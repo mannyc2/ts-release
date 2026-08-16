@@ -1,123 +1,164 @@
-# Resumability and durable release state
+# Resumability and durable release history
 
-Status: research checkpoint. This document defines the durable state model and worked recovery traces. It does not implement a journal, Workflow, Activity, or provider mutation.
+Status: research checkpoint. This document defines the durable history and derived state model. It does not implement a journal, Workflow, Activity, or provider mutation.
 
 ## Target user experience
 
 A release can stop after any provider-local coordinate and later continue by:
 
 1. loading the same finalized bundle;
-2. loading the journal for that bundle and release intent;
-3. preserving every accepted or observed-equivalent coordinate;
-4. observing uncertain coordinates before any new dispatch;
-5. creating a new attempt only after provider-local evidence permits it; and
-6. presenting conflicts or irreducible uncertainty instead of blindly repeating work.
+2. loading the same canonical release plan;
+3. replaying the ordered journal history;
+4. preserving every accepted or observed-equivalent operation;
+5. observing uncertain operations before any new dispatch;
+6. creating a new attempt only when provider-local evidence permits it; and
+7. presenting conflicts or irreducible uncertainty instead of blindly repeating work.
 
-The user does not rebuild artifacts merely because a provider operation failed or the process died. Continuation is per coordinate, not an all-or-nothing rerun.
+Artifacts are finalized once and reused. Continuation is per Intent, not an all-or-nothing rerun.
 
-## Stable logical operation versus attempt
+## No LogicalOperation peer
 
-### `LogicalOperation`
+### Canonical release plan
 
-A logical operation is the durable identity of one intended provider-local outcome. It is stable across process restarts, engine retries, and operator continuation.
+The canonical plan stores each desired provider fact exactly once as a provider-specific Intent.
 
 ```text
-LogicalOperation = {
-  operationId,
-  providerImplementation,
-  endpointOrNamespace,
-  coordinate,
-  intentDigest,
+ReleasePlan = {
+  schemaVersion,
   bundleId,
-  artifactReferences,
-  dependencies
+  intents,
+  dependencyEdges
 }
 ```
 
+Each Intent already contains provider implementation, endpoint, coordinate, desired metadata, desired byte facts, and bundle artifact references.
+
 ```text
-operationId = hash(
-  providerImplementation,
-  endpointOrNamespace,
-  canonicalCoordinate,
-  canonicalIntentDigest
+OperationId = hashCanonical(
+  "ts-release/provider-intent/v1",
+  canonicalEncodedIntent
 )
 ```
 
-Changing the intended bytes, metadata, endpoint, or provider coordinate creates a new logical operation. A correction does not rewrite the old operation's history.
+There is no serialized `LogicalOperation` record that repeats the Intent fields. There is no separately stored intent digest beside an operation ID. A plan index may cache derived operation IDs only if loading recomputes and validates them.
 
-### `Attempt`
+Dependency edges reference derived operation IDs. They express orchestration order and do not repeat provider facts.
 
-An attempt is one possible dispatch of a logical operation.
+### Canonical journal history
+
+The journal stores one ordered event history. It does not store these as independent peers:
+
+- current state;
+- attempts;
+- attempt terminal facts;
+- receipts;
+- observations; and
+- evidence arrays.
+
+Those facts enter through events. Current state is a deterministic fold.
 
 ```text
-Attempt = {
-  attemptId,
-  operationId,
-  ordinal,
-  dispatchId,
-  startedAt,
-  authorizationFacts,
-  idempotencyKeyIfAny,
-  terminalFact
+Journal = {
+  schemaVersion,
+  planId,
+  events
 }
 ```
 
 ```text
-attemptId = operationId + ordinal
-dispatchId = unique physical mutation boundary
+JournalEvent =
+  | DispatchStarted
+  | DispatchRejectedBeforeCommit
+  | ReceiptAccepted
+  | ObservationRecorded
+  | RiskRetryAuthorized
+  | ConsumerEvidenceRecorded
 ```
 
-One physical provider command may cover more than one logical operation. For example, `npm publish --tag next` can create an immutable version and move a mutable tag in one command. Both logical operations record the same `dispatchId` while keeping separate terminal facts and reconciliation.
+A materialized state table, attempt index, or observation index is a disposable projection. It must be reproducible from the release plan and ordered event history. It cannot be accepted as a second source of truth.
 
-An attempt ordinal is not proof of non-commit and is not automatically a provider idempotency key.
+## Event identities
 
-## Durable operation states
+### DispatchStarted
 
-The journal preserves one of these states for each logical operation.
-
-| State | Meaning | Next lawful action |
-| --- | --- | --- |
-| `Planned` | Canonical intent and dependencies are durable; no attempt is known to have crossed dispatch. | Validate authorization, then create a dispatch attempt. |
-| `Dispatching(attempt)` | The journal recorded the attempt before calling the mutating boundary. The final provider outcome may be unknown. | Record a returned receipt, a proven pre-dispatch failure, or perform fresh observation. Never blindly start another attempt. |
-| `Accepted(receipt)` | The provider returned a provider-native acceptance receipt for the exact intent. | Preserve; optionally gather M/B/C evidence. |
-| `SatisfiedByObservation(freshObservation)` | A fresh provider read proves the coordinate equivalent to the intent. | Preserve; optionally gather consumer evidence. |
-| `ProvenNotCommitted(proof)` | Provider-local evidence or a trusted local boundary proves the prior attempt did not commit. | A new attempt is permitted if policy and authorization still allow it. |
-| `AbsentRetryable(freshObservation, policy)` | The coordinate is currently absent, but visibility or propagation rules prevent treating absence as proof of non-commit. | Observe again under a bounded policy; do not mutate yet. |
-| `Pending(freshObservation, policy)` | The provider reports accepted but nonterminal processing, indexing, scanning, or publication. | Observe again; do not duplicate. |
-| `Conflict(freshObservation)` | The coordinate exists with facts incompatible with the intent. | Stop, preserve evidence, and require correction or maintainer choice. |
-| `Inconclusive(evidence)` | Available evidence cannot distinguish commit, non-commit, equivalence, or conflict. | Stop automatic progress. Require stronger evidence or a maintainer decision. |
-
-`Accepted` and `SatisfiedByObservation` are two different ways to satisfy the same logical operation. Both remain durable because the receipt and observation have different evidentiary value.
-
-## Journal transition law
-
-The minimum write-ahead law is:
+`DispatchStarted` is appended atomically before crossing the external mutation boundary.
 
 ```text
-persist Planned
-  -> persist Dispatching(attempt N)
-  -> cross the external mutation boundary
-  -> persist one terminal or observation classification
+DispatchStarted = {
+  eventId,
+  operationId,
+  attemptId,
+  dispatchId,
+  authorizationFacts,
+  providerIdempotencyKeyIfAny,
+  startedAt
+}
 ```
 
-The external side effect must never occur before `Dispatching` is durable.
+`attemptId` is derived from the operation ID and the journal sequence allocated for this dispatch start. A separate mutable attempt counter is not canonical.
 
-After process loss, any operation still in `Dispatching` is treated as an unknown provider outcome. The next process observes the provider. It does not infer non-commit from the absence of a local receipt.
+`dispatchId` identifies one physical mutation boundary. Several operation histories may reference the same dispatch ID when one command can affect several Intents. For example, one npm command may affect an immutable version Intent and a mutable dist-tag Intent.
 
-### Permitted transitions
+### Terminal and observation events
+
+A later event references the attempt or operation it classifies:
+
+```text
+DispatchRejectedBeforeCommit(attemptId, proof)
+ReceiptAccepted(attemptId, providerNativeReceipt)
+ObservationRecorded(operationId, attemptIdIfRelevant, freshObservation)
+RiskRetryAuthorized(operationId, priorAttemptId, maintainerDecision)
+ConsumerEvidenceRecorded(operationIdOrRelease, evidenceEnvironment, result)
+```
+
+Receipt and observation payloads remain provider-native and versioned. Secrets, temporary paths, and unbounded bodies are not persisted.
+
+## Derived operation states
+
+The fold of plan plus events produces one state per operation.
+
+| Derived state | Required history | Next lawful action |
+| --- | --- | --- |
+| `Planned` | Intent exists and no dispatch event exists. | Append `DispatchStarted`, then cross the mutation boundary. |
+| `Dispatching(attempt)` | Latest relevant event is `DispatchStarted` with no conclusive later event. | Observe or append a returned receipt/proof. Never blindly start another attempt. |
+| `Accepted(receipt)` | `ReceiptAccepted` proves provider acceptance for the Intent. | Preserve; gather metadata, byte, or consumer evidence as separate events. |
+| `SatisfiedByObservation(observation)` | A fresh observation proves the Intent equivalent. | Preserve; gather consumer evidence if required. |
+| `ProvenNotCommitted(proof)` | Provider-local or trusted local evidence proves the prior attempt did not commit. | A new attempt may be started if still authorized. |
+| `AbsentRetryable(observation, policy)` | Fresh absence is not yet authoritative because visibility may lag. | Observe again under the bounded policy. |
+| `Pending(observation, policy)` | Provider reports accepted but nonterminal processing or indexing. | Observe again. Do not duplicate. |
+| `Conflict(observation)` | Fresh facts contradict the Intent. | Stop automatic progress; correct or supersede explicitly. |
+| `Inconclusive(evidence)` | Available evidence cannot prove commit, non-commit, equivalence, or conflict. | Stop automatic progress; obtain stronger evidence or append an explicit risk decision. |
+
+`Accepted` and `SatisfiedByObservation` are different evidentiary paths to a satisfied operation. The fold preserves the receipt or observation event that established the result.
+
+## Fold laws
+
+### Minimum write-ahead law
+
+```text
+canonical Intent exists in ReleasePlan
+  -> append DispatchStarted
+  -> durably commit the event
+  -> cross the external mutation boundary
+  -> append receipt, proof, or observation event
+```
+
+The external mutation must never occur before `DispatchStarted` is durable.
+
+### Permitted histories
 
 ```text
 Planned
   -> Dispatching(N)
 
 Dispatching(N)
-  -> Accepted(receipt)
-  -> ProvenNotCommitted(preDispatchProof)
-  -> SatisfiedByObservation(observation)
-  -> AbsentRetryable(observation)
-  -> Pending(observation)
-  -> Conflict(observation)
-  -> Inconclusive(evidence)
+  -> Accepted
+  -> ProvenNotCommitted
+  -> SatisfiedByObservation
+  -> AbsentRetryable
+  -> Pending
+  -> Conflict
+  -> Inconclusive
 
 AbsentRetryable
   -> SatisfiedByObservation
@@ -135,89 +176,81 @@ Pending
 
 ProvenNotCommitted
   -> Dispatching(N + 1)
+
+Inconclusive
+  -> Dispatching(N + 1) only after RiskRetryAuthorized
 ```
 
-A new observation may enrich `Accepted` or `SatisfiedByObservation` with metadata and byte evidence, but it does not erase the original receipt or trace.
+A risk-bearing retry is an exceptional audited maintainer decision. It is not evidence that duplicates are safe and it does not rewrite the prior inconclusive history.
 
-### Forbidden transitions
+### Forbidden histories
 
 ```text
-Dispatching(N) -> Dispatching(N + 1) without reconciliation
-Pending -> Dispatching without proof of non-commit
-Inconclusive -> automatic retry
+Dispatching(N) -> Dispatching(N + 1) without proof or explicit risk authorization
+Pending -> Dispatching without proof or risk authorization
 Conflict -> automatic overwrite
 Accepted -> repeated create because consumer evidence is missing
+SatisfiedByObservation -> repeated create because a receipt is absent
 ```
 
-## Journal record shape
+## Storage requirements
 
-Illustrative durable shape:
-
-```json
-{
-  "schemaVersion": "ts-release/journal/v1",
-  "releaseId": "...",
-  "bundleId": "...",
-  "operations": {
-    "operation-id": {
-      "provider": "npmjs",
-      "coordinate": {},
-      "intent": {},
-      "state": { "tag": "Dispatching", "attemptId": "..." },
-      "attempts": [],
-      "observations": [],
-      "consumerEvidence": []
-    }
-  }
-}
-```
-
-The journal stores canonical values and redacted provider-native evidence. It must not persist bearer tokens, private keys, temporary paths, or unbounded response bodies.
-
-## Persistence requirements
-
-A production journal needs:
+A production release plan and journal need:
 
 - versioned canonical encoding;
-- domain-separated record identity;
-- atomic append or compare-and-swap transition;
-- detection of torn or conflicting writes;
-- one-writer lease or operation-level CAS for concurrent continuation;
+- domain-separated plan, Intent, and event identities;
+- atomic append or compare-and-swap;
+- torn-write and conflicting-writer detection;
+- one-writer lease or operation-level CAS for continuation;
 - durable linkage to the finalized bundle;
-- provider receipt and observation Schema versions;
-- bounded evidence payloads with raw-fact fingerprints where necessary;
-- explicit secret redaction; and
-- an audit history that does not rewrite prior attempts.
+- versioned provider Receipt and FreshObservation schemas;
+- bounded and redacted evidence payloads;
+- immutable prior history;
+- deterministic folding; and
+- validation that any cached projection equals the fold result.
 
-The storage backend is a maintainer choice. These laws apply whether the first implementation uses local files, SQLite, an object store, or another durable service.
+The backend remains a maintainer choice. These laws apply to local files, SQLite, an object store, or another durable service.
 
-## Dependency and dispatch groups
+## Dependency and physical dispatch groups
 
-A release is a graph of logical operations.
+A release plan is a graph of Intents.
 
-- An npm dist-tag operation depends on the intended version being satisfied.
-- A GitHub asset depends on the release resource and tag policy.
-- A Homebrew formula Git publication depends on finalized public download URLs and checksums.
-- Consumer installation depends on provider acceptance and public visibility but is not itself a provider mutation.
+- An npm dist-tag Intent depends on the intended version Intent being satisfied.
+- A GitHub asset Intent depends on the release Intent being satisfied.
+- A Homebrew formula Git publication Intent depends on finalized download URLs and checksums.
+- A Scoop bucket publication Intent depends on finalized manifest bytes and referenced artifact URLs.
+- Consumer installation depends on provider acceptance or public visibility but is not a provider mutation.
 
-A dispatch group records when one physical command can mutate several coordinates. Every child logical operation still has its own state.
+A physical command may affect several Intents. The journal expresses this by appending one `DispatchStarted` event per affected operation with the same `dispatchId`. It does not create a composite operation that duplicates the child Intents.
 
-If a grouped command returns success, the provider adapter maps the command receipt into provider-native receipt facts for each child it can prove. Any child not proved by the receipt remains subject to fresh observation.
+If a grouped command returns success, the adapter appends a provider-native receipt event for each Intent the response proves. Any unproved child remains `Dispatching` and must be observed.
 
 ## Worked trace 1: ordinary npm success
 
-Desired outcome:
+Canonical plan:
 
 ```text
-Version: registry.npmjs.org / @scope/pkg / 1.2.3 / tarball integrity X
-Tag:     registry.npmjs.org / @scope/pkg / latest -> 1.2.3
+V = NpmVersionIntent(
+  registry.npmjs.org,
+  @scope/pkg,
+  1.2.3,
+  tarball integrity X
+)
+
+T = NpmDistTagIntent(
+  registry.npmjs.org,
+  @scope/pkg,
+  latest -> 1.2.3
+)
+
+Dependency: V before T
 ```
 
-Journal:
+Derived IDs:
 
 ```text
-V = Planned(NpmVersionIntent)
-T = Planned(NpmDistTagIntent), depends on V
+V.id = hashCanonical(V)
+T.id = hashCanonical(T)
 ```
 
 The adapter elects one physical command:
@@ -226,45 +259,52 @@ The adapter elects one physical command:
 D1 = npm publish package.tgz --tag latest
 ```
 
-Before execution:
+Before execution, append:
 
 ```text
-V -> Dispatching(V-attempt-1, dispatchId D1)
-T -> Dispatching(T-attempt-1, dispatchId D1)
+DispatchStarted(V.id, V1, D1)
+DispatchStarted(T.id, T1, D1)
 ```
 
-The command returns success and provider response facts:
+The command returns success and proves both effects:
 
 ```text
-V -> Accepted(NpmVersionReceipt)
-T -> Accepted(NpmDistTagReceipt)
+ReceiptAccepted(V1, NpmVersionReceipt)
+ReceiptAccepted(T1, NpmDistTagReceipt)
 ```
 
-A later metadata read can add:
+The fold yields:
 
 ```text
-V metadata = Equivalent(name, version, integrity, shasum)
-T metadata = Equivalent(latest -> 1.2.3)
+V = Accepted(version receipt)
+T = Accepted(tag receipt)
 ```
 
-Clean install remains a separate consumer result:
+Later metadata reads append separate observations:
 
 ```text
-C = NotObserved
+ObservationRecorded(V.id, Equivalent(name, version, integrity, shasum))
+ObservationRecorded(T.id, Equivalent(latest -> 1.2.3))
 ```
 
-If the process dies after the registry commits but before either receipt is stored, both remain `Dispatching(D1)`. Recovery reads package metadata once and classifies independently:
+A clean npm install may still be:
+
+```text
+ConsumerEvidenceRecorded(release, clean-npm, NotObserved)
+```
+
+If the process dies after registry commit but before receipt events, both operations fold to `Dispatching`. Recovery reads package metadata and appends independent observations:
 
 ```text
 V -> SatisfiedByObservation(version and bytes equivalent)
 T -> SatisfiedByObservation(tag equivalent)
 ```
 
-If the version is equivalent but `latest` points to `1.2.2`, V remains satisfied while T becomes `Conflict` or a separately authorized tag-correction operation. The package version is never republished.
+If the version is equivalent but `latest` points to `1.2.2`, V remains satisfied while T becomes `Conflict` or is superseded by a separately authorized tag-correction Intent. The package version is never republished.
 
 ## Worked trace 2: partial PyPI progress
 
-Desired files:
+Canonical plan contains one Warehouse file Intent per distribution:
 
 ```text
 A = package-1.2.3.tar.gz
@@ -272,220 +312,219 @@ B = package-1.2.3-py3-none-any.whl
 C = package-1.2.3-cp313-manylinux_x86_64.whl
 ```
 
-Each filename is its own logical operation.
-
-First run:
+First run events:
 
 ```text
-A -> Dispatching(A1) -> Accepted(WarehouseUploadReceipt)
-B -> Dispatching(B1) -> process loses response
-C -> local credential validation fails before dispatch
+DispatchStarted(A, A1, D1)
+ReceiptAccepted(A1, WarehouseUploadReceipt)
+
+DispatchStarted(B, B1, D2)
+# response lost, no later event
+
+DispatchStarted(C, C1, D3)
+DispatchRejectedBeforeCommit(C1, credential-preflight-proof)
 ```
 
-Durable states:
+Folded states:
 
 ```text
 A = Accepted(receipt)
 B = Dispatching(B1)
-C = ProvenNotCommitted(preDispatchCredentialFailure)
+C = ProvenNotCommitted(preflight proof)
 ```
 
 Continuation:
 
-1. Load the same finalized bundle.
-2. Do not upload A.
-3. Read the Warehouse Simple API for B.
-4. If B is listed with the exact filename, size, and SHA-256, record `SatisfiedByObservation`.
-5. If B is absent but indexing may still be delayed, record `AbsentRetryable` and observe under the bounded policy.
-6. Repair credentials for C and create `C2` only because the prior failure proved no dispatch.
+1. Load the same bundle and plan.
+2. Fold the journal.
+3. Do not upload A.
+4. Read the Warehouse Simple API for B.
+5. If filename, size, and SHA-256 match, append `ObservationRecorded(...Equivalent...)`.
+6. If B is absent but indexing may lag, append `AbsentRetryable` and observe again.
+7. Repair credentials for C and append `DispatchStarted(C, C2, D4)` only because C1 proved non-commit.
 
-The parent PyPI publication is complete only when A, B, and C are satisfied. Partial success is normal state, not a rollback trigger.
+The parent PyPI outcome is complete only when every required file Intent is satisfied. Partial success is normal durable history.
 
 ## Worked trace 3: lost GitHub asset response
 
 Prerequisites:
 
 ```text
-Tag ref = satisfied
-Release resource = Accepted(releaseId 42)
-Asset = release 42 / effective stored name tool-linux-x64.tar.gz / digest X
+Release Intent = Accepted(releaseId 42)
+Asset Intent = release 42 / requested name tool-linux-x64.tar.gz / digest X
 ```
 
-Mutation:
+Events:
 
 ```text
-Asset -> Dispatching(A1)
-POST upload bytes
-connection disappears before response is recorded
+DispatchStarted(asset, A1, D1)
+POST asset bytes
+# response lost
 ```
+
+The fold yields `Dispatching(A1)`.
 
 Recovery:
 
-1. List all assets for release 42, following pagination to a complete listing.
-2. Apply the explicit requested-name to effective-stored-name rule.
-3. Compare returned name, state, size, media type, and digest or downloaded bytes.
+1. List all assets for release 42 and follow pagination to completion.
+2. Apply the Intent's explicit requested-name to stored-name normalization rule.
+3. Compare effective stored name, state, size, media type, and digest or downloaded bytes.
 
-Outcomes:
+Possible appended observations:
 
 ```text
-matching asset -> SatisfiedByObservation
-same name, different bytes -> Conflict
-asset in processing state -> Pending
-complete authoritative absence after visibility policy -> ProvenNotCommitted
-incomplete listing or unavailable digest/read -> Inconclusive or AbsentRetryable
+matching uploaded asset -> Equivalent -> SatisfiedByObservation
+same effective name, different bytes -> Conflict
+provider processing state -> Pending
+complete authoritative absence after visibility budget -> AuthoritativelyAbsent -> ProvenNotCommitted
+incomplete listing or unavailable identity -> Inconclusive or AbsentRetryable
 ```
 
-Only `ProvenNotCommitted` permits A2. A response-loss timeout by itself does not.
+Only `ProvenNotCommitted` normally permits A2. A timeout alone does not.
 
-## Worked trace 4: catalog Git publication
+## Worked trace 4: Homebrew formula publication
 
-The finalized bundle contains the exact catalog target and managed-state bytes. Three outcomes are tracked separately:
+The finalized bundle contains:
 
 ```text
-G = conditional Git ref publication
-R = catalog rendering correctness
-C = package-manager installation
+F = rendered formula artifact
+G = conditional tap Git publication Intent
+C = Homebrew consumer evidence target
 ```
 
-Before mutation:
+The formula rendering law is established before publication by exact URLs, checksums, class/token name, and install stanza validation. It is not a second provider operation record.
+
+Events:
 
 ```text
-G = Planned(expected predecessor SHA P, target tree digest X)
-R = local structural evidence for the finalized catalog bytes
-C = NotObserved
-```
-
-Dispatch:
-
-```text
-G -> Dispatching(G1)
-create blobs/tree/commit
+DispatchStarted(G, G1, D1)
+create Git blobs/tree/commit
 conditional ref update P -> Q
 ```
 
-Normal success:
+Normal response:
 
 ```text
-G -> Accepted(GitRefReceipt(commit Q, ref, previous P))
+ReceiptAccepted(G1, GitRefReceipt(previous P, commit Q))
 ```
 
-If the response is lost, recovery reads the ref and exact managed paths:
+Lost-response recovery reads the ref and exact formula path:
 
 ```text
-ref == Q and bytes equivalent -> SatisfiedByObservation
+ref == Q and formula bytes equivalent -> SatisfiedByObservation
 ref advanced to unrelated commit -> Conflict
-ref remains P and no created commit can be authoritative for the ref update -> ProvenNotCommitted for the ref operation
-read cannot establish the managed paths -> Inconclusive
+ref remains P with authoritative rejected update -> ProvenNotCommitted
+read cannot establish ref or managed path -> Inconclusive
 ```
 
-Neither Git acceptance nor local rendering evidence is a package-manager installation result. C remains `NotObserved` until a clean Scoop, Homebrew, or other consumer resolves and installs the intended bytes.
+A clean `brew install` and executable smoke are consumer evidence. Missing consumer evidence never repeats an accepted ref update.
 
-Continuation never repeats a satisfied ref update merely because consumer testing has not run.
+## Worked trace 5: Scoop publication
 
-## Worked trace 5: unknown custom provider
-
-A consumer package supplies a provider whose mutation endpoint returns a receipt on success but whose read API cannot query exact coordinates.
+The finalized bundle contains:
 
 ```text
-O = Planned(custom coordinate K, intent digest X)
-O -> Dispatching(O1)
+M = Scoop manifest artifact with exact URLs and hashes
+G = conditional bucket Git publication Intent
+C = Windows Scoop consumer evidence target
+```
+
+The Git flow is the same provider law used by Homebrew, but the renderer and consumer environment differ.
+
+After response loss:
+
+```text
+bucket ref and manifest bytes equivalent -> SatisfiedByObservation
+bucket ref changed to unrelated commit -> Conflict
+old ref remains and conditional update was rejected -> ProvenNotCommitted
+Scoop install not run -> ConsumerEvidence = NotObserved
+```
+
+The rewrite ships both Homebrew formula and Scoop outcomes. They are not an either/or catalog choice.
+
+## Worked trace 6: unknown custom provider
+
+A custom provider has an exact Intent and mutation receipt schema, but its read API exposes only an incomplete listing with no digest.
+
+Events:
+
+```text
+DispatchStarted(O, O1, D1)
 provider may commit
-process loses response
+# response lost
+ObservationRecorded(O, Inconclusive(
+  "provider cannot distinguish committed coordinate from absence"
+))
 ```
 
-The provider's observe operation can report only an unscoped listing that is incomplete and has no digest.
+The fold yields `Inconclusive`.
 
-```text
-O -> Inconclusive({
-  reason: "Provider cannot distinguish committed K from absent K after response loss",
-  attempt: O1,
-  availableFacts: ...
-})
-```
+The core presents:
 
-The core does not call O2 automatically. It presents:
+- the canonical Intent;
+- derived operation ID;
+- finalized artifact digest;
+- dispatch event and authorization facts;
+- all available provider observations; and
+- provider-declared absence limitations.
 
-- exact intent and finalized artifact digest;
-- the lost attempt boundary;
-- all available provider facts;
-- provider-declared lack of authoritative absence; and
-- maintainer actions such as supply external evidence, abandon, or explicitly authorize a risk-bearing retry.
-
-An explicit risk-bearing retry is a new audited maintainer decision, not a normal automatic transition and not proof that duplicates are safe.
+The core does not append O2 automatically. A maintainer may provide stronger evidence, abandon the operation, supersede it with another Intent, or append `RiskRetryAuthorized` and accept duplicate risk.
 
 ## Workflow and Activity relationship
 
-Effect Workflow or Activity can later provide execution, timers, encoded engine state, and process resumption. They do not replace the release journal.
+Effect Workflow or Activity may later execute timers, observations, and dispatch commands. They do not define the canonical provider Intent or journal history.
 
-The journal remains authoritative because it provides:
+Activity identity at the inspected Effect pins depends on workflow execution ID, Activity name, and attempt. That is engine identity, not provider operation identity. The release operation ID is derived directly from canonical Intent bytes.
 
-- provider-local intent and coordinate identity;
-- stable operation identity independent of Activity names;
-- grouped physical dispatch records;
-- provider receipts and fresh observations;
-- proof of non-commit, pending, conflict, and inconclusive states;
-- finalized bundle linkage; and
-- consumer evidence.
-
-The engine may execute a transition such as `observe operation O` or `dispatch attempt O2`. It must first read and CAS the journal state. Engine replay cannot infer a remote npm, Warehouse, GitHub, Git, or custom-provider commit whose response was lost.
+Before a Workflow or Activity dispatches a provider mutation, it must CAS-append `DispatchStarted`. Engine replay cannot infer whether npm, Warehouse, GitHub, Git, or a custom provider committed after a response was lost.
 
 ## Default retry policy
 
-The core default is:
-
 ```text
 retry observation according to provider policy;
-retry mutation only after ProvenNotCommitted;
-never retry Conflict or Inconclusive automatically.
+retry mutation after ProvenNotCommitted;
+allow risk-bearing retry only after an explicit audited decision;
+never retry Conflict automatically;
+never interpret missing consumer evidence as permission to mutate.
 ```
 
-Provider-native idempotency keys and conditional writes improve the proof surface, but they do not remove the journal. The journal records which key or condition was used and what the provider later established.
-
-## Consumer evidence
-
-Consumer outcomes are attached to satisfied provider operations or the release as a whole:
-
-```text
-ObservedEquivalent
-ObservedDifferent
-ObservedFailure
-NotObserved
-```
-
-Each carries an evidence environment. Missing consumer evidence never causes provider mutation replay.
+Provider-native idempotency keys and conditional writes improve the proof surface. The journal records which key or condition was used, but their existence does not eliminate the history.
 
 ## Correction and supersession
 
-A correction creates a new canonical intent and therefore a new logical operation ID. The journal links it as superseding or correcting an earlier operation while preserving:
+A correction creates a new canonical Intent and therefore a new derived operation ID. A supersession event or plan edge links the new Intent to the prior one while preserving:
 
-- the original intent;
-- every attempt;
-- receipt or conflicting observation;
+- the original Intent;
+- every dispatch event;
+- every receipt and observation;
 - correction authority; and
-- new provider-local coordinate or conditional baseline.
+- the new desired provider fact.
 
-The old history is immutable.
+Prior history is immutable.
 
-## Genuine remaining choices
+## Genuine remaining maintainer choices
 
-Maintainers still need to decide:
+The shipping provider scope is not a remaining choice. Maintainers still need to decide:
 
-- journal storage backend and transaction model;
-- operation-level lease duration and concurrent-run behavior;
-- exact dispatch-group representation for composite provider commands;
-- provider-specific observation budgets and when absence becomes authoritative;
-- how a maintainer records an explicit risk-bearing retry after inconclusive evidence;
-- journal retention, compaction, and secret-redaction policy;
+- journal backend and transaction model;
+- release-plan and event schema details;
+- operation-level lease duration and concurrent continuation behavior;
+- exact dispatch-group allocation for composite commands;
+- provider-specific observation budgets and authoritative-absence rules;
+- the UI and authority model for `RiskRetryAuthorized`;
+- retention, compaction, and secret-redaction policy;
 - whether Workflow or Activity is included in the first delivery; and
-- which consumer evidence is required before a release is called complete.
+- which consumer evidence is required before the whole release is called complete.
 
 ## Conclusions
 
-1. Stable logical operations and individual attempts are different durable entities.
-2. `Dispatching` is a write-ahead uncertainty boundary, not permission to retry.
-3. Accepted receipts and equivalent observations are separate terminal evidence.
-4. Proven non-commit is the normal gateway to another mutation attempt.
-5. Absent-retryable, pending, conflict, and inconclusive are first-class states.
-6. Partial provider progress is preserved per coordinate against the same finalized bundle.
-7. Workflow or Activity may execute the model but cannot replace provider reconciliation.
-8. The intended experience is continuation without rebuilding and without blind repetition.
+1. Intent is the sole canonical desired provider representation.
+2. Operation ID is derived directly from canonical Intent bytes.
+3. There is no serialized LogicalOperation peer.
+4. Ordered journal events are canonical; current state and indexes are derived.
+5. `DispatchStarted` is a write-ahead uncertainty boundary, not permission to retry.
+6. Accepted receipts and equivalent observations are separate evidentiary paths.
+7. Proven non-commit is the normal gateway to another mutation attempt.
+8. Absent-retryable, pending, conflict, and inconclusive are first-class derived states.
+9. npm, plural Warehouse files, GitHub assets, Homebrew formulas, Scoop, and custom providers continue per Intent against the same finalized bundle.
+10. Workflow or Activity may execute the model but cannot replace provider reconciliation.

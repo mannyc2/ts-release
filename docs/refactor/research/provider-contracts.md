@@ -1,191 +1,223 @@
 # Provider contracts and reconciliation facts
 
-Status: research checkpoint. This document specifies provider-local facts and recovery laws. It does not define a universal `Publisher`, `verify`, `ensurePublished`, or provider admission mechanism.
+Status: research checkpoint. This document fixes the shipping provider scope and the provider-local fact model. It does not implement production APIs or mutate any provider.
+
+## Shipping rewrite scope
+
+The shipping rewrite scope is fixed:
+
+1. npm;
+2. PyPI/Warehouse;
+3. GitHub Releases and release assets;
+4. Homebrew formulas;
+5. Scoop; and
+6. arbitrary custom providers.
+
+This is the shipping product scope and is not a remaining product-scope choice. Homebrew casks, OCI registries, object stores, GitLab Releases, Gitea Releases, Winget, and other destinations may be discussed as comparisons or later provider packages, but they do not replace or reduce the shipping scope above.
 
 ## Evidence discipline
 
-Claims in this document use four labels:
+Claims use these labels:
 
-- **Provider-specified:** stated by the provider's official protocol or product documentation.
-- **Source-observed:** implemented or parsed by current ts-release source at a pinned commit.
-- **Inferred:** a design consequence drawn from provider-specified or source-observed facts.
-- **Proposed:** a contract for the rewrite that still requires implementation and provider acceptance evidence.
+- **Provider-specified:** stated by official provider protocol or documentation.
+- **Source-observed:** visible in pinned provider, client, or ts-release source.
+- **Inferred:** a design consequence of provider-specified or source-observed facts.
+- **Proposed:** a rewrite contract that still requires implementation evidence.
 
-The current implementations are useful evidence, not the final architecture:
+Current source evidence:
 
 - [npm adapter](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/publication/npm.ts)
 - [PyPI adapter](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/publication/pypi.ts)
 - [GitHub adapter](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/publication/github.ts)
 - [catalog Git adapter](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/publication/catalog-git.ts)
-- [current correction intent](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/correction/intent.ts)
+- [current report model](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/publication/report.ts)
 
-## Three separate provider facts
+## One canonical desired representation
 
-A durable release record must not collapse these values into one generic result.
+### Intent is the operation definition
 
-### `Intent`
-
-`Intent` is the canonical statement of the requested provider-local outcome before dispatch. It includes:
+A provider-specific `Intent` is the single canonical representation of one desired provider-local outcome. It contains:
 
 - provider implementation identity;
 - endpoint or namespace identity;
 - provider-local coordinate;
-- artifact or metadata digest requirements;
-- mutable pointer requirements, if any;
-- authorization and mutation mode relevant to the request; and
-- an intent schema version and canonical digest.
+- exact desired metadata and byte facts;
+- referenced bundle artifacts;
+- mutation mode and conditions relevant to the provider; and
+- an explicit schema version.
 
-An `Intent` is not evidence that a provider accepted anything.
+There is no serialized `LogicalOperation` peer that repeats provider, endpoint, coordinate, artifact references, or desired facts.
 
-### Provider-native `Receipt`
+```text
+OperationId = hashCanonical(
+  "ts-release/provider-intent/v1",
+  canonicalEncodedIntent
+)
+```
 
-A `Receipt` is returned by the mutation boundary after the provider reports acceptance. It preserves provider-native identifiers and response facts rather than reducing them to a universal publication ID. Examples include:
+`OperationId` is derived from the validated Intent. It is not stored as an unchecked peer and it is not computed by hashing duplicated fields alongside an intent digest. A cache or index may store the derived ID only if loading recomputes and checks it.
 
-- npm registry name, version, effective tag, and registry response facts;
-- Warehouse upload response and exact filename coordinate;
-- GitHub release ID, asset API URL, returned asset name, and digest field;
-- a Git commit SHA and updated ref;
-- AWS S3 ETag, version ID, checksum, request ID, and endpoint facts.
+### Release plan and dependencies
 
-A receipt is not a fresh read and may be absent after a committed write whose response was lost.
+A canonical release plan contains:
 
-### `FreshObservation`
+```text
+ReleasePlan = {
+  bundleId,
+  intents,
+  dependencyEdges
+}
+```
 
-A `FreshObservation` records a read performed after a specified dispatch or recovery point. It contains:
+Each dependency edge references derived operation IDs. Dependencies are orchestration facts, not duplicate provider facts. The plan ID is derived from the canonical plan bytes.
 
-- the provider implementation and endpoint observed;
-- the exact coordinate queried;
-- observation time and request identity;
-- raw provider-native facts needed for later audit;
-- the comparison against one canonical `Intent`; and
-- the observation classification.
+### Journal events, not parallel peer records
 
-A cached package index, local lockfile, prior receipt, or stale listing is not a `FreshObservation` unless the provider contract explicitly makes it authoritative for that coordinate.
+The journal appends events that reference an operation ID. It does not separately persist a current state, an attempts array, an observations array, terminal facts, and evidence collections that can disagree.
+
+```text
+JournalEvent =
+  | DispatchStarted
+  | DispatchRejectedBeforeCommit
+  | ReceiptAccepted
+  | ObservationRecorded
+  | RiskRetryAuthorized
+  | ConsumerEvidenceRecorded
+```
+
+The current operation state is a deterministic fold of the release plan and ordered journal events. Attempts, terminal facts, receipts, observations, and evidence are carried by or referenced from the events that introduced them. A materialized state projection is a disposable index and must be reproducible from the canonical event history.
+
+## Four independent facts
+
+### Intent
+
+The requested provider-local outcome before dispatch. Intent is desired state, not evidence.
+
+### Provider-native Receipt
+
+A mutation response that the provider or trusted client reports as accepted. It preserves provider-native identifiers and response facts rather than reducing every provider to one generic publication ID.
+
+Examples:
+
+- npm package/version, effective tag facts, and registry response identifiers;
+- Warehouse repository, normalized project, filename, and upload response;
+- GitHub release ID or asset ID, returned stored name, state, size, digest, and URLs;
+- Git commit and conditional ref-update result.
+
+A receipt is not a fresh read. It may be absent after a committed write whose response was lost.
+
+### FreshObservation
+
+A provider read performed after a named dispatch or recovery point. It records:
+
+- provider implementation and endpoint observed;
+- exact coordinate queried;
+- request time and request identity when available;
+- provider-native facts needed for audit;
+- comparison with one canonical Intent; and
+- classification.
+
+A cached package index, local lockfile, prior receipt, or stale listing is not a fresh observation unless the provider contract explicitly makes it authoritative.
+
+### ConsumerEvidence
+
+An install, download, import, execution, or package-manager result in a named environment. Consumer evidence is separate from provider acceptance and reconciliation.
 
 ## Observation classifications
 
-The rewrite should use provider-local observation evidence to produce one of these classifications:
-
-| Classification | Meaning | May dispatch another attempt? |
+| Classification | Meaning | Another mutation attempt? |
 | --- | --- | --- |
-| `Equivalent` | Fresh provider facts satisfy the exact intent. | No; operation is satisfied. |
-| `Conflict` | The coordinate exists, but provider facts contradict the intent. | No; requires correction or maintainer decision. |
-| `AuthoritativelyAbsent` | The provider gives authoritative evidence that the exact coordinate is not committed. | Yes, if provider policy permits creation. |
-| `AbsentRetryable` | The coordinate is absent, but the absence may still be a visibility or propagation state. | Not yet; follow the bounded observation policy. |
-| `Pending` | Provider reports an accepted, processing, scanning, indexing, or otherwise nonterminal state. | No blind retry; observe until terminal or budget exhaustion. |
-| `Inconclusive` | The read cannot prove equivalence, conflict, or absence. | No blind retry. Preserve uncertainty. |
+| `Equivalent` | Fresh provider facts satisfy the exact Intent. | No. The operation is satisfied. |
+| `Conflict` | The coordinate exists with facts that contradict the Intent. | No automatic retry. |
+| `AuthoritativelyAbsent` | Provider-local evidence proves the exact coordinate is not committed. | Yes, if creation remains authorized. |
+| `AbsentRetryable` | The coordinate is absent, but visibility or propagation prevents a non-commit conclusion. | Observe again; do not mutate. |
+| `Pending` | The provider reports accepted but nonterminal processing, indexing, scanning, or publication. | Observe again; do not duplicate. |
+| `Inconclusive` | Available reads cannot prove equivalence, conflict, or non-commit. | No automatic retry. |
 
-`Inconclusive` is not a temporary synonym for `AuthoritativelyAbsent`. Some operations remain irreducibly inconclusive because the provider exposes no read that can distinguish response loss from non-commit.
+`Inconclusive` is not a temporary spelling of `AuthoritativelyAbsent`. Some custom providers cannot resolve response-loss uncertainty at all.
 
-## Stable logical operation and attempt identity
+## npm
 
-A provider mutation is one stable logical operation with zero or more dispatch attempts:
-
-```text
-LogicalOperationId = hash(
-  provider implementation identity,
-  endpoint or namespace identity,
-  provider-local coordinate,
-  canonical Intent digest
-)
-
-AttemptId = LogicalOperationId + attempt ordinal
-```
-
-The provider coordinate is not a generic string. Each provider owns its coordinate type, receipts, errors, and reconciliation rules.
-
-## npm and npm-compatible registries
-
-Official npm references:
+Official references:
 
 - [`npm publish`](https://docs.npmjs.com/cli/v11/commands/npm-publish/)
 - [dist-tags](https://docs.npmjs.com/adding-dist-tags-to-packages/)
 - [package metadata response shape](https://github.com/npm/registry/blob/main/docs/responses/package-metadata.md)
 - [trusted publishing](https://docs.npmjs.com/trusted-publishers/)
 
-### Exact desired outcome
+### Composite command, separate intents
 
-One user-facing npm publication commonly asks for two different provider facts:
-
-1. an immutable package-version outcome, including the tarball bytes and integrity fields; and
-2. a mutable dist-tag pointer, such as `latest -> 1.2.3`.
-
-`npm publish --tag X` may request both through one CLI operation, but recovery must compare them independently. The version can be accepted while the intended tag is absent or points elsewhere. Conversely, a tag can later move without changing the immutable version.
-
-### Proposed coordinates
+One `npm publish --tag X` command can request two outcomes:
 
 ```text
-NpmVersionCoordinate = {
+NpmVersionIntent = {
   registryImplementation,
   registryOrigin,
   packageName,
-  version
+  version,
+  tarballIntegrity,
+  shasum,
+  access,
+  provenancePolicy
 }
 
-NpmDistTagCoordinate = {
+NpmDistTagIntent = {
   registryImplementation,
   registryOrigin,
   packageName,
-  tag
+  tag,
+  targetVersion
 }
 ```
 
-The version `Intent` includes tarball SHA-512 integrity, legacy shasum if required by the implementation, package metadata identity, access mode, and provenance policy. The tag `Intent` includes the exact target version.
+The physical command may share one `dispatchId`, but each Intent has its own derived operation ID and its own event fold. The version can be accepted while the tag is missing or points elsewhere. A tag can later move without changing immutable version bytes.
 
 ### Reconciliation law
 
-- Version metadata and tarball integrity are compared against the version intent.
-- The dist-tag map is compared against the tag intent.
-- A version conflict is not repaired by moving a tag.
-- A tag difference does not make already-correct immutable bytes conflicting.
-- A returned npm CLI success is a receipt for the command, but the journal still records version and tag facts separately.
+- Compare version metadata and tarball integrity with `NpmVersionIntent`.
+- Compare the dist-tag mapping with `NpmDistTagIntent`.
+- Do not repair a version conflict by moving a tag.
+- Do not classify correct version bytes as conflicting merely because a tag differs.
+- Do not republish an already satisfied immutable version because consumer evidence is absent.
 
 ### npmjs versus compatible registries
 
-The current adapter parses npm registry package metadata and dist-tags. Those exact response, uniqueness, provenance, trusted-publishing, and deletion laws are **npmjs implementation laws**, not automatically laws of every registry that accepts an npm-like protocol.
+The current adapter parses npm package metadata, versions, integrity, shasum, and dist-tags. npmjs uniqueness, deletion, provenance, trusted-publishing, and visibility laws are implementation laws. A compatible registry must declare its own implementation identity and recovery capabilities. Sharing an npm-like HTTP shape is insufficient.
 
-An arbitrary compatible registry therefore needs its own `registryImplementation` identity and capability facts. Sharing an HTTP shape does not prove equivalent conflict, visibility, immutability, tag, or authorization behavior.
-
-## Warehouse and PyPI-compatible repositories
+## PyPI/Warehouse
 
 Official references:
 
 - [PyPI upload API](https://docs.pypi.org/api/upload/)
-- [Python Simple Repository API](https://packaging.python.org/en/latest/specifications/simple-repository-api/)
+- [Simple Repository API](https://packaging.python.org/en/latest/specifications/simple-repository-api/)
 - [file yanking](https://packaging.python.org/en/latest/specifications/file-yanking/)
 - [PyPI trusted publishing](https://docs.pypi.org/trusted-publishers/using-a-publisher/)
 
-### Exact desired outcome
+### Per-file Intent
 
-A PyPI release is a set of independently observable file coordinates. Wheels and source distributions can make partial progress. Project and version pages are derived views and must not erase the per-file commit boundary.
+A PyPI release is plural. Each distribution filename is independently accepted and observed.
 
 ```text
-PyPiFileCoordinate = {
+WarehouseFileIntent = {
   repositoryImplementation,
   repositoryOrigin,
   normalizedProject,
-  filename
+  version,
+  filename,
+  size,
+  sha256,
+  distributionType,
+  yankedExpectation
 }
 ```
 
-The file intent includes the exact filename, size, SHA-256 digest, project/version relationship, file type, and yanked expectation when relevant.
+An sdist and five wheels therefore produce six Intents and six derived operation IDs. Accepted files are preserved while unresolved files continue.
 
-### Warehouse versus compatible implementations
+### Warehouse versus compatible indexes
 
-Warehouse upload behavior and its Simple API representation are implementation-specific evidence for pypi.org. A private or compatible index may differ in duplicate handling, filename normalization, upload response, indexing delay, yanking, metadata fields, and authorization.
+Warehouse upload and Simple API behavior are evidence for pypi.org. Compatible indexes may differ in duplicate handling, filename normalization, response status, indexing delay, metadata fields, yanking, and authorization. The provider implementation identity must state `Warehouse` only when Warehouse laws are actually relied on.
 
-The rewrite should therefore name `Warehouse` when relying on Warehouse laws and otherwise record an explicit compatible implementation. It should not label every compatible endpoint as `PyPI` and inherit pypi.org recovery conclusions.
-
-### Partial progress
-
-For a release containing files `A`, `B`, and `C`:
-
-- `A = Equivalent` is terminal and must not be uploaded again;
-- `B = AuthoritativelyAbsent` may be dispatched if creation is authorized;
-- `C = Pending` or `Inconclusive` remains blocked from blind repetition; and
-- the parent publication is complete only when every required file coordinate is satisfied.
-
-## GitHub tags, releases, and assets
+## GitHub Releases and assets
 
 Official references:
 
@@ -194,130 +226,147 @@ Official references:
 - [releases](https://docs.github.com/en/rest/releases/releases)
 - [release assets](https://docs.github.com/en/rest/releases/assets)
 
-### Separate coordinates
+### Release Intent
 
-A GitHub release flow can contain at least four distinct facts:
+A GitHub release Intent includes repository identity, tag name, required tag-binding policy, target commit or tag object, release title/body, draft state, and prerelease state. If release creation can create a missing tag, that tag mutation is still represented and journaled as a provider fact within the GitHub release capability. It does not create a new shipping destination category.
 
-1. a lightweight tag ref pointing directly to a commit;
-2. an annotated tag object, whose ref points to the tag object;
-3. a release resource associated with `tag_name`; and
-4. one asset per effective stored asset name.
-
-These are not one atomic provider coordinate.
+### Asset Intent and effective stored name
 
 ```text
-GitTagRefCoordinate = { apiOrigin, repositoryId, refName }
-GitTagObjectCoordinate = { apiOrigin, repositoryId, tagObjectSha }
-GitHubReleaseCoordinate = { apiOrigin, repositoryId, tagName }
-GitHubAssetCoordinate = { apiOrigin, repositoryId, releaseId, effectiveStoredName }
-```
-
-### Tag creation
-
-The intent must state whether the desired tag is lightweight or annotated and what commit or tag object it must resolve to. Observing only that a release has the right `tag_name` does not prove the ref binding. If release creation is allowed to create a missing tag implicitly, that implicit mutation is still journaled as a separate desired and observed fact.
-
-### Asset-name normalization
-
-GitHub's upload API accepts a requested `name` and returns a stored asset object. The rewrite must not assume that a local filename, requested name, and returned stored name are necessarily identical.
-
-- Before dispatch, the intent records the requested public asset name.
-- The receipt records the returned asset ID, API URL, stored name, state, size, media type, and digest when available.
-- A fresh listing compares the **effective stored name** and bytes against the intent.
-- Any accepted normalization rule must be explicit and deterministic. Unexpected renaming is a conflict or an inconclusive mapping, not automatic success.
-
-A lost upload response is recovered by listing all assets, finding the effective name under the explicit normalization rule, and comparing size and digest. Absence from an incomplete or paginated listing is not authoritative absence.
-
-## Homebrew formulas and casks
-
-Official references:
-
-- [Formula Cookbook](https://docs.brew.sh/Formula-Cookbook)
-- [Cask Cookbook](https://docs.brew.sh/Cask-Cookbook)
-
-A formula and a cask are different publication and installation languages:
-
-- formulas describe source or binary package build/install behavior through Ruby formula definitions;
-- casks describe macOS application artifacts, artifacts such as `app`, `pkg`, or `binary`, uninstall behavior, and cask-specific version/checksum rules.
-
-They must not share one generic `HomebrewPackageCoordinate` merely because both are stored in Git repositories.
-
-```text
-HomebrewFormulaCoordinate = { gitRemote, ref, formulaPath, formulaName }
-HomebrewCaskCoordinate = { gitRemote, ref, caskPath, token }
-```
-
-The Git ref update is one provider acceptance fact. Formula or cask rendering correctness and an actual `brew install` or `brew install --cask` are separate evidence outcomes.
-
-## Catalog Git publication
-
-The current catalog adapter builds and conditionally publishes an exact target/state pair through GitHub Git-data APIs. The rewrite should preserve three independent outcomes:
-
-1. **Git publication:** a commit exists and the intended ref resolves to it;
-2. **catalog rendering:** files at the intended paths encode the correct version, downloads, checksums, and managed state; and
-3. **consumer installation:** the package manager resolves the catalog and installs or executes the intended bytes.
-
-A successful conditional ref update is a provider-native receipt for Git publication. It does not prove that the rendered catalog is semantically correct or that downstream package managers have observed the ref.
-
-The coordinate includes remote implementation, repository, ref, expected predecessor, and managed paths. A conflict on the ref is not equivalent to a rendering conflict and should preserve the observed predecessor SHA.
-
-## AWS S3 and S3-compatible object stores
-
-Official AWS references:
-
-- [S3 API operations](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_Simple_Storage_Service.html)
-- [virtual-hosted and path-style request identity](https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html)
-- [bucket naming and uniqueness](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)
-
-### AWS coordinate
-
-```text
-AwsS3ObjectCoordinate = {
-  partition,
-  accountOrAuthorityScope,
-  endpointOrigin,
-  region,
-  bucket,
-  key,
-  versionIdPolicy
+GitHubAssetIntent = {
+  apiOrigin,
+  repositoryId,
+  releaseId,
+  requestedPublicName,
+  acceptedNameNormalizationRule,
+  mediaType,
+  size,
+  sha256,
+  artifactReference
 }
 ```
 
-The intent may include checksum algorithm/value, content length, content type, metadata, object-lock conditions, encryption policy, and conditional headers. A receipt preserves request IDs, ETag, checksum fields, and version ID when versioning is enabled.
+The receipt records the returned asset ID, API URL, effective stored name, state, size, media type, digest, and download URL. A fresh listing must follow pagination to completion before absence can be authoritative.
 
-ETag must not be treated as a universal content hash. Its meaning depends on upload mode, encryption, and implementation.
+A lost response is reconciled by applying the explicit name-normalization rule and comparing state, size, media type, and digest or downloaded bytes. Unexpected renaming is a conflict or inconclusive mapping, not automatic success.
 
-### Generic compatible endpoints
+## Homebrew formulas
 
-An endpoint that implements an S3-like API is not automatically AWS S3. MinIO, cloud-provider object stores, proxies, and local emulators can differ in endpoint identity, consistency, checksums, versioning, conditional writes, multipart ETags, listing, and authorization.
+Homebrew formulas are in the fixed shipping scope. Homebrew casks are not a substitute.
 
-The provider implementation and endpoint origin therefore participate in the coordinate. `bucket + key` alone is insufficient and can alias independent stores.
+The release plan separates three outcomes:
 
-## Unknown custom providers
+1. formula rendering is structurally correct and references intended URLs and checksums;
+2. the tap Git ref accepts the intended commit; and
+3. a clean Homebrew consumer installs and executes the intended bytes.
 
-An arbitrary provider package supplies:
+```text
+HomebrewFormulaIntent = {
+  tapGitImplementation,
+  remoteIdentity,
+  ref,
+  expectedPredecessor,
+  formulaPath,
+  formulaName,
+  renderedFormulaArtifact,
+  referencedArtifactDigests
+}
+```
 
-- its provider implementation identity;
-- a canonical coordinate Schema;
-- an `Intent` Schema and digest law;
-- provider-native receipt and error Schemas;
-- an observe operation and classification rules;
-- explicit evidence for authoritative absence, if available;
-- retry and correction capabilities; and
-- an evidence-environment declaration for each claimed outcome.
+The provider-native acceptance fact is the conditional Git publication. Formula semantics and `brew install` evidence remain separate.
 
-The core does not certify the provider. It persists opaque provider-native values under the provider's versioned Schemas and enforces the generic journal transitions. A provider that cannot distinguish non-commit from response loss can still participate, but its operation may end `Inconclusive` and require a maintainer decision.
+## Scoop
 
-## Consumer acceptance is a separate model
+Scoop is in the fixed shipping scope.
 
-Provider observation does not answer whether a consumer can use the release.
+The release plan separates:
 
-`NotObserved` is therefore a **consumer-evidence result**, not a provider observation classification. It means the requested consumer outcome was not exercised in the stated environment. Examples:
+1. Scoop manifest rendering and URL/hash correctness;
+2. bucket Git publication through a conditional ref update; and
+3. clean Scoop installation and executable smoke behavior.
 
-- npm version accepted, but clean installation was not run;
-- GitHub asset equivalent, but public download was not exercised;
-- Git ref updated, but Homebrew rendering or installation was not observed.
+```text
+ScoopManifestIntent = {
+  bucketGitImplementation,
+  remoteIdentity,
+  ref,
+  expectedPredecessor,
+  manifestPath,
+  manifestArtifact,
+  referencedArtifactDigests
+}
+```
 
-Consumer evidence can be:
+A successful Git ref update does not by itself prove that Scoop resolved, downloaded, installed, or executed the intended artifact.
+
+## Git publication shared by Homebrew and Scoop
+
+Git rendering and Git publication are distinct laws:
+
+- rendered catalog bytes are finalized bundle artifacts;
+- Git blobs, trees, and commits are content-addressed;
+- the target ref is a mutable pointer;
+- a conditional update is accepted only against its expected predecessor;
+- response loss is reconciled by reading the ref and exact managed paths;
+- a ref advanced to unrelated content is a conflict; and
+- consumer installation remains separate evidence.
+
+A shared Git publication implementation is valid because Homebrew and Scoop share these exact Git laws. Their renderers and consumer environments remain different.
+
+## Arbitrary custom providers
+
+Arbitrary custom providers are in the fixed shipping scope. The core does not certify or allowlist providers.
+
+A provider package supplies:
+
+- a stable implementation identity;
+- a versioned canonical Intent schema;
+- provider-native Receipt, observation, and error schemas;
+- dispatch behavior;
+- fresh observation and classification behavior;
+- authoritative-absence rules, if any;
+- pending and visibility policy;
+- correction capabilities, if any; and
+- evidence-environment declarations for claimed outcomes.
+
+Illustrative boundary only:
+
+```ts
+interface ProviderContract<I, R, O, E, Requirements> {
+  readonly implementationId: string
+  readonly Intent: Schema.Schema<I>
+  readonly Receipt: Schema.Schema<R>
+  readonly Observation: Schema.Schema<O>
+  readonly dispatch: (
+    intent: I,
+    context: DispatchContext
+  ) => Effect.Effect<R, E, Requirements>
+  readonly observe: (
+    intent: I,
+    context: ObservationContext
+  ) => Effect.Effect<ObservationClassification<O>, E, Requirements>
+}
+```
+
+There is deliberately no generic `Publisher`, `publish`, `verify`, `ensurePublished`, or universal receipt union. Generic orchestration validates Intent, derives operation identity, appends journal events, and folds state. Provider packages own the provider laws.
+
+## Non-shipping comparisons
+
+### Homebrew casks
+
+Casks use a different language, artifact model, installation behavior, and consumer environment. They remain later product work and do not weaken the formula commitment.
+
+### AWS S3 and compatible object stores
+
+AWS S3 and each compatible implementation need explicit endpoint and implementation identity. ETags are not universal content hashes. They are valid custom-provider candidates, not fixed first-party shipping providers in this rewrite.
+
+### Other SCM releases and package catalogs
+
+GitLab Releases, Gitea Releases, Winget, AUR, Nix, Krew, OCI registries, and similar destinations may be implemented through arbitrary custom providers or later first-party packages. Their absence from the first-party list does not narrow the six fixed shipping capabilities.
+
+## Consumer acceptance
+
+Consumer evidence is recorded as:
 
 ```text
 ObservedEquivalent
@@ -326,36 +375,19 @@ ObservedFailure
 NotObserved
 ```
 
-Each result is paired with an evidence environment such as clean local consumer, scratch registry, public registry, end-user host, or self-release. A provider can be `Accepted(receipt)` while the consumer outcome remains `NotObserved`.
+Each result carries an evidence environment. Examples include clean npm consumer, clean Python virtual environment, public GitHub download, clean Homebrew host, clean Windows Scoop host, and self-release.
 
-## Proposed provider boundary shape
-
-This is illustrative, not a production API:
-
-```ts
-interface ProviderContract<Coordinate, Intent, Receipt, Observation, Error> {
-  readonly implementationId: string
-  readonly intentDigest: (intent: Intent) => Digest
-  readonly coordinateOf: (intent: Intent) => Coordinate
-  readonly observe: (
-    coordinate: Coordinate,
-    intent: Intent
-  ) => Effect<ObservationClassification<Observation>, Error, Requirements>
-  readonly dispatch: (
-    intent: Intent,
-    attempt: AttemptContext
-  ) => Effect<Receipt, Error, Requirements>
-}
-```
-
-There is deliberately no shared `verify`, `ensurePublished`, `publish`, correction, or success-receipt union. Generic orchestration acts on journal transitions while provider packages own the actual mutation and observation laws.
+`NotObserved` is not a provider observation classification. A provider can be accepted or satisfied while consumer evidence remains `NotObserved`.
 
 ## Conclusions
 
-1. Intent, receipt, fresh observation, and consumer evidence are separate facts.
-2. Provider implementation and endpoint identity are part of the coordinate whenever compatible implementations can differ.
-3. Mutable pointers and immutable bytes are separate coordinates even when one command requests both.
-4. Pending and inconclusive states are durable product states, not errors to erase through retries.
-5. `NotObserved` belongs to consumer acceptance, not provider reconciliation.
-6. Provider-local coordinates, receipts, errors, and reconciliation must remain provider-local.
-7. No universal `Publisher`, `verify`, or `ensurePublished` contract is supported by the evidence.
+1. The shipping provider scope is fixed: npm, PyPI/Warehouse, GitHub Releases/assets, Homebrew formulas, Scoop, and arbitrary custom providers.
+2. Intent is the single canonical desired representation.
+3. Operation identity is derived directly from canonical Intent bytes.
+4. No serialized LogicalOperation peer repeats Intent fields.
+5. Journal events are canonical; current state and evidence indexes are derived projections.
+6. Intent, receipt, fresh observation, and consumer evidence remain separate facts.
+7. npm version/tag and plural Warehouse files remain independently recoverable even when a command is composite.
+8. Homebrew and Scoop share Git publication laws but retain separate rendering and consumer laws.
+9. Provider-local coordinates, receipts, errors, and reconciliation remain provider-local.
+10. The evidence does not support a universal Publisher, verify, or ensurePublished abstraction.

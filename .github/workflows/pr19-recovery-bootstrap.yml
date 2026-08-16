@@ -27,16 +27,20 @@ jobs:
           base64 --decode /tmp/pr19-recovery.tar.gz.b64 > /tmp/pr19-recovery.tar.gz
           printf '%s  %s\n' '5a7c3e5678f862f263b4547748dfccedb784241c5841604d8dfc182035220a6e' '/tmp/pr19-recovery.tar.gz' | sha256sum --check --strict
           tar -xzf /tmp/pr19-recovery.tar.gz
+          git checkout -- .github/workflows/refactor-research-probes.yml
           rm -f .pr19-recovery.part-*
-          rm -f .github/workflows/pr19-recovery-bootstrap.yml
 
-      - name: Commit recovered checkpoint
+      - name: Commit recovered non-workflow checkpoint
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
+          if git diff --cached --name-only | grep -q '^\.github/workflows/'; then
+            echo 'unexpected workflow mutation in non-workflow recovery commit' >&2
+            exit 1
+          fi
           git diff --cached --check
           git status --short
           git commit -m 'Reconcile PR 19 research checkpoint'

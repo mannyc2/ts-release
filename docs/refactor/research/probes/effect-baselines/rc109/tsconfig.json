@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
     "strict": true,
-    "target": "ES2022",
+    "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2022", "DOM"],
-    "types": ["node"],
+    "lib": ["ESNext"],
+    "types": [],
     "noEmit": true,
-    "skipLibCheck": false
+    "skipLibCheck": true
   },
   "include": ["probe.ts"]
 }

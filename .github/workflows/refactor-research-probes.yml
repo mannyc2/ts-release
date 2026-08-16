@@ -203,6 +203,17 @@ jobs:
           path: .probe/effect-build
           persist-credentials: false
 
+      - name: Setup Node for effect-build's deliberate npm consumer boundary
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.2"
+
+      - name: Install effect-build's exact npm consumer version
+        run: |
+          npm install --global npm@11.11.0
+          node --version
+          npm --version
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:

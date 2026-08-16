@@ -23,7 +23,7 @@ jobs:
           node-version: 22
       - run: npm install --no-save --no-audit --no-fund typescript@6.0.3
       - run: npx tsc -p probe-tsconfig.json
-      - run: npx tsc --strict --target ES2022 --module NodeNext --moduleResolution NodeNext --lib ES2022,DOM artifact-owned-bundle.ts --outDir .probe-dist
+      - run: npx tsc --ignoreConfig --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --lib ES2022,DOM artifact-owned-bundle.ts --outDir .probe-dist
       - run: node .probe-dist/artifact-owned-bundle.js
 
   effect-baselines:
@@ -54,7 +54,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-save --no-audit --no-fund effect@4.0.0-rc.109 typescript@6.0.3
-      - run: npx tsc --strict --target ES2022 --module NodeNext --moduleResolution NodeNext artifact-schema-load.ts --outDir .probe-dist-effect
+      - run: npx tsc --ignoreConfig --strict --skipLibCheck --target ESNext --module NodeNext --moduleResolution NodeNext --lib ESNext,DOM artifact-schema-load.ts --outDir .probe-dist-effect
       - run: node .probe-dist-effect/artifact-schema-load.js
 
   custom-provider-clean-consumer:

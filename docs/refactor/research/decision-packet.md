@@ -1,289 +1,334 @@
-# Maintainer decision packet
+# Refactor research decision packet
 
-Status: research-only checkpoint. These are the remaining choices. The
-recommendations do not select a root production API and must not be implemented
-until maintainers choose among the lawful alternatives.
+Status: review-ready research checkpoint. Production implementation remains paused.
 
-## Decision 1: artifact construction kernel
+This packet consolidates the provider, artifact, resumability, Effect, extensibility, and product-outcome research. It identifies decisions supported by evidence and choices that still belong to maintainers.
 
-**Law:** trusted bundles own immutable bytes, derive/check content identity,
-reject duplicate logical IDs, use private construction, and return typed load
-failures.
+## Executive conclusion
 
-**Lawful alternatives:**
+The rewrite should be organized around four independent structures:
 
-1. direct immutable `Bundle.build(allInputs)`;
-2. persistent immutable `Draft.add -> Draft` plus deterministic finalization;
-3. runtime-closed mutable draft whose aliases share one atomic Open/Finalized
-   state.
+1. **One finalized immutable release bundle** with a versioned canonical manifest and durable byte ownership.
+2. **Provider-local logical operations** whose coordinates, intents, receipts, errors, and observations remain provider-specific.
+3. **One explicit durable journal** that separates a stable logical operation from its individual dispatch attempts and preserves uncertainty instead of blindly retrying.
+4. **Two-dimensional acceptance evidence** that states both the outcome claimed and the environment in which it was observed.
 
-**Counterexample:** returning a `Bundle` type without `add` while a retained
-mutable draft alias can continue changing the same internal maps.
+Effect supplies useful composition, typed errors, Layers, scopes, and possibly later Workflow or Activity execution. It does not define the provider model, replace the journal, or make external mutations exactly once.
 
-**Recommendation:** start with direct immutable build if all first-cut builders
-can enumerate outputs; otherwise use a persistent immutable draft. Do not use a
-mutable draft until the alias-closing and crash laws have their own probe.
+No production API, Effect migration, Workflow or Activity implementation, or provider mutation is included in this PR.
 
-## Decision 2: durable reference qualification
+## Decisions supported by evidence
 
-**Law:** an independently used reference cannot resolve against the wrong
-bundle.
+### 1. No universal publication service
 
-**Lawful alternatives:**
+The evidence does not support one universal `Publisher`, `verify`, `verifyInstall`, or `ensurePublished` interface.
 
-1. globally qualified `{ bundleId, artifactId }` durable references; or
-2. relative artifact IDs allowed only inside one decoded bundle envelope and
-   immediately resolved into privately constructed bundle-bound handles.
+npm versions and tags, Warehouse files, GitHub refs/releases/assets, Git catalog refs, Homebrew formulas, Homebrew casks, and object-store objects have different coordinates, mutation boundaries, receipts, conflict laws, and reconciliation evidence.
 
-**Counterexample:** a plain relative ID copied out of an envelope and later
-resolved against whichever Bundle happens to be supplied.
+Generic orchestration should operate on journal transitions. Provider packages own:
 
-**Recommendation:** use globally qualified refs for independently persisted
-provider/run records; consider relative IDs only inside one versioned bundle
-format whose load boundary creates bundle-bound values.
+- canonical coordinate and intent Schemas;
+- provider-native receipt and error Schemas;
+- dispatch operations;
+- fresh observation and classification;
+- authoritative-absence rules;
+- pending and irreducible-uncertainty behavior; and
+- correction capabilities.
 
-## Decision 3: canonical bundle identity
+See [provider-contracts.md](./provider-contracts.md).
 
-**Law:** bundle identity is deterministic across hosts, changes with every
-identity-relevant manifest/content change, and is versioned/domain separated.
+### 2. Intent, receipt, observation, and consumer evidence are separate
 
-**Lawful alternatives:**
+The rewrite should persist these facts independently:
 
-- a specified canonical binary encoding;
-- a specified canonical JSON-like encoding with exact ordering/number/string
-  rules; or
-- a Merkle-style manifest whose node encodings and domains are versioned.
+```text
+Intent
+ProviderNativeReceipt
+FreshObservation
+ConsumerEvidence
+```
 
-**Counterexample:** locale-dependent sorting plus ad hoc `JSON.stringify` and
-one undifferentiated `sha256-...` namespace.
+A successful mutation receipt is not a fresh read. A fresh read is not proof that the mutation attempt returned. A provider can be accepted while consumer installation remains `NotObserved`.
 
-**Recommendation:** select and version the simplest canonical encoding before a
-persistent bundle is shipped. The current owned-bundle probe is not that
-specification.
+### 3. Direct immutable bundle construction
 
-## Decision 4: resumability promise and progress granularity
+The public artifact model should construct a finalized immutable bundle directly. Any mutable ingestion accumulator stays private.
 
-**Law:** the documented promise matches the actual durable boundary.
+The bundle ID is derived from one versioned, domain-separated canonical manifest using the existing canonical implementation in:
 
-**Lawful alternatives:**
+- [`src/model/canonical.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/model/canonical.ts)
+- [`scripts/lib/canonical-json.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/scripts/lib/canonical-json.ts)
 
-1. no persisted resume;
-2. finalized-bundle reuse, with interrupted incomplete builds restarting;
-3. per-artifact/build-node journal satisfying "never rebuild completed
-   artifacts."
+There is no unchecked stored ID peer beside the manifest. Bundle-relative references are resolved into bundle-bound handles at load time. Qualified references are used only when independently crossing envelopes.
 
-**Counterexample:** promising no rebuild while persisting nothing until artifact
-N of M and the final bundle are complete.
+See [artifact-model.md](./artifact-model.md).
 
-**Recommendation:** either fund per-artifact release progress or narrow the
-first-cut promise to finalized-bundle reuse. effect-build may produce/cache
-artifacts but should not own release-run/provider progress.
+### 4. The release program owns durable root outputs
 
-## Decision 5: publication write-ahead state
+Producer libraries own output construction and scoped readers. The root release program owns:
 
-**Law:** durable `Dispatching` is recorded before a request is sent, and an
-abandoned `Dispatching` reconciles before repeat dispatch.
+- adoption into durable storage;
+- logical artifact identity;
+- provider meaning;
+- the canonical manifest;
+- bundle finalization; and
+- retention and cleanup authority.
 
-**Lawful alternatives:**
+An effect-build compiler artifact and a ts-release release bundle share some value laws, but their lifetime laws differ. effect-build commonly owns build-scope scratch output; ts-release must continue after process loss. Shared laws may justify small shared values, while different lifetimes may justify separate resource APIs.
 
-- explicit ts-release journal;
-- a persistent Workflow/Activity engine with provider recovery Activities;
-- a generic durable-run library satisfying the same state law; or
-- CI-backed storage that still records the explicit state machine.
+The earlier rule that a second adopter proves architectural validity is removed. Laws determine validity. Adoption and maintenance cost determine package-extraction priority.
 
-**Counterexample:** persisting only `Planned`, dying after provider commit, and
-blindly repeating because local state says no dispatch happened.
+### 5. Explicit journal before Workflow or Activity
 
-**Recommendation:** require the write-ahead law independently of mechanism.
-Never claim exactly-once at npm/PyPI/GitHub/Git without provider support.
+The durable product state separates:
 
-## Decision 6: durable execution mechanism in the first cut
+```text
+LogicalOperation
+Attempt
+```
 
-**Law:** the selected mechanism survives the failures and retention window the
-product promises, with versioned operation identity and honest unknown states.
+Normal operation states are:
 
-**Lawful alternatives:**
+```text
+Planned
+Dispatching(attempt)
+Accepted(receipt)
+SatisfiedByObservation(freshObservation)
+ProvenNotCommitted(proof)
+AbsentRetryable(observation, policy)
+Pending(observation, policy)
+Conflict(observation)
+Inconclusive(evidence)
+```
 
-1. explicit release journal;
-2. Effect Cluster WorkflowEngine with an operated persistent stack;
-3. an external durable system such as Temporal or Step Functions; or
-4. defer fine-grained durability and ship the narrower bundle-only promise.
+The core mutation rule is:
 
-**Counterexample:** citing an in-memory WorkflowEngine or a happy-path Activity
-replay as process-loss durability.
+```text
+persist Dispatching before crossing the provider boundary;
+start another mutation attempt only after ProvenNotCommitted.
+```
 
-**Recommendation:** do not begin Workflow/Activity implementation in this PR.
-Choose the product promise and operational ownership first; then run the
-provider-commit-before-exit fault test against the chosen mechanism.
+Workflow or Activity may later execute journal transitions. Engine replay does not infer a provider commit after response loss.
 
-## Decision 7: aligned Effect version
+See [resumability.md](./resumability.md).
 
-**Law:** ts-release, platform packages, effect-build, and clean consumers install
-and compile against one exact, commit-pinned family; semantic source deltas are
-accepted explicitly.
+### 6. Effect alignment is a migration decision, not a manifest edit
 
-**Lawful alternatives:**
+Corrected candidate evidence from [research run 31948959001](https://github.com/mannyc2/ts-release/actions/runs/31948959001) shows:
 
-- align on rc.108;
-- align on the current pinned rc.109 source/package family; or
-- choose a later exact version after repeating the same source and combined-set
-  checks.
+- rc.108 and rc.109 both pass effect-build install, build, check, type tests, unit tests, and clean packed-consumer tests;
+- ts-release installs successfully with each aligned family; and
+- both candidates fail at ts-release's own TypeScript check because beta.83 source needs a broad migration.
 
-Remaining on beta.83 while adding effect-build is not lawful because
-effect-build's peer lower bound is beta.104.
+The former rc.108 platform mismatch and rc.109 `@effect/bun-test` 404 were harness defects, not compatibility evidence.
 
-**Counterexample:** selecting rc.108 only because it is effect-build's
-`devDependency`, despite its broader peer range and without testing the combined
-set.
+No target is selected. The evidence does not currently rank rc.108 and rc.109 because both stop at the same cross-cutting source migration. Choosing rc.108 because effect-build develops against it or rc.109 merely because it is later would outrun the evidence.
 
-**Recommendation:** no version yet. Compare required and informational combined
-candidate results, then select the newest candidate whose complete agreed gate
-passes without unacceptable semantic deltas.
+See [effect-patterns.md](./effect-patterns.md).
 
-## Decision 8: provider extension and CLI packaging
+### 7. First-cut outcome set
 
-**Law:** an independently authored provider can participate at the library level
-without modifying core or joining an allowlist. CLI distribution claims match
-its actual loader.
+The outcome roadmap supports a first cut containing:
 
-**Lawful alternatives:**
+1. native npm version and dist-tag outcomes;
+2. native Warehouse/PyPI per-file outcomes;
+3. GitHub tag, release, and asset outcomes; and
+4. one conditional Git catalog path.
 
-1. dynamic Node/TypeScript CLI importing consumer modules;
-2. user-built custom entrypoint that statically bundles chosen providers; or
-3. a prebuilt executable with a separately specified runtime loader, trust,
-   resolution, and reporting contract.
+Together these exercise immutable versions, mutable pointers, partial multi-file progress, response-loss reconciliation, conditional Git refs, and consumer evidence.
 
-**Counterexample:** a standalone probe computes `loadedUnknownProvider` but the
-check passes merely because documentation contains the word "standalone."
+Build matrices, archives, checksums, SBOMs, signing, and provenance should initially compose through owned outputs and neighboring tools unless ts-release later earns a dedicated implementation.
 
-**Recommendation:** accept the clean Node module/closed-Layer proof only at its
-narrow boundary. Keep the standalone result informational until an explicit
-loader outcome is required and asserted.
+See [goreleaser-outcomes.md](./goreleaser-outcomes.md).
 
-## Decision 9: provider operation vocabulary
+### 8. Library extensibility before sealed-executable extensibility
 
-**Law:** each provider exposes coordinates, receipts, conflict, partial-success,
-and recovery observations that match its protocol.
+The clean Node consumer probe establishes only this:
 
-**Lawful alternatives:**
+> A CLI can dynamically import a consumer module that has already supplied its own Layer and exported an already-closed Effect, even when the CLI core did not know that provider package at build time.
 
-- provider-local functions/modules;
-- concrete provider services for shared client/config resources; or
-- narrower shared services only where at least two implementations satisfy one
-  caller-visible operation law.
+That is sufficient evidence for an open library/configuration boundary. It does not prove a ts-release provider contract, durable preparation, typed CLI reporting, multi-provider orchestration, resumability, or sealed-executable discovery.
 
-**Counterexample:** `Publisher.publish(unknown) -> unknown` for npm, PyPI,
-GitHub, Git catalogs, and S3.
+The prebuilt single-file experiment remains informational and reports `loadedUnknownProvider: false`. A requirement for a sealed standalone CLI would need a separately designed loader, trust policy, package-resolution mechanism, and reporting contract.
 
-**Recommendation:** no universal Publisher, `ensurePublished`, or required
-`verify` member. Return normal documented success and reconcile only ambiguous
-requests.
+## Corrected research conclusions
 
-## Decision 10: public observation and consumer acceptance
+The following conclusions changed during reconciliation and the corrected pass:
 
-**Law:** provider acceptance, fresh public metadata, intended public byte
-identity, and clean consumer installation/execution are separate outcomes.
+| Earlier interpretation | Supported interpretation now |
+| --- | --- |
+| rc.108 failed from Effect/platform mismatch | Harness defect. effect-build's full package and consumer gate passes at rc.108. |
+| rc.109 failed because `@effect/bun-test` was unavailable | Harness defect. The corrected harness preserves the vendored package; the aligned install succeeds. |
+| Candidate compatibility stopped during dependency setup | Both candidates reach ts-release's own TypeScript migration boundary. |
+| Artifact validity depended on a second adopter | Architectural validity follows exact laws; extraction priority follows adoption and maintenance cost. |
+| Relative references were inherently bundle-bound | They become bundle-bound only after validated load-time resolution into a handle. |
+| One verification tier could summarize readiness | Outcome claimed and evidence environment are independent dimensions. |
+| The 151 GoReleaser rows were a feature backlog | The rows are a traceability census; the product roadmap is outcome-oriented and classifies mechanisms separately. |
 
-**Lawful alternatives:**
+## Acceptance model
 
-- stop at provider receipt;
-- add provider-specific fresh observation;
-- add public byte/delivery checks; and/or
-- add explicitly supported clean consumer environments.
+The rewrite should replace one-dimensional tiers with two axes.
 
-**Counterexample:** marking a Winget PR created, GitHub asset uploaded, or npm
-version visible as "consumer verified."
+### Axis 1: outcome claimed
 
-**Recommendation:** restore provider publication first. Add consumer acceptance
-only for named support promises and keep HistoricalReceipt and FreshObservation
-separate in data and CLI.
+| Outcome code | Claim |
+| --- | --- |
+| `L` | Static or structural law: types, canonical identity, duplicate rejection, reference binding. |
+| `R` | Local runtime law: bytes copied/read, interruption, cleanup, typed failure propagation. |
+| `X` | Extension law: a clean consumer can supply an unknown provider/program through the supported boundary. |
+| `A` | Provider accepted the intended coordinate or mutation. |
+| `M` | Fresh public or authoritative metadata matches the intent. |
+| `B` | Provider-visible or downloaded bytes match the finalized bundle. |
+| `C` | A clean consumer discovers, installs, downloads, imports, or executes the release. |
+| `J` | Recovery law: response loss or process death continues per coordinate without blind repetition. |
+| `S` | Self-release law: the rewritten product performs its own non-manual release. |
 
-## Decision 11: Homebrew/Scoop host coupling
+### Axis 2: evidence environment
 
-**Law:** formula/manifest rendering and consumer semantics do not require GitHub;
-Git publication uses a conditional ref protocol that can have multiple hosts.
+| Environment code | Environment | What it cannot prove alone |
+| --- | --- | --- |
+| `compile` | TypeScript compile/type test | Runtime behavior, provider acceptance, durability. |
+| `in-process` | Disposable local runtime probe | Clean packaging, process loss, real provider behavior. |
+| `clean-consumer` | Fresh package installation in an isolated project | Public registry behavior or durable provider recovery. |
+| `protocol-double` | Deterministic provider/client double | Actual provider policy, propagation, or public availability. |
+| `scratch-provider` | Authorized scratch namespace on a real provider | Production namespace policy or representative end-user behavior. |
+| `public-provider` | Real public release coordinate | Consumer behavior across hosts and recovery under controlled faults. |
+| `end-user` | Representative clean OS/package-manager/runtime | Provider mutation semantics or journal durability by itself. |
+| `self-release` | ts-release releases ts-release through the rewritten product | Nothing broader than the exact providers and environments exercised, but it is the decisive integrated gate. |
 
-**Lawful alternatives:**
+### Evidence record
 
-- generic Git transport with host-specific implementations;
-- GitHub Git-data implementation plus at least one non-GitHub implementation
-  under the same law; or
-- explicitly document GitHub-only scope as a product narrowing.
+Each claim is recorded as:
 
-**Counterexample:** treating GitHub release subjects and GitHub Git-data APIs as
-Homebrew or Scoop domain identity.
+```text
+{
+  outcome,
+  environment,
+  subject,
+  evidenceRef,
+  result,
+  limitations
+}
+```
 
-**Recommendation:** restore generic Git-backed catalog outcomes; allow returned
-GitHub asset URLs to be ordinary inputs, not mandatory provider coupling.
+Examples:
 
-## Decision 12: artifact handoff as a generic library
+```text
+L / compile / bundle-relative reference / pass
+X / clean-consumer / unknown provider module / pass with narrow Layer-closed conclusion
+A / scratch-provider / npm version 1.2.3 / accepted(receipt)
+M / public-provider / npm dist-tag latest / observed equivalent
+B / public-provider / GitHub asset / downloaded digest equivalent
+C / end-user / Homebrew formula / NotObserved
+J / scratch-provider / lost GitHub asset response / satisfied by observation
+```
 
-**Law:** a generic package excludes release providers/coordinates and has at
-least two credible users under the same ownership, identity, load, and failure
-laws.
+A green check is not a claim unless the check names its outcome and environment. Missing evidence remains `NotObserved`.
 
-**Lawful alternatives:**
+## Decisive acceptance gate
 
-- keep the artifact kernel internal until stable;
-- publish a generic bundle/handoff package after a second adopter; or
-- contribute only build-specific handoff improvements to effect-build.
+The eventual integrated gate is:
 
-**Counterexample:** extracting release-specific manifests and calling them a
-universal artifact library without another user.
+> ts-release performs its own non-manual release through the rewritten product, reuses one finalized bundle, persists its journal before every external mutation, reconciles any interrupted coordinate without blind repetition, publishes the intended public bytes and metadata, and is installed or executed by clean consumers.
 
-**Recommendation:** implement internally first after the format decision. Split
-only when the public law and a second use case are concrete.
+This is not required in the research PR. It is the acceptance target that prevents local internal checks from substituting for the released product outcome.
 
-## Decision 13: effect-build integration boundary
+A decisive self-release record should include:
 
-**Law:** effect-build remains a build/executable package; ts-release owns release
-identity, durable progress, publication, and provider receipts.
+- final bundle ID and canonical manifest;
+- every provider-local intent and logical operation ID;
+- attempts, receipts, and fresh observations;
+- public byte comparisons;
+- clean npm import or CLI execution;
+- any package-manager/catalog installation included in the release;
+- recovery trace for at least one intentionally interrupted coordinate; and
+- no manual provider mutation outside the journaled program.
 
-**Lawful alternatives:**
+## Suggested implementation sequence after approval
 
-- consume effect-build's public compiler services/artifacts directly;
-- adapt its outputs once into the selected bundle kernel; or
-- upstream a genuinely generic finalized-file handoff law.
+This is sequencing guidance only; implementation remains out of scope for this PR.
 
-**Counterexample:** adding registries, release recovery, tags, or provider
-publication to effect-build because ts-release needs them.
+1. Freeze the canonical bundle manifest and bound-handle laws.
+2. Define a versioned journal Schema and deterministic in-memory transition model.
+3. Port one provider at a time to provider-local intents, receipts, observations, and attempts.
+4. Establish the clean Node extension boundary against the real provider contract.
+5. Add scratch-provider acceptance and recovery evidence for the first-cut providers.
+6. Decide whether Workflow or Activity adds enough value to the first delivery after the journal works without it.
+7. Perform the behavior-preserving Effect migration as a separate project.
+8. Add public consumer evidence and the non-manual self-release gate.
 
-**Recommendation:** adapt public build results into release-owned artifacts.
-Prove caller-level compiler substitution separately before depending on a
-single shared compiler service abstraction.
+## Genuine remaining maintainer choices
 
-## Decision 14: acceptance tiers for the rewrite
+The research narrows but does not eliminate these decisions:
 
-**Law:** each claim is backed by the tier it names.
+### Effect
 
-Recommended tier order:
+- rc.108 versus rc.109 after a behavior-preserving migration plan and source-delta review;
+- whether Workflow or Activity is present in the first delivery at all;
+- whether unstable CLI/test dependencies are isolated, replaced, or carried through migration.
 
-1. source and compile proof;
-2. deterministic disposable protocol contract test;
-3. clean packed library/CLI consumer;
-4. approved scratch live provider mutation and response-loss injection;
-5. fresh public-byte observation; and
-6. clean package-manager installation/import/execution on supported platforms.
+### Bundle and storage
 
-**Counterexample:** a passing internal assertion or source search marked as a
-live consumer outcome.
+- exact `bundle-manifest/v1` fields and ordering rules;
+- whether provider intents live in the bundle envelope or a separately hashed journal root;
+- durable bundle-store backend and transaction boundary;
+- eager copy versus durable ownership transfer;
+- retention and cleanup policy;
+- exact shared-value boundary with effect-build.
 
-**Recommendation:** the first production rewrite checkpoint should require
-provider contract tests and clean packed consumers. Live scratch and consumer
-install tiers should be provider-specific gates before claiming those outcomes,
-not one universal verification stage.
+### Journal and recovery
 
-## Decisions intentionally not made
+- journal backend, compare-and-swap model, and operation leases;
+- dispatch-group representation for composite commands such as npm publish plus dist-tag;
+- provider-specific visibility budgets and authoritative-absence rules;
+- how maintainers explicitly authorize a risk-bearing retry after `Inconclusive`;
+- correction and supersession authority.
 
-This packet does not choose:
+### Product scope
 
-- a root `ReleaseDefinition` type;
-- a public Bundle constructor or reference syntax;
-- Workflow/Activity;
-- an Effect version;
-- a stock dynamic provider loader;
-- a universal provider interface; or
-- automatic consumer verification.
+- exact first-cut built-ins beyond npm, Warehouse/PyPI, GitHub, and one Git catalog;
+- whether Homebrew formula support is in the first cut or immediately after it;
+- which consumer outcomes are required before a release is called complete;
+- Node library/config loading versus a separately specified standalone executable requirement;
+- self-release rollout order and rollback/correction policy.
 
-Production implementation remains paused until the remote research checkpoint
-and its checks are reviewed.
+## Direct source index
+
+### ts-release
+
+- [canonical identity](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/model/canonical.ts)
+- [current prepared model](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/release/prepared.ts)
+- [artifact collections](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/model/artifact-collection.ts)
+- [npm implementation](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/publication/npm.ts)
+- [PyPI implementation](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/publication/pypi.ts)
+- [GitHub implementation](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/publication/github.ts)
+- [catalog Git implementation](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/publication/catalog-git.ts)
+- [corrected probe commit](https://github.com/mannyc2/ts-release/commit/d57e7e91b58683d030201d278eb96cd5acd05a21)
+- [corrected research run](https://github.com/mannyc2/ts-release/actions/runs/31948959001)
+
+### Effect and effect-build
+
+- [Effect beta.83 source](https://github.com/Effect-TS/effect/tree/cd7ab658994104bd6fe8f841f1440bea32c387f5)
+- [Effect rc.108 source](https://github.com/Effect-TS/effect/tree/bef7bf38ae4b73d5511043f707aed083de5da7cc)
+- [Effect rc.109 source](https://github.com/Effect-TS/effect/tree/ee06c9c1eed73ebcf282541ceb1615ff1ba1730d)
+- [effect-build exercised source](https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13)
+- [effect-build artifact value](https://github.com/mannyc2/effect-build/blob/15c811bb9904142a33d119766b62082f3c689f13/packages/effect-build/src/standalone/Artifact.ts)
+
+### Product comparison
+
+- [preserved 151-case census](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/docs/refactor/research/goreleaser-outcomes.md)
+- [GoReleaser source pin](https://github.com/goreleaser/goreleaser/tree/92453c1dbdf592d227cb236600093a503f2351f3)
+
+## Final recommendation
+
+Approve the research direction, not production implementation:
+
+- immutable canonical bundles;
+- provider-local contracts;
+- explicit durable journal;
+- per-coordinate continuation;
+- open Node library/config extensibility;
+- outcome-oriented product roadmap; and
+- two-dimensional acceptance ending in self-release.
+
+Defer Effect target selection and Workflow or Activity adoption until the separate migration and delivery choices are reviewed. Do not reopen a universal publisher abstraction or replace provider evidence with internal green checks.

@@ -1,0 +1,10 @@
+{
+  "name": "@outside/custom-publication-provider",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": { ".": "./dist/index.js" },
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "dependencies": { "@ts-release-research/core": "0.0.0" },
+  "peerDependencies": { "effect": "4.0.0-rc.109" }
+}

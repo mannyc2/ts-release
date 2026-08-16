@@ -74,7 +74,7 @@ jobs:
       - name: Compile and run owned-bundle assertions
         run: |
           rm -rf .probe-dist-owned
-          bun x tsc --strict --skipLibCheck --target ESNext --module NodeNext --moduleResolution NodeNext --lib ESNext,DOM artifact-owned-bundle.ts --outDir .probe-dist-owned
+          bun x tsc --ignoreConfig --strict --skipLibCheck --target ESNext --module NodeNext --moduleResolution NodeNext --lib ESNext,DOM artifact-owned-bundle.ts --outDir .probe-dist-owned
           bun .probe-dist-owned/artifact-owned-bundle.js
           printf 'ARTIFACT_OWNED_RUNTIME_RESULT={"status":"pass","limitations":"Bundle.fromValidated and provisional identity format remain"}\n'
 

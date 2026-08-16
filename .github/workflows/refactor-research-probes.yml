@@ -3,74 +3,213 @@ name: Refactor research probes
 on:
   pull_request:
     paths:
-      - "docs/refactor/research/**"
       - ".github/workflows/refactor-research-probes.yml"
+      - "docs/refactor/research/**"
+      - "test/core/workflow-shape.test.ts"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  research-documents:
+    name: Research documents and scope
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Validate document evidence and 151-case census
+        run: bun docs/refactor/research/probes/validate-research-docs.mjs
+
+      - name: Validate diff whitespace and research scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          if [[ -z "$base" ]]; then
+            base="HEAD^"
+          fi
+          git diff --check "$base...HEAD"
+          unexpected="$(git diff --name-only "$base...HEAD" | grep -Ev '^(docs/refactor/research/|\.github/workflows/refactor-research-probes\.yml$|test/core/workflow-shape\.test\.ts$)' || true)"
+          if [[ -n "$unexpected" ]]; then
+            printf 'Unexpected changed paths:\n%s\n' "$unexpected" >&2
+            exit 1
+          fi
+          printf 'RESEARCH_SCOPE_RESULT={"diffCheck":"pass","scope":"pass"}\n'
+
   artifact-probes:
+    name: Artifact probes
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: docs/refactor/research/probes
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          node-version: 22
-      - run: npm install --no-save --no-audit --no-fund typescript@6.0.3
-      - run: npx tsc -p probe-tsconfig.json
-      - run: npx tsc --ignoreConfig --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --lib ES2022,DOM artifact-owned-bundle.ts --outDir .probe-dist
-      - run: node .probe-dist/artifact-owned-bundle.js
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install probe dependencies with Bun
+        run: bun install --no-save
+
+      - name: Compile type-only artifact probes
+        run: |
+          bun run check:artifact-types
+          printf 'ARTIFACT_TYPECHECK_RESULT={"status":"pass","scope":"type-and-counterexample-probes"}\n'
+
+      - name: Compile and run owned-bundle assertions
+        run: |
+          rm -rf .probe-dist-owned
+          bun x tsc --strict --skipLibCheck --target ESNext --module NodeNext --moduleResolution NodeNext --lib ESNext,DOM artifact-owned-bundle.ts --outDir .probe-dist-owned
+          bun .probe-dist-owned/artifact-owned-bundle.js
+          printf 'ARTIFACT_OWNED_RUNTIME_RESULT={"status":"pass","limitations":"Bundle.fromValidated and provisional identity format remain"}\n'
+
+  effect-artifact-load:
+    name: Effect artifact load boundary
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/refactor/research/probes
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install probe dependencies with Bun
+        run: bun install --no-save
+
+      - name: Compile and run typed load-boundary probe
+        run: |
+          rm -rf .probe-dist-effect
+          bun run check:effect-load
+          bun run run:effect-load
+          printf 'EFFECT_ARTIFACT_LOAD_RESULT={"status":"pass","scope":"in-memory-schema-and-typed-error-probe"}\n'
 
   effect-baselines:
+    name: Effect public surface compile-only (${{ matrix.baseline }})
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        baseline: [beta83, rc108, rc109]
-    runs-on: ubuntu-latest
+        baseline:
+          - beta83
+          - rc108
+          - rc109
     defaults:
       run:
         working-directory: docs/refactor/research/probes/effect-baselines/${{ matrix.baseline }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          node-version: 22
-      - run: npm install --no-audit --no-fund
-      - run: npm run check
+          persist-credentials: false
 
-  effect-artifact-load:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docs/refactor/research/probes
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-      - run: npm install --no-save --no-audit --no-fund effect@4.0.0-rc.109 typescript@6.0.3
-      - run: npx tsc --ignoreConfig --strict --skipLibCheck --target ESNext --module NodeNext --moduleResolution NodeNext --lib ESNext,DOM artifact-schema-load.ts --outDir .probe-dist-effect
-      - run: node .probe-dist-effect/artifact-schema-load.js
+          bun-version: 1.3.14
+
+      - name: Install baseline dependencies with Bun
+        run: bun install --no-save
+
+      - name: Compile the narrow public surface
+        run: |
+          bun run check
+          printf 'EFFECT_BASELINE_RESULT={"baseline":"${{ matrix.baseline }}","status":"pass","claim":"compile-only"}\n'
 
   custom-provider-clean-consumer:
+    name: Custom provider clean Node consumer
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: docs/refactor/research/probes/custom-provider
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          node-version: 22
-      - run: npm install --no-audit --no-fund
-      - run: npm run build
-      - run: npm run test:clean
-      - uses: oven-sh/setup-bun@v2
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
-      - run: npm run test:standalone
+
+      - name: Setup Node for the deliberate npm consumer boundary
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.2"
+
+      - name: Record runtimes
+        run: |
+          bun --version
+          node --version
+          npm --version
+
+      - name: Install fixture dependencies with Bun
+        run: bun install --no-save
+
+      - name: Build fixture packages
+        run: bun run build
+
+      - name: Exercise the clean npm package consumer
+        run: |
+          bun run test:clean
+          printf 'CUSTOM_PROVIDER_CLEAN_RESULT={"status":"pass","claim":"consumer-module-supplied-and-closed-its-own-Layer"}\n'
+
+      - name: Run standalone loader experiment (informational)
+        run: bun run probe:standalone:informational
+
+  effect-build-alignment:
+    name: Effect alignment candidate (informational, ${{ matrix.effect }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        effect:
+          - 4.0.0-rc.108
+          - 4.0.0-rc.109
+    steps:
+      - name: Checkout ts-release research branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout pinned effect-build source
+        uses: actions/checkout@v4
+        with:
+          repository: mannyc2/effect-build
+          ref: 15c811bb9904142a33d119766b62082f3c689f13
+          path: .probe/effect-build
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Exercise the actual aligned candidate set (informational)
+        run: >-
+          bun docs/refactor/research/probes/probe-effect-build-alignment.mjs
+          --effect-build .probe/effect-build
+          --effect-version ${{ matrix.effect }}

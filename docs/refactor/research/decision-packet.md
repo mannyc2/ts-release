@@ -1,230 +1,94 @@
-# Refactor research decision packet
+# Maintainer decision packet
 
-Status: research checkpoint for maintainer review. Production implementation remains paused.
+Status: research projection. Canonical authorities are listed in `README.md`.
 
-## Fixed shipping scope
+## Conclusions derived from laws or provider evidence
 
-The rewrite ships:
+1. The shipping distribution scope is the 6 families in `competitive-scope.md`.
+2. Consumer install/import/execute checks are application/CI policy, not provider capabilities.
+3. `ConsumerScenario`, durable acceptance records, and `ConsumerEvidenceRecorded` are removed from the core model.
+4. Replay protection is declared when the exact request is prepared and recorded before dispatch.
+5. Resume-time `ReplaySafetyCapability` is removed.
+6. Deterministic `ReplayAuthorized` is removed; the next `DispatchStarted` records its durable replay basis.
+7. `RiskAccepted` remains because it records a new human authorization fact.
+8. Observed absence cannot fence an earlier in-flight request.
+9. Request status is reconciliation evidence, not replay protection.
+10. Provider behavior identity and request fingerprint mismatch stop automatic replay.
+11. Journal compare-and-swap is the cooperative dispatch gate for concurrent fresh runners.
+12. Arbitrary providers remain ordinary packages plus Layers and a versioned durable definition.
+13. The artifact kernel contains immutable content and logical artifact identity, not provider or acceptance facts.
+14. No universal `Publisher`, `Builder`, or consumer-test interface is justified.
+15. Public OpenAI Plugin Directory publication is a reviewed portal flow, not an assumed API provider.
 
-- npm;
-- PyPI/Warehouse;
-- GitHub Releases and assets;
-- Homebrew formulas;
-- Scoop; and
-- arbitrary custom providers.
+## Provisional recommendations
 
-The research below evaluates architecture and implementation order without reducing that scope.
-
-## Executive result
-
-The evidence currently supports a system composed from five distinct structures:
-
-1. **Artifact bundle:** immutable content objects plus bundle-local logical artifact IDs.
-2. **Release plan:** canonical provider-specific Intents and dependency edges, bound to one bundle.
-3. **Application provider definitions:** versioned Intent decoders and independently optional capabilities supplied by ordinary TypeScript and Layers.
-4. **Journal:** one ordered history of physical dispatch, provider receipt, fresh observation, replay authority, consumer evidence, and plan supersession events.
-5. **Acceptance records:** explicit outcome plus evidence environment.
-
-No one structure should repeat the canonical facts owned by another.
-
-## Decision ledger
-
-## A. Conclusions derived from laws or provider evidence
-
-These are not left as product choices unless new contradictory evidence appears.
-
-| Conclusion | Basis | Confidence |
+| Topic | Recommendation | Confidence |
 | --- | --- | --- |
-| Shipping scope is npm, Warehouse/PyPI, GitHub, Homebrew formulas, Scoop, and arbitrary custom providers. | Maintainer-fixed product scope. | Fixed |
-| Intent is canonical desired provider state; no `LogicalOperation` peer repeats provider/endpoint/coordinate/facts. | One canonical representation per fact. | High |
-| Journal state, attempts, receipts, observations, and evidence indexes are derived from one event history. | Peer representations can disagree. | High |
-| A provider may be valid without an authoritative observation endpoint. | Real write-only/custom protocols exist. | High |
-| Consumer evidence and evidence environments do not belong to provider admission. | Consumer outcome depends on release policy and environment. | High |
-| One physical mutation boundary needs one canonical durable start event. | Crash consistency and request identity. | High |
-| Observation of absence alone cannot fence an already-dispatched request. | Distributed request can commit later. | High |
-| Safe replay can be authorized by provider-enforced idempotency/conditions even without proof of noncommit. | Provider replay law differs from noncommit proof. | High |
-| Credential failure before the mutation boundary creates no dispatch attempt. | No request can have committed. | High |
-| Warehouse commit/progress unit is one distribution file. | Pinned Warehouse source. | High |
-| npmjs initial version, tarball, and selected tag are co-requested in one package PUT. | Pinned npm source. | High |
-| GitHub asset numeric release ID is response/observation-bound, not plan-known. | GitHub release API. | High |
-| One conditional Git ref update can expose several managed paths atomically. | Git object/ref law. | High |
-| Artifact kernel does not require release/provider/destination/kind/generic metadata fields. | Universal artifact law counterexamples. | High |
-| Current dual canonical-JSON implementations cannot remain coequal identity authorities. | Different implementations can diverge. | High |
-| Workflow/Activity cannot provide external exactly-once publication. | Effect/Temporal retry and external-effect gap. | High |
-| GoReleaser Verify is public SCM asset/CDN/signature evidence, not native npm/PyPI installation. | Current official documentation. | High |
+| Replay algebra | `None`, `IdempotencyKey`, `CompareAndSwap`, `ExactDuplicateAccepted` | High |
+| Replay decision | pure core projection over plan, journal, prepared request, and time | High |
+| Custom opaque dispatch | automatic replay off unless using a core-supported prepared-dispatch law | High |
+| Provider code identity | persist behavior ID and bind application/source/lockfile identity | High |
+| Consumer tests | ordinary Effects/CI after publication; no mutation-journal persistence | High |
+| Effect target | plan against exact published rc.109; no dependency change yet | Moderate |
+| Implementation order | minimum kernel followed by wire-complete npm and Warehouse slices | High |
+| effect-build expansion | concrete archive, uv, Poetry, nFPM, and Apple integrations; no universal Builder | High |
+| Notarization | exercise before freezing finalization boundary | High |
+| AI-native distribution | package + repo marketplace + validated human submission handoff | High |
+| Initial competitive count | 19 outcome families: 6 distribution, 10 production/trust, 3 AI-native | Moderate |
+| Deferred destination packages | 6: GitLab, Gitea, Cloudsmith, GemFury, Artifactory, Nexus | High |
 
-## B. Provisional recommendations
+## Critiques that survived
 
-These are the strongest current designs but still deserve maintainer review.
+- resume-time provider code could change replay verdicts;
+- a replay verdict without evidence is insufficient;
+- static protection and live reconciliation are different questions;
+- `DispatchStarted` should be the canonical protection record;
+- consumer scenarios lacked a substitutability law and product consumer;
+- aggregate green alignment jobs do not select an Effect version;
+- destination packages and artifact-production capabilities require different scope accounting.
 
-| Recommendation | Confidence | Tradeoff / reason not fixed |
-| --- | --- | --- |
-| Versioned provider definition plus independent optional capabilities. | High | Exact TypeScript shape and resolver placement remain open. |
-| Application-supplied heterogeneous provider-definition resolver on every runner. | High | Mechanically resembles a registry; must not become admission. |
-| One canonical `DispatchStarted` event per physical request, containing all genuine member attempts. | High | Provider grouping semantics must be explicit. |
-| Prefer provider Intent granularity that matches the authoritative commit unit. | High | npm composite desired facts still raise public state-shape questions. |
-| Model initial npmjs publish as one composite Intent; later dist-tag changes separately. | High for npmjs | Compatible registries may differ; facet reporting needs design. |
-| Model Warehouse upload and yank as separate Intents. | High for Warehouse | Compatible indexes may expose different yank laws. |
-| GitHub asset Intent references parent release Intent; release ID is bound later. | High | Dispatch requires parent receipt/observation resolution. |
-| Explicit GitHub tag establishment when ts-release owns tag creation. | Moderate | Extra request/race versus composite release-create convenience. |
-| Artifact kernel is content objects plus logical artifact mapping. | High | Provider roles move into plan models. |
-| Bound artifact handles should not require an ambient active `ArtifactStore`. | Moderate | Exact Effect resource API needs a focused type probe. |
-| Verify bytes at adoption/import, then trust immutable CAS within that trust domain. | High | Weak backends may need first-read or explicit audit checks. |
-| Use published `effect@4.0.0-rc.109` as migration target. | Moderate | Full behavior-preserving ts-release migration has not passed. |
-| Use hybrid wire-complete vertical slices. | High | Accept early refactoring after provider evidence. |
-| Keep explicit journal even if Workflow/Activity is later used. | High | Additional model/storage work. |
-| Implement artifact laws in ts-release workspace before extracting a generic package. | Moderate | Packaging priority, not semantic validity. |
+## Critiques refuted or narrowed
 
-## C. Genuine maintainer/product choices
+### "All replay safety can be decided without provider facts"
 
-These cannot currently be answered solely from provider law.
+Refuted in the broad form. Core can interpret a small protection algebra, but a provider must establish at dispatch time that its exact request satisfies one scheme. The provider law still matters; it is frozen into recorded evidence rather than executed later.
 
-### Public API and application composition
+### "Immutable coordinates make replay safe"
 
-- exact provider definition and optional-capability interfaces;
-- explicit resolver value versus Context service;
-- release definition/configuration module shape;
-- CLI dynamic-loading and trust policy;
-- sealed executable requirement, if any.
+Refuted. npm immutable-version duplicates can conflict and one physical publish can also affect a mutable tag. Immutability helps reconciliation, not automatic replay.
 
-### Bundle and persistence
+### "Request status is replay protection"
 
-- exact manifest fields and ordering;
-- digest algorithm policy for v1;
-- local/SQLite/remote object store backend;
-- eager copy versus durable transfer;
-- eager existence checks on trusted-store load;
-- retention and cleanup;
-- canonical JSON bootstrap strategy.
+Refuted. A request-status token can establish committed, terminal non-commit, or pending; it does not itself suppress duplicate effects.
 
-### Journal and concurrency
+### "A generic consumer-test capability is needed to expose clean-install checks"
 
-- exact event Schemas;
-- backend and compare-and-swap model;
-- lease duration and takeover;
-- request fingerprint fields;
-- grouped response mapping;
-- risk-retry CLI/approval UX;
-- evidence retention/compaction.
+Refuted. Ordinary Effect composition and CI already express the user action. No mutation or resume state depends on a provider-level interface.
 
-### Provider product policy
+## Genuine maintainer choices
 
-- npm-compatible registry support beyond npmjs;
-- compatible Python repositories beyond Warehouse;
-- explicit versus implicit GitHub tag creation policy;
-- required public download/execute evidence for GitHub;
-- Homebrew/Scoop platform matrix and completion policy;
-- custom provider schema migration policy.
+- exact TypeScript shape of ProviderDefinition and prepared dispatch;
+- whether core-owned HTTP/Git transports are required for built-in automatic replay;
+- exact replay scheme IDs and versioning;
+- durable treatment of idempotency keys considered sensitive;
+- provider behavior/application identity and migration policy;
+- normalized request projection rules for commands and signed requests;
+- journal backend, compare-and-swap primitive, lease/takeover, and retention;
+- exact npm composite Intent/result shape;
+- notarization ownership and pre-finalization durability;
+- which of the 13 recommended non-fixed initial outcome families must be released in vNext versus architecture-proved before release;
+- exact OpenAI submission-handoff artifact and validator;
+- artifact-handoff package boundary with effect-build;
+- Workflow/Activity adoption timing.
 
-### Effect and delivery
+## Product counts
 
-- whether Workflow/Activity is in the first shipping implementation;
-- whether Effect migration is a separate series or greenfield prerequisite;
-- exact behavior gate for rc.109;
-- maintained scratch-provider resources;
-- self-release rollout and rollback policy.
-
-## 1. Custom-provider boundary
-
-### Alternatives considered
-
-| Alternative | Eliminating counterexample | Result |
-| --- | --- | --- |
-| monolithic provider lifecycle | write-only provider has no observation/correction/consumer capability | rejected as mandatory |
-| ordinary TypeScript only | fresh runner cannot decode persisted custom Intent from a closure | insufficient alone |
-| versioned definition + optional capabilities | no counterexample found that requires unsupported flags | recommended |
-| opaque `advance(history)` | provider can mutate before generic write-ahead boundary | rejected as safety boundary |
-
-### Recommendation
-
-Mandatory durable definition facts:
+Canonical counts are maintained in `competitive-scope.md`:
 
 ```text
-implementation ID
-schema version
-Intent Schema/canonical encoding
+fixed distribution outcomes:               6
+recommended artifact production/trust:    10
+recommended AI-native outcomes:            3
+recommended initial total:                19
+deferred destination-only packages:        6
 ```
-
-Capabilities are independent:
-
-```text
-dispatch
-fresh observation
-replay safety
-correction
-consumer scenario
-```
-
-A provider with no observation is valid; lost response may end `Inconclusive`.
-
-### Fresh runner
-
-The application imports the custom package and supplies its definition and Layer. Core resolves persisted definition ID/version through an application-local resolver. This is not a built-in allowlist.
-
-See [provider-contracts.md](./provider-contracts.md).
-
-## 2. Physical dispatch
-
-### Alternatives considered
-
-| Alternative | Counterexample | Result |
-| --- | --- | --- |
-| one dispatch event with members | can be misused for unrelated batching | recommended only for genuine one request |
-| separate member events transactionally | duplicates shared authorization/request identity or needs a peer dispatch record | weaker |
-| grouping outside journal | crash loses which Intents shared in-flight request | rejected |
-| every mutation one composite Intent | Warehouse batch can partially commit per file | provider-specific only |
-
-### Recommendation
-
-One canonical physical-dispatch event, with one member normally and a nonempty member set only when the provider request genuinely spans several Intents. Prefer Intent granularity matching provider commit law.
-
-See [resumability.md](./resumability.md).
-
-## 3. Retry authority
-
-The journal records exactly one authority for another dispatch:
-
-```text
-ProvenUnableToCommit
-ProviderReplaySafe
-RiskAccepted
-```
-
-Counterexample to the earlier narrower rule:
-
-- a conditional Git update can be safely replayed with the same expected predecessor even when the first response was lost; proof of noncommit is unnecessary because the condition fences incompatible repetition.
-
-Counterexample to absence-based retry:
-
-- stale request D1 can commit after a fresh read reports absence and after runner B starts.
-
-See [resumability.md](./resumability.md) and [adversarial-traces.md](./adversarial-traces.md).
-
-## 4. Artifact kernel
-
-### Alternatives considered
-
-| Alternative | Counterexample | Result |
-| --- | --- | --- |
-| release-shaped bundle with providers/kinds/metadata | untyped combinations and provider schema evolution | rejected as kernel |
-| content objects only | two logical artifacts sharing bytes lose identity | too small |
-| content objects + logical artifact mapping | satisfies all universal laws | recommended |
-| path manifest | mutable/path/backend-specific identity | implementation only |
-
-### Recommendation
-
-```text
-ArtifactBundleManifest {
-  schemaVersion,
-  objects { digest, byteLength },
-  artifacts { artifactId, contentDigest }
-}
-```
-
-Release facts and provider Intents live in the plan. Digest/size are derived through artifact references.
-
-See [artifact-model.md](./artifact-model.md).
-
-## Continued research
-
-The remaining sections continue in [decision-packet-details.md](./decision-packet-details.md).

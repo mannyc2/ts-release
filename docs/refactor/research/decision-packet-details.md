@@ -1,229 +1,240 @@
-# Decision packet: provider details, Effect, strategy, and contradictions
+# Decision packet details and source index
 
-Status: continuation of [decision-packet.md](./decision-packet.md). It is part of the same research document and has the same guardrails.
+Status: evidence and tradeoff supplement to `decision-packet.md`.
 
-## 5. Provider-specific conclusions
+## ConsumerScenario first-principles questions
 
-### npmjs
+### What concrete action consumes it?
 
-Pinned source proves one package PUT contains version, tarball, and initial tag. The success response is not a rich echo of package facts.
+No current core action. A release application or CI job may run `npm install`, `pip install`, `brew install`, Scoop installation, an import, or a CLI command.
 
-Current recommendation:
+### When does it run?
 
-```text
-one NpmPublishIntent for initial PUT
-separate later NpmDistTagIntent
-```
+After provider acceptance, after public visibility, or in a separate later workflow. Different scenarios have different prerequisites.
 
-### Warehouse
+### What changes on failure?
 
-One file per request. HTTP 200 body contains warnings, not file ID/digest/URL. File identity remains Intent and later observation. Yank is a separate mutable fact.
+The selected application/CI policy fails. Historical provider acceptance remains true. Mutation replay is not authorized.
+
+### Why not provider definition?
+
+The scenario depends on product behavior and environment, not only provider law. One provider can have many scenarios; one scenario can span several providers.
+
+### Substitutability law?
+
+None was found across npm install, binary execution, Homebrew, Scoop, and application-specific imports.
+
+### Is durable evidence required?
+
+Not for publication correctness or resume. Normal CI logs/artifacts are sufficient unless a product separately chooses to persist acceptance reports.
+
+### Does a public API need it?
+
+No demonstrated API. An ordinary Effect supplied by the release application is sufficient.
+
+### What is lost by removal?
+
+Only a generic core registry/status/resume mechanism for arbitrary consumer tests. That loss does not block the fixed shipping scope.
+
+Conclusion: remove completely from provider definitions and the canonical journal. Preserve clean-consumer testing as project/application policy.
+
+## Replay alternatives
+
+### A. Resume-time ReplaySafetyCapability
+
+Canonical facts:
+
+- old history plus newly installed provider code.
+
+Failure:
+
+- identical history can yield different verdicts across provider versions;
+- verdict may not preserve evidence;
+- combines static request protection with live observations.
+
+Rejected.
+
+### B. Dispatch-time protection interpreted by core
+
+Canonical facts:
+
+- prepared request fingerprint;
+- provider behavior identity;
+- authorization scope;
+- protection scheme, key/condition, and expiry;
+- journal history.
+
+Strength:
+
+- deterministic;
+- auditable;
+- no old verdict recomputation.
+
+Weakness:
+
+- requires a deliberately small core algebra;
+- provider still must honestly prepare/send the recorded request.
+
+Recommended.
+
+### C. Provider-version-pinned replay classifier
+
+Canonical facts:
+
+- history plus exact provider executable version.
+
+Strength:
+
+- prevents version drift.
+
+Weakness:
+
+- replay logic remains executable historical policy;
+- harder to audit than recorded protection;
+- code availability becomes part of safety.
+
+Useful as migration/compatibility defense, not the primary model.
+
+### D. No automatic replay except structural proofs
+
+Strength:
+
+- smallest safe state space;
+- arbitrary providers remain honest.
+
+Weakness:
+
+- fewer automatic continuations.
+
+Recommended as the default around B: only core-supported recorded schemes enable automatic replay.
+
+## Counterexamples used
+
+### Idempotency key scope/expiry
+
+- Stripe v1: 24 hours; v2: same API and account/sandbox within 30 days.
+- AWS Cloud Control: 36 hours.
+- Google: at least 60 minutes in documented APIs.
+
+An unscoped string is insufficient.
+
+### Conditional Git
+
+Expected-old to desired-new is safe to replay because remote compare-and-swap prevents a second successful transition.
+
+### Warehouse exact duplicate
+
+Pinned source accepts the same filename and hashes, but rejects same filename with different content. The protection must bind coordinate and content.
+
+### npm
+
+Immutable version does not prevent conflict or capture mutable initial-tag effects. No automatic replay scheme is inferred.
 
 ### GitHub
 
-Tag/ref, release resource, and assets are separate provider facts. Asset release ID is late-bound from parent success. Returned asset ID/name/state/size/digest are receipt facts.
+No general idempotency key for release/asset creation. Observation is required after response loss.
 
-### Homebrew/Scoop
+### Write-only provider
 
-Renderer correctness, one conditional Git ref update, public path/ref visibility, byte/hash identity, and clean install are separate outcomes. One ref update can publish several paths without per-path provider partial success.
+No observation/protection means inconclusive, not provider invalidity.
 
-See [provider-contracts.md](./provider-contracts.md).
+### Request-status provider
 
-## 6. GoReleaser comparison authority
+Request status can prove terminal non-commit or satisfaction. It remains observation.
 
-Current structure:
+## Request fingerprint requirements
 
-1. [complete evidence census](./goreleaser-evidence-census.md);
-2. [material evidence groups](./goreleaser-material-evidence.md);
-3. [derived outcome roadmap](./goreleaser-outcomes.md).
+The normalized projection should bind:
 
-This eliminates competing dispositions:
+- provider definition/behavior identity;
+- endpoint/API version;
+- method/operation;
+- coordinate;
+- canonical body/arguments;
+- referenced artifact digests;
+- relevant non-secret headers/options;
+- idempotency key or condition;
+- authorization principal/account/tenant/scope.
 
-- census preserves cases and per-project columns;
-- material groups own current evidence grade;
-- roadmap owns product disposition;
-- provider docs own protocol facts;
-- fixed maintainer scope owns shipping commitments.
+It should exclude freshly reacquired credential bytes and transport signatures whose semantic authority is separately bound.
 
-Every case maps to one evidence group. An `INDEX` cell does not become demonstrated support.
+For multipart or command transports, volatile boundaries/paths must either be stabilized or excluded through a provider-defined normalized projection. Built-in providers should use a core-owned prepared transport where practical.
 
-## 7. Effect target and pattern recommendation
+## Secrets
 
-### Target
+Automatic replay requires recovering exact protection material.
 
-Published rc.109 is recommended with moderate confidence. It is inside effect-build's peer range, passes the corrected combined gates, and current upstream still reports rc.109. rc.108 has no demonstrated advantage.
+Preferred:
 
-This recommendation remains provisional until a behavior-preserving ts-release migration passes the full gate.
+- deterministic non-secret key derived from operation identity;
+- durable secret-manager reference;
+- encrypted journal field under an explicit storage policy.
 
-### Architecture
+If none is available, protection is not reusable. Credentials are always reacquired.
 
-Closest analogy:
+## OpenAI plugin distribution
 
-- Effect SQL for common core plus backend-specific extensions;
-- Effect Platform for app-supplied implementation Layers;
-- Effect AI for normalization tradeoffs;
-- effect-build for one lawful common operation.
+Official package shape:
 
-No analogy supports one universal release `Publisher`.
+- `.codex-plugin/plugin.json`;
+- optional `skills/`;
+- optional `.app.json` or `.mcp.json`;
+- assets/hooks;
+- local or repository marketplace metadata.
 
-See [effect-patterns.md](./effect-patterns.md).
+Official public flow:
 
-## 8. Implementation strategy
+1. verified developer/business identity;
+2. portal draft;
+3. package/server scan;
+4. listing, prompts, test cases, availability, attestations;
+5. OpenAI review;
+6. developer chooses Publish after approval.
 
-### Alternatives
+The portal requires at least five positive and three negative tests. Public submission is not immediate publication and no general publication API is documented.
 
-| Strategy | Main failure mode |
-| --- | --- |
-| full model-first | wire-blind internal certification |
-| provider-first ad hoc | inconsistent bundle/journal laws |
-| workflow-engine first | engine identity/retry substitutes for provider correctness |
-| hybrid wire-complete slices | planned early refactoring |
+Sources:
 
-### Recommendation
+- https://developers.openai.com/plugins/build/plugins
+- https://developers.openai.com/plugins/deploy/submission
 
-Use hybrid slices:
+## Artifact production sources
 
-```text
-minimal bundle/plan/history
-npm
-Warehouse
-generalization checkpoint
-GitHub
-conditional Git + Homebrew + Scoop
-custom provider fresh-runner
-durable concurrency
-self-release
-```
+- effect-build granular branch:
+  https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13
+- GoReleaser nFPM:
+  https://www.goreleaser.com/customization/package/nfpm/
+- app bundles:
+  https://www.goreleaser.com/customization/package/app_bundles/
+- DMG:
+  https://www.goreleaser.com/customization/package/dmg/
+- pkg:
+  https://goreleaser.com/customization/package/pkg/
+- notarization:
+  https://goreleaser.com/customization/sign/notarize/
 
-Shipping scope remains complete; only implementation order is sequential.
+## Probe limits
 
-See [implementation-strategy.md](./implementation-strategy.md).
+No new probe was added in this pass.
 
-## 9. Acceptance model
+Existing clean-consumer probe does not prove persisted provider restoration or replay. Existing artifact probes do not prove remote/object-store behavior. Existing Effect baseline probes do not prove Workflow semantics. Alignment candidate jobs remain informational.
 
-Every evidence record names:
-
-```text
-outcome
-environment
-subject
-result
-limitations
-```
-
-Outcomes:
+Recommended next discriminating probe:
 
 ```text
-structural law
-local runtime
-extension
-provider acceptance
-metadata
-bytes
-consumer behavior
-continuation
-self-release
+runner A:
+  persist custom Intent
+  prepare exact dispatch
+  record protection and DispatchStarted
+  stop before/after simulated response loss
+
+runner B:
+  load same application/provider behavior
+  decode Intent
+  prepare request
+  compare fingerprint
+  derive core replay decision
+  use CAS to prevent a second runner from dispatching
 ```
 
-Environments:
-
-```text
-compile
-in-process
-clean-consumer
-protocol-double
-scratch-provider
-public-provider
-end-user
-self-release
-```
-
-The decisive gate is a non-manual ts-release self-release with one intentionally interrupted coordinate and clean consumer execution.
-
-## 10. Probe limits
-
-### Artifact probes
-
-Prove local type/runtime counterexamples, copied byte ownership, duplicate rejection, and typed load failures. They do not prove durable CAS, process loss, remote stores, or the production handle API.
-
-### Effect baseline probes
-
-Prove a small surface compiles. They do not prove Activity persistence, retry, or provider safety.
-
-### Alignment harness
-
-Proves dependency/install/test boundaries up to ts-release typecheck. It does not rank runtime semantics or complete migration cost.
-
-### Clean custom-provider probe
-
-Proves dynamic import of a consumer module that supplied and closed its Layer. It does not prove persisted definition resolution or fresh-runner continuation.
-
-### Standalone executable probe
-
-Informational failure. It does not load the consumer-installed unknown provider.
-
-### No new probe in this pass
-
-The current questions were answerable from pinned source and counterexample analysis. The next focused probe should be two-process custom-provider definition resolution without live mutation.
-
-## 11. Unresolved contradictions
-
-1. **Automatic resumability versus weak providers:** arbitrary providers may lack observation and replay safety. The honest product promise must allow `Inconclusive`.
-2. **Complete planning versus response-bound coordinates:** GitHub assets need parent references and later release-ID binding.
-3. **Composite request versus canonical Intent granularity:** npm initial publish co-establishes version/tag facts, but reporting wants independent facets.
-4. **Load-time fail-fast versus remote scalability:** eager hashing every object conflicts with trusted CAS and large remote bundles.
-5. **Local zero-infrastructure versus fresh-runner durability:** local files are simple but do not survive arbitrary runner replacement without a durable volume.
-6. **Published rc.109 versus unstable source drift:** exact package pinning helps, but Workflow APIs can still change in later releases.
-7. **Open provider model versus resolver mechanics:** a resolver is required for persisted type erasure but must not become admission/certification.
-8. **Provider-native errors versus coherent CLI:** reporting needs projections without replacing durable native facts.
-9. **Adjacent build capabilities versus complete product ambition:** archives/checksums are needed, but do not belong in the provider journal kernel.
-
-## 12. Primary source index
-
-### Effect
-
-- [current Effect pin](https://github.com/Effect-TS/effect/tree/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6)
-- [LanguageModel](https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/effect/src/unstable/ai/LanguageModel.ts)
-- [AiError](https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/effect/src/unstable/ai/AiError.ts)
-- [SqlClient](https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/effect/src/unstable/sql/SqlClient.ts)
-- [PgClient](https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/sql/pg/src/PgClient.ts)
-- [Activity](https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/effect/src/unstable/workflow/Activity.ts)
-- [WorkflowEngine](https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/effect/src/unstable/workflow/WorkflowEngine.ts)
-
-### Provider wires
-
-- [npm libnpmpublish](https://github.com/npm/cli/blob/51c2bf81fa2c31547d0fec44fff2aaac3d9a9862/workspaces/libnpmpublish/lib/publish.js)
-- [npm publish command](https://github.com/npm/cli/blob/51c2bf81fa2c31547d0fec44fff2aaac3d9a9862/lib/commands/publish.js)
-- [Warehouse legacy upload](https://github.com/pypi/warehouse/blob/4bdd89d85bc522a0d555a871ffe250d644c660dc/warehouse/forklift/legacy.py)
-- [GitHub REST description](https://github.com/github/rest-api-description/tree/67c14c7efb01cdeeac0ecd8cee9fae8d7a80e2aa)
-- [Homebrew Formula Cookbook](https://github.com/Homebrew/brew/blob/78dc68a15f167a973207437a4454381641a2f82f/docs/Formula-Cookbook.md)
-- [Scoop source](https://github.com/ScoopInstaller/Scoop/tree/b588a06e41d920d2123ec70aee682bae14935939)
-
-### Durable execution
-
-- [Effect Workflow source](https://github.com/Effect-TS/effect/tree/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/effect/src/unstable/workflow)
-- [Temporal Activity idempotency](https://github.com/temporalio/documentation/blob/7f42b11f9ea68c1b463527fc1c13150a61c5cd16/docs/encyclopedia/activities/activity-definition.mdx)
-- [Temporal Activity operations](https://github.com/temporalio/documentation/blob/7f42b11f9ea68c1b463527fc1c13150a61c5cd16/docs/encyclopedia/activities/activity-operations.mdx)
-
-### Build and product comparison
-
-- [effect-build granular branch](https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13)
-- [GoReleaser current pin](https://github.com/goreleaser/goreleaser/tree/92453c1dbdf592d227cb236600093a503f2351f3)
-- [material evidence groups](./goreleaser-material-evidence.md)
-
-## 13. Recommendation for maintainer discussion
-
-Approve these research directions, not production APIs:
-
-- minimal content bundle kernel;
-- canonical plan Intents;
-- versioned provider definitions with optional capabilities;
-- one physical-dispatch event;
-- three explicit replay authorities;
-- provider-native receipts/observations;
-- hybrid wire-complete implementation order;
-- published rc.109 migration target pending full gate;
-- complete fixed shipping scope; and
-- self-release as decisive evidence.
-
-Keep the contradictions in section 11 open until focused design review or external evidence resolves them.
+A variant with provider behavior V2 must stop rather than reach a different automatic verdict.

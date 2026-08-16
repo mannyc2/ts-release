@@ -2,6 +2,7 @@
   "name": "custom-provider-clean-consumer-probe",
   "private": true,
   "type": "module",
+  "workspaces": ["core", "provider", "cli"],
   "scripts": {
     "build": "tsc -b core provider cli",
     "test:clean": "node scripts/test-clean-consumer.mjs",

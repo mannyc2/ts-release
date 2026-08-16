@@ -1,411 +1,491 @@
-# Resumability
+# Resumability and durable release state
 
-Status: recovered research checkpoint. This document compares mechanisms
-against one external-mutation model. It does not implement Workflow/Activity or
-select a durable execution system.
+Status: research checkpoint. This document defines the durable state model and worked recovery traces. It does not implement a journal, Workflow, Activity, or provider mutation.
 
-## Target user promise
+## Target user experience
 
-The provisional target is:
+A release can stop after any provider-local coordinate and later continue by:
 
-> After interruption, continue a release without rebuilding completed artifacts
-> or blindly repeating external mutations, while detecting changed inputs,
-> code, credentials, and provider conflicts and preserving an honest record of
-> what is known, observed, and still ambiguous.
+1. loading the same finalized bundle;
+2. loading the journal for that bundle and release intent;
+3. preserving every accepted or observed-equivalent coordinate;
+4. observing uncertain coordinates before any new dispatch;
+5. creating a new attempt only after provider-local evidence permits it; and
+6. presenting conflicts or irreducible uncertainty instead of blindly repeating work.
 
-This target is stronger than "rerun the command" and weaker than a distributed
-transaction across registries. It requires explicit progress granularity and an
-honest unknown state.
+The user does not rebuild artifacts merely because a provider operation failed or the process died. Continuation is per coordinate, not an all-or-nothing rerun.
 
-## External-mutation gap used for every comparison
+## Stable logical operation versus attempt
 
-All mechanisms are evaluated against the same sequence:
+### `LogicalOperation`
+
+A logical operation is the durable identity of one intended provider-local outcome. It is stable across process restarts, engine retries, and operator continuation.
 
 ```text
-local durable state says an operation may run
--> request reaches an independent provider
--> provider commits
--> response or worker disappears
--> local durable state lacks a terminal success receipt
+LogicalOperation = {
+  operationId,
+  providerImplementation,
+  endpointOrNamespace,
+  coordinate,
+  intentDigest,
+  bundleId,
+  artifactReferences,
+  dependencies
+}
 ```
 
-A workflow engine, CI system, database, or lease can make local history durable.
-It cannot infer the provider commit from local history alone. Safe continuation
-requires one of:
+```text
+operationId = hash(
+  providerImplementation,
+  endpointOrNamespace,
+  canonicalCoordinate,
+  canonicalIntentDigest
+)
+```
 
-- provider-native idempotency enforced by the provider;
-- a conditional coordinate/write whose conflict is authoritative;
-- an authoritative reconciliation read; or
-- a human decision when the provider state remains irreducibly unknown.
+Changing the intended bytes, metadata, endpoint, or provider coordinate creates a new logical operation. A correction does not rewrite the old operation's history.
 
-## Write-ahead law
+### `Attempt`
 
-The minimum honest publication state machine is:
+An attempt is one possible dispatch of a logical operation.
+
+```text
+Attempt = {
+  attemptId,
+  operationId,
+  ordinal,
+  dispatchId,
+  startedAt,
+  authorizationFacts,
+  idempotencyKeyIfAny,
+  terminalFact
+}
+```
+
+```text
+attemptId = operationId + ordinal
+dispatchId = unique physical mutation boundary
+```
+
+One physical provider command may cover more than one logical operation. For example, `npm publish --tag next` can create an immutable version and move a mutable tag in one command. Both logical operations record the same `dispatchId` while keeping separate terminal facts and reconciliation.
+
+An attempt ordinal is not proof of non-commit and is not automatically a provider idempotency key.
+
+## Durable operation states
+
+The journal preserves one of these states for each logical operation.
+
+| State | Meaning | Next lawful action |
+| --- | --- | --- |
+| `Planned` | Canonical intent and dependencies are durable; no attempt is known to have crossed dispatch. | Validate authorization, then create a dispatch attempt. |
+| `Dispatching(attempt)` | The journal recorded the attempt before calling the mutating boundary. The final provider outcome may be unknown. | Record a returned receipt, a proven pre-dispatch failure, or perform fresh observation. Never blindly start another attempt. |
+| `Accepted(receipt)` | The provider returned a provider-native acceptance receipt for the exact intent. | Preserve; optionally gather M/B/C evidence. |
+| `SatisfiedByObservation(freshObservation)` | A fresh provider read proves the coordinate equivalent to the intent. | Preserve; optionally gather consumer evidence. |
+| `ProvenNotCommitted(proof)` | Provider-local evidence or a trusted local boundary proves the prior attempt did not commit. | A new attempt is permitted if policy and authorization still allow it. |
+| `AbsentRetryable(freshObservation, policy)` | The coordinate is currently absent, but visibility or propagation rules prevent treating absence as proof of non-commit. | Observe again under a bounded policy; do not mutate yet. |
+| `Pending(freshObservation, policy)` | The provider reports accepted but nonterminal processing, indexing, scanning, or publication. | Observe again; do not duplicate. |
+| `Conflict(freshObservation)` | The coordinate exists with facts incompatible with the intent. | Stop, preserve evidence, and require correction or maintainer choice. |
+| `Inconclusive(evidence)` | Available evidence cannot distinguish commit, non-commit, equivalence, or conflict. | Stop automatic progress. Require stronger evidence or a maintainer decision. |
+
+`Accepted` and `SatisfiedByObservation` are two different ways to satisfy the same logical operation. Both remain durable because the receipt and observation have different evidentiary value.
+
+## Journal transition law
+
+The minimum write-ahead law is:
+
+```text
+persist Planned
+  -> persist Dispatching(attempt N)
+  -> cross the external mutation boundary
+  -> persist one terminal or observation classification
+```
+
+The external side effect must never occur before `Dispatching` is durable.
+
+After process loss, any operation still in `Dispatching` is treated as an unknown provider outcome. The next process observes the provider. It does not infer non-commit from the absence of a local receipt.
+
+### Permitted transitions
 
 ```text
 Planned
-  -> Dispatching     // durably recorded before sending
-  -> Succeeded(receipt)
-     | ProvenNotCommitted
-     | ReconcileRequired
+  -> Dispatching(N)
+
+Dispatching(N)
+  -> Accepted(receipt)
+  -> ProvenNotCommitted(preDispatchProof)
+  -> SatisfiedByObservation(observation)
+  -> AbsentRetryable(observation)
+  -> Pending(observation)
+  -> Conflict(observation)
+  -> Inconclusive(evidence)
+
+AbsentRetryable
+  -> SatisfiedByObservation
+  -> ProvenNotCommitted
+  -> Pending
+  -> Conflict
+  -> Inconclusive
+
+Pending
+  -> Accepted
+  -> SatisfiedByObservation
+  -> ProvenNotCommitted
+  -> Conflict
+  -> Inconclusive
+
+ProvenNotCommitted
+  -> Dispatching(N + 1)
 ```
 
-Required transition laws:
+A new observation may enrich `Accepted` or `SatisfiedByObservation` with metadata and byte evidence, but it does not erase the original receipt or trace.
 
-1. `Planned -> Dispatching` is durable before request dispatch.
-2. A terminal `Succeeded(receipt)` records the documented provider success
-   response and the non-secret identity needed to interpret it.
-3. `ProvenNotCommitted` is used only when client/provider evidence proves that
-   this attempt did not commit.
-4. `ReconcileRequired` is used when dispatch may have happened but no terminal
-   response was durably recorded, or when the provider documents another
-   inspectable ambiguous state.
-5. If a process disappears from `Dispatching`, continuation reconciles before
-   considering a repeat write.
-6. Reconciliation stores a fresh observation separately from the historical
-   receipt/state that caused it.
-7. No local transition claims exactly-once registry mutation.
+### Forbidden transitions
 
-This write-ahead law prevents the journal from later saying "dispatch was
-impossible" when the request may actually have been sent. It does not fence or
-undo the provider.
+```text
+Dispatching(N) -> Dispatching(N + 1) without reconciliation
+Pending -> Dispatching without proof of non-commit
+Inconclusive -> automatic retry
+Conflict -> automatic overwrite
+Accepted -> repeated create because consumer evidence is missing
+```
 
-## Proposed durable data separation
+## Journal record shape
 
-A durable record needs separate types for historical execution evidence and
-fresh external evidence:
+Illustrative durable shape:
 
-```ts
-interface HistoricalReceipt {
-  readonly coordinate: unknown
-  readonly providerAcceptedAt: string
-  readonly providerFields: unknown
-  readonly authorizationIdentity?: AuthorizationIdentity
-}
-
-interface FreshObservation {
-  readonly coordinate: unknown
-  readonly observedAt: string
-  readonly observerIdentity?: AuthorizationIdentity
-  readonly providerFields: unknown
-  readonly classification: "Equivalent" | "Absent" | "Conflict" | "Inconclusive"
+```json
+{
+  "schemaVersion": "ts-release/journal/v1",
+  "releaseId": "...",
+  "bundleId": "...",
+  "operations": {
+    "operation-id": {
+      "provider": "npmjs",
+      "coordinate": {},
+      "intent": {},
+      "state": { "tag": "Dispatching", "attemptId": "..." },
+      "attempts": [],
+      "observations": [],
+      "consumerEvidence": []
+    }
+  }
 }
 ```
 
-The CLI must not render a `HistoricalReceipt` as though it were a current
-provider read. Conversely, a current read does not replace or rewrite the
-historical record of the original attempt.
+The journal stores canonical values and redacted provider-native evidence. It must not persist bearer tokens, private keys, temporary paths, or unbounded response bodies.
 
-## Secrets and authorization identity
-
-Never persist secret token material, private keys, session cookies, raw OIDC
-credentials, or unredacted environment/config values.
-
-Some non-secret authorization identity is relevant to safe continuation and may
-be durable:
-
-- registry account or username;
-- cloud account/tenant/project;
-- service principal or role ARN/name;
-- repository installation/application identity;
-- granted scopes/audience;
-- approval identity and timestamp; and
-- credential mechanism (token, trusted publishing, OIDC role), without the
-  secret itself.
+## Persistence requirements
 
-Continuation reacquires credentials through current Layers/configuration and
-compares the non-secret identity/policy with the historical operation. A
-credential that is valid but belongs to a different account is not equivalent.
+A production journal needs:
 
-## Leases and concurrency
-
-A lease prevents cooperative concurrent continuation only when all contenders
-honor the same durable lease. It cannot fence a stale request already in flight
-at an external registry.
-
-Therefore:
+- versioned canonical encoding;
+- domain-separated record identity;
+- atomic append or compare-and-swap transition;
+- detection of torn or conflicting writes;
+- one-writer lease or operation-level CAS for concurrent continuation;
+- durable linkage to the finalized bundle;
+- provider receipt and observation Schema versions;
+- bounded evidence payloads with raw-fact fingerprints where necessary;
+- explicit secret redaction; and
+- an audit history that does not rewrite prior attempts.
 
-- lease acquisition must happen before forward execution;
-- lease epoch/owner should be stored with local transitions;
-- loss of lease stops future local dispatch;
-- provider conditional writes and coordinates still handle races at the
-  provider boundary; and
-- a late response from an old owner is recorded as historical evidence and
-  reconciled against the current run, not silently discarded or accepted.
-
-A distributed lock with no provider conditional is not an exactly-once fence.
-
-## Progress granularity and artifact rebuilding
-
-The target sentence "never rebuild completed artifacts" is incompatible with
-persisting only a final bundle when a build produces artifact 1 of N, records
-nothing durable, and crashes while building artifact 2.
-
-Three lawful promises are possible:
-
-| Progress owner | Honest promise | Cost/counterexample |
-| --- | --- | --- |
-| Finalized-bundle boundary only | A completed finalized bundle is reused; an interrupted incomplete build may restart from the beginning. | Does not satisfy "never rebuild completed artifacts." |
-| effect-build/build tool internal cache | Reuse depends on that tool's cache/key/retention laws; ts-release persists only final bundle identity. | Not generic across builders; a cache hit is not a durable release checkpoint unless exact inputs/outputs are recorded. |
-| Release journal per artifact/object | Every accepted artifact/object and its build input/definition identity is durably recorded; continuation imports/reuses it and builds only missing nodes. | More journal/schema/storage complexity; must handle partially written objects and changed build definitions. |
+The storage backend is a maintainer choice. These laws apply whether the first implementation uses local files, SQLite, an object store, or another durable service.
 
-**Recommendation for the provisional target:** release-level durable progress is
-owned per artifact/object or build node by the release run, even when
-effect-build performs the actual compilation. effect-build may return typed
-artifacts and its own cache evidence, but it should not own release-run identity,
-provider receipts, or cross-provider continuation. If maintainers choose
-bundle-only persistence for the first cut, the user promise must be narrowed
-explicitly.
+## Dependency and dispatch groups
 
-## Identity and compatibility of durable work
+A release is a graph of logical operations.
 
-A run identity should bind at least:
+- An npm dist-tag operation depends on the intended version being satisfied.
+- A GitHub asset depends on the release resource and tag policy.
+- A Homebrew formula Git publication depends on finalized public download URLs and checksums.
+- Consumer installation depends on provider acceptance and public visibility but is not itself a provider mutation.
 
-- source revision and dirty/workspace policy;
-- release definition/module identity;
-- dependency lock and relevant runtime/tool versions;
-- finalized input artifact identities;
-- provider coordinates and non-secret destination identity;
-- durable Schema/format versions; and
-- a program/operation-definition version.
+A dispatch group records when one physical command can mutate several coordinates. Every child logical operation still has its own state.
 
-Continuation must reject or explicitly migrate changed source, dependencies,
-Schemas, provider coordinates, or release code. Replaying an old receipt through
-new code without a compatibility decision is not safe continuation.
+If a grouped command returns success, the provider adapter maps the command receipt into provider-native receipt facts for each child it can prove. Any child not proved by the receipt remains subject to fresh observation.
 
-## Effect Workflow/Activity identity scenarios
-
-Pinned source:
-
-- beta.83: `cd7ab658994104bd6fe8f841f1440bea32c387f5`;
-- rc.108: `bef7bf38ae4b73d5511043f707aed083de5da7cc`;
-- current pin: `ee06c9c1eed73ebcf282541ceb1615ff1ba1730d`.
-
-Source evidence relevant to identity:
-
-- a Workflow has a tag, payload, idempotency function, and derived execution ID;
-- an Activity has a stable name and success/error Schemas;
-- `WorkflowEngine.activityExecute` receives the Activity and attempt;
-- `Activity.CurrentAttempt` participates in retry execution; and
-- `Activity.idempotencyKey(name, { includeAttempt })` hashes workflow execution
-  ID, supplied name, and optionally the current attempt.
-
-Thus Activity identity is more than a string label in isolation. Execution
-identity, activity name, attempt policy, ordering/definition, and payload or
-coordinate identity must be designed together. The compile-only probes do not
-establish these semantics.
-
-| Change to a release program | Replay/deduplication risk | Lawful treatment |
-| --- | --- | --- |
-| Reorder two provider coordinates while reusing positional Activity names | Stored result may be associated with a different conceptual coordinate if identity was position-derived. | Activity/step identity includes stable coordinate-derived identity, not array index alone; reject incompatible program definition. |
-| Insert a new operation before old operations | Position/count-based identities shift. | Stable explicit operation IDs or coordinate hashes; insertion does not rename existing durable work. |
-| Rename an Activity | Engine sees a new durable name while old result remains under prior name. | Treat as a versioned migration or new operation; do not silently assume equivalence. |
-| Two assets for the same provider/release | Provider name alone collides. | Identity includes release coordinate plus unique asset coordinate/name/content identity. |
-| Retry attempt changes | Including attempt in provider idempotency key can intentionally create a new provider request; excluding it can deduplicate attempts. | Decide per provider contract and record the policy. Do not use a generic default around non-idempotent writes. |
-| Workflow execution ID changes for the same intended release | All Activity idempotency helpers may change. | Stable release-run identity and explicit resume lookup; starting a new run is not continuation unless receipts are imported/reconciled deliberately. |
-
-No Activity naming scheme is selected here.
-
-## Mechanism comparison
-
-### Common criteria
-
-Each mechanism is evaluated for:
+## Worked trace 1: ordinary npm success
 
-- durable local progress and granularity;
-- run/operation identity;
-- leases/concurrency;
-- cancellation;
-- credential reacquisition;
-- retention and old-code compatibility;
-- custom provider participation; and
-- the external-mutation gap.
-
-### 1. Explicit ts-release journal
-
-A release-owned journal can store the write-ahead state machine, artifact
-progress, receipts, observations, leases, and compatibility versions directly.
-
-| Dimension | Assessment |
-| --- | --- |
-| Durable progress | Exact granularity is under product control: bundle-only, per artifact, per provider coordinate. |
-| Identity | Can bind release-run and operation IDs directly to provider/artifact coordinates. |
-| Concurrency | Lease/epoch can serialize cooperative continuation. Does not fence stale provider requests. |
-| Cancellation | Stops future dispatch and records cancellation; committed provider effects remain. |
-| Credentials | Reacquired through Layers; journal stores only non-secret authorization identity. |
-| Retention | Product/backend policy; expired artifacts/receipts become typed continuation limits. |
-| Evolution | Requires explicit journal/schema/program versioning and migrations. |
-| Custom providers | Provider package supplies coordinate, receipt, reconciliation, and durable Schemas. |
-| External mutation gap | Still present; journal routes `Dispatching` to provider reconciliation. |
-
-This is the most direct expression of the target but creates release-specific
-persistence code and operational ownership.
-
-### 2. Effect Workflow/Activity with in-memory engine
-
-Primary source:
-
-- https://github.com/Effect-TS/effect/blob/ee06c9c1eed73ebcf282541ceb1615ff1ba1730d/packages/effect/src/unstable/workflow/WorkflowEngine.ts
-
-The in-memory engine is useful for tests/local development. It does not survive
-process loss, so it cannot satisfy durable continuation. Typed Activity results,
-names, Schemas, poll/resume APIs, and interruption behavior are still useful
-API research, but a passing in-memory replay test is not evidence of durable
-execution.
-
-External mutation gap: unchanged and potentially worsened by automatic retry if
-an external write is placed in an Activity without provider recovery logic.
-
-### 3. Effect Cluster WorkflowEngine
-
-Primary source family:
-
-- https://github.com/Effect-TS/effect/tree/ee06c9c1eed73ebcf282541ceb1615ff1ba1730d/packages/effect/src/unstable/cluster
-- https://github.com/Effect-TS/effect/tree/ee06c9c1eed73ebcf282541ceb1615ff1ba1730d/packages/effect/src/unstable/workflow
-
-Cluster can route Workflow/Activity messages through cluster sharding and
-configured message storage. Durability therefore depends on the selected
-cluster/message-storage implementation and its retention/availability, not on
-the `Activity` type alone.
-
-| Dimension | Assessment |
-| --- | --- |
-| Durable progress | Potentially fine-grained Activity/Workflow results with a persistent engine/storage. Exact guarantees require source and backend pin. |
-| Identity | Workflow execution ID, Activity names, attempts, Schemas, and program definition become durable compatibility surface. |
-| Concurrency | Cluster entity routing can serialize engine work; provider writes still require conditional/idempotent/reconcile laws. |
-| Cancellation | Durable interrupt/resume machinery can stop future engine work; remote effects already sent remain. |
-| Credentials | Activity Layers reacquire credentials; never encode secrets in payload/exit. |
-| Retention | Message storage and artifact backend policy. |
-| Evolution | Unstable APIs and durable name/Schema migrations are a real cost. |
-| Custom providers | Ordinary Effects can be wrapped as Activities, but doing so adds a durable participation contract. |
-| External mutation gap | Unchanged. Engine cannot infer provider commit before result storage. |
-
-No Cluster deployment or Activity implementation is included.
-
-### 4. CI-native artifacts and reruns
-
-Primary sources:
-
-- https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/re-running-workflows-and-jobs
-- https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts
-- https://docs.github.com/en/actions/using-jobs/using-concurrency
-
-| Dimension | Assessment |
-| --- | --- |
-| Durable progress | Uploaded artifacts and job boundaries; intra-job progress usually reruns unless explicitly journaled. |
-| Identity | Commit/ref/run/job identity is available, but definition/dependency/bundle identity must still be bound explicitly. |
-| Concurrency | CI concurrency groups reduce cooperative overlap; they do not fence stale registry requests. |
-| Cancellation | Stops jobs; provider commits already made remain. |
-| Credentials | Reacquired from secrets/OIDC under current workflow permissions. Original and current authorization identity must be recorded separately. |
-| Retention | Finite, CI-controlled, configurable within platform limits. Expired artifacts can make continuation impossible. |
-| Evolution | Rerun semantics are provider-specific; old artifacts may meet new code unless versioned explicitly. |
-| Custom providers | Good when the user's workflow installs/imports them. |
-| External mutation gap | Unchanged; rerun after lost response must reconcile. |
-
-CI is a possible backend and user interface, not the semantic definition of
-resumability.
-
-### 5. Temporal
-
-Pinned primary source used for the external-effect property:
-
-- https://github.com/temporalio/documentation/blob/7f42b11f9ea68c1b463527fc1c13150a61c5cd16/docs/encyclopedia/activities/activity-definition.mdx
-
-Temporal documents that an Activity can complete its business work, crash
-before reporting completion, and then execute again. It recommends idempotent
-Activities and explains that idempotency keys are enforced by the external
-service being called, not by the Activity itself.
-
-| Dimension | Assessment |
-| --- | --- |
-| Durable progress | Mature Workflow history and Activity scheduling/results. Granularity follows Activity design. |
-| Identity | Workflow/Run/Activity IDs and versioning become durable program surface. |
-| Concurrency | Workflow semantics can serialize decisions; external provider conditionals still required. |
-| Cancellation | Durable cancellation/timeouts; external commits remain. |
-| Credentials | Worker reacquisition; secrets outside durable history. |
-| Retention | Temporal namespace/history/archival policy plus artifact storage. |
-| Evolution | Requires deterministic Workflow/versioning discipline and Activity compatibility. |
-| Custom providers | Worker code can call arbitrary providers with provider-local contracts. |
-| External mutation gap | Explicitly unchanged: Activity may execute more than once if completion was not recorded. |
-
-Temporal is representative evidence that mature durable execution does not
-create exactly-once effects at an independent service boundary.
-
-### 6. AWS Step Functions
-
-Primary sources:
-
-- https://docs.aws.amazon.com/step-functions/latest/dg/concepts-standard-vs-express.html
-- https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
-- https://docs.aws.amazon.com/step-functions/latest/dg/using-eventbridge-scheduler.html
-
-Step Functions persists state-machine progress and supports retry/catch/timeouts
-according to workflow type and configuration. Service integrations may offer
-provider-specific idempotency or execution naming; arbitrary registry calls do
-not inherit exactly-once semantics merely because they run in a state machine.
-
-| Dimension | Assessment |
-| --- | --- |
-| Durable progress | Managed state transitions; granularity follows state/task boundaries. |
-| Identity | Execution and state names/input are durable; changing definitions requires compatibility policy. |
-| Concurrency | Managed execution controls; no fence for a request already at npm/PyPI/GitHub. |
-| Cancellation | Stops future state transitions; external commits remain. |
-| Credentials | IAM/service roles are reacquired; store role/account/scope identity, not credentials. |
-| Retention | Product/workflow-type/account policy. Artifacts need separate storage. |
-| Evolution | State-machine definitions and task input/output formats are durable compatibility surface. |
-| Custom providers | Lambda/container/HTTP tasks can call arbitrary providers, with packaging and IAM costs. |
-| External mutation gap | Unchanged unless the called provider/integration supplies idempotency or reconciliation. |
-
-### 7. Generic durable-run library
-
-A generic library is coherent only if it excludes release-specific concepts and
-states laws usable by at least two domains, for example releases and deployment
-or migration orchestration.
-
-Candidate laws:
-
-1. stable run identity binds immutable input and program version;
-2. named step identity is stable across continuation;
-3. durable write-ahead `Dispatching` precedes external work;
-4. terminal typed exits are replayed, not recomputed;
-5. unfinished dispatch requires caller-supplied recovery before retry;
-6. one lease epoch owns forward local execution;
-7. secrets are execution requirements, not persisted values; and
-8. retention/schema incompatibility returns typed limits.
-
-This could reduce duplicated persistence machinery, but it is not justified by
-an in-memory task graph or a second name for the ts-release journal. No generic
-library is implemented.
-
-## Mechanism summary
-
-| Mechanism | Survives process loss | Fine-grained progress | Operational burden | External mutation exactly once |
-| --- | --- | --- | --- | --- |
-| Bundle-only rerun | yes for finalized bundle | no | low | no |
-| Explicit release journal | yes with durable backend | chosen by product | medium | no |
-| Effect in-memory engine | no | in-process only | low | no |
-| Effect Cluster engine | potentially, with persistent stack | Activity-level | high/unstable | no |
-| CI artifacts/reruns | yes within retention/job boundaries | coarse unless journaled | delegated to CI | no |
-| Temporal | yes | Activity-level | managed/self-hosted platform | no |
-| Step Functions | yes | state/task-level | cloud platform | no |
-| Generic durable-run library | depends on backend | explicit step-level | library plus backend | no |
-
-## Decision boundary
-
-The evidence supports these recommendations without selecting implementation
-syntax:
-
-- preserve the write-ahead `Dispatching` state in any durable mechanism;
-- route abandoned `Dispatching` operations to provider reconciliation;
-- use per-artifact release progress if the product keeps the "never rebuild"
-  promise;
-- keep HistoricalReceipt and FreshObservation distinct in storage and CLI;
-- record non-secret authorization identity and reacquire secrets;
-- treat Activity/step names, execution identity, attempts, coordinates, and
-  program versions as durable compatibility surface; and
-- evaluate every durable system against the same provider commit-before-local
-  record gap.
-
-The remaining maintainer choice is whether the first production cut includes
-fine-grained durable execution, bundle-bound rerun only, or no persisted resume.
-No Workflow/Activity implementation begins in this PR.
+Desired outcome:
+
+```text
+Version: registry.npmjs.org / @scope/pkg / 1.2.3 / tarball integrity X
+Tag:     registry.npmjs.org / @scope/pkg / latest -> 1.2.3
+```
+
+Journal:
+
+```text
+V = Planned(NpmVersionIntent)
+T = Planned(NpmDistTagIntent), depends on V
+```
+
+The adapter elects one physical command:
+
+```text
+D1 = npm publish package.tgz --tag latest
+```
+
+Before execution:
+
+```text
+V -> Dispatching(V-attempt-1, dispatchId D1)
+T -> Dispatching(T-attempt-1, dispatchId D1)
+```
+
+The command returns success and provider response facts:
+
+```text
+V -> Accepted(NpmVersionReceipt)
+T -> Accepted(NpmDistTagReceipt)
+```
+
+A later metadata read can add:
+
+```text
+V metadata = Equivalent(name, version, integrity, shasum)
+T metadata = Equivalent(latest -> 1.2.3)
+```
+
+Clean install remains a separate consumer result:
+
+```text
+C = NotObserved
+```
+
+If the process dies after the registry commits but before either receipt is stored, both remain `Dispatching(D1)`. Recovery reads package metadata once and classifies independently:
+
+```text
+V -> SatisfiedByObservation(version and bytes equivalent)
+T -> SatisfiedByObservation(tag equivalent)
+```
+
+If the version is equivalent but `latest` points to `1.2.2`, V remains satisfied while T becomes `Conflict` or a separately authorized tag-correction operation. The package version is never republished.
+
+## Worked trace 2: partial PyPI progress
+
+Desired files:
+
+```text
+A = package-1.2.3.tar.gz
+B = package-1.2.3-py3-none-any.whl
+C = package-1.2.3-cp313-manylinux_x86_64.whl
+```
+
+Each filename is its own logical operation.
+
+First run:
+
+```text
+A -> Dispatching(A1) -> Accepted(WarehouseUploadReceipt)
+B -> Dispatching(B1) -> process loses response
+C -> local credential validation fails before dispatch
+```
+
+Durable states:
+
+```text
+A = Accepted(receipt)
+B = Dispatching(B1)
+C = ProvenNotCommitted(preDispatchCredentialFailure)
+```
+
+Continuation:
+
+1. Load the same finalized bundle.
+2. Do not upload A.
+3. Read the Warehouse Simple API for B.
+4. If B is listed with the exact filename, size, and SHA-256, record `SatisfiedByObservation`.
+5. If B is absent but indexing may still be delayed, record `AbsentRetryable` and observe under the bounded policy.
+6. Repair credentials for C and create `C2` only because the prior failure proved no dispatch.
+
+The parent PyPI publication is complete only when A, B, and C are satisfied. Partial success is normal state, not a rollback trigger.
+
+## Worked trace 3: lost GitHub asset response
+
+Prerequisites:
+
+```text
+Tag ref = satisfied
+Release resource = Accepted(releaseId 42)
+Asset = release 42 / effective stored name tool-linux-x64.tar.gz / digest X
+```
+
+Mutation:
+
+```text
+Asset -> Dispatching(A1)
+POST upload bytes
+connection disappears before response is recorded
+```
+
+Recovery:
+
+1. List all assets for release 42, following pagination to a complete listing.
+2. Apply the explicit requested-name to effective-stored-name rule.
+3. Compare returned name, state, size, media type, and digest or downloaded bytes.
+
+Outcomes:
+
+```text
+matching asset -> SatisfiedByObservation
+same name, different bytes -> Conflict
+asset in processing state -> Pending
+complete authoritative absence after visibility policy -> ProvenNotCommitted
+incomplete listing or unavailable digest/read -> Inconclusive or AbsentRetryable
+```
+
+Only `ProvenNotCommitted` permits A2. A response-loss timeout by itself does not.
+
+## Worked trace 4: catalog Git publication
+
+The finalized bundle contains the exact catalog target and managed-state bytes. Three outcomes are tracked separately:
+
+```text
+G = conditional Git ref publication
+R = catalog rendering correctness
+C = package-manager installation
+```
+
+Before mutation:
+
+```text
+G = Planned(expected predecessor SHA P, target tree digest X)
+R = local structural evidence for the finalized catalog bytes
+C = NotObserved
+```
+
+Dispatch:
+
+```text
+G -> Dispatching(G1)
+create blobs/tree/commit
+conditional ref update P -> Q
+```
+
+Normal success:
+
+```text
+G -> Accepted(GitRefReceipt(commit Q, ref, previous P))
+```
+
+If the response is lost, recovery reads the ref and exact managed paths:
+
+```text
+ref == Q and bytes equivalent -> SatisfiedByObservation
+ref advanced to unrelated commit -> Conflict
+ref remains P and no created commit can be authoritative for the ref update -> ProvenNotCommitted for the ref operation
+read cannot establish the managed paths -> Inconclusive
+```
+
+Neither Git acceptance nor local rendering evidence is a package-manager installation result. C remains `NotObserved` until a clean Scoop, Homebrew, or other consumer resolves and installs the intended bytes.
+
+Continuation never repeats a satisfied ref update merely because consumer testing has not run.
+
+## Worked trace 5: unknown custom provider
+
+A consumer package supplies a provider whose mutation endpoint returns a receipt on success but whose read API cannot query exact coordinates.
+
+```text
+O = Planned(custom coordinate K, intent digest X)
+O -> Dispatching(O1)
+provider may commit
+process loses response
+```
+
+The provider's observe operation can report only an unscoped listing that is incomplete and has no digest.
+
+```text
+O -> Inconclusive({
+  reason: "Provider cannot distinguish committed K from absent K after response loss",
+  attempt: O1,
+  availableFacts: ...
+})
+```
+
+The core does not call O2 automatically. It presents:
+
+- exact intent and finalized artifact digest;
+- the lost attempt boundary;
+- all available provider facts;
+- provider-declared lack of authoritative absence; and
+- maintainer actions such as supply external evidence, abandon, or explicitly authorize a risk-bearing retry.
+
+An explicit risk-bearing retry is a new audited maintainer decision, not a normal automatic transition and not proof that duplicates are safe.
+
+## Workflow and Activity relationship
+
+Effect Workflow or Activity can later provide execution, timers, encoded engine state, and process resumption. They do not replace the release journal.
+
+The journal remains authoritative because it provides:
+
+- provider-local intent and coordinate identity;
+- stable operation identity independent of Activity names;
+- grouped physical dispatch records;
+- provider receipts and fresh observations;
+- proof of non-commit, pending, conflict, and inconclusive states;
+- finalized bundle linkage; and
+- consumer evidence.
+
+The engine may execute a transition such as `observe operation O` or `dispatch attempt O2`. It must first read and CAS the journal state. Engine replay cannot infer a remote npm, Warehouse, GitHub, Git, or custom-provider commit whose response was lost.
+
+## Default retry policy
+
+The core default is:
+
+```text
+retry observation according to provider policy;
+retry mutation only after ProvenNotCommitted;
+never retry Conflict or Inconclusive automatically.
+```
+
+Provider-native idempotency keys and conditional writes improve the proof surface, but they do not remove the journal. The journal records which key or condition was used and what the provider later established.
+
+## Consumer evidence
+
+Consumer outcomes are attached to satisfied provider operations or the release as a whole:
+
+```text
+ObservedEquivalent
+ObservedDifferent
+ObservedFailure
+NotObserved
+```
+
+Each carries an evidence environment. Missing consumer evidence never causes provider mutation replay.
+
+## Correction and supersession
+
+A correction creates a new canonical intent and therefore a new logical operation ID. The journal links it as superseding or correcting an earlier operation while preserving:
+
+- the original intent;
+- every attempt;
+- receipt or conflicting observation;
+- correction authority; and
+- new provider-local coordinate or conditional baseline.
+
+The old history is immutable.
+
+## Genuine remaining choices
+
+Maintainers still need to decide:
+
+- journal storage backend and transaction model;
+- operation-level lease duration and concurrent-run behavior;
+- exact dispatch-group representation for composite provider commands;
+- provider-specific observation budgets and when absence becomes authoritative;
+- how a maintainer records an explicit risk-bearing retry after inconclusive evidence;
+- journal retention, compaction, and secret-redaction policy;
+- whether Workflow or Activity is included in the first delivery; and
+- which consumer evidence is required before a release is called complete.
+
+## Conclusions
+
+1. Stable logical operations and individual attempts are different durable entities.
+2. `Dispatching` is a write-ahead uncertainty boundary, not permission to retry.
+3. Accepted receipts and equivalent observations are separate terminal evidence.
+4. Proven non-commit is the normal gateway to another mutation attempt.
+5. Absent-retryable, pending, conflict, and inconclusive are first-class states.
+6. Partial provider progress is preserved per coordinate against the same finalized bundle.
+7. Workflow or Activity may execute the model but cannot replace provider reconciliation.
+8. The intended experience is continuation without rebuilding and without blind repetition.

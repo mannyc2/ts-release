@@ -2,27 +2,31 @@ import { execFileSync } from "node:child_process"
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 
-const root = resolve(new URL("..", import.meta.url).pathname)
+const root = resolve(fileURLToPath(new URL("..", import.meta.url)))
 const coreSource = readFileSync(join(root, "core/src/index.ts"), "utf8")
 if (/outside|custom-publication-provider|Client/.test(coreSource)) {
   throw new Error("core fixture contains provider knowledge")
 }
 
+const packedTarballs = []
 const pack = (directory) => {
   const output = execFileSync("npm", ["pack", "--json"], {
     cwd: join(root, directory),
     encoding: "utf8"
   })
   const [{ filename }] = JSON.parse(output)
-  return join(root, directory, filename)
+  const tarball = join(root, directory, filename)
+  packedTarballs.push(tarball)
+  return tarball
 }
 
-const core = pack("core")
-const provider = pack("provider")
-const cli = pack("cli")
 const consumer = mkdtempSync(join(tmpdir(), "ts-release-provider-consumer-"))
 try {
+  const core = pack("core")
+  const provider = pack("provider")
+  const cli = pack("cli")
   writeFileSync(join(consumer, "package.json"), JSON.stringify({
     name: "clean-consumer",
     private: true,
@@ -61,5 +65,5 @@ export default Outside.publish(artifact).pipe(
   console.log(output)
 } finally {
   rmSync(consumer, { recursive: true, force: true })
-  for (const tarball of [core, provider, cli]) rmSync(tarball, { force: true })
+  for (const tarball of packedTarballs) rmSync(tarball, { force: true })
 }

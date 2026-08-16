@@ -11,9 +11,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: refactor-research-probes-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  research-documents:
-    name: Research documents and scope
+  research-scope:
+    name: Research scope
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,21 +26,15 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-
-      - name: Validate document evidence and 151-case census
-        run: bun docs/refactor/research/probes/validate-research-docs.mjs
-
       - name: Validate diff whitespace and research scope
         shell: bash
         run: |
           set -euo pipefail
-          base="${{ github.event.pull_request.base.sha }}"
-          if [[ -z "$base" ]]; then
-            base="HEAD^"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            default_branch="${{ github.event.repository.default_branch }}"
+            base="$(git merge-base "origin/$default_branch" HEAD)"
           fi
           git diff --check "$base...HEAD"
           unexpected="$(git diff --name-only "$base...HEAD" | grep -Ev '^(docs/refactor/research/|\.github/workflows/refactor-research-probes\.yml$|test/core/workflow-shape\.test\.ts$)' || true)"

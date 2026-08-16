@@ -2,23 +2,27 @@ import { execFileSync, spawnSync } from "node:child_process"
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 
-const root = resolve(new URL("..", import.meta.url).pathname)
+const root = resolve(fileURLToPath(new URL("..", import.meta.url)))
 const output = join(root, "research-release-standalone")
 
+const packedTarballs = []
 const pack = (directory) => {
   const packed = execFileSync("npm", ["pack", "--json"], {
     cwd: join(root, directory),
     encoding: "utf8"
   })
   const [{ filename }] = JSON.parse(packed)
-  return join(root, directory, filename)
+  const tarball = join(root, directory, filename)
+  packedTarballs.push(tarball)
+  return tarball
 }
 
-const core = pack("core")
-const provider = pack("provider")
 const consumer = mkdtempSync(join(tmpdir(), "ts-release-standalone-consumer-"))
 try {
+  const core = pack("core")
+  const provider = pack("provider")
   execFileSync("bun", [
     "build",
     "cli/src/index.ts",
@@ -74,5 +78,5 @@ export default Outside.publish(makeArtifact({
 } finally {
   rmSync(consumer, { recursive: true, force: true })
   rmSync(output, { force: true })
-  for (const tarball of [core, provider]) rmSync(tarball, { force: true })
+  for (const tarball of packedTarballs) rmSync(tarball, { force: true })
 }

@@ -330,6 +330,30 @@ const main = async (): Promise<void> => {
   if (corruptionResult._tag !== "Failure") {
     throw new Error("corrupted bytes passed the load boundary")
   }
+
+  const duplicateObject = await Bundle.decode({
+    ...encoded,
+    objects: [...encoded.objects, encoded.objects[0]!]
+  })
+  if (duplicateObject._tag !== "Failure") {
+    throw new Error("duplicate object ID passed the load boundary")
+  }
+
+  const duplicateArtifact = await Bundle.decode({
+    ...encoded,
+    artifacts: [...encoded.artifacts, encoded.artifacts[0]!]
+  })
+  if (duplicateArtifact._tag !== "Failure") {
+    throw new Error("duplicate artifact ID passed the load boundary")
+  }
+
+  const missingObject = await Bundle.decode({
+    ...encoded,
+    objects: []
+  })
+  if (missingObject._tag !== "Failure") {
+    throw new Error("missing referenced object passed the load boundary")
+  }
 }
 
-void main()
+await main()

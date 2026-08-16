@@ -11,9 +11,11 @@
 
 import { Effect, Schema } from "effect"
 
+const Byte = Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 255 }))
+
 class ByteObject extends Schema.Class<ByteObject>("ByteObject")({
   id: Schema.NonEmptyString,
-  bytes: Schema.Array(Schema.Number)
+  bytes: Schema.Array(Byte)
 }) {}
 
 class ArtifactEntry extends Schema.Class<ArtifactEntry>("ArtifactEntry")({
@@ -172,6 +174,16 @@ const program = Effect.gen(function*() {
   if (invalid._tag !== "InvalidBundle") {
     return yield* Effect.die("nested missing object did not fail at load")
   }
+
+  for (const invalidByte of [256, 1.5]) {
+    const invalidBytes = yield* Effect.flip(Bundle.load({
+      ...valid,
+      objects: [{ ...valid.objects[0], bytes: [invalidByte] }]
+    }))
+    if (invalidBytes._tag !== "InvalidBundle") {
+      return yield* Effect.die(`invalid byte ${invalidByte} did not fail at load`)
+    }
+  }
 })
 
-void Effect.runPromise(program)
+await Effect.runPromise(program)

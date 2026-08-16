@@ -23,7 +23,16 @@ if (!/^4\.0\.0-(?:beta\.\d+|rc\.\d+)$/u.test(effectVersion)) {
   throw new Error(`unsupported candidate syntax: ${effectVersion}`)
 }
 
-const ignoredComponents = new Set([".git", ".probe", "node_modules", "dist", ".release"])
+const ignoredComponents = new Set([
+  ".agent-sources",
+  ".cache",
+  ".git",
+  ".probe",
+  ".release",
+  ".repos",
+  "dist",
+  "node_modules"
+])
 const shouldCopyTsRelease = (source) => {
   const path = relative(repository, source)
   if (path === "") return true
@@ -32,8 +41,21 @@ const shouldCopyTsRelease = (source) => {
 const shouldCopyEffectBuild = (source) => {
   const path = relative(effectBuildInput, source)
   if (path === "") return true
-  return !path.split(sep).some((component) => new Set([".git", "node_modules", "dist", "outputs", "work"]).has(component))
+  return !path.split(sep).some((component) =>
+    new Set([".agent-sources", ".cache", ".git", "node_modules", "dist", "outputs", "work"]).has(component)
+  )
 }
+
+const alignedEffectPackages = new Set([
+  "effect",
+  "@effect/platform-bun",
+  "@effect/platform-deno",
+  "@effect/platform-node",
+  "@effect/platform-node-shared"
+])
+
+const isLocalDependency = (value) =>
+  typeof value === "string" && /^(?:file|link|portal|workspace):/u.test(value)
 
 const packageFiles = (root) => {
   const found = []
@@ -58,7 +80,7 @@ const rewriteEffectFamily = (root, options) => {
       const section = manifest[sectionName]
       if (section === undefined) continue
       for (const dependency of Object.keys(section)) {
-        if (dependency === "effect" || dependency.startsWith("@effect/")) {
+        if (alignedEffectPackages.has(dependency) && !isLocalDependency(section[dependency])) {
           section[dependency] = effectVersion
           rewrites += 1
         }
@@ -66,11 +88,18 @@ const rewriteEffectFamily = (root, options) => {
     }
     if (manifest.overrides && typeof manifest.overrides === "object") {
       for (const dependency of Object.keys(manifest.overrides)) {
-        if (dependency === "effect" || dependency.startsWith("@effect/")) {
+        if (alignedEffectPackages.has(dependency) && !isLocalDependency(manifest.overrides[dependency])) {
           manifest.overrides[dependency] = effectVersion
           rewrites += 1
         }
       }
+    }
+    if (options.platformNodeSharedOverride && path === join(root, "package.json")) {
+      manifest.overrides = {
+        ...(manifest.overrides ?? {}),
+        "@effect/platform-node-shared": effectVersion
+      }
+      rewrites += 1
     }
     writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`)
   }
@@ -84,18 +113,25 @@ const removeLocks = (root) => {
   }
 }
 
-const phases = []
+const attemptedPhases = []
+const completedPhases = []
+let failedPhase
 const run = (phase, cwd, command, args) => {
-  phases.push(phase)
+  attemptedPhases.push(phase)
   const result = spawnSync(command, args, {
     cwd,
     env: { ...process.env, BUN_INSTALL_CACHE_DIR: join(temporaryRoot, "bun-cache") },
     stdio: "inherit"
   })
-  if (result.error) throw new Error(`${phase}: ${result.error.message}`)
+  if (result.error) {
+    failedPhase = phase
+    throw new Error(`${phase}: ${result.error.message}`)
+  }
   if (result.status !== 0) {
+    failedPhase = phase
     throw new Error(`${phase}: ${command} ${args.join(" ")} exited ${result.status}${result.signal ? ` (${result.signal})` : ""}`)
   }
+  completedPhases.push(phase)
 }
 
 const shippedManifest = JSON.parse(readFileSync(join(repository, "package.json"), "utf8"))
@@ -111,8 +147,14 @@ try {
   cpSync(repository, tsReleaseCopy, { recursive: true, filter: shouldCopyTsRelease })
   cpSync(effectBuildInput, effectBuildCopy, { recursive: true, filter: shouldCopyEffectBuild })
 
-  const tsReleaseRewrites = rewriteEffectFamily(tsReleaseCopy, { rewritePeers: true })
-  const effectBuildRewrites = rewriteEffectFamily(effectBuildCopy, { rewritePeers: false })
+  const tsReleaseRewrites = rewriteEffectFamily(tsReleaseCopy, {
+    rewritePeers: true,
+    platformNodeSharedOverride: false
+  })
+  const effectBuildRewrites = rewriteEffectFamily(effectBuildCopy, {
+    rewritePeers: false,
+    platformNodeSharedOverride: true
+  })
   removeLocks(tsReleaseCopy)
   removeLocks(effectBuildCopy)
 
@@ -156,8 +198,9 @@ try {
     shippedManifestsInstallCompatible: false,
     tsReleaseEffectReferencesRewritten: tsReleaseRewrites,
     effectBuildDevelopmentReferencesRewritten: effectBuildRewrites,
-    compatible: true,
-    completedPhases: phases
+    fullGatePassed: true,
+    attemptedPhases,
+    completedPhases
   }
 } catch (error) {
   result = {
@@ -166,8 +209,10 @@ try {
     shippedEffect,
     effectBuildPeer,
     shippedManifestsInstallCompatible: false,
-    compatible: false,
-    failedAfterPhases: phases,
+    fullGatePassed: false,
+    attemptedPhases,
+    completedPhases,
+    failedPhase,
     error: error instanceof Error ? error.message : String(error)
   }
 } finally {
@@ -175,6 +220,6 @@ try {
 }
 
 console.log(`EFFECT_ALIGNMENT_RESULT=${JSON.stringify(result)}`)
-if (process.env.REQUIRE_EFFECT_ALIGNMENT === "1" && !result.compatible) {
+if (process.env.REQUIRE_EFFECT_ALIGNMENT === "1" && !result.fullGatePassed) {
   process.exitCode = 1
 }

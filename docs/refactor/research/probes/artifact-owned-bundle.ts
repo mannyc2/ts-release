@@ -5,6 +5,8 @@
 // finalization, duplicate rejection, private construction, and a decode/load
 // boundary without ambient reader/writer services?
 
+import { createHash } from "node:crypto"
+
 declare const artifactIdBrand: unique symbol
 declare const objectIdBrand: unique symbol
 declare const bundleIdBrand: unique symbol
@@ -58,13 +60,8 @@ type Result<A, E> =
 const success = <A>(value: A): Result<A, never> => ({ _tag: "Success", value })
 const failure = <E>(error: E): Result<never, E> => ({ _tag: "Failure", error })
 
-const hex = (bytes: Uint8Array): string =>
-  Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
-
-const sha256 = async (bytes: Uint8Array): Promise<`sha256-${string}`> => {
-  const digest = await crypto.subtle.digest("SHA-256", bytes)
-  return `sha256-${hex(new Uint8Array(digest))}`
-}
+const sha256 = async (bytes: Uint8Array): Promise<`sha256-${string}`> =>
+  `sha256-${createHash("sha256").update(bytes).digest("hex")}`
 
 const utf8 = (value: string): Uint8Array => new TextEncoder().encode(value)
 

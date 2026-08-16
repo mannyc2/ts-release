@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -b core provider cli",
     "test:clean": "node scripts/test-clean-consumer.mjs",
-    "test:standalone": "node scripts/test-standalone-loader.mjs"
+    "probe:standalone:informational": "node scripts/test-standalone-loader.mjs"
   },
   "devDependencies": {
     "@effect/platform-node": "4.0.0-rc.109",

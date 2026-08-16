@@ -1,8 +1,13 @@
 // Disposable research probe. Not production API.
 //
 // Question: can bundle decoding and artifact resolution report typed Effect
-// failures while keeping construction private and validating nested references
-// once at the load boundary?
+// failures while keeping the constructor private and validating nested
+// references once at a load boundary?
+//
+// Narrow result only: this in-memory probe demonstrates Schema decoding,
+// duplicate/missing-entry validation, copied byte reads, and typed lookup
+// failures. It does not derive or verify the manifest's bundle identity, bind a
+// relative reference structurally to a bundle, or exercise durable storage.
 
 import { Effect, Schema } from "effect"
 
@@ -93,35 +98,31 @@ class Bundle {
     return new Bundle(manifest.id, artifacts, objects)
   })
 
-  resolveRelative = Effect.fn("ArtifactProbe.Bundle.resolveRelative")(
-    function*(ref: RelativeArtifactRef): Effect.fn.Return<LogicalFile, MissingArtifact> {
-      const artifact = this.artifacts.get(ref.artifactId)
-      if (artifact === undefined) {
-        return yield* new MissingArtifact({ artifactId: ref.artifactId })
-      }
-      const bytes = this.objects.get(artifact.objectId)
-      if (bytes === undefined) {
-        return yield* Effect.die(`validated object disappeared: ${artifact.objectId}`)
-      }
-      return {
-        name: artifact.name,
-        mediaType: artifact.mediaType,
-        bytes: Uint8Array.from(bytes)
-      }
-    }.bind(this)
-  )
+  resolveRelative(ref: RelativeArtifactRef): Effect.Effect<LogicalFile, MissingArtifact> {
+    const artifact = this.artifacts.get(ref.artifactId)
+    if (artifact === undefined) {
+      return Effect.fail(new MissingArtifact({ artifactId: ref.artifactId }))
+    }
+    const bytes = this.objects.get(artifact.objectId)
+    if (bytes === undefined) {
+      return Effect.die(`validated object disappeared: ${artifact.objectId}`)
+    }
+    return Effect.succeed({
+      name: artifact.name,
+      mediaType: artifact.mediaType,
+      bytes: Uint8Array.from(bytes)
+    })
+  }
 
-  resolveQualified = Effect.fn("ArtifactProbe.Bundle.resolveQualified")(
-    function*(ref: QualifiedArtifactRef): Effect.fn.Return<LogicalFile, WrongBundle | MissingArtifact> {
-      if (ref.bundleId !== this.id) {
-        return yield* new WrongBundle({
-          expectedBundleId: this.id,
-          observedBundleId: ref.bundleId
-        })
-      }
-      return yield* this.resolveRelative(ref)
-    }.bind(this)
-  )
+  resolveQualified(ref: QualifiedArtifactRef): Effect.Effect<LogicalFile, WrongBundle | MissingArtifact> {
+    if (ref.bundleId !== this.id) {
+      return Effect.fail(new WrongBundle({
+        expectedBundleId: this.id,
+        observedBundleId: ref.bundleId
+      }))
+    }
+    return this.resolveRelative(ref)
+  }
 }
 
 const valid = {

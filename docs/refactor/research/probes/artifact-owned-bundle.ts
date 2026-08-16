@@ -1,11 +1,27 @@
 // Disposable research probe. Not production API.
 //
-// Question: what is the smallest explicit BundleDraft -> Bundle candidate that
-// establishes owned bytes, content-derived identities, deterministic repeated
-// finalization, duplicate rejection, private construction, and a decode/load
-// boundary without ambient reader/writer services?
+// Question: what can a small explicit BundleDraft -> Bundle candidate establish
+// without ambient reader/writer services?
+//
+// Narrow positive results exercised below:
+// - ingestion copies caller-owned bytes;
+// - byte-object identities are derived from copied content;
+// - duplicate logical artifact IDs are rejected;
+// - a persistent draft can be finalized repeatedly with the same result;
+// - divergent persistent drafts derive different bundle identities;
+// - decoded object bytes are rehashed and duplicate/missing entries rejected;
+// - provider-facing reads return copied bytes.
+//
+// Important limitations deliberately retained:
+// - Bundle.fromValidated is public and can bypass decode-time validation;
+// - canonical ordering is code-unit ordering, but identity still uses ad hoc JSON;
+// - the bundle hash is not domain-separated or version-prefixed;
+// - identity includes object IDs and sizes, not a formally specified encoding;
+// - no filesystem/object-store load boundary, streaming, or atomic manifest commit
+//   is exercised;
+// - an impossible SHA-256 collision/corrupt table is still a thrown defect.
 
-import { createHash } from "node:crypto"
+const subtle = globalThis.crypto.subtle
 
 declare const artifactIdBrand: unique symbol
 declare const objectIdBrand: unique symbol
@@ -60,16 +76,20 @@ type Result<A, E> =
 const success = <A>(value: A): Result<A, never> => ({ _tag: "Success", value })
 const failure = <E>(error: E): Result<never, E> => ({ _tag: "Failure", error })
 
-const sha256 = async (bytes: Uint8Array): Promise<`sha256-${string}`> =>
-  `sha256-${createHash("sha256").update(bytes).digest("hex")}`
+const sha256 = async (bytes: Uint8Array): Promise<`sha256-${string}`> => {
+  const owned = Uint8Array.from(bytes)
+  const digest = new Uint8Array(await subtle.digest("SHA-256", owned.buffer))
+  return `sha256-${[...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`
+}
 
-const utf8 = (value: string): Uint8Array => new TextEncoder().encode(value)
+const compareCodeUnits = (left: string, right: string): number =>
+  left < right ? -1 : left > right ? 1 : 0
 
 const canonicalArtifacts = (entries: ReadonlyMap<ArtifactId, ArtifactEntry>): ReadonlyArray<ArtifactEntry> =>
-  [...entries.values()].sort((left, right) => left.id.localeCompare(right.id))
+  [...entries.values()].sort((left, right) => compareCodeUnits(left.id, right.id))
 
 const canonicalObjects = (objects: ReadonlyMap<ObjectId, Uint8Array>): ReadonlyArray<readonly [ObjectId, Uint8Array]> =>
-  [...objects.entries()].sort(([left], [right]) => left.localeCompare(right))
+  [...objects.entries()].sort(([left], [right]) => compareCodeUnits(left, right))
 
 const bundleIdentityInput = (
   entries: ReadonlyMap<ArtifactId, ArtifactEntry>,
@@ -139,6 +159,8 @@ class Bundle {
     private readonly objects: ReadonlyMap<ObjectId, Uint8Array>
   ) {}
 
+  // LIMITATION: this public constructor surrogate is intentionally left visible
+  // so the document cannot claim that validated construction is unforgeable.
   static fromValidated(
     id: BundleId,
     entries: ReadonlyMap<ArtifactId, ArtifactEntry>,

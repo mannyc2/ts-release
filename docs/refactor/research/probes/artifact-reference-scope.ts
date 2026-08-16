@@ -1,5 +1,9 @@
 // Disposable research probe. Not production API.
 // Question: when does bundle identity belong in every artifact reference?
+//
+// This file illustrates two encodings only. A RelativeArtifactRef is not
+// structurally tied to a Bundle. The relative-reference law would be satisfied
+// only after load-time resolution creates a bundle-bound handle/capability.
 
 declare const bundleIdBrand: unique symbol
 declare const artifactIdBrand: unique symbol
@@ -71,16 +75,16 @@ const resolveQualified = (
     : { _tag: "Failure", error: new MissingArtifact(ref.artifactId) }
 }
 
-// Relative law: a durable output is valid only inside the one envelope that
-// carries its owning BundleId. Bundle identity is represented once. Extracting
-// and transporting a ref independently loses wrong-bundle detection.
+// Relative encoding: bundle identity is represented once in an envelope. A
+// reference extracted from that envelope is just an ArtifactId and can be used
+// with the wrong Bundle unless the loader resolves it to a bundle-bound handle.
 const relativeEnvelope: BoundOutput<RelativeOutput> = {
   bundleId: "bundle-a" as BundleId,
   value: { executables: ["cli" as ArtifactId] }
 }
 
-// Qualified law: every ref is independently portable and can reject use with a
-// different bundle. The cost is repeated bundle identity in nested output.
+// Qualified encoding: each reference remains independently checkable, at the
+// cost of repeating bundle identity throughout nested output.
 const qualifiedOutput: QualifiedOutput = {
   executables: [{
     bundleId: "bundle-a" as BundleId,

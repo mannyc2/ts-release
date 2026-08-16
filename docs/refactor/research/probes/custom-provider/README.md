@@ -1,23 +1,25 @@
 # Custom-provider clean-consumer probe
 
-This is a disposable research fixture, not a proposed release API.
+This is a disposable research fixture, not a ts-release provider API.
 
-It tests one narrow architecture claim at Effect `4.0.0-rc.109`:
+The clean Node consumer proves only this boundary at Effect `4.0.0-rc.109`:
 
-1. a small core package contains no provider list or registration mechanism;
-2. a separately packed package defines its own client service, `make`, `layer`,
-   `layerConfig`, provider-local receipt, and publication Effect;
-3. a separately packed Node CLI dynamically imports a consumer-owned module;
-4. a clean temporary project installs all three tarballs and runs a publication
-   the CLI could not have known when it was built.
+1. a packed core fixture has no knowledge of the outside package;
+2. a separately packed outside package owns a concrete service, Layer, receipt,
+   and publication Effect;
+3. a packed Node CLI dynamically imports a consumer-owned module; and
+4. that module has already supplied its own Layer and closed the Effect's
+   requirements before the CLI executes it.
 
-This proves ordinary package/TypeScript/Layer composition. It does **not** prove
-that a Bun/Node SEA or other single-file standalone executable preserves a host
-module loader. Such a distribution would additionally need a documented module
-loading boundary, filesystem access, package resolution in the consumer
-project, and a security/trust policy for executing arbitrary code.
+The CLI therefore receives an `Effect<unknown, unknown, never>`. The probe does
+not establish integration with a ts-release publication-provider contract,
+durable preparation, typed CLI reporting, more than one provider, dependency
+ordering, partial-success recovery, or resumability.
 
-`test:standalone` records a separate Bun standalone result without treating
-success as required. The research question is whether the packaging format
-preserves the consumer-side loader, not whether providers should join an
-allowlist when it does not.
+The separately named `probe:standalone:informational` experiment compiles the
+CLI to one Bun executable and records whether that executable can load a
+provider installed only in the consumer project. Its JSON result includes the
+actual `loadedUnknownProvider` boolean. The command is informational by default:
+a green workflow step means the experiment ran, not that the capability exists.
+Set `REQUIRE_STANDALONE_UNKNOWN_PROVIDER=1` only in a future acceptance gate
+that deliberately chooses this capability as required.

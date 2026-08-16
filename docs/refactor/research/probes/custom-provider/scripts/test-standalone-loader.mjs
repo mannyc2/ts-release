@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process"
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 
@@ -52,6 +52,8 @@ export default Outside.publish(makeArtifact({
     encoding: "utf8"
   })
   const result = {
+    classification: "informational",
+    capability: "prebuilt-single-file-cli-loads-consumer-installed-provider",
     status: run.status,
     signal: run.signal,
     stdout: run.stdout.trim(),
@@ -60,8 +62,15 @@ export default Outside.publish(makeArtifact({
   }
   console.log(JSON.stringify(result, null, 2))
 
-  const report = readFileSync(join(root, "README.md"), "utf8")
-  if (!report.includes("standalone")) throw new Error("README must state the standalone boundary")
+  if (result.loadedUnknownProvider) {
+    console.error("INFORMATIONAL RESULT: the compiled executable loaded the consumer-installed provider in this environment")
+  } else {
+    console.error("INFORMATIONAL LIMITATION: the compiled executable did not load the consumer-installed provider")
+  }
+
+  if (process.env.REQUIRE_STANDALONE_UNKNOWN_PROVIDER === "1" && !result.loadedUnknownProvider) {
+    throw new Error("standalone executable did not load the consumer-installed provider")
+  }
 } finally {
   rmSync(consumer, { recursive: true, force: true })
   rmSync(output, { force: true })

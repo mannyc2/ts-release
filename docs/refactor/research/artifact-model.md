@@ -1,231 +1,330 @@
 # Artifact model
 
-Status: active research. Separate `ArtifactReader` and `ArtifactWriter` services are hypotheses, not accepted architecture.
+Status: recovered research checkpoint. No root artifact API is selected.
 
-## Requirements
+This document separates facts demonstrated by disposable probes from laws that
+would still have to be implemented and tested. The probes are not production
+code and are not evidence that a release store, archive format, or public API
+has been selected.
 
-The model must establish all of the following:
+## Required laws
 
-- generated output becomes release-owned immutable content rather than a mutable workspace path;
-- durable output identifies the exact content used by publication;
-- references resolve against the correct bundle;
-- missing or changed content fails once at the load boundary;
-- private storage paths cannot escape into npm, GitHub, commands, or other providers;
-- integrations can obtain bytes, streams, or a scoped logical filename when necessary;
-- finalization prevents further ingestion;
-- zero, one, and many artifacts require no mode;
-- two logical artifacts may share bytes without sharing domain meaning.
+Any later artifact model must satisfy these laws independently of its syntax:
 
-## Terminology
+1. **Owned bytes.** After ingestion, later mutation of caller-owned memory or a
+   workspace file cannot change the bytes used by publication.
+2. **Content identity.** A content identifier is derived from, or checked
+   against, the bytes it names. The identity format is versioned and domain
+   separated.
+3. **Logical identity.** Duplicate logical artifact identifiers are rejected;
+   no map insertion may silently replace an earlier artifact.
+4. **Bundle identity.** A finalized bundle identity changes when its canonical
+   manifest or referenced bytes change. Canonicalization is deterministic
+   across hosts and locales.
+5. **Construction boundary.** Callers cannot construct a trusted finalized
+   bundle merely by asserting that unvalidated maps and identities are valid.
+6. **Load boundary.** Schema decoding, content checks, duplicate checks, and
+   reference checks happen before provider work and return typed failures.
+7. **Finalization.** A finalized value exposes no ingestion operation. If a
+   mutable draft design is used, an aliased pre-finalization handle must also be
+   closed at runtime after finalization.
+8. **Reference ownership.** A durable reference can be resolved only by its
+   owning bundle. A relative reference becomes safe only after load-time
+   resolution into a bundle-bound value or handle.
+9. **Path privacy.** A provider sees a logical name and bytes, stream, or scoped
+   materialization. It does not receive a private content-store path.
+10. **Cardinality.** Zero, one, and many artifacts are ordinary collections.
+    Multiplicity is not a feature flag.
+11. **Shared content.** Two logical artifacts may share the same immutable byte
+    object without sharing logical identity or meaning.
 
-- **Content identity**: digest and size of immutable bytes.
-- **Logical artifact identity**: the domain-specific role/name assigned to content.
-- **Bundle identity**: identity of the finalized collection against which references resolve.
-- **Private storage location**: backend path/key used to store bytes; it is not provider input.
-- **Logical file**: a scoped presentation of bytes with a provider-appropriate filename, without revealing private storage layout.
+## What the original probe actually establishes
 
-## Candidate A: ambient `ArtifactReader` and `ArtifactWriter` services
+`probes/artifact-finalization.ts` is intentionally a counterexample-rich type
+probe. Its returned Bundle type has no add method. It also shows that a
+provider-facing `LogicalFile` type can expose a logical name, media type, and
+bytes without exposing a private storage path.
 
-Sketch:
+Those are the only positive conclusions established by that probe. In
+particular, the probe also demonstrates why the stronger sentence
+"write-after-finalization is unrepresentable" was not justified:
 
-```ts
-const artifact = yield* ArtifactWriter.add(input)
-const bytes = yield* ArtifactReader.bytes(artifact.ref)
+- a retained persistent draft can be finalized repeatedly;
+- two finalizations can use the same caller-supplied bundle ID while containing
+  different logical artifacts;
+- input and output `Uint8Array` values alias internal storage;
+- the byte-object ID is supplied by the caller rather than derived or checked;
+- duplicate artifact and byte-object IDs overwrite entries;
+- `Bundle` has a public constructor; and
+- missing and wrong-bundle lookups throw generic `Error` values outside the
+  Effect error channel.
+
+The narrower result is therefore:
+
+> The static type of one returned value can omit `add`, and one provider-facing
+> projection can omit a private path. The probe does not establish immutable
+> ownership, trustworthy identity, unique finalization, private construction,
+> or typed load failures.
+
+## Probe results and remaining counterexamples
+
+### Owned-bundle probe
+
+`probes/artifact-owned-bundle.ts` tests a persistent immutable draft candidate.
+It currently demonstrates, within one in-memory process:
+
+- ingestion copies caller-owned bytes;
+- object IDs are derived from SHA-256 bytes;
+- duplicate logical artifact IDs return a typed result;
+- two logical artifacts can share one content object;
+- repeated finalization of the same persistent value is deterministic in the
+  tested process;
+- divergent persistent drafts produce different bundle IDs in the tested
+  examples;
+- resolved bytes are copied before being returned;
+- encoding and decoding reject missing objects, duplicate IDs, changed object
+  bytes, and a mismatched bundle identity.
+
+It does **not** establish a production bundle law. Important counterexamples and
+limitations remain visible in the file:
+
+- `Bundle.fromValidated` is public and accepts a claimed trusted state;
+- bundle identity uses ad hoc JSON encoding rather than a specified canonical
+  binary or text encoding;
+- code-unit sorting avoids locale dependence but is not yet a versioned
+  canonicalization specification;
+- the bundle hash is not domain separated from object hashes and its identity
+  input has no explicit hash-domain version;
+- the manifest identity includes object IDs and sizes but not an independently
+  specified serialization of every manifest field;
+- the SHA-256 collision or corrupted-map branch is an unchecked defect;
+- no filesystem, object-store, streaming, crash, atomic-manifest, symlink, or
+  archive extraction law is tested; and
+- a persistent draft may be finalized more than once by design. This is lawful
+  only if finalization means deterministic construction, not one-shot closure.
+
+The probe compiles and runs, but that proves only its executable assertions.
+
+### Effect load-boundary probe
+
+`probes/artifact-schema-load.ts` tests private construction and typed Effect
+failures at a load boundary. It demonstrates that a decoded bundle can reject
+malformed manifests, duplicate artifact/object IDs, missing objects, missing
+artifacts, and a qualified wrong-bundle lookup without generic throws. It also
+copies bytes on load and on resolution.
+
+Its limits are deliberate:
+
+- manifest and object IDs are strings supplied by the fixture, not derived;
+- a bundle ID is not checked against manifest or byte content;
+- it validates one in-memory shape, not a durable backend;
+- the relative resolver is safe only because the caller already has a loaded
+  `Bundle`; and
+- it does not prove one traversal can discover arbitrary nested references in a
+  caller-defined output Schema.
+
+### Reference-scope probe
+
+`probes/artifact-reference-scope.ts` compares two representations:
+
+```text
+BoundOutput { bundleId, value containing relative artifact IDs }
+QualifiedArtifactRef { bundleId, artifactId }
 ```
 
-Analysis:
+The probe illustrates the representation tradeoff. A relative reference is not structurally tied
+to its bundle and can be copied out of the envelope. The
+strong relative-reference law would require load-time resolution into a
+bundle-bound handle or value whose constructor is private. A globally qualified
+reference carries duplicate bundle identity but preserves wrong-bundle checking
+when transported independently.
 
-| Property | Assessment |
-| --- | --- |
-| Canonical representation | Reference plus ambient active store/bundle |
-| Bundle identity | Usually implicit in the Effect environment |
-| Invalid states removed | Can separate read-capable and write-capable programs at the requirement level |
-| Write after finalization | Not structurally impossible if a writer service value remains available; generally a checked failure |
-| Backend assumptions | Can abstract filesystem/object storage |
-| Effect requirements | Every operation carries ambient service requirements |
-| Serialization | References need a loading/decoding service or later validation pass |
-| Public API/LOC | Two services, constructors, Layers, errors, and store lifecycle |
+The probe therefore does not choose relative references. It identifies the law
+that a relative design must add.
 
-Early concern: this split is not a filesystem permission boundary, cannot stop arbitrary code using `FileSystem`, makes wrong-bundle resolution easier to hide, and can represent a writer after finalization.
+## Small candidates still under consideration
 
-## Candidate B: `BundleDraft.add(...) -> finalize -> Bundle`
+The LOC figures below are research-probe LOC, not production estimates. They
+make the comparison concrete without pretending that backend, Schema, tests,
+streaming, and migration code are free.
 
-Sketch:
+| Candidate | Probe basis | Probe LOC | Core law | Counterexample that disqualifies an implementation |
+| --- | --- | ---: | --- | --- |
+| Direct immutable build | `artifact-owned-bundle.ts` without an exposed draft | 335 total in current combined probe | Ingest all declared inputs, copy/hash them, validate duplicates, then privately construct one Bundle. | Constructor accepts caller IDs or mutable byte aliases. |
+| Persistent immutable draft | `artifact-owned-bundle.ts` | 335 | `add` returns a new value; any retained earlier value remains valid but cannot mutate later values; finalization is deterministic for a draft value. | Internal maps/bytes are shared mutably, or divergent contents can retain one bundle identity. |
+| Runtime-closed mutable draft | Original type transition plus a closed-state check; no complete probe yet | estimated 120-180 for only the in-memory kernel | First successful finalization atomically closes every alias to the shared mutable state; later add/finalize calls fail with typed `DraftClosed`. | An old alias continues to ingest or finalizes a divergent bundle after closure. |
+| Bundle-bound resolved handle | `artifact-schema-load.ts` plus a private handle constructor | 177 in the current load probe | Load resolves a relative ID against exactly one Bundle and returns a handle that cannot be rebound. | A plain relative ID escapes and is resolved against whichever bundle is later supplied. |
+| Globally qualified durable ref | `artifact-reference-scope.ts` | 95 | Every independently transportable reference names both bundle and artifact and is checked at load/use. | Decoder accepts a ref whose bundle ID differs from the enclosing durable record without rejecting it. |
+
+These candidates can be combined. For example, a persistent immutable draft can
+finalize into a Bundle whose decoded output contains bundle-bound handles. The
+point of the table is to keep the decisions separate:
+
+- draft mutability/lifetime;
+- durable identity and canonical encoding;
+- durable reference qualification; and
+- runtime provider-facing access.
+
+## Candidate laws in more detail
+
+### Candidate A: direct immutable build
+
+Shape:
 
 ```ts
-const draft = yield* BundleDraft.make(options)
-const executable = yield* draft.add({
-  name: "tool-linux-x64",
-  source
-})
-const bundle = yield* draft.finalize(outputSchema, output)
+Bundle.build({ artifacts, outputSchema, output })
 ```
 
-After `finalize`, callers receive a different type with no `add` method.
+Required laws:
 
-Analysis:
+- input enumeration finishes before the Bundle exists;
+- duplicate logical IDs fail before any trusted Bundle is returned;
+- bytes are copied or transferred into release ownership;
+- object identity is derived from the owned bytes;
+- bundle identity is derived from one documented canonical manifest format;
+- construction is private outside the validating function; and
+- build failure returns typed errors without exposing a partially trusted
+  Bundle.
 
-| Property | Assessment |
-| --- | --- |
-| Canonical representation | Explicit draft state, finalized manifest, content objects, and output value |
-| Bundle identity | Explicit on finalized `Bundle` and references |
-| Invalid states removed | Write-after-finalization can be absent from the type surface; output/reference validation occurs during finalization/load |
-| Filesystem/object storage | Draft implementation can stream to a backend; finalized Bundle can use a backend-neutral resolver |
-| Effect requirements | Construction/finalization may require platform services; ordinary reads can be methods/functions on explicit values |
-| Serialization | Finalized manifest and output Schema provide one durable boundary |
-| Public API/LOC | Potentially smaller than two ambient services if state transition and storage backend are kept narrow |
+This is the smallest state space when callers can enumerate all artifacts at
+once. Counterexample: a compiler that discovers output incrementally and must
+stream large files would need buffering or another builder protocol.
 
-Open question: TypeScript values can be retained or aliased before finalization. The implementation must ensure that an old draft handle cannot continue mutating after finalization; type-level absence alone is insufficient if the same mutable object escapes.
+### Candidate B: persistent immutable draft
 
-## Candidate C: immutable resolved artifact handles
-
-Sketch:
+Shape:
 
 ```ts
-const handle = bundle.resolve(ref)
-const stream = handle.stream
-const path = yield* handle.materialize({ name: "tool.exe" })
+const next = yield* Draft.add(previous, input)
+const bundle = yield* Draft.finalize(next, schema, output)
 ```
 
-Analysis:
+Required laws:
 
-- bundle identity can be captured by the handle, eliminating repeated `(bundle, ref)` pairing;
-- a handle can expose logical identity, size, digest, bytes/stream, and scoped logical-file materialization;
-- provider code receives no private content-addressed path;
-- handles are process-local and should not be serialized; durable state serializes references and resolves them once at load;
-- backend substitutability is possible if handle operations close over a backend-neutral byte source;
-- a handle can accidentally become too powerful if it exposes both storage internals and provider presentation.
+- `add` never mutates `previous`;
+- every draft owns or immutably shares content objects;
+- repeated finalization of one value returns the same identity and bytes;
+- finalizing an earlier retained value is legal and produces the earlier
+  content, not a conflicting bundle with a shared claimed ID; and
+- IDs are derived, never assigned to make two drafts appear identical.
 
-This candidate composes naturally with Candidate B: load/finalize returns an immutable Bundle whose `resolve` operation produces handles.
+This model avoids a runtime closed-state but does not make finalization one-shot.
+That is not a defect if the public law is deterministic immutable construction.
+Counterexample: claiming "no finalization after finalization" while exposing
+persistent earlier values would be a false law.
 
-## Candidate D: direct module functions accepting `(bundle, ref)`
+### Candidate C: runtime-closed mutable draft
 
-Sketch:
+Shape:
 
 ```ts
-const bytes = Bundle.bytes(bundle, ref)
-const stream = Bundle.stream(bundle, ref)
+const draft = yield* Draft.make()
+yield* draft.add(input)
+const bundle = yield* draft.finalize(schema, output)
 ```
 
-Analysis:
+Required laws:
 
-- bundle identity is explicit at every call;
-- wrong-bundle errors are visible rather than ambient;
-- no new Effect services are required;
-- easiest to make backend-neutral when Bundle is an explicit capability value;
-- more repetitive than a resolved handle;
-- public API can remain very small;
-- nested output structures still require one load-boundary reference validation pass.
+- aliases share one internal state machine;
+- the state transition from Open to Finalized is atomic;
+- all mutation methods check the shared state;
+- finalization publishes no trusted value until manifest/content validation
+  finishes;
+- a failed finalization has an explicitly chosen retry/closed law; and
+- cancellation cannot leave a trusted manifest pointing at incomplete bytes.
 
-## Candidate E: capability-bearing `ArtifactRef<BundleId>`
+This model can support streaming and incremental discovery with fewer copied
+maps. It relies on runtime state, not TypeScript linearity. Counterexample: a
+method returning a `Bundle` type with no `add` while an old draft alias remains
+open does not satisfy the law.
 
-A type-level bundle parameter can reduce accidental cross-bundle use:
+## Construction and decoding boundary
+
+A production load operation would need a versioned format and a sequence at
+least as strong as:
+
+```text
+decode format/version
+-> validate canonical manifest shape and safe storage entries
+-> reject duplicate logical and object IDs
+-> load each referenced unique object
+-> derive/check digest and size
+-> validate every logical entry points at a present object
+-> decode typed output
+-> resolve every output reference against this Bundle
+-> construct Bundle and bundle-bound runtime values privately
+```
+
+A backend may defer reading large content until streaming, but then the load law
+must state what was checked eagerly and what typed read-integrity failure can
+still occur later. Saying "validated once" is only true if the backend prevents
+or detects later mutation.
+
+## Provider-facing values
+
+Provider code should not learn a private digest path. Small lawful projections
+include:
 
 ```ts
-interface ArtifactRef<BundleId> {
-  readonly bundle: BundleId
-  readonly logicalId: string
-  readonly content: ContentId
+interface LogicalFile {
+  readonly logicalName: string
+  readonly mediaType: string
+  readonly size: bigint
+  readonly bytes: Effect.Effect<Uint8Array, ArtifactReadError>
 }
 ```
 
-Limits:
-
-- branded generic IDs do not survive unknown JSON without decoding;
-- runtime bundle identity remains necessary;
-- compile-time brands do not prevent malicious or `any`-based construction;
-- useful as an additional state reduction, not as the only check.
-
-## Preliminary structural direction
-
-The smallest promising model is currently:
+or a scoped materialization:
 
 ```text
-BundleDraft
-  add logical artifacts and release-owned bytes
-  finalize output Schema/value
-      |
-      v
-immutable Bundle
-  explicit bundle identity
-  validated output
-  resolve(ref) -> immutable handle
-  scoped logical-file materialization
+materialize(logicalName)
+-> path basename equals the requested safe logical name
+-> bytes equal the bundle-bound content
+-> private store path is not returned
+-> temporary path is removed when Scope closes
 ```
 
-This is an **inference under test**, not a selected root API.
+Direct HTTP providers should normally consume bytes or streams. Command-based
+providers may need scoped materialization. This requirement does not by itself
+entail ambient `ArtifactReader` or `ArtifactWriter` services.
 
-The model would establish these laws:
+## Backend questions not proved
 
-1. A finalized Bundle has no ingestion operation.
-2. Every serialized reference names both its bundle and logical artifact.
-3. Loading validates manifest, content digest/size, and all output references once.
-4. A resolved handle belongs to exactly one loaded Bundle.
-5. Provider-facing materialization uses the logical filename, not the backend path.
-6. Logical artifacts and byte objects are separate: many logical artifacts may share one content identity.
-7. Zero/one/many is represented by ordinary output data and Schema.
+No current probe establishes these backend laws:
 
-## Boundary validation
+- atomic manifest commit after all objects are durable;
+- crash recovery during object ingestion;
+- immutable or integrity-checked object reads after load;
+- safe archive extraction and symlink handling;
+- content garbage collection and retention;
+- multipart upload recovery;
+- cross-machine bundle transfer;
+- CI artifact archive import;
+- object-store authorization boundaries; or
+- scoped temporary-file cleanup under interruption.
 
-Proposed load sequence for evaluation:
+A backend abstraction is justified only when two implementations satisfy the
+same externally visible ownership, identity, load, and failure laws. The
+existence of a filesystem and an object store does not by itself require two
+ambient public services.
 
-```text
-decode manifest and typed output
--> validate bundle identity and safe relative storage entries
--> load/inspect every referenced content object once
--> verify size and digest
--> validate every nested ArtifactRef against manifest and bundle ID
--> construct immutable Bundle and resolved output
-```
+## Remaining maintainer choices
 
-After the boundary, internal operations should carry trusted values. Rehashing the same owned bytes before every provider call would recreate the current verification inversion.
+The evidence is sufficient to frame, but not decide, these questions:
 
-## Scoped logical-file materialization
+1. Does the first implementation need incremental streaming construction, or
+   can it build one immutable Bundle from a complete artifact list?
+2. Is persistent immutable finalization acceptable, or is one-shot runtime
+   closure a product requirement?
+3. Are durable references globally qualified, or are they relative only inside
+   a decoded envelope that resolves immediately to bundle-bound handles?
+4. Which canonical encoding and domain-separated identity format is supported
+   and versioned?
+5. Which integrity checks are eager at load and which remain typed read-time
+   checks?
+6. Is artifact handoff an internal ts-release module first, or a separately
+   versioned generic library after a second adopter exists?
 
-Command integrations may require a path. The required law is:
-
-```text
-handle.materialize(logicalName)
-  -> scoped path whose basename is logicalName
-  -> bytes equal the handle content
-  -> path is removed when the scope closes
-  -> no private bundle path is returned or embedded in command arguments
-```
-
-Direct HTTP integrations should normally use bytes/streams and avoid materialization.
-
-## Backend comparison
-
-| Backend | Draft behavior | Finalized behavior |
-| --- | --- | --- |
-| Local filesystem | copy/hash into private temporary storage; atomic manifest finalization | immutable directory/archive or copied content objects |
-| Object storage | multipart/stream upload to temporary keys; commit manifest/root last | content-addressed or immutable objects referenced by manifest |
-| CI artifact archive | construct ordinary directory, archive after finalization | extract and validate once on another runner |
-| In-memory test | store bytes by content ID | deterministic fixture Bundle |
-
-A backend abstraction is coherent when implementations satisfy the same ownership, immutability, reference, and failure laws. It need not wait for an existing adopter to be architecturally valid; whether to build it separately now is a priority decision.
-
-## Generic-library test
-
-A generic artifact-handoff library would be coherent only if its public contract excludes release-specific concepts and is independently useful for:
-
-- build-to-deploy handoff;
-- generated-code bundles;
-- test-result or model artifact handoff;
-- offline packaging pipelines;
-- CI artifact transport.
-
-Honest generic failures would include unsafe path, duplicate logical identity, source read failure, content digest mismatch, missing content, wrong bundle, output decode failure, and finalized draft. Provider names, release coordinates, publication status, and credentials do not belong in that library.
-
-## Disposable compiling probe
-
-A small probe will be committed under `docs/refactor/research/probes/` to answer one question only: can the public type transition make `add` absent after finalization while keeping bundle identity explicit and allowing two logical artifacts to share content? It is not production code.
-
-## Remaining work
-
-- Run the probe against the repository's pinned Effect/TypeScript versions.
-- Compare Schema decoding service versus a private post-decode reference walk.
-- Estimate production LOC for all candidates using the same local and object-storage laws.
-- Exercise nested references in arrays, records, optional fields, and provider-owned Schema classes.
-- Test path privacy with a fake command provider and fake HTTP provider.
-- Determine whether a resolved handle should expose bytes, stream, and materialization directly or through small module functions.
+No root artifact API is selected. The next implementation step must wait for
+those choices and for a production-grade format/backend proof; this checkpoint
+contains neither.

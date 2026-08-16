@@ -34,11 +34,11 @@ try {
   ], { cwd: consumer, stdio: "inherit" })
 
   writeFileSync(join(consumer, "release.config.mjs"), `
-import { Artifact } from "@ts-release-research/core"
+import { makeArtifact } from "@ts-release-research/core"
 import * as Outside from "@outside/custom-publication-provider"
 import { Effect } from "effect"
 
-const artifact = new Artifact({
+const artifact = makeArtifact({
   id: "artifact-1",
   logicalName: "tool.bin",
   bytes: new Uint8Array([1, 2, 3, 4])

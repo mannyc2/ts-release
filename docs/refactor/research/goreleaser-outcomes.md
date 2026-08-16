@@ -1,139 +1,199 @@
 # GoReleaser-derived outcome roadmap
 
-Status: derived product roadmap. The complete 151-case evidence comparison is retained in the current branch as [goreleaser-evidence-census.md](./goreleaser-evidence-census.md). This document references census case IDs and gives every case a current outcome and disposition.
+Status: derived product roadmap. It is not the evidence authority by itself.
 
-## Two-document audit structure
+## Audit structure
 
-The comparison is intentionally split:
+- [goreleaser-evidence-census.md](./goreleaser-evidence-census.md) retains all 151 cases with separate GoReleaser, current ts-release, v0.0.7, and historical rewrite-proposal columns. Its `R` cells are traceability, not current product authority.
+- [goreleaser-material-evidence.md](./goreleaser-material-evidence.md) assigns current primary evidence and grades to material feature groups.
+- This document derives product outcomes and maps every census case to one evidence group and disposition.
 
-1. **Evidence census:** all 151 source cases with separate columns for GoReleaser, current ts-release, ts-release v0.0.7, and the rewrite proposal.
-2. **Derived roadmap:** user outcomes and product disposition, with census IDs as an auditable crosswalk.
+Older parity documents remain source-link indexes. Their dispositions are superseded where the current evidence census, material evidence, provider research, or fixed project scope is more specific.
 
-The roadmap does not replace the census. The census does not dictate product scope merely because a mechanism exists.
+## Fixed shipping scope
 
-## Evidence pins
-
-- Complete census and current ts-release comparison pin: `1e9efd717ff9d5dc2dbe5e079894cd8e92eb7ed3`.
-- ts-release v0.0.7 pin: `af59436cff908fb52773cf18dd95d154f892b8de`.
-- GoReleaser evidence pin retained by the census: `cab7c6ef5d4ffc2429828f031ff7bb4645de7dad`.
-- Additional current GoReleaser review pin used by the derived roadmap: [`92453c1dbdf592d227cb236600093a503f2351f3`](https://github.com/goreleaser/goreleaser/tree/92453c1dbdf592d227cb236600093a503f2351f3).
-
-## Fixed shipping rewrite scope
-
-The shipping rewrite includes:
+The rewrite ships:
 
 1. npm;
 2. PyPI/Warehouse;
-3. GitHub Releases and release assets;
+3. GitHub Releases and assets;
 4. Homebrew formulas;
 5. Scoop; and
 6. arbitrary custom providers.
 
-This list is fixed. The roadmap classifies other outcomes without reopening the shipping set.
+Homebrew casks are comparison evidence and later work, not part of this fixed scope.
 
 ## Outcome facets
 
-Every maintained outcome is evaluated independently for:
+| Code | Outcome |
+| --- | --- |
+| `A` | provider accepted the intended mutation |
+| `M` | public or authoritative metadata matches |
+| `B` | intended byte identity is observed |
+| `C` | a clean consumer discovers, installs, imports, downloads, or executes |
+| `J` | interruption continues without blind repetition |
 
-| Code | Facet | Question |
-| --- | --- | --- |
-| `A` | Provider acceptance | Did the provider accept the intended mutation or coordinate? |
-| `M` | Public or authoritative metadata | Does a fresh read show the intended metadata and pointers? |
-| `B` | Intended byte identity | Do provider-visible bytes or digests match the finalized bundle? |
-| `C` | Consumer behavior | Can a clean consumer discover, install, download, import, or execute the release? |
-| `J` | Continuation | Can response loss or process death continue without blind repetition? |
+A row can satisfy one facet while another remains `NotObserved`.
 
-One green outcome does not imply the others. Missing consumer evidence remains `NotObserved` and never causes provider replay.
+## Evidence environments
+
+```text
+compile
+in-process
+clean-consumer
+protocol-double
+scratch-provider
+public-provider
+end-user
+self-release
+```
+
+A green protocol double does not prove provider acceptance. A provider receipt does not prove clean consumer behavior.
 
 ## Shipping outcome roadmap
 
-| Outcome | Census cases | A | M | B | C | J | Product disposition |
+| Outcome | Evidence group / census | A | M | B | C | J | Disposition |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Finalized immutable release bundle and canonical plan | C006, C048, C053, P025 | n/a | canonical manifest | canonical digests | local readers | same bundle reused | Structural shipping behavior |
-| Native npm version and dist-tag publication | C071, P005 are contrast-only wrapper rows | version/tag receipts | registry version and tag facts | tarball integrity/shasum | clean install and import/CLI | per-Intent recovery | Shipping first-party built-in |
-| Native PyPI/Warehouse publication | C024-C025 are contrast-only builder rows | one receipt per file | Simple API file facts | filename/size/SHA-256 | clean install/import/CLI | partial per-file continuation | Shipping first-party built-in |
-| GitHub Releases and assets | C060-C061 | release and per-asset receipts | release/tag/asset reads | asset digest or downloaded bytes | public download/execute | lost-response reconciliation | Shipping first-party built-in |
-| Homebrew formulas | C085 | conditional tap ref receipt | formula path and ref | referenced archive checksums | `brew install` and smoke | conditional Git reconciliation | Shipping first-party built-in |
-| Scoop | C077 | conditional bucket ref receipt | manifest path and ref | URL/hash identity | clean Scoop install and smoke | conditional Git reconciliation | Shipping first-party built-in |
-| Arbitrary custom providers | C083; C066-C068 and C081-C082 are destination examples | provider-defined | provider-defined | provider-defined | provider-defined | provider-declared uncertainty laws | Shipping extension capability |
-| Non-manual ts-release self-release | Derived acceptance gate, not one census mechanism | all required receipts or equivalent observations | public metadata | public bytes match bundle | clean consumers run released ts-release | one interrupted coordinate continues | Decisive integrated gate |
+| immutable artifact bundle and canonical plan | G01, G03, G21 / C006, C032-C048, P025 | n/a | canonical manifest | content digests | local readers | same bundle reused | structural shipping behavior |
+| native npm publication | N01; G10 is contrast / C071, P005 | npmjs/compatible-registry receipt | version and initial/later tag facts | tarball integrity/shasum | clean install/import/bin | provider-specific replay or observation | shipping first-party built-in |
+| native Warehouse/PyPI publication | N02; G02 is contrast / C024-C025 | one receipt per file | Simple API file facts | filename/size/hash | clean install/import/bin | per-file partial continuation | shipping first-party built-in |
+| GitHub tag, release, and assets | G06 / C060-C061 | provider-native ref/release/asset receipts | complete reads | returned digest or downloaded bytes | public download/execute | lost-response reconciliation | shipping first-party built-in |
+| Homebrew formulas | G16 / C085 | conditional tap ref receipt | formula path/ref/rendered facts | referenced archive checksums | `brew install` and smoke | conditional Git replay/reconciliation | shipping first-party built-in |
+| Scoop | G12 / C077 | conditional bucket ref receipt | manifest path/ref | URL/hash identity | clean Scoop install and smoke | conditional Git replay/reconciliation | shipping first-party built-in |
+| arbitrary custom provider | G14 plus G08/G11 examples / C083 | provider-defined | optional | optional | release-policy-defined | honest capability-dependent continuation | shipping extension capability |
+| non-manual ts-release self-release | project decision | all required operations accepted or observed equivalent | public facts | public bytes equal bundle | clean consumers run ts-release | one injected interruption continues | decisive integrated gate |
 
-Native npm and native PyPI remain first-class ts-release outcomes even though GoReleaser's relevant rows describe wrapper packages and Python builders rather than native publication. The census records those differences instead of pretending feature equivalence.
+## Structural outcomes
 
-## Supporting and non-shipping outcomes
+| Outcome | Evidence groups | Why it falls out |
+| --- | --- | --- |
+| zero/one/many artifacts | G02-G03 | collections, not a mode |
+| multiple package or file coordinates | N01, N02 | provider-local arrays/maps |
+| prebuilt or external builders | G02 | any producer can supply owned bytes |
+| checksums as content facts | G04 | bundle objects already have digests |
+| per-coordinate continuation | G21 | plan Intents plus journal history |
+| custom provider participation | G14 | application-supplied provider definitions and Layers |
+| dependencies between provider outcomes | G01, G05 | canonical dependency edges and ordinary Effect composition |
 
-| Outcome | Census cases | Classification | Direction |
-| --- | --- | --- | --- |
-| Build matrices and language builders | C015-C031, P028 | Adjacent composition | effect-build or another producer returns owned outputs. |
-| Archives, installers, and system packages | C032-C047, P002-P003, P009, P016-P017, P029 | Adjacent or later provider-specific work | Produce artifacts outside the durable mutation kernel, then adopt them. |
-| SBOM, signing, notarization, and attestations | C052, C054-C057, C079, P006 | Adjacent composition | Carry artifacts and service receipts without universal signing APIs. |
-| Homebrew casks | C070, P014 | Later product work | Different renderer and consumer law; not part of formula shipping scope. |
-| Other feeds and release providers | C062-C063, C066-C069, C072-C076, C078, C081-C082, P010, P015, P030 | Custom provider or later built-in | Explicit provider implementation and endpoint laws required. |
-| Announcements and repository project management | C084, C087-C101, P019 | Intentionally outside core | Compose after durable release completion. |
-| CI hosts | C102-C115 | Evidence environment/integration | Run ts-release; do not become provider outcomes. |
+## Adjacent composition
 
-## Exhaustive census crosswalk
+| Outcome | Evidence group | Direction |
+| --- | --- | --- |
+| build matrices and language compilers | G02 | effect-build or another producer |
+| archives and source archives | G03 | build/transformation operation that returns artifacts |
+| system/install packages | G03 | producer packages; repository publication remains separate |
+| SBOMs, signatures, notarization, attestations | G04 | typed artifacts or external service receipts |
+| changelog/release note generation | G13 | finalized text can enter provider Intents |
+| announcements | G18 | sequence after required durable outcomes |
+| CI hosts | G19 | execution/evidence environments |
 
-Every `C001-C115` and `P001-P036` case appears exactly once below. This table is the audit bridge from the complete comparison to the product roadmap.
+## Later product work or custom providers
 
-| Roadmap bucket | Census case IDs | Disposition | Derived treatment |
-| --- | --- | --- | --- |
-| Configuration and orchestration mechanisms | C001-C014, P004, P008, P011, P018, P020-P022, P031, P033-P034 | Taxonomy/mechanism or ordinary configuration | Keep only laws needed by the release plan, canonical Intents, dependency graph, and application configuration. Do not copy every YAML surface as a product outcome. |
-| Build systems and producer outputs | C015-C031, P028 | Adjacent composition | effect-build or another producer creates owned outputs. ts-release adopts finalized outputs; it does not absorb every language builder. |
-| Packaging and installer construction | C032-C047, P002-P003, P009, P016-P017, P029 | Adjacent composition or later provider-specific work | Archives, installers, system packages, app bundles, and images are produced outside the durable mutation kernel unless a later maintained package earns its own laws. |
-| Checksums, SBOM, signing, and notarization | C048-C057, P006 | Structural or adjacent composition | Bundle digests are structural. Checksum files, SBOMs, signatures, and notarization compose as owned artifacts or external service outcomes. |
-| Publish-phase and hook mechanisms | C058-C059, P012-P013, P024, P032 | Taxonomy/mechanism | Represent provider dispatch and extension packages directly. A hook or phase name is not itself a provider outcome. |
-| GitHub Releases and assets | C060-C061 | Shipping first-party built-in | Ship provider-local release and asset Intents, receipts, observations, response-loss recovery, public bytes, and consumer download evidence. |
-| Other SCM release providers | C062-C063 | Arbitrary custom provider or later first-party package | GitLab and Gitea do not replace the fixed GitHub built-in commitment. |
-| Snapshots and nightlies | C064-C065, P027 | Later product policy | Policy over versioning, retention, and destination selection; not required to define the shipping provider set. |
-| Generic blobs and external feeds | C066-C069, C081-C082, P010, P015, P030 | Arbitrary custom provider or later first-party package | Each store or feed needs explicit implementation identity, endpoint identity, receipt, observation, and uncertainty laws. |
-| Homebrew casks | C070, P014 | Later product work | Casks have different rendering and installation laws. They are not part of the fixed formula shipping commitment. |
-| npm wrapper packages | C071, P005 | Later product work or adjacent build | GoReleaser wrapper packages are not native npm publication. Native npm remains a fixed shipping built-in even though the census rows are contrast evidence only. |
-| Other package catalogs | C072-C076, C078 | Arbitrary custom provider or later first-party package | Winget, AUR, Nix, Krew, and MCP Registry remain outside the fixed first-party set. |
-| Scoop | C077 | Shipping first-party built-in | Ship Scoop manifest rendering, conditional bucket Git publication, reconciliation, and clean Windows consumer evidence. |
-| Attestations | C079 | Adjacent composition | Carry attestation artifacts and provider receipts without inventing a universal signing or provenance service. |
-| Changelog and release notes | C080, P007, P023, P026 | Adjacent composition | ts-release may carry finalized text; generation and preview policy are neighboring concerns. |
-| Arbitrary custom providers | C083 | Shipping capability | Ship the open provider contract and dynamic Node library/config boundary. Do not add a central allowlist or certification registry. |
-| Closing milestones and PR UI | C084, P019 | Intentionally outside the durable release kernel | Repository project-management and PR presentation are not provider publication outcomes. |
-| Homebrew formulas | C085 | Shipping first-party built-in | Ship formula rendering, conditional tap Git publication, reconciliation, and clean Homebrew install/execute evidence. |
-| Published-asset acceptance and verify terminology | C086, P001 | Acceptance taxonomy/mechanism | Replace one generic verify phase with explicit provider acceptance, metadata, byte identity, consumer behavior, and evidence environments. |
-| Announcements | C087-C101 | Intentionally outside ts-release core | Announcements compose after durable release outcomes and do not participate in mutation recovery. |
-| CI integrations | C102-C115 | Integration/documentation surface | CI hosts run the product; they are evidence environments, not separate release-provider outcomes. |
-| Durable staged continuation | P025 | Structural shipping behavior | The canonical release plan, finalized bundle, and append-only journal provide continuation without blind repetition. |
-| Pro licensing | P035-P036 | Intentionally outside ts-release | Commercial license transport is unrelated to the open ts-release provider model. |
+| Outcome | Evidence group | Reason |
+| --- | --- | --- |
+| Homebrew casks | G09 | different renderer and consumer laws from formulas |
+| GitLab/Gitea releases | G06 | not in fixed first-party set |
+| Winget, AUR, Nix, Krew, MCP registry | G11 | provider-specific process and acceptance laws |
+| object stores and generic feeds | G08 | custom provider first; named implementation required |
+| container images and indexes | G03 | OCI digest/tag laws need a dedicated model |
+| npm binary wrappers | G10 | different product from native npm package publication |
+| snapshots/nightlies | G07 | version/retention/destination policy |
+| commercial license transport | G20 | intentionally outside ts-release |
 
-## Acceptance environments
+## GoReleaser Verify user outcome
 
-Each claimed outcome is paired with an evidence environment:
+Evidence group G17 establishes the actual purpose:
 
-| Environment | Typical evidence |
-| --- | --- |
-| `compile` | Schema, type, and static-law checks |
-| `in-process` | Disposable runtime and state-fold tests |
-| `clean-consumer` | Fresh package installation from packed artifacts |
-| `protocol-double` | Deterministic provider acceptance and response-loss traces |
-| `scratch-provider` | Authorized real-provider namespace |
-| `public-provider` | Public metadata and byte observation |
-| `end-user` | Representative Homebrew, Scoop, npm, or Python consumer host |
-| `self-release` | Rewritten ts-release releases and consumes itself |
+- re-download published SCM release assets;
+- catch broken/truncated uploads and CDN propagation failures;
+- run checksum/signature or arbitrary commands over downloaded assets;
+- verify images through configured commands;
+- exclude package-registry-only and blob-only artifacts from automatic download.
 
-A roadmap row is not complete merely because one environment is green. Each evidence record names outcome, environment, subject, result, and limitations.
+ts-release should preserve these outcomes when required, but not the universal name `verify`.
 
-## Audit rules
+Equivalent explicit claims are:
 
-1. The evidence census remains complete and current in the branch.
-2. The roadmap references census IDs rather than replacing them with prose memory.
-3. Every census case maps to one exhaustive crosswalk disposition.
-4. Native npm and native PyPI additions are explicit even without native GoReleaser equivalents.
-5. A mechanism such as retry, hook, phase, verify, template, or CI integration is not promoted into a user outcome by default.
-6. Homebrew formulas and Scoop are fixed shipping built-ins, not optional catalog examples.
-7. Arbitrary custom providers are a shipping capability, not only future extensibility.
+```text
+public asset downloadable
+downloaded bytes match intended content
+signature/checksum command succeeds
+image digest/command succeeds
+```
 
-## Conclusions
+Clean npm or PyPI install remains a separate `C` outcome.
 
-1. The 151-case comparison and the outcome roadmap are both retained.
-2. The census provides GoReleaser/current-ts-release/v0.0.7/rewrite traceability.
-3. The roadmap provides product disposition with an exhaustive case-ID crosswalk.
-4. Shipping scope is fixed to npm, PyPI/Warehouse, GitHub Releases/assets, Homebrew formulas, Scoop, and arbitrary custom providers.
-5. Provider acceptance, metadata, bytes, consumer behavior, and continuation remain separate claims.
-6. The decisive gate is a non-manual self-release through the rewritten product.
+## Native npm and PyPI distinctions
+
+### Native npm
+
+GoReleaser's npm cases generate wrapper packages that download SCM archives during install. ts-release publishes the user's native tarball. The bytes, package metadata, provider Intent, and consumer path differ.
+
+### Native PyPI/Warehouse
+
+GoReleaser's Python builders produce wheels and sdists. Its documented publication path is a hook such as `uv publish` or `poetry publish`. ts-release needs provider-native per-file Warehouse publication and recovery.
+
+## Complete census crosswalk
+
+Every `C001-C115` and `P001-P036` case maps exactly once.
+
+| Evidence group | Census case IDs | Derived disposition |
+| --- | --- | --- |
+| G01 configuration/orchestration | C001-C014; P004; P008; P011; P018; P020-P022; P031; P033-P034 | taxonomy/mechanism or ordinary application configuration |
+| G02 builders/producer outputs | C015-C031; P028 | adjacent producer composition |
+| G03 packaging/transformation | C032-C047; P002-P003; P009; P016-P017; P024; P029 | adjacent or later artifact producer |
+| G04 checksums/security metadata | C048-C057; C079; P006 | structural digest plus adjacent artifacts/services |
+| G05 publish/hook mechanisms | C058-C059; P012-P013; P032 | taxonomy/mechanism |
+| G06 SCM releases | C060-C063 | GitHub shipping; GitLab/Gitea later/custom |
+| G07 snapshots/nightlies | C064-C065; P027 | later release policy |
+| G08 blobs/external feeds | C066-C069; C081-C082; P010; P015; P030 | custom provider or later built-in |
+| G09 Homebrew casks | C070; P014 | later product work, explicitly outside fixed formula scope |
+| G10 npm wrappers | C071; P005 | later wrapper product; contrast with native npm |
+| G11 other catalogs | C072-C076; C078 | custom provider or later built-in |
+| G12 Scoop | C077 | shipping first-party built-in |
+| G13 changelog/release notes | C080; P007; P023; P026 | adjacent composition |
+| G14 custom publishers/providers | C083 | shipping arbitrary-provider capability |
+| G15 project management | C084; P019 | outside durable release kernel |
+| G16 Homebrew formulas | C085 | shipping first-party built-in |
+| G17 Verify | C086; P001 | explicit public-byte/signature/CDN evidence, not universal phase |
+| G18 announcements | C087-C101 | outside durable core |
+| G19 CI hosts | C102-C115 | execution/evidence environment |
+| G20 licensing | P035-P036 | intentionally outside ts-release |
+| G21 durable staged continuation | P025 | structural shipping behavior |
+
+## Evidence inheritance rule
+
+A census row with `I` remains `INDEX` evidence. It inherits only:
+
+- the material group's current evidence grade;
+- the group's product disposition; and
+- any explicit provider/project evidence linked from that group.
+
+It does not become "researched" merely because the crosswalk is numerically complete.
+
+## Implementation evidence progression
+
+| Claim | Earliest useful evidence | Decisive evidence |
+| --- | --- | --- |
+| structural bundle/plan law | compile + in-process tests | self-release uses same bytes |
+| provider normal success | protocol double | scratch/public provider receipt |
+| lost-response recovery | fault-injected double | controlled scratch-provider response loss |
+| public byte identity | provider digest or download | self-release public bytes |
+| consumer behavior | clean local consumer | representative end-user/self-release |
+| custom provider continuation | two-process clean consumer | fresh runner resumes custom provider after interruption |
+
+## Recommendations
+
+1. Keep census, material evidence, and roadmap as three layers rather than merging them.
+2. Treat `INDEX` as a weak evidence grade.
+3. Refresh material groups at pinned current source revisions.
+4. Keep fixed shipping scope independent of GoReleaser feature names.
+5. Report A/M/B/C/J separately.
+6. Use GoReleaser Verify as evidence for a user outcome, not as an API name to copy.
+
+## Remaining contradictions
+
+- Many census rows still have only index-level evidence. The group mapping is auditable but not equivalent to line-by-line source research.
+- Current GoReleaser Pro behavior is partly documented without inspectable OSS implementation.
+- The fixed ts-release shipping scope exceeds direct GoReleaser equivalents for native npm and Warehouse.
+- Some adjacent capabilities, such as archives and checksums, are required to deliver the intended product even though they do not belong in the durable provider kernel. Their exact package ownership remains open.

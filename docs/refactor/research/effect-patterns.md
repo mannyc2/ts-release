@@ -1,22 +1,22 @@
-# Effect patterns and alignment research
+# Effect version and architecture research
 
-Status: research checkpoint. This document records the corrected alignment evidence, migration surface, Activity identity and retry laws, and the boundary between Effect execution and ts-release durable history. It does not migrate Effect or implement Workflow/Activity.
+Status: research and design checkpoint. This document compares pinned Effect versions and architecture patterns relevant to ts-release. It does not migrate dependencies, implement Workflow/Activity, or select the production root API.
 
-## Evidence pins
+## 1. Evidence pins
 
-| Subject | Pin |
-| --- | --- |
-| Current ts-release Effect family | [`cd7ab658994104bd6fe8f841f1440bea32c387f5`](https://github.com/Effect-TS/effect/tree/cd7ab658994104bd6fe8f841f1440bea32c387f5), `effect@4.0.0-beta.83` |
-| rc.108 candidate | [`bef7bf38ae4b73d5511043f707aed083de5da7cc`](https://github.com/Effect-TS/effect/tree/bef7bf38ae4b73d5511043f707aed083de5da7cc) |
-| rc.109 candidate | [`ee06c9c1eed73ebcf282541ceb1615ff1ba1730d`](https://github.com/Effect-TS/effect/tree/ee06c9c1eed73ebcf282541ceb1615ff1ba1730d) |
-| Exercised effect-build source | [`15c811bb9904142a33d119766b62082f3c689f13`](https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13) |
-| Mechanical harness correction | [`d57e7e91b58683d030201d278eb96cd5acd05a21`](https://github.com/mannyc2/ts-release/commit/d57e7e91b58683d030201d278eb96cd5acd05a21) |
+| Baseline | Version | Commit |
+| --- | --- | --- |
+| shipped ts-release family | `4.0.0-beta.83` | [`cd7ab658994104bd6fe8f841f1440bea32c387f5`](https://github.com/Effect-TS/effect/tree/cd7ab658994104bd6fe8f841f1440bea32c387f5) |
+| effect-build development family | `4.0.0-rc.108` | [`bef7bf38ae4b73d5511043f707aed083de5da7cc`](https://github.com/Effect-TS/effect/tree/bef7bf38ae4b73d5511043f707aed083de5da7cc) |
+| published later candidate | `4.0.0-rc.109` | [`ee06c9c1eed73ebcf282541ceb1615ff1ba1730d`](https://github.com/Effect-TS/effect/tree/ee06c9c1eed73ebcf282541ceb1615ff1ba1730d) |
+| date-pinned current source, 2026-08-16 | package still reports `4.0.0-rc.109` | [`397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6`](https://github.com/Effect-TS/effect/tree/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6) |
+| effect-build granular branch | peer range `>=4.0.0-beta.104 <4.1.0-0` | [`15c811bb9904142a33d119766b62082f3c689f13`](https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13) |
 
-The exercised effect-build peer range is `>=4.0.0-beta.104 <4.1.0-0`. The shipped beta.83 family is outside that combined range before source migration is considered.
+The shipped beta.83 family is outside effect-build's declared peer range.
 
-## Corrected candidate result
+## 2. Corrected alignment result
 
-The former rc.108 platform mismatch and rc.109 `@effect/bun-test` 404 were harness defects. The corrected harness preserves the vendored test package, applies effect-build's platform override, propagates runtime failures, and reports attempted, completed, and failed phases separately.
+The corrected harness demonstrates:
 
 | Phase | rc.108 | rc.109 |
 | --- | --- | --- |
@@ -29,195 +29,135 @@ The former rc.108 platform mismatch and rc.109 `@effect/bun-test` 404 were harne
 | aligned ts-release install | pass | pass |
 | aligned ts-release TypeScript check | fail | fail |
 
-Exact outputs are retained in [research run 31950649319](https://github.com/mannyc2/ts-release/actions/runs/31950649319).
+The previous rc.108 platform mismatch and rc.109 `@effect/bun-test` 404 were harness defects.
 
-The result proves that both aligned dependency sets install and that effect-build's package and consumer gates pass. It proves that a manifest-only alignment is insufficient for ts-release. It does not rank the candidates and does not prove release-engine semantics.
+This result separates:
 
-## beta.83 to rc.108/rc.109 migration surface
+- dependency-set installation compatibility: established for both candidates;
+- effect-build package behavior under its own gates: established for both candidates;
+- ts-release source compatibility: not established; both require migration;
+- release semantics: not established by the harness.
 
-The two rc candidates expose substantially the same ts-release failure families. The migration is repository-wide.
+Primary evidence:
 
-### Primarily syntactic or type-surface changes
+- [corrected harness commit](https://github.com/mannyc2/ts-release/commit/d57e7e91b58683d030201d278eb96cd5acd05a21)
+- [research run 31954375253](https://github.com/mannyc2/ts-release/actions/runs/31954375253)
 
-1. **Schema tagged errors and generated construction.** Tagged error declarations, generated constructors, `.make` calls, and instance field inference must move together.
-2. **Constructor and dual-call conventions.** Many old call sites now report argument-count or callback-shape errors. Each occurrence must be classified rather than mass-replaced.
-3. **Effect service and context inference.** Helpers that relied on beta.83 inference produce `unknown` requirements or errors under the rc family.
-4. **Catch, match, and tagged handlers.** Coordinator and provider error unions need behavior-preserving handler updates.
-5. **Schema constraints and services.** Generic code must account for rc `Constraint`, decoding services, and encoding services.
-6. **CLI, Action, and test integrations.** Unstable CLI and test surfaces changed and should be isolated rather than allowed to define public release architecture.
+## 3. Failure-class comparison
 
-### Semantic changes that require review
+A green or red aggregate job is not enough. The candidate comparison separates these failure families.
 
-1. **Activity interruption retry policy.** The default interruption schedule changed between beta.83 and the rc family.
-2. **Partial Activity exits.** The rc family exposes partial exit schema support that beta.83 lacks. Persisting partial exits would be a design decision, not a mechanical migration.
-3. **Unknown error normalization.** Fixing new `unknown` channels by widening or dying would alter provider-local typed failure behavior.
-4. **Schema service placement.** Moving encoding or decoding requirements changes where durable values can lawfully be loaded.
-5. **Workflow and Activity identity.** Making code compile does not prove that replay identity remains correct.
+| Failure family | beta.83 -> rc candidates | Candidate distinction |
+| --- | --- | --- |
+| dependency declarations | beta.83 outside effect-build peer range | rc.108 and rc.109 both satisfy range |
+| test adapter/package availability | harness must preserve vendored `@effect/bun-test` | corrected for both |
+| duplicate/misaligned Effect installs | family must be overridden consistently | corrected for both |
+| ts-release source migration | broad compile failures | both fail at same phase |
+| semantic Workflow/Activity changes | beta.83 differs | rc.108, rc.109, and current inspected Activity source match |
+| unstable API future risk | present | current commit remains rc.109 but unstable modules can change |
 
-### Approximate affected production surface
+## 4. Migration surface
 
-- `src/api/` public entry points and errors;
-- `src/model/` schemas, canonical values, and domain errors;
-- `src/publication/` provider adapters, coordinators, recovery, and reports;
-- `src/release/` preparation, graph, staging, and capability code;
-- `src/correction/` correction intent and flows;
-- `src/platform/` services and credentials;
-- `apps/release-ts/` CLI wiring;
-- GitHub Action application code; and
-- tests plus the vendored Bun test adapter.
+### Primarily syntactic or type-system migration
 
-The practical estimate remains dozens of production call sites plus broad tests. The migration should be a behavior-preserving project separate from the architecture implementation.
+- `Schema.TaggedErrorClass` and generated constructor shapes;
+- `.make` versus direct constructors;
+- changed callable/dual-call conventions;
+- `Context.Service` and inferred requirements;
+- `Effect` error channels inferred as `unknown`;
+- catch, match, and tagged-handler call shapes;
+- Schema generic bounds and Constraint types;
+- encoding and decoding service requirements;
+- unstable CLI and test adapter imports.
 
-## Activity execution identity hazard
-
-At the inspected rc pins, the in-memory engine keys Activity execution results from:
-
-```text
-workflow execution ID / Activity name / attempt
-```
-
-Sources:
-
-- [rc.109 Activity](https://github.com/Effect-TS/effect/blob/ee06c9c1eed73ebcf282541ceb1615ff1ba1730d/packages/effect/src/unstable/workflow/Activity.ts)
-- [rc.109 WorkflowEngine](https://github.com/Effect-TS/effect/blob/ee06c9c1eed73ebcf282541ceb1615ff1ba1730d/packages/effect/src/unstable/workflow/WorkflowEngine.ts)
-
-That is engine execution identity. It is not provider operation identity.
-
-Reusing one Activity name for two npm versions, Warehouse filenames, GitHub assets, Homebrew formula publications, Scoop publications, or custom-provider coordinates can alias work when attempt numbers also match. Renaming or reordering Activities can conversely prevent replay from finding an earlier result.
-
-The release operation identity is derived directly from one canonical provider Intent:
+Affected production strata include:
 
 ```text
-OperationId = hashCanonical(
-  "ts-release/provider-intent/v1",
-  canonicalEncodedIntent
-)
+src/api
+src/model
+src/platform
+src/publication
+src/release
+src/correction
+apps/release-ts
+apps/ts-release-action
+tests and test adapters
 ```
 
-There is no serialized LogicalOperation object that repeats provider, endpoint, coordinate, artifacts, or desired facts. Activity names may include the derived operation ID, but Activity identity is never the provider source of truth.
+This is a repository-wide behavior-preserving migration, not a manifest edit.
 
-## Default interruption retry versus Activity.retry
+### Semantic changes requiring review
 
-The Activity constructor wraps its body in a default retry-on-interruption policy. At the inspected rc pins, that policy retries interruption causes under a bounded schedule.
+- default Activity interruption retry schedule;
+- partial Activity exit encoding;
+- Activity identity and attempt behavior;
+- error normalization choices;
+- Schema service requirements at durable boundaries;
+- unstable workflow engine persistence semantics.
 
-`Activity.retry` is a separate wrapper around ordinary `Effect.retry` that increments `CurrentAttempt` for application-selected retries.
+## 5. Version delta table
 
-These mechanisms differ:
+| Pattern | beta.83 | rc.108 | rc.109 | current `397bf1e` | Classification |
+| --- | --- | --- | --- | --- | --- |
+| `Effect.fn` / `Effect.gen` workflows | present | present | present | present | largely unchanged |
+| Layer provision at app boundary | present | present | present | present | largely unchanged |
+| scoped filesystem/process resources | present | present | present | present | API/type migration possible |
+| Schema constraint surface | older bounds | `Schema.Constraint` family | same inspected surface | same inspected surface | API/type change |
+| Activity `exitSchemaPartial` | absent | present | present | present | semantic capability change |
+| default interruption retry | different schedule construction and timing | min(exponential 400ms, spaced 10s), bounded by attempt <= 10 | same source hash as rc.108 | same source hash | semantic change beta -> rc |
+| `Activity.retry` attempt context | present | present | present | present | semantics need source review |
+| in-memory Activity cache key | execution/name/attempt | execution/name/attempt | same | same inspected source | identity hazard unchanged among rc candidates |
+| Workflow persistent engine | unstable/in-memory + cluster source | unstable | unstable | unstable | infrastructure and compatibility risk |
+| Effect AI provider metadata/error normalization | older generation | rc generation | rc generation | current expanded docs/source | common-service pattern, not provider proof |
+| Effect SQL backend extensions | present | present | present | current source explicit | common core + backend extension pattern |
 
-- constructor-level interruption retry can re-execute an Activity body after interruption;
-- `Activity.retry` increments the explicit attempt context for an application retry policy;
-- neither proves that an external provider did not commit;
-- neither creates an idempotency guarantee for npm, Warehouse, GitHub, Git, or a custom provider; and
-- neither is the canonical ts-release attempt history.
+## 6. Target recommendation
 
-A provider mutation may run only after the ts-release journal has atomically appended its write-ahead dispatch event. Re-execution after interruption must first fold the journal and reconcile provider facts.
+### Alternatives
 
-## What the explicit journal supplies
+#### Target beta.83
 
-Effect Workflow/Activity may persist engine inputs, results, clocks, suspension, and replay position when backed by an appropriate engine. It does not infer what happened between remote provider commit and local result persistence.
+**Strength:** avoids a separate migration before rewrite work.
 
-The ts-release release plan and event journal supply:
+**Counterexample:** effect-build's peer range excludes beta.83, and the rewrite would be built on a version already requiring replacement for its selected build dependency.
 
-- the canonical provider Intent;
-- operation identity derived from Intent bytes;
-- dependency edges among Intents;
-- each write-ahead dispatch event;
-- grouping of several Intents under one physical dispatch ID;
-- provider-native receipt events;
-- fresh observation events;
-- proof-of-noncommit events;
-- pending, conflict, absent-retryable, and inconclusive evidence;
-- explicit risk-bearing retry authorization;
-- finalized bundle linkage; and
-- consumer evidence.
+**Conclusion:** rejected.
 
-Current state is a deterministic fold of plan plus ordered events. The journal does not store state, attempts, terminal facts, observations, and evidence as parallel authoritative peers.
+#### Target rc.108
 
-Workflow/Activity may execute commands that append and fold this history. It does not replace it.
+**Strength:** exact effect-build development pin; full effect-build gates pass.
 
-## Effect patterns supported for the rewrite
+**Counterexample:** rc.109 passes the same gates, and no evidence shows rc.108 has lower ts-release migration cost or safer semantics.
 
-### Typed provider failures
+#### Target rc.109 published commit `ee06c9c...`
 
-Provider-specific failures remain typed in the Effect error channel. Migration fixes must not silently widen them to `unknown` or convert expected failures into defects.
+**Strength:** later published candidate; full effect-build gates pass; current upstream package version remains rc.109.
 
-### Layers at boundaries
+**Tradeoff:** current source has advanced beyond the published commit while retaining the same version, demonstrating unstable-source drift.
 
-Providers, credentials, HTTP, process execution, Git, bundle storage, and journal storage should be supplied through Layers at application boundaries. Provider packages can close their own requirements for dynamic loading without a central provider registry.
+#### Target current date-pinned commit `397bf1e...`
 
-### Scoped resource ownership
+**Strength:** freshest source evidence; inspected Activity source has the same hash as rc.108/rc.109; closest to upstream direction.
 
-Temporary materializations, subprocess resources, and producer scratch outputs are scoped. Finalized release bundle bytes are durable and outlive the producer scope. Scope is therefore part of the API law, not only cleanup syntax.
+**Tradeoff:** depending directly on a Git commit rather than a published package complicates consumers and reproducibility.
 
-### Lazy Effects
+### Provisional recommendation
 
-Preparation, observation, and dispatch remain lazy Effects. Constructing an Intent or plan does not perform I/O or acquire credentials.
+Use published `4.0.0-rc.109` as the rewrite migration target, pinned exactly through the package manager, with moderate confidence.
 
-### Schema at persistence boundaries
+Reasons:
 
-Canonical plan, journal events, provider receipts, observations, and consumer evidence are decoded at durable boundaries with explicit excess-property and canonical-encoding rules.
+1. beta.83 is outside effect-build's peer range;
+2. rc.108 and rc.109 pass the same combined dependency gates;
+3. no inspected semantic advantage favors rc.108;
+4. current upstream still reports rc.109;
+5. package consumers should not depend on an unpublished Git commit; and
+6. the migration can separately pin current source commits for research.
 
-## Improvements that belong in effect-build
+This is a recommendation for migration planning, not a dependency change in this PR.
 
-The shared compiler-domain laws support these generic improvements in effect-build:
+The main tradeoff is unstable-module drift. Workflow/Activity should be isolated behind a narrow application boundary or excluded from the first implementation if exact source stability cannot be guaranteed.
 
-1. **Owned output readers.** Return logical output metadata plus a scoped reader/materializer rather than exposing only an absolute scratch path.
-2. **Canonical output identity values.** Reuse safe digest, byte-count, target, and logical producer values where the laws are exact.
-3. **Compiler operation identity.** Derive identity from compiler provider, normalized target, canonical options, tool identity, and input digest.
-4. **Explicit lifetime declarations.** State whether an output is build-scoped or transferred to a durable owner.
-5. **Alignment tooling.** Keep a reusable full-family compatibility harness that preserves vendored/local packages and reports phase boundaries honestly.
+## Continued research
 
-The following do not belong in effect-build:
-
-- npm, Warehouse, GitHub, Homebrew, Scoop, or custom release coordinates;
-- release-provider receipts and observations;
-- the ts-release release plan or journal;
-- risk-bearing provider retry authority;
-- consumer installation evidence; or
-- a universal release Publisher service.
-
-## Alignment recommendation
-
-No Effect target is selected by this checkpoint.
-
-Both rc.108 and rc.109 are credible dependency-set candidates. Both pass the same effect-build gates and stop at the same broad ts-release source migration. Current evidence does not establish lower migration cost or better release semantics for either.
-
-Before selecting a target, maintainers should review a behavior-preserving migration design that:
-
-1. inventories production error families under both candidates;
-2. demonstrates replacements for Schema errors, services, handlers, and CLI/test boundaries;
-3. compares semantic source deltas relevant to interruption, attempt context, encoded exits, and replay identity; and
-4. runs the complete ts-release gate without beginning production architecture implementation.
-
-Choosing rc.108 because effect-build develops against it is unsupported. Choosing rc.109 merely because it is later is also unsupported. Investigating rc.109 first is a sequencing preference, not an architecture decision.
-
-## Shipping scope relationship
-
-The fixed shipping rewrite scope is:
-
-- npm;
-- PyPI/Warehouse;
-- GitHub Releases and assets;
-- Homebrew formulas;
-- Scoop; and
-- arbitrary custom providers.
-
-Effect migration and Workflow/Activity adoption must serve this scope. They must not reopen it or substitute a smaller provider sample as the shipping product definition.
-
-## Probe conclusions retained
-
-- The beta.83, rc.108, and rc.109 baseline packages prove only that a small public surface compiles.
-- The corrected alignment harness proves equal dependency and effect-build gate reach for rc.108 and rc.109, ending at ts-release migration.
-- The clean Node consumer proves dynamic import of a consumer module that supplied its own Layer and exported an already-closed Effect. It does not prove the full provider contract or durable recovery.
-- The standalone executable experiment remains informational and reports `loadedUnknownProvider: false`.
-- No Workflow or Activity implementation is included.
-
-## Genuine remaining choices
-
-- rc.108 versus rc.109 after the migration-design review;
-- whether Workflow/Activity is included in the first delivery;
-- how unstable CLI/test dependencies are isolated or replaced;
-- exact Layer boundaries for journal and bundle storage; and
-- whether narrow shared output values remain duplicated or move into effect-build or a small independent package.
-
-The shipping provider scope is not a remaining choice.
+The remaining sections continue in [effect-architecture-patterns.md](./effect-architecture-patterns.md).

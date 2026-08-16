@@ -1,329 +1,321 @@
-# Artifact and bundle design
+# Artifact kernel, ownership, and persistence boundaries
 
-Status: research checkpoint. This document records the recommended artifact laws and remaining ownership decisions. It does not implement the production bundle API.
+Status: research and design checkpoint. This document reopens the artifact conclusion and derives the smallest reusable kernel from artifact laws. It does not implement a production bundle API or choose a storage backend.
 
-## Current implementation evidence
+## Fixed product context
 
-The rewrite should start from laws already earned by ts-release rather than inventing a second identity format:
+The shipping rewrite includes npm, PyPI/Warehouse, GitHub Releases/assets, Homebrew formulas, Scoop, and arbitrary custom providers. The artifact kernel must support all of them without containing their provider models.
 
-- [`src/model/canonical.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/model/canonical.ts) provides strict canonical JSON, normalized strings, deterministic object-key ordering, bounded integer rules, length framing, and domain-separated SHA-256 helpers.
-- [`scripts/lib/canonical-json.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/scripts/lib/canonical-json.ts) is the script-side counterpart used by release tooling.
-- [`test/core/canonical-identity.test.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/test/core/canonical-identity.test.ts) checks stable key ordering, Unicode normalization, and domain separation.
-- [`src/release/prepared.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/release/prepared.ts) shows the current split between prepared identity, manifest digest, public artifact records, and provider-specific prepared publications.
-- [`src/model/artifact-collection.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/model/artifact-collection.ts) demonstrates normalized member keys, declared cardinality, logical output identity, media/kind checks, and duplicate-sensitive collection laws.
+## Source pins
 
-The present direction is to simplify the public model while preserving these earned laws.
+- current canonical implementation: [`src/model/canonical.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/model/canonical.ts)
+- script-side canonical implementation: [`scripts/lib/canonical-json.ts`](https://github.com/mannyc2/ts-release/blob/269b8673f596cd586e7ff6ae378a4e318fe0c331/scripts/lib/canonical-json.ts)
+- current prepared manifest: [`src/release/prepared.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/release/prepared.ts)
+- current prepared store: [`src/release/prepared-store.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/release/prepared-store.ts)
+- artifact collection model: [`src/model/artifact-collection.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/model/artifact-collection.ts)
+- effect-build granular branch: [`15c811bb9904142a33d119766b62082f3c689f13`](https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13)
 
-## Recommended root model
+## 1. Universal artifact laws
 
-### Direct immutable construction
+A reusable artifact handoff needs only laws that hold independent of release provider, package manager, platform role, or consumer.
 
-The public API constructs a finalized immutable bundle directly. A caller does not receive a public mutable builder that later changes phase.
+### Law A1: exact immutable content
 
-An implementation may use an accumulator internally while ingesting streams, directories, compiler outputs, or archives. That accumulator remains private to the constructor and is not serializable, provider-visible, or reusable after finalization.
-
-```text
-inputs and producer outputs
-  -> private ingestion accumulator
-  -> validation, normalization, and byte ownership
-  -> canonical manifest
-  -> immutable Bundle
-```
-
-This avoids a public `Draft -> finalize -> Bundle` state machine when the only lawful externally visible value is already finalized.
-
-### One canonical manifest
-
-A bundle has one canonical manifest. There is no independently stored `bundleId` field beside a manifest digest that can disagree with it.
+A finalized content object has:
 
 ```text
-manifestBytes = canonicalJson(manifest)
-bundleId = domainHash("ts-release/bundle-manifest/v1", manifestBytes)
+ContentDigest
+ByteLength
+ReadableBytes
 ```
 
-The serialized manifest does not contain its own `bundleId`. On load, the decoder:
+Reading the object yields exactly the bytes whose digest and length are recorded.
 
-1. rejects noncanonical bytes;
-2. decodes the versioned manifest Schema;
-3. recomputes the domain-separated bundle ID;
-4. validates every artifact entry and referenced blob; and
-5. creates bundle-bound handles.
+### Law A2: durable ownership
 
-A storage index may cache the derived ID, but the ID is derived data and must be checked rather than trusted.
+A finalized bundle owns or durably references its content for the bundle's declared lifetime. It does not depend on a mutable workspace path or a producer scope that has already closed.
 
-## Proposed canonical envelope
+### Law A3: logical identity differs from content identity
 
-Illustrative shape only:
+Two logical artifacts can share one content object.
+
+```text
+ArtifactId A -> digest X
+ArtifactId B -> digest X
+```
+
+The kernel does not collapse A and B because their provider roles may differ.
+
+### Law A4: one manifest commit
+
+One canonical manifest names every logical artifact and referenced content object. Bundle identity is derived from that manifest. No unchecked stored bundle ID is a peer authority.
+
+### Law A5: references resolve within an explicit bundle
+
+A relative artifact reference is meaningful only inside one canonical bundle or plan envelope. At the load boundary it resolves into a bundle-bound value.
+
+### Law A6: finalization is one-way
+
+No public finalized bundle value supports ingestion or mutation. Any accumulator is private and cannot outlive construction.
+
+## 2. Fields that do not follow from universal artifact law
+
+The following facts may be useful elsewhere, but they are not universal artifact-kernel fields:
+
+- release name or version;
+- source commit;
+- documents or release notes;
+- provider Intents or destinations;
+- npm package name/version;
+- Python project/filename;
+- GitHub public asset name;
+- Homebrew formula semantics;
+- Scoop manifest semantics;
+- target OS/architecture;
+- central `kind` such as executable/archive/package/digest;
+- generic `metadata: Record<string, unknown>`;
+- private storage path; and
+- consumer acceptance status.
+
+Putting these fields in the kernel enlarges the state space by allowing combinations such as an `archive` kind with nonarchive bytes, a provider destination without a release plan, or untyped metadata that downstream code casts differently.
+
+Typed release and provider models can refer to artifact IDs without making those meanings kernel facts.
+
+## 3. Candidate models
+
+### Candidate K1: release-shaped bundle
+
+```text
+Bundle {
+  release,
+  documents,
+  artifacts { kind, mediaType, metadata },
+  providerIntents,
+  objects
+}
+```
+
+**Strength:** one envelope appears self-contained.
+
+**Counterexamples:**
+
+- the same artifact bundle can be reused by a different release plan or acceptance policy;
+- provider Intents have independent schema evolution and authorization semantics;
+- a generic metadata map becomes a second untyped model;
+- one central kind union must grow for every producer or package manager.
+
+**Conclusion:** rejected as a reusable artifact kernel. A higher release envelope may compose bundle, plan, and journal references.
+
+### Candidate K2: content-only object set
+
+```text
+Bundle {
+  objects: [{ digest, bytes }]
+}
+```
+
+**Strength:** minimal immutable CAS.
+
+**Counterexample:** two logical artifacts sharing bytes become indistinguishable, and provider Intents cannot refer to stable logical roles without inventing external path identity.
+
+**Conclusion:** too small.
+
+### Candidate K3: content objects plus logical artifact mapping
+
+```text
+ArtifactBundleManifest {
+  schemaVersion,
+  objects: [{ digest, byteLength }],
+  artifacts: [{ artifactId, contentDigest }]
+}
+```
+
+**Strengths:**
+
+- exact content and logical identity are separate;
+- duplicate bytes can be deduplicated;
+- no provider or release facts leak in;
+- zero, one, and many artifacts use one collection;
+- the manifest is suitable for local files or object storage.
+
+**Counterexample addressed:** provider filenames and target roles are modeled by typed plans referencing `artifactId`.
+
+**Provisional recommendation:** strongest kernel, high confidence.
+
+### Candidate K4: path manifest
+
+```text
+artifacts: [{ artifactId, path, digest, size }]
+```
+
+**Strength:** easy local implementation.
+
+**Counterexamples:**
+
+- path identity is backend-specific;
+- path can escape the bundle root;
+- mutable file replacement creates check-to-use gaps;
+- object storage has no stable filesystem path.
+
+**Conclusion:** path can be an implementation index, not canonical artifact identity.
+
+## 4. Recommended minimal manifest
+
+Illustrative only:
 
 ```json
 {
-  "schemaVersion": "ts-release/bundle-manifest/v1",
-  "release": {
-    "name": "example",
-    "version": "1.2.3"
-  },
+  "schemaVersion": "artifact-bundle/v1",
+  "objects": [
+    {
+      "digest": "sha256:...",
+      "byteLength": 1234
+    }
+  ],
   "artifacts": [
     {
       "artifactId": "cli-linux-x64",
-      "kind": "executable",
-      "mediaType": "application/octet-stream",
-      "bytes": 123456,
-      "sha256": "...",
-      "metadata": {
-        "os": "linux",
-        "arch": "x64"
-      }
+      "content": "sha256:..."
     }
-  ],
-  "documents": [],
-  "providerIntents": []
+  ]
 }
 ```
 
-The exact fields remain a maintainer choice. The laws are more important than this example:
+Laws:
 
-- schema version is explicit;
-- keys and strings use the existing canonical implementation;
-- arrays have domain-defined ordering rules;
-- integer, path, and text constraints are total and checked;
+- arrays have one specified canonical order;
+- object digests are unique;
 - artifact IDs are unique;
-- each artifact has exact size and content digest;
-- no private filesystem path appears in the manifest; and
-- bundle ID is derived from canonical manifest bytes under a versioned domain.
+- every artifact references exactly one declared object;
+- unreferenced objects are either rejected or explicitly permitted by one canonical policy;
+- bundle ID is the domain-separated hash of canonical manifest bytes;
+- the manifest contains no bundle ID field;
+- no path appears in the canonical model; and
+- byte length is canonical on the content object, not repeated on each artifact.
 
-Provider intents may be stored in the same release envelope or in a separately domain-hashed journal root. If stored in the bundle manifest, they reference artifacts by bundle-relative identity and do not introduce provider-specific fields into the core artifact entry.
+## 5. Release plan and artifact references
 
-## Artifact identity and logical meaning
-
-Content identity and logical artifact identity are different facts.
-
-Two logical artifacts may share identical bytes while differing in:
-
-- target platform;
-- media type or executable role;
-- public filename;
-- package-manager role;
-- producer operation; or
-- provider intent.
-
-The bundle therefore stores:
+A separate canonical release plan contains provider and release meaning:
 
 ```text
-ArtifactId     - unique logical identity within the bundle
-ContentDigest  - byte identity, reusable by multiple ArtifactIds
-```
-
-A content-addressed backend may deduplicate bytes by digest. It must not collapse logical artifacts or provider intents merely because bytes match.
-
-## Bundle-relative and qualified references
-
-### Inside one envelope
-
-References within one manifest are bundle-relative:
-
-```json
-{
-  "kind": "bundle-relative",
-  "artifactId": "cli-linux-x64"
+ReleasePlan {
+  schemaVersion,
+  bundleId,
+  releaseFacts,
+  intents,
+  dependencyEdges
 }
 ```
 
-The serialized reference intentionally does not repeat the bundle ID. Its meaning is defined by the containing canonical envelope.
+Provider Intents reference bundle-local artifact IDs:
 
-### At the load boundary
+```text
+GithubAssetIntent {
+  parentReleaseIntent,
+  requestedName,
+  contentType,
+  artifact: ArtifactRef("cli-linux-x64")
+}
+```
 
-A relative reference is not structurally bound merely because its string appears inside JSON. The loader resolves it against the decoded bundle and returns a bundle-bound handle:
+Digest and size are resolved from the bundle. They are not repeated in the Intent unless they independently cross another envelope or are themselves part of a provider coordinate.
+
+### Operation identity and bundle-relative references
+
+If `IntentId` is derived from canonical Intent bytes and the Intent contains a relative artifact ID, the globally qualified operation is:
+
+```text
+(planId, IntentId)
+```
+
+The canonical `planId` binds one `bundleId` and all Intents. This avoids copying artifact digest and size into every provider Intent merely to make identity content-sensitive.
+
+## 6. Provider-specific typed meanings
+
+Examples outside the kernel:
 
 ```ts
-interface BoundArtifactHandle {
+interface ExecutableRole {
+  readonly artifact: ArtifactRef
+  readonly target: SystemTarget
+}
+
+interface NpmTarballRole {
+  readonly artifact: ArtifactRef
+  readonly packageName: string
+  readonly version: string
+}
+
+interface WarehouseFileRole {
+  readonly artifact: ArtifactRef
+  readonly project: string
+  readonly filename: string
+}
+
+interface PublicAssetRole {
+  readonly artifact: ArtifactRef
+  readonly requestedName: string
+  readonly mediaType: string
+}
+```
+
+These values can be Schema-backed within the release plan. They do not require a central artifact-kind union.
+
+## 7. Bound artifact access alternatives
+
+### Alternative H1: ambient `ArtifactStore`
+
+```ts
+handle.open: Effect<Stream, Error, ArtifactStore>
+```
+
+**Strength:** backend is replaceable through DI.
+
+**Counterexamples:**
+
+- the active store and bundle are implicit;
+- a handle from bundle A can be evaluated with store B;
+- every caller carries an environmental requirement even after resolution;
+- tests can accidentally provide a store that contains another object with the same digest under different trust assumptions.
+
+**Conclusion:** not entailed.
+
+### Alternative H2: direct `(bundle, ref)` functions
+
+```ts
+Bundle.open(bundle, ref)
+```
+
+**Strength:** bundle identity is explicit and wrong-bundle resolution is visible.
+
+**Tradeoff:** every use passes the bundle; provider code can retain a relative ref without a bound resolution step.
+
+### Alternative H3: resolved handle closes over a backend-owned capability
+
+```ts
+interface ResolvedArtifact {
   readonly bundleId: BundleId
   readonly artifactId: ArtifactId
-  readonly digest: Sha256Digest
-  readonly bytes: number
-  readonly open: Effect<ByteStream, ArtifactReadError, ArtifactStore>
+  readonly digest: Digest
+  readonly byteLength: number
+  readonly stream: Effect.Effect<Stream.Stream<Uint8Array, ReadError>>
+  readonly materialize: Effect.Effect<LogicalFile, ReadError, Scope.Scope>
 }
 ```
 
-The handle cannot be created by a public unchecked constructor. Resolution fails if the artifact is absent, duplicated, has mismatched bytes, or violates the manifest.
+The constructor is private to the validated loader. The handle carries the backend operation internally rather than requiring a globally active store.
 
-### Across envelopes
+**Strengths:**
 
-Only references that independently cross an envelope carry a bundle qualifier:
+- bundle identity is explicit;
+- provider code cannot forge or resolve wrong-bundle refs;
+- backend remains replaceable at bundle-load time;
+- provider APIs receive only readable content and logical materializations.
 
-```json
-{
-  "kind": "qualified",
-  "bundleId": "sha256:...",
-  "artifactId": "cli-linux-x64"
-}
-```
+**Tradeoff:** a handle is process-local and not itself serializable.
 
-Examples include a journal stored separately from the bundle, a catalog that points to an earlier release bundle, or a cache index spanning many bundles. Qualified references are resolved through an explicit bundle store and then become the same `BoundArtifactHandle` shape.
+**Provisional recommendation:** H3 for in-process use, with H2 as the lower-level implementation form. Confidence is moderate because exact Effect resource typing still needs a compiling design probe.
 
-## Byte ownership and lifetime
+## Continued research
 
-An artifact record is useful only if its bytes remain readable for the lifetime promised by the owning layer.
-
-### Finalized ts-release bundle
-
-The release bundle must support:
-
-- reuse after process loss;
-- continuation hours or days later;
-- multiple provider reads without rebuilding;
-- exact byte comparison during reconciliation; and
-- independent cleanup after the release journal no longer references it.
-
-A durable bundle store therefore owns or durably references the bytes before a bundle becomes final. It cannot rely on a producer's temporary directory remaining alive.
-
-### Producer output
-
-A build or compiler library may produce an output whose bytes are valid only inside a scope. The producer should return an owned output value or reader, not ask downstream code to guess a path.
-
-Illustrative shape:
-
-```ts
-interface ProducedOutput {
-  readonly logicalName: string
-  readonly kind: string
-  readonly mediaType: string
-  readonly bytes: number
-  readonly digest: Sha256Digest
-  readonly open: Effect<ByteStream, OutputReadError, Scope>
-}
-```
-
-The release program adopts the output while the producer scope is alive. Adoption copies or transfers the bytes into the bundle store, validates the declared digest and size, and assigns a bundle-local `ArtifactId`.
-
-### No storage paths in provider contracts
-
-Providers receive bound readers or materialized scoped resources. They do not receive private store paths as stable identity. A provider may request a temporary file for a CLI or HTTP library, but that path is scoped implementation detail and never serialized into the bundle, intent, receipt, or journal.
-
-## Root output ownership
-
-The top-level release program owns the release bundle because it is the first layer that knows:
-
-- which producer outputs participate in one release;
-- their logical public roles;
-- provider intents;
-- durable continuation requirements; and
-- cleanup authority.
-
-Build libraries own their output creation and scoped lifetime. They do not own the release bundle or provider meaning.
-
-Recommended boundary:
-
-```text
-producer library
-  -> zero or more ProducedOutput values
-release program
-  -> adopts selected outputs
-  -> creates logical ArtifactIds and provider-relative references
-  -> finalizes one durable Bundle
-provider package
-  -> reads only the bound artifacts referenced by its Intent
-```
-
-This permits a build result to be used outside ts-release while keeping release-specific identity and durability in ts-release.
-
-## Exact shared laws with effect-build
-
-At the exercised pin, effect-build's public standalone artifact contains an absolute path, byte count, optional digest, target, and stage observations. See [`Artifact.ts`](https://github.com/mannyc2/effect-build/blob/15c811bb9904142a33d119766b62082f3c689f13/packages/effect-build/src/standalone/Artifact.ts).
-
-The exact laws plausibly shared by effect-build and ts-release are narrower than a complete bundle API:
-
-1. output size is a nonnegative safe integer;
-2. a present digest has one canonical algorithm and encoding;
-3. an output has logical producer or target metadata distinct from bytes;
-4. output bytes must be readable while the declared owner is alive;
-5. consumers must not mutate finalized output metadata; and
-6. duplicate logical identities within one owner are rejected.
-
-The lifetime laws differ:
-
-| Concern | effect-build output | ts-release bundle |
-| --- | --- | --- |
-| Typical owner | compiler/build scope | durable release store and journal |
-| Expected lifetime | often one build invocation | process-independent continuation |
-| Path exposure today | absolute path in public artifact | should be absent from serialized model |
-| Identity scope | compiler operation/target | release bundle and provider intents |
-| Cleanup | scope close or build cleanup | reference-aware release cleanup |
-
-This difference may justify separate resource APIs even if a small immutable output-description type is shared.
-
-## Generic-library boundary
-
-The earlier rule that a second adopter must prove architectural validity is removed.
-
-- **Laws determine validity.** A generic abstraction is valid when its semantics are coherent and its invariants are exact.
-- **Adoption and maintenance determine packaging priority.** A separate package is worthwhile when multiple call sites, ownership boundaries, release cadence, or maintenance cost justify it.
-
-A minimal generic output library is justified only if it can state exact laws without leaking either effect-build's scratch lifetime or ts-release's release semantics. Candidate shared pieces are canonical digest/size values and immutable output descriptions. Bundle manifests, provider references, durable stores, and journal integration remain ts-release-specific unless another domain independently has the same laws.
-
-## Provider-facing artifact access
-
-Provider packages should request the artifacts named by their own intent:
-
-```text
-Intent
-  -> one or more bundle-relative ArtifactIds
-  -> load-time BoundArtifactHandles
-  -> provider-specific materialization or streaming
-```
-
-The core can enforce:
-
-- reference belongs to the loaded bundle;
-- expected logical kind and media type;
-- exact digest and size;
-- duplicate-reference policy; and
-- scoped cleanup of temporary materializations.
-
-The provider owns filename normalization, multipart or package assembly, and remote byte-observation laws.
-
-## Probe evidence and limits
-
-The disposable probes remain useful counterexamples and type experiments, not production designs.
-
-### Owned-bundle probe
-
-[`artifact-owned-bundle.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/docs/refactor/research/probes/artifact-owned-bundle.ts) demonstrates copied-byte ownership and duplicate checks. It still exposes `Bundle.fromValidated` and uses a provisional identity construction. It does not establish the production constructor, canonical manifest, durable store, or cleanup protocol.
-
-### Reference-scope probe
-
-[`artifact-reference-scope.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/docs/refactor/research/probes/artifact-reference-scope.ts) illustrates relative and qualified references. A serialized relative reference becomes structurally bundle-bound only after load-time resolution into a handle.
-
-### Effect load-boundary probe
-
-[`artifact-schema-load.ts`](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/docs/refactor/research/probes/artifact-schema-load.ts) demonstrates in-memory Schema decoding and typed load errors. It does not establish persistence, streaming, transactional storage, interruption safety, or recovery after process loss.
-
-### Negative assertions
-
-The corrected probe commit adds missing negative assertions and makes runtime failures propagate. This improves truthfulness of the experiment but does not promote the probe types into the production design.
-
-## Recommended direction
-
-1. Use direct immutable bundle construction as the public model.
-2. Keep ingestion accumulators private.
-3. Reuse the existing canonical JSON implementation and add an explicit `bundle-manifest/v1` hash domain.
-4. Derive one bundle ID from one canonical manifest; do not persist an unchecked ID peer.
-5. Use bundle-relative references inside one envelope.
-6. Resolve references into nonforgeable bundle-bound handles at load time.
-7. Use qualified references only when crossing envelopes independently.
-8. Let the release program own durable root outputs and provider meaning.
-9. Let producer libraries own construction and scoped output readers.
-10. Share only laws that are exact across effect-build and ts-release; lifetime differences remain first-class.
-
-## Genuine remaining choices
-
-Maintainers still need to decide:
-
-- whether provider intents live in the bundle manifest or in a separately hashed journal root;
-- the durable bundle-store backend and transaction boundary;
-- whether bundle adoption copies bytes eagerly or supports a durable transfer protocol;
-- the exact public `ProducedOutput` and `BoundArtifactHandle` APIs;
-- cleanup and retention policy after terminal or abandoned releases;
-- which artifact metadata is canonical identity versus advisory observation; and
-- whether the minimal shared output-description values remain duplicated, move to effect-build, move to ts-release, or become a small independent package.
-
-These are implementation and packaging choices around an already supported set of artifact laws. No production implementation is included here.
+The remaining sections continue in [artifact-storage.md](./artifact-storage.md).

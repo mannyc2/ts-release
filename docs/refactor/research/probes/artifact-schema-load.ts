@@ -25,17 +25,17 @@ class BundleManifest extends Schema.Class<BundleManifest>("BundleManifest")({
   artifacts: Schema.Array(ArtifactEntry)
 }) {}
 
-class InvalidBundle extends Schema.TaggedErrorClass<InvalidBundle>()(
+class InvalidBundle extends Schema.TaggedError<InvalidBundle>("ArtifactProbe/InvalidBundle")(
   "InvalidBundle",
   { reason: Schema.NonEmptyString }
 ) {}
 
-class MissingArtifact extends Schema.TaggedErrorClass<MissingArtifact>()(
+class MissingArtifact extends Schema.TaggedError<MissingArtifact>("ArtifactProbe/MissingArtifact")(
   "MissingArtifact",
   { artifactId: Schema.NonEmptyString }
 ) {}
 
-class WrongBundle extends Schema.TaggedErrorClass<WrongBundle>()(
+class WrongBundle extends Schema.TaggedError<WrongBundle>("ArtifactProbe/WrongBundle")(
   "WrongBundle",
   {
     expectedBundleId: Schema.NonEmptyString,

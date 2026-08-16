@@ -1,0 +1,17 @@
+{
+  "name": "custom-provider-clean-consumer-probe",
+  "private": true,
+  "type": "module",
+  "workspaces": ["core", "provider", "cli"],
+  "scripts": {
+    "build": "tsc -b core provider cli",
+    "test:clean": "node scripts/test-clean-consumer.mjs",
+    "probe:standalone:informational": "node scripts/test-standalone-loader.mjs"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "4.0.0-rc.109",
+    "@types/node": "24.3.0",
+    "effect": "4.0.0-rc.109",
+    "typescript": "6.0.3"
+  }
+}

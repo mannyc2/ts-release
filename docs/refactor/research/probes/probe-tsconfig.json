@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM"],
+    "noEmit": true,
+    "skipLibCheck": false
+  },
+  "include": [
+    "artifact-finalization.ts",
+    "artifact-owned-bundle.ts",
+    "artifact-reference-scope.ts"
+  ]
+}

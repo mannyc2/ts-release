@@ -1,0 +1,14 @@
+{
+  "name": "ts-release-refactor-research-probes",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check:artifact-types": "tsc -p probe-tsconfig.json",
+    "check:effect-load": "tsc --ignoreConfig --strict --skipLibCheck --target ESNext --module NodeNext --moduleResolution NodeNext --lib ESNext,DOM artifact-schema-load.ts --outDir .probe-dist-effect",
+    "run:effect-load": "bun .probe-dist-effect/artifact-schema-load.js"
+  },
+  "devDependencies": {
+    "effect": "4.0.0-rc.109",
+    "typescript": "6.0.3"
+  }
+}

@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url"
 
 const modulePath = process.argv[2]
 
-const program = modulePath === undefined
+const program: Effect.Effect<unknown, unknown, never> = modulePath === undefined
   ? Effect.sync(() => {
     console.error("usage: research-release <release-module.mjs>")
     process.exitCode = 2
@@ -16,9 +16,12 @@ const program = modulePath === undefined
   }).pipe(
     Effect.flatMap((loaded) => {
       const candidate = loaded as { readonly default?: unknown }
-      return Effect.isEffect(candidate.default)
-        ? candidate.default
-        : Effect.die("release module must default-export an Effect")
+      if (!Effect.isEffect(candidate.default)) {
+        return Effect.die("release module must default-export an Effect")
+      }
+      // The consumer-owned module must have supplied its own Layers before it
+      // crosses this dynamic application boundary.
+      return candidate.default as Effect.Effect<unknown, unknown, never>
     }),
     Effect.tap((receipt) => Effect.sync(() => {
       process.stdout.write(`${JSON.stringify(receipt)}\n`)

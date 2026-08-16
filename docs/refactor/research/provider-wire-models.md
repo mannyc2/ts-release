@@ -1,21 +1,16 @@
-# Provider-specific wire models
+# npm and Warehouse wire models
 
-Status: provider protocol research companion to [provider-contracts.md](./provider-contracts.md). It does not select the production API.
+Status: provider-protocol companion to `provider-contracts.md`. It records wire facts and the operation shapes they force; it does not select a public API.
 
-## 1. Provider-specific wire models
+## npmjs initial publication
 
-## 2. npmjs
+Primary sources:
 
-Primary source:
+- https://github.com/npm/cli/blob/51c2bf81fa2c31547d0fec44fff2aaac3d9a9862/workspaces/libnpmpublish/lib/publish.js
+- https://github.com/npm/cli/blob/51c2bf81fa2c31547d0fec44fff2aaac3d9a9862/lib/commands/publish.js
+- https://docs.npmjs.com/cli/v11/commands/npm-publish/
 
-- [`libnpmpublish/lib/publish.js`](https://github.com/npm/cli/blob/51c2bf81fa2c31547d0fec44fff2aaac3d9a9862/workspaces/libnpmpublish/lib/publish.js)
-- [`npm publish` command](https://github.com/npm/cli/blob/51c2bf81fa2c31547d0fec44fff2aaac3d9a9862/lib/commands/publish.js)
-- [npm publish documentation](https://docs.npmjs.com/cli/v11/commands/npm-publish/)
-- [dist-tag documentation](https://docs.npmjs.com/adding-dist-tags-to-packages/)
-
-### Actual initial publish request
-
-For normal publication, `libnpmpublish` constructs one package metadata document containing:
+Pinned `libnpmpublish` constructs one package document containing:
 
 ```text
 versions[manifest.version] = manifest
@@ -23,77 +18,88 @@ dist-tags[tag] = manifest.version
 _attachments[tarballName] = tarball bytes
 ```
 
-It sends one package PUT. The initial immutable version, tarball attachment, and selected initial tag are co-requested through one physical mutation.
+and sends one package PUT. Therefore the initial publish is one logical operation and one physical dispatch.
 
-### Competing Intent models
+### Frozen operation shape
 
-#### Model N1: one composite `NpmPublishIntent`
+```text
+NpmPublishOperation
+  desired immutable version and tarball
+  desired initial dist-tag in the same PUT
+```
 
-The Intent contains the version bytes and the initial tag desired by the same PUT. Fresh observation compares version identity and tag state as separate facets.
+The resulting receipt is composite because the one request concerns two independently observable remote facets:
 
-**Strength:** matches the physical provider mutation and avoids inventing a prerequisite that the wire does not have.
+```text
+NpmPublishReceipt {
+  provider/transport acceptance facts,
+  versionFacet,
+  initialTagFacet
+}
+```
 
-**Tradeoff:** one accepted response may satisfy a composite Intent while later observations find the mutable tag moved.
+The receipt must distinguish provider-returned facts from Intent-derived facts. Pinned source ignores a rich response body, so name, version, tarball digest, access, provenance, and requested tag remain request/Intent facts unless a provider response explicitly returns them.
 
-#### Model N2: separate version and tag Intents sharing one physical dispatch
+A fresh observation may report:
 
-**Strength:** independent durable status for immutable version and mutable tag.
+```text
+version: satisfied | absent | conflict
+tag: satisfied | moved | absent
+```
 
-**Tradeoff:** suggests two logical provider mutations even though npmjs initially accepts one document. It also requires one physical response to classify several Intents.
+This does not split the historical PUT into member operations. `memberOperationIds` is not required.
 
-**Provisional recommendation:** Model N1 for the initial npmjs PUT, with high confidence for npmjs at the pinned source. A later `npm dist-tag` mutation is a separate Intent. Compatible registries may require another model.
+A later dist-tag change is a separate `NpmDistTagOperation` because it is a separate request and can occur after version publication.
 
-### Success receipt discipline
+### Lost response
 
-The normal publish code uses `ignoreBody: true` and returns transport response information rather than a rich provider object. Package name, version, tarball digest, access, provenance, and tag are primarily known from the request/Intent, not echoed by the provider.
+Version immutability alone does not authorize replay. The same PUT may conflict and also asks for a mutable tag. After response loss:
 
-A durable npm receipt should therefore contain only provider/transport-returned facts, such as successful completion, status/headers, and request identifiers when exposed, plus a reference to the Intent. It should not copy request fields and label them provider-returned.
+- observe version and tag;
+- stop satisfied when both match;
+- treat moved tag as a new correction operation;
+- stop/wait inconclusive when absence cannot fence the earlier request;
+- report conflict for incompatible version bytes.
 
-### Partial success
+The pinned client exposes no documented idempotency-key input. npm contributes no secret replay material.
 
-The pinned source does not establish that npmjs can commit the version while failing to establish the initial tag within the same package PUT. Treating that as a documented partial commit would be an unsupported claim. Version and tag remain independently observable because the tag is mutable after publication.
-
-## 3. Warehouse and PyPI-compatible repositories
+## Warehouse/PyPI-compatible upload
 
 Primary sources:
 
-- [`warehouse/forklift/legacy.py`](https://github.com/pypi/warehouse/blob/4bdd89d85bc522a0d555a871ffe250d644c660dc/warehouse/forklift/legacy.py)
-- [PyPI upload API](https://docs.pypi.org/api/upload/)
-- [Simple Repository API](https://packaging.python.org/en/latest/specifications/simple-repository-api/)
-- [file yanking](https://packaging.python.org/en/latest/specifications/file-yanking/)
+- https://github.com/pypi/warehouse/blob/4bdd89d85bc522a0d555a871ffe250d644c660dc/warehouse/forklift/legacy.py
+- https://docs.pypi.org/api/upload/
+- https://packaging.python.org/en/latest/specifications/simple-repository-api/
 
-### Commit unit
+One legacy upload request commits one distribution file. A release with an sdist and several wheels therefore has one operation per file and can make partial progress.
 
-One legacy upload request commits one distribution file. A release containing an sdist and several wheels can make partial progress file by file.
+### Receipt discipline
 
-### Success receipt
+Warehouse HTTP 200 returns warnings but no provider-generated distribution ID, digest, size, URL, or upload time. The receipt contains acceptance status, provider/transport headers or request IDs, warnings, and a reference to the operation. Project/version, filename, size, and digest remain Intent facts. The Simple API supplies later observation.
 
-Warehouse returns HTTP 200 with a body consisting of warnings. It does not return a provider-generated distribution ID, digest, size, URL, or upload time in the success body.
-
-The receipt therefore contains:
-
-- provider acceptance status and response headers/request IDs;
-- warnings returned by Warehouse; and
-- a reference to the file Intent.
-
-Filename, project/version, size, and expected digest remain Intent facts. A later Simple API read supplies fresh provider observations.
-
-### Duplicate behavior
+### Exact duplicate
 
 Pinned Warehouse source distinguishes:
 
-- exact duplicate content for an existing filename: accepted as a successful duplicate;
-- same filename with different content: rejected; and
-- a previously deleted filename: rejected from reuse.
+- same filename and matching content hashes: successful duplicate;
+- same filename and different content: conflict;
+- previously deleted filename: reuse rejected.
 
-These are Warehouse laws, not guaranteed laws of every compatible index.
+This can support `replay.exact-duplicate/1` only when behavior identity, coordinate/content fingerprints, and the re-prepared request all match. It is not assumed for every compatible repository.
 
-### Yank state
+No secret replay material is required.
 
-Warehouse currently yanks a release rather than replacing uploaded bytes. Immutable file upload and mutable yanked state are separate desired facts. A compatible repository may expose different yanking granularity.
+## Production boundary
 
-**Provisional recommendation:** model file upload Intents separately from a provider-specific yank Intent. Confidence is high for Warehouse, lower for generic compatible repositories.
+uv and Poetry build wheels/sdists through concrete effect-build integrations. ts-release adopts the finalized files and owns Warehouse publication, per-file journal state, observation, and recovery.
 
-## Continued research
+## Operation-shape consequence
 
-The remaining sections continue in [provider-wire-github-catalogs.md](./provider-wire-github-catalogs.md).
+The current provider set does not justify a generic one-request-many-operations mechanism:
+
+- npm: one request, one composite operation/receipt;
+- Warehouse: one request per file operation;
+- GitHub release/asset: separate requests and operations;
+- conditional Git: one ref/tree transition operation.
+
+A future provider may reopen this only with a concrete counterexample and a demonstrated law.

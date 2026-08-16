@@ -1,132 +1,111 @@
 # Custom-provider composition and fresh-runner loading
 
-Status: continuation of `provider-contracts.md`.
+Status: operational continuation of `provider-contracts.md`.
 
-## Ordinary Effect DI versus interchangeability
+## Ordinary Effect composition
 
-A concrete provider client is ordinary dependency injection:
+Concrete clients, credentials, rate limits, observation code, and correction code are ordinary services supplied by Layers. This does not imply a common publication service.
 
-```ts
-class AcmeClient extends Context.Service<AcmeClient, AcmeClientService>()(
-  "@acme/release/AcmeClient"
-) {}
-```
+A shared abstraction is introduced only for one proved law:
 
-The application supplies a Layer. This does not imply that Acme, npm, Warehouse, and GitHub implement a common publication service.
+- provider-definition resolution reconstructs persisted Intent types;
+- core HTTP/Git transports structurally bind prepared requests to sends;
+- `JournalStore` atomically appends one event at one expected revision.
 
-A shared abstraction is justified only when implementations satisfy one law. The current justified shared boundary is provider-definition resolution for persisted Intents, not publication behavior.
+There is no universal `Publisher`, custom request-projection interface, or provider admission registry.
 
 ## Fresh-runner application contract
 
-A new runner has:
+A fresh runner has:
 
 ```text
-durable bundle
+durable bundle locator and digest
 durable release plan
-durable journal
+durable journal locator
 no previous process memory
-new credentials
+newly acquired credentials
 release application/configuration
 ```
 
-The application supplies provider definitions and Layers:
+The application supplies the definitions and Layers needed by the plan. The plan stores definition ID, Intent schema version, behavior ID, and operation ID. The first dispatch records the provider lockfile identity used at preparation time.
 
-```ts
-ReleaseApplication.make({
-  definitions: [
-    Npm.definition,
-    Warehouse.definition,
-    Github.definition,
-    Homebrew.definition,
-    Scoop.definition,
-    Acme.definition
-  ],
-  layer: Layer.mergeAll(
-    Npm.layerConfig(...),
-    Warehouse.layerConfig(...),
-    Github.layerConfig(...),
-    Acme.layer(...)
-  )
-})
+The application does not serialize a Layer, closure, client, or historical replay classifier.
+
+## Strict provider identity
+
+Automatic replay requires all of:
+
+```text
+same definitionId
+same Intent schema version and canonical Intent
+same behaviorId
+same provider/application lockfile identity
+same core transport scheme
+same endpoint and authorization identity
+same re-prepared request fingerprint
+same replay-protection scope and unexpired scheme
+successful journal appendIfRevision
 ```
 
-The plan stores provider definition ID, Intent schema version, and behavior ID. It does not serialize a Layer, closure, client, or arbitrary executable policy.
+A mismatch produces a structured stop. Equal bytes do not relax behavior/lockfile drift in v1. The explanation reports every compared fact, matched and mismatched values, the consequence, and the exact assertion a later `RiskAccepted` would make.
 
-## Behavior identity
+There is no v1 migration operation. A provider upgrade that cannot satisfy strict identity may observe, create a new plan, or proceed only after human risk acceptance.
 
-A fresh runner may decode and observe an old operation only when the supplied provider definition is compatible with the persisted definition identity.
+## Core-owned transports
 
-Automatic replay additionally requires:
+### HTTP
 
-- the same behavior ID;
-- an equivalent newly prepared request fingerprint;
-- compatible endpoint and authorization scope;
-- unexpired recorded replay protection;
-- a successful journal compare-and-swap.
+Core constructs and freezes the exact HTTP method, endpoint, non-secret semantic headers, body bytes, derived idempotency material, and fingerprint. The transport sends that immutable value only after `DispatchStarted` is durably appended.
 
-If provider code changes request rendering, the fingerprint changes and automatic replay stops. If behavior identity changes, automatic replay stops even if the Intent Schema still decodes.
+### Git
 
-Observation under newer code may be allowed only through an explicit compatibility declaration or migration. That is a maintainer-facing schema/behavior migration question, not automatic provider admission.
+Core constructs the exact repository/ref coordinate, expected revision, desired revision, and command/protocol projection. A compare-and-swap ref update is recorded as `replay.cas/1` before send.
 
-## Remaining implementation dependency
+### Opaque provider Effect
 
-Core can make the replay decision deterministic, but arbitrary executable provider code still has one unavoidable law:
+Opaque code may still participate in initial dispatch and observation, but automatic replay is disabled. No TypeScript interface can prove that arbitrary code sends only the recorded bytes or performs no additional effects. The safe cost of not using a core transport is less automation, never weaker replay safety.
 
-> The dispatch operation must send the exact prepared mutation whose normalized projection and protection were recorded.
+## Two-process probe result
 
-Built-in HTTP/Git integrations can make this stronger by handing an immutable prepared request to a core-owned transport. An opaque custom Effect can violate the law by sending something else. No type-only interface can prevent arbitrary code from performing additional effects.
+`probes/two-runner/probe.mjs` runs runner A and runner B as separate Node processes with durable files as their only shared state.
 
-For opaque custom providers, automatic replay should default to disabled unless the provider uses a core-supported prepared-dispatch form or the exact application/provider behavior is pinned and trusted.
+It demonstrates:
 
-## Dynamic CLI boundary
+- crash after `DispatchStarted` before send;
+- response loss after one simulated provider effect;
+- deterministic key derivation without plaintext key persistence;
+- request re-preparation and fingerprint comparison;
+- V2 behavior/lockfile drift stopping while request fingerprint remains equal;
+- unknown replay-scheme and opaque-transport stops;
+- one CAS winner, one loser, one send, and one external effect.
 
-A dynamic TypeScript/Node CLI can load the consumer's release application and therefore provider packages unknown when the CLI package was built.
+The probe's directory lock is only a seam. Production backend selection is in `journal-backends.md`.
 
-A sealed single-file executable has a separate package-resolution problem. Failure to load arbitrary unbundled packages from a sealed executable is not evidence for a closed provider union. Until a sealed loader is proved, the dynamic CLI is the honest extensibility surface.
+## Dynamic loading boundary
 
-## Closest Effect analogies
+A dynamic Node/TypeScript CLI can load provider packages selected by the release application. A sealed executable has a separate module-resolution problem and is not evidence for a closed provider union.
 
-### Effect SQL
+## Closest Effect analogy
 
-Transferable:
+Effect SQL remains the closest analogy: shared operations exist only where backend laws align, while concrete packages retain backend-specific services. Release destinations are additive, so the analogy stops before a universal publication service.
 
-- common interface only where backend laws align;
-- concrete backend clients and richer backend-specific operations;
-- application-selected Layers.
+## Failure reporting
 
-Non-transferable:
+A fresh runner distinguishes:
 
-- publication destinations are additive;
-- provider commit units and receipts differ;
-- no universal publish query/transaction law exists.
+```text
+UnknownProviderDefinition
+UnsupportedIntentSchema
+ProviderIdentityDrift
+UnsupportedTransport
+UnsupportedReplayScheme
+ExpiredReplayProtection
+RequestMismatch
+JournalRevisionMismatch
+Satisfied
+Conflict
+Pending
+Inconclusive
+```
 
-### Effect AI
-
-Transferable:
-
-- arbitrary provider implementations can supply a shared service;
-- provider-specific metadata can be namespaced.
-
-Cost:
-
-- normalization into `AiError` simplifies callers but may erase provider-native distinctions. For ts-release, canonical receipts and observations should remain provider-native; normalized reporting is a derived projection.
-
-### effect-build
-
-Transferable:
-
-- a common operation is lawful when all providers implement the same compile-executable contract;
-- provider-correlated options and targets remain typed;
-- concrete packages can add lower-level operations.
-
-Non-transferable:
-
-- producing an executable is one operation shape;
-- npm, Warehouse, GitHub, and Git catalog mutations are not substitutes.
-
-Pinned sources:
-
-- https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/sql/pg/src/PgClient.ts
-- https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/ai/openai/src/OpenAiLanguageModel.ts
-- https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/effect/src/unstable/ai/AiError.ts
-- https://github.com/mannyc2/effect-build/blob/15c811bb9904142a33d119766b62082f3c689f13/packages/effect-build/src/Provider.ts
+These are explanations or typed failures derived from one plan/journal history. They are not release modes or a second synchronized state table.

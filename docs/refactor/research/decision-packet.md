@@ -1,94 +1,106 @@
 # Maintainer decision packet
 
-Status: research projection. Canonical authorities are listed in `README.md`.
+Status: accepted-decision projection. Canonical authorities remain `competitive-scope.md`, `provider-contracts.md`, `resumability.md`, and `artifact-storage.md`.
 
-## Conclusions derived from laws or provider evidence
+## Decisions closed
 
-1. The shipping distribution scope is the 6 families in `competitive-scope.md`.
-2. Consumer install/import/execute checks are application/CI policy, not provider capabilities.
-3. `ConsumerScenario`, durable acceptance records, and `ConsumerEvidenceRecorded` are removed from the core model.
-4. Replay protection is declared when the exact request is prepared and recorded before dispatch.
-5. Resume-time `ReplaySafetyCapability` is removed.
-6. Deterministic `ReplayAuthorized` is removed; the next `DispatchStarted` records its durable replay basis.
-7. `RiskAccepted` remains because it records a new human authorization fact.
-8. Observed absence cannot fence an earlier in-flight request.
-9. Request status is reconciliation evidence, not replay protection.
-10. Provider behavior identity and request fingerprint mismatch stop automatic replay.
-11. Journal compare-and-swap is the cooperative dispatch gate for concurrent fresh runners.
-12. Arbitrary providers remain ordinary packages plus Layers and a versioned durable definition.
-13. The artifact kernel contains immutable content and logical artifact identity, not provider or acceptance facts.
-14. No universal `Publisher`, `Builder`, or consumer-test interface is justified.
-15. Public OpenAI Plugin Directory publication is a reviewed portal flow, not an assumed API provider.
+| Topic | Accepted decision |
+| --- | --- |
+| consumer testing | `ConsumerScenario`, durable acceptance records, and `ConsumerEvidenceRecorded` removed; application/CI Effects remain |
+| replay authority | protection frozen at dispatch preparation and interpreted by core; `ReplaySafetyCapability` removed |
+| replay events | deterministic `ReplayAuthorized` removed; `RiskAccepted` remains as a new human fact |
+| replay algebra | append-only `replay.none/1`, `replay.idempotency-key/1`, `replay.cas/1`, `replay.exact-duplicate/1` |
+| absence/status | absence never fences an in-flight request; request status is reconciliation evidence |
+| ProviderDefinition | exactly definition ID, Intent Schema, schema version, behavior ID, and operation-ID projection |
+| provider operations | prepare/observe/correct are optional provider-local services, not one lifecycle |
+| automatic replay transport | only core-owned HTTP/Git prepared transports; no custom projection contract |
+| opaque custom providers | valid dispatch/observe providers; uncertain continuation is `Inconclusive` or `RiskAccepted` |
+| identity drift | behavior or lockfile mismatch blocks automatic replay, even with equal request fingerprint |
+| migration | none in v1; new provider version observes, creates a new plan, or uses human risk acceptance |
+| npm | one publish operation with a composite receipt/observation; no `memberOperationIds` |
+| GitHub | release creation and each asset upload are separate operations |
+| notarization | `effect-build-apple` owns submission/status/stapling/verification; only finalized bytes enter ts-release |
+| bundle kernel | internal extraction-ready ts-release library; no planning/provider imports; not moved into effect-build |
+| Workflow/Activity | deferred until six fixed distribution families are wire-complete; later remains `unstable` |
+| vNext scope | 16 outcome families: D01-D06 plus P01-P10 |
+| AI-native | A01-A03 architecture-proved only; later handoff is a pure validator, never a publication provider |
+| deferred destinations | GitLab, Gitea, Cloudsmith, GemFury, Artifactory, Nexus |
 
-## Provisional recommendations
+## R1 closed: journal backend
 
-| Topic | Recommendation | Confidence |
-| --- | --- | --- |
-| Replay algebra | `None`, `IdempotencyKey`, `CompareAndSwap`, `ExactDuplicateAccepted` | High |
-| Replay decision | pure core projection over plan, journal, prepared request, and time | High |
-| Custom opaque dispatch | automatic replay off unless using a core-supported prepared-dispatch law | High |
-| Provider code identity | persist behavior ID and bind application/source/lockfile identity | High |
-| Consumer tests | ordinary Effects/CI after publication; no mutation-journal persistence | High |
-| Effect target | plan against exact published rc.109; no dependency change yet | Moderate |
-| Implementation order | minimum kernel followed by wire-complete npm and Warehouse slices | High |
-| effect-build expansion | concrete archive, uv, Poetry, nFPM, and Apple integrations; no universal Builder | High |
-| Notarization | exercise before freezing finalization boundary | High |
-| AI-native distribution | package + repo marketplace + validated human submission handoff | High |
-| Initial competitive count | 19 outcome families: 6 distribution, 10 production/trust, 3 AI-native | Moderate |
-| Deferred destination packages | 6: GitLab, Gitea, Cloudsmith, GemFury, Artifactory, Nexus | High |
+One shared service is justified:
+
+```text
+JournalStore.appendIfRevision(expectedRevision, completeEvent)
+```
+
+v1 requires two first-party Layers because the deployment surfaces are genuinely different:
+
+```text
+LocalGenerationJournalStore
+S3ConditionalJournalStore
+```
+
+SQLite satisfies the local law but is not a second required v1 local implementation. CI artifacts carry immutable bundles but do not become journal authority without external conditional state.
+
+The race probe gives one winner and one loser for filesystem, SQLite, and conditional-object algorithms, and demonstrates that two artifact uploads still need one external-state winner.
+
+## R2 closed: idempotency material
+
+No shipping provider requires genuinely secret durable replay material. v1 is derived-key-only and removes plaintext key material and secret-manager references from the model.
+
+The event stores key fingerprint, scope, base/final request fingerprints, and validity interval. A fresh core HTTP transport derives the same key from origin dispatch identity plus the base request fingerprint. Credentials are reacquired and never treated as replay keys.
 
 ## Critiques that survived
 
-- resume-time provider code could change replay verdicts;
-- a replay verdict without evidence is insufficient;
-- static protection and live reconciliation are different questions;
-- `DispatchStarted` should be the canonical protection record;
-- consumer scenarios lacked a substitutability law and product consumer;
-- aggregate green alignment jobs do not select an Effect version;
-- destination packages and artifact-production capabilities require different scope accounting.
+- resume-time provider code could change replay decisions;
+- verdict-only replay records lacked evidence;
+- static protection and live reconciliation answer different questions;
+- `DispatchStarted` is the canonical protection record;
+- consumer scenarios lacked a substitutability law and core consumer;
+- immutable coordinates do not themselves make replay safe;
+- CI artifacts do not supply journal CAS;
+- opaque custom code cannot prove exact-send correspondence.
 
 ## Critiques refuted or narrowed
 
-### "All replay safety can be decided without provider facts"
+### All replay safety can be decided without provider facts
 
-Refuted in the broad form. Core can interpret a small protection algebra, but a provider must establish at dispatch time that its exact request satisfies one scheme. The provider law still matters; it is frozen into recorded evidence rather than executed later.
+Refuted broadly. Provider protocol facts establish which exact prepared request satisfies a core-supported scheme. The law is frozen as evidence before dispatch rather than executed later.
 
-### "Immutable coordinates make replay safe"
+### Request status is replay protection
 
-Refuted. npm immutable-version duplicates can conflict and one physical publish can also affect a mutable tag. Immutability helps reconciliation, not automatic replay.
+Refuted. It may establish committed, terminal non-commit, or pending; it does not suppress duplicate effects.
 
-### "Request status is replay protection"
+### One blessed journal backend covers local and CI
 
-Refuted. A request-status token can establish committed, terminal non-commit, or pending; it does not itself suppress duplicate effects.
+Refuted. A local filesystem backend cannot honestly claim cross-machine CI semantics, while requiring cloud object storage for every local release is unnecessary. The same narrow Layer law with two implementations is the smallest decision-grade result.
 
-### "A generic consumer-test capability is needed to expose clean-install checks"
+### Secret-manager references are prudent future-proofing
 
-Refuted. Ordinary Effect composition and CI already express the user action. No mutation or resume state depends on a provider-level interface.
-
-## Genuine maintainer choices
-
-- exact TypeScript shape of ProviderDefinition and prepared dispatch;
-- whether core-owned HTTP/Git transports are required for built-in automatic replay;
-- exact replay scheme IDs and versioning;
-- durable treatment of idempotency keys considered sensitive;
-- provider behavior/application identity and migration policy;
-- normalized request projection rules for commands and signed requests;
-- journal backend, compare-and-swap primitive, lease/takeover, and retention;
-- exact npm composite Intent/result shape;
-- notarization ownership and pre-finalization durability;
-- which of the 13 recommended non-fixed initial outcome families must be released in vNext versus architecture-proved before release;
-- exact OpenAI submission-handoff artifact and validator;
-- artifact-handoff package boundary with effect-build;
-- Workflow/Activity adoption timing.
+Refuted for v1. No in-scope provider needs them. A future provider that proves secret replay capability is a new evidence-backed scheme, not justification for an unused union now.
 
 ## Product counts
 
-Canonical counts are maintained in `competitive-scope.md`:
+Canonical counts are maintained only in `competitive-scope.md`:
 
 ```text
-fixed distribution outcomes:               6
-recommended artifact production/trust:    10
-recommended AI-native outcomes:            3
-recommended initial total:                19
-deferred destination-only packages:        6
+vNext acceptance:                    16
+architecture-proved only:             3
+deferred destination packages:        6
 ```
+
+## Genuine implementation choices still open
+
+- exact production TypeScript spelling of the frozen five fields and prepared transport values;
+- precise S3 object layout, error types, retention defaults, and conformance tests;
+- local generation-store platform support beyond the documented filesystem law;
+- exact npm-compatible registry policy beyond npmjs;
+- exact Warehouse-compatible repository policy beyond pinned Warehouse;
+- GitHub tag-establishment policy;
+- provider-specific observation match rules;
+- final effect-build package layout after its Candidate C2 planning converges;
+- exact Effect release target and migration sequence;
+- later Workflow/Activity engine selection after wire completion.
+
+None of these reopens the accepted event, replay, scope, or artifact-boundary laws.

@@ -1,240 +1,193 @@
 # Decision packet details and source index
 
-Status: evidence and tradeoff supplement to `decision-packet.md`.
+Status: evidence and tradeoff supplement to `decision-packet.md`. It does not own a peer scope list, event model, or provider contract.
 
-## ConsumerScenario first-principles questions
+## Two-runner probe
 
-### What concrete action consumes it?
+The disposable probe under `probes/two-runner/` runs runner A and runner B as separate Node processes. Durable JSON is their only shared state.
 
-No current core action. A release application or CI job may run `npm install`, `pip install`, `brew install`, Scoop installation, an import, or a CLI command.
+### Field list discriminated
 
-### When does it run?
+The compile assertion uses exactly:
 
-After provider acceptance, after public visibility, or in a separate later workflow. Different scenarios have different prerequisites.
+```text
+ProviderDefinition
+  definitionId
+  intentSchema
+  intentSchemaVersion
+  behaviorId
+  operationId
 
-### What changes on failure?
+DispatchStarted
+  one operationId
+  no memberOperationIds
+```
 
-The selected application/CI policy fails. Historical provider acceptance remains true. Mutation replay is not authorized.
+### Runtime traces
 
-### Why not provider definition?
+- runner A records `DispatchStarted` and stops before send; runner B re-prepares and continues;
+- runner A commits one simulated remote effect and loses the response; runner B sends the same derived key and receives the original result;
+- the durable plan/journal contains the key fingerprint but not plaintext key material;
+- provider V2 produces the same request fingerprint but a different behavior/lockfile identity and receives `provider-identity-drift`;
+- unknown replay scheme and opaque transport stop;
+- two fresh runners race at the same journal revision: one appends, one loses, one sends.
 
-The scenario depends on product behavior and environment, not only provider law. One provider can have many scenarios; one scenario can span several providers.
+The V2 stop contains every comparison and the exact assertion a later `RiskAccepted` would make. This demonstrates that equal bytes do not silently relax strict identity.
 
-### Substitutability law?
+## Frozen definition and transport consequences
 
-None was found across npm install, binary execution, Homebrew, Scoop, and application-specific imports.
+The probe supports the five-field law but does not choose production generics, classes, tags, or constructor spelling.
 
-### Is durable evidence required?
+Automatic replay requires a core-owned prepared transport. There is no `NormalizedRequestProjection` method for provider authors. The structural distinction is:
 
-Not for publication correctness or resume. Normal CI logs/artifacts are sufficient unless a product separately chooses to persist acceptance reports.
+```text
+imports core HTTP/Git transport
+  -> eligible for supported automatic replay schemes
 
-### Does a public API need it?
+dispatches arbitrary provider Effect
+  -> initial dispatch and observation only
+```
 
-No demonstrated API. An ordinary Effect supplied by the release application is sufficient.
+This removes one subtly unsafe extension contract rather than adding an admission mechanism.
 
-### What is lost by removal?
+## Structured stop explanation
 
-Only a generic core registry/status/resume mechanism for arbitrary consumer tests. That loss does not block the fixed shipping scope.
+Every blocked automatic replay reports:
 
-Conclusion: remove completely from provider definitions and the canonical journal. Preserve clean-consumer testing as project/application policy.
+- the decision code;
+- all recorded and candidate facts examined;
+- match, mismatch, unsupported, or expired result;
+- the consequence of each result;
+- prior dispatch and operation;
+- candidate request fingerprint;
+- accepted duplicate/conflict/overwrite/provider-drift risks;
+- the exact first-person authorization assertion.
 
-## Replay alternatives
+The shape is intentionally more detailed than the strict v1 rule needs. A future relaxation that permits equal core-prepared bytes across behavior drift could change only the decision rule and preserve the same recorded evidence and explanation format.
 
-### A. Resume-time ReplaySafetyCapability
+## R1: journal mechanism findings
 
-Canonical facts:
+Canonical note: `journal-backends.md`.
 
-- old history plus newly installed provider code.
+### Local filesystem
 
-Failure:
-
-- identical history can yield different verdicts across provider versions;
-- verdict may not preserve evidence;
-- combines static request protection with live observations.
-
-Rejected.
-
-### B. Dispatch-time protection interpreted by core
-
-Canonical facts:
-
-- prepared request fingerprint;
-- provider behavior identity;
-- authorization scope;
-- protection scheme, key/condition, and expiry;
-- journal history.
-
-Strength:
-
-- deterministic;
-- auditable;
-- no old verdict recomputation.
-
-Weakness:
-
-- requires a deliberately small core algebra;
-- provider still must honestly prepare/send the recorded request.
-
-Recommended.
-
-### C. Provider-version-pinned replay classifier
-
-Canonical facts:
-
-- history plus exact provider executable version.
-
-Strength:
-
-- prevents version drift.
-
-Weakness:
-
-- replay logic remains executable historical policy;
-- harder to audit than recorded protection;
-- code availability becomes part of safety.
-
-Useful as migration/compatibility defense, not the primary model.
-
-### D. No automatic replay except structural proofs
-
-Strength:
-
-- smallest safe state space;
-- arbitrary providers remain honest.
-
-Weakness:
-
-- fewer automatic continuations.
-
-Recommended as the default around B: only core-supported recorded schemes enable automatic replay.
-
-## Counterexamples used
-
-### Idempotency key scope/expiry
-
-- Stripe v1: 24 hours; v2: same API and account/sandbox within 30 days.
-- AWS Cloud Control: 36 hours.
-- Google: at least 60 minutes in documented APIs.
-
-An unscoped string is insufficient.
-
-### Conditional Git
-
-Expected-old to desired-new is safe to replay because remote compare-and-swap prevents a second successful transition.
-
-### Warehouse exact duplicate
-
-Pinned source accepts the same filename and hashes, but rejects same filename with different content. The protection must bind coordinate and content.
-
-### npm
-
-Immutable version does not prevent conflict or capture mutable initial-tag effects. No automatic replay scheme is inferred.
-
-### GitHub
-
-No general idempotency key for release/asset creation. Observation is required after response loss.
-
-### Write-only provider
-
-No observation/protection means inconclusive, not provider invalidity.
-
-### Request-status provider
-
-Request status can prove terminal non-commit or satisfaction. It remains observation.
-
-## Request fingerprint requirements
-
-The normalized projection should bind:
-
-- provider definition/behavior identity;
-- endpoint/API version;
-- method/operation;
-- coordinate;
-- canonical body/arguments;
-- referenced artifact digests;
-- relevant non-secret headers/options;
-- idempotency key or condition;
-- authorization principal/account/tenant/scope.
-
-It should exclude freshly reacquired credential bytes and transport signatures whose semantic authority is separately bound.
-
-For multipart or command transports, volatile boundaries/paths must either be stabilized or excluded through a provider-defined normalized projection. Built-in providers should use a core-owned prepared transport where practical.
-
-## Secrets
-
-Automatic replay requires recovering exact protection material.
-
-Preferred:
-
-- deterministic non-secret key derived from operation identity;
-- durable secret-manager reference;
-- encrypted journal field under an explicit storage policy.
-
-If none is available, protection is not reusable. Credentials are always reacquired.
-
-## OpenAI plugin distribution
-
-Official package shape:
-
-- `.codex-plugin/plugin.json`;
-- optional `skills/`;
-- optional `.app.json` or `.mcp.json`;
-- assets/hooks;
-- local or repository marketplace metadata.
-
-Official public flow:
-
-1. verified developer/business identity;
-2. portal draft;
-3. package/server scan;
-4. listing, prompts, test cases, availability, attestations;
-5. OpenAI review;
-6. developer chooses Publish after approval.
-
-The portal requires at least five positive and three negative tests. Public submission is not immediate publication and no general publication API is documented.
+A direct `O_EXCL` event-file open provides exclusive creation but exposes an incomplete-file crash window. The selected local algorithm prewrites and synchronizes a complete candidate, then atomically hard-links it to the unique next-generation path. Existing destination means revision mismatch. The backend is supported only on documented local filesystems; generic NFS/SMB/network mounts are excluded.
 
 Sources:
 
-- https://developers.openai.com/plugins/build/plugins
-- https://developers.openai.com/plugins/deploy/submission
+- https://www.man7.org/linux/man-pages/man2/open.2.html
+- https://man7.org/linux/man-pages/man2/link.2.html
+- https://www.man7.org/linux/man-pages/man3/fsync.3p.html
 
-## Artifact production sources
+### SQLite
 
-- effect-build granular branch:
-  https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13
-- GoReleaser nFPM:
-  https://www.goreleaser.com/customization/package/nfpm/
-- app bundles:
-  https://www.goreleaser.com/customization/package/app_bundles/
-- DMG:
-  https://www.goreleaser.com/customization/package/dmg/
-- pkg:
-  https://goreleaser.com/customization/package/pkg/
-- notarization:
-  https://goreleaser.com/customization/sign/notarize/
+`BEGIN IMMEDIATE` plus a conditional head update and event insert gives one writer/transaction winner. SQLite is a valid local implementation, but its own documentation warns against depending on network-filesystem locking. It does not add a deployment surface beyond the local generation store, so it is not required in v1.
 
-## Probe limits
+Sources:
 
-No new probe was added in this pass.
+- https://www.sqlite.org/lang_transaction.html
+- https://www.sqlite.org/rescode.html
+- https://www.sqlite.org/lockingv3.html
 
-Existing clean-consumer probe does not prove persisted provider restoration or replay. Existing artifact probes do not prove remote/object-store behavior. Existing Effect baseline probes do not prove Workflow semantics. Alignment candidate jobs remain informational.
+### S3 conditional object store
 
-Recommended next discriminating probe:
+The algorithm uploads a complete immutable event segment, reads the current head/ETag, and conditionally replaces the small head object with `If-Match`. The first matching write wins; stale writes receive precondition failure. Strong read-after-write consistency allows a fresh runner to reload the current head.
+
+Sources:
+
+- https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes.html
+- https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html
+
+### CI artifacts plus external state
+
+Modern GitHub Actions artifacts are immutable uploads and have bounded retention. Two runners can both upload artifacts, so artifact creation does not select the dispatch winner. When paired with S3 conditional state, S3 is the journal and the artifact is bundle transport.
+
+Sources:
+
+- https://github.com/actions/upload-artifact
+- https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository
+
+### Executable race result
+
+`probes/journal-backends/probe.mjs` launches two processes for each candidate:
 
 ```text
-runner A:
-  persist custom Intent
-  prepare exact dispatch
-  record protection and DispatchStarted
-  stop before/after simulated response loss
-
-runner B:
-  load same application/provider behavior
-  decode Intent
-  prepare request
-  compare fingerprint
-  derive core replay decision
-  use CAS to prevent a second runner from dispatching
+filesystem:                    winners=1 losers=1 finalRevision=2
+SQLite:                        winners=1 losers=1 finalRevision=2
+conditional object double:     winners=1 losers=1 finalRevision=2
+CI artifact uploads:           uploads=2
+external conditional state:    winners=1 losers=1 finalRevision=2
 ```
 
-A variant with provider behavior V2 must stop rather than reach a different automatic verdict.
+The object service is a protocol double; official S3 documentation is the authority for live service semantics.
+
+## R2: idempotency material findings
+
+Canonical note: `idempotency-material.md`.
+
+### Fixed provider set
+
+- npm's pinned client exposes no documented idempotency-key input;
+- Warehouse exact-duplicate protection uses filename/content hashes;
+- GitHub release and asset endpoints expose no general idempotency key;
+- conditional Git uses expected/desired object IDs;
+- custom core HTTP keys are client-derived;
+- opaque custom providers receive no automatic replay.
+
+No case requires a server-generated secret replay capability.
+
+### Derived-key record
+
+```text
+replay.idempotency-key/1 {
+  originDispatchId,
+  baseRequestFingerprint,
+  keyFingerprint,
+  scopeFingerprint,
+  requestFingerprint,
+  validFrom,
+  expiresAt
+}
+```
+
+The key value is recomputed by core and never persisted. Authentication secrets are reacquired separately. A future first-party provider that proves a secret capability requirement must introduce a new scheme and durable-secret design at that time.
+
+## npm operation decision
+
+Pinned npm code sends one document with version metadata, attachment, and initial dist-tag. Therefore:
+
+- one `NpmPublishOperation`;
+- one `DispatchStarted.operationId`;
+- one composite receipt with version and tag facets;
+- later observation reports both facets;
+- later tag movement is a new operation.
+
+This removes the previously speculative member-operation model.
+
+## Apple finalization decision
+
+`effect-build-apple` owns the notary submission identifier and all status recovery. Stapling and verification occur before the artifact becomes finalized. ts-release adopts only the final bytes, so no Apple event enters the distribution journal and no pre-finalization bundle state is introduced.
+
+## Scope decision
+
+The canonical count is 16/3/6:
+
+- 16 vNext acceptance families;
+- 3 AI-native architecture proofs only;
+- 6 deferred destination packages.
+
+The later OpenAI handoff is a pure directory validator. It is never a provider, receipt, or publication operation.
+
+## Standing model-expansion check
+
+This pass forces exactly one new shared interface: `JournalStore`, because two backends satisfy one append-if-revision law and both deployment surfaces are required.
+
+It does not force:
+
+- a release mode;
+- a provider capability registry;
+- a member-operation union;
+- a synchronized peer state table;
+- a custom request-projection contract;
+- a secret-reference union;
+- a pre-finalization ts-release journal.

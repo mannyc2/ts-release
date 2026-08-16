@@ -1,50 +1,45 @@
 # Refactor research packet
 
-Status: draft research for PR #19. This directory does not define a production API and does not authorize an Effect migration, Workflow/Activity implementation, Promise facade, or live provider mutation.
+Status: draft research for the stacked continuation of PR #19. This directory does not define a production API and does not authorize an Effect migration, Workflow/Activity implementation, Promise facade, or live provider mutation.
 
 ## Authority hierarchy
 
-Use one document for each kind of decision:
+1. `competitive-scope.md` owns the 16/3/6 capability ledger.
+2. `provider-contracts.md` owns the provider-definition and optional-service laws.
+3. `resumability.md` owns events, replay protection, request equivalence, structured stops, and CAS-before-send.
+4. `journal-backends.md` owns R1 storage-mechanism evidence and the `JournalStore` result.
+5. `idempotency-material.md` owns R2 secret-material evidence and the derived-key-only result.
+6. `artifact-model.md` and `artifact-storage.md` own immutable content, adoption, and the effect-build boundary.
+7. `provider-wire-models.md` and `provider-wire-github-catalogs.md` own provider-specific operation/receipt facts.
+8. `goreleaser-evidence-census.md` owns the complete feature census; `goreleaser-outcomes.md` projects it through the canonical scope ledger.
+9. `decision-packet.md` is a review projection and must not create peer authorities.
 
-1. [competitive-scope.md](./competitive-scope.md) is the canonical capability and release-scope ledger.
-2. [provider-contracts.md](./provider-contracts.md) is the canonical provider-extension and provider-capability analysis.
-3. [resumability.md](./resumability.md) is the canonical journal, replay, and retry-law analysis.
-4. [artifact-model.md](./artifact-model.md) and [artifact-storage.md](./artifact-storage.md) are the canonical artifact and byte-ownership analysis.
-5. [goreleaser-evidence-census.md](./goreleaser-evidence-census.md) is the complete feature-source census; [goreleaser-outcomes.md](./goreleaser-outcomes.md) is its derived outcome roadmap.
-6. [decision-packet.md](./decision-packet.md) is a review projection. It must not introduce a second scope list, provider contract, journal model, or artifact model.
+## Accepted high-confidence conclusions
 
-Provider wire facts remain in:
+- vNext acceptance is 16 outcome families: six distribution plus ten artifact-production/trust families.
+- The three AI-native outcomes are architecture-proved only; the six destination packages remain deferred.
+- `ConsumerScenario`, durable acceptance records, `ConsumerEvidenceRecorded`, `ReplaySafetyCapability`, and `ReplayAuthorized` are removed.
+- `RiskAccepted` remains because it records a new human decision.
+- ProviderDefinition has exactly five conceptual fields: definition ID, Intent Schema, schema version, behavior ID, and operation-ID projection.
+- prepare/observe/correct are optional provider-local services.
+- automatic replay exists only through core-owned HTTP/Git prepared transports and append-only replay scheme IDs.
+- provider authors cannot supply a custom normalized request projection in v1.
+- behavior or lockfile drift blocks automatic replay even when request fingerprints match; no migration machinery exists in v1.
+- npm initial publish is one operation with a composite receipt; `memberOperationIds` is removed.
+- Apple notarization/stapling/verification belongs to `effect-build-apple`; ts-release adopts only finalized bytes.
+- the bundle kernel remains an internal extraction-ready ts-release library.
+- one `JournalStore.appendIfRevision` law is justified by local-generation and S3-conditional backends.
+- no fixed provider requires secret durable replay material; v1 is derived-key-only.
+- Workflow/Activity remains deferred until six fixed distribution families are wire-complete.
 
-- [provider-wire-models.md](./provider-wire-models.md)
-- [provider-wire-github-catalogs.md](./provider-wire-github-catalogs.md)
+## Executable research
 
-Effect and execution research remains in:
+- `probes/two-runner/`: separate-process prepare/replay/identity/CAS traces.
+- `probes/journal-backends/`: two-process filesystem, SQLite, conditional-object, and artifact-plus-external-state races.
+- `.github/workflows/refactor-research-probes.yml`: compiles/runs both probe sets.
 
-- [effect-patterns.md](./effect-patterns.md)
-- [effect-architecture-patterns.md](./effect-architecture-patterns.md)
-- [fresh-runner-resumability.md](./fresh-runner-resumability.md)
-- [implementation-strategy.md](./implementation-strategy.md)
-
-## Current high-confidence conclusions
-
-- Provider mutation acceptance, fresh provider observation, public delivery observation, and clean consumer behavior are different outcomes.
-- Clean install or execution checks are application or CI policy. They are not a provider capability and are not part of the canonical mutation/recovery journal.
-- Replay protection is fixed when a concrete request is prepared. The journal records the protection before dispatch. Core later derives replay permission from durable facts; provider code does not reinterpret an old dispatch.
-- Unsupported replay laws stop automatic replay. They do not admit executable policy into the resume path.
-- Arbitrary providers remain ordinary imported TypeScript plus Layers. A fresh runner must load the same application/provider definition identity that produced the persisted Intent.
-- The fixed shipping distribution scope is unchanged. Implementation order and artifact-production ownership are tracked separately in the canonical competitive-scope ledger.
+A passing probe proves only its explicit mechanism and environment. The conditional-object probe is a protocol double; official provider documentation remains the authority for live service semantics.
 
 ## Research labels
 
-Material claims should be labeled or attributable as:
-
-- provider-specified;
-- current-code-observed;
-- released-code-observed;
-- source-observed;
-- experimentally observed;
-- inferred;
-- proposal;
-- unresolved.
-
-A passing compile probe proves only the compiled surface. It does not prove protocol semantics, durable continuation, or a live endpoint outcome.
+Claims should remain attributable as provider-specified, source-observed, experimentally observed, inferred, accepted decision, proposal, or unresolved.

@@ -1,173 +1,202 @@
 # Adversarial traces
 
-Status: worked state traces, not executable tests.
+Status: worked state traces projected from the canonical plan/journal/replay model. Executable counterparts are under `probes/two-runner/` and `probes/journal-backends/`.
 
-## T1. Normal npm success
+## T1. Normal npm composite success
 
-1. Plan contains one initial npm publish Intent.
-2. Provider prepares the registry PUT and no automatic replay protection.
-3. Core appends `DispatchStarted`.
-4. Registry returns documented success.
-5. Core appends `ReceiptAccepted`.
-6. Publication is accepted. A later clean install is CI policy, not journal state.
+1. Plan contains one `NpmPublishOperation`.
+2. Core prepares one npm PUT containing version/tarball and initial dist-tag.
+3. Core appends one singular `DispatchStarted.operationId`.
+4. Registry accepts the request.
+5. Core records one composite receipt with version and initial-tag facets.
+6. A later clean install is CI policy, not journal state.
+
+No member-operation list is created.
 
 ## T2. Lost npm response
 
-1. `DispatchStarted` exists.
-2. Connection disappears after the request may have reached the registry.
-3. No receipt exists.
-4. Fresh runner observes package version and dist-tag.
-5. Outcomes:
-   - version and tag satisfied -> `ObservationRecorded`, stop satisfied;
-   - version satisfied, tag differs -> version remains complete; tag correction is a new Intent;
-   - absent while request could still commit -> stop/wait inconclusive;
-   - conflicting bytes/version -> conflict.
-6. Version immutability alone never authorizes replay.
+1. `DispatchStarted` exists and the response disappears.
+2. No npm replay protection was recorded.
+3. Fresh runner observes version and tag.
+4. Both satisfied -> stop satisfied.
+5. Version satisfied, tag moved -> version remains complete; tag correction is a new operation.
+6. Absence while the PUT may still commit -> wait or stop inconclusive.
+7. Conflicting bytes -> conflict.
+8. Version immutability alone never authorizes replay.
 
 ## T3. Warehouse partial publication
 
-Three file Intents: wheel A, wheel B, sdist C.
+Three file operations: wheel A, wheel B, sdist C.
 
-1. A returns HTTP 200 -> receipt accepted.
+1. A returns HTTP 200.
 2. B response is lost.
 3. C was never attempted.
 4. Fresh runner observes B by filename/hash.
-5. If B is present with intended hash, it is satisfied by observation.
-6. C is initially dispatchable.
-7. A is not rebuilt or reuploaded.
+5. Matching B -> satisfied by observation.
+6. C remains initially dispatchable.
+7. A is neither rebuilt nor reuploaded.
 
-## T4. Warehouse exact duplicate replay
+## T4. Warehouse exact duplicate
 
-1. Upload response is lost.
-2. The earlier request is no longer in flight, or operator chooses to use the documented exact-duplicate law.
-3. Historical dispatch records `ExactDuplicateAccepted` with Warehouse behavior ID, filename, content fingerprint, and request fingerprint.
-4. Fresh runner prepares byte-equivalent upload under matching behavior ID.
-5. Core authorizes exact replay.
-6. Warehouse returns HTTP 200 for identical filename/hashes.
-7. Different bytes would fail fingerprint comparison before send or conflict at Warehouse.
+1. B's historical dispatch records `replay.exact-duplicate/1` with pinned Warehouse behavior, coordinate/content fingerprints, and request fingerprint.
+2. Fresh runner prepares the equivalent file upload through core HTTP.
+3. Identity, request, content, and scheme all match.
+4. Journal CAS appends one new dispatch.
+5. Pinned Warehouse accepts identical filename/hashes.
+6. Different bytes fail before send or conflict at Warehouse.
 
-## T5. Git compare-and-swap replay
+## T5. Conditional Git replay
 
-1. Intent wants `refs/heads/main` to move from P to Q.
-2. Dispatch records expected P and desired Q.
+1. Operation wants ref R to move from P to Q.
+2. Historical dispatch records `replay.cas/1`, expected P, desired Q, and request fingerprint.
 3. Response is lost.
-4. Fresh runner prepares the same `P -> Q` update.
-5. Core recognizes unexpired/unchanged `CompareAndSwap` protection.
-6. CAS journal append permits one runner to dispatch.
-7. If first request already committed, replay sees Q or fails expected-P precondition; it cannot apply a second distinct mutation.
+4. Fresh runner prepares the same core Git update.
+5. Core verifies identity/fingerprint and appends one dispatch.
+6. If the first request already committed, remote R is Q and expected-P cannot apply a second distinct transition.
 
-## T6. Idempotency key with expiry
+## T6. Derived idempotency key after response loss
 
-1. Prepared request records key K, account/scope S, request fingerprint F, and expiry E.
-2. Response is lost.
-3. Before E, fresh runner prepares same F under same S and recovers K.
-4. Core may authorize replay.
-5. After E, automatic replay is denied even if K is reused by provider code.
-6. A new request needs observation, non-commit proof, or risk acceptance.
+1. Core computes base request fingerprint F0.
+2. Core derives K from scheme ID, origin dispatch ID, and F0.
+3. `DispatchStarted` stores fingerprint(K), scope, F0, final request fingerprint F1, and expiry; it does not store K.
+4. Runner A creates one remote effect and loses the response.
+5. Runner B loads only plan/journal, derives the same K, verifies fingerprint(K) and F1, wins journal CAS, and sends.
+6. Provider returns the original result; remote request count is two and effect count is one.
+7. After expiry, automatic replay stops.
 
-## T7. Different provider code on two runners
+## T7. Equal request bytes under provider V2
 
-History records behavior ID V1 and request fingerprint F.
+History records behavior V1, lockfile L1, and request fingerprint F.
 
-Runner A loads provider V1 and prepares F.
-Runner B loads provider V2 and prepares G.
+Runner B loads behavior V2 and lockfile L2, then prepares the same fingerprint F.
 
-- A receives the deterministic core replay decision.
-- B stops because behavior ID/fingerprint mismatch.
-- V2 cannot reinterpret V1 history as safe.
+The result is not a different replay verdict. It is:
 
-If V2 prepares F but has a different behavior ID, it still stops until an explicit compatibility/migration decision exists.
+```text
+code: provider-identity-drift
+requestFingerprint: match
+providerBehaviorId: mismatch V1 -> V2
+providerLockfileIdentity: mismatch L1 -> L2
+consequence: block automatic replay
+riskAcceptance: exact human assertion
+```
 
-## T8. Lost GitHub asset response
+V2 never executes historical replay policy.
 
-1. Asset Intent references parent release Intent and requested public name.
-2. Parent release receipt/observation supplies release ID.
-3. Asset upload is dispatched without idempotency key.
-4. Response is lost.
-5. Fresh runner lists assets and compares effective name, state, size, and digest.
-6. Matching uploaded asset -> satisfied.
-7. `starter` asset after documented 502 -> provider-specific failed state/correction.
-8. Absence while upload may still be in flight -> inconclusive, not replay authority.
+## T8. Unknown replay scheme
 
-## T9. Write-only custom provider
+1. History contains `replay.idempotency-key/2`.
+2. Core v1 knows only append-only `/1` meanings.
+3. Request bytes otherwise match.
+4. Automatic replay stops `unsupported-replay-scheme`.
+5. Old event meaning is not guessed or reinterpreted.
 
-1. Dispatch is recorded with `replayProtection: None`.
-2. Response is lost.
-3. Provider has no observation or request-status API.
-4. Fresh runner cannot prove commit or non-commit.
-5. Automatic replay is unavailable.
-6. Maintainer may stop or append `RiskAccepted` and start a new attempt.
+## T9. Opaque custom provider
 
-This provider is valid; its resumability ceiling is explicit.
+1. Custom provider initially dispatches through its own Effect.
+2. `DispatchStarted.transportId` is `provider.opaque/1` and protection is none.
+3. Response is lost.
+4. Provider has no authoritative observation.
+5. Core cannot prove exact-send correspondence or non-commit.
+6. Operation stops `Inconclusive`.
+7. Maintainer may record `RiskAccepted`; the provider remains valid.
 
-## T10. Custom provider with request status
+## T10. Custom provider with authoritative request status
 
-1. Dispatch response returns a request token, or the token was known before dispatch.
+1. Historical receipt/request facts include a status token.
 2. Fresh runner calls the authoritative status endpoint.
-3. Status:
-   - succeeded -> satisfied by observation;
-   - terminal rejected/no mutation -> non-commit authority;
-   - pending -> wait;
-   - expired/unknown -> inconclusive.
-4. Request status is reconciliation evidence, not replay protection.
+3. Succeeded -> satisfied.
+4. Terminal rejected with no mutation -> non-commit authority.
+5. Pending -> wait.
+6. Expired/unknown -> inconclusive.
+7. The token is observation evidence, not a replay-protection scheme.
 
 ## T11. Absence while stale request remains in flight
 
-1. Runner A sends request and loses its lease.
-2. Runner B reads the destination and sees absence.
+1. Runner A sends, then loses ownership.
+2. Runner B observes absence.
 3. A's request later commits.
-4. Therefore B cannot convert absence to non-commit proof.
-5. B waits, uses request status, uses recorded replay protection, or stops inconclusive.
+4. Therefore B cannot turn absence into a fence.
+5. B may wait, query request status, use recorded structural protection, or stop inconclusive.
 
-## T12. Two fresh runners
+## T12. Two fresh runners race
 
-Both runners load journal version 9 and derive replay-safe.
+A and B load journal revision 9 and derive the same safe continuation.
 
-1. A compare-and-swap appends `DispatchStarted` at version 9 -> version 10.
-2. B's append at version 9 fails.
-3. B reloads and does not send.
-4. The lease is optional; CAS is the dispatch gate.
+1. A `appendIfRevision(9, DispatchStarted A)` -> appended revision 10.
+2. B `appendIfRevision(9, DispatchStarted B)` -> revision mismatch 10.
+3. A sends.
+4. B reloads and does not send.
+5. Executable probe result: one winner, one loser, one send, one effect.
 
-## T13. Explicit risky replay
+A lease is optional and does not replace CAS.
 
-1. No non-commit proof or replay protection exists.
-2. Maintainer reviews Intent, receipts, observations, and risk.
-3. Maintainer appends `RiskAccepted` describing scope and reason.
-4. New `DispatchStarted` references that event.
-5. The event is not named `ReplayAuthorized`; it records a real human decision.
+## T13. Local filesystem CAS on unsupported network storage
 
-## T14. Consumer failure after accepted publication
+1. Application points the local generation store at an undocumented network filesystem.
+2. Required hard-link/synchronization semantics are not established.
+3. Backend refuses support or configuration validation fails.
+4. It does not silently downgrade to best-effort locking.
+5. User selects S3 conditional storage or supplies a conforming `JournalStore` Layer.
 
-1. Provider receipt proves npm publication acceptance.
-2. Separate CI job runs `npm install` and CLI smoke test.
-3. Test fails because entrypoint packaging is wrong.
-4. CI/release policy fails.
-5. Journal does not replay npm publication and does not mark the provider receipt uncertain.
-6. The fix is a new version/plan, not mutation recovery.
+## T14. CI artifacts without external state
 
-## T15. OpenAI public plugin handoff
+1. Two CI runners upload different immutable journal-looking artifacts.
+2. Both uploads succeed.
+3. Neither upload establishes the authoritative next head.
+4. No runner may send based on artifact upload alone.
+5. With S3 external state, one conditional head writer wins; S3 is the journal and artifacts are bundle transport.
 
-1. Artifact production emits plugin manifest, skills, optional MCP references, listing assets, tests, and release notes.
-2. ts-release may publish a repository marketplace entry.
-3. Public submission packet is validated.
-4. A verified human uses the OpenAI portal.
-5. OpenAI reviews.
-6. After approval, a human chooses Publish.
-7. No fictitious automated OpenAI provider receipt is recorded.
+## T15. Explicit risky replay
 
-## T16. Notarization changes final bytes
+1. No non-commit proof or supported protection exists.
+2. Structured stop lists all facts and risks.
+3. Maintainer records `RiskAccepted` containing the exact assertion.
+4. A new singular `DispatchStarted` references that event.
+5. Audit reports the accepted duplicate/conflict/overwrite/provider-drift risk.
 
-1. App bundle and DMG are locally constructed and signed.
-2. Notary submission is dispatched; response is lost.
-3. Fresh runner reconciles status with provider request identity.
-4. After acceptance, stapling changes DMG bytes.
-5. Final release bundle cannot have committed the pre-stapled DMG as the final artifact.
-6. This trace must inform the production/release phase boundary before it is frozen.
+## T16. Consumer failure after provider success
 
-## T17. Plan correction
+1. Provider receipt proves publication acceptance.
+2. Separate CI installs and executes the package.
+3. Packaging error causes failure.
+4. Release acceptance fails.
+5. Provider publication is not replayed and the receipt remains true.
+6. Fix requires a new artifact/version/plan.
 
-1. Historical Intent I1 and dispatch events remain immutable.
-2. Maintainer creates plan revision with Intent I2.
-3. `PlanSuperseded` links I1 to I2 and records reason/authority.
+## T17. GitHub release and assets
+
+1. Release creation is one operation and request.
+2. Asset A upload is a second operation/request.
+3. Asset B upload is a third operation/request.
+4. Losing A's response does not affect release or B's operation identity.
+5. Fresh runner lists assets and matches stored name, size, state, and digest where present.
+6. Absence does not authorize immediate replay.
+
+No operation-member mechanism is needed.
+
+## T18. Apple notarization before artifact finalization
+
+1. `effect-build-apple` constructs and signs an app/DMG/pkg.
+2. It submits to Apple's notary service and records the submission identifier in its production context.
+3. Response/status ambiguity is recovered internally through that identifier.
+4. After acceptance, it staples and verifies.
+5. Only then is the artifact finalized.
+6. ts-release adopts those final bytes into its immutable bundle.
+7. No pre-stapled artifact, Apple receipt, or pre-finalization event enters the ts-release distribution journal.
+
+## T19. Plan correction
+
+1. Historical operation I1 and events remain immutable.
+2. Maintainer creates plan revision with operation I2.
+3. `PlanSuperseded` links them with reason and authority.
 4. I2 receives its own operation ID and attempts.
-5. New provider code never reinterprets I1's request as I2.
+5. New provider code never reinterprets I1 as I2.
+
+## T20. AI-native human handoff
+
+1. Artifact work creates a plugin package and listing/test handoff directory.
+2. A pure validator checks its required files, metadata, assets, release notes, attestations, and tests.
+3. vNext records no OpenAI publication operation.
+4. A later verified human uses the documented portal flow.
+5. No fictitious provider receipt is created.

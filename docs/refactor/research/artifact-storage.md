@@ -1,8 +1,10 @@
 # Artifact ownership, persistence, and effect-build boundary
 
-Status: continuation of `artifact-model.md`.
+Status: canonical byte-ownership continuation of `artifact-model.md`.
 
-## Universal artifact kernel
+## Internal immutable-content kernel
+
+The kernel remains an internal extraction-ready library within ts-release:
 
 ```text
 ContentObject {
@@ -16,115 +18,108 @@ LogicalArtifact {
 }
 ```
 
-Release, provider, destination, filename, platform role, package type, and consumer-test facts remain outside this kernel.
+It lives in its own directory, imports nothing from release planning or providers, and can later be extracted without changing its laws. It does not move into effect-build and does not acquire provider, destination, acceptance, or journal concepts.
 
-## Ownership transfer
+Revisit separate packaging only if effect-build planning, currently Candidate C2 in its PR #4, converges on directly emitting into this exact persistent kernel. That is a sequencing decision, not a challenge to the kernel's coherence.
 
-A producer can return:
+## Adoption law
 
-- a scoped intermediate that must be consumed before scope close; or
-- a finalized output at a caller-selected path.
+A producer returns either a scoped intermediate or a finalized output at a caller-selected path. ts-release adopts finalized bytes by:
 
-ts-release adopts either form by streaming bytes into release-owned storage, computing digest and length during the copy, and committing the content object before referencing it from the manifest.
+1. streaming them into release-owned storage;
+2. computing digest and length during copy;
+3. rejecting mutation during adoption;
+4. committing the content object before manifest reference;
+5. publishing the manifest/commit marker last.
 
-No provider receives a private CAS path. It receives a bound handle that can stream bytes or materialize a scoped logical filename.
+Providers receive bound artifact handles or scoped materialized filenames, never private CAS paths.
 
-## Current effect-build lifetime evidence
-
-The pinned granular branch already has two distinct laws:
-
-1. `JavaScriptBundle.withFile`/owned bundle operations: a scoped artifact is valid only during a callback.
-2. `Integration.produceExecutable`: validates and atomically publishes an executable to a caller-selected destination.
-
-Sources:
-
-- https://github.com/mannyc2/effect-build/blob/15c811bb9904142a33d119766b62082f3c689f13/packages/effect-build/src/JavaScriptBundle.ts
-- https://github.com/mannyc2/effect-build/blob/15c811bb9904142a33d119766b62082f3c689f13/packages/effect-build/src/Integration.ts
-
-ts-release can adopt a scoped output inside the callback or choose a private adoption path as the finalized destination.
-
-## Is packaging inside effect-build's domain?
-
-The current README says effect-build is not a generic build orchestrator or packager. That accurately limits the shipped product. It is not by itself a semantic proof that archives, wheels, system packages, app bundles, DMGs, and pkgs belong elsewhere.
-
-The coherent shared law is narrower:
-
-> A concrete integration transforms explicit inputs into validated artifact outputs with explicit lifetime and ownership.
-
-This law supports concrete packages such as:
+## effect-build boundary
 
 ```text
+effect-build
+  generic concrete artifact production and transformation
+  tool discovery and execution
+  scoped staging and intermediate ownership
+  caller-selected finalized outputs
+  artifact-specific validation
+
+ts-release
+  adoption into immutable release bundle
+  provider planning and mutation
+  durable journal/recovery
+  provider-native evidence and reporting
+```
+
+The current effect-build statement that it is not a generic packager describes its current consumers. The coherent domain law is concrete transformation from explicit inputs to validated artifact outputs with explicit lifetime and ownership.
+
+This supports concrete integrations such as:
+
+```text
+effect-build-archive
 effect-build-uv
 effect-build-poetry
 effect-build-nfpm
 effect-build-apple
-effect-build-archive
 ```
 
-without introducing a universal Builder service.
+without a universal Builder.
 
-Each integration can retain provider/tool-specific input, errors, stages, and outputs. The common infrastructure may include process execution, scoped staging, final-path publication, digesting, and artifact adoption.
+## Apple finalization law
 
-## Notarization tension
+`effect-build-apple` owns:
 
-Local signing is an artifact transformation. Apple notarization is an external mutation followed by status polling, and stapling may change final bytes.
+- app bundle construction;
+- DMG/pkg construction;
+- local codesign/productsign work;
+- notary submission;
+- status recovery through Apple's submission identifier;
+- stapling;
+- final verification.
 
-Alternatives:
-
-1. effect-build owns the complete operation, including remote notary calls;
-2. ts-release owns notary submission/recovery, then invokes an effect-build stapling transform;
-3. a dedicated Apple release-run integration owns both and participates in the same journal;
-4. notarization occurs before the release bundle and uses a separate durable production journal.
-
-Counterexample to a simple boundary:
+An Apple artifact is not finalized until notarization acceptance, stapling where applicable, and verification complete. ts-release sees only the finalized artifact and therefore preserves:
 
 ```text
-all artifacts finalized
--> all provider mutations
+finalize every artifact
+-> adopt immutable bytes
+-> plan and perform distribution mutations
 ```
 
-A notarized/stapled DMG cannot be finalized before the remote notary outcome if stapling is part of the promised bytes.
+The notary call is a remote and potentially ambiguous operation, but that ambiguity is internal to artifact production. `effect-build-apple` must recover it by submission identifier. It never enters ts-release's provider journal, and the bundle kernel needs no pre-finalization durability.
 
-Recommendation: include one notarization trace/prototype before freezing the production/release phase boundary. Do not force notarization into effect-build merely because it produces an artifact, and do not force it into ts-release merely because it calls a remote service.
+A failed or abandoned Apple production run produces no final artifact for adoption. Re-running artifact production is distinct from replaying a ts-release distribution mutation.
 
-## Generic-library packaging
+## Production outcome ownership
 
-Artifact-handoff laws can be independently valid even with one current adopter. Packaging priority depends on:
+The canonical vNext production/trust families are P01-P10 in `competitive-scope.md`. This file does not maintain a second count.
 
-- independent usefulness;
-- maintenance and release cadence;
-- whether effect-build and ts-release need the exact same persistent-lifetime law;
-- whether the abstraction reduces rather than adds states.
-
-Lifetime differences matter:
-
-- effect-build scoped intermediates can disappear after use;
-- ts-release bundle objects must survive process and runner loss.
-
-A shared package should therefore contain only immutable content/logical-reference laws, not ts-release retention, provider Intent, or release journal concepts.
+- executable matrices remain concrete compiler integrations;
+- wheels/sdists belong to uv/Poetry production integrations;
+- Warehouse publication belongs to ts-release;
+- nFPM creates package artifacts; later repository publication is separate;
+- Apple construction/signing/notarization/stapling belongs to `effect-build-apple`;
+- archives are concrete transformations.
 
 ## Validation boundaries
 
 At adoption:
 
-- copy/read producer bytes;
-- derive digest and length;
-- reject mutation during copy;
-- own the final object.
+- derive digest and length from bytes actually copied;
+- own the resulting object;
+- verify producer output is stable through the copy.
 
 At untrusted bundle import:
 
 - decode canonical manifest;
-- validate IDs and references;
+- validate IDs/references;
 - verify content objects according to backend trust policy.
 
-Inside one trusted immutable CAS domain:
+Within one trusted immutable store, repeated reads need not rehash every object. Verification may be lazy or explicit.
 
-- do not rehash every object on every read;
-- verify lazily on first access or through an explicit audit when the backend needs it.
+## What this decision does not add
 
-A manifest/commit marker published last prevents readers from accepting a partially written bundle.
-
-## Competitive-scope projection
-
-The canonical list of production outcomes is `competitive-scope.md`. This file does not maintain a separate scope list.
+- no universal Builder;
+- no cross-project artifact registry;
+- no pre-finalization ts-release journal;
+- no Apple publication provider in ts-release;
+- no synchronized effect-build/ts-release state model.

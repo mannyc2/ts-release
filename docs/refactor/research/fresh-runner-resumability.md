@@ -1,124 +1,120 @@
 # Fresh-runner continuation
 
-Status: operational projection of `resumability.md`.
+Status: operational projection of `resumability.md`, `journal-backends.md`, and `idempotency-material.md`.
 
-## Target scenario
+## Target
 
 ```text
-new CI runner
-no previous workspace
-no process memory
+new machine or process
+no shared memory with the prior runner
 durable bundle + plan + journal
 credentials reacquired
 release application/provider definitions loaded
-continuation proceeds without blind mutation replay
+no blind provider replay
 ```
 
 ## Required durable inputs
 
-1. immutable bundle and bundle ID;
-2. canonical provider Intents;
-3. provider definition ID, Intent schema version, and behavior ID;
-4. dependency edges;
-5. ordered journal events;
-6. journal compare-and-swap version;
-7. durable references needed to reacquire credentials or replay key material;
-8. source/application/lockfile identity sufficient to load compatible provider code.
+1. bundle locator, bundle ID, and finalized content digests;
+2. canonical provider Intents and dependency edges;
+3. provider definition ID and Intent schema version;
+4. operation ID projection result;
+5. ordered journal events and current revision;
+6. journal resume locator;
+7. provider behavior and lockfile identity recorded at dispatch;
+8. non-secret replay protection facts.
 
-Consumer test output is not required for mutation continuation.
+No consumer-test output or plaintext idempotency key is required.
 
-## Continuation algorithm
+## Algorithm
 
-1. Load and validate the bundle, plan, and journal.
-2. Fold current per-Intent state.
-3. Load the release application.
-4. Resolve each provider definition by ID and schema version.
-5. Reject automatic mutation when behavior identity is incompatible.
-6. Run fresh observations where the provider supports them.
-7. Prepare any candidate request without sending it.
-8. Compute the normalized request fingerprint and replay protection.
-9. Ask core's pure replay decision function whether an attempt is authorized.
-10. Compare-and-swap append one `DispatchStarted`.
-11. Send only after the append succeeds.
-12. Record the provider receipt, terminal non-commit proof, or fresh observation.
+1. Open the configured `JournalStore` from its resume locator.
+2. Load and validate the plan, journal, and bundle binding.
+3. Fold operation state from the plan and journal.
+4. Load the release application and resolve provider definitions.
+5. Decode and canonically re-encode each relevant Intent.
+6. Run fresh observations where useful and supported.
+7. Purely prepare a candidate request through `core.http/1` or `core.git/1`, or identify an opaque transport.
+8. Compare definition, schema, operation, behavior, lockfile, endpoint, authorization, transport, fingerprints, protection scope, and expiry.
+9. Derive the core replay/stop decision.
+10. `appendIfRevision` the next `DispatchStarted`.
+11. Send only when the append returns `Appended`.
+12. Record receipt, terminal non-commit evidence, or observation through another CAS append.
 
 ## Installed-code divergence
 
-Two runners with identical history can load different provider packages. They must not thereby reach different automatic replay verdicts.
-
-The rule is:
-
 ```text
-same behaviorId + same requestFingerprint + same protection facts
-  -> same core replay decision
+same recorded identity + same core-prepared request facts
+  -> same core decision
 
-behaviorId or requestFingerprint mismatch
-  -> no automatic replay
+behaviorId mismatch
+or lockfile identity mismatch
+or request fingerprint mismatch
+or unknown replay scheme
+or opaque transport
+  -> structured non-automatic stop
 ```
 
-The newer provider may still offer an explicit migration or a read-only observation compatibility path. That path does not rewrite historical replay evidence.
+Provider V2 cannot return a different replay verdict. Even when V2 prepares identical bytes, strict behavior/lockfile drift stops automatic replay in v1. The stop reports the equal fingerprint alongside the identity mismatch and constructs the exact `RiskAccepted` assertion.
 
-Remaining dependency: a provider implementation can violate its contract by sending a request different from the recorded prepared request. Built-in providers should minimize this with core-owned transports. Opaque custom Effects cannot be made non-malicious by TypeScript types.
+No migration machinery exists in v1. Observation under newer code is an application responsibility; automatic mutation is not.
 
-## Journal compare-and-swap
+## Cooperative race
 
-Suppose runners A and B load journal version 41 and both determine that exact replay is safe.
+Suppose A and B load revision 41 and both derive the same automatic replay result:
 
 ```text
-A appends DispatchStarted at expected version 41 -> succeeds, version 42
-B appends DispatchStarted at expected version 41 -> fails
-B reloads version 42 and does not send
+A appendIfRevision(41, DispatchStarted A) -> Appended(42)
+B appendIfRevision(41, DispatchStarted B) -> RevisionMismatch(42)
+A sends
+B reloads and does not send
 ```
 
-The append and dispatch gate must be ordered so that a runner cannot send after losing the compare-and-swap.
+The two-process probe demonstrates one winner, one loser, one send, and one simulated external effect.
 
-A lease can improve ownership and liveness but is not the safety authority. It cannot fence a stale request already in flight at a provider.
+CAS does not fence a stale request sent by an earlier runner. Absence still does not prove that request cannot commit later.
 
-## Storage mechanisms
+## Journal backends
 
-| Mechanism | Fresh-runner bundle | CAS journal | Concurrent takeover | External exactly once |
-| --- | --- | --- | --- | --- |
-| local files | only with durable shared volume | weak unless filesystem supports atomic protocol | weak | no |
-| SQLite | yes on durable/shared volume | transactional | cooperative; deployment-specific | no |
-| remote database/object store | yes | strong conditional writes possible | strongest initial fit | no |
-| CI artifacts plus rerun | bundle yes; mutable progress awkward | weak without external state | CI-specific | no |
-| Effect Workflow memory engine | no cross-process durable guarantee | engine-local | test/local | no |
-| Effect Cluster Workflow | durable messages/results with infrastructure | engine-managed | engine-managed | no |
-| Temporal | durable workflow/activity history | engine-managed | strong worker coordination | no |
-| explicit release journal | exactly tailored to provider evidence | chosen backend | chosen backend | no |
+### Local generation store
 
-Temporal explicitly recommends idempotent Activities because an external effect may complete and the worker may crash before the completion event is recorded. Durable execution does not remove the provider boundary.
+Resume locator: durable journal directory. The plan under that root binds the bundle locator and digest.
 
-Sources:
+Supported only on a documented local filesystem with the required link, synchronization, and crash-recovery semantics. Generic NFS, SMB, network home directories, and CI artifact mounts are not claimed.
 
-- https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/effect/src/unstable/workflow/Activity.ts
-- https://github.com/temporalio/documentation/blob/7f42b11f9ea68c1b463527fc1c13150a61c5cd16/docs/encyclopedia/activities/activity-definition.mdx
+### S3 conditional store
 
-## Custom-provider continuation
+Resume locator: bucket plus journal prefix. The reachable head binds immutable event segments, plan, and bundle locator/digest.
 
-A custom provider is resumable when the fresh runner's application supplies the matching provider definition and any required Layers.
+The append algorithm uploads a complete immutable segment and conditionally replaces the head with `If-Match` against the observed ETag. A failed or ambiguous conditional write does not permit send; the runner reloads the head.
 
-Capabilities determine the ceiling:
+### SQLite
 
-- dispatch only, no observation/protection: response loss stops inconclusive;
-- authoritative status observation: continuation may classify committed, rejected, or pending;
-- recorded core-supported protection: exact replay may proceed;
-- unsupported opaque replay law: no automatic replay;
-- behavior mismatch: no automatic replay.
+SQLite transactionally satisfies the local law and is covered by the race probe. It is not required in v1 because it does not add a deployment surface beyond the local generation store and is not a supported network-filesystem solution.
 
-This is honest capability-bounded resumability, not provider admission.
+### CI artifacts plus external state
 
-## Retention and expiry
+CI artifacts can carry immutable bundle bytes. They do not expose the mutable-head CAS needed by the journal. When paired with S3 conditional state, S3 remains the journal authority and artifacts remain transport.
 
-Continuation can fail precisely because:
+## Retention and takeover
 
-- bundle expired;
-- journal expired;
-- provider definition unavailable;
-- schema migration unavailable;
-- replay key expired;
-- replay key secret reference unavailable;
-- request-status retention expired;
-- provider observation no longer authoritative.
+The journal, plan, and bundle must survive the configured recovery horizon. Object-store lifecycle policy and CI artifact retention must not silently expire required state.
 
-These are limits of the evidence, not reasons to rebuild or blindly replay.
+A lease is optional for ownership display, throttling, or operator coordination. It cannot replace `appendIfRevision`, make an in-flight request absent, or authorize replay.
+
+## Custom-provider ceilings
+
+| Provider shape | Continuation after uncertain send |
+| --- | --- |
+| core transport + supported recorded protection | automatic exact replay may be available |
+| authoritative request-status observation | observe committed, terminal non-commit, or pending |
+| ordinary observation only | may establish satisfied/conflict; absence is not a fence |
+| opaque write-only provider | `Inconclusive` or human `RiskAccepted` |
+| unknown replay law | no automatic replay |
+| behavior/lockfile drift | structured stop; no automatic migration |
+
+This is capability-bounded resumability, not provider admission.
+
+## Failure precision
+
+Continuation can stop because the journal or bundle expired, the definition/schema is unavailable, provider identity drifted, protection expired, request-status retention expired, observation is no longer authoritative, or storage CAS is ambiguous. None permits rebuilding completed artifacts or blindly replaying mutation.

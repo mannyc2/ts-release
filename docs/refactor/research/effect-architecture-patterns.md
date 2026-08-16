@@ -1,148 +1,109 @@
 # Effect architecture patterns for ts-release
 
-Status: semantic pattern research. It does not select the root API.
+Status: semantic pattern research. It does not select the root public API.
 
-## Principle
+## Rule
 
-Use `Context.Service` and Layers for concrete replaceable dependencies. Introduce a common service only when implementations are substitutable under one law.
+Use `Context.Service` and Layers for replaceable dependencies. Introduce one shared service only when implementations satisfy one substitutability law.
+
+## Shared laws that survived
+
+### Provider definition resolution
+
+A fresh application can resolve `(definitionId, intentSchemaVersion)` and decode a persisted Intent. This reconstructs durable type erasure; it is not a universal publication service.
+
+### Core transports
+
+`core.http/1` and `core.git/1` have a shared structural role: core constructs, fingerprints, freezes, and sends the exact prepared request after journal CAS. Provider packages contribute provider-local preparation inputs and response decoding, not a custom normalization contract.
+
+### JournalStore
+
+Two deployment surfaces genuinely need the same law:
+
+```text
+appendIfRevision(expectedRevision, completeEvent)
+  -> Appended | RevisionMismatch
+```
+
+`LocalGenerationJournalStore` and `S3ConditionalJournalStore` may therefore be Layers for one narrow service. This is the only new shared abstraction forced by R1. It introduces no release mode, provider registry, or synchronized peer state.
 
 ## Closest analogy: Effect SQL
 
-Effect SQL provides a common `SqlClient` because PostgreSQL, SQLite, MySQL, and other backends support a shared query/transaction vocabulary. Backend packages can extend that interface with operations such as PostgreSQL LISTEN/NOTIFY.
+Effect SQL exposes common query/transaction operations because its backends satisfy those laws, while concrete packages retain backend-specific extensions. Transfer to ts-release:
 
-Transfer to ts-release:
-
-- provider clients are concrete services;
-- provider packages expose `make`, `layer`, and `layerConfig` where useful;
+- concrete provider clients and storage backends are services;
 - application/runtime/test boundaries supply Layers;
-- provider-specific operations and errors remain in the provider package;
-- a shared interface should include only a proved common law.
+- provider-native receipts, observations, and errors remain typed;
+- common services stop exactly where the laws stop.
 
-Where the analogy stops:
-
-- release destinations are additive, not alternatives;
-- commit units differ;
-- receipts and conflict laws differ;
-- there is no universal publish query/transaction language.
+Release destinations are additive and their commit units differ, so there is no universal `Publisher`.
 
 Primary source:
 
 - https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/sql/pg/src/PgClient.ts
 
-## Effect AI normalization
-
-Effect AI demonstrates a genuine common `LanguageModel` service. Provider adapters normalize many failures into shared `AiError` reasons while retaining namespaced provider metadata.
-
-Benefit:
-
-- callers can handle common transport, authentication, rate-limit, and output failures uniformly.
-
-Cost:
-
-- provider-native distinctions can be erased or moved into generic metadata.
-
-ts-release durable receipts, observations, conflict facts, and replay protection are authority-bearing. They should remain provider-native. A normalized report can be derived for the CLI, but it should not replace canonical provider evidence.
-
-Sources:
-
-- https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/ai/openai/src/OpenAiLanguageModel.ts
-- https://github.com/Effect-TS/effect/blob/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6/packages/effect/src/unstable/ai/AiError.ts
-
-## effect-build
-
-effect-build's provider definitions share a compile-executable operation shape with provider-correlated options, targets, stages, and artifacts. That is a lawful common operation.
-
-Its granular branch also exposes concrete lower-level operations:
-
-- scoped JavaScript-bundle production;
-- executable publication to a caller-selected final path.
-
-Transfer:
-
-- concrete integrations can share low-level ownership and process infrastructure;
-- not every integration must be projected into one root service;
-- provider packages can add richer provider-specific operations.
-
-False analogy:
-
-- the existence of a compiler provider definition does not imply a publisher provider definition;
-- uv, Poetry, nFPM, and Apple packaging do not automatically implement one universal `Builder`.
-
-Sources:
-
-- https://github.com/mannyc2/effect-build/blob/15c811bb9904142a33d119766b62082f3c689f13/packages/effect-build/src/Provider.ts
-- https://github.com/mannyc2/effect-build/blob/15c811bb9904142a33d119766b62082f3c689f13/packages/effect-build/src/Integration.ts
-
 ## Removed pseudo-capabilities
 
-### ConsumerScenario
+- `ConsumerScenario`: application/CI policy, no provider substitutability law.
+- durable acceptance records and `ConsumerEvidenceRecorded`: no mutation/recovery consumer.
+- `ReplaySafetyCapability`: old replay safety cannot depend on newly installed provider code.
+- `ReplayAuthorized`: deterministic projection, not a new fact.
+- universal `Publisher`: destinations are not substitutes.
+- universal `Builder`: concrete artifact tools have no demonstrated common operation law.
 
-No substitutability law was found. Consumer install/execute checks are application policy or CI tests.
+`RiskAccepted` remains because it records a new human decision.
 
-### ReplaySafetyCapability
-
-Replay safety for an old dispatch must not vary with newly installed provider code. Protection is recorded when the request is prepared, then interpreted by core.
-
-### Universal Publisher
-
-Destinations are additive and have different inputs, commit units, receipts, and errors.
-
-## Provider definition versus service
-
-Provider definition:
+## Provider definition versus provider services
 
 ```text
-durable decoding and behavior identity
+ProviderDefinition
+  definitionId
+  Intent Schema and version
+  behaviorId
+  operationId projection
+
+provider-local services
+  prepare
+  observe
+  correct
+  configured client and credentials
 ```
 
-Concrete provider service:
+The five definition fields are frozen as a law; exact TypeScript spelling remains for implementation. `prepare`, `observe`, and `correct` are optional services, not members of one mandatory lifecycle.
 
-```text
-configured client, credentials, transport, rate limiting, observation
-```
+## Schema boundaries
 
-These should not be conflated.
+Use Schema for persisted Intents, provider-native receipts/observations, journal events, bundle manifests, cross-process plans, and public typed errors.
 
-A custom provider can be ordinary TypeScript plus a Layer without a central allowlist. Durable resumption adds a stable definition ID, schema version, and behavior ID so the same application can decode persisted Intent on a fresh runner.
+Do not repeatedly decode trusted in-process values. Core transport prepared requests are immutable runtime values whose fingerprints and replay facts are persisted, not arbitrary provider projections.
 
-## Schema and boundary rules
+## Scope and artifact ownership
 
-Use Schema for:
+Use Scope for temporary snapshots, staging, subprocesses, credential/config files, and materialized logical filenames. A scoped producer output must be adopted before scope close.
 
-- persisted Intents;
-- provider-native receipts and observations;
-- journal events;
-- bundle manifests;
-- cross-process release plans;
-- public typed errors.
+The immutable-content/bundle kernel stays an internal extraction-ready ts-release library in its own directory and imports nothing from planning or providers. It does not move into effect-build.
 
-Do not repeatedly decode already trusted in-process values.
-
-Schema services may help load bundle-relative references into bound handles, but that mechanism need not become an ambient public ArtifactStore service.
-
-## Scope and process ownership
-
-Use Scope for temporary source snapshots, staged outputs, temporary credentials/configuration files, processes, and materialized logical filenames.
-
-The release bundle owns durable bytes. A scoped effect-build output must be adopted before its scope closes.
+Concrete effect-build integrations may produce archives, wheels/sdists, system packages, Apple packages, signatures, and fully notarized/stapled artifacts. No universal Builder follows.
 
 ## Workflow/Activity
 
-Workflow/Activity stores and replays encoded results/messages. It does not persist a JavaScript code cursor and does not make an independent provider exactly once.
+Workflow/Activity can host the same plan/journal semantics later but cannot redefine them or make an external provider exactly once. Activity retry remains unsafe without the same recorded provider protection.
 
-Activity constructor interruption retry and `Activity.retry` are different mechanisms. Neither proves an external request did not commit.
+Adoption is deferred until all six fixed distribution families are wire-complete. Any later engine remains behind `unstable` and must preserve:
 
-Activity names and attempts participate in identity in the inspected engine. Release operation identity remains the canonical Intent digest, not call order or Activity name.
+- singular operation identity;
+- frozen `DispatchStarted` evidence;
+- core-owned transport correspondence;
+- structured stops;
+- `JournalStore` CAS semantics;
+- provider-native receipts and observations.
 
-## Version recommendation
+## Effect version
 
-The corrected alignment harness shows rc.108 and rc.109 both satisfy effect-build's exercised dependency set and both reach ts-release's broad beta.83 source-migration boundary.
-
-Provisional recommendation: plan the rewrite against the exact published rc.109 family, with moderate confidence, because beta.83 is outside effect-build's peer range and no semantic advantage for rc.108 has been demonstrated. Do not modify production dependencies until a behavior-preserving migration plan exists.
+The existing alignment probes remain informational. Planning against the exact published rc.109 family remains the current moderate-confidence direction, with no dependency migration in this research checkpoint.
 
 Pins:
 
-- beta.83: https://github.com/Effect-TS/effect/tree/cd7ab658994104bd6fe8f841f1440bea32c387f5
-- rc.108: https://github.com/Effect-TS/effect/tree/bef7bf38ae4b73d5511043f707aed083de5da7cc
 - rc.109: https://github.com/Effect-TS/effect/tree/ee06c9c1eed73ebcf282541ceb1615ff1ba1730d
 - current source research: https://github.com/Effect-TS/effect/tree/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6
+- effect-build granular branch: https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13

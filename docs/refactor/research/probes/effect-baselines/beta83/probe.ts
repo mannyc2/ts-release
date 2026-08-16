@@ -14,17 +14,16 @@ class BoundaryError extends Schema.TaggedErrorClass<BoundaryError>()("BoundaryEr
 const make = Effect.fnUntraced(function*() {
   return ExampleClient.of({ get: (key) => Effect.succeed(key) })
 })
-const layer = Layer.effect(ExampleClient, make)
+const layer = Layer.effect(ExampleClient, make())
 const operation = Effect.fn("probe.operation")(function*(key: string) {
   const client = yield* ExampleClient
   return yield* client.get(key)
 })
-const decoded = Schema.decodeUnknownEffect(BoundaryValue)({ value: "ok" })
 const activity = Activity.make({
   name: "probe.activity",
   success: BoundaryValue,
   error: BoundaryError,
-  execute: decoded
+  execute: Effect.succeed(new BoundaryValue({ value: "ok" }))
 })
 void activity.exitSchema
 // beta.83 does not expose partial-exit encoding.

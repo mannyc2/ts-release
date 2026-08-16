@@ -1,6 +1,13 @@
 // Disposable research probe. Not production API.
-// Question: can finalization, bundle identity, shared bytes, and path hiding be
-// represented structurally without separate ambient reader/writer services?
+//
+// This probe establishes only two narrow TypeScript facts:
+// 1. The value returned by finalize() need not expose add().
+// 2. A provider-facing value can omit a private storage path.
+//
+// It intentionally retains counterexamples that prevent stronger claims:
+// caller-supplied identities, aliased Uint8Array ownership, duplicate overwrite,
+// repeated finalization from a retained draft, a public Bundle constructor, and
+// generic thrown errors.
 
 declare const bundleIdBrand: unique symbol
 declare const artifactIdBrand: unique symbol
@@ -99,25 +106,41 @@ const secondId = "second" as ArtifactId
 const sharedBytes = "sha256-deadbeef" as ByteObjectId
 const bytes = new Uint8Array([1, 2, 3])
 
-const draft = BundleDraft.empty(bundleId)
+const retainedDraft = BundleDraft.empty(bundleId)
   .add({ artifactId: firstId, name: "one.bin", mediaType: "application/octet-stream", bytes }, sharedBytes)
-  .add({ artifactId: secondId, name: "two.exe", mediaType: "application/vnd.microsoft.portable-executable", bytes }, sharedBytes)
 
-const bundle = draft.finalize()
+const bundle = retainedDraft
+  .add({ artifactId: secondId, name: "two.exe", mediaType: "application/octet-stream", bytes }, sharedBytes)
+  .finalize()
 
-// Write-after-finalization is structurally unavailable.
+// Narrow result: add() is absent from the finalized value's static type.
 // @ts-expect-error Bundle intentionally has no add method.
 bundle.add({ artifactId: firstId, name: "late", mediaType: "text/plain", bytes }, sharedBytes)
 
 const first = bundle.resolve({ bundleId, artifactId: firstId })
 const second = bundle.resolve({ bundleId, artifactId: secondId })
 
-// Two logical artifacts retain distinct names/meaning while sharing bytes.
+// Narrow result: logical artifacts can expose distinct names while sharing an
+// object reference. This does not prove immutable byte ownership.
 void [first.name, second.name, first.bytes === second.bytes]
 
-// A provider sees only the logical file. No storage path exists in this type.
+// Narrow result: this provider input type has no storage path.
 function providerUpload(file: LogicalFile): number {
   return file.bytes.byteLength
 }
-
 void providerUpload(first)
+
+// Counterexample: a retained draft can be finalized again with the same
+// caller-supplied BundleId but different contents.
+const divergentBundle = retainedDraft.finalize()
+void divergentBundle
+
+// Counterexample: source and resolved bytes are aliases of internal storage.
+bytes[0] = 9
+first.bytes[1] = 8
+
+// Counterexample: duplicate logical/object IDs silently overwrite.
+const overwritten = retainedDraft
+  .add({ artifactId: firstId, name: "replacement.bin", mediaType: "text/plain", bytes }, sharedBytes)
+  .finalize()
+void overwritten

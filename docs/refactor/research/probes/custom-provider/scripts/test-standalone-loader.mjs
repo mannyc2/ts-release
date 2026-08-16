@@ -37,10 +37,10 @@ try {
     "effect@4.0.0-rc.109", core, provider
   ], { cwd: consumer, stdio: "inherit" })
   writeFileSync(join(consumer, "release.config.mjs"), `
-import { Artifact } from "@ts-release-research/core"
+import { makeArtifact } from "@ts-release-research/core"
 import * as Outside from "@outside/custom-publication-provider"
 import { Effect } from "effect"
-export default Outside.publish(new Artifact({
+export default Outside.publish(makeArtifact({
   id: "standalone-artifact",
   logicalName: "standalone.bin",
   bytes: new Uint8Array([8, 9])

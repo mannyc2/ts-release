@@ -1,0 +1,76 @@
+name: Refactor research probes
+
+on:
+  pull_request:
+    paths:
+      - "docs/refactor/research/**"
+      - ".github/workflows/refactor-research-probes.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  artifact-probes:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/refactor/research/probes
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-save --no-audit --no-fund typescript@6.0.3
+      - run: npx tsc -p probe-tsconfig.json
+      - run: npx tsc --strict --target ES2022 --module NodeNext --moduleResolution NodeNext --lib ES2022,DOM artifact-owned-bundle.ts --outDir .probe-dist
+      - run: node .probe-dist/artifact-owned-bundle.js
+
+  effect-baselines:
+    strategy:
+      fail-fast: false
+      matrix:
+        baseline: [beta83, rc108, rc109]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/refactor/research/probes/effect-baselines/${{ matrix.baseline }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run check
+
+  effect-artifact-load:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/refactor/research/probes
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-save --no-audit --no-fund effect@4.0.0-rc.109 typescript@6.0.3
+      - run: npx tsc --strict --target ES2022 --module NodeNext --moduleResolution NodeNext artifact-schema-load.ts --outDir .probe-dist-effect
+      - run: node .probe-dist-effect/artifact-schema-load.js
+
+  custom-provider-clean-consumer:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/refactor/research/probes/custom-provider
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - run: npm run test:clean
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: npm run test:standalone

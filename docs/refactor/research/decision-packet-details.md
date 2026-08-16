@@ -1,193 +1,157 @@
-# Decision packet details and source index
+# Decision packet details and counterexamples
 
-Status: evidence and tradeoff supplement to `decision-packet.md`. It does not own a peer scope list, event model, or provider contract.
+Status: evidence/tradeoff supplement to `decision-packet.md`.
 
-## Two-runner probe
+## 1. What the corrected probe establishes
 
-The disposable probe under `probes/two-runner/` runs runner A and runner B as separate Node processes. Durable JSON is their only shared state.
+The two-runner probe establishes:
 
-### Field list discriminated
+- the selected strict shape compiles and executes;
+- runner B can reproduce a core-owned request;
+- a journal CAS can prevent two fixture runners from sending;
+- strict implementation drift produces a structured stop; and
+- a core-derived operation ID remains stable across two provider
+  implementations in the focused identity comparison.
 
-The compile assertion uses exactly:
+It does not establish:
+
+- that five ProviderDefinition fields are minimal;
+- that behavior or lockfile identity should block replay;
+- that equal request bytes prove server idempotency;
+- that the fake remote is a provider protocol; or
+- that the local CAS seam is a production backend.
+
+## 2. Operation identity alternatives
+
+| Alternative | Canonical input | Installed-code dependence | Counterexample |
+| --- | --- | --- | --- |
+| provider `operationId(intent)` | provider executable projection | yes | V1 and V2 hash the same Intent under different domains |
+| core hash of definition/schema/Intent | canonical durable bytes | no | must include plan/bundle binding for relative artifact references |
+| random ID stored with plan | stored peer identifier | no after creation | can disagree with canonical Intent and cannot be recomputed |
+
+Recommendation: core-derived identity with `planId` binding.
+
+## 3. Strict versus bytes-sufficient replay
+
+### Strict implementation policy
+
+Blocks on behavior ID or whole-lockfile change.
+
+False-positive examples:
+
+- documentation-only or unrelated dependency lockfile update;
+- test-runner dependency update;
+- provider package rebuild with unchanged request construction;
+- dependency graph change that does not affect the prepared request.
+
+It also has false-negative limits:
+
+- provider source may change without a lockfile change;
+- a manually maintained behavior ID may not be bumped.
+
+### Bytes-sufficient correspondence policy
+
+For core-owned transports, compare:
 
 ```text
-ProviderDefinition
-  definitionId
-  intentSchema
-  intentSchemaVersion
-  behaviorId
-  operationId
-
-DispatchStarted
-  one operationId
-  no memberOperationIds
+operation ID
+endpoint
+non-secret authorization identity/scope
+immutable request fingerprint
+replay key/condition and scope
+validity interval
+trusted remote replay law
+journal CAS
 ```
 
-### Runtime traces
+No concrete fixed-provider counterexample was found in which all of these match
+and local implementation drift alone makes the repeat request unsafe.
 
-- runner A records `DispatchStarted` and stops before send; runner B re-prepares and continues;
-- runner A commits one simulated remote effect and loses the response; runner B sends the same derived key and receives the original result;
-- the durable plan/journal contains the key fingerprint but not plaintext key material;
-- provider V2 produces the same request fingerprint but a different behavior/lockfile identity and receives `provider-identity-drift`;
-- unknown replay scheme and opaque transport stop;
-- two fresh runners race at the same journal revision: one appends, one loses, one sends.
+A changed response decoder can affect receipt/reporting behavior, but it does
+not change whether the exact request is safe to send. Observation compatibility
+is a separate provider operation.
 
-The V2 stop contains every comparison and the exact assertion a later `RiskAccepted` would make. This demonstrates that equal bytes do not silently relax strict identity.
+Recommendation: implementation provenance is diagnostic, not a replay gate.
 
-## Frozen definition and transport consequences
+## 4. Request correspondence versus protocol authority
 
-The probe supports the five-field law but does not choose production generics, classes, tags, or constructor spelling.
-
-Automatic replay requires a core-owned prepared transport. There is no `NormalizedRequestProjection` method for provider authors. The structural distinction is:
+Counterexample:
 
 ```text
-imports core HTTP/Git transport
-  -> eligible for supported automatic replay schemes
-
-dispatches arbitrary provider Effect
-  -> initial dispatch and observation only
+custom provider prepares an HTTP POST
+adds Idempotency-Key: K
+server ignores the header
+first request commits, response is lost
+core sends byte-identical request with K
+second effect is created
 ```
 
-This removes one subtly unsafe extension contract rather than adding an admission mechanism.
+Core proved correspondence. It did not prove remote enforcement.
 
-## Structured stop explanation
+Authority alternatives:
 
-Every blocked automatic replay reports:
+| Model | Auditability | Custom-provider effect | Hidden allowlist risk |
+| --- | --- | --- | --- |
+| provider self-asserts scheme | low | open | no, but unsafe assertion possible |
+| core recognizes provider behavior IDs | medium | closed unless core changes | high |
+| application trusts a protocol-law declaration | explicit | open | no core allowlist, but maintained policy |
+| built-in structural laws only | high | custom replay conservative | low |
 
-- the decision code;
-- all recorded and candidate facts examined;
-- match, mismatch, unsupported, or expired result;
-- the consequence of each result;
-- prior dispatch and operation;
-- candidate request fingerprint;
-- accepted duplicate/conflict/overwrite/provider-drift risks;
-- the exact first-person authorization assertion.
+`core.git/1` CAS is structurally strongest because core constructs the expected
+old and desired new ref update and Git enforces it. Warehouse exact-duplicate
+and generic idempotency-key behavior remain provider-law claims.
 
-The shape is intentionally more detailed than the strict v1 rule needs. A future relaxation that permits equal core-prepared bytes across behavior drift could change only the decision rule and preserve the same recorded evidence and explanation format.
+No final authority representation is selected.
 
-## R1: journal mechanism findings
+## 5. Journal backend alternatives
 
-Canonical note: `journal-backends.md`.
+The law is fixed; implementation set is not.
 
-### Local filesystem
+### Filesystem generations
 
-A direct `O_EXCL` event-file open provides exclusive creation but exposes an incomplete-file crash window. The selected local algorithm prewrites and synchronizes a complete candidate, then atomically hard-links it to the unique next-generation path. Existing destination means revision mismatch. The backend is supported only on documented local filesystems; generic NFS/SMB/network mounts are excluded.
-
-Sources:
-
-- https://www.man7.org/linux/man-pages/man2/open.2.html
-- https://man7.org/linux/man-pages/man2/link.2.html
-- https://www.man7.org/linux/man-pages/man3/fsync.3p.html
+Current evidence is Linux-local only. Windows/macOS durability remains unproved.
 
 ### SQLite
 
-`BEGIN IMMEDIATE` plus a conditional head update and event insert gives one writer/transaction winner. SQLite is a valid local implementation, but its own documentation warns against depending on network-filesystem locking. It does not add a deployment surface beyond the local generation store, so it is not required in v1.
+Strong portable local candidate. It needs a safe local/block filesystem and
+does not by itself solve multi-host CI.
 
-Sources:
+### Dedicated Git ref
 
-- https://www.sqlite.org/lang_transaction.html
-- https://www.sqlite.org/rescode.html
-- https://www.sqlite.org/lockingv3.html
+A fast-forward commit chain or explicit expected-old push can provide a
+repository-native CAS. It avoids a second cloud account for GitHub Actions but
+requires write permission, careful ref policy, and a response-loss read-back.
 
-### S3 conditional object store
+### S3
 
-The algorithm uploads a complete immutable event segment, reads the current head/ETag, and conditionally replaces the small head object with `If-Match`. The first matching write wins; stale writes receive precondition failure. Strong read-after-write consistency allows a fresh runner to reload the current head.
+Strong conditional cross-host storage for AWS users. It is not entailed by
+release-provider scope.
 
-Sources:
+### User-supplied JournalStore
 
-- https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes.html
-- https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html
+Needed if the product supports deployments that already rely on a database or
+object store not maintained first-party. The shared law makes this ordinary
+Layer substitution rather than a release mode.
 
-### CI artifacts plus external state
+## 6. Apple notarization
 
-Modern GitHub Actions artifacts are immutable uploads and have bounded retention. Two runners can both upload artifacts, so artifact creation does not select the dispatch winner. When paired with S3 conditional state, S3 is the journal and the artifact is bundle transport.
+Moving ownership to effect-build-apple removes notarization from ts-release's
+provider journal, but it does not remove the need for durable production state.
 
-Sources:
-
-- https://github.com/actions/upload-artifact
-- https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository
-
-### Executable race result
-
-`probes/journal-backends/probe.mjs` launches two processes for each candidate:
+A correct effect-build design must survive:
 
 ```text
-filesystem:                    winners=1 losers=1 finalRevision=2
-SQLite:                        winners=1 losers=1 finalRevision=2
-conditional object double:     winners=1 losers=1 finalRevision=2
-CI artifact uploads:           uploads=2
-external conditional state:    winners=1 losers=1 finalRevision=2
+submission accepted
+process disappears before submission ID/result is durably recorded
+new runner receives same pre-notarization bytes
+polls or reconciles without blind resubmission
+staples and verifies final bytes
+ts-release adopts only then
 ```
 
-The object service is a protocol double; official S3 documentation is the authority for live service semantics.
+The package boundary is decided. The durable mechanism remains open.
 
-## R2: idempotency material findings
+## 7. Minor correction
 
-Canonical note: `idempotency-material.md`.
-
-### Fixed provider set
-
-- npm's pinned client exposes no documented idempotency-key input;
-- Warehouse exact-duplicate protection uses filename/content hashes;
-- GitHub release and asset endpoints expose no general idempotency key;
-- conditional Git uses expected/desired object IDs;
-- custom core HTTP keys are client-derived;
-- opaque custom providers receive no automatic replay.
-
-No case requires a server-generated secret replay capability.
-
-### Derived-key record
-
-```text
-replay.idempotency-key/1 {
-  originDispatchId,
-  baseRequestFingerprint,
-  keyFingerprint,
-  scopeFingerprint,
-  requestFingerprint,
-  validFrom,
-  expiresAt
-}
-```
-
-The key value is recomputed by core and never persisted. Authentication secrets are reacquired separately. A future first-party provider that proves a secret capability requirement must introduce a new scheme and durable-secret design at that time.
-
-## npm operation decision
-
-Pinned npm code sends one document with version metadata, attachment, and initial dist-tag. Therefore:
-
-- one `NpmPublishOperation`;
-- one `DispatchStarted.operationId`;
-- one composite receipt with version and tag facets;
-- later observation reports both facets;
-- later tag movement is a new operation.
-
-This removes the previously speculative member-operation model.
-
-## Apple finalization decision
-
-`effect-build-apple` owns the notary submission identifier and all status recovery. Stapling and verification occur before the artifact becomes finalized. ts-release adopts only the final bytes, so no Apple event enters the distribution journal and no pre-finalization bundle state is introduced.
-
-## Scope decision
-
-The canonical count is 16/3/6:
-
-- 16 vNext acceptance families;
-- 3 AI-native architecture proofs only;
-- 6 deferred destination packages.
-
-The later OpenAI handoff is a pure directory validator. It is never a provider, receipt, or publication operation.
-
-## Standing model-expansion check
-
-This pass forces exactly one new shared interface: `JournalStore`, because two backends satisfy one append-if-revision law and both deployment surfaces are required.
-
-It does not force:
-
-- a release mode;
-- a provider capability registry;
-- a member-operation union;
-- a synchronized peer state table;
-- a custom request-projection contract;
-- a secret-reference union;
-- a pre-finalization ts-release journal.
+The replay law has four cases, not "three facts": initial dispatch, proven
+non-commit, trusted replay protection, and explicit risk acceptance.

@@ -1,45 +1,65 @@
 # Refactor research packet
 
-Status: draft research for the stacked continuation of PR #19. This directory does not define a production API and does not authorize an Effect migration, Workflow/Activity implementation, Promise facade, or live provider mutation.
+Status: draft research for stacked PR #20. No production API, Promise facade,
+Effect migration, Workflow/Activity implementation, or live provider mutation
+is authorized here.
 
-## Authority hierarchy
+## Canonical authorities
 
-1. `competitive-scope.md` owns the 16/3/6 capability ledger.
-2. `provider-contracts.md` owns the provider-definition and optional-service laws.
-3. `resumability.md` owns events, replay protection, request equivalence, structured stops, and CAS-before-send.
-4. `journal-backends.md` owns R1 storage-mechanism evidence and the `JournalStore` result.
-5. `idempotency-material.md` owns R2 secret-material evidence and the derived-key-only result.
-6. `artifact-model.md` and `artifact-storage.md` own immutable content, adoption, and the effect-build boundary.
-7. `provider-wire-models.md` and `provider-wire-github-catalogs.md` own provider-specific operation/receipt facts.
-8. `goreleaser-evidence-census.md` owns the complete feature census; `goreleaser-outcomes.md` projects it through the canonical scope ledger.
-9. `decision-packet.md` is a review projection and must not create peer authorities.
+1. `competitive-scope.md` - 16/3/6 product scope.
+2. `provider-contracts.md` - provider-definition and optional-operation laws.
+3. `resumability.md` - journal, request correspondence, replay, and risk laws.
+4. `journal-backends.md` - accepted store law and open backend comparison.
+5. `artifact-model.md` and `artifact-storage.md` - immutable content and
+   effect-build boundary.
+6. `goreleaser-evidence-census.md` and `goreleaser-outcomes.md` - evidence
+   census and derived roadmap.
+7. `decision-packet.md` - review projection only; it must not create peer
+   authorities.
 
 ## Accepted high-confidence conclusions
 
-- vNext acceptance is 16 outcome families: six distribution plus ten artifact-production/trust families.
-- The three AI-native outcomes are architecture-proved only; the six destination packages remain deferred.
-- `ConsumerScenario`, durable acceptance records, `ConsumerEvidenceRecorded`, `ReplaySafetyCapability`, and `ReplayAuthorized` are removed.
-- `RiskAccepted` remains because it records a new human decision.
-- ProviderDefinition has exactly five conceptual fields: definition ID, Intent Schema, schema version, behavior ID, and operation-ID projection.
-- prepare/observe/correct are optional provider-local services.
-- automatic replay exists only through core-owned HTTP/Git prepared transports and append-only replay scheme IDs.
-- provider authors cannot supply a custom normalized request projection in v1.
-- behavior or lockfile drift blocks automatic replay even when request fingerprints match; no migration machinery exists in v1.
-- npm initial publish is one operation with a composite receipt; `memberOperationIds` is removed.
-- Apple notarization/stapling/verification belongs to `effect-build-apple`; ts-release adopts only finalized bytes.
-- the bundle kernel remains an internal extraction-ready ts-release library.
-- one `JournalStore.appendIfRevision` law is justified by local-generation and S3-conditional backends.
-- no fixed provider requires secret durable replay material; v1 is derived-key-only.
-- Workflow/Activity remains deferred until six fixed distribution families are wire-complete.
+- Consumer testing is application/CI policy, not a provider capability or
+  mutation-journal event.
+- Replay protection is recorded before dispatch; `RiskAccepted` records a real
+  human decision.
+- Observed absence cannot fence an in-flight request.
+- Core-owned transports can prove recorded/sent request correspondence.
+- Transport correspondence does not prove a remote idempotency or
+  exact-duplicate law.
+- Provider-controlled operation identity is not required; core can derive it
+  from plan and canonical Intent facts.
+- Whole-lockfile and manually maintained behavior identity are implementation
+  provenance, not established replay authorities.
+- `JournalStore.appendIfRevision` is a lawful shared interface; mandatory
+  backend selection remains open.
+- effect-build-apple owns notarization through final bytes, while its durable
+  fresh-process recovery design remains unresolved.
+- vNext acceptance remains 16 outcome families; A01-A03 are architecture proof
+  only and X01-X06 are deferred.
 
-## Executable research
+## Probe discipline
 
-- `probes/two-runner/`: separate-process prepare/replay/identity/CAS traces.
-- `probes/journal-backends/`: two-process filesystem, SQLite, conditional-object, and artifact-plus-external-state races.
-- `.github/workflows/refactor-research-probes.yml`: compiles/runs both probe sets.
+The two-runner probe exercises one selected shape. It does not establish that
+its field list is exact or minimal.
 
-A passing probe proves only its explicit mechanism and environment. The conditional-object probe is a protocol double; official provider documentation remains the authority for live service semantics.
+The focused identity comparison shows only that:
 
-## Research labels
+- core-derived operation identity is stable across provider implementations;
+- provider-authored identity can diverge for the same canonical Intent; and
+- strict implementation blocking and bytes-sufficient correspondence are
+  distinct policies.
 
-Claims should remain attributable as provider-specified, source-observed, experimentally observed, inferred, accepted decision, proposal, or unresolved.
+It does not prove provider idempotency, live response-loss recovery, production
+storage, or a final TypeScript API.
+
+## Evidence labels
+
+- provider-specified;
+- current-code-observed;
+- released-code-observed;
+- source-observed;
+- experimentally observed;
+- inferred;
+- proposal;
+- unresolved.

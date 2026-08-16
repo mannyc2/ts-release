@@ -1,106 +1,114 @@
 # Maintainer decision packet
 
-Status: accepted-decision projection. Canonical authorities remain `competitive-scope.md`, `provider-contracts.md`, `resumability.md`, and `artifact-storage.md`.
+Status: research projection. Canonical authorities are listed in `README.md`.
+This revision distinguishes accepted laws from implementation choices reopened
+by review.
 
-## Decisions closed
+## Accepted conclusions and maintainer decisions
 
-| Topic | Accepted decision |
-| --- | --- |
-| consumer testing | `ConsumerScenario`, durable acceptance records, and `ConsumerEvidenceRecorded` removed; application/CI Effects remain |
-| replay authority | protection frozen at dispatch preparation and interpreted by core; `ReplaySafetyCapability` removed |
-| replay events | deterministic `ReplayAuthorized` removed; `RiskAccepted` remains as a new human fact |
-| replay algebra | append-only `replay.none/1`, `replay.idempotency-key/1`, `replay.cas/1`, `replay.exact-duplicate/1` |
-| absence/status | absence never fences an in-flight request; request status is reconciliation evidence |
-| ProviderDefinition | exactly definition ID, Intent Schema, schema version, behavior ID, and operation-ID projection |
-| provider operations | prepare/observe/correct are optional provider-local services, not one lifecycle |
-| automatic replay transport | only core-owned HTTP/Git prepared transports; no custom projection contract |
-| opaque custom providers | valid dispatch/observe providers; uncertain continuation is `Inconclusive` or `RiskAccepted` |
-| identity drift | behavior or lockfile mismatch blocks automatic replay, even with equal request fingerprint |
-| migration | none in v1; new provider version observes, creates a new plan, or uses human risk acceptance |
-| npm | one publish operation with a composite receipt/observation; no `memberOperationIds` |
-| GitHub | release creation and each asset upload are separate operations |
-| notarization | `effect-build-apple` owns submission/status/stapling/verification; only finalized bytes enter ts-release |
-| bundle kernel | internal extraction-ready ts-release library; no planning/provider imports; not moved into effect-build |
-| Workflow/Activity | deferred until six fixed distribution families are wire-complete; later remains `unstable` |
-| vNext scope | 16 outcome families: D01-D06 plus P01-P10 |
-| AI-native | A01-A03 architecture-proved only; later handoff is a pure validator, never a publication provider |
-| deferred destinations | GitLab, Gitea, Cloudsmith, GemFury, Artifactory, Nexus |
+1. vNext acceptance is 16 outcome families: D01-D06 and P01-P10.
+2. A01-A03 are architecture proofs only; X01-X06 are deferred.
+3. `ConsumerScenario`, durable acceptance records, and
+   `ConsumerEvidenceRecorded` are removed.
+4. `ReplaySafetyCapability` and deterministic `ReplayAuthorized` are removed.
+5. `RiskAccepted` remains because it records a new human authorization fact.
+6. Replay protection is recorded before dispatch; observations remain separate.
+7. Observed absence cannot fence an earlier in-flight request.
+8. The replay vocabulary remains `None`, `IdempotencyKey`, `CompareAndSwap`, and
+   `ExactDuplicateAccepted`, with append-only versioned scheme IDs.
+9. Core-owned transports are required to prove request correspondence for
+   automatic replay.
+10. npm initial publication is one operation with a composite version/tag
+    receipt and observation; `memberOperationIds` remains removed.
+11. effect-build-apple owns notarization through final verified/stapled bytes.
+12. The immutable-content/bundle kernel remains internal to ts-release for now.
+13. Workflow/Activity remains deferred until the six fixed distribution
+    families are wire-complete.
+14. `JournalStore.appendIfRevision` is a lawful shared storage interface.
+15. No fixed provider requires durable plaintext secret idempotency material.
 
-## R1 closed: journal backend
+## Corrections to claims from the previous checkpoint
 
-One shared service is justified:
+### The two-runner probe exercises; it does not discover
 
-```text
-JournalStore.appendIfRevision(expectedRevision, completeEvent)
-```
+The probe-selected five-field provider shape and strict implementation-drift
+policy are test inputs. Compilation and execution show internal consistency,
+not minimality or architectural necessity.
 
-v1 requires two first-party Layers because the deployment surfaces are genuinely different:
+### Provider-controlled operation ID is not required
 
-```text
-LocalGenerationJournalStore
-S3ConditionalJournalStore
-```
-
-SQLite satisfies the local law but is not a second required v1 local implementation. CI artifacts carry immutable bundles but do not become journal authority without external conditional state.
-
-The race probe gives one winner and one loser for filesystem, SQLite, and conditional-object algorithms, and demonstrates that two artifact uploads still need one external-state winner.
-
-## R2 closed: idempotency material
-
-No shipping provider requires genuinely secret durable replay material. v1 is derived-key-only and removes plaintext key material and secret-manager references from the model.
-
-The event stores key fingerprint, scope, base/final request fingerprints, and validity interval. A fresh core HTTP transport derives the same key from origin dispatch identity plus the base request fingerprint. Credentials are reacquired and never treated as replay keys.
-
-## Critiques that survived
-
-- resume-time provider code could change replay decisions;
-- verdict-only replay records lacked evidence;
-- static protection and live reconciliation answer different questions;
-- `DispatchStarted` is the canonical protection record;
-- consumer scenarios lacked a substitutability law and core consumer;
-- immutable coordinates do not themselves make replay safe;
-- CI artifacts do not supply journal CAS;
-- opaque custom code cannot prove exact-send correspondence.
-
-## Critiques refuted or narrowed
-
-### All replay safety can be decided without provider facts
-
-Refuted broadly. Provider protocol facts establish which exact prepared request satisfies a core-supported scheme. The law is frozen as evidence before dispatch rather than executed later.
-
-### Request status is replay protection
-
-Refuted. It may establish committed, terminal non-commit, or pending; it does not suppress duplicate effects.
-
-### One blessed journal backend covers local and CI
-
-Refuted. A local filesystem backend cannot honestly claim cross-machine CI semantics, while requiring cloud object storage for every local release is unnecessary. The same narrow Layer law with two implementations is the smallest decision-grade result.
-
-### Secret-manager references are prudent future-proofing
-
-Refuted for v1. No in-scope provider needs them. A future provider that proves secret replay capability is a new evidence-backed scheme, not justification for an unused union now.
-
-## Product counts
-
-Canonical counts are maintained only in `competitive-scope.md`:
+Current recommendation:
 
 ```text
-vNext acceptance:                    16
-architecture-proved only:             3
-deferred destination packages:        6
+operationId = core hash(definitionId, schemaVersion, canonical Intent), paired with planId as the operation key
 ```
 
-## Genuine implementation choices still open
+The focused identity comparison shows that a provider projection can create
+different IDs for identical Intent bytes.
 
-- exact production TypeScript spelling of the frozen five fields and prepared transport values;
-- precise S3 object layout, error types, retention defaults, and conformance tests;
-- local generation-store platform support beyond the documented filesystem law;
-- exact npm-compatible registry policy beyond npmjs;
-- exact Warehouse-compatible repository policy beyond pinned Warehouse;
-- GitHub tag-establishment policy;
-- provider-specific observation match rules;
-- final effect-build package layout after its Candidate C2 planning converges;
-- exact Effect release target and migration sequence;
-- later Workflow/Activity engine selection after wire completion.
+### Behavior and lockfile identity are provenance, not replay authority
 
-None of these reopens the accepted event, replay, scope, or artifact-boundary laws.
+No fixed-provider counterexample was found where the exact core-owned request,
+endpoint, authorization scope, replay protection, validity, and trusted remote
+law match, but package/lockfile drift alone makes sending unsafe.
+
+Current recommendation: report implementation provenance diagnostically. Do not
+block replay solely on whole-lockfile or manually maintained behavior identity.
+
+### Core transport does not prove remote idempotency
+
+Core can prove recorded/sent request correspondence. A separate provider
+protocol law must establish idempotency-key, compare-and-swap, or
+exact-duplicate behavior. The authority representation for non-structural laws
+is unresolved.
+
+### Backend selection is reopened
+
+The `JournalStore` law remains accepted. The required first-party backend set
+does not follow from the 16 outcome families. SQLite, dedicated Git ref, S3,
+filesystem generations, and user-supplied Layers remain candidates.
+
+### Apple durable recovery remains open
+
+Ownership is decided; effect-build-apple still needs a durable fresh-process
+notarization/submission design.
+
+## Current recommendations
+
+| Topic | Recommendation | Confidence | Tradeoff |
+| --- | --- | --- | --- |
+| operation identity | core-derived from plan and canonical Intent | High | exact framing still to select |
+| implementation identity | optional provenance/diagnostic | High for core transports | less conservative than whole-lockfile blocking |
+| request correspondence | immutable core HTTP/Git transports | High | opaque custom transports cannot auto-replay |
+| remote replay law | keep separate from transport evidence | High | authority representation unresolved |
+| provider definition minimum | ID + Schema version + Intent Schema/canonical encoding | High | optional operations resolved separately |
+| backend interface | `JournalStore.appendIfRevision` | High | backend set still open |
+| local backend candidate | compare SQLite against filesystem generations | Moderate | deployment-specific |
+| GitHub CI backend candidate | dedicated/orphan Git ref | Moderate | permission and policy constraints |
+| S3 | optional backend for AWS deployments | High | not default infrastructure |
+| Apple P10 | required and effect-build-owned, durable design open | High | separate effect-build research required |
+
+## Genuine unresolved choices
+
+- final ProviderDefinition TypeScript spelling;
+- operation-ID domain/framing and plan binding;
+- representation of trusted provider replay-law authority;
+- whether `replay.idempotency-key/1` or
+  `replay.exact-duplicate/1` is enabled for any custom provider in v1;
+- first-party JournalStore backend set;
+- Windows/macOS support for a filesystem generation store;
+- Git-ref journal permissions, retention, and fork behavior;
+- Apple notarization durable-state mechanism;
+- exact request-fingerprint canonicalization;
+- provider receipt/observation schema migration;
+- Workflow/Activity adoption after wire-complete providers.
+
+## Model-expansion review
+
+The correction removes rather than adds peer facts:
+
+- provider-authored operation identity is unnecessary;
+- whole-lockfile identity is not a replay authority;
+- probe-selected field lists are not declared exact;
+- S3 is not a scope-implied mode; and
+- effect-build ownership is not treated as proof of notarization durability.

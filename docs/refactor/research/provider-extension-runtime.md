@@ -1,111 +1,118 @@
 # Custom-provider composition and fresh-runner loading
 
-Status: operational continuation of `provider-contracts.md`.
+Status: operational companion to `provider-contracts.md`.
 
 ## Ordinary Effect composition
 
-Concrete clients, credentials, rate limits, observation code, and correction code are ordinary services supplied by Layers. This does not imply a common publication service.
+A provider client is an ordinary concrete service supplied by a Layer. This
+solves dependency injection; it does not imply that npm, Warehouse, GitHub, and
+a custom endpoint implement one interchangeable publisher service.
 
-A shared abstraction is introduced only for one proved law:
+```ts
+class AcmeClient extends Context.Service<AcmeClient, AcmeClientService>()(
+  "@acme/release/AcmeClient"
+) {}
+```
 
-- provider-definition resolution reconstructs persisted Intent types;
-- core HTTP/Git transports structurally bind prepared requests to sends;
-- `JournalStore` atomically appends one event at one expected revision.
+The release application imports provider packages and supplies their Layers.
+No core allowlist is required.
 
-There is no universal `Publisher`, custom request-projection interface, or provider admission registry.
-
-## Fresh-runner application contract
+## Durable definition resolution
 
 A fresh runner has:
 
 ```text
-durable bundle locator and digest
-durable release plan
-durable journal locator
-no previous process memory
-newly acquired credentials
+immutable bundle
+release plan
+journal
 release application/configuration
+new credentials
+no process memory from the earlier runner
 ```
 
-The application supplies the definitions and Layers needed by the plan. The plan stores definition ID, Intent schema version, behavior ID, and operation ID. The first dispatch records the provider lockfile identity used at preparation time.
-
-The application does not serialize a Layer, closure, client, or historical replay classifier.
-
-## Strict provider identity
-
-Automatic replay requires all of:
+The plan stores:
 
 ```text
-same definitionId
-same Intent schema version and canonical Intent
-same behaviorId
-same provider/application lockfile identity
-same core transport scheme
-same endpoint and authorization identity
-same re-prepared request fingerprint
-same replay-protection scope and unexpired scheme
-successful journal appendIfRevision
+providerDefinitionId
+intentSchemaVersion
+canonical encoded Intent
 ```
 
-A mismatch produces a structured stop. Equal bytes do not relax behavior/lockfile drift in v1. The explanation reports every compared fact, matched and mismatched values, the consequence, and the exact assertion a later `RiskAccepted` would make.
+Core derives:
 
-There is no v1 migration operation. A provider upgrade that cannot satisfy strict identity may observe, create a new plan, or proceed only after human risk acceptance.
+```text
+operationId = hash(planId, definitionId, schemaVersion, canonicalIntent)
+```
 
-## Core-owned transports
+The application supplies the matching Schema and optional operations. It does
+not need to reproduce a provider-authored operation-ID function.
 
-### HTTP
+## Implementation provenance
 
-Core constructs and freezes the exact HTTP method, endpoint, non-secret semantic headers, body bytes, derived idempotency material, and fingerprint. The transport sends that immutable value only after `DispatchStarted` is durably appended.
+Package version, source revision, and lockfile identity can be useful for:
 
-### Git
+- diagnostics;
+- audit trails;
+- reproduction of a historical bug;
+- deciding whether a maintainer wants to trust a new observation decoder; and
+- explaining why newly prepared request bytes changed.
 
-Core constructs the exact repository/ref coordinate, expected revision, desired revision, and command/protocol projection. A compare-and-swap ref update is recorded as `replay.cas/1` before send.
+They are not automatic replay authorities when a core-owned transport produces
+an identical immutable request with the same endpoint, authorization scope,
+replay protection, and validity interval.
 
-### Opaque provider Effect
+The corrected identity probe compares both policies:
 
-Opaque code may still participate in initial dispatch and observation, but automatic replay is disabled. No TypeScript interface can prove that arbitrary code sends only the recorded bytes or performs no additional effects. The safe cost of not using a core transport is less automation, never weaker replay safety.
+```text
+same wire facts, different behavior/lockfile provenance
 
-## Two-process probe result
+strict implementation policy -> stop
+wire-correspondence policy    -> allow
+```
 
-`probes/two-runner/probe.mjs` runs runner A and runner B as separate Node processes with durable files as their only shared state.
+The probe does not prove remote idempotency. It shows that implementation
+identity is an additional conservative policy, not a fact entailed by request
+correspondence.
 
-It demonstrates:
+## Fresh-runner replay dependency
 
-- crash after `DispatchStarted` before send;
-- response loss after one simulated provider effect;
-- deterministic key derivation without plaintext key persistence;
-- request re-preparation and fingerprint comparison;
-- V2 behavior/lockfile drift stopping while request fingerprint remains equal;
-- unknown replay-scheme and opaque-transport stops;
-- one CAS winner, one loser, one send, and one external effect.
+Automatic replay still depends on two separate proofs:
 
-The probe's directory lock is only a seam. Production backend selection is in `journal-backends.md`.
+1. **Correspondence:** core can prove the new immutable request equals the
+   historical request under the recorded scope.
+2. **Remote law:** a trusted protocol-law authority establishes that replaying
+   that request is safe.
 
-## Dynamic loading boundary
+A provider package cannot obtain automatic replay merely by returning
+`replay.idempotency-key/1` or `replay.exact-duplicate/1`. The authority model
+for non-structural provider laws remains open.
 
-A dynamic Node/TypeScript CLI can load provider packages selected by the release application. A sealed executable has a separate module-resolution problem and is not evidence for a closed provider union.
+## Opaque custom effects
+
+A provider that performs arbitrary effects outside a core-owned transport is
+valid for initial dispatch and optional observation. Core cannot prove that a
+later invocation sends the historical request and performs no additional
+mutation.
+
+Therefore uncertain opaque dispatches do not replay automatically. They
+continue through observation, terminal non-commit evidence, or explicit
+`RiskAccepted`.
+
+## Dynamic CLI boundary
+
+A dynamic TypeScript/Node CLI can load the consumer's release application and
+therefore provider packages unknown when the CLI package was built.
+
+A sealed single-file executable has a separate package-resolution problem. That
+packaging limitation does not justify a provider union or registry.
 
 ## Closest Effect analogy
 
-Effect SQL remains the closest analogy: shared operations exist only where backend laws align, while concrete packages retain backend-specific services. Release destinations are additive, so the analogy stops before a universal publication service.
+Effect SQL remains the closest partial analogy:
 
-## Failure reporting
+- common interfaces exist only where backend laws align;
+- concrete backend clients retain richer provider-specific behavior;
+- application Layers choose implementations.
 
-A fresh runner distinguishes:
-
-```text
-UnknownProviderDefinition
-UnsupportedIntentSchema
-ProviderIdentityDrift
-UnsupportedTransport
-UnsupportedReplayScheme
-ExpiredReplayProtection
-RequestMismatch
-JournalRevisionMismatch
-Satisfied
-Conflict
-Pending
-Inconclusive
-```
-
-These are explanations or typed failures derived from one plan/journal history. They are not release modes or a second synchronized state table.
+The analogy stops because release destinations are additive and have different
+commit units, receipts, and replay laws.

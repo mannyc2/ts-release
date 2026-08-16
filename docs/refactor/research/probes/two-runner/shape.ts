@@ -3,12 +3,28 @@ export interface IntentSchema<I> {
   readonly decode: (encoded: unknown) => I
 }
 
-export interface ProviderDefinition<I> {
+/**
+ * The original probe-selected provider shape. This interface is exercised by
+ * the two-runner fixture; it is not asserted to be minimal or canonical.
+ */
+export interface SelectedProviderDefinition<I> {
   readonly definitionId: string
   readonly intentSchema: IntentSchema<I>
   readonly intentSchemaVersion: string
   readonly behaviorId: string
   readonly operationId: (intent: I) => string
+}
+
+/**
+ * A smaller candidate used by the identity comparison. Core can derive the
+ * operation identifier from plan identity, definition identity, schema
+ * version, and canonical Intent bytes. behaviorId can then be provenance
+ * rather than an identity or replay-authority field.
+ */
+export interface CoreDerivedProviderDefinitionCandidate<I> {
+  readonly definitionId: string
+  readonly intentSchema: IntentSchema<I>
+  readonly intentSchemaVersion: string
 }
 
 export type ReplaySchemeId =
@@ -54,7 +70,8 @@ export interface CorePreparedHttpRequest {
   readonly bodyBase64: string
 }
 
-export interface PreparedDispatch {
+/** The strict candidate exercised by runner A and runner B. */
+export interface SelectedPreparedDispatch {
   readonly operationId: string
   readonly providerDefinitionId: string
   readonly providerBehaviorId: string
@@ -64,6 +81,26 @@ export interface PreparedDispatch {
   readonly request: CorePreparedHttpRequest
   readonly requestFingerprint: string
   readonly replayProtection: ReplayProtection
+}
+
+/**
+ * A correspondence-focused candidate. It retains request, endpoint,
+ * authorization, and replay-protection facts, while behavior and lockfile
+ * identity are optional provenance rather than replay gates.
+ */
+export interface WireCorrespondencePreparedDispatchCandidate {
+  readonly operationId: string
+  readonly providerDefinitionId: string
+  readonly endpointIdentity: string
+  readonly authorizationIdentity: string
+  readonly request: CorePreparedHttpRequest
+  readonly requestFingerprint: string
+  readonly replayProtection: ReplayProtection
+  readonly implementationProvenance?: {
+    readonly packageVersion?: string
+    readonly sourceRevision?: string
+    readonly lockfileDigest?: string
+  }
 }
 
 export type ReplayBasis =
@@ -78,7 +115,8 @@ export type ReplayBasis =
       readonly riskAcceptedEventId: string
     }
 
-export interface DispatchStarted {
+/** The strict historical event shape currently exercised by the fixture. */
+export interface SelectedDispatchStarted {
   readonly type: "DispatchStarted"
   readonly dispatchId: string
   readonly attempt: number
@@ -95,12 +133,33 @@ export interface DispatchStarted {
   readonly startedAt: string
 }
 
+/** Candidate event if implementation identity is retained as provenance only. */
+export interface WireCorrespondenceDispatchStartedCandidate {
+  readonly type: "DispatchStarted"
+  readonly dispatchId: string
+  readonly attempt: number
+  readonly operationId: string
+  readonly providerDefinitionId: string
+  readonly transportId: "core.http/1" | "core.git/1" | "provider.opaque/1"
+  readonly endpointIdentity: string
+  readonly requestFingerprint: string
+  readonly authorizationIdentity: string
+  readonly replayProtection: ReplayProtection
+  readonly replayBasis: ReplayBasis
+  readonly implementationProvenance?: {
+    readonly packageVersion?: string
+    readonly sourceRevision?: string
+    readonly lockfileDigest?: string
+  }
+  readonly startedAt: string
+}
+
 export interface ReplayFactComparison {
   readonly fact: string
   readonly recorded: string | null
   readonly candidate: string | null
   readonly result: "match" | "mismatch" | "unsupported" | "expired"
-  readonly consequence: "allow" | "block"
+  readonly consequence: "allow" | "block" | "diagnostic"
 }
 
 export interface RiskAcceptanceAssertion {
@@ -115,6 +174,7 @@ export interface ReplayStopExplanation {
   readonly decision: "stop"
   readonly code:
     | "provider-identity-drift"
+    | "implementation-provenance-drift"
     | "request-mismatch"
     | "unsupported-replay-scheme"
     | "expired-replay-protection"
@@ -124,78 +184,15 @@ export interface ReplayStopExplanation {
   readonly riskAcceptance: RiskAcceptanceAssertion
 }
 
-type Equal<A, B> =
-  (<T>() => T extends A ? 1 : 2) extends
-  (<T>() => T extends B ? 1 : 2)
-    ? (<T>() => T extends B ? 1 : 2) extends
-      (<T>() => T extends A ? 1 : 2)
-      ? true
-      : false
-    : false
-
-type Assert<T extends true> = T
-
+// These assignments prove that both candidate shapes are usable by ordinary
+// TypeScript. They intentionally do not claim exactness or minimality.
 type ProbeIntent = {
   readonly coordinate: string
   readonly payload: Readonly<Record<string, string>>
 }
 
-type ExpectedProviderDefinitionKeys =
-  | "definitionId"
-  | "intentSchema"
-  | "intentSchemaVersion"
-  | "behaviorId"
-  | "operationId"
-
-type ExpectedDispatchStartedKeys =
-  | "type"
-  | "dispatchId"
-  | "attempt"
-  | "operationId"
-  | "providerDefinitionId"
-  | "providerBehaviorId"
-  | "providerLockfileIdentity"
-  | "transportId"
-  | "endpointIdentity"
-  | "requestFingerprint"
-  | "authorizationIdentity"
-  | "replayProtection"
-  | "replayBasis"
-  | "startedAt"
-
-type ProviderDefinitionFieldListIsExact = Assert<
-  Equal<keyof ProviderDefinition<ProbeIntent>, ExpectedProviderDefinitionKeys>
->
-
-type DispatchStartedFieldListIsExact = Assert<
-  Equal<keyof DispatchStarted, ExpectedDispatchStartedKeys>
->
-
-export type ProbeShapeAssertions =
-  | ProviderDefinitionFieldListIsExact
-  | DispatchStartedFieldListIsExact
-
-export const providerDefinitionFieldList = [
-  "definitionId",
-  "intentSchema",
-  "intentSchemaVersion",
-  "behaviorId",
-  "operationId"
-] as const satisfies ReadonlyArray<keyof ProviderDefinition<ProbeIntent>>
-
-export const dispatchStartedFieldList = [
-  "type",
-  "dispatchId",
-  "attempt",
-  "operationId",
-  "providerDefinitionId",
-  "providerBehaviorId",
-  "providerLockfileIdentity",
-  "transportId",
-  "endpointIdentity",
-  "requestFingerprint",
-  "authorizationIdentity",
-  "replayProtection",
-  "replayBasis",
-  "startedAt"
-] as const satisfies ReadonlyArray<keyof DispatchStarted>
+export type ProbeShapeCandidates =
+  | SelectedProviderDefinition<ProbeIntent>
+  | CoreDerivedProviderDefinitionCandidate<ProbeIntent>
+  | SelectedDispatchStarted
+  | WireCorrespondenceDispatchStartedCandidate

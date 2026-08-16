@@ -1,250 +1,203 @@
 # Journal backend and compare-and-swap research
 
-Status: decision-grade response to research question R1. This note selects the
-minimum storage law and v1 backend set. It does not implement the production
-journal API.
+Status: research response to R1. The `JournalStore` law is accepted; the
+mandatory first-party backend set is reopened.
 
-## Required law
+## Accepted storage law
 
-The provider and replay model needs one storage operation before any external
-send:
+Before any external send:
 
 ```text
 appendIfRevision(
   journalRoot,
   expectedRevision,
   completeEvent
-) -> Appended(newRevision) | RevisionMismatch(actualRevision)
+) -> Appended(newRevision)
+   | RevisionMismatch(actualRevision)
+   | AmbiguousStorageOutcome
 ```
 
-The law is:
+Required properties:
 
-1. at most one writer can advance one journal revision;
-2. the complete event becomes visible atomically, never as a partial record;
-3. a successful append is durable before it returns;
-4. a read after success observes the new head;
-5. a runner may send only after receiving `Appended`; and
-6. stale, busy, precondition-failed, and ambiguous storage outcomes never count
-   as success.
+1. at most one writer advances a revision;
+2. readers never observe a partial event;
+3. success is durable before return;
+4. read-after-success observes the new head;
+5. only `Appended` permits send; and
+6. timeouts and ambiguous storage responses are reconciled before any send.
 
-This is a genuine substitutability law. A `JournalStore` Layer is justified if
-more than one backend is needed. It is not a provider registry or a release
-mode.
+This is a genuine substitutability law and justifies a `JournalStore` service.
+It does not imply a specific cloud account or backend.
 
 ## Candidate comparison
 
-| Candidate | Exact CAS primitive | Two-machine continuation | Result |
-| --- | --- | --- | --- |
-| local filesystem generation store | prewrite and sync a complete candidate, then atomically hard-link it to the unique next-generation path; existing destination loses | only when both runners have the same supported durable filesystem; generic network filesystems are excluded | bless for local use |
-| SQLite | `BEGIN IMMEDIATE`; conditional `UPDATE ... WHERE revision = expected`; insert event; commit | only through a safe local/block volume; SQLite explicitly warns against network filesystems | valid local alternative, not needed in v1 |
-| conditional object store | upload immutable event segment, then replace the small head object with `If-Match` on the observed ETag | yes, through the shared bucket/prefix | bless AWS S3 for CI/cross-machine use |
-| CI artifacts plus external state | artifact upload is immutable storage; the external state's conditional write is the actual CAS | yes only because of the external state | not a journal backend by itself |
+| Candidate | CAS primitive | Local UX | Fresh CI runner | Main unresolved risk |
+| --- | --- | --- | --- | --- |
+| filesystem generation store | install one complete generation at a unique path | simple | only with shared durable filesystem | current probe is Linux-only; crash semantics on Windows/macOS not yet established |
+| SQLite | transaction plus conditional head update | strong cross-platform local candidate | only with a safely shared database file/block volume | network filesystem behavior and multi-host deployment |
+| orphan/dedicated Git ref | commit whose parent is observed head; explicit expected-old push or fast-forward update | requires Git repository | uses existing GitHub repository and token | permissions, fork workflows, ref policy, sensitive/public history, push response ambiguity |
+| S3 conditional object | immutable event segment plus `If-Match` head update | extra AWS setup | strong cross-host candidate for AWS users | extra account, credentials, bucket, cost, lifecycle policy |
+| user-supplied store | implementation-specific | depends on application | covers existing infrastructure | conformance and support burden |
+| CI artifacts only | no conditional mutable head | convenient bundle transport | uploads can both succeed | cannot choose the dispatch winner |
 
-## 1. Local filesystem
+## Filesystem generation store
 
-### Primitive
+The existing probe exercises a Linux local protocol based on complete-file
+prewrite and exclusive installation of the next generation. It shows that two
+local processes select one winner in the tested environment.
 
-`open(path, O_CREAT | O_EXCL)` creates a path only when it does not already
-exist and fails with `EEXIST` otherwise. That is enough for exclusive creation,
-but directly opening the authoritative event path exposes a crash window in
-which the path exists before the event is complete.
+It does not establish a portable v1 backend:
 
-The stronger local protocol is:
+- Windows hard-link and directory durability semantics were not exercised;
+- macOS crash-durability and directory synchronization were not exercised;
+- Node's `fs.link` portability does not itself prove power-loss durability; and
+- generic NFS/SMB/network-home behavior is explicitly outside the probe.
 
-1. write the complete event to a unique candidate file on the same filesystem;
-2. synchronize the candidate;
-3. call `link(candidate, events/<next-revision>.json)`;
-4. treat success as the CAS winner and `EEXIST` as revision mismatch;
-5. synchronize the events directory before reporting `Appended`; and
-6. remove the candidate name.
+Official sources:
 
-`link` creates the new directory entry atomically and does not overwrite an
-existing destination. The resulting generation path names an already-complete
-inode.
+- POSIX/Linux open and exclusive-create semantics:
+  https://www.man7.org/linux/man-pages/man2/open.2.html
+- link semantics and NFS caveats:
+  https://man7.org/linux/man-pages/man2/link.2.html
+- Windows hard-link API:
+  https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createhardlinkw
 
-### Filesystem boundary
+Disposition: viable Linux-local candidate; not yet a blessed cross-platform
+backend.
 
-This backend is supported only on a documented local filesystem with working
-link, synchronization, and crash-recovery semantics. Linux documents that
-`O_EXCL` locking on NFS depends on NFSv3 or later and sufficiently new kernels;
-without that support it races. Linux also warns that an NFS server can perform
-a hard-link operation and fail before returning the result, requiring a later
-`stat` check.
+## SQLite
 
-Therefore the v1 local backend does not claim generic NFS, SMB, network home
-directories, or CI artifact mounts. A user can supply another `JournalStore`
-Layer only after establishing the same law.
+A transaction can acquire write ownership, conditionally update the head at the
+expected revision, insert the complete event, and commit atomically.
 
-### Fresh runner, retention, and takeover
+The existing two-process probe selects one winner locally. SQLite is more
+portable than a hand-built hard-link protocol and supplies useful query/index
+facilities. It still should not be placed on an unsupported network filesystem.
 
-A fresh local runner receives the journal directory as its resume locator. The
-plan stored under that root binds the immutable bundle identity. Co-location is
-the default layout; no second root manifest is introduced.
-
-Retention is user-managed. Cleanup is permitted only after terminal state and
-the configured recovery horizon. A lease is not required for safety: the CAS
-selects one dispatch start, and any later continuation remains governed by the
-recorded replay protection. A lease may improve diagnostics or operator
-coordination but cannot turn observed absence into a fence.
-
-Sources:
-
-- https://www.man7.org/linux/man-pages/man2/open.2.html
-- https://man7.org/linux/man-pages/man2/link.2.html
-- https://www.man7.org/linux/man-pages/man3/fsync.3p.html
-
-## 2. SQLite
-
-### Primitive
-
-The transaction is:
-
-```sql
-BEGIN IMMEDIATE;
-UPDATE journal_head
-SET revision = :next
-WHERE revision = :expected;
-
--- only when exactly one row changed
-INSERT INTO journal_events(revision, event_bytes)
-VALUES (:next, :event_bytes);
-COMMIT;
-```
-
-SQLite supports one writer at a time. `BEGIN IMMEDIATE` either acquires the
-write transaction or returns `SQLITE_BUSY`; once it succeeds, SQLite documents
-that operations through the following commit will not later fail with
-`SQLITE_BUSY`. The conditional update distinguishes the winner from a writer
-that begins after the head has advanced.
-
-### Boundary and disposition
-
-SQLite provides atomic local transactions and a convenient query/index layer,
-but it does not widen the deployment surface beyond the local filesystem
-backend. SQLite explicitly warns that POSIX advisory locking is buggy or
-missing on many NFS implementations and recommends not placing the database on
-a network filesystem.
-
-SQLite is therefore a valid later or user-supplied local `JournalStore`, but it
-is not a second required v1 implementation. Shipping both it and the generation
-store would duplicate the same local deployment outcome.
-
-Sources:
+Official sources:
 
 - https://www.sqlite.org/lang_transaction.html
-- https://www.sqlite.org/rescode.html
 - https://www.sqlite.org/lockingv3.html
+- https://www.sqlite.org/howtocorrupt.html
 
-## 3. Conditional object store
+Disposition: strong default-local candidate; not proof of cross-machine CI
+continuation by itself.
 
-### Primitive
+## Dedicated or orphan Git ref
 
-For AWS S3:
+A journal can be represented as an append-only commit chain on a dedicated ref:
 
-1. upload the complete event under an immutable, unique segment key;
-2. read the current head object and its ETag;
-3. `PutObject` the new head with `If-Match: <observed-etag>`;
-4. treat `200` as the only successful append;
-5. treat `412` as revision mismatch; and
-6. treat `409`, `404`, timeout, or response loss as ambiguous until a fresh read
-   establishes which head is current.
+```text
+observed head H
+new commit N has parent H and contains complete event/head data
+push N to refs/ts-release/journals/<release>
+```
 
-S3 documents `If-Match` as an ETag precondition and fails a mismatched write
-with `412`. Its conditional-write documentation states that when several
-conditional writes target the same object, the first write to finish succeeds
-and later writes fail. S3 also documents strong read-after-write consistency
-for object PUT/DELETE, strong HEAD metadata reads, and atomic updates to one
-key.
+CAS alternatives:
 
-The immutable segment may become an unreachable orphan when its head CAS
-loses. That is safe and can be garbage-collected after the retention horizon.
-The authoritative journal is the chain reachable from the head.
+- ordinary fast-forward push, where only the first child of H can advance the
+  remote ref;
+- explicit `--force-with-lease=<ref>:<H>` when the representation requires a
+  non-fast-forward replacement; or
+- a hosting API that exposes an explicit expected-old ref condition.
 
-### Fresh runner, retention, and takeover
+Git documents that `--force-with-lease=<ref>:<expect>` updates only when the
+remote ref equals the expected value and fails otherwise:
 
-A CI runner receives the S3 bucket/prefix as its journal resume locator and
-loads new credentials. The plan reached from the journal binds the immutable
-bundle locator and digest. Bundle objects may share the prefix, but physical
-co-location is not a correctness requirement and no synchronized peer root is
-added.
+- https://git-scm.com/docs/git-push
 
-Bucket lifecycle policy must retain the journal, plan, and bundle for at least
-the configured recovery horizon. Deleting or expiring the head concurrently
-with an active release is outside the backend law and surfaces as an ambiguous
-storage failure, never as append success.
+Advantages for GitHub Actions:
+
+- no separate S3 account or bucket;
+- bundle locator and journal can remain associated with the repository;
+- commit history is inspectable and naturally retained with the repository;
+- the same Git conditional-update law already appears in Homebrew/Scoop
+  publication research.
+
+Costs and open questions:
+
+- `GITHUB_TOKEN` needs contents write permission; defaults may be read-only;
+- fork-origin workflows generally cannot safely receive write credentials;
+- branch/ref protections and organization policy can reject updates;
+- journal contents may be visible to repository readers;
+- garbage collection and long-term retention need a policy;
+- a lost push response still requires reading the ref before deciding;
+- if two contenders construct the same target commit, Git may report the second
+  push as already up to date rather than identify one writer as the winner;
+  candidate commits therefore need distinct writer/dispatch identity or an API
+  whose response distinguishes the successful compare-and-swap; and
+- a live two-runner hosted-Git experiment has not been run.
+
+GitHub token permission source:
+
+- https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository
+
+Disposition: credible GitHub-CI candidate that deserves a focused local bare-
+repository race, including the same-target/no-op ambiguity, and later a
+scratch-repository test before backend selection.
+
+## S3 conditional objects
+
+AWS S3 documents conditional writes with `If-Match` and `If-None-Match`. A
+journal can upload immutable event segments and conditionally replace a small
+head object.
 
 Sources:
 
 - https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes.html
-- https://docs.aws.amazon.com/AmazonS3/latest/userguide/
+- https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html
 
-## 4. CI artifacts plus external state
+The existing conditional-object probe is a protocol double, not a live S3
+conformance test.
 
-GitHub Actions artifact upload v4 and later produces immutable artifacts.
-Immutable upload is useful for bundle transport, but it does not expose a
-conditional mutable head over the ordered journal. Two runners can upload two
-different artifacts successfully; neither upload decides which runner may send.
+Disposition: strong optional backend for deployments already using AWS; not
+entailed by the 16 product outcomes and not yet justified as mandatory default
+infrastructure.
 
-Artifact retention is also bounded: GitHub documents a default of 90 days, a
-1-90 day range for public repositories, and a 1-400 day range for private
-repositories. Release correctness cannot silently depend on the repository's
-default artifact retention.
+## CI artifacts
 
-Therefore:
+GitHub Actions artifacts are useful immutable bundle transport. They are not a
+journal CAS because two uploads can both succeed and neither chooses the
+mutation winner.
 
-```text
-CI artifact + external conditional state
-  = artifact transport + the external JournalStore
-```
-
-It is not a fourth journal backend. For the initial GitHub Actions deployment,
-artifacts may carry the immutable bundle while the S3 head and event segments
-carry the journal.
-
-Sources:
+Source:
 
 - https://github.com/actions/upload-artifact
-- https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository
 
-## Executable race evidence
+They must be paired with Git, S3, a database, or another conditional state
+backend.
 
-`probes/journal-backends/probe.mjs` launches two separate processes against all
-four mechanisms.
+## Does v1 require backend pluggability?
 
-Observed result:
-
-```text
-filesystem:                 winners=1 losers=1 finalRevision=2
-SQLite:                     winners=1 losers=1 finalRevision=2
-conditional object double: winners=1 losers=1 finalRevision=2
-CI artifacts uploaded:     2
-external-state winners:    1
-```
-
-The filesystem and SQLite results are real local races. The object-store result
-is a protocol double that exercises the proposed client algorithm; the cited
-S3 documentation is the authority for live service semantics.
-
-## Decision
-
-The 16-family vNext scope genuinely requires two deployment surfaces:
-
-1. local/offline or one-host operation; and
-2. fresh CI runners on different machines.
-
-One blessed backend does not cover both without either imposing cloud storage
-on local use or falsely treating ephemeral/artifact storage as a shared CAS.
-Therefore v1 has one narrow `JournalStore` law with two first-party Layers:
+The deployment surfaces are genuinely different:
 
 ```text
-LocalGenerationJournalStore
-S3ConditionalJournalStore
+local developer or one-host runner
+fresh GitHub Actions runner
+other hosted or self-hosted CI
+existing AWS/database infrastructure
 ```
 
-SQLite remains documented and probed but is not required in v1. GitHub Actions
-artifacts remain an immutable bundle transport, not journal authority.
+No single implementation is currently demonstrated as the smallest acceptable
+choice for all of them. Therefore the narrow `JournalStore` Layer remains
+justified. That does not mean every backend ships first-party.
 
-This adds no release mode, provider capability, provider registry, or peer
-state representation. Application configuration supplies exactly one
-`JournalStore` Layer for a run, and every implementation must satisfy the same
-append-if-revision law.
+## Revised recommendation
+
+Do not bless `LocalGenerationJournalStore` plus `S3ConditionalJournalStore` as
+architecturally required.
+
+Research order:
+
+1. keep the `appendIfRevision` law;
+2. run a focused Git-ref race against a local bare repository;
+3. establish Windows and macOS behavior before claiming a portable filesystem
+   generation store;
+4. compare SQLite and the generation store for local default UX;
+5. evaluate a scratch GitHub ref for GitHub Actions;
+6. retain S3 as an optional first-party or user-supplied backend for AWS
+   deployments; and
+7. choose the shipped set from actual deployment/UX evidence, not provider
+   feature count.
+
+The current backend selection is therefore a genuine maintainer/product choice.

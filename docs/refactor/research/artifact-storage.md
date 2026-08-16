@@ -1,10 +1,9 @@
 # Artifact ownership, persistence, and effect-build boundary
 
-Status: canonical byte-ownership continuation of `artifact-model.md`.
+Status: canonical ownership research. The effect-build/ts-release boundary is
+accepted; Apple notarization recovery remains unresolved within effect-build.
 
-## Internal immutable-content kernel
-
-The kernel remains an internal extraction-ready library within ts-release:
+## Universal artifact kernel
 
 ```text
 ContentObject {
@@ -18,108 +17,127 @@ LogicalArtifact {
 }
 ```
 
-It lives in its own directory, imports nothing from release planning or providers, and can later be extracted without changing its laws. It does not move into effect-build and does not acquire provider, destination, acceptance, or journal concepts.
+Release, provider, destination, public filename, platform role, package kind,
+and consumer-test facts remain outside this kernel.
 
-Revisit separate packaging only if effect-build planning, currently Candidate C2 in its PR #4, converges on directly emitting into this exact persistent kernel. That is a sequencing decision, not a challenge to the kernel's coherence.
+## Ownership transfer
 
-## Adoption law
+A producer can return:
 
-A producer returns either a scoped intermediate or a finalized output at a caller-selected path. ts-release adopts finalized bytes by:
+- a scoped intermediate valid only inside a callback; or
+- a finalized output at a caller-selected path.
 
-1. streaming them into release-owned storage;
-2. computing digest and length during copy;
-3. rejecting mutation during adoption;
-4. committing the content object before manifest reference;
-5. publishing the manifest/commit marker last.
+ts-release adopts either by streaming bytes into release-owned immutable
+storage, deriving digest and length during the copy, and committing the content
+object before the manifest references it.
 
-Providers receive bound artifact handles or scoped materialized filenames, never private CAS paths.
+Providers receive a bundle-bound handle or scoped logical filename, never a
+private CAS path.
 
-## effect-build boundary
+## Current effect-build lifetime evidence
+
+The pinned granular branch exposes two useful contracts:
+
+1. scoped JavaScript bundle access; and
+2. `produceExecutable` publication to a caller-selected final path.
+
+Sources:
+
+- https://github.com/mannyc2/effect-build/blob/15c811bb9904142a33d119766b62082f3c689f13/packages/effect-build/src/JavaScriptBundle.ts
+- https://github.com/mannyc2/effect-build/blob/15c811bb9904142a33d119766b62082f3c689f13/packages/effect-build/src/Integration.ts
+
+The internal extraction-ready bundle library remains inside ts-release for now.
+Its laws are independently coherent; packaging priority is separate from
+architectural validity.
+
+## Accepted responsibility boundary
 
 ```text
 effect-build
-  generic concrete artifact production and transformation
+  concrete artifact production and transformation
   tool discovery and execution
-  scoped staging and intermediate ownership
-  caller-selected finalized outputs
-  artifact-specific validation
+  scoped intermediate ownership
+  producer-specific validation
+  caller-selected finalized output
 
 ts-release
-  adoption into immutable release bundle
-  provider planning and mutation
+  adoption into immutable release-owned content
+  release planning
+  provider mutation
   durable journal/recovery
-  provider-native evidence and reporting
+  reporting
 ```
 
-The current effect-build statement that it is not a generic packager describes its current consumers. The coherent domain law is concrete transformation from explicit inputs to validated artifact outputs with explicit lifetime and ownership.
+No universal `Builder` follows. Concrete uv, Poetry, nFPM, archive, and Apple
+operations may share lower-level process and ownership infrastructure without
+sharing one root operation type.
 
-This supports concrete integrations such as:
+## Apple notarization ownership
+
+The maintainer decision is:
 
 ```text
-effect-build-archive
-effect-build-uv
-effect-build-poetry
-effect-build-nfpm
-effect-build-apple
+effect-build-apple owns
+  submission
+  polling
+  response-loss recovery
+  stapling
+  final verification
+
+ts-release adopts only finalized bytes
 ```
 
-without a universal Builder.
+This resolves package responsibility, not the durable recovery design.
+Notarization remains an asynchronous external mutation. A fresh process needs:
 
-## Apple finalization law
+- a durable submission identifier or request fingerprint;
+- exact pre-notarization input identity;
+- Apple account/team/profile identity without secret persistence;
+- polling state and terminal result;
+- a rule for resubmission after response loss;
+- durable access to the input bytes; and
+- a path from acceptance to stapled, verified final bytes.
 
-`effect-build-apple` owns:
+Possible effect-build designs include:
 
-- app bundle construction;
-- DMG/pkg construction;
-- local codesign/productsign work;
-- notary submission;
-- status recovery through Apple's submission identifier;
-- stapling;
-- final verification.
+1. an effect-build-owned durable operation record;
+2. a small generic durable production-run facility;
+3. caller-supplied persistence callbacks/Layer; or
+4. integration with a later durable engine while retaining the same external
+   mutation law.
 
-An Apple artifact is not finalized until notarization acceptance, stapling where applicable, and verification complete. ts-release sees only the finalized artifact and therefore preserves:
+A same-process retry loop is insufficient for the vNext acceptance promise.
+
+## P10 status
+
+Apple notarization/stapling remains required in the 16-family vNext acceptance
+scope, but its durable design is unresolved. It is not architecturally closed
+merely because ownership moved to effect-build-apple.
+
+The ts-release artifact law remains simple:
 
 ```text
-finalize every artifact
--> adopt immutable bytes
--> plan and perform distribution mutations
+notarization and stapling complete
+-> effect-build-apple verifies final bytes
+-> ts-release adopts final bytes
 ```
 
-The notary call is a remote and potentially ambiguous operation, but that ambiguity is internal to artifact production. `effect-build-apple` must recover it by submission identifier. It never enters ts-release's provider journal, and the bundle kernel needs no pre-finalization durability.
-
-A failed or abandoned Apple production run produces no final artifact for adoption. Re-running artifact production is distinct from replaying a ts-release distribution mutation.
-
-## Production outcome ownership
-
-The canonical vNext production/trust families are P01-P10 in `competitive-scope.md`. This file does not maintain a second count.
-
-- executable matrices remain concrete compiler integrations;
-- wheels/sdists belong to uv/Poetry production integrations;
-- Warehouse publication belongs to ts-release;
-- nFPM creates package artifacts; later repository publication is separate;
-- Apple construction/signing/notarization/stapling belongs to `effect-build-apple`;
-- archives are concrete transformations.
+No pre-finalization ts-release journal is introduced.
 
 ## Validation boundaries
 
 At adoption:
 
-- derive digest and length from bytes actually copied;
-- own the resulting object;
-- verify producer output is stable through the copy.
+- stream producer bytes;
+- derive digest and length;
+- detect mutation during copy where possible;
+- own the final object.
 
-At untrusted bundle import:
+At an untrusted bundle import:
 
-- decode canonical manifest;
-- validate IDs/references;
-- verify content objects according to backend trust policy.
+- decode the canonical manifest;
+- validate IDs and references;
+- verify content according to backend trust policy.
 
-Within one trusted immutable store, repeated reads need not rehash every object. Verification may be lazy or explicit.
-
-## What this decision does not add
-
-- no universal Builder;
-- no cross-project artifact registry;
-- no pre-finalization ts-release journal;
-- no Apple publication provider in ts-release;
-- no synchronized effect-build/ts-release state model.
+Inside one trusted immutable CAS domain, repeated full rehashing is not required
+on every read.

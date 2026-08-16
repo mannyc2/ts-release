@@ -1,10 +1,26 @@
-# Provider boundaries and optional services
+# Provider boundaries and optional operations
 
-Status: canonical provider-extension analysis. Provider wire facts are in `provider-wire-models.md` and `provider-wire-github-catalogs.md`.
+Status: canonical provider-extension analysis for PR #20. This revision reopens
+identity and replay-authority fields that the first probe merely exercised.
+Provider wire facts remain in `provider-wire-models.md` and
+`provider-wire-github-catalogs.md`.
 
-## Frozen provider-definition law
+## Fixed conclusions
 
-The durable definition has exactly five conceptual fields:
+- There is no universal `Publisher` service.
+- `prepare`, `observe`, and `correct` are optional provider-local operations,
+  not members of one mandatory lifecycle.
+- A write-only provider is valid. After response loss it may remain
+  `Inconclusive`.
+- `ConsumerScenario` and durable consumer-acceptance records are not provider
+  capabilities.
+- Arbitrary providers are ordinary packages plus Layers. Durable continuation
+  additionally requires that a fresh runner can identify and decode persisted
+  provider Intent.
+
+## The first probe did not establish a five-field law
+
+The first two-runner probe selected and exercised:
 
 ```text
 definitionId
@@ -14,20 +30,100 @@ behaviorId
 operationId(intent)
 ```
 
-The two-runner compile probe asserts that exact field list. This document does not choose the production TypeScript spelling.
+Its type assertion restated that selected shape. It proved that the shape
+compiled and that the fixture used it consistently. It did not prove that all
+five fields were necessary, minimal, or preferable.
 
-The fields establish these laws:
+The corrected probe now compares the selected shape with smaller alternatives.
 
-1. `definitionId` identifies the provider definition loaded by a fresh application.
-2. `intentSchema` and `intentSchemaVersion` decode the canonical provider-local Intent.
-3. `behaviorId` identifies the declared remote/request behavior used by automatic replay checks.
-4. `operationId(intent)` projects one stable logical operation identity.
+## Provider-definition alternatives
 
-Provider identity recorded for dispatch additionally binds the application/source lockfile identity. In v1, behavior or lockfile drift blocks automatic replay. There is no automatic migration machinery.
+### A. Provider-controlled operation identity
 
-## Optional provider-local services
+```ts
+interface ProviderDefinition<I> {
+  readonly definitionId: string
+  readonly intentSchemaVersion: string
+  readonly intentSchema: Schema.Schema<I>
+  readonly operationId: (intent: I) => OperationId
+}
+```
 
-A definition does not contain one mandatory lifecycle. A package may separately expose ordinary Effect services or operations for:
+Counterexample: two provider versions can assign different IDs to identical
+canonical Intent bytes. A fresh runner then depends on installed executable
+code to reproduce an identity that core can derive itself.
+
+### B. Core-derived operation identity
+
+```text
+operationId = hashCanonical(
+  "ts-release/operation/1",
+  {
+    providerDefinitionId,
+    intentSchemaVersion,
+    canonicalIntent
+  }
+)
+
+operationKey = { planId, operationId }
+```
+
+`operationId` is a core-derived identity for the provider-local Intent bytes.
+`operationKey` supplies the owning plan/bundle envelope needed to interpret
+bundle-relative references. This avoids asking provider code to reproduce
+identity while also avoiding a second copy of plan facts inside the operation
+hash. The provider supplies the Schema and canonical Intent bytes; it does not
+supply the identity projection.
+
+The focused identity probe demonstrates:
+
+- the same plan/definition/schema/Intent produces one stable operation ID under
+  two provider implementations; and
+- provider-controlled projections can produce different IDs for the same
+  Intent.
+
+This supports B as the current recommendation. It does not select the final
+hash framing or Schema API.
+
+### C. Behavior and lockfile identity as replay authorities
+
+The strict candidate blocks automatic replay when either value changes, even
+when these facts match:
+
+```text
+operation ID
+endpoint
+authorization identity and scope
+exact immutable request fingerprint
+replay scheme, scope, condition, and expiry
+```
+
+No concrete fixed-provider counterexample was found in which sending the same
+core-owned request under the same remote replay law becomes unsafe solely
+because an unrelated dependency or provider package version changed.
+
+A decoder or reporting implementation may change, but that affects how a new
+response is interpreted, not whether the exact request is safe to send. An
+opaque provider Effect may change arbitrary behavior, but opaque transports do
+not receive automatic replay in the current model.
+
+Therefore behavior/package/source/lockfile identity is best treated as optional
+implementation provenance and diagnostics, not a replay authority. This is a
+provisional recommendation with high confidence, not a claim that provenance
+has no audit value.
+
+## Smallest durable definition under current evidence
+
+```ts
+interface ProviderDefinition<I> {
+  readonly definitionId: string
+  readonly intentSchemaVersion: string
+  readonly intentSchema: Schema.Schema<I>
+}
+```
+
+The Schema boundary must provide one canonical encoding. Core derives operation
+identity. Application composition supplies optional provider-local services:
 
 ```text
 prepare
@@ -35,88 +131,82 @@ observe
 correct
 ```
 
-Their laws differ:
-
-- `prepare` is pure with respect to external mutation. It resolves one exact operation into a prepared dispatch.
-- `observe` performs a fresh provider read and returns provider-native evidence.
-- `correct` constructs a new Intent or plan supersession. It never rewrites historical facts.
-
-A write-only provider may omit observation. An immutable provider may omit correction. Unsupported operations are absent, not encoded as fake no-op members.
-
-## Prepared dispatch and transport ownership
-
-Automatic replay is available only when request correspondence is structural.
-
-### Core HTTP and Git transports
-
-A provider using a supported core transport supplies provider-local input to the transport constructor. Core owns:
-
-- canonical request/command construction;
-- insertion of any supported derived idempotency key or condition;
-- request fingerprinting;
-- immutable prepared-request representation;
-- the actual send operation.
-
-The transport consumes only the prepared dispatch after the journal append succeeds. The provider cannot supply its own normalized request projection in v1.
-
-### Opaque custom transport
-
-A custom provider may dispatch through its own Effect, but core cannot prove that arbitrary executable code sends the recorded request. Such a provider remains valid and may observe or correct, but after an uncertain dispatch it has no automatic replay path. It stops `Inconclusive` unless authoritative observation, terminal non-commit evidence, or human `RiskAccepted` resolves the state.
-
-The capability difference is visible in the imported transport, not in an author-implemented projection contract.
-
-## Removed abstractions
-
-### ConsumerScenario and durable acceptance records
-
-Removed completely from provider definitions and the canonical mutation journal.
-
-A clean install, import, download, or execution depends on product policy and environment. It may run after provider acceptance, after public visibility, or in another workflow. Its failure can fail CI without changing historical provider acceptance or authorizing replay.
-
-| Outcome | Owner |
-| --- | --- |
-| provider accepted mutation | provider receipt |
-| fresh metadata or byte observation | provider observation operation |
-| package installs or executes in an environment | application/CI Effect |
-| ts-release releases itself | maintained project end-to-end gate |
-| reusable custom acceptance work | ordinary user-supplied Effect |
-
-### ReplaySafetyCapability
-
-Removed. Old dispatch safety is not executable provider policy on a new runner. Protection is frozen into `DispatchStarted` and interpreted by a versioned core algebra.
-
-### Universal Publisher or Builder
-
-Rejected. Destinations are additive and have different coordinates, commit units, receipts, observations, and correction laws. Artifact tools likewise retain concrete operations until a genuine shared law is demonstrated.
-
-## Provider resolution is not admission
-
-A fresh release application supplies definitions and Layers for all providers used by the persisted plan. Core performs heterogeneous lookup by definition ID and schema version. This is reconstruction of durable type erasure, not an allowlist or certification registry.
-
-The resolver rejects:
-
-- unknown definition IDs;
-- unsupported Intent schema versions;
-- duplicate definition identities;
-- Intent bytes that do not reproduce canonical encoding;
-- unavailable declared behavior/lockfile identity for automatic replay.
-
-A newer provider may still perform read-only observation if the application explicitly supports decoding the old Intent. It may not automatically replay the old operation.
-
-## Separate shared law: JournalStore
-
-Research question R1 demonstrated one genuine storage abstraction:
+Implementation provenance may be recorded separately:
 
 ```text
-appendIfRevision(expectedRevision, completeEvent)
-  -> Appended(newRevision) | RevisionMismatch(actualRevision)
+package version
+source revision
+lockfile digest
+build identity
 ```
 
-Local generation files and S3 conditional writes satisfy the same safety law across different deployment surfaces. This `JournalStore` Layer is unrelated to provider interchangeability and adds no release mode or peer state representation. See `journal-backends.md`.
+Those fields explain which code produced an event. They do not override equal
+wire evidence or create a second operation identity.
 
-## Evidence
+## Core transport evidence versus provider replay-law evidence
 
-- `probes/two-runner/shape.ts` asserts the five-field definition and singular-operation dispatch shape.
-- `probes/two-runner/probe.mjs` exercises separate fresh processes, strict V2 drift, structured stops, and CAS-before-send.
-- `idempotency-material.md` establishes derived-key-only v1 replay material.
-- `journal-backends.md` establishes the journal CAS law and required Layers.
+These are distinct.
+
+### Core transport evidence
+
+A core-owned immutable prepared request can establish:
+
+- the exact request projection recorded before dispatch;
+- the exact request sent;
+- equivalence of a newly prepared replay request;
+- whether the transport boundary was crossed; and
+- the request fingerprint, endpoint, and authorization scope.
+
+### Provider protocol evidence
+
+Core transport cannot establish that a remote server:
+
+- honors an idempotency-key header;
+- uses the claimed key scope or expiry;
+- treats an exact duplicate as equivalent success; or
+- implements a particular conditional-write law.
+
+Those are provider protocol laws.
+
+## Who may select a replay scheme?
+
+Four alternatives remain under review.
+
+| Alternative | Strength | Failure mode |
+| --- | --- | --- |
+| any provider selects a scheme during preparation | open extension surface | arbitrary assertion can claim a law the server does not enforce |
+| core recognizes selected provider behavior IDs | simple automatic policy | hidden allowlist and manually maintained behavior attestations |
+| application supplies a trusted protocol-law binding | explicit authority and custom participation | another maintained policy object must be audited and versioned |
+| automatic replay only for structurally evidenced built-in laws | smallest safe v1 | fewer automatic custom-provider continuations |
+
+`core.git/1` compare-and-swap is closest to structural because core prepares the
+expected-old/desired-new Git update and Git itself enforces the precondition.
+
+`replay.idempotency-key/1` and `replay.exact-duplicate/1` are not structural
+merely because they appear in the journal. Their use still requires a trusted
+provider-law authority. No final authority model is selected in this pass.
+Unsupported or untrusted laws result in observation, `Inconclusive`, or
+`RiskAccepted`, never automatic replay.
+
+## Custom providers
+
+A custom provider unknown when core was built can still participate:
+
+1. the release application imports its package;
+2. the package supplies the versioned Intent Schema and provider-local Layers;
+3. core derives operation identity from the persisted canonical Intent;
+4. a fresh runner loads the same application and resolves the definition ID;
+5. observation and correction remain optional;
+6. automatic replay is available only when both request correspondence and a
+   trusted replay-law authority exist.
+
+This is resolution, not admission or certification.
+
+## Current recommendation
+
+- Remove provider-controlled `operationId(intent)` from the canonical provider
+  definition.
+- Keep behavior and lockfile identity as optional provenance, not replay gates.
+- Retain core-owned transport as the request-correspondence mechanism.
+- Keep provider replay-law authorization explicitly unresolved instead of
+  pretending transport correspondence proves remote idempotency.

@@ -1,27 +1,55 @@
-# Resumability, frozen dispatch evidence, and journal laws
+# Resumability, replay protection, and journal laws
 
-Status: canonical replay and journal analysis. Research only; no production API is selected here.
+Status: canonical replay/journal research for PR #20. This revision separates
+request correspondence from remote replay-law authority and reopens
+implementation-identity fields.
 
 ## User promise
 
-A fresh authorized runner can load exact finalized inputs and durable progress, reuse completed work, continue without blindly repeating an external mutation, and stop with a precise satisfied, conflicting, pending, or irreducibly inconclusive result plus the minimum human decision required.
+A release is resumable when another authorized runner can load exact finalized
+inputs and durable progress, reuse completed work, continue per provider
+coordinate without blindly repeating a mutation, and stop with a precise
+satisfied, conflict, pending, or irreducibly inconclusive explanation.
 
 ## Canonical authorities
 
 ```text
 Bundle
-  exact finalized immutable content
+  exact immutable content
 
 ReleasePlan
-  provider-local Intents and dependency edges
+  canonical provider-local Intents and dependency edges
 
 Journal
-  one ordered event history
+  ordered historical events
 ```
 
-Current state is a pure fold over plan and journal. Materialized indexes are disposable. Consumer install/execute results are application/CI outcomes and are not journal facts.
+Materialized indexes are disposable folds. Consumer install or execution output
+is application/CI evidence, not mutation-journal state.
 
-## Event vocabulary
+## Core-derived operation identity
+
+A provider-controlled `operationId(intent)` is not required.
+
+```text
+operationId = hashCanonical(
+  "ts-release/operation/1",
+  {
+    providerDefinitionId,
+    intentSchemaVersion,
+    canonicalIntent
+  }
+)
+
+operationKey = { planId, operationId }
+```
+
+The plan-scoped key binds bundle-relative references without copying the whole
+plan identity into the provider-local operation digest. The exact framing
+remains a production-design choice, but neither value is projected by installed
+provider code.
+
+## Minimal event families
 
 ```text
 DispatchStarted
@@ -32,226 +60,196 @@ RiskAccepted
 PlanSuperseded
 ```
 
-Removed:
+`ReplayAuthorized` remains removed because a deterministic replay verdict is a
+projection, not a new external fact. `ConsumerEvidenceRecorded` remains
+removed.
 
-- `ReplayAuthorized`: deterministic replay permission adds no new fact;
-- `ConsumerEvidenceRecorded`: consumer results do not affect mutation recovery;
-- durable acceptance records;
-- resume-time `ReplaySafetyCapability`.
-
-`RiskAccepted` remains because it records a new human authorization.
-
-## One operation, one physical dispatch
-
-`operationId` names one logical provider operation. One external request receives one canonical event:
+## DispatchStarted candidate
 
 ```text
 DispatchStarted {
-  type,
   dispatchId,
   attempt,
   operationId,
   providerDefinitionId,
-  providerBehaviorId,
-  providerLockfileIdentity,
   transportId,
   endpointIdentity,
   requestFingerprint,
   authorizationIdentity,
   replayProtection,
   replayBasis,
+  implementationProvenance?,
   startedAt
 }
 ```
 
-`memberOperationIds` is removed. No second provider currently justifies a one-request-many-operations model.
+`implementationProvenance` may contain package/source/lockfile facts for audit.
+It is not a replay gate under the current recommendation.
 
-npm's initial publish is one operation because one PUT co-requests the immutable version/tarball and mutable initial dist-tag. Its composite receipt and later observation expose both remote facets. A later dist-tag move is a separate operation.
-
-GitHub release creation and each asset upload are separate wire requests and therefore separate operations. A conditional Git ref update may publish many rendered files, but the operation is the one desired ref/tree transition.
+The original probe-selected fields remain exercised in the fixture. The probe
+no longer claims that its list is exact or minimal.
 
 ## Mutation uncertainty boundary
 
-Preparation must finish before journal append and must not mutate the provider. A runner may send only after `appendIfRevision` durably commits `DispatchStarted`.
+An attempt begins only after `DispatchStarted` is durably appended and before a
+core transport may send.
 
-Failures before that append create no attempt. After send may have begun, a missing response is uncertain unless transport or authoritative provider evidence proves non-dispatch or terminal non-commit.
+Before that boundary these failures create no attempt:
 
-## Replay authorities
+- request validation;
+- artifact resolution;
+- credential acquisition;
+- local signing needed to construct the request; and
+- inability to append the journal event.
 
-A later attempt is lawful only through one of three facts:
+After the boundary, a missing response is uncertain unless transport or
+provider evidence proves non-dispatch or non-commit.
+
+## Four ways a later attempt can be lawful
+
+The prior document incorrectly said "three facts" while listing four cases.
+The complete set is:
 
 1. no earlier `DispatchStarted` exists;
-2. the earlier request is proven unable to commit now or later;
-3. the exact earlier prepared request carried an unexpired core-supported protection; or
-4. a maintainer recorded `RiskAccepted`.
+2. the earlier attempt is proven unable to commit now or later;
+3. exact replay is authorized by recorded, trusted provider-enforced
+   protection; or
+4. a maintainer records `RiskAccepted`.
 
-Observed absence is never a fence for an earlier in-flight request. Request-status evidence is reconciliation, not replay protection.
+Observed absence is never proof of case 2.
 
-## Append-only replay protection IDs
+## Request correspondence versus remote replay law
 
-The v1 algebra is intentionally closed and versioned by meaning:
+### Correspondence evidence
+
+A core-owned immutable transport can prove:
+
+- what request was recorded;
+- what request crossed the transport boundary;
+- whether a newly prepared request has the same fingerprint;
+- endpoint and non-secret authorization identity; and
+- the replay key or conditional values actually placed on the request.
+
+### Remote-law evidence
+
+Correspondence does not prove that the remote service honors the key,
+condition, scope, expiry, or exact-duplicate behavior.
+
+Examples:
+
+- an arbitrary server may ignore an `Idempotency-Key` header;
+- Warehouse exact-duplicate behavior is a Warehouse law, not an HTTP law;
+- Git compare-and-swap is a Git remote-ref law;
+- a duplicate npm version may conflict rather than return equivalent success.
+
+Therefore a recorded scheme has two parts:
+
+```text
+request protection facts
+trusted protocol-law authority
+```
+
+The first is structural journal evidence. The second remains provider-specific.
+The production representation of the authority is unresolved.
+
+## Replay-protection data algebra
+
+The accepted vocabulary remains:
 
 ```text
 replay.none/1
-
-replay.idempotency-key/1 {
-  originDispatchId,
-  baseRequestFingerprint,
-  keyFingerprint,
-  scopeFingerprint,
-  requestFingerprint,
-  validFrom,
-  expiresAt
-}
-
-replay.cas/1 {
-  coordinateFingerprint,
-  expectedRevision,
-  desiredRevision,
-  requestFingerprint
-}
-
-replay.exact-duplicate/1 {
-  coordinateFingerprint,
-  contentFingerprint,
-  requestFingerprint,
-  expiresAt?
-}
+replay.idempotency-key/1
+replay.cas/1
+replay.exact-duplicate/1
 ```
 
-An unknown identifier or later major version never receives automatic replay. Existing event meaning is immutable; semantic change requires a new ID.
+Unknown versions never replay automatically. Scheme identifiers are append-only
+and old events are never reinterpreted.
 
-## Derived idempotency keys; no secret references
+This algebra records facts; it does not, by itself, prove a provider law.
 
-No fixed vNext provider requires secret durable replay material. v1 therefore contains neither plaintext key material nor a secret-manager-reference union.
+## Implementation identity alternatives
 
-For a supported core HTTP transport:
+### Strict implementation blocking
+
+Block when provider behavior or whole-lockfile identity differs, even when the
+immutable request and protection facts match.
+
+Benefit: maximally conservative.
+
+Costs:
+
+- unrelated dependency changes can disable safe continuation;
+- a lockfile proves dependency identity, not remote semantics;
+- provider source can change without a lockfile change; and
+- manually maintained behavior IDs can be stale.
+
+### Wire-sufficient replay
+
+For a core-owned transport, authorize based on:
 
 ```text
-baseRequestFingerprint = fingerprint(
-  exact prepared request before the derived idempotency field,
-  excluding reacquired authentication bytes
-)
-
-key = Encode(SHA-256(
-  "ts-release/replay.idempotency-key/1" ||
-  originDispatchId ||
-  baseRequestFingerprint
-))
-
-requestFingerprint = fingerprint(
-  exact immutable request after key insertion
-)
+same operation ID
+same endpoint
+same authorization identity/scope
+same immutable request fingerprint
+same replay-protection facts
+protection unexpired
+trusted remote replay law
+successful journal CAS
 ```
 
-The journal stores the key fingerprint, never the key value. A fresh runner derives the same key and verifies both fingerprints. Scope and expiry remain mandatory.
+No concrete fixed-provider counterexample was found in which these facts match
+but local code drift alone makes sending unsafe. Response decoding and
+observation compatibility remain separate concerns.
 
-See `idempotency-material.md`.
-
-## Core-owned transport rule
-
-Automatic replay is structural, not an author assertion.
-
-- `core.http/1` owns canonical request construction, derived key insertion, fingerprinting, immutability, and send.
-- `core.git/1` owns the exact conditional update projection and send.
-- `provider.opaque/1` may perform initial dispatch and observation but never receives automatic replay in v1.
-
-There is no provider-supplied normalized projection contract.
-
-## Strict request equivalence
-
-Before automatic replay, core compares:
-
-1. definition ID;
-2. Intent schema version and canonical Intent/operation ID;
-3. behavior ID;
-4. provider/application lockfile identity;
-5. core transport ID;
-6. endpoint/coordinate identity;
-7. non-secret authorization principal/account/tenant/scope;
-8. base and final request fingerprints as applicable;
-9. replay scheme, condition/key fingerprint, and scope;
-10. validity interval;
-11. fresh evidence of satisfaction, conflict, or pending work;
-12. journal revision.
-
-Any behavior or lockfile mismatch blocks automatic replay even when request bytes are equal. No bytes-sufficient relaxation exists in v1.
-
-## Structured non-automatic verdict
-
-Every stop reports:
-
-```text
-ReplayStopExplanation {
-  code,
-  comparisons: [
-    { fact, recorded, candidate, result, consequence }
-  ],
-  riskAcceptance: {
-    priorDispatchId,
-    operationId,
-    candidateRequestFingerprint,
-    acceptedRisks,
-    exactAssertion
-  }
-}
-```
-
-A bare `false`, generic refusal, or unstructured incompatibility error is a defect. The explanation shape is designed so a future bytes-sufficient relaxation could loosen the decision without changing historical events.
+Current recommendation: use wire-sufficient replay and keep implementation
+identity as diagnostics/provenance. Confidence is high for core-owned
+transports and intentionally does not extend to opaque provider Effects.
 
 ## Pure decision path
 
 ```text
-decideNextAttempt(plan, journal, preparedRequest, now)
+decideNextAttempt(plan, journal, preparedRequest, now, replayLawAuthority)
 ```
 
-returns one of:
+returns:
 
 ```text
 InitialAttempt
 ReplayFromNonCommitProof
 ReplayFromRecordedProtection
-RequiresRiskAcceptance(explanation)
-ObserveOrWait(explanation)
+RequiresRiskAcceptance
+ObserveOrWait
 StopSatisfied
 StopConflict
-StopInconclusive(explanation)
+StopInconclusive
 ```
 
-For identical durable history, time, and re-prepared core request facts, two runners derive the same result. Installed provider code cannot reinterpret old safety evidence; drift appears as a comparison mismatch.
+Installed code can change whether it successfully reconstructs the historical
+request. If the fingerprint changes, replay stops. If the exact request and
+protection facts match, package or lockfile drift alone does not change the
+recommended decision.
 
-## Journal compare-and-swap
+## Concurrent runners
 
-All backends satisfy one law:
+Two runners may derive the same decision. Only one may append the next
+`DispatchStarted` through `JournalStore.appendIfRevision`. The loser reloads and
+must not send.
 
-```text
-appendIfRevision(expectedRevision, completeEvent)
-  -> Appended(newRevision) | RevisionMismatch(actualRevision)
-```
+This is cooperative dispatch fencing. It cannot stop an earlier request already
+in flight at the provider.
 
-Only `Appended` permits send. Two runners may compute the same replay result, but only one can append the next dispatch event.
+## Cancellation and correction
 
-R1 established two required v1 Layers:
+Cancellation prevents future local effects; it cannot roll back or fence a
+provider request already sent.
 
-```text
-LocalGenerationJournalStore
-S3ConditionalJournalStore
-```
+Historical Intents and events remain immutable. Correction creates a new plan
+revision or superseding Intent. New code never rewrites a historical request.
 
-The first uses prewritten, synchronized generation files atomically installed at a unique revision path. The second uses immutable event segments plus an S3 head-object `If-Match` conditional write. SQLite is a valid local alternative but is not a second required v1 implementation. CI artifacts transport immutable bundles; without external conditional state they are not a journal authority.
+## Open design question
 
-See `journal-backends.md` and `probes/journal-backends/`.
-
-## Provider evidence consequences
-
-- npm immutability aids observation but does not authorize replay.
-- pinned Warehouse exact-duplicate behavior can satisfy `replay.exact-duplicate/1` for equivalent filename/content/request facts.
-- explicit Git expected-old to desired-new update satisfies `replay.cas/1`.
-- GitHub release and asset creation expose no general idempotency key; lost responses use observation and may remain inconclusive.
-- an authoritative request-status endpoint may prove committed, terminal non-commit, or pending, but the token itself is not replay protection.
-
-## Cancellation, takeover, and correction
-
-A lease may improve liveness or diagnostics but is not the safety authority and cannot fence a stale provider request. CAS selects one cooperative continuation.
-
-Historical Intent and events are immutable. Correction creates a new operation/plan revision and may append `PlanSuperseded`. New provider code never reinterprets the old request as the new operation.
+The main unresolved replay question is no longer request correspondence. It is
+how a non-structural provider protocol law is trusted without creating a hidden
+provider allowlist or a weak provider-authored assertion.

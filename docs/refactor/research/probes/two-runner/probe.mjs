@@ -34,3 +34,5 @@ console.log(`TWO_RUNNER_PROBE_RESULT=${JSON.stringify({
 })}`)
 
 await runDevelopmentToolingProbe()
+await import("../development-tooling/language-service-matrix.mjs")
+await import("../development-tooling/oxlint-exact.mjs")

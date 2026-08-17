@@ -1,4 +1,5 @@
 import { rm } from "node:fs/promises"
+import { runDevelopmentToolingProbe } from "../development-tooling/probe.mjs"
 import { stateRoot, providerDefinitionFields, dispatchStartedFields } from "./helpers.mjs"
 import { beforeSend, responseLoss, providerV2 } from "./scenarios-basic.mjs"
 import { casRace, mutatedStop } from "./scenarios-race.mjs"
@@ -31,3 +32,5 @@ console.log(`TWO_RUNNER_PROBE_RESULT=${JSON.stringify({
     "the probe does not select production TypeScript spelling"
   ]
 })}`)
+
+await runDevelopmentToolingProbe()

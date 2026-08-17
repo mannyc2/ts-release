@@ -1,240 +1,157 @@
-# Decision packet details and source index
+# Decision packet details and counterexamples
 
-Status: evidence and tradeoff supplement to `decision-packet.md`.
+Status: evidence/tradeoff supplement to `decision-packet.md`.
 
-## ConsumerScenario first-principles questions
+## 1. What the corrected probe establishes
 
-### What concrete action consumes it?
+The two-runner probe establishes:
 
-No current core action. A release application or CI job may run `npm install`, `pip install`, `brew install`, Scoop installation, an import, or a CLI command.
+- the selected strict shape compiles and executes;
+- runner B can reproduce a core-owned request;
+- a journal CAS can prevent two fixture runners from sending;
+- strict implementation drift produces a structured stop; and
+- a core-derived operation ID remains stable across two provider
+  implementations in the focused identity comparison.
 
-### When does it run?
+It does not establish:
 
-After provider acceptance, after public visibility, or in a separate later workflow. Different scenarios have different prerequisites.
+- that five ProviderDefinition fields are minimal;
+- that behavior or lockfile identity should block replay;
+- that equal request bytes prove server idempotency;
+- that the fake remote is a provider protocol; or
+- that the local CAS seam is a production backend.
 
-### What changes on failure?
+## 2. Operation identity alternatives
 
-The selected application/CI policy fails. Historical provider acceptance remains true. Mutation replay is not authorized.
+| Alternative | Canonical input | Installed-code dependence | Counterexample |
+| --- | --- | --- | --- |
+| provider `operationId(intent)` | provider executable projection | yes | V1 and V2 hash the same Intent under different domains |
+| core hash of definition/schema/Intent | canonical durable bytes | no | must include plan/bundle binding for relative artifact references |
+| random ID stored with plan | stored peer identifier | no after creation | can disagree with canonical Intent and cannot be recomputed |
 
-### Why not provider definition?
+Recommendation: core-derived identity with `planId` binding.
 
-The scenario depends on product behavior and environment, not only provider law. One provider can have many scenarios; one scenario can span several providers.
+## 3. Strict versus bytes-sufficient replay
 
-### Substitutability law?
+### Strict implementation policy
 
-None was found across npm install, binary execution, Homebrew, Scoop, and application-specific imports.
+Blocks on behavior ID or whole-lockfile change.
 
-### Is durable evidence required?
+False-positive examples:
 
-Not for publication correctness or resume. Normal CI logs/artifacts are sufficient unless a product separately chooses to persist acceptance reports.
+- documentation-only or unrelated dependency lockfile update;
+- test-runner dependency update;
+- provider package rebuild with unchanged request construction;
+- dependency graph change that does not affect the prepared request.
 
-### Does a public API need it?
+It also has false-negative limits:
 
-No demonstrated API. An ordinary Effect supplied by the release application is sufficient.
+- provider source may change without a lockfile change;
+- a manually maintained behavior ID may not be bumped.
 
-### What is lost by removal?
+### Bytes-sufficient correspondence policy
 
-Only a generic core registry/status/resume mechanism for arbitrary consumer tests. That loss does not block the fixed shipping scope.
-
-Conclusion: remove completely from provider definitions and the canonical journal. Preserve clean-consumer testing as project/application policy.
-
-## Replay alternatives
-
-### A. Resume-time ReplaySafetyCapability
-
-Canonical facts:
-
-- old history plus newly installed provider code.
-
-Failure:
-
-- identical history can yield different verdicts across provider versions;
-- verdict may not preserve evidence;
-- combines static request protection with live observations.
-
-Rejected.
-
-### B. Dispatch-time protection interpreted by core
-
-Canonical facts:
-
-- prepared request fingerprint;
-- provider behavior identity;
-- authorization scope;
-- protection scheme, key/condition, and expiry;
-- journal history.
-
-Strength:
-
-- deterministic;
-- auditable;
-- no old verdict recomputation.
-
-Weakness:
-
-- requires a deliberately small core algebra;
-- provider still must honestly prepare/send the recorded request.
-
-Recommended.
-
-### C. Provider-version-pinned replay classifier
-
-Canonical facts:
-
-- history plus exact provider executable version.
-
-Strength:
-
-- prevents version drift.
-
-Weakness:
-
-- replay logic remains executable historical policy;
-- harder to audit than recorded protection;
-- code availability becomes part of safety.
-
-Useful as migration/compatibility defense, not the primary model.
-
-### D. No automatic replay except structural proofs
-
-Strength:
-
-- smallest safe state space;
-- arbitrary providers remain honest.
-
-Weakness:
-
-- fewer automatic continuations.
-
-Recommended as the default around B: only core-supported recorded schemes enable automatic replay.
-
-## Counterexamples used
-
-### Idempotency key scope/expiry
-
-- Stripe v1: 24 hours; v2: same API and account/sandbox within 30 days.
-- AWS Cloud Control: 36 hours.
-- Google: at least 60 minutes in documented APIs.
-
-An unscoped string is insufficient.
-
-### Conditional Git
-
-Expected-old to desired-new is safe to replay because remote compare-and-swap prevents a second successful transition.
-
-### Warehouse exact duplicate
-
-Pinned source accepts the same filename and hashes, but rejects same filename with different content. The protection must bind coordinate and content.
-
-### npm
-
-Immutable version does not prevent conflict or capture mutable initial-tag effects. No automatic replay scheme is inferred.
-
-### GitHub
-
-No general idempotency key for release/asset creation. Observation is required after response loss.
-
-### Write-only provider
-
-No observation/protection means inconclusive, not provider invalidity.
-
-### Request-status provider
-
-Request status can prove terminal non-commit or satisfaction. It remains observation.
-
-## Request fingerprint requirements
-
-The normalized projection should bind:
-
-- provider definition/behavior identity;
-- endpoint/API version;
-- method/operation;
-- coordinate;
-- canonical body/arguments;
-- referenced artifact digests;
-- relevant non-secret headers/options;
-- idempotency key or condition;
-- authorization principal/account/tenant/scope.
-
-It should exclude freshly reacquired credential bytes and transport signatures whose semantic authority is separately bound.
-
-For multipart or command transports, volatile boundaries/paths must either be stabilized or excluded through a provider-defined normalized projection. Built-in providers should use a core-owned prepared transport where practical.
-
-## Secrets
-
-Automatic replay requires recovering exact protection material.
-
-Preferred:
-
-- deterministic non-secret key derived from operation identity;
-- durable secret-manager reference;
-- encrypted journal field under an explicit storage policy.
-
-If none is available, protection is not reusable. Credentials are always reacquired.
-
-## OpenAI plugin distribution
-
-Official package shape:
-
-- `.codex-plugin/plugin.json`;
-- optional `skills/`;
-- optional `.app.json` or `.mcp.json`;
-- assets/hooks;
-- local or repository marketplace metadata.
-
-Official public flow:
-
-1. verified developer/business identity;
-2. portal draft;
-3. package/server scan;
-4. listing, prompts, test cases, availability, attestations;
-5. OpenAI review;
-6. developer chooses Publish after approval.
-
-The portal requires at least five positive and three negative tests. Public submission is not immediate publication and no general publication API is documented.
-
-Sources:
-
-- https://developers.openai.com/plugins/build/plugins
-- https://developers.openai.com/plugins/deploy/submission
-
-## Artifact production sources
-
-- effect-build granular branch:
-  https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13
-- GoReleaser nFPM:
-  https://www.goreleaser.com/customization/package/nfpm/
-- app bundles:
-  https://www.goreleaser.com/customization/package/app_bundles/
-- DMG:
-  https://www.goreleaser.com/customization/package/dmg/
-- pkg:
-  https://goreleaser.com/customization/package/pkg/
-- notarization:
-  https://goreleaser.com/customization/sign/notarize/
-
-## Probe limits
-
-No new probe was added in this pass.
-
-Existing clean-consumer probe does not prove persisted provider restoration or replay. Existing artifact probes do not prove remote/object-store behavior. Existing Effect baseline probes do not prove Workflow semantics. Alignment candidate jobs remain informational.
-
-Recommended next discriminating probe:
+For core-owned transports, compare:
 
 ```text
-runner A:
-  persist custom Intent
-  prepare exact dispatch
-  record protection and DispatchStarted
-  stop before/after simulated response loss
-
-runner B:
-  load same application/provider behavior
-  decode Intent
-  prepare request
-  compare fingerprint
-  derive core replay decision
-  use CAS to prevent a second runner from dispatching
+operation ID
+endpoint
+non-secret authorization identity/scope
+immutable request fingerprint
+replay key/condition and scope
+validity interval
+trusted remote replay law
+journal CAS
 ```
 
-A variant with provider behavior V2 must stop rather than reach a different automatic verdict.
+No concrete fixed-provider counterexample was found in which all of these match
+and local implementation drift alone makes the repeat request unsafe.
+
+A changed response decoder can affect receipt/reporting behavior, but it does
+not change whether the exact request is safe to send. Observation compatibility
+is a separate provider operation.
+
+Recommendation: implementation provenance is diagnostic, not a replay gate.
+
+## 4. Request correspondence versus protocol authority
+
+Counterexample:
+
+```text
+custom provider prepares an HTTP POST
+adds Idempotency-Key: K
+server ignores the header
+first request commits, response is lost
+core sends byte-identical request with K
+second effect is created
+```
+
+Core proved correspondence. It did not prove remote enforcement.
+
+Authority alternatives:
+
+| Model | Auditability | Custom-provider effect | Hidden allowlist risk |
+| --- | --- | --- | --- |
+| provider self-asserts scheme | low | open | no, but unsafe assertion possible |
+| core recognizes provider behavior IDs | medium | closed unless core changes | high |
+| application trusts a protocol-law declaration | explicit | open | no core allowlist, but maintained policy |
+| built-in structural laws only | high | custom replay conservative | low |
+
+`core.git/1` CAS is structurally strongest because core constructs the expected
+old and desired new ref update and Git enforces it. Warehouse exact-duplicate
+and generic idempotency-key behavior remain provider-law claims.
+
+No final authority representation is selected.
+
+## 5. Journal backend alternatives
+
+The law is fixed; implementation set is not.
+
+### Filesystem generations
+
+Current evidence is Linux-local only. Windows/macOS durability remains unproved.
+
+### SQLite
+
+Strong portable local candidate. It needs a safe local/block filesystem and
+does not by itself solve multi-host CI.
+
+### Dedicated Git ref
+
+A fast-forward commit chain or explicit expected-old push can provide a
+repository-native CAS. It avoids a second cloud account for GitHub Actions but
+requires write permission, careful ref policy, and a response-loss read-back.
+
+### S3
+
+Strong conditional cross-host storage for AWS users. It is not entailed by
+release-provider scope.
+
+### User-supplied JournalStore
+
+Needed if the product supports deployments that already rely on a database or
+object store not maintained first-party. The shared law makes this ordinary
+Layer substitution rather than a release mode.
+
+## 6. Apple notarization
+
+Moving ownership to effect-build-apple removes notarization from ts-release's
+provider journal, but it does not remove the need for durable production state.
+
+A correct effect-build design must survive:
+
+```text
+submission accepted
+process disappears before submission ID/result is durably recorded
+new runner receives same pre-notarization bytes
+polls or reconciles without blind resubmission
+staples and verifies final bytes
+ts-release adopts only then
+```
+
+The package boundary is decided. The durable mechanism remains open.
+
+## 7. Minor correction
+
+The replay law has four cases, not "three facts": initial dispatch, proven
+non-commit, trusted replay protection, and explicit risk acceptance.

@@ -1,141 +1,104 @@
 # GitHub, Git catalog, and custom-provider wire models
 
-Status: continuation of [provider-wire-models.md](./provider-wire-models.md). It is part of the same research document and has the same guardrails.
+Status: continuation of `provider-wire-models.md` with the same research-only guardrails.
 
-## 4. GitHub tag, release, and asset
-
-Primary references:
-
-- [Git refs API](https://docs.github.com/en/rest/git/refs)
-- [Git tags API](https://docs.github.com/en/rest/git/tags)
-- [create a release](https://docs.github.com/en/rest/releases/releases#create-a-release)
-- [upload a release asset](https://docs.github.com/en/rest/releases/assets#upload-a-release-asset)
-
-### Late-bound asset coordinate
-
-A numeric `releaseId` and `upload_url` do not exist until a release is created or observed. A precomputed asset Intent must not pretend to know them.
-
-Alternatives:
-
-1. **Parent-reference coordinate:** asset Intent references the parent release Intent ID and requested public name; dispatch resolves numeric ID from the parent receipt or fresh observation.
-2. **Deferred Intent creation:** create asset Intents only after the release succeeds.
-3. **Predicted numeric coordinate:** persist an anticipated release ID.
-
-Alternative 3 is invalid. Alternative 2 weakens stable planning and review. Alternative 1 preserves a complete plan while treating numeric release ID as a response binding.
-
-**Provisional recommendation:** parent-reference coordinate, high confidence.
-
-### Tag establishment versus release creation
-
-GitHub release creation can reference a tag name and may establish a missing lightweight tag through `target_commitish`. An explicit tag-ref mutation and the release resource are still separately observable GitHub facts.
-
-Alternatives:
-
-- explicit tag Intent before release Intent;
-- one composite release Intent whose provider-specific dispatch policy may create a tag;
-- require the tag to preexist outside ts-release.
-
-**Provisional recommendation:** explicit tag establishment when ts-release owns tag creation, because it gives exact commit binding and response-loss reconciliation. Confidence is moderate; the extra request and race surface are tradeoffs.
-
-### Asset name and receipt
-
-The upload request supplies a requested name. GitHub can normalize some names. A successful 201 response supplies:
-
-- numeric asset ID;
-- returned stored name;
-- state;
-- content type;
-- size;
-- digest when present;
-- API and browser URLs.
-
-The returned stored name is a receipt binding. It is not safe to assume it equals the local filename. A lost response requires a complete paginated listing and an explicit matching rule.
-
-## 5. Git publication for Homebrew formulas and Scoop
+## GitHub tag, release, and assets
 
 Primary sources:
 
-- [Homebrew Formula Cookbook](https://github.com/Homebrew/brew/blob/78dc68a15f167a973207437a4454381641a2f82f/docs/Formula-Cookbook.md)
-- [Scoop source](https://github.com/ScoopInstaller/Scoop/tree/b588a06e41d920d2123ec70aee682bae14935939)
-- [current ts-release catalog Git adapter](https://github.com/mannyc2/ts-release/blob/d57e7e91b58683d030201d278eb96cd5acd05a21/src/publication/catalog-git.ts)
+- https://docs.github.com/en/rest/git/refs
+- https://docs.github.com/en/rest/git/tags
+- https://docs.github.com/en/rest/releases/releases#create-a-release
+- https://docs.github.com/en/rest/releases/assets#upload-a-release-asset
 
-A single Git commit and conditional ref update can publish several managed paths atomically within one repository. Those paths are not independent provider commit units.
+### Operation boundaries
 
-Recommended separation:
+GitHub release creation and every asset upload are separate wire requests and separate operations. No member-operation vocabulary is needed.
+
+When ts-release owns tag creation, an explicit tag/ref transition is also a separate operation. Release creation may refer to the tag but does not collapse the ref and release-resource histories.
+
+### Late-bound asset coordinate
+
+A numeric release ID and upload URL exist only after release creation or observation. An asset operation therefore references the parent release operation plus its requested public name. Dispatch resolves the numeric binding from the parent receipt or fresh observation. Predicting a numeric ID is invalid; deferring all asset planning would weaken stable plan review.
+
+### Receipt and observation
+
+A successful asset response returns provider-native facts such as numeric ID, stored name, state, content type, size, digest when present, and URLs. The stored name is a receipt binding and may differ from the local filename.
+
+After a lost response, a fresh runner performs complete paginated observation and applies an explicit match rule. The endpoint exposes no general idempotency key. Duplicate filename may return conflict rather than equivalent success. Absence while an upload may still be in flight is inconclusive, not replay authority.
+
+GitHub release creation likewise relies on fresh release/tag observation after response loss. It contributes no secret replay material.
+
+## Conditional Git publication for Homebrew and Scoop
+
+A single commit and conditional ref update may publish several rendered paths atomically. The provider operation is the desired ref/tree transition:
 
 ```text
-HomebrewFormulaRenderIntent
-ScoopManifestRenderIntent
-GitRefPublicationIntent
-HomebrewConsumerEvidence
-ScoopConsumerEvidence
+GitRefPublicationOperation {
+  repository/ref,
+  expectedRevision,
+  desiredRevision/tree
+}
 ```
 
-Rendering may happen before the release plan is finalized and produces exact artifacts. The Git publication Intent refers to one exact tree or managed-path set and one expected predecessor. One ref update is one physical mutation and one provider acceptance fact.
+Rendered formula and manifest files are artifacts, not peer remote operations. One explicit expected-old condition supplies `replay.cas/1`; Git object IDs are non-secret facts.
 
-Catalog rendering and Git publication are distinct outcomes:
+Rendering, publication, and consumer behavior remain distinct:
 
-- correct local Ruby or JSON bytes do not prove the remote ref moved;
-- a successful ref update does not prove the formula/manifest is semantically installable; and
-- one `brew install` or Scoop install does not prove another platform variant.
+- valid local Ruby/JSON bytes do not prove ref movement;
+- successful ref movement does not prove installability;
+- `brew install` or Scoop smoke tests are application/CI evidence, not provider journal events.
 
-## 6. Arbitrary custom provider without observation
+Primary sources:
 
-A valid custom provider may supply:
+- https://git-scm.com/docs/git-push
+- https://github.com/Homebrew/brew/blob/78dc68a15f167a973207437a4454381641a2f82f/docs/Formula-Cookbook.md
+- https://github.com/ScoopInstaller/Scoop/tree/b588a06e41d920d2123ec70aee682bae14935939
+
+## Arbitrary custom providers
+
+A custom provider may supply:
 
 ```text
-versioned Intent
-dispatch capability
-provider-native Receipt
-typed errors
+five-field ProviderDefinition
+optional prepare service
+optional observe service
+optional correct service
+provider-native receipts/errors
+Layers
 ```
 
-and no exact observation.
+### Core transport custom provider
 
-Normal success remains `Accepted(receipt)`. If the response is lost:
+A provider using `core.http/1` or `core.git/1` receives structural request fingerprinting and may use a supported recorded replay scheme. Core owns the final immutable request and send.
 
-- provider-enforced replay safety may authorize another request;
-- otherwise the operation becomes `Inconclusive`;
-- the core must not reject the provider merely because it cannot reconcile automatically.
+### Opaque custom provider
 
-This is an honest extension model. It exposes weaker resumability for that provider rather than weakening the entire core contract.
+A provider dispatching an arbitrary Effect remains valid but cannot opt into automatic replay by implementing a projection method. After response loss:
 
-## 7. Receipt, observation, and consumer evidence discipline
+- authoritative observation may establish satisfied, conflict, pending, or terminal non-commit;
+- otherwise the operation stops `Inconclusive`;
+- a maintainer may record `RiskAccepted`.
 
-| Fact | Source | May repeat Intent fields? |
-| --- | --- | --- |
-| Intent | authored and canonical plan | It is the source of desired provider, endpoint, coordinate, and artifact facts. |
-| Provider-native receipt | successful mutation response | Only provider-returned facts plus references to Intent/dispatch. |
-| Fresh observation | explicit provider read | Provider-returned facts and comparison result. |
-| Consumer evidence | named consumer operation in named environment | Consumer result, environment, and subject; not provider mutation status. |
+This is an explicit automation ceiling, not provider rejection.
 
-A receipt can be associated with an Intent without echoing its coordinate fields. The association comes from the journal's dispatch record.
+## Evidence discipline
 
-## 8. Recommendations and confidence
+| Fact | Authority |
+| --- | --- |
+| desired endpoint, coordinate, metadata, artifact references | canonical Intent |
+| exact physical request identity and replay protection | `DispatchStarted` |
+| provider-returned mutation facts | provider-native receipt |
+| provider-returned read facts | fresh observation |
+| install/import/execute outcome | application/CI test |
 
-| Recommendation | Confidence | Tradeoff |
-| --- | --- | --- |
-| Replace one mandatory provider lifecycle with a versioned definition plus optional capabilities. | High | A heterogeneous resolver is still needed at the application boundary. |
-| Permit providers with no observation capability. | High | Lost-response completion may remain permanently inconclusive. |
-| Keep consumer evidence and evidence environments outside provider admission. | High | Release policy must explicitly choose required consumer gates. |
-| Use an application-supplied provider-definition resolver on every fresh runner. | High | Definition/version migration becomes an explicit operational responsibility. |
-| Model initial npmjs publish as one composite Intent and later tag moves separately. | High for npmjs, medium generally | Compatible registries may implement different mutation laws. |
-| Use parent Intent references for GitHub asset planning and bind release ID from a receipt/observation. | High | Dispatch resolution is more complex than storing a final numeric coordinate. |
-| Treat one conditional Git ref update as the publication unit for several formula/Scoop paths. | High | Per-path progress exists only before the ref update, not as provider publication state. |
+Receipts and observations may reference an operation without copying Intent fields and relabeling them provider-returned.
 
-## 9. Genuine remaining choices
+## Remaining provider-specific choices
 
-- Exact TypeScript shape of provider definitions and optional capability values.
-- Whether the application resolver is an explicit value, a Context service, or both.
-- Schema migration policy for persisted custom-provider Intents.
-- Whether explicit GitHub tag creation is mandatory or a configurable provider policy.
-- Exact npm-compatible registry support policy beyond npmjs.
-- Which compatible Python repositories receive first-party support beyond Warehouse.
-- Which consumer evidence is required for Homebrew and Scoop release completion.
+- whether explicit GitHub tag creation is mandatory or configured per release policy;
+- exact npm-compatible registry support beyond npmjs;
+- exact Python repository support beyond pinned Warehouse;
+- provider-specific observation matching for GitHub assets and releases.
 
-## 10. Unresolved contradictions
-
-1. A fully reviewed plan wants every provider Intent known before dispatch, while some provider coordinates contain response-bound identities such as GitHub `releaseId`. Parent references solve this structurally, but the exact plan Schema is not selected.
-2. A provider with no observation endpoint is valid, yet the target resumability promise cannot always converge automatically after response loss. The product must state resumability per provider capability rather than claim universal convergence.
-3. A heterogeneous runtime resolver is operationally a lookup table, but it is not an allowlist. Documentation and naming must prevent it from becoming a provider-admission registry.
-4. npmjs currently co-requests an initial tag with version publication. Whether the public model exposes one composite Intent or two derived outcome facets remains a model choice, even though the physical wire fact is established.
+None requires a universal lifecycle or operation-member model.

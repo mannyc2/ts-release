@@ -1,152 +1,65 @@
 # Implementation-order comparison
 
-Status: research-only. The canonical capability ledger is `competitive-scope.md`; this document does not reduce or redefine it.
+Status: research-only. Scope remains the 16/3/6 ledger in
+`competitive-scope.md`.
 
-## Strategies
+## Accepted sequence
 
-### A. Model and storage first
-
-Build the complete artifact, plan, journal, provider-definition, and reporting model before exercising a live provider.
-
-Strength:
-
-- coherent internal vocabulary.
-
-Risk:
-
-- repeats the current failure mode: extensive internal proof before wire evidence;
-- abstractions may encode imagined commonality;
-- response-loss laws arrive late.
-
-### B. Provider scripts first
-
-Implement each provider directly, then generalize.
-
-Strength:
-
-- fastest wire contact.
-
-Risk:
-
-- ad hoc artifact ownership and persistence;
-- incompatible provider results;
-- difficult fresh-runner continuation.
-
-### C. Durable engine first
-
-Adopt Workflow/Activity or another durable system, then map providers into it.
-
-Strength:
-
-- timers, retries, persistence, and worker recovery.
-
-Risk:
-
-- engine retry can replay external mutations;
-- activity identity can distort provider Intent identity;
-- infrastructure choice freezes the model too early.
-
-### D. Hybrid wire-complete slices
-
-1. establish the minimum immutable bundle, canonical Intent, physical dispatch event, and CAS journal;
-2. exercise npm normal success and lost response;
-3. exercise Warehouse per-file success, duplicate, partial progress, and response loss;
-4. generalize only the replay and observation laws demonstrated by those wires;
+1. minimum immutable bundle, canonical Intent, core-derived operation identity,
+   `DispatchStarted`, and `JournalStore` law;
+2. wire-complete npm normal success and response-loss behavior;
+3. Warehouse per-file success, conflict, partial progress, and response loss;
+4. generalize only laws demonstrated by those provider slices;
 5. add GitHub tag/release/assets;
-6. add conditional Git plus Homebrew formulas and Scoop;
-7. prove a two-process arbitrary custom-provider continuation;
-8. exercise the architecture-shaping artifact-production families from `competitive-scope.md`;
-9. exercise OpenAI plugin package, repo marketplace, and public-submission handoff;
-10. run the rewritten product's own non-manual release.
+6. add conditional Git publication plus Homebrew formulas and Scoop;
+7. prove custom-provider fresh-runner continuation;
+8. exercise P01-P10 artifact production/trust outcomes;
+9. prove A01-A03 architecture without making them vNext acceptance gates;
+10. complete non-manual ts-release self-release.
 
-Recommendation: D.
+## Corrections before production work
 
-## Why npm and Warehouse first
+The previous checkpoint prematurely froze several implementation choices. The
+next production design should use these corrected constraints:
 
-They expose different laws early:
+- operation identity is core-derived, not provider-projected;
+- implementation/lockfile provenance is diagnostic, not replay authority;
+- core transport proves correspondence, not remote idempotency;
+- automatic replay requires a separate trusted provider-law authority;
+- the `JournalStore` interface is fixed, but its first-party backend set is
+  open;
+- Apple notarization is effect-build-owned but durable recovery is unresolved.
 
-```text
-npm
-  one composite registry document
-  immutable package version
-  mutable dist-tag
-  weak response receipt
-  useful read reconciliation
+## Earliest discriminating work
 
-Warehouse
-  one upload per distribution file
-  exact duplicate same content accepted
-  filename/content conflict
-  per-file partial progress
-```
+Before a production provider API is frozen:
 
-A common model that survives both is more credible than one inferred from internal types.
+1. decide the replay-law authority model using npm, Warehouse, Git, and a custom
+   idempotency-key counterexample;
+2. run a focused Git-ref journal race and evaluate GitHub Actions permissions;
+3. compare SQLite and filesystem-generation local UX on Linux, macOS, and
+   Windows;
+4. design effect-build-apple's durable notarization record; and
+5. keep provider wire slices ahead of generalized orchestration machinery.
 
-## Replay implementation order
+## Why this does not reduce ambition
 
-Before implementing automatic replay:
-
-1. persist prepared request fingerprints and protection;
-2. implement pure core replay decision;
-3. prove compare-and-swap dispatch gating;
-4. test expiry/scope/equivalence;
-5. test two runners with different provider versions;
-6. default unsupported provider laws to no automatic replay.
-
-Do not implement resume-time executable replay policy.
-
-## Consumer testing order
-
-Consumer install/execute checks remain ordinary CI/application Effects.
-
-Use them as acceptance evidence after the provider path exists:
-
-- npm install/import/CLI;
-- pip install/import/entrypoint;
-- public GitHub binary execution;
-- brew install;
-- Scoop install;
-- ts-release self-release.
-
-Do not place them in the provider contract or mutation journal.
-
-## Artifact-production order
-
-The architecture-shaping set is not postponed until after provider completion.
-
-A useful sequence:
-
-1. existing executable matrix adoption;
-2. archives and source archives;
-3. uv/Poetry wheel and sdist integrations;
-4. nFPM package integration;
-5. app bundle, DMG, and pkg;
-6. local signing;
-7. notarization/stapling trace before final bundle lifecycle is frozen.
-
-No universal Builder is required.
-
-## AI-native order
-
-1. construct the OpenAI plugin package and validate manifest/assets;
-2. publish a local/repository marketplace through ordinary file/Git output;
-3. produce a portal-ready public submission packet;
-4. stop at validated human handoff unless OpenAI documents an automation API.
-
-Official review and publish remain human-gated portal operations.
+All 16 vNext outcomes remain required. The sequence merely obtains external
+wire and deployment evidence before generalized infrastructure becomes hard to
+change.
 
 ## Evidence gates
 
-Each slice distinguishes:
-
 ```text
+compile/type probe
+process-separated local probe
 protocol double
-scratch/live provider acceptance
+scratch provider acceptance
 fresh public observation
 intended byte identity
 clean consumer behavior
 fresh-runner response-loss continuation
-released self-use
+non-manual self-release
 ```
 
-The decisive final gate is a non-manual ts-release self-release through the rewritten product.
+A lower gate must not be reported as a higher one.

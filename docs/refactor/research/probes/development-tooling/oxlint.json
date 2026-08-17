@@ -1,9 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
   "plugins": ["typescript", "import"],
-  "categories": {
-    "correctness": "error"
-  },
   "rules": {
     "typescript/consistent-type-imports": ["warn", { "fixStyle": "inline-type-imports" }],
     "typescript/no-import-type-side-effects": "error",

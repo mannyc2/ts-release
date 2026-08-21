@@ -1,103 +1,158 @@
-# Canonical competitive-scope ledger
+# Competitive scope projection
 
-Status: canonical scope authority for PR #20. Other documents must reference
-this file rather than repeat independent counts.
+Status: derived product view for the PR #20 research checkpoint. The sole
+atomic scope authority is [`launch-scorecard.md`](launch-scorecard.md). If a
+count, disposition, owner, dependency, fixture, or acceptance oracle here
+drifts from an atomic row, the scorecard wins.
 
-## Counts
-
-```text
-vNext acceptance:                        16
-  fixed distribution outcomes:            6
-  artifact production/trust outcomes:     10
-
-architecture-proved only in vNext:         3
-  AI-native outcomes:                      3
-
-deferred destination packages:             6
-```
-
-Implementation order does not reduce acceptance scope.
-
-## A. Fixed distribution outcomes: 6
-
-| ID | Outcome | Ownership direction | Status |
-| --- | --- | --- | --- |
-| D01 | Native npm package-version publication and dist-tag management | ts-release npm integration | vNext acceptance |
-| D02 | Warehouse/PyPI-compatible per-file distribution publication | ts-release Warehouse integration; compatible implementations named explicitly | vNext acceptance |
-| D03 | GitHub tag/ref, release-resource, and release-asset publication | ts-release GitHub integration | vNext acceptance |
-| D04 | Homebrew formula rendering and conditional Git publication | concrete renderer plus ts-release Git mutation/recovery | vNext acceptance |
-| D05 | Scoop manifest rendering and conditional Git publication | concrete renderer plus ts-release Git mutation/recovery | vNext acceptance |
-| D06 | Arbitrary custom-provider composition and fresh-runner continuation | user package/application plus Layers; no core allowlist | vNext acceptance |
-
-Homebrew casks are not included in D04.
-
-## B. Artifact production and trust outcomes: 10
-
-| ID | Outcome | Working owner | Status |
-| --- | --- | --- | --- |
-| P01 | Executable target matrices | existing effect-build compiler integrations | vNext acceptance |
-| P02 | Binary/general archives | concrete effect-build transformation | vNext acceptance |
-| P03 | Source archives from an explicit source snapshot | concrete effect-build transformation; ts-release supplies release-owned source identity | vNext acceptance |
-| P04 | Wheels and sdists through uv and Poetry | concrete effect-build integrations; Warehouse publication remains ts-release | vNext acceptance |
-| P05 | nFPM/system packages such as deb, rpm, apk, ipk, Arch Linux, and MSIX | concrete effect-build integration | vNext acceptance |
-| P06 | macOS app bundles | effect-build-apple | vNext acceptance |
-| P07 | DMG construction | effect-build-apple | vNext acceptance |
-| P08 | macOS pkg construction | effect-build-apple | vNext acceptance |
-| P09 | Local signing, including codesign/productsign and format-specific signing | concrete effect-build transformations | vNext acceptance |
-| P10 | Remote notarization, polling/recovery, stapling, and final verification | effect-build-apple | vNext acceptance; durable recovery design unresolved |
-
-P10 ownership is decided, but its fresh-process durable design is not. The scope
-ledger must not turn ownership into a false claim of completed architecture.
-
-## C. AI-native outcomes: 3 architecture proofs
-
-These do not block vNext release acceptance.
-
-| ID | Outcome | Boundary | Status |
-| --- | --- | --- | --- |
-| A01 | Construct a valid OpenAI plugin/skills package | artifact production or ordinary Effect | architecture proof only |
-| A02 | Publish/update a local or repository marketplace entry | file/Git publication | architecture proof only |
-| A03 | Validate a public-submission handoff directory | pure validator over package, listing metadata/assets, release notes, attestations, and required positive/negative tests | architecture proof only; never a publication provider |
-
-## D. Deferred maintained destination packages: 6
+## Current finite shape
 
 ```text
-X01 GitLab
-X02 Gitea
-X03 Cloudsmith
-X04 GemFury
-X05 Artifactory
-X06 Nexus
+evaluated launch candidates:               79
+  selected vNext leaves:                   69
+    core delivery and reporting:            3
+    provider and distribution:             35
+    artifact production and trust:         28
+    OpenAI plugin delivery:                  3
+  resolved-to-later candidate leaves:      10
+
+deferred maintained destination packages:   7
+named later-model leaves:                   30
 ```
 
-Arbitrary-provider composition must allow these without core changes.
+This is not a claim that 69 independent abstractions are needed. It is an
+acceptance decomposition: each leaf names one observable user outcome, a
+finite fixture, and the evidence required to call it complete. Shared laws are
+represented once by prerequisites `R01-R07`, not copied into capability
+interfaces.
 
-## E. Later or adjacent outcomes
+## Selected launch outcomes
 
-- Homebrew casks;
-- Winget;
-- OCI images and registries;
-- broader signing/attestation ecosystems;
-- nFPM repository publication;
-- announcements;
-- hosted dashboards/catalog services.
+### Core delivery and reporting: 3 leaves
 
-## Responsibility boundary
+- `K01`: a machine-readable release report projected from canonical bundle,
+  plan, and journal facts;
+- `K02`: fresh-runner continuation of a complete multi-provider release
+  without blind mutation;
+- `K03`: a packed first-party GitHub Action and a genuinely non-manual
+  ts-release self-release.
+
+These are product outcomes. A generic `verify`, `ConsumerScenario`, release
+mode, or certification layer is not introduced.
+
+### Provider and distribution: 35 leaves
+
+| Family | Atomic leaves | Selected boundary |
+| --- | ---: | --- |
+| `D01` native npm | 6 | native tarballs, OIDC/provenance, dist-tags, plural workspaces, structural private omission, and lost-response continuation |
+| `D02` Python indexes | 7 | per-file Warehouse/PyPI, trusted publishing, plural distributions, separately proven pypiserver/devpi behavior, and honest ambiguous continuation |
+| `D03` GitHub | 6 | tag/ref, release resource, plural assets, publication, and distinct lost-response paths for releases and assets |
+| `D04` Homebrew Formula | 3 | render, conditional Git publication, and fresh-runner continuation |
+| `D05` Scoop | 3 | render, conditional Git publication, and fresh-runner continuation |
+| `D06` custom providers | 7 | ordinary imports/Layers, durable codecs, core HTTP/Git or opaque Effect dispatch, native durable values, multiple instances, and fresh-runner honesty |
+| `D07` MCP Registry | 3 | manifest, registry publication, and ambiguous-completion continuation |
+
+Consumer installation, import, discovery, download, and execution appear in
+the evidence facet `C`. They are not capabilities supplied to providers and
+do not become journal events merely because they are valuable acceptance
+evidence.
+
+### Artifact production and trust: 28 leaves
+
+The selected artifact side is deliberately concrete:
+
+- prebuilt adoption plus the exact Bun, Deno, and Node SEA matrices already
+  expressed by the pinned effect-build branch;
+- deterministic ZIP and tar.gz binary archives, including malicious-layout
+  rejection;
+- ZIP and tar.gz source archives from an exact Git tree;
+- one pinned `uv build` frontend exercised against `uv_build` and
+  `poetry-core` projects;
+- deb, rpm, apk, Arch, and unsigned MSIX production;
+- macOS app bundles, DMGs, pkgs, Developer ID signing, and Windows MSIX
+  Authenticode mechanics;
+- Apple submission, fresh-runner polling, stapling, and Gatekeeper
+  verification;
+- deterministic SHA-256 checksums and SPDX/CycloneDX SBOMs through pinned
+  Syft.
+
+The ownership boundary is structural:
 
 ```text
 effect-build
-  concrete production/transformation
-  scoped intermediates and caller-selected outputs
-  producer/tool-specific validation
+  concrete tool execution and artifact transformation
+  tool-specific inputs, intermediates, and validation
+  finalized outputs returned to the caller
 
 ts-release
-  immutable adoption
-  release planning
-  provider mutation
-  durable journal/recovery
-  reporting
+  immutable adoption and logical release identity
+  versioned provider Intents and provider mutation
+  durable journal, continuation decisions, and reports
+  integrated release acceptance
 ```
 
-The immutable artifact-handoff kernel remains an internal extraction-ready
-library inside ts-release. This is a packaging-sequence decision, not a denial
-of its generic laws.
+Apple notarization crosses that boundary without creating two histories.
+effect-build-apple owns the concrete notary operations; ts-release owns the
+release journal and continuation. If Apple accepts a submission before its ID
+is durably recorded and no authoritative correlation API closes the gap, the
+truthful result is `Inconclusive`.
+
+### OpenAI plugin delivery: 3 leaves
+
+AI-native delivery is launch scope, not an architecture-only footnote:
+
+- `AI01`: construct and validate an installable skills-only OpenAI plugin;
+- `AI02`: create or update a repository marketplace entry through conditional
+  Git state;
+- `AI03`: produce and validate the complete public-submission handoff.
+
+The final public portal review remains a human external action. The handoff
+validator must not report provider success for an action no protocol performed.
+
+## Nine resolved launch-shaping maintainer decisions
+
+Ten evaluated candidate leaves reduce to nine choices because MSI construction
+and MSI signing move together. All nine are resolved to finite later work in
+this checkpoint.
+
+| Decision | Leaves | Resolved disposition |
+| --- | --- | --- |
+| include ipk/OpenWrt | `P05-04` | later unless embedded distribution is a product goal |
+| include MSI and choose its toolchain | `P05-07`, `P09-04` | later; selected MSIX already covers a Windows installer |
+| detached OpenPGP signatures | `P09-05` | later absent demand |
+| keyless Cosign blob signatures | `P09-06` | later until identity and transparency policy are selected |
+| OCI image/index publication | `Q03` | later; it adds a producer and destination protocol |
+| hosted nightly publication | `Q05-02` | later; local no-dispatch builds already fall out structurally |
+| derived SemVer proposal | `Q06-01` | later; accept an explicit version first |
+| derived release notes | `Q06-02` | later; accept explicit notes first |
+| macOS universal executable | `Q07` | later unless one universal download is a launch promise |
+
+None of these later choices blocks the selected 69 leaves from being specified
+or implemented. Reopening one requires an explicit scorecard disposition
+change; it must not add a mode or a second scope ledger.
+
+## Deferred and later destinations
+
+The maintained provider packages explicitly deferred until after vNext are
+GitLab, Gitea, Cloudsmith, GemFury, Artifactory, Nexus, and Iru (`X01-X07`).
+The custom-provider acceptance fixture must demonstrate that each could be
+implemented without a core allowlist or sealed provider union.
+
+The 30 named later leaves comprise the 20 pre-existing later outcomes plus the
+10 candidates resolved above. Together they retain real product possibilities
+without pretending they are launch acceptance: ipk, MSI/signing, OpenPGP,
+Cosign, OCI, hosted nightlies, derived version/notes, universal macOS,
+Homebrew Casks, Winget, source RPM, npm wrapper packages, makeself/NSIS,
+Snapcraft/Flatpak/Chocolatey, AUR/NUR/Krew, another AI registry, a named blob
+destination, Docker Hub metadata, AI-assisted notes, additional compiler/
+transformation integrations, and independent-project monorepo scoping.
+
+## Competitive interpretation
+
+GoReleaser mechanism names are evidence, not requirements. A row earns launch
+scope when it contributes to the desired product and has an external oracle.
+Conversely, a selected capability does not disappear merely because
+GoReleaser expresses it differently. The exact historical mapping lives in
+[`goreleaser-evidence-census.md`](goreleaser-evidence-census.md), and the
+outcome-oriented reading lives in
+[`goreleaser-outcomes.md`](goreleaser-outcomes.md).

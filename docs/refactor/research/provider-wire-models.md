@@ -6,9 +6,9 @@ Status: provider-protocol companion to `provider-contracts.md`. It records wire 
 
 Primary sources:
 
-- https://github.com/npm/cli/blob/51c2bf81fa2c31547d0fec44fff2aaac3d9a9862/workspaces/libnpmpublish/lib/publish.js
-- https://github.com/npm/cli/blob/51c2bf81fa2c31547d0fec44fff2aaac3d9a9862/lib/commands/publish.js
-- https://docs.npmjs.com/cli/v11/commands/npm-publish/
+- https://github.com/npm/cli/blob/v12.0.2/workspaces/libnpmpublish/lib/publish.js
+- https://github.com/npm/cli/blob/v12.0.2/lib/commands/publish.js
+- https://docs.npmjs.com/cli/v12/commands/npm-publish/
 
 Pinned `libnpmpublish` constructs one package document containing:
 
@@ -19,6 +19,9 @@ _attachments[tarballName] = tarball bytes
 ```
 
 and sends one package PUT. Therefore the initial publish is one logical operation and one physical dispatch.
+
+The selected public scoped/unscoped npmjs Intent records `access: "public"`
+explicitly; the current library default is not used as product policy.
 
 ### Frozen operation shape
 
@@ -38,7 +41,11 @@ NpmPublishReceipt {
 }
 ```
 
-The receipt must distinguish provider-returned facts from Intent-derived facts. Pinned source ignores a rich response body, so name, version, tarball digest, access, provenance, and requested tag remain request/Intent facts unless a provider response explicitly returns them.
+The receipt must distinguish provider-returned facts from Intent-derived facts.
+Current `libnpmpublish` ignores a rich response body and returns the HTTP
+response; documented HTTP `201` is normal success. No success JSON is invented.
+Name, version, tarball digest, access, provenance, and requested tag remain
+request/Intent facts unless a provider response explicitly returns them.
 
 A fresh observation may report:
 
@@ -85,7 +92,11 @@ Pinned Warehouse source distinguishes:
 - same filename and different content: conflict;
 - previously deleted filename: reuse rejected.
 
-This can support `replay.exact-duplicate/1` only when behavior identity, coordinate/content fingerprints, and the re-prepared request all match. It is not assumed for every compatible repository.
+This can support `replay.exact-duplicate/1` only when exact coordinate/content
+facts, request correspondence, and a versioned application-trusted Warehouse
+protocol-law binding all match. Implementation provenance is diagnostic, not
+replay authority. v1 does not enable this non-structural law, and it is not
+assumed for every compatible repository.
 
 No secret replay material is required.
 

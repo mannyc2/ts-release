@@ -60,13 +60,18 @@ Primary sources:
 A custom provider may supply:
 
 ```text
-five-field ProviderDefinition
+stable definition ID
+versioned service-free Intent Schema/codec
 optional prepare service
 optional observe service
 optional correct service
 provider-native receipts/errors
-Layers
+operation-local Layers
 ```
+
+Core owns canonical Intent encoding and operation identity. The application
+assembles definitions through ordinary imports and rejects duplicate IDs; this
+is resolution, not registration or admission.
 
 ### Core transport custom provider
 

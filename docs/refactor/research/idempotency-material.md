@@ -102,7 +102,9 @@ does not rely on a generic header whose semantics are unknown.
 | application-supplied trusted law binding | open and explicit | maintained policy and versioning burden |
 | no automatic non-CAS replay in v1 | smallest safety surface | less automatic Warehouse/custom continuation |
 
-No final representation is selected in this correction pass.
+v1 selects no automatic non-CAS replay. A future application-supplied trusted
+law binding remains a provisional seam and must be selected durably before
+dispatch.
 
 ## R2 conclusion
 
@@ -113,5 +115,6 @@ no plaintext replay secret in v1
 no speculative durable-secret union
 ```
 
-The provider-law authority question is separate and remains open. Removing
-secret storage does not authorize arbitrary providers to claim a replay scheme.
+The provider-law authority question is separate: v1 answers it only for
+structural core CAS. Removing secret storage does not authorize arbitrary
+providers to claim a replay scheme.

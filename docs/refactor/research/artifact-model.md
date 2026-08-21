@@ -187,7 +187,7 @@ Laws:
 - object digests are unique;
 - artifact IDs are unique;
 - every artifact references exactly one declared object;
-- unreferenced objects are either rejected or explicitly permitted by one canonical policy;
+- unreferenced objects are rejected;
 - bundle ID is the domain-separated hash of canonical manifest bytes;
 - the manifest contains no bundle ID field;
 - no path appears in the canonical model; and

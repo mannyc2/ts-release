@@ -112,7 +112,9 @@ Grade: `DOC + SOURCE` for material examples; remaining case rows inherit `INDEX`
 Rewrite disposition:
 
 - archive/checksum production is intended shipping behavior through build/transformation composition;
-- platform installers and system packages are later built-ins or custom producers;
+- platform installers and system packages follow the selected/later
+  dispositions in `launch-scorecard.md`; this material map does not decide
+  their scope;
 - publication to a package repository is a separate provider outcome.
 
 ## G04 - Checksums, SBOMs, signing, notarization, attestations

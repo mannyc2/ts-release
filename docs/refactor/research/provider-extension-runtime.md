@@ -41,11 +41,20 @@ canonical encoded Intent
 Core derives:
 
 ```text
-operationId = hash(planId, definitionId, schemaVersion, canonicalIntent)
+operationId = hash(
+  "ts-release/operation/1",
+  definitionId,
+  schemaVersion,
+  canonicalIntent
+)
+
+operationKey = (planId, operationId)
 ```
 
-The application supplies the matching Schema and optional operations. It does
-not need to reproduce a provider-authored operation-ID function.
+The provider-local identity is stable across plans; `operationKey` supplies
+the owning release envelope. The application supplies the matching Schema and
+optional operations. It does not need to reproduce a provider-authored
+operation-ID function.
 
 ## Implementation provenance
 
@@ -84,8 +93,10 @@ Automatic replay still depends on two separate proofs:
    that request is safe.
 
 A provider package cannot obtain automatic replay merely by returning
-`replay.idempotency-key/1` or `replay.exact-duplicate/1`. The authority model
-for non-structural provider laws remains open.
+`replay.idempotency-key/1` or `replay.exact-duplicate/1`. v1 enables only the
+structural core compare-and-swap law; a future non-structural binding is
+application-owned policy selected before dispatch, not a resume-time provider
+capability.
 
 ## Opaque custom effects
 

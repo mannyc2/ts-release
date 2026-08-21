@@ -29,15 +29,20 @@ requires it; vNext does not begin by creating a third repository.
   `15c811bb9904142a33d119766b62082f3c689f13`;
 - Effect public-surface alignment candidate: `4.0.0-rc.108` at
   `bef7bf38ae4b73d5511043f707aed083de5da7cc`;
-- production alignment decision: exact `4.0.0-beta.107` family at
+- first-slice production alignment: exact `4.0.0-beta.83` family at
+  `cd7ab658994104bd6fe8f841f1440bea32c387f5`;
+- blocked future alignment candidate: `4.0.0-beta.107` at
   `3c495ae7c96d43bfc3b8020250562a194c2c895e`;
 - ts-release PR #20 corrected research base:
   `2fbb58c3dadb874a528d37530603aa8b396f30c5`.
 
-The historical pins make the research reproducible. The beta.107 line is the
-production decision required by the repository's aligned-beta policy. Every
-Effect package in each install graph moves together; the release must not mix
-beta/RC versions merely to satisfy individual probes.
+The historical pins make the research reproducible. Exact family alignment is
+required, but the first slice stays on the beta.83 family that passes the
+production `skipLibCheck: false` gate. A direct beta.107 trial failed that gate
+in both repository source and published declarations. Every Effect package in
+an install graph must still move together; beta.107/effect-build compatibility
+therefore remains a finite repository-wide migration rather than a mixed-family
+exception.
 
 ## Capability ownership
 

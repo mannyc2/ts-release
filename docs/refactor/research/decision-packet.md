@@ -40,7 +40,9 @@ This packet distinguishes final first-slice decisions from provisional seams.
     operation key is `(planId, operationId)`.
 17. The first-party Bun CLI journal is local SQLite at an explicit state path.
     It is a local/default deployment choice, not a cross-host guarantee.
-18. Production Effect packages align exactly on `4.0.0-beta.107`.
+18. Exact Effect-family alignment is final. The first production slice stays
+    on the currently passing `4.0.0-beta.83` family; beta.107/effect-build
+    compatibility is a finite blocked repository-wide migration.
 
 ## Corrections to claims from the previous checkpoint
 
@@ -126,7 +128,7 @@ Final for the first implementation slice:
 - operation-local Layers resolved through ordinary imports;
 - structural core CAS as the only automatic replay authority;
 - Bun SQLite as the first-party local journal; and
-- exact aligned Effect `4.0.0-beta.107` packages.
+- exact aligned Effect `4.0.0-beta.83` packages for this slice.
 
 Provisional seams that do not alter those laws:
 
@@ -138,6 +140,8 @@ Provisional seams that do not alter those laws:
   recorded;
 - exact request-fingerprint canonicalization;
 - provider receipt/observation schema migration;
+- the beta.107/effect-build-compatible repository-wide Effect migration after
+  a published beta passes strict declaration checking;
 - any later Workflow/Activity adoption after wire-complete providers.
 
 ## Model-expansion review

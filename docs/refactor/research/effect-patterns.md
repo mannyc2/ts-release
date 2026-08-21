@@ -12,7 +12,7 @@ decision. It does not select Workflow/Activity or a Promise root API.
 | effect-build development family | `4.0.0-rc.108` | [`bef7bf38ae4b73d5511043f707aed083de5da7cc`](https://github.com/Effect-TS/effect/tree/bef7bf38ae4b73d5511043f707aed083de5da7cc) |
 | published later candidate | `4.0.0-rc.109` | [`ee06c9c1eed73ebcf282541ceb1615ff1ba1730d`](https://github.com/Effect-TS/effect/tree/ee06c9c1eed73ebcf282541ceb1615ff1ba1730d) |
 | date-pinned current source, 2026-08-16 | package still reports `4.0.0-rc.109` | [`397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6`](https://github.com/Effect-TS/effect/tree/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6) |
-| selected current beta, 2026-08-21 | `4.0.0-beta.107` | [`3c495ae7c96d43bfc3b8020250562a194c2c895e`](https://github.com/Effect-TS/effect/tree/3c495ae7c96d43bfc3b8020250562a194c2c895e) |
+| current npm beta, 2026-08-21 | `4.0.0-beta.107` | [`3c495ae7c96d43bfc3b8020250562a194c2c895e`](https://github.com/Effect-TS/effect/tree/3c495ae7c96d43bfc3b8020250562a194c2c895e) |
 | effect-build granular branch | peer range `>=4.0.0-beta.104 <4.1.0-0` | [`15c811bb9904142a33d119766b62082f3c689f13`](https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13) |
 
 The shipped beta.83 family is outside effect-build's declared peer range.
@@ -116,16 +116,22 @@ This is a repository-wide behavior-preserving migration, not a manifest edit.
 
 ## 6. Target decision
 
-Production work aligns every Effect-family runtime and test package exactly on
-`4.0.0-beta.107`, the npm `beta` dist-tag value observed on 2026-08-21. The
-repository's binding instructions require aligned beta versions; the current
-`rc.111` dist tag therefore does not override this choice. `latest` remains the
-v3 line and is never used as an implicit v4 selector.
+The exact-family alignment law is final. The first production slice keeps every
+Effect-family runtime and test package exactly on the shipped
+`4.0.0-beta.83` family. A direct beta.107 trial produced 524 TypeScript errors
+across 75 files. Forty `Schema.TaggedErrorClass` failures span 24 production
+files, and the published beta.107 declarations themselves fail this
+repository's `skipLibCheck: false` gate through missing `SchemaAST.Sentinel`
+and `Param.getParamMetadata` members. The earlier research probes used
+`skipLibCheck: true`, so they do not establish production compatibility.
 
-The implementation migration must update the entire install graph and lockfile
-in one slice and pass compile, unit, package-export, and clean packed-consumer
-gates. Historical rc.108/rc.109 probes remain useful migration evidence but are
-not production-version authority.
+The current npm tags observed on 2026-08-21 are beta.107, rc.111, and the v3
+`latest` line. They are current-package evidence, not permission to weaken the
+production type gate or mix Effect families. A beta.107/effect-build-compatible
+upgrade is finite later work: update the entire install graph and lockfile in
+one repository-wide source migration after a published beta passes strict
+declaration checking. Historical rc.108/rc.109 probes remain migration
+evidence, not production-version authority.
 
 Primary package evidence:
 
@@ -137,11 +143,24 @@ Primary package evidence:
 
 #### Target beta.83
 
-**Strength:** avoids a separate migration before rewrite work.
+**Strength:** is already exact-aligned across the production and test graph and
+passes the repository's strict compile gate.
 
-**Counterexample:** effect-build's peer range excludes beta.83, and the rewrite would be built on a version already requiring replacement for its selected build dependency.
+**Tradeoff:** effect-build's peer range excludes beta.83, so concrete
+effect-build integration remains blocked on the later aligned migration.
 
-**Conclusion:** rejected.
+**Conclusion:** selected for the first production slice; not selected as the
+long-term effect-build integration target.
+
+#### Target beta.107
+
+**Strength:** current npm beta and within effect-build's declared peer range.
+
+**Counterexample:** fails the production source and strict published-declaration
+gates described above. Weakening `skipLibCheck`, carrying ambient declaration
+patches, or performing a 75-file migration would improperly expand this slice.
+
+**Conclusion:** finite blocked migration, not the first-slice pin.
 
 #### Target rc.108
 
@@ -161,9 +180,10 @@ Primary package evidence:
 
 **Tradeoff:** depending directly on a Git commit rather than a published package complicates consumers and reproducibility.
 
-The former provisional rc.109 recommendation is superseded by the aligned-beta
-decision above. Workflow/Activity remains outside the first implementation;
-version selection does not make it the release kernel.
+The former provisional rc.109 and beta.107 recommendations are superseded by
+the aligned beta.83 first-slice decision above. Workflow/Activity remains
+outside the first implementation; version selection does not make it the
+release kernel.
 
 ## Continued research
 

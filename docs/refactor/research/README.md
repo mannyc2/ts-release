@@ -87,9 +87,11 @@ oracle differs materially.
 - Provider Intent Schemas encode to the versioned strict canonical-JSON
   representation owned by core. Core derives bundle, plan, and operation
   identities; `(planId, operationId)` is the durable operation key.
-- Production packages align exactly on Effect `4.0.0-beta.107`, the current npm
-  beta on 2026-08-21. Historical RC probes remain evidence, not the selected
-  package family.
+- Exact Effect-family alignment is final. The first production slice stays on
+  the currently passing `4.0.0-beta.83` family. A direct beta.107 production
+  trial failed strict source and published-declaration gates; the aligned
+  beta.107/effect-build migration is finite later work. Historical RC probes
+  remain evidence, not the selected package family.
 - effect-build owns concrete artifact production and transformation;
   ts-release owns immutable adoption, provider mutation, release history,
   continuation, and reporting.

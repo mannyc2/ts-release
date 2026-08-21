@@ -19,8 +19,8 @@ Codes:
 
 - `V`: selected proposed vNext acceptance leaf.
 - `D`: genuine maintainer decision; the row is a candidate, not selected scope.
-- `P`, `X`, `L`: architecture proof, deferred maintained package, or preserved
-  later outcome.
+- `X`, `L`: deferred maintained package or preserved later outcome. No
+  architecture-proof-only row remains in this revision.
 - `A`, `M`, `B`, `C`, `J`: provider acceptance, authoritative metadata,
   intended bytes, consumer behavior, and interruption continuation evidence.
 
@@ -31,7 +31,7 @@ launch candidates=79; selected V=69; unresolved D=10
 architecture proofs=0; deferred maintained destinations=7; named later leaves=20
 ```
 
-The 69 candidate rows are mutually exclusive records. `D` rows are not also
+The 69 selected rows are mutually exclusive records. `D` rows are not also
 represented as proof or later rows; their recommendation belongs only in the
 decision table below.
 

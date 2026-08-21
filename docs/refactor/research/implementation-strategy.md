@@ -28,9 +28,9 @@ next production design should use these corrected constraints:
 - operation identity is core-derived, not provider-projected;
 - implementation/lockfile provenance is diagnostic, not replay authority;
 - core transport proves correspondence, not remote idempotency;
-- automatic replay requires a separate trusted provider-law authority;
-- the `JournalStore` interface is fixed, but its first-party backend set is
-  open;
+- v1 automatic replay is limited to structurally evidenced core CAS laws;
+- the `JournalStore` interface is fixed and Bun SQLite is the first-party local
+  default; shared/remote backend UX remains provisional;
 - concrete Apple notary operations are effect-build-owned; release-level
   durable history remains in ts-release and correlation recovery is unresolved.
 
@@ -38,11 +38,10 @@ next production design should use these corrected constraints:
 
 Before a production provider API is frozen:
 
-1. decide the replay-law authority model using npm, Warehouse, Git, and a custom
-   idempotency-key counterexample;
+1. preserve nonstructural replay laws as future application policy using npm,
+   Warehouse, Git, and a custom idempotency-key counterexample;
 2. run a focused Git-ref journal race and evaluate GitHub Actions permissions;
-3. compare SQLite and filesystem-generation local UX on Linux, macOS, and
-   Windows;
+3. validate the selected SQLite local UX on Linux, macOS, and Windows;
 4. design effect-build-apple's typed notary operations against ts-release's
    single durable operation/journal record; and
 5. keep provider wire slices ahead of generalized orchestration machinery.
@@ -51,8 +50,9 @@ Before a production provider API is frozen:
 
 All 69 selected vNext leaves remain required unless the sole scorecard changes.
 The sequence merely obtains external wire and deployment evidence before
-generalized infrastructure becomes hard to change. Ten candidate leaves remain
-visible as nine maintainer choices rather than disappearing from the roadmap.
+generalized infrastructure becomes hard to change. Ten evaluated candidate
+leaves remain visible as nine resolved-later maintainer decisions rather than
+disappearing from the roadmap.
 
 ## Evidence gates
 

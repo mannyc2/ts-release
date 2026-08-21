@@ -1,7 +1,7 @@
 # Artifact ownership, persistence, and effect-build boundary
 
 Status: canonical ownership research. The effect-build/ts-release boundary is
-accepted; Apple notarization recovery remains unresolved within effect-build.
+accepted; ts-release owns release-level Apple continuation and history.
 
 ## Universal artifact kernel
 
@@ -80,14 +80,17 @@ The maintainer decision is:
 effect-build-apple owns
   submission
   polling
-  response-loss recovery
   stapling
   final verification
 
-ts-release adopts only finalized bytes
+ts-release owns
+  immutable pre-notary input identity
+  dispatch and provider-native submission/status history
+  response-loss observation and continuation decisions
+  adoption of finalized bytes
 ```
 
-This resolves package responsibility, not the durable recovery design.
+This resolves package responsibility, not the remaining Apple correlation seam.
 Notarization remains an asynchronous external mutation. A fresh process needs:
 
 - a durable submission identifier or request fingerprint;

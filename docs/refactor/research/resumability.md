@@ -1,8 +1,8 @@
 # Resumability, replay protection, and journal laws
 
-Status: canonical replay/journal research for PR #20. This revision separates
-request correspondence from remote replay-law authority and reopens
-implementation-identity fields.
+Status: canonical replay/journal authority for the v1 implementation. This
+revision closes the first-slice replay policy while keeping future
+non-structural protocol bindings outside the kernel.
 
 ## User promise
 
@@ -45,9 +45,10 @@ operationKey = { planId, operationId }
 ```
 
 The plan-scoped key binds bundle-relative references without copying the whole
-plan identity into the provider-local operation digest. The exact framing
-remains a production-design choice, but neither value is projected by installed
-provider code.
+plan identity into the provider-local operation digest. Core encodes the
+Schema output as strict canonical JSON and uses domain-separated,
+length-prefixed SHA-256 framing. Codec versions and golden vectors are
+append-only. Neither identity is projected by installed provider code.
 
 ## Minimal event families
 
@@ -150,7 +151,9 @@ trusted protocol-law authority
 ```
 
 The first is structural journal evidence. The second remains provider-specific.
-The production representation of the authority is unresolved.
+For v1, automatic replay is enabled only for structurally evidenced core
+compare-and-swap requests. No provider-authored assertion, allowlist, behavior
+ID, or resume-time capability may supply a non-structural authority.
 
 ## Replay-protection data algebra
 
@@ -203,14 +206,14 @@ No concrete fixed-provider counterexample was found in which these facts match
 but local code drift alone makes sending unsafe. Response decoding and
 observation compatibility remain separate concerns.
 
-Current recommendation: use wire-sufficient replay and keep implementation
-identity as diagnostics/provenance. Confidence is high for core-owned
-transports and intentionally does not extend to opaque provider Effects.
+Production decision: use wire-sufficient replay only for the core-owned
+compare-and-swap law and keep implementation identity as diagnostics/provenance.
+Opaque provider Effects and npm response-loss cases do not auto-replay.
 
 ## Pure decision path
 
 ```text
-decideNextAttempt(plan, journal, preparedRequest, now, replayLawAuthority)
+decideNextAttempt(plan, journal, preparedRequest, now)
 ```
 
 returns:
@@ -248,8 +251,9 @@ provider request already sent.
 Historical Intents and events remain immutable. Correction creates a new plan
 revision or superseding Intent. New code never rewrites a historical request.
 
-## Open design question
+## Provisional extension seam
 
-The main unresolved replay question is no longer request correspondence. It is
-how a non-structural provider protocol law is trusted without creating a hidden
-provider allowlist or a weak provider-authored assertion.
+A future application may bind a versioned non-structural protocol law before
+dispatch and persist that selection with the request facts. That seam is not
+part of the v1 kernel. It must not become a hidden provider allowlist, a weak
+provider-authored assertion, or a capability queried during resume.

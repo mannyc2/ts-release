@@ -102,11 +102,14 @@ Authority alternatives:
 old and desired new ref update and Git enforces it. Warehouse exact-duplicate
 and generic idempotency-key behavior remain provider-law claims.
 
-No final authority representation is selected.
+v1 selects built-in structural compare-and-swap only. Any future
+non-structural authority is an application-trusted, versioned binding selected
+and persisted before dispatch, never a provider capability queried at resume.
 
 ## 5. Journal backend alternatives
 
-The law is fixed; implementation set is not.
+The law is fixed. Bun SQLite is the first-party local/default implementation;
+the shared/remote implementation set is provisional.
 
 ### Filesystem generations
 
@@ -114,8 +117,8 @@ Current evidence is Linux-local only. Windows/macOS durability remains unproved.
 
 ### SQLite
 
-Strong portable local candidate. It needs a safe local/block filesystem and
-does not by itself solve multi-host CI.
+Selected first-party local default at an explicit path. It needs a safe
+local/block filesystem and does not by itself solve multi-host CI.
 
 ### Dedicated Git ref
 

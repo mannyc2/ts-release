@@ -1,7 +1,8 @@
 # Provider boundaries and optional operations
 
-Status: canonical provider-extension analysis for PR #20. This revision reopens
-identity and replay-authority fields that the first probe merely exercised.
+Status: canonical provider-extension authority for the first v1 slice. This
+revision closes identity and v1 replay authority while preserving future
+application policy as a provisional seam.
 Provider wire facts remain in `provider-wire-models.md` and
 `provider-wire-github-catalogs.md`.
 
@@ -82,8 +83,9 @@ The focused identity probe demonstrates:
 - provider-controlled projections can produce different IDs for the same
   Intent.
 
-This supports B as the current recommendation. It does not select the final
-hash framing or Schema API.
+This selects B. Core encodes the provider Schema output with the versioned
+strict canonical-JSON algorithm and derives the ID with domain-separated,
+length-framed SHA-256. Codec versions and golden vectors are append-only.
 
 ### C. Behavior and lockfile identity as replay authorities
 
@@ -141,7 +143,9 @@ build identity
 ```
 
 Those fields explain which code produced an event. They do not override equal
-wire evidence or create a second operation identity.
+wire evidence or create a second operation identity. Duplicate definition IDs
+or operation IDs in one application/plan are rejected rather than resolved by
+registration order.
 
 ## Core transport evidence versus provider replay-law evidence
 
@@ -170,7 +174,7 @@ Those are provider protocol laws.
 
 ## Who may select a replay scheme?
 
-Four alternatives remain under review.
+Four alternatives were reviewed.
 
 | Alternative | Strength | Failure mode |
 | --- | --- | --- |
@@ -183,10 +187,12 @@ Four alternatives remain under review.
 expected-old/desired-new Git update and Git itself enforces the precondition.
 
 `replay.idempotency-key/1` and `replay.exact-duplicate/1` are not structural
-merely because they appear in the journal. Their use still requires a trusted
-provider-law authority. No final authority model is selected in this pass.
-Unsupported or untrusted laws result in observation, `Inconclusive`, or
-`RiskAccepted`, never automatic replay.
+merely because they appear in the journal. v1 selects the smallest safe
+alternative: only structurally evidenced built-in compare-and-swap laws may
+authorize automatic replay. Unsupported or untrusted laws result in
+observation, `Inconclusive`, or `RiskAccepted`, never automatic replay. A future
+application-trusted binding must be versioned and durably selected before
+dispatch; it is not a capability queried from provider code during resume.
 
 ## Custom providers
 
@@ -197,8 +203,8 @@ A custom provider unknown when core was built can still participate:
 3. core derives operation identity from the persisted canonical Intent;
 4. a fresh runner loads the same application and resolves the definition ID;
 5. observation and correction remain optional;
-6. automatic replay is available only when both request correspondence and a
-   trusted replay-law authority exist.
+6. automatic replay is available in v1 only for the structural core
+   compare-and-swap law.
 
 This is resolution, not admission or certification.
 
@@ -208,5 +214,5 @@ This is resolution, not admission or certification.
   definition.
 - Keep behavior and lockfile identity as optional provenance, not replay gates.
 - Retain core-owned transport as the request-correspondence mechanism.
-- Keep provider replay-law authorization explicitly unresolved instead of
-  pretending transport correspondence proves remote idempotency.
+- Limit v1 replay-law authorization to structural core compare-and-swap and
+  keep non-structural application bindings as later work.

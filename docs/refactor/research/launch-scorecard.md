@@ -18,22 +18,24 @@ metadata, bytes, consumer behavior, and continuation remain separate evidence.
 Codes:
 
 - `V`: selected proposed vNext acceptance leaf.
-- `D`: genuine maintainer decision; the row is a candidate, not selected scope.
-- `X`, `L`: deferred maintained package or preserved later outcome. No
-  architecture-proof-only row remains in this revision.
+- `D`: unresolved genuine maintainer decision; no row has this disposition in
+  this revision.
+- `X`: deferred maintained package.
+- `L`: preserved later outcome, including evaluated candidates resolved to
+  later work. No architecture-proof-only row remains in this revision.
 - `A`, `M`, `B`, `C`, `J`: provider acceptance, authoritative metadata,
   intended bytes, consumer behavior, and interruption continuation evidence.
 
 Mechanically counted record totals in this revision:
 
 ```text
-launch candidates=79; selected V=69; unresolved D=10
-architecture proofs=0; deferred maintained destinations=7; named later leaves=20
+evaluated launch candidates=79; selected V=69; resolved-to-later candidates=10; unresolved D=0
+architecture proofs=0; deferred maintained destinations X=7; all named later leaves L=30
 ```
 
-The 69 selected rows are mutually exclusive records. `D` rows are not also
-represented as proof or later rows; their recommendation belongs only in the
-decision table below.
+The 69 selected rows are mutually exclusive records. The ten evaluated
+candidates resolved to later work remain finite `L` rows; their rationale is
+recorded in the resolved-decision table below rather than in another ledger.
 
 ## Owner and implementation-status registry
 
@@ -44,6 +46,8 @@ missing from the rewrite, not that no adjacent tool exists.
 | --- | --- | --- |
 | `N*` | `ts-release` npm integration | current/released code exists but is superseded; rewrite missing |
 | `W*` | `ts-release` Warehouse integration | current/released behavior is partial; rewrite missing |
+| `CF` | `ts-release` compatible Python-index integration | pypiserver/devpi protocol evidence exists; rewrite missing |
+| `CJ` | `ts-release` Python-index continuation integration | response-loss research/probes only; rewrite missing |
 | `G*` | `ts-release` GitHub integration | current/released behavior exists; wire-first rewrite missing |
 | `MR` | planned `ts-release` MCP Registry integration | protocol researched; production implementation missing |
 | `R0` | concrete Homebrew/Scoop renderer package | owner/package name unselected; implementation missing |
@@ -58,7 +62,7 @@ missing from the rewrite, not that no adjacent tool exists.
 | `BA`, `BSA` | provisional `effect-build-archives` package | missing; package name is not frozen |
 | `BUV`, `BPO` | provisional `effect-build-python` package | missing; one uv frontend is selected, poetry-core is a fixture rather than a second provider |
 | `BN`, `BMX` | provisional `effect-build-nfpm` package | missing; nFPM v2.47.0 is the selected external tool |
-| `BWX` | provisional `effect-build-windows` package | missing; MSI toolchain decision remains open |
+| `BWX` | provisional `effect-build-windows` package | missing; MSI and its toolchain are resolved to later work |
 | `BAP` | provisional `effect-build-apple` package | missing; concrete Apple operations only, with durable continuation in `ts-release` |
 | `BWS` | provisional `effect-build-windows` signing operation | missing; MSIX mechanics selected, production credential backend unresolved |
 | `BGP`, `BCO` | future OpenPGP and Cosign transformations | missing and not selected for launch |
@@ -137,19 +141,19 @@ P04-01|P04 Python builds|Build a wheel and sdist through one pinned uv frontend|
 P05-01|P05 system/installers|Build deb with nFPM|BN|nFPM v2.47.0; deb; Linux x64 fixture|CLI+explicit package metadata>package|dpkg-deb inspection+Debian install/remove/run[B,C]|system-package CLI|P01-01|V|-|S31
 P05-02|P05 system/installers|Build rpm with nFPM|BN|nFPM v2.47.0; rpm; Linux x64 fixture|CLI+explicit package metadata>package|rpm inspection+Fedora install/remove/run[B,C]|system-package CLI|P01-01|V|-|S31
 P05-03|P05 system/installers|Build apk with nFPM|BN|nFPM v2.47.0; apk; Linux x64 fixture|CLI+explicit package metadata>package|apk inspection+Alpine install/remove/run[B,C]|system-package CLI|P01-01|V|-|S31
-P05-04|P05 system/installers|Build ipk with nFPM|BN|nFPM v2.47.0; ipk; Linux x64 fixture|CLI+explicit package metadata>package|opkg inspection in pinned OpenWrt image[B,C]|system-package CLI|P01-01|D|Recommend later unless embedded/OpenWrt distribution matters|S31
+P05-04|P05 system/installers|Build ipk with nFPM|BN|nFPM v2.47.0; ipk; Linux x64 fixture|CLI+explicit package metadata>package|opkg inspection in pinned OpenWrt image[B,C]|system-package CLI|P01-01|L|Resolved later absent a named embedded/OpenWrt distribution need|S31
 P05-05|P05 system/installers|Build an Arch package with nFPM|BN|nFPM v2.47.0; Arch; Linux x64 fixture|CLI+explicit package metadata>package|pacman inspection and clean install/remove/run[B,C]|system-package CLI|P01-02|V|-|S31
 P05-06|P05 system/installers|Build an unsigned Windows x64 MSIX with nFPM|BMX|nFPM v2.47.0; MSIX; Windows x64|Windows executable+manifest/assets>.msix|nFPM result; MakeAppx unpack/validation; clean install/run[B,C]|Windows CLI|P01-02|V|-|S31,S32
-P05-07|P05 system/installers|Build a Windows x64 MSI with a current MSI toolchain|BWX|one of WiX 7 or msitools; exact choice unresolved; no WiX 4 claim|Windows executable+product metadata>.msi|tool validation and silent clean install/uninstall/run[B,C]|Windows CLI|P01-02|D|Recommend later: nFPM MSIX is already in the selected generic integration; WiX 7 adds licensing/fee review|S33
+P05-07|P05 system/installers|Build a Windows x64 MSI with a current MSI toolchain|BWX|one of WiX 7 or msitools; exact future choice intentionally deferred; no WiX 4 claim|Windows executable+product metadata>.msi|tool validation and silent clean install/uninstall/run[B,C]|Windows CLI|P01-02|L|Resolved later: selected nFPM MSIX already supplies a Windows installer; MSI requires separate legal/tooling review|S33
 P06-01|P06 mac app|Build arm64+x64 .app bundles|BAP|exact two architecture bundles|executables+plist/resources>2 unsigned .app directories|plutil+launch smoke[B,C]|minimal app|P01-02|V|-|S34
 P07-01|P07 DMG|Build arm64+x64 UDZO DMGs|BAP|exact two DMGs|signed apps+layout>2 .dmg files|hdiutil verify/attach/list and clean launch[B,C]|Apple app|P09-01|V|-|S35
 P08-01|P08 mac pkg|Build unsigned arm64+x64 macOS pkg installers|BAP|pkgbuild/productbuild; exact 2 packages|signed apps+installer metadata>2 unsigned pkgs|pkgutil payload inspection and clean installer fixture[B,C]|Apple installer|P09-01|V|-|S36
 P09-01|P09 signing|Developer ID-sign .app|BAP|Apple app signing|unsigned app+identity/entitlements>signed app|codesign --verify --deep --strict[B]|Apple fixture|P06-01|V|-|S34,S37
 P09-02|P09 signing|Developer ID-sign .pkg|BAP|Apple installer signing|unsigned pkg+identity>signed pkg|pkgutil --check-signature[B]|Apple fixture|P08-01|V|-|S36,S37
 P09-03|P09 signing|Authenticode-sign an MSIX with SignTool|BWS|Windows x64; local PFX/certificate-store backend; SHA-256; RFC 3161 timestamp; test certificate proves mechanics only|unsigned MSIX+signing identity>signed MSIX|SignTool /pa verification; timestamp assertion; clean install smoke[B,C]|Windows fixture|P05-06|V|production credential backend remains an explicit implementation decision, not a reason to omit mechanics|S38
-P09-04|P09 signing|Authenticode-sign an MSI with SignTool|BWS|same policy as P09-03; only if MSI selected|unsigned MSI+signing identity>signed MSI|SignTool /pa verification; timestamp assertion; clean install smoke[B,C]|Windows fixture|P05-07|D|Later with the MSI toolchain decision|S38
-P09-05|P09 signing|Create detached OpenPGP signatures|BGP|one .asc per selected file|final file+key>.asc|gpg --verify[B]|archive fixture|R01|D|Later unless existing demand appears|S39
-P09-06|P09 signing|Create keyless Cosign blob signatures|BCO|cosign blob; GitHub OIDC|final file+identity policy>Sigstore bundle/signature|cosign verify-blob[B]|archive fixture|R01|D|Later: separate identity, transparency, publication, and verification policy|S40
+P09-04|P09 signing|Authenticode-sign an MSI with SignTool|BWS|same policy as P09-03; only if MSI is selected in later work|unsigned MSI+signing identity>signed MSI|SignTool /pa verification; timestamp assertion; clean install smoke[B,C]|Windows fixture|P05-07|L|Resolved later with MSI construction and toolchain review|S38
+P09-05|P09 signing|Create detached OpenPGP signatures|BGP|one .asc per selected file|final file+key>.asc|gpg --verify[B]|archive fixture|R01|L|Resolved later absent demand for separate key-custody and verifier policy|S39
+P09-06|P09 signing|Create keyless Cosign blob signatures|BCO|cosign blob; GitHub OIDC|final file+identity policy>Sigstore bundle/signature|cosign verify-blob[B]|archive fixture|R01|L|Resolved later: identity, transparency, publication, and verification form a separate policy domain|S40
 P10-01|P10 notarization|Submit exact Apple bytes and durably retain the returned submission identity|BAP+AJ|notarytool; one exact input digest/submission|signed artifact+credentials>submission ID or terminal result, then journal event|Apple submission ID/status plus durable journal append[A,J]|crash after ID received and before/after append|P09-01,P09-02,R03|V|if Apple accepts before the ID is recorded, continuation is Inconclusive absent an authoritative correlation API|S41,S45
 P10-02|P10 notarization|Resume Apple status polling by recorded submission ID on runner 2|BAP+AJ|second macOS runner; credential reacquisition|journaled submission ID+credentials>accepted,rejected,or pending observation|notarytool info/log recorded as observation[M,J]|fresh-runner fixture|P10-01,R03|V|-|S41,S45
 P10-03|P10 notarization|Staple accepted ticket; produce final bytes|BAP|app/DMG/pkg types selected above|acc result+art -> stapled art|stapler validate + final digest[B]|Apple fixture|P10-02|V|-|S41
@@ -157,11 +161,11 @@ P10-04|P10 notarization|Verify Gatekeeper before TR adoption|BAP|cur mac spctl|s
 Q01|Trust|Generate and verify SHA256SUMS as a deterministic view of the finalized bundle|BCK|SHA-256 only; sorted public names; no peer digest store|finalized artifact set>checksum file|sha256sum/shasum verification against bundle bytes[B]|portable release|R01|V|-|S42
 Q02-01|Trust|Generate an SPDX JSON SBOM with pinned Syft|BSB|Syft v1.50.0; SPDX JSON; exact scan-subject policy|source/final artifact>SPDX JSON|schema validation and component assertions[B]|portable CLI|R01,R04,R05|V|-|S43
 Q02-02|Trust|Generate a CycloneDX JSON SBOM with the same pinned Syft integration|BSB|Syft v1.50.0; CycloneDX JSON; same scan-subject policy|source/final artifact>CycloneDX JSON|schema validation and component assertions[B]|same CLI|Q02-01|V|-|S43
-Q03|Material choice|Build/push amd64+arm64 OCI index to GHCR|BOC|OCI Image/Distribution specs; GHCR|context+executables>2 manifests+index digest|registry digest+pull/run[A,M,B,C,J]|container CLI/server|P01-02,R03|D|Recommend later; new producer and provider surface|S44
-Q05-02|Material choice|Publish a nightly under an explicit version and retention policy|AP|one GitHub nightly policy; exact retention rule|source+artifacts>nightly coordinates and retained history|provider receipts, public reads, clean download/run, continuation[A,M,B,C,J]|portable CLI|D03-04,K02|D|Recommend later; local snapshots already fall out from planning/building without dispatch|S46
-Q06-01|Material choice|Derive a SemVer proposal from Conventional Commits|APP|one exact Git range and Conventional Commits 1.0|history+policy>version proposal|golden breaking/feat/fix history preview[M]|release-history fixture|R04|D|Recommend later; accept explicit version first|S47
-Q06-02|Material choice|Derive release notes/changelog from Conventional Commits|APP|same exact Git range and one notes template|history+policy>reviewable notes|golden history preview[M]|release-history fixture|R04|D|Recommend later; accept explicit notes first|S47
-Q07|Material choice|Produce one macOS universal executable from matching x64 and arm64 inputs|BAP|Mach-O universal2 only|two finalized executables>one universal executable|lipo inspection+execution on supported macOS runners[B,C]|portable CLI|P01-02|D|Recommend later unless a universal download is a launch promise|S21,S34
+Q03|Material choice|Build/push amd64+arm64 OCI index to GHCR|BOC|OCI Image/Distribution specs; GHCR|context+executables>2 manifests+index digest|registry digest+pull/run[A,M,B,C,J]|container CLI/server|P01-02,R03|L|Resolved later: OCI adds a producer, registry provider, credentials, index, and replay laws|S44
+Q05-02|Material choice|Publish a nightly under an explicit version and retention policy|AP|one GitHub nightly policy; exact retention rule|source+artifacts>nightly coordinates and retained history|provider receipts, public reads, clean download/run, continuation[A,M,B,C,J]|portable CLI|D03-04,K02|L|Resolved later: local snapshots already fall out from planning/building without dispatch|S46
+Q06-01|Material choice|Derive a SemVer proposal from Conventional Commits|APP|one exact Git range and Conventional Commits 1.0|history+policy>version proposal|golden breaking/feat/fix history preview[M]|release-history fixture|R04|L|Resolved later; accept an explicit version first|S47
+Q06-02|Material choice|Derive release notes/changelog from Conventional Commits|APP|same exact Git range and one notes template|history+policy>reviewable notes|golden history preview[M]|release-history fixture|R04|L|Resolved later; accept explicit notes first|S47
+Q07|Material choice|Produce one macOS universal executable from matching x64 and arm64 inputs|BAP|Mach-O universal2 only|two finalized executables>one universal executable|lipo inspection+execution on supported macOS runners[B,C]|portable CLI|P01-02|L|Resolved later absent a product promise for one universal download|S21,S34
 ```
 
 ## AI-native launch and finite non-launch rows
@@ -239,7 +243,7 @@ commit-pinned where the source itself matters.
 | ID | Primary evidence |
 | --- | --- |
 | `S01` | [current ts-release npm source](https://github.com/mannyc2/ts-release/tree/d57e7e91b58683d030201d278eb96cd5acd05a21) and [v0.0.7](https://github.com/mannyc2/ts-release/tree/af59436cff908fb52773cf18dd95d154f892b8de) |
-| `S02` | [npm publish](https://docs.npmjs.com/cli/v11/commands/npm-publish/) and [dist-tags](https://docs.npmjs.com/adding-dist-tags-to-packages/) |
+| `S02` | [npm publish](https://docs.npmjs.com/cli/v12/commands/npm-publish/), [libnpmpublish 12.0.0 source](https://github.com/npm/cli/blob/v12.0.2/workspaces/libnpmpublish/lib/publish.js), and [dist-tags](https://docs.npmjs.com/adding-dist-tags-to-packages/) |
 | `S03` | [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) |
 | `S04` | [npm registry/package semantics](https://docs.npmjs.com/about-the-public-npm-registry/) |
 | `S05` | [Warehouse source](https://github.com/pypi/warehouse) and [file-upload protocol implementation](https://github.com/pypi/warehouse/tree/main/warehouse/forklift) |
@@ -247,17 +251,17 @@ commit-pinned where the source itself matters.
 | `S07` | [PyPI trusted publishers](https://docs.pypi.org/trusted-publishers/) |
 | `S08` | [pypiserver source](https://github.com/pypiserver/pypiserver) |
 | `S09` | [devpi server documentation](https://devpi.net/docs/devpi/devpi/stable/%2Bd/index.html) |
-| `S10` | [GitHub release REST API](https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28) |
-| `S11` | [GitHub release-asset REST API](https://docs.github.com/en/rest/releases/assets?apiVersion=2022-11-28) |
+| `S10` | [GitHub release REST API](https://docs.github.com/en/rest/releases/releases?apiVersion=2026-03-10) |
+| `S11` | [GitHub release-asset REST API](https://docs.github.com/en/rest/releases/assets?apiVersion=2026-03-10) |
 | `S12` | [Homebrew Formula Cookbook](https://docs.brew.sh/Formula-Cookbook) |
 | `S13` | [Homebrew package validation and installation](https://docs.brew.sh/Adding-Software-to-Homebrew) |
 | `S14` | [Git push and `--force-with-lease`](https://git-scm.com/docs/git-push) |
 | `S15` | [Scoop manifest documentation](https://github.com/ScoopInstaller/Scoop/wiki/App-Manifests) and [pinned client source](https://github.com/ScoopInstaller/Scoop/tree/b588a06e41d920d2123ec70aee682bae14935939) |
-| `S16` | [PR #20 custom-provider clean-consumer probe](https://github.com/mannyc2/ts-release/tree/2fbb58c3dadb874a528d37530603aa8b396f30c5/docs/refactor/research/probes/custom-provider-clean-consumer) |
+| `S16` | [PR #20 custom-provider clean-consumer probe](https://github.com/mannyc2/ts-release/tree/2fbb58c3dadb874a528d37530603aa8b396f30c5/docs/refactor/research/probes/custom-provider) |
 | `S17` | [Effect Context and Layer source at 4.0.0-rc.108](https://github.com/Effect-TS/effect/tree/bef7bf38ae4b73d5511043f707aed083de5da7cc/packages/effect/src) |
 | `S18` | [Effect Schema/Codec source at 4.0.0-rc.108](https://github.com/Effect-TS/effect/blob/bef7bf38ae4b73d5511043f707aed083de5da7cc/packages/effect/src/Schema.ts) |
 | `S19` | [Node package and ESM loading](https://nodejs.org/api/packages.html) |
-| `S20` | [PR #20 artifact probes](https://github.com/mannyc2/ts-release/tree/2fbb58c3dadb874a528d37530603aa8b396f30c5/docs/refactor/research/probes/artifact-candidates) |
+| `S20` | PR #20 artifact probes: [finalization](https://github.com/mannyc2/ts-release/blob/2fbb58c3dadb874a528d37530603aa8b396f30c5/docs/refactor/research/probes/artifact-finalization.ts), [owned bundle](https://github.com/mannyc2/ts-release/blob/2fbb58c3dadb874a528d37530603aa8b396f30c5/docs/refactor/research/probes/artifact-owned-bundle.ts), [reference scope](https://github.com/mannyc2/ts-release/blob/2fbb58c3dadb874a528d37530603aa8b396f30c5/docs/refactor/research/probes/artifact-reference-scope.ts), and [Schema load](https://github.com/mannyc2/ts-release/blob/2fbb58c3dadb874a528d37530603aa8b396f30c5/docs/refactor/research/probes/artifact-schema-load.ts) |
 | `S21` | [requested effect-build research branch at `15c811bb`](https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13) and its [exact support matrix](https://github.com/mannyc2/effect-build/blob/15c811bb9904142a33d119766b62082f3c689f13/tooling/support-matrix.json) |
 | `S22` | [Bun standalone executables and target matrix](https://bun.com/docs/bundler/executables) |
 | `S23` | [Deno compile and target matrix](https://docs.deno.com/runtime/reference/cli/compile/) |
@@ -291,7 +295,7 @@ commit-pinned where the source itself matters.
 | `S51` | [official MCP Registry source/protocol](https://github.com/modelcontextprotocol/registry) and [GoReleaser MCP publication flow](https://goreleaser.com/customization/publish/mcp/) |
 | `S52` | [GoReleaser Iru publication flow](https://goreleaser.com/customization/publish/iru/) at current audit pin; this is a post-151 delta, not part of the historical denominator |
 
-## Maintainer decisions
+## Resolved maintainer decisions
 
 Selections already made in this checkpoint are not repeated as questions:
 prebuilt adoption, the pinned Bun/Deno/Node SEA matrices, ZIP/tar.gz and source
@@ -299,20 +303,22 @@ archives, one uv frontend with two PEP 517 backend fixtures, deb/rpm/apk/Arch/
 MSIX, Apple packaging/signing/notarization, MSIX Authenticode mechanics,
 SHA256SUMS, SPDX JSON, and CycloneDX JSON are proposed vNext leaves.
 
-The remaining ten `D` leaves reduce to nine decisions. Recommendations are
-evidence-based defaults, not silent maintainer choices.
+The ten evaluated candidate leaves reduced to nine decisions and are resolved
+to finite later work in this checkpoint. Reopening one requires an explicit
+scorecard disposition change; it does not create a release mode or a second
+scope ledger.
 
-| Decision | Candidate leaves | Product value | Cost/risk | Recommendation |
+| Decision | Candidate leaves | Product value | Cost/risk | Resolution |
 | --- | --- | --- | --- | --- |
-| `DEC01` embedded/OpenWrt package | `P05-04` | reaches `opkg` consumers | another installer oracle and niche support surface | later unless a named user needs ipk |
-| `DEC02` MSI toolchain | `P05-07`, `P09-04` | conventional enterprise Windows installer plus signing | nFPM does not produce MSI; WiX 7 has a new licence/fee decision; msitools is another toolchain | ship selected MSIX first; decide MSI after legal/tooling review |
-| `DEC03` detached OpenPGP | `P09-05` | conventional detached signatures | key custody and verification policy distinct from platform signing | later absent demand |
+| `DEC01` embedded/OpenWrt package | `P05-04` | reaches `opkg` consumers | another installer oracle and niche support surface | later; revisit only for a named embedded/OpenWrt need |
+| `DEC02` MSI toolchain | `P05-07`, `P09-04` | conventional enterprise Windows installer plus signing | nFPM does not produce MSI; WiX 7 has a new licence/fee decision; msitools is another toolchain | later; ship selected MSIX and require legal/tooling review before reconsidering MSI |
+| `DEC03` detached OpenPGP | `P09-05` | conventional detached signatures | key custody and verification policy distinct from platform signing | later absent demonstrated demand |
 | `DEC04` keyless Cosign blobs | `P09-06` | identity and transparency evidence | OIDC, transparency log, bundle publication, and verifier policy create a separate domain | later; do not hide it behind generic signing |
-| `DEC05` OCI/GHCR | `Q03` | large GoReleaser parity outcome and container-native delivery | new producer, registry provider, multi-platform index, credentials, and replay laws | later unless a launch user needs containers |
+| `DEC05` OCI/GHCR | `Q03` | large GoReleaser parity outcome and container-native delivery | new producer, registry provider, multi-platform index, credentials, and replay laws | later absent a launch requirement for containers |
 | `DEC06` nightlies | `Q05-02` | continuous downloadable builds | mutable retention/version policy and repeated publication | later; local snapshots already fall out from no-dispatch composition |
-| `DEC07` derived version | `Q06-01` | less manual release policy | conventional-commit interpretation and override UX | accept explicit version first; derive later |
-| `DEC08` derived notes | `Q06-02` | less manual changelog work | policy/template review; independent of version calculation | accept explicit notes first; derive later |
-| `DEC09` universal macOS executable | `Q07` | one macOS download instead of two | extra transformation/signing order and size; current effect-build matrix already provides both thin binaries | later unless one universal download is promised |
+| `DEC07` derived version | `Q06-01` | less manual release policy | conventional-commit interpretation and override UX | later; accept an explicit version first |
+| `DEC08` derived notes | `Q06-02` | less manual changelog work | policy/template review; independent of version calculation | later; accept explicit notes first |
+| `DEC09` universal macOS executable | `Q07` | one macOS download instead of two | extra transformation/signing order and size; current effect-build matrix already provides both thin binaries | later absent a product promise for one universal download |
 
 ## Current GoReleaser delta beyond the 151-case denominator
 

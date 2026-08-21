@@ -6,9 +6,10 @@ is the exact authority for the preserved historical 151-case mapping. This
 document explains the product consequences; it creates neither rows nor
 counts.
 
-At this checkpoint the scorecard projects 69 selected vNext leaves, 10
-unresolved candidate leaves, 7 deferred maintained destinations, and 20 named
-later leaves. Those numbers are repeated here only as a checkable snapshot.
+At this checkpoint the scorecard projects 69 selected vNext leaves, no
+unresolved candidate leaves, 7 deferred maintained destinations, and 30 named
+later leaves, including 10 evaluated candidates resolved to later work. Those
+numbers are repeated here only as a checkable snapshot.
 
 ## Evidence terminates outside the model
 
@@ -36,9 +37,9 @@ duplicate, unresolved target, or many-to-many final disposition.
 ```text
 151 historical cases
   28 -> selected vNext leaves
-  14 -> unresolved launch decisions
+   0 -> unresolved launch decisions
    7 -> deferred maintained providers
-  24 -> named later-model leaves
+  38 -> named later-model leaves
   33 -> adjacent composition
   39 -> mechanism or taxonomy
    6 -> intentional exclusion
@@ -132,10 +133,11 @@ answers an explicit metadata/byte promise or reconciles ambiguous completion.
 The scorecard keeps the remaining gaps finite rather than hiding them behind
 "parity":
 
-- nine maintainer choices covering ipk, MSI/toolchain, OpenPGP, Cosign, OCI,
-  nightlies, version derivation, notes derivation, and universal macOS output;
+- ten candidate leaves resolved to later work through nine decisions covering
+  ipk, MSI/toolchain, OpenPGP, Cosign, OCI, nightlies, version derivation,
+  notes derivation, and universal macOS output;
 - seven deferred maintained destination providers;
-- twenty named later leaves for additional catalogs, installers, ecosystems,
+- thirty named later leaves for additional catalogs, installers, ecosystems,
   transforms, and planning policy.
 
 Announcements, project-management mutations, CI-host setup, and unrelated

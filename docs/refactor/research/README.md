@@ -38,12 +38,13 @@ The research has one authority per fact:
 ## Product checkpoint
 
 ```text
-79 launch candidates
+79 evaluated launch candidates
   69 selected vNext leaves
-  10 unresolved candidate leaves / 9 maintainer choices
+  10 resolved-later leaves / 9 maintainer choices
+  0 unresolved candidate leaves
 
 7 deferred maintained destination packages
-20 named later-model leaves
+30 named later-model leaves
 
 151 preserved GoReleaser cases
   151 exact finite dispositions
@@ -67,7 +68,9 @@ oracle differs materially.
   belongs to the possible-dispatch/no-response path.
 - Observed absence cannot fence an in-flight mutation.
 - Replay protection is frozen at dispatch. Core request correspondence and a
-  remote protocol's enforcement law are different evidence.
+  remote protocol's enforcement law are different evidence. Automatic replay
+  in v1 is limited to structurally evidenced core compare-and-swap laws; npm
+  response loss observes and then stops honestly rather than resending.
 - `RiskAccepted` records a scoped human decision; it is not a substitute for
   evidence.
 - Provider-controlled operation identity, whole-lockfile identity, and
@@ -78,8 +81,15 @@ oracle differs materially.
 - Provider-specific services are plain DI. A shared interface is justified
   only when implementations are substitutable under the same laws.
 - `JournalStore.appendIfRevision` is a lawful shared interface. The first-party
-  backend/default UX remains an implementation decision rather than a product
-  family.
+  Bun CLI default is a local SQLite database at an explicit state path. It is
+  not presented as a cross-host CI store; Git-ref and other shared backends
+  remain provisional seams.
+- Provider Intent Schemas encode to the versioned strict canonical-JSON
+  representation owned by core. Core derives bundle, plan, and operation
+  identities; `(planId, operationId)` is the durable operation key.
+- Production packages align exactly on Effect `4.0.0-beta.107`, the current npm
+  beta on 2026-08-21. Historical RC probes remain evidence, not the selected
+  package family.
 - effect-build owns concrete artifact production and transformation;
   ts-release owns immutable adoption, provider mutation, release history,
   continuation, and reporting.
@@ -93,9 +103,9 @@ oracle differs materially.
   capabilities. Native npm, Python production, Warehouse publication, asset
   byte evidence, and consumer installation remain distinct outcomes.
 
-## Active maintainer choices
+## Resolved maintainer choices
 
-The scorecard retains nine choices rather than silently deciding them:
+The scorecard preserves nine reviewed choices as finite later work:
 
 1. ipk/OpenWrt package production;
 2. MSI inclusion, toolchain, and associated MSI signing;
@@ -107,8 +117,11 @@ The scorecard retains nine choices rather than silently deciding them:
 8. automatic release-note derivation;
 9. macOS universal executable output.
 
-The provisional recommendation is to defer all nine unless product demand
-changes. That recommendation is deliberately weaker than a frozen decision.
+All nine are deferred from vNext. New primary evidence strengthens the
+deferrals: OpenWrt 25.12 moved its default package manager from opkg/ipk to APK;
+WiX 7 adds a license/toolchain decision; and the other seven each introduce a
+separate trust, registry, retention, derivation, or transformation policy.
+Promotion requires concrete product demand and its own acceptance evidence.
 
 ## Effect direction
 

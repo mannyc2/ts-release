@@ -2,17 +2,16 @@
 
 Status: research projection. Canonical authorities are listed in `README.md`;
 `launch-scorecard.md` is the sole product-scope and product-decision authority.
-This packet distinguishes accepted architecture laws from implementation
-choices reopened by review.
+This packet distinguishes final first-slice decisions from provisional seams.
 
 ## Accepted conclusions and maintainer decisions
 
 1. vNext acceptance is 69 atomic leaves: 3 core delivery/reporting, 35
    provider/distribution, 28 artifact/trust, and 3 OpenAI plugin-delivery
    outcomes.
-2. Ten candidate leaves remain unresolved as nine maintainer choices; seven
-   maintained provider packages are deferred and twenty leaves are named later
-   work.
+2. Ten evaluated candidate leaves are resolved to later work across nine
+   maintainer choices; seven maintained provider packages are deferred and
+   thirty leaves are named later work. No product-scope choice remains open.
 3. `ConsumerScenario`, durable acceptance records, and
    `ConsumerEvidenceRecorded` are removed.
 4. `ReplaySafetyCapability` and deterministic `ReplayAuthorized` are removed.
@@ -22,7 +21,10 @@ choices reopened by review.
 8. The replay vocabulary remains `None`, `IdempotencyKey`, `CompareAndSwap`, and
    `ExactDuplicateAccepted`, with append-only versioned scheme IDs.
 9. Core-owned transports are required to prove request correspondence for
-   automatic replay.
+   automatic replay. v1 enables automatic replay only for structurally
+   evidenced core compare-and-swap laws. npm uses `replay.none/1`: a lost
+   response leads to observation and either satisfaction or an honest stop,
+   never an absence-authorized resend.
 10. npm initial publication is one operation with a composite version/tag
     receipt and observation; `memberOperationIds` remains removed.
 11. effect-build-apple owns concrete notarization operations through final
@@ -33,6 +35,12 @@ choices reopened by review.
     slices and journal semantics are complete.
 14. `JournalStore.appendIfRevision` is a lawful shared storage interface.
 15. No fixed provider requires durable plaintext secret idempotency material.
+16. Core owns strict canonical-JSON encoding and domain-separated,
+    length-framed hashes for bundle, plan, and operation identity. The durable
+    operation key is `(planId, operationId)`.
+17. The first-party Bun CLI journal is local SQLite at an explicit state path.
+    It is a local/default deployment choice, not a cross-host guarantee.
+18. Production Effect packages align exactly on `4.0.0-beta.107`.
 
 ## Corrections to claims from the previous checkpoint
 
@@ -44,7 +52,7 @@ not minimality or architectural necessity.
 
 ### Provider-controlled operation ID is not required
 
-Current recommendation:
+Production decision:
 
 ```text
 operationId = core hash(definitionId, schemaVersion, canonical Intent), paired with planId as the operation key
@@ -66,14 +74,18 @@ block replay solely on whole-lockfile or manually maintained behavior identity.
 
 Core can prove recorded/sent request correspondence. A separate provider
 protocol law must establish idempotency-key, compare-and-swap, or
-exact-duplicate behavior. The authority representation for non-structural laws
-is unresolved.
+exact-duplicate behavior. No non-structural remote law is enabled for automatic
+replay in v1. A future application-trusted binding must be versioned and
+durably selected before dispatch; it may not be asserted by a provider at
+resume time.
 
-### Backend selection is reopened
+### Local backend selection is closed
 
-The `JournalStore` law remains accepted. The required first-party backend set
-does not follow from the selected product leaves. SQLite, dedicated Git ref,
-S3, filesystem generations, and user-supplied Layers remain candidates.
+The `JournalStore` law remains accepted. Bun's native SQLite driver supplies a
+transactional first-party local default without a new service account. The
+database path is explicit, and one transaction performs the expected-revision
+check and complete append. Dedicated Git ref, S3, filesystem generations, and
+user-supplied Layers remain deployment options, not peer product families.
 
 ### Apple durable recovery remains open
 
@@ -85,39 +97,48 @@ path, especially acceptance before submission-ID recording, remains open.
 
 | Topic | Recommendation | Confidence | Tradeoff |
 | --- | --- | --- | --- |
-| operation identity | core-derived from definition ID, codec version, and canonical Intent; paired with plan ID as operation key | High | production canonical encoder still to select |
+| operation identity | core-derived from definition ID, codec version, and strict canonical Intent JSON; paired with plan ID as operation key | High | append-only codec versions require golden vectors |
 | implementation identity | optional provenance/diagnostic | High for core transports | less conservative than whole-lockfile blocking |
 | request correspondence | immutable core HTTP/Git transports | High | opaque custom transports cannot auto-replay |
-| remote replay law | keep separate from transport evidence | High | authority representation unresolved |
+| remote replay law | structural core CAS only in v1; nonstructural bindings are future application policy | High | fewer automatic continuations |
 | provider definition minimum | ID + Schema version + Intent Schema/canonical encoding | High | optional operations resolved separately |
-| backend interface | `JournalStore.appendIfRevision` | High | backend set still open |
-| local backend candidate | compare SQLite against filesystem generations | Moderate | deployment-specific |
+| backend interface | `JournalStore.appendIfRevision` | High | implementations must preserve ambiguous-storage outcomes |
+| local backend | Bun SQLite at an explicit path | High | local/shared-file scope only |
 | GitHub CI backend candidate | dedicated/orphan Git ref | Moderate | permission and policy constraints |
 | S3 | optional backend for AWS deployments | High | not default infrastructure |
 | Apple P10 | selected; concrete operations in effect-build-apple and one release journal in ts-release | High | commit-before-record gap can still end Inconclusive |
 
 ## Product choices
 
-The nine launch-shaping maintainer choices are represented only in
+The nine launch-shaping maintainer choices are resolved only in
 `launch-scorecard.md`: ipk, MSI/toolchain and MSI signing, OpenPGP, Cosign, OCI,
 nightlies, SemVer derivation, release-note derivation, and universal macOS
-output. This packet does not create another disposition for them.
+output. All nine are finite later work. This packet does not create another
+disposition for them.
 
-## Genuine unresolved architecture choices
+## Final production decisions and provisional seams
+
+Final for the first implementation slice:
+
+- one immutable bundle, one durable plan, one append-only journal, and derived
+  views only;
+- strict canonical JSON and core-derived bundle/plan/operation identities;
+- operation-local Layers resolved through ordinary imports;
+- structural core CAS as the only automatic replay authority;
+- Bun SQLite as the first-party local journal; and
+- exact aligned Effect `4.0.0-beta.107` packages.
+
+Provisional seams that do not alter those laws:
 
 - final ProviderDefinition TypeScript spelling;
-- production canonical encoding/framing for the selected operation-ID law;
-- representation of trusted provider replay-law authority;
-- whether `replay.idempotency-key/1` or
-  `replay.exact-duplicate/1` is enabled for any custom provider in v1;
-- first-party JournalStore backend set;
-- Windows/macOS support for a filesystem generation store;
+- future application-trusted nonstructural replay-law bindings;
+- shared/remote JournalStore implementation and GitHub Actions default UX;
 - Git-ref journal permissions, retention, and fork behavior;
 - exact Apple correlation behavior when submission succeeds before its ID is
   recorded;
 - exact request-fingerprint canonicalization;
 - provider receipt/observation schema migration;
-- Workflow/Activity adoption after wire-complete providers.
+- any later Workflow/Activity adoption after wire-complete providers.
 
 ## Model-expansion review
 

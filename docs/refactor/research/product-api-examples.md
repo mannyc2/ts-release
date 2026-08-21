@@ -133,15 +133,19 @@ Private workspaces are structurally omitted from the operation set. Warehouse
 progress is per file; a release can retain successful wheels while another
 wheel remains unresolved.
 
-The CLI report projects each operation's acceptance, metadata, byte, consumer,
-and continuation evidence independently:
+The canonical release report projects provider acceptance, metadata, bytes,
+observations, and continuation state from the bundle, plan, and journal:
 
 ```text
-@acme/core@2.0.0       accepted   registry observed   install passed
-@acme/cli@2.0.0        accepted   registry observed   bin passed
-acme-2.0.0.tar.gz       accepted   hash observed       install passed
+@acme/core@2.0.0       accepted   registry observed
+@acme/cli@2.0.0        accepted   registry observed
+acme-2.0.0.tar.gz       accepted   hash observed
 acme-2.0.0-py3.whl      pending    no blind retry      action required
 ```
+
+Clean install/import/bin results are acceptance evidence. CI may join them into
+a presentation view, but they are not provider capabilities, journal events,
+or canonical release-report facts.
 
 ## 4. GitHub assets followed by Homebrew and Scoop
 
@@ -204,6 +208,10 @@ const layers = Layer.mergeAll(Acme.layer(config), Journal.layer, Git.layer)
 
 export default Release.application({ definitions, layers, makePlan })
 ```
+
+`Definitions.from` constructs one immutable application-owned resolver from
+ordinary imports and rejects duplicate definition IDs. It is not global
+registration, admission, discovery, or a package-name allowlist.
 
 The provider package supplies a service-free, versioned bidirectional Intent
 codec and concrete Layers. Optional operations remain provider-local:

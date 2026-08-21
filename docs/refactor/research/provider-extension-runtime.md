@@ -93,8 +93,10 @@ Automatic replay still depends on two separate proofs:
    that request is safe.
 
 A provider package cannot obtain automatic replay merely by returning
-`replay.idempotency-key/1` or `replay.exact-duplicate/1`. The authority model
-for non-structural provider laws remains open.
+`replay.idempotency-key/1` or `replay.exact-duplicate/1`. v1 enables only the
+structural core compare-and-swap law; a future non-structural binding is
+application-owned policy selected before dispatch, not a resume-time provider
+capability.
 
 ## Opaque custom effects
 

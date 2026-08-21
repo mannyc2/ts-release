@@ -1,6 +1,8 @@
 # Effect version and architecture research
 
-Status: research and design checkpoint. This document compares pinned Effect versions and architecture patterns relevant to ts-release. It does not migrate dependencies, implement Workflow/Activity, or select the production root API.
+Status: research and design checkpoint. This document preserves historical
+candidate evidence and records the current aligned-beta implementation
+decision. It does not select Workflow/Activity or a Promise root API.
 
 ## 1. Evidence pins
 
@@ -10,6 +12,7 @@ Status: research and design checkpoint. This document compares pinned Effect ver
 | effect-build development family | `4.0.0-rc.108` | [`bef7bf38ae4b73d5511043f707aed083de5da7cc`](https://github.com/Effect-TS/effect/tree/bef7bf38ae4b73d5511043f707aed083de5da7cc) |
 | published later candidate | `4.0.0-rc.109` | [`ee06c9c1eed73ebcf282541ceb1615ff1ba1730d`](https://github.com/Effect-TS/effect/tree/ee06c9c1eed73ebcf282541ceb1615ff1ba1730d) |
 | date-pinned current source, 2026-08-16 | package still reports `4.0.0-rc.109` | [`397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6`](https://github.com/Effect-TS/effect/tree/397bf1ebd95c0d6d58dc53e4f33c8ad3f34746f6) |
+| selected current beta, 2026-08-21 | `4.0.0-beta.107` | [`3c495ae7c96d43bfc3b8020250562a194c2c895e`](https://github.com/Effect-TS/effect/tree/3c495ae7c96d43bfc3b8020250562a194c2c895e) |
 | effect-build granular branch | peer range `>=4.0.0-beta.104 <4.1.0-0` | [`15c811bb9904142a33d119766b62082f3c689f13`](https://github.com/mannyc2/effect-build/tree/15c811bb9904142a33d119766b62082f3c689f13) |
 
 The shipped beta.83 family is outside effect-build's declared peer range.
@@ -111,7 +114,24 @@ This is a repository-wide behavior-preserving migration, not a manifest edit.
 | Effect AI provider metadata/error normalization | older generation | rc generation | rc generation | current expanded docs/source | common-service pattern, not provider proof |
 | Effect SQL backend extensions | present | present | present | current source explicit | common core + backend extension pattern |
 
-## 6. Target recommendation
+## 6. Target decision
+
+Production work aligns every Effect-family runtime and test package exactly on
+`4.0.0-beta.107`, the npm `beta` dist-tag value observed on 2026-08-21. The
+repository's binding instructions require aligned beta versions; the current
+`rc.111` dist tag therefore does not override this choice. `latest` remains the
+v3 line and is never used as an implicit v4 selector.
+
+The implementation migration must update the entire install graph and lockfile
+in one slice and pass compile, unit, package-export, and clean packed-consumer
+gates. Historical rc.108/rc.109 probes remain useful migration evidence but are
+not production-version authority.
+
+Primary package evidence:
+
+- https://www.npmjs.com/package/effect?activeTab=versions
+- https://www.npmjs.com/package/@effect/platform-bun?activeTab=versions
+- https://www.npmjs.com/package/@effect/platform-node?activeTab=versions
 
 ### Alternatives
 
@@ -141,22 +161,9 @@ This is a repository-wide behavior-preserving migration, not a manifest edit.
 
 **Tradeoff:** depending directly on a Git commit rather than a published package complicates consumers and reproducibility.
 
-### Provisional recommendation
-
-Use published `4.0.0-rc.109` as the rewrite migration target, pinned exactly through the package manager, with moderate confidence.
-
-Reasons:
-
-1. beta.83 is outside effect-build's peer range;
-2. rc.108 and rc.109 pass the same combined dependency gates;
-3. no inspected semantic advantage favors rc.108;
-4. current upstream still reports rc.109;
-5. package consumers should not depend on an unpublished Git commit; and
-6. the migration can separately pin current source commits for research.
-
-This is a recommendation for migration planning, not a dependency change in this PR.
-
-The main tradeoff is unstable-module drift. Workflow/Activity should be isolated behind a narrow application boundary or excluded from the first implementation if exact source stability cannot be guaranteed.
+The former provisional rc.109 recommendation is superseded by the aligned-beta
+decision above. Workflow/Activity remains outside the first implementation;
+version selection does not make it the release kernel.
 
 ## Continued research
 

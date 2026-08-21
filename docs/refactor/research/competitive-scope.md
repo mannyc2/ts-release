@@ -8,16 +8,16 @@ drifts from an atomic row, the scorecard wins.
 ## Current finite shape
 
 ```text
-launch candidates:                         79
+evaluated launch candidates:               79
   selected vNext leaves:                   69
     core delivery and reporting:            3
     provider and distribution:             35
     artifact production and trust:         28
     OpenAI plugin delivery:                  3
-  unresolved candidate leaves:             10
+  resolved-to-later candidate leaves:      10
 
 deferred maintained destination packages:   7
-named later-model leaves:                   20
+named later-model leaves:                   30
 ```
 
 This is not a claim that 69 independent abstractions are needed. It is an
@@ -109,12 +109,13 @@ AI-native delivery is launch scope, not an architecture-only footnote:
 The final public portal review remains a human external action. The handoff
 validator must not report provider success for an action no protocol performed.
 
-## Nine launch-shaping maintainer decisions
+## Nine resolved launch-shaping maintainer decisions
 
-Ten atomic decision leaves reduce to nine choices because MSI construction and
-MSI signing move together.
+Ten evaluated candidate leaves reduce to nine choices because MSI construction
+and MSI signing move together. All nine are resolved to finite later work in
+this checkpoint.
 
-| Decision | Leaves | Provisional recommendation |
+| Decision | Leaves | Resolved disposition |
 | --- | --- | --- |
 | include ipk/OpenWrt | `P05-04` | later unless embedded distribution is a product goal |
 | include MSI and choose its toolchain | `P05-07`, `P09-04` | later; selected MSIX already covers a Windows installer |
@@ -126,9 +127,9 @@ MSI signing move together.
 | derived release notes | `Q06-02` | later; accept explicit notes first |
 | macOS universal executable | `Q07` | later unless one universal download is a launch promise |
 
-None of these choices blocks the selected 69 leaves from being specified or
-implemented. Accepting one changes the scorecard disposition; it must not add
-a mode or a second scope ledger.
+None of these later choices blocks the selected 69 leaves from being specified
+or implemented. Reopening one requires an explicit scorecard disposition
+change; it must not add a mode or a second scope ledger.
 
 ## Deferred and later destinations
 
@@ -137,12 +138,14 @@ GitLab, Gitea, Cloudsmith, GemFury, Artifactory, Nexus, and Iru (`X01-X07`).
 The custom-provider acceptance fixture must demonstrate that each could be
 implemented without a core allowlist or sealed provider union.
 
-The 20 named later leaves retain real product possibilities without pretending
-they are launch acceptance. They include Homebrew Casks, Winget, source RPM,
-npm wrapper packages, makeself/NSIS, Snapcraft/Flatpak/Chocolatey, AUR/NUR/Krew,
-another AI registry, a named blob destination, Docker Hub metadata, AI-assisted
-notes, additional compiler/transformation integrations, and independent-project
-monorepo scoping.
+The 30 named later leaves comprise the 20 pre-existing later outcomes plus the
+10 candidates resolved above. Together they retain real product possibilities
+without pretending they are launch acceptance: ipk, MSI/signing, OpenPGP,
+Cosign, OCI, hosted nightlies, derived version/notes, universal macOS,
+Homebrew Casks, Winget, source RPM, npm wrapper packages, makeself/NSIS,
+Snapcraft/Flatpak/Chocolatey, AUR/NUR/Krew, another AI registry, a named blob
+destination, Docker Hub metadata, AI-assisted notes, additional compiler/
+transformation integrations, and independent-project monorepo scoping.
 
 ## Competitive interpretation
 

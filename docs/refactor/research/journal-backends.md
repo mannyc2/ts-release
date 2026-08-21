@@ -1,7 +1,7 @@
 # Journal backend and compare-and-swap research
 
-Status: research response to R1. The `JournalStore` law is accepted; the
-mandatory first-party backend set is reopened.
+Status: canonical store-law research. The `JournalStore` law and first-party
+local Bun default are selected; shared/remote deployment remains provisional.
 
 ## Accepted storage law
 
@@ -76,12 +76,16 @@ facilities. It still should not be placed on an unsupported network filesystem.
 
 Official sources:
 
+- https://bun.sh/docs/runtime/sqlite
 - https://www.sqlite.org/lang_transaction.html
 - https://www.sqlite.org/lockingv3.html
 - https://www.sqlite.org/howtocorrupt.html
 
-Disposition: strong default-local candidate; not proof of cross-machine CI
-continuation by itself.
+Disposition: selected first-party Bun CLI local default at an explicit database
+path. One immediate transaction checks the expected revision and appends the
+complete event; only a committed, read-back success returns `Appended`.
+Revision mismatch and ambiguous storage outcome remain distinct. This is not a
+claim of cross-machine CI continuation or arbitrary network-filesystem safety.
 
 ## Dedicated or orphan Git ref
 
@@ -151,7 +155,7 @@ The existing conditional-object probe is a protocol double, not a live S3
 conformance test.
 
 Disposition: strong optional backend for deployments already using AWS; not
-entailed by the 16 product outcomes and not yet justified as mandatory default
+entailed by the selected product outcomes and not justified as mandatory default
 infrastructure.
 
 ## CI artifacts
@@ -178,14 +182,15 @@ other hosted or self-hosted CI
 existing AWS/database infrastructure
 ```
 
-No single implementation is currently demonstrated as the smallest acceptable
-choice for all of them. Therefore the narrow `JournalStore` Layer remains
-justified. That does not mean every backend ships first-party.
+No single implementation is the smallest acceptable choice for all of them.
+Therefore the narrow `JournalStore` Layer remains justified. Bun SQLite ships
+for local/default UX; that does not mean every backend ships first-party.
 
-## Revised recommendation
+## Selected local default and research order
 
 Do not bless `LocalGenerationJournalStore` plus `S3ConditionalJournalStore` as
-architecturally required.
+architecturally required. Select Bun SQLite for local/default UX and retain the
+others as finite deployment work.
 
 Research order:
 
@@ -193,11 +198,13 @@ Research order:
 2. run a focused Git-ref race against a local bare repository;
 3. establish Windows and macOS behavior before claiming a portable filesystem
    generation store;
-4. compare SQLite and the generation store for local default UX;
+4. retain the generation store as a Linux-local alternative rather than a peer
+   canonical representation;
 5. evaluate a scratch GitHub ref for GitHub Actions;
 6. retain S3 as an optional first-party or user-supplied backend for AWS
    deployments; and
-7. choose the shipped set from actual deployment/UX evidence, not provider
-   feature count.
+7. choose any additional shipped set from actual deployment/UX evidence, not
+   provider feature count.
 
-The current backend selection is therefore a genuine maintainer/product choice.
+The shared/remote backend selection remains a provisional deployment choice;
+the first-party local default is closed.

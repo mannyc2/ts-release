@@ -28,7 +28,7 @@ Mechanically counted record totals in this revision:
 
 ```text
 launch candidates=79; selected V=69; unresolved D=10
-architecture proofs=0; deferred maintained destinations=7; named later leaves=19
+architecture proofs=0; deferred maintained destinations=7; named later leaves=20
 ```
 
 The 69 candidate rows are mutually exclusive records. `D` rows are not also
@@ -37,7 +37,7 @@ decision table below.
 
 ## Owner and implementation-status registry
 
-The compact owner/status field in every row resolves here. “Missing” means
+The compact owner/status field in every row resolves here. "Missing" means
 missing from the rewrite, not that no adjacent tool exists.
 
 | Code | Owning boundary | Observed implementation status |
@@ -72,8 +72,8 @@ missing from the rewrite, not that no adjacent tool exists.
 
 ## Structural prerequisite registry
 
-Dependencies use these stable IDs instead of names such as “bundle” or
-“plan”. They are architecture prerequisites, not extra product-scope peers.
+Dependencies use these stable IDs instead of names such as "bundle" or
+"plan". They are architecture prerequisites, not extra product-scope peers.
 
 | ID | Canonical fact or service |
 | --- | --- |
@@ -196,6 +196,7 @@ L16|metadata|Update Docker Hub repository description|later provider|one Docker 
 L17|policy|Generate AI-assisted release notes|later policy integration|one named model/provider and review flow|commits+prompt>reviewed notes|golden cases+human approval[M]|release history|Q06-02|L|-|S49
 L18|producer|Add Go, Rust, and Zig compiler integrations|later effect-build|one concrete package/toolchain per language|source snapshot>final executable matrix|toolchain result+cross-platform run[B,C]|three CLIs|P01-01|L|-|S49
 L19|producer|Add UPX and verifiable-Go transformations|later effect-build|two separately implemented transformations|final inputs>transformed bytes|tool-specific validation+run[B,C]|portable CLI|P01-01|L|-|S49
+L20|planning policy|Scope independent projects inside one monorepo|later ts-release policy|directory/tag/changelog filters for two independent releases; not a coordinated-release mode|repository+explicit project definitions>two ordinary plans|plan/report inspection; each plan retains ordinary provider laws[M,J]|two-project monorepo|R02,K01|L|-|S45,S49
 ```
 
 ## Explicit census-only dispositions
@@ -221,8 +222,13 @@ non-launch disposition without inventing another product leaf.
 | `M09` | mechanism/taxonomy | CI integration index or example workflow |
 | `M10` | mechanism/taxonomy | GoReleaser Pro licensing mechanics, not a ts-release product outcome |
 | `M11` | mechanism/taxonomy | opt-in/out product telemetry and its privacy policy, not a release artifact/provider outcome |
+| `M12` | mechanism/taxonomy | broad provider, signing, SCM-release, package, or archive family heading; atomic children carry product scope |
+| `M13` | mechanism/taxonomy | local snapshot is ordinary plan/build composition with dispatch omitted, not a named release mode |
+| `M14` | mechanism/taxonomy | cross-publish credential/routing selection, not another publication outcome |
 | `E01` | intentional exclusion | offline/fallback GoReleaser Pro licence-key behavior |
 | `E02` | intentional exclusion | PR-template checkboxes as release correctness or product capability |
+| `E03` | intentional exclusion | deprecated GoReleaser Docker image/manifest pipelines; current OCI work is represented only by `Q03` |
+| `E04` | intentional exclusion | deprecated legacy Podman image/manifest pipeline |
 
 ## Source registry
 

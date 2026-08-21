@@ -158,7 +158,8 @@ const targetDirectory = (target: string): string | undefined => {
 // are mechanical here so new ambient host usage is a deliberate act.
 const hostPlatformPackages: Readonly<Record<string, string>> = {
   "@effect/platform-bun": "src/platform/bun.ts",
-  "@effect/platform-node": "src/platform/node.ts"
+  "@effect/platform-node": "src/platform/node.ts",
+  "bun:sqlite": "src/platform/bun-journal.ts"
 }
 const fileSystemFiles: ReadonlySet<string> = new Set([
   "src/api/api.ts",
@@ -170,6 +171,10 @@ const fileSystemFiles: ReadonlySet<string> = new Set([
   "src/drivers/workspace.ts",
   "src/platform/source-observer.ts",
   "src/platform/credentials.ts",
+  // The concrete local journal backend owns creation of its exact durable state parent.
+  "src/platform/bun-journal.ts",
+  // The npm operation adapter owns its private scoped tarball transport.
+  "src/platform/npm-native-client.ts",
   "src/release/prepare.ts",
   "src/release/staging.ts",
   "src/release/prepared-store.ts"

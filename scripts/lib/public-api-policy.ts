@@ -30,9 +30,17 @@ export const runtimeBearingSourcePaths: ReadonlyArray<string> = [
   "extensions/provider-adapter.ts",
   "store.ts",
   "platform/bun.ts",
+  "platform/bun-journal.ts",
+  "platform/npm-native-client.ts",
   "platform/node.ts",
   "platform/services.ts",
-  "platform/release-runtime.ts"
+  "platform/release-runtime.ts",
+  "publication/npm-native.ts",
+  "publication/npm-operation.ts",
+  "release/artifact-bundle.ts",
+  "release/release-plan.ts",
+  "release/journal.ts",
+  "release/release-report.ts"
 ]
 
 export const bannedExternalPrefixes: ReadonlyArray<string> = [
@@ -41,14 +49,32 @@ export const bannedExternalPrefixes: ReadonlyArray<string> = [
   "effect/unstable/cli",
   "effect/unstable/http",
   "effect/unstable/process",
+  "bun:",
   "node:"
 ]
+
+// These vNext modules are intentionally internal while their application API
+// remains provisional. Listing them as runtime-bearing makes every public
+// entry graph prove that it does not accidentally retain them.
+const internalReleaseKernelSourcePaths: ReadonlySet<string> = new Set([
+  "platform/bun-journal.ts",
+  "platform/npm-native-client.ts",
+  "publication/npm-native.ts",
+  "publication/npm-operation.ts",
+  "release/artifact-bundle.ts",
+  "release/release-plan.ts",
+  "release/journal.ts",
+  "release/release-report.ts"
+])
 
 // One host module per host, and each is reachable only from its own
 // entrypoint: importing the package root under Node must never pull a Bun
 // module into the graph, and the reverse.
 const withoutHost = (host: string): ReadonlyArray<string> =>
-  runtimeBearingSourcePaths.filter((path) => path !== `platform/${host}.ts`)
+  runtimeBearingSourcePaths.filter((path) =>
+    path !== `platform/${host}.ts`
+    && !path.startsWith(`platform/${host}-`)
+    && !internalReleaseKernelSourcePaths.has(path))
 
 // effect/unstable/{http,process} are runtime necessities of the live driver
 // graph (every subpath today), allowed per-subpath; the declaration-side bite

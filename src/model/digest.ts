@@ -1,20 +1,24 @@
 import * as Schema from "effect/Schema"
 import { createHash } from "node:crypto"
 
-const lowercaseHex = (algorithm: "sha1" | "sha256" | "sha512", length: number) =>
+const lowercaseHex = <const Name extends string>(
+  algorithm: "sha1" | "sha256" | "sha512",
+  length: number,
+  name: Name
+) =>
   Schema.String.check(Schema.makeFilter((value: string) =>
     new RegExp(`^[a-f0-9]{${length}}$`, "u").test(value)
       ? undefined
       : `${algorithm} digest bytes must be exactly ${length} lowercase hexadecimal characters.`
-  )).pipe(Schema.brand(`${algorithm}Hex`))
+  )).pipe(Schema.brand(name))
 
-export const Sha1Hex = lowercaseHex("sha1", 40)
+export const Sha1Hex = lowercaseHex("sha1", 40, "sha1Hex")
 export type Sha1Hex = typeof Sha1Hex.Type
 
-export const Sha256Hex = lowercaseHex("sha256", 64)
+export const Sha256Hex = lowercaseHex("sha256", 64, "sha256Hex")
 export type Sha256Hex = typeof Sha256Hex.Type
 
-export const Sha512Hex = lowercaseHex("sha512", 128)
+export const Sha512Hex = lowercaseHex("sha512", 128, "sha512Hex")
 export type Sha512Hex = typeof Sha512Hex.Type
 
 export class Sha1Digest

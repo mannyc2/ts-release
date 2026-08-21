@@ -31,7 +31,8 @@ next production design should use these corrected constraints:
 - automatic replay requires a separate trusted provider-law authority;
 - the `JournalStore` interface is fixed, but its first-party backend set is
   open;
-- Apple notarization is effect-build-owned but durable recovery is unresolved.
+- concrete Apple notary operations are effect-build-owned; release-level
+  durable history remains in ts-release and correlation recovery is unresolved.
 
 ## Earliest discriminating work
 
@@ -42,7 +43,8 @@ Before a production provider API is frozen:
 2. run a focused Git-ref journal race and evaluate GitHub Actions permissions;
 3. compare SQLite and filesystem-generation local UX on Linux, macOS, and
    Windows;
-4. design effect-build-apple's durable notarization record; and
+4. design effect-build-apple's typed notary operations against ts-release's
+   single durable operation/journal record; and
 5. keep provider wire slices ahead of generalized orchestration machinery.
 
 ## Why this does not reduce ambition

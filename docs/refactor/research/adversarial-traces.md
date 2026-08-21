@@ -113,7 +113,14 @@ both policies.
 Core-derived identity removes this installed-code dependency:
 
 ```text
-hash("ts-release/operation/1", planId, definitionId, schemaVersion, I)
+operationId = hash(
+  "ts-release/operation/1",
+  definitionId,
+  schemaVersion,
+  I
+)
+
+operationKey = (planId, operationId)
 ```
 
 ## T9. Lost GitHub asset response

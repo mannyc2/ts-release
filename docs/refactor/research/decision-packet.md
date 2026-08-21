@@ -77,8 +77,9 @@ S3, filesystem generations, and user-supplied Layers remain candidates.
 
 ### Apple durable recovery remains open
 
-Ownership is decided; effect-build-apple still needs a durable fresh-process
-notarization/submission design.
+Ownership is decided: effect-build-apple supplies concrete notary operations
+and ts-release supplies the one release journal. The fresh-process correlation
+path, especially acceptance before submission-ID recording, remains open.
 
 ## Current recommendations
 

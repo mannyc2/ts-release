@@ -26,10 +26,11 @@ It does not establish:
 | Alternative | Canonical input | Installed-code dependence | Counterexample |
 | --- | --- | --- | --- |
 | provider `operationId(intent)` | provider executable projection | yes | V1 and V2 hash the same Intent under different domains |
-| core hash of definition/schema/Intent | canonical durable bytes | no | must include plan/bundle binding for relative artifact references |
+| core hash of definition/schema/Intent | canonical durable bytes | no | must be paired with the owning plan ID to interpret bundle-relative references |
 | random ID stored with plan | stored peer identifier | no after creation | can disagree with canonical Intent and cannot be recomputed |
 
-Recommendation: core-derived identity with `planId` binding.
+Recommendation: core-derived provider-local identity, paired with `planId` as
+the operation key. `planId` is not another input to the operation hash.
 
 ## 3. Strict versus bytes-sufficient replay
 
@@ -135,10 +136,11 @@ Layer substitution rather than a release mode.
 
 ## 6. Apple notarization
 
-Moving ownership to effect-build-apple removes notarization from ts-release's
-provider journal, but it does not remove the need for durable production state.
+Concrete notary operations belong to effect-build-apple, but they execute under
+ts-release's release operation and journal. This preserves one authoritative
+history while keeping Apple tool/protocol details concrete.
 
-A correct effect-build design must survive:
+A correct coordinated design must address:
 
 ```text
 submission accepted
@@ -149,7 +151,10 @@ staples and verifies final bytes
 ts-release adopts only then
 ```
 
-The package boundary is decided. The durable mechanism remains open.
+The package boundary is decided. effect-build-apple may expose typed
+submit/info/staple/validate Effects and values; it must not create a peer
+workflow history. The pre-recorded-submission-ID correlation gap remains open
+and may truthfully produce `Inconclusive`.
 
 ## 7. Minor correction
 

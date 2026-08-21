@@ -41,11 +41,20 @@ canonical encoded Intent
 Core derives:
 
 ```text
-operationId = hash(planId, definitionId, schemaVersion, canonicalIntent)
+operationId = hash(
+  "ts-release/operation/1",
+  definitionId,
+  schemaVersion,
+  canonicalIntent
+)
+
+operationKey = (planId, operationId)
 ```
 
-The application supplies the matching Schema and optional operations. It does
-not need to reproduce a provider-authored operation-ID function.
+The provider-local identity is stable across plans; `operationKey` supplies
+the owning release envelope. The application supplies the matching Schema and
+optional operations. It does not need to reproduce a provider-authored
+operation-ID function.
 
 ## Implementation provenance
 

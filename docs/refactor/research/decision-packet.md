@@ -1,13 +1,18 @@
 # Maintainer decision packet
 
-Status: research projection. Canonical authorities are listed in `README.md`.
-This revision distinguishes accepted laws from implementation choices reopened
-by review.
+Status: research projection. Canonical authorities are listed in `README.md`;
+`launch-scorecard.md` is the sole product-scope and product-decision authority.
+This packet distinguishes accepted architecture laws from implementation
+choices reopened by review.
 
 ## Accepted conclusions and maintainer decisions
 
-1. vNext acceptance is 16 outcome families: D01-D06 and P01-P10.
-2. A01-A03 are architecture proofs only; X01-X06 are deferred.
+1. vNext acceptance is 69 atomic leaves: 3 core delivery/reporting, 35
+   provider/distribution, 28 artifact/trust, and 3 OpenAI plugin-delivery
+   outcomes.
+2. Ten candidate leaves remain unresolved as nine maintainer choices; seven
+   maintained provider packages are deferred and twenty leaves are named later
+   work.
 3. `ConsumerScenario`, durable acceptance records, and
    `ConsumerEvidenceRecorded` are removed.
 4. `ReplaySafetyCapability` and deterministic `ReplayAuthorized` are removed.
@@ -20,10 +25,12 @@ by review.
    automatic replay.
 10. npm initial publication is one operation with a composite version/tag
     receipt and observation; `memberOperationIds` remains removed.
-11. effect-build-apple owns notarization through final verified/stapled bytes.
+11. effect-build-apple owns concrete notarization operations through final
+    verified/stapled bytes; ts-release owns the release journal and
+    continuation decisions.
 12. The immutable-content/bundle kernel remains internal to ts-release for now.
-13. Workflow/Activity remains deferred until the six fixed distribution
-    families are wire-complete.
+13. Workflow/Activity remains deferred until the selected fixed-provider wire
+    slices and journal semantics are complete.
 14. `JournalStore.appendIfRevision` is a lawful shared storage interface.
 15. No fixed provider requires durable plaintext secret idempotency material.
 
@@ -65,8 +72,8 @@ is unresolved.
 ### Backend selection is reopened
 
 The `JournalStore` law remains accepted. The required first-party backend set
-does not follow from the 16 outcome families. SQLite, dedicated Git ref, S3,
-filesystem generations, and user-supplied Layers remain candidates.
+does not follow from the selected product leaves. SQLite, dedicated Git ref,
+S3, filesystem generations, and user-supplied Layers remain candidates.
 
 ### Apple durable recovery remains open
 
@@ -77,7 +84,7 @@ notarization/submission design.
 
 | Topic | Recommendation | Confidence | Tradeoff |
 | --- | --- | --- | --- |
-| operation identity | core-derived from plan and canonical Intent | High | exact framing still to select |
+| operation identity | core-derived from definition ID, codec version, and canonical Intent; paired with plan ID as operation key | High | production canonical encoder still to select |
 | implementation identity | optional provenance/diagnostic | High for core transports | less conservative than whole-lockfile blocking |
 | request correspondence | immutable core HTTP/Git transports | High | opaque custom transports cannot auto-replay |
 | remote replay law | keep separate from transport evidence | High | authority representation unresolved |
@@ -86,19 +93,27 @@ notarization/submission design.
 | local backend candidate | compare SQLite against filesystem generations | Moderate | deployment-specific |
 | GitHub CI backend candidate | dedicated/orphan Git ref | Moderate | permission and policy constraints |
 | S3 | optional backend for AWS deployments | High | not default infrastructure |
-| Apple P10 | required and effect-build-owned, durable design open | High | separate effect-build research required |
+| Apple P10 | selected; concrete operations in effect-build-apple and one release journal in ts-release | High | commit-before-record gap can still end Inconclusive |
 
-## Genuine unresolved choices
+## Product choices
+
+The nine launch-shaping maintainer choices are represented only in
+`launch-scorecard.md`: ipk, MSI/toolchain and MSI signing, OpenPGP, Cosign, OCI,
+nightlies, SemVer derivation, release-note derivation, and universal macOS
+output. This packet does not create another disposition for them.
+
+## Genuine unresolved architecture choices
 
 - final ProviderDefinition TypeScript spelling;
-- operation-ID domain/framing and plan binding;
+- production canonical encoding/framing for the selected operation-ID law;
 - representation of trusted provider replay-law authority;
 - whether `replay.idempotency-key/1` or
   `replay.exact-duplicate/1` is enabled for any custom provider in v1;
 - first-party JournalStore backend set;
 - Windows/macOS support for a filesystem generation store;
 - Git-ref journal permissions, retention, and fork behavior;
-- Apple notarization durable-state mechanism;
+- exact Apple correlation behavior when submission succeeds before its ID is
+  recorded;
 - exact request-fingerprint canonicalization;
 - provider receipt/observation schema migration;
 - Workflow/Activity adoption after wire-complete providers.
@@ -111,4 +126,5 @@ The correction removes rather than adds peer facts:
 - whole-lockfile identity is not a replay authority;
 - probe-selected field lists are not declared exact;
 - S3 is not a scope-implied mode; and
-- effect-build ownership is not treated as proof of notarization durability.
+- effect-build ownership is not treated as proof of release-level notarization
+  durability.

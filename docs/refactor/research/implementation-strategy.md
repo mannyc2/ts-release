@@ -1,21 +1,24 @@
 # Implementation-order comparison
 
-Status: research-only. Scope remains the 16/3/6 ledger in
-`competitive-scope.md`.
+Status: research-only implementation projection. Atomic scope remains
+`launch-scorecard.md`; the complete coordinated program is
+`cross-repository-delivery.md`.
 
 ## Accepted sequence
 
 1. minimum immutable bundle, canonical Intent, core-derived operation identity,
-   `DispatchStarted`, and `JournalStore` law;
+   `DispatchStarted`, `JournalStore` law, and derived release report;
 2. wire-complete npm normal success and response-loss behavior;
 3. Warehouse per-file success, conflict, partial progress, and response loss;
 4. generalize only laws demonstrated by those provider slices;
 5. add GitHub tag/release/assets;
 6. add conditional Git publication plus Homebrew formulas and Scoop;
 7. prove custom-provider fresh-runner continuation;
-8. exercise P01-P10 artifact production/trust outcomes;
-9. prove A01-A03 architecture without making them vNext acceptance gates;
-10. complete non-manual ts-release self-release.
+8. exercise every selected P/Q artifact-production and trust leaf through the
+   effect-build handoff;
+9. add MCP Registry and the selected OpenAI plugin-delivery leaves;
+10. ship the first-party GitHub Action and complete non-manual ts-release
+    self-release with fresh-runner injection.
 
 ## Corrections before production work
 
@@ -44,9 +47,10 @@ Before a production provider API is frozen:
 
 ## Why this does not reduce ambition
 
-All 16 vNext outcomes remain required. The sequence merely obtains external
-wire and deployment evidence before generalized infrastructure becomes hard to
-change.
+All 69 selected vNext leaves remain required unless the sole scorecard changes.
+The sequence merely obtains external wire and deployment evidence before
+generalized infrastructure becomes hard to change. Ten candidate leaves remain
+visible as nine maintainer choices rather than disappearing from the roadmap.
 
 ## Evidence gates
 

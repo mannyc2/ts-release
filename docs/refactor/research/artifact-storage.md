@@ -98,31 +98,30 @@ Notarization remains an asynchronous external mutation. A fresh process needs:
 - durable access to the input bytes; and
 - a path from acceptance to stapled, verified final bytes.
 
-Possible effect-build designs include:
-
-1. an effect-build-owned durable operation record;
-2. a small generic durable production-run facility;
-3. caller-supplied persistence callbacks/Layer; or
-4. integration with a later durable engine while retaining the same external
-   mutation law.
+The selected coordinated direction keeps one release history. effect-build-apple
+exposes concrete submit/info/staple/validate Effects and typed values;
+ts-release records the dispatch, submission identity/status, and continuation
+facts in its release journal. A later durable engine may host that history but
+must not create a peer operation record.
 
 A same-process retry loop is insufficient for the vNext acceptance promise.
 
 ## P10 status
 
-Apple notarization/stapling remains required in the 16-family vNext acceptance
-scope, but its durable design is unresolved. It is not architecturally closed
-merely because ownership moved to effect-build-apple.
+Apple submission, fresh-runner polling, stapling, and Gatekeeper verification
+remain four selected atomic vNext leaves. The pre-recorded-submission-ID
+correlation gap is unresolved. It is not architecturally closed merely because
+concrete operations live in effect-build-apple.
 
 The ts-release artifact law remains simple:
 
 ```text
-notarization and stapling complete
--> effect-build-apple verifies final bytes
--> ts-release adopts final bytes
+ts-release records exact pre-notary input and DispatchStarted
+-> effect-build-apple performs concrete notary operations
+-> ts-release records provider-native submission/status facts
+-> effect-build-apple staples and verifies final bytes
+-> ts-release adopts final bytes into the immutable bundle
 ```
-
-No pre-finalization ts-release journal is introduced.
 
 ## Validation boundaries
 

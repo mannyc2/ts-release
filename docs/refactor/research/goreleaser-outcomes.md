@@ -6,6 +6,10 @@ is the exact authority for the preserved historical 151-case mapping. This
 document explains the product consequences; it creates neither rows nor
 counts.
 
+At this checkpoint the scorecard projects 69 selected vNext leaves, 10
+unresolved candidate leaves, 7 deferred maintained destinations, and 20 named
+later leaves. Those numbers are repeated here only as a checkable snapshot.
+
 ## Evidence terminates outside the model
 
 | Facet | Required question |

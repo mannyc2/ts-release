@@ -455,6 +455,11 @@ Every candidate executes the same 16 fixtures:
 15. consumer attempt to shadow host-owned dependencies; and
 16. journal write/read bound symmetry at the exact limit and one byte over.
 
+The first trial spec binds case 16 to a 64-byte **trial-only** fixture limit and
+records `hasProductAuthority: false`. Every candidate receipt must bind that
+same integer. This proves read/write symmetry without inventing the eventual
+production limit; a production bound remains a later freeze decision.
+
 Record semantic/structural/operational/source metrics, mutation owners,
 construction-versus-validation invariants, counterexamples, and marginal probes
 for every candidate. The selected machine/interpreter slice must be no more
@@ -523,6 +528,14 @@ quantiles. Each probe records before/after tree hashes, patch hash, per-lane
 gross additions/deletions, files/modules/packages/concepts/central branches
 touched, public/durable/DAG deltas, and zero-touch assertions. Do not dilute the
 distribution with reused scorecard rows that add zero mechanism code.
+
+The candidate-neutral spec currently declares one non-zero observation for
+each of nine probes. Under nearest-rank quantiles, p90 is therefore rank 9 and
+is the effective maximum, so this population's operative maximum is <=100 and
+the <=200 maximum guard is redundant. The schema records that consequence
+explicitly. Expanding the sample population or changing the percentile
+requires a hash-changing trial-spec amendment; tools may not silently weaken or
+reinterpret the declared arithmetic.
 
 Topology hard gates include clean packed library execution under Node and Bun;
 packed CLI and Action; packed external provider with two instances; lossless

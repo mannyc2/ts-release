@@ -11,6 +11,49 @@ permissions:
   contents: read
 
 jobs:
+  architecture-program:
+    name: Architecture program validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.2"
+
+      - name: Verify root isolation before install
+        run: |
+          test ! -e node_modules
+          printf '%s  %s\n' '5640ae3df79d9a378864c7345f7d78ca74056bf44e420756629d28ac15943cf9' 'bun.lock' | sha256sum --check
+
+      - name: Install architecture program
+        run: bun install --cwd tools/architecture-program --frozen-lockfile
+
+      - name: Check architecture schema
+        run: bun run check:architecture-schema
+
+      - name: Check architecture inputs
+        run: bun run check:architecture-inputs
+
+      - name: Verify architecture program isolation
+        run: |
+          test ! -e node_modules
+          printf '%s  %s\n' '5640ae3df79d9a378864c7345f7d78ca74056bf44e420756629d28ac15943cf9' 'bun.lock' | sha256sum --check
+          test "$(node -p "require('./tools/architecture-program/node_modules/effect/package.json').version")" = '4.0.0-rc.108'
+          test "$(node -p "require('./tools/architecture-program/node_modules/@effect/vitest/package.json').version")" = '4.0.0-rc.108'
+          test "$(node -p "require('./tools/architecture-program/node_modules/vitest/package.json').version")" = '4.1.10'
+          git diff --exit-code -- bun.lock tools/architecture-program/bun.lock
+
   portable:
     name: Portable package checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

@@ -1,0 +1,21 @@
+{
+  "name": "@ts-release/architecture-program",
+  "version": "0.0.0-private",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.14",
+  "scripts": {
+    "check": "tsc -p tsconfig.json --noEmit",
+    "check:inputs": "bun run src/check-inputs.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "effect": "4.0.0-rc.108"
+  },
+  "devDependencies": {
+    "@effect/vitest": "4.0.0-rc.108",
+    "@types/bun": "1.3.14",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

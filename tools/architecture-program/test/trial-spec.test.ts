@@ -1,0 +1,287 @@
+import { createHash } from "node:crypto"
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { dirname, join, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
+import { describe, expect, it } from "@effect/vitest"
+import { Effect, Exit } from "effect"
+import { parseCanonicalJsonBytes } from "../src/canonical-document.js"
+import { checkSourceAnchor } from "../src/check-inputs.js"
+import {
+  type SourceAnchor,
+  TrialSpecInvariantError,
+  decodeArchitectureTrialSpec,
+  encodeArchitectureTrialSpec
+} from "../src/schema/trial-spec.js"
+
+type MutableDocument = Record<string, any>
+type Mutation = (document: MutableDocument) => void
+
+const fixturePath = resolve(
+  typeof import.meta.dir === "string" ? import.meta.dir : dirname(fileURLToPath(import.meta.url)),
+  "../../../docs/refactor/architecture-program/inputs/trial-spec.json"
+)
+
+const loadValidDocument = Effect.fn("trialSpecTest.loadValidDocument")(function* () {
+  const bytes = yield* Effect.tryPromise(() => readFile(fixturePath))
+  return structuredClone(parseCanonicalJsonBytes(bytes)) as MutableDocument
+})
+
+const expectDecodeFailure = Effect.fn("trialSpecTest.expectDecodeFailure")(
+  function* (mutate: Mutation) {
+    const document = yield* loadValidDocument()
+    mutate(document)
+    const exit = yield* decodeArchitectureTrialSpec(document).pipe(Effect.exit)
+    expect(Exit.isFailure(exit)).toBe(true)
+  }
+)
+
+describe("ArchitectureTrialSpecV1", () => {
+  it.effect("decodes the committed canonical trial specification", () =>
+    Effect.gen(function* () {
+      const document = yield* loadValidDocument()
+      const spec = yield* decodeArchitectureTrialSpec(document)
+
+      expect(spec.schemaVersion).toBe("ts-release/architecture-trial-spec/v1")
+      expect(spec.machineCandidates).toHaveLength(2)
+      expect(spec.topologyCandidates).toHaveLength(3)
+    }))
+
+  it.effect("rejects premature selection and target-publication fields at the top level", () =>
+    Effect.gen(function* () {
+      for (const key of ["selectedCandidateId", "targetSurface", "npmMap"]) {
+        yield* expectDecodeFailure((document) => {
+          document[key] = key === "selectedCandidateId" ? "M1-extracted-fold" : {}
+        })
+      }
+    }))
+
+  it.effect("rejects duplicate entity ids", () =>
+    expectDecodeFailure((document) => {
+      document.laws[1].id = document.laws[0].id
+    }))
+
+  it.effect("rejects dangling law, case, gate, and probe references", () =>
+    Effect.gen(function* () {
+      const mutations: ReadonlyArray<Mutation> = [
+        (document) => {
+          document.machineCandidates[0].lawIds[0] = "L99-missing-law"
+        },
+        (document) => {
+          document.machineCandidates[0].caseIds[0] = "C99-missing-case"
+        },
+        (document) => {
+          document.machineCandidates[0].gateIds[0] = "GM99-missing-gate"
+        },
+        (document) => {
+          document.gateRequirements[0].probeIds = ["P99-missing-probe"]
+        }
+      ]
+      for (const mutate of mutations) yield* expectDecodeFailure(mutate)
+    }))
+
+  it.effect("binds authority coordinates and exact law, case, and probe provenance", () =>
+    Effect.gen(function* () {
+      const mutations: ReadonlyArray<Mutation> = [
+        (document) => {
+          document.authorities[0].ownerId = "product-research"
+        },
+        (document) => {
+          document.authorities[0].sourceAnchor.startLine = 93
+        },
+        (document) => {
+          document.laws[0].authorityIds = ["A12-cross-repository-boundary"]
+        },
+        (document) => {
+          document.machineCases[0].authorityIds = ["A03-machine-contract"]
+        },
+        (document) => {
+          document.marginalProbes[0].authorityIds = ["A04-topology-contract"]
+        }
+      ]
+      for (const mutate of mutations) yield* expectDecodeFailure(mutate)
+    }))
+
+  it.effect("rejects traversal and backslash repository paths in the schema", () =>
+    Effect.gen(function* () {
+      for (const path of ["../outside.md", "docs\\outside.md"]) {
+        yield* expectDecodeFailure((document) => {
+          document.authorities[0].sourceAnchor.path = path
+        })
+      }
+    }))
+
+  it.effect("requires the complete candidate, case, and probe sets", () =>
+    Effect.gen(function* () {
+      const mutations: ReadonlyArray<Mutation> = [
+        (document) => document.machineCandidates.pop(),
+        (document) => document.topologyCandidates.pop(),
+        (document) => document.machineCases.pop(),
+        (document) => document.marginalProbes.pop()
+      ]
+      for (const mutate of mutations) yield* expectDecodeFailure(mutate)
+    }))
+
+  it.effect("requires every candidate to use the same complete shared sets", () =>
+    Effect.gen(function* () {
+      const mutations: ReadonlyArray<Mutation> = [
+        (document) => document.machineCandidates[1].lawIds.pop(),
+        (document) => document.machineCandidates[1].caseIds.pop(),
+        (document) => document.topologyCandidates[2].probeIds.pop(),
+        (document) => document.topologyCandidates[2].gateIds.pop()
+      ]
+      for (const mutate of mutations) yield* expectDecodeFailure(mutate)
+    }))
+
+  it.effect("does not permit weakened Action, artifact, provider, or host literals", () =>
+    Effect.gen(function* () {
+      const mutations: ReadonlyArray<Mutation> = [
+        (document) => {
+          document.topologyFixture.actionPlacement = "library"
+        },
+        (document) => {
+          document.topologyFixture.finalizedArtifactKinds = ["finalized-file"]
+        },
+        (document) => {
+          document.topologyFixture.externalProviderLoading = "registry"
+        },
+        (document) => {
+          document.topologyFixture.providerInstances[0].endpointClass = "any"
+        },
+        (document) => {
+          document.topologyFixture.roles.find((role: MutableDocument) => role.kind === "GitHub-Action").kind = "host"
+        }
+      ]
+      for (const mutate of mutations) yield* expectDecodeFailure(mutate)
+    }))
+
+  it.effect("requires hard offline gates without credentials or external mutation", () =>
+    Effect.gen(function* () {
+      const mutations: ReadonlyArray<Mutation> = [
+        (document) => {
+          document.gateRequirements[0].hard = false
+        },
+        (document) => {
+          document.gateRequirements[0].networkAccess = true
+        },
+        (document) => {
+          document.gateRequirements[0].credentials = true
+        },
+        (document) => {
+          document.gateRequirements[0].mutatesExternalState = true
+        },
+        (document) => {
+          document.gateRequirements[0].command = ["true"]
+        }
+      ]
+      for (const mutate of mutations) yield* expectDecodeFailure(mutate)
+    }))
+
+  it.effect("forbids weighted scoring and weak tie breakers", () =>
+    Effect.gen(function* () {
+      const mutations: ReadonlyArray<Mutation> = [
+        (document) => {
+          document.machineSelectionPolicy.weightedScoring = "allowed"
+        },
+        (document) => {
+          document.machineSelectionPolicy.rankSums = "allowed"
+        },
+        (document) => {
+          document.topologySelectionPolicy.lexicographicTieBreaks = "allowed"
+        },
+        (document) => {
+          document.topologySelectionPolicy.unresolvedOutcome = "FirstCandidateWins"
+        }
+      ]
+      for (const mutate of mutations) yield* expectDecodeFailure(mutate)
+    }))
+
+  it.effect("requires both inconclusive and safe-stop terminal cases", () =>
+    expectDecodeFailure((document) => {
+      for (const machineCase of document.machineCases) {
+        if (machineCase.requiredTerminalOutcome === "Inconclusive" ||
+          machineCase.requiredTerminalOutcome === "SafeStop") {
+          machineCase.requiredTerminalOutcome = "Succeeded"
+        }
+      }
+    }))
+
+  it.effect("keeps the C16 64-byte journal bound trial-only", () =>
+    Effect.gen(function* () {
+      const mutateC16 = (
+        document: MutableDocument,
+        mutate: (parameters: MutableDocument) => void
+      ): void => {
+        const c16 = document.machineCases.find((machineCase: MutableDocument) =>
+          machineCase.id === "C16-journal-bound-symmetry")
+        mutate(c16.trialParameters)
+      }
+      const mutations: ReadonlyArray<Mutation> = [
+        (document) => mutateC16(document, (parameters) => {
+          parameters.limitBytes = 65
+        }),
+        (document) => mutateC16(document, (parameters) => {
+          parameters.limitSource = "product-configuration"
+        }),
+        (document) => mutateC16(document, (parameters) => {
+          parameters.hasProductAuthority = true
+        })
+      ]
+      for (const mutate of mutations) yield* expectDecodeFailure(mutate)
+    }))
+
+  it.effect("refuses to encode a decoded specification after semantic mutation", () =>
+    Effect.gen(function* () {
+      const document = yield* loadValidDocument()
+      const spec = yield* decodeArchitectureTrialSpec(document)
+      ;(spec.machineCandidates[0] as unknown as MutableDocument).caseIds = []
+
+      expect(() => encodeArchitectureTrialSpec(spec)).toThrow(TrialSpecInvariantError)
+      expect(() => encodeArchitectureTrialSpec(spec)).toThrow(/required ordered set/u)
+    }))
+})
+
+describe("source anchor verification", () => {
+  it.effect("checks whole-file hashes, line ranges, missing paths, and symlink containment", () =>
+    Effect.acquireUseRelease(
+      Effect.tryPromise(() => mkdtemp(join(tmpdir(), "architecture-program-anchor-"))),
+      (temporaryRoot) => Effect.gen(function* () {
+        const repositoryRoot = join(temporaryRoot, "repository")
+        const outsidePath = join(temporaryRoot, "outside.txt")
+        const contents = "first\nsecond\n"
+        yield* Effect.tryPromise(() => mkdir(repositoryRoot))
+        yield* Effect.tryPromise(() => writeFile(join(repositoryRoot, "anchor.txt"), contents))
+        yield* Effect.tryPromise(() => writeFile(outsidePath, contents))
+        yield* Effect.tryPromise(() => symlink(outsidePath, join(repositoryRoot, "escape.txt")))
+
+        const sha256 = createHash("sha256").update(contents).digest("hex")
+        const wholeFile = {
+          _tag: "WholeFileSourceAnchor",
+          path: "anchor.txt",
+          sha256
+        } as unknown as SourceAnchor
+        const lineRange = {
+          _tag: "LineRangeSourceAnchor",
+          path: "anchor.txt",
+          sha256,
+          startLine: 1,
+          endLine: 2
+        } as unknown as SourceAnchor
+
+        yield* checkSourceAnchor(repositoryRoot, wholeFile)
+        yield* checkSourceAnchor(repositoryRoot, lineRange)
+
+        for (const invalidAnchor of [
+          { ...wholeFile, sha256: "0".repeat(64) },
+          { ...lineRange, startLine: 2, endLine: 1 },
+          { ...lineRange, endLine: 3 },
+          { ...wholeFile, path: "missing.txt" },
+          { ...wholeFile, path: "escape.txt" }
+        ] as unknown as ReadonlyArray<SourceAnchor>) {
+          const exit = yield* checkSourceAnchor(repositoryRoot, invalidAnchor).pipe(Effect.exit)
+          expect(Exit.isFailure(exit)).toBe(true)
+        }
+      }),
+      (temporaryRoot) => Effect.promise(() => rm(temporaryRoot, { recursive: true, force: true }))
+    ))
+})

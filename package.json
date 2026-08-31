@@ -78,6 +78,7 @@
     "test": "bun test",
     "check:architecture-schema": "bun run --cwd tools/architecture-program check && bun run --cwd tools/architecture-program test",
     "check:architecture-inputs": "bun run --cwd tools/architecture-program check:inputs",
+    "generate:architecture-traceability": "bun run --cwd tools/architecture-program generate:traceability",
     "test:coverage": "bun test --coverage",
     "check:package-exports": "bun run scripts/check-package-exports.ts",
     "check:packed-consumers": "bun run scripts/check-packed-consumers.ts",

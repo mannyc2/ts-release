@@ -19,7 +19,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
+
+      - name: Admit Plan 184 historical evidence
+        run: |
+          git fetch --no-tags origin '+refs/pull/17/head:refs/codex/evidence/plan184'
+          test "$(git rev-parse refs/codex/evidence/plan184)" = 'f6ead4454ebb58122139fb6d424e1614be1af392'
+          git merge-base --is-ancestor 86d30feba02c904e196288c3e3bd1316ee9050af refs/codex/evidence/plan184
+          git merge-base --is-ancestor 5ee1be5e26ae2145c8e0f28a5ca73ddb7c6b8d6b refs/codex/evidence/plan184
+          git merge-base --is-ancestor 7690da13fc8c41f6fa6bb25442b60221e5a50f91 refs/codex/evidence/plan184
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2

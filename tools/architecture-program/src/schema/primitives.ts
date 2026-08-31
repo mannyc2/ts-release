@@ -97,3 +97,34 @@ export type ExistingRepositoryPath = typeof ExistingRepositoryPath.Type
 
 export const PlannedRepositoryPath = repositoryPath.pipe(Schema.brand("PlannedRepositoryPath"))
 export type PlannedRepositoryPath = typeof PlannedRepositoryPath.Type
+
+export const TraceabilityId = Schema.NonEmptyString.check(
+  nfcText,
+  Schema.isPattern(/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/u)
+).pipe(Schema.brand("TraceabilityId"))
+export type TraceabilityId = typeof TraceabilityId.Type
+
+export const TraceabilityTargetId = Schema.NonEmptyString.check(
+  nfcText,
+  Schema.isPattern(/^[A-Za-z0-9][A-Za-z0-9._/-]*$/u),
+  Schema.makeFilter((value: string) => value.length <= 256 ? undefined : "must contain at most 256 characters")
+).pipe(Schema.brand("TraceabilityTargetId"))
+export type TraceabilityTargetId = typeof TraceabilityTargetId.Type
+
+export const SourceRecordId = Schema.NonEmptyString.check(
+  nfcText,
+  Schema.isPattern(/^[A-Z][A-Z0-9]*(?:-[0-9]{2})?$/u)
+).pipe(Schema.brand("SourceRecordId"))
+export type SourceRecordId = typeof SourceRecordId.Type
+
+export const EvidenceId = Schema.NonEmptyString.check(
+  nfcText,
+  Schema.isPattern(/^[A-Za-z][A-Za-z0-9]*(?:[._/-][A-Za-z0-9]+)*$/u)
+).pipe(Schema.brand("EvidenceId"))
+export type EvidenceId = typeof EvidenceId.Type
+
+export const WitnessKindId = Schema.NonEmptyString.check(
+  nfcText,
+  Schema.isPattern(/^witness\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u)
+).pipe(Schema.brand("WitnessKindId"))
+export type WitnessKindId = typeof WitnessKindId.Type

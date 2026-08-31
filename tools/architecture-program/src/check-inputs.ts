@@ -4,6 +4,9 @@ import { dirname, isAbsolute, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { Effect, Schema } from "effect"
 import { canonicalJsonBytes, parseCanonicalJsonBytes } from "./canonical-document.js"
+import { checkArchitectureBaseline } from "./check-baseline.js"
+import { checkOwnershipDecisions } from "./check-ownership-decisions.js"
+import { checkResearchTraceability } from "./check-research-traceability.js"
 import {
   type ArchitectureTrialSpecV1,
   type SourceAnchor,
@@ -142,7 +145,11 @@ export const checkInputs = Effect.fn("ArchitectureTrialSpecV1.checkInputs")(
       ))
     }
 
-    return spec
+    const traceability = yield* checkResearchTraceability(repositoryRoot)
+    const ownership = yield* checkOwnershipDecisions(repositoryRoot)
+    const baseline = yield* checkArchitectureBaseline(repositoryRoot)
+
+    return { trialSpec: spec, traceability, ownership, baseline }
   }
 )
 
@@ -154,7 +161,16 @@ if (import.meta.main) {
   Effect.runPromise(cliProgram).then(
     (result) => {
       if (result._tag === "Success") {
-        console.log(`architecture trial inputs valid (${result.spec.authorities.length} source anchors)`)
+        const { baseline, ownership, traceability, trialSpec } = result.spec
+        console.log(
+          `architecture program inputs valid (${trialSpec.authorities.length} trial anchors, ` +
+          `${traceability.document.propositions.length} propositions, ` +
+          `${traceability.checkedSourceCoordinates} traceability anchors, ` +
+          `${ownership.document.decisions.length} ownership decisions, ` +
+          `${ownership.document.freezeBlockerIds.length} freeze blockers, ` +
+          `${baseline.document.baselines.length} immutable baselines, ` +
+          `${baseline.document.candidateBaselines.length} pending candidate baselines)`
+        )
         return
       }
       const rendered = result.error instanceof Error ? result.error.message : String(result.error)

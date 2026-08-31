@@ -1,22 +1,65 @@
 import { Effect, Schema } from "effect"
 import {
   ArtifactId,
-  CaseId,
   Description,
   ExistingRepositoryPath,
-  GateId,
   GitRevision,
   LawId,
-  MachineCandidateId,
   MetricId,
   OwnerId,
   PlannedRepositoryPath,
-  ProbeId,
   ProgramId,
   RoleId,
   Sha256Hex,
-  TopologyCandidateId
 } from "./primitives.js"
+import {
+  CaseExecutionDefinition,
+  ExecutionContract,
+  InputBinding,
+  MeasurementContract,
+  ProbeExecutionDefinition,
+  ReceiptContract,
+  REQUIRED_CASE_ACTIONS,
+  REQUIRED_CASE_EXECUTIONS,
+  REQUIRED_INPUT_BINDINGS,
+  REQUIRED_MEASUREMENT_METHODS,
+  REQUIRED_PROBE_ACTION_IDS,
+  REQUIRED_PROBE_ACTIONS,
+  REQUIRED_TRIAL_LANES,
+  definitionSha256,
+  exactOrderedIssues,
+  executionContractSha256,
+  fixtureSha256,
+  measurementContractSha256
+} from "./trial-contract.js"
+import {
+  CaseFixtureV2,
+  ExpectedCaseEvidenceV2,
+  ProbeChangeDefinitionV2,
+  caseFixtureSha256V2,
+  expectedCaseEvidenceSha256V2,
+  probeChangeDefinitionSha256V2
+} from "./trial-evidence.js"
+import {
+  V2CaseId,
+  V2GateId,
+  V2MachineCandidateId,
+  V2ProbeId,
+  V2TopologyCandidateId,
+  V2_CASE_IDS,
+  V2_MACHINE_CANDIDATE_IDS,
+  V2_MACHINE_GATE_IDS,
+  V2_PROBE_IDS,
+  V2_TOPOLOGY_CANDIDATE_IDS,
+  V2_TOPOLOGY_GATE_IDS
+} from "./v2-ids.js"
+import {
+  REQUIRED_CASE_FIXTURES,
+  REQUIRED_CASE_TERMINAL_OUTCOMES as FIXTURE_CASE_TERMINAL_OUTCOMES,
+  REQUIRED_EXPECTED_CASE_EVIDENCE,
+  REQUIRED_PROBE_CHANGE_IDS,
+  REQUIRED_PROBE_PARAMETER_ENTRIES
+} from "../trial-fixture-registry.js"
 
 export const REQUIRED_LAW_IDS = [
   "L01-single-canonical-durable-chain",
@@ -202,24 +245,7 @@ const REQUIRED_PROBE_AUTHORITY_IDS: Readonly<Record<(typeof REQUIRED_PROBE_IDS)[
   "P09-difficult-recovery-transition": ["A04-topology-contract", "A07-fresh-runner", "A10-effect-build-boundary"]
 }
 
-export const REQUIRED_CASE_IDS = [
-  "C01-initial-success",
-  "C02-rejection-before-commit",
-  "C03-response-loss-satisfied-observation",
-  "C04-response-loss-inconclusive-stop",
-  "C05-core-git-cas-protected-replay",
-  "C06-explicit-risk-acceptance",
-  "C07-concurrent-runners-single-cas-winner",
-  "C08-request-endpoint-mismatch",
-  "C09-supersession-late-evidence",
-  "C10-ambiguous-append-readback",
-  "C11-malformed-provider-graph",
-  "C12-external-provider-two-instances",
-  "C13-apple-commit-before-id-loss",
-  "C14-finalized-file-tree-adoption",
-  "C15-host-dependency-shadowing",
-  "C16-journal-bound-symmetry"
-] as const
+export const REQUIRED_CASE_IDS = V2_CASE_IDS
 
 export const REQUIRED_CASE_LAW_IDS: Readonly<Record<(typeof REQUIRED_CASE_IDS)[number], ReadonlyArray<string>>> = {
   "C01-initial-success": ["L01-single-canonical-durable-chain", "L02-single-pure-transition-owner", "L03-single-interpreter-cas-authority", "L04-facts-decisions-effects-separated", "L05-host-owned-single-journal"],
@@ -259,36 +285,9 @@ export const REQUIRED_CASE_OBSERVATION_IDS: Readonly<Record<(typeof REQUIRED_CAS
   "C16-journal-bound-symmetry": ["exact-limit-write-succeeds", "exact-limit-read-succeeds", "one-byte-over-write-rejected-before-append", "one-byte-over-read-rejected", "read-write-bounds-identical"]
 }
 
-export const REQUIRED_CASE_TERMINAL_OUTCOMES: Readonly<Record<(typeof REQUIRED_CASE_IDS)[number], string>> = {
-  "C01-initial-success": "Succeeded",
-  "C02-rejection-before-commit": "Rejected",
-  "C03-response-loss-satisfied-observation": "Succeeded",
-  "C04-response-loss-inconclusive-stop": "Inconclusive",
-  "C05-core-git-cas-protected-replay": "Succeeded",
-  "C06-explicit-risk-acceptance": "Succeeded",
-  "C07-concurrent-runners-single-cas-winner": "Succeeded",
-  "C08-request-endpoint-mismatch": "Rejected",
-  "C09-supersession-late-evidence": "SafeStop",
-  "C10-ambiguous-append-readback": "SafeStop",
-  "C11-malformed-provider-graph": "Rejected",
-  "C12-external-provider-two-instances": "Succeeded",
-  "C13-apple-commit-before-id-loss": "Inconclusive",
-  "C14-finalized-file-tree-adoption": "Succeeded",
-  "C15-host-dependency-shadowing": "Rejected",
-  "C16-journal-bound-symmetry": "SafeStop"
-}
+export const REQUIRED_CASE_TERMINAL_OUTCOMES = FIXTURE_CASE_TERMINAL_OUTCOMES
 
-export const REQUIRED_PROBE_IDS = [
-  "P01-second-provider-instance",
-  "P02-packed-external-provider",
-  "P03-new-first-party-provider",
-  "P04-new-commitment-mechanism",
-  "P05-existing-provider-operation",
-  "P06-journal-store-backend",
-  "P07-file-tree-producer-adapter",
-  "P08-deliberate-public-export",
-  "P09-difficult-recovery-transition"
-] as const
+export const REQUIRED_PROBE_IDS = V2_PROBE_IDS
 
 export const REQUIRED_PROBE_LAW_IDS: Readonly<Record<(typeof REQUIRED_PROBE_IDS)[number], ReadonlyArray<string>>> = {
   "P01-second-provider-instance": ["L05-host-owned-single-journal", "L07-open-provider-composition", "L13-exact-acyclic-import-graph"],
@@ -305,11 +304,11 @@ export const REQUIRED_PROBE_LAW_IDS: Readonly<Record<(typeof REQUIRED_PROBE_IDS)
 export const REQUIRED_PROBE_ZERO_TOUCH_ROLE_IDS: Readonly<Record<(typeof REQUIRED_PROBE_IDS)[number], ReadonlyArray<string>>> = {
   "P01-second-provider-instance": ["role-kernel"],
   "P02-packed-external-provider": ["role-kernel"],
-  "P03-new-first-party-provider": ["role-machine", "role-node-host", "role-bun-host", "role-cli-host", "role-github-action-host", "role-first-party-provider-a", "role-first-party-provider-b"],
+  "P03-new-first-party-provider": ["role-bun-host", "role-cli-host", "role-first-party-provider-a", "role-first-party-provider-b", "role-github-action-host", "role-machine", "role-node-host"],
   "P04-new-commitment-mechanism": [],
-  "P05-existing-provider-operation": ["role-kernel", "role-machine", "role-node-host", "role-bun-host", "role-cli-host", "role-github-action-host", "role-first-party-provider-b"],
-  "P06-journal-store-backend": ["role-machine", "role-first-party-provider-a", "role-first-party-provider-b", "role-packed-external-provider"],
-  "P07-file-tree-producer-adapter": ["role-kernel-workflow", "role-first-party-provider-a", "role-first-party-provider-b", "role-packed-external-provider"],
+  "P05-existing-provider-operation": ["role-bun-host", "role-cli-host", "role-first-party-provider-b", "role-github-action-host", "role-kernel", "role-machine", "role-node-host"],
+  "P06-journal-store-backend": ["role-first-party-provider-a", "role-first-party-provider-b", "role-machine", "role-packed-external-provider"],
+  "P07-file-tree-producer-adapter": ["role-first-party-provider-a", "role-first-party-provider-b", "role-kernel-workflow", "role-packed-external-provider"],
   "P08-deliberate-public-export": [],
   "P09-difficult-recovery-transition": []
 }
@@ -318,11 +317,11 @@ export const REQUIRED_PROBE_CHANGE_KINDS: Readonly<Record<(typeof REQUIRED_PROBE
   "P01-second-provider-instance": [],
   "P02-packed-external-provider": ["ordinary-import-and-layer", "packed-consumer"],
   "P03-new-first-party-provider": [],
-  "P04-new-commitment-mechanism": ["state", "command", "authority"],
+  "P04-new-commitment-mechanism": ["authority", "command", "state"],
   "P05-existing-provider-operation": [],
   "P06-journal-store-backend": [],
   "P07-file-tree-producer-adapter": [],
-  "P08-deliberate-public-export": ["runtime-surface", "declaration-surface", "emitted-inventory"],
+  "P08-deliberate-public-export": ["declaration-surface", "emitted-inventory", "runtime-surface"],
   "P09-difficult-recovery-transition": ["durable-format-review", "migration-review"]
 }
 
@@ -342,10 +341,7 @@ export const REQUIRED_PROBE_MEASUREMENT_IDS = [
   "dependency-dag-delta"
 ] as const
 
-export const REQUIRED_MACHINE_CANDIDATE_IDS = [
-  "M1-extracted-fold",
-  "M2-total-transition"
-] as const
+export const REQUIRED_MACHINE_CANDIDATE_IDS = V2_MACHINE_CANDIDATE_IDS
 
 const REQUIRED_MACHINE_CANDIDATES = {
   "M1-extracted-fold": {
@@ -360,11 +356,7 @@ const REQUIRED_MACHINE_CANDIDATES = {
   }
 } as const
 
-export const REQUIRED_TOPOLOGY_CANDIDATE_IDS = [
-  "T1-root",
-  "T2-kernel-provider-bundle",
-  "T3-provider-verticals"
-] as const
+export const REQUIRED_TOPOLOGY_CANDIDATE_IDS = V2_TOPOLOGY_CANDIDATE_IDS
 
 const REQUIRED_TOPOLOGY_CANDIDATES = {
   "T1-root": {
@@ -384,36 +376,9 @@ const REQUIRED_TOPOLOGY_CANDIDATES = {
   }
 } as const
 
-export const REQUIRED_MACHINE_GATE_IDS = [
-  "GM01-shared-case-semantics",
-  "GM02-law-and-owner-invariants",
-  "GM03-construction-boundaries",
-  "GM04-result-provenance",
-  "GM05-machine-source-budget",
-  "GM06-marginal-measurement",
-  "GM07-candidate-equivalence",
-  "GM08-metric-and-readability-completeness",
-  "GM09-offline-nonmutation"
-] as const
+export const REQUIRED_MACHINE_GATE_IDS = V2_MACHINE_GATE_IDS
 
-export const REQUIRED_TOPOLOGY_GATE_IDS = [
-  "GT01-shared-fixture-machine-and-cases",
-  "GT02-packed-library-node",
-  "GT03-packed-library-bun",
-  "GT04-packed-cli",
-  "GT05-packed-github-action",
-  "GT06-packed-external-provider-two-instances",
-  "GT07-lossless-effect-build-file-tree-adoption",
-  "GT08-exact-runtime-declaration-surface",
-  "GT09-exact-emitted-packed-inventory",
-  "GT10-exact-static-type-dynamic-manifest-graph",
-  "GT11-no-cycle-sibling-reversal-or-host-edge",
-  "GT12-version-skew-partial-publication",
-  "GT13-dry-run-build-publication-self-release",
-  "GT14-tree-shaking-and-packed-bytes",
-  "GT15-all-nine-marginal-probes",
-  "GT16-offline-nonmutation"
-] as const
+export const REQUIRED_TOPOLOGY_GATE_IDS = V2_TOPOLOGY_GATE_IDS
 
 type RequiredGateId = (typeof REQUIRED_MACHINE_GATE_IDS)[number] | (typeof REQUIRED_TOPOLOGY_GATE_IDS)[number]
 
@@ -560,30 +525,16 @@ const Law = Schema.Struct({
   authorityIds: Schema.NonEmptyArray(ArtifactId)
 })
 
-export class NoTrialParameters extends Schema.TaggedClass<NoTrialParameters>()(
-  "NoTrialParameters",
-  {}
-) {}
-
-export class JournalBoundTrialParameters extends Schema.TaggedClass<JournalBoundTrialParameters>()(
-  "JournalBoundTrialParameters",
-  {
-    limitSource: Schema.Literal("trial-fixture"),
-    limitBytes: Schema.Literal(64),
-    hasProductAuthority: Schema.Literal(false)
-  }
-) {}
-
-const TrialParameters = Schema.Union([NoTrialParameters, JournalBoundTrialParameters])
-
 const MachineCase = Schema.Struct({
-  id: CaseId,
+  id: V2CaseId,
   title: Description,
   lawIds: Schema.NonEmptyArray(LawId),
   authorityIds: Schema.NonEmptyArray(ArtifactId),
   requiredObservationIds: Schema.NonEmptyArray(ArtifactId),
   requiredTerminalOutcome: Schema.Literals(["Succeeded", "Rejected", "Inconclusive", "SafeStop"]),
-  trialParameters: TrialParameters
+  fixture: CaseFixtureV2,
+  expectedEvidence: ExpectedCaseEvidenceV2,
+  execution: CaseExecutionDefinition
 })
 
 const CandidateSharedFields = {
@@ -591,13 +542,13 @@ const CandidateSharedFields = {
   implementationRoot: PlannedRepositoryPath,
   authorityIds: Schema.NonEmptyArray(ArtifactId),
   lawIds: Schema.Array(LawId),
-  caseIds: Schema.Array(CaseId),
-  probeIds: Schema.Array(ProbeId),
-  gateIds: Schema.Array(GateId)
+  caseIds: Schema.Array(V2CaseId),
+  probeIds: Schema.Array(V2ProbeId),
+  gateIds: Schema.Array(V2GateId)
 } as const
 
 const MachineCandidate = Schema.Struct({
-  id: MachineCandidateId,
+  id: V2MachineCandidateId,
   model: Schema.Literals(["extracted-fold", "total-transition"]),
   ...CandidateSharedFields
 })
@@ -628,25 +579,27 @@ const ProviderInstance = Schema.Struct({
 
 const TopologyFixture = Schema.Struct({
   artifactId: ArtifactId,
+  fixtureSha256: Sha256Hex,
+  constructionActionIds: Schema.NonEmptyArray(ArtifactId),
   roles: Schema.Array(FixtureRole),
   providerInstances: Schema.Array(ProviderInstance),
   finalizedArtifactKinds: Schema.Array(Schema.Literals(["finalized-file", "finalized-tree"])),
   actionPlacement: Schema.Literal("host-application"),
   externalProviderLoading: Schema.Literal("ordinary-import-and-layer"),
   sharedLawIds: Schema.Array(LawId),
-  sharedCaseIds: Schema.Array(CaseId),
-  sharedProbeIds: Schema.Array(ProbeId)
+  sharedCaseIds: Schema.Array(V2CaseId),
+  sharedProbeIds: Schema.Array(V2ProbeId)
 })
 
 const TopologyCandidate = Schema.Struct({
-  id: TopologyCandidateId,
+  id: V2TopologyCandidateId,
   model: Schema.Literals(["root", "kernel-provider-bundle", "provider-verticals"]),
   fixtureArtifactId: ArtifactId,
   ...CandidateSharedFields
 })
 
 const MarginalProbe = Schema.Struct({
-  id: ProbeId,
+  id: V2ProbeId,
   title: Description,
   lawIds: Schema.NonEmptyArray(LawId),
   authorityIds: Schema.NonEmptyArray(ArtifactId),
@@ -663,17 +616,19 @@ const MarginalProbe = Schema.Struct({
     "ordinary-import-and-layer",
     "packed-consumer"
   ])),
-  requiredMeasurementIds: Schema.Array(MetricId)
+  requiredMeasurementIds: Schema.Array(MetricId),
+  changeDefinition: ProbeChangeDefinitionV2,
+  execution: ProbeExecutionDefinition
 })
 
 const GateRequirement = Schema.Struct({
-  id: GateId,
+  id: V2GateId,
   scope: Schema.Literals(["machine", "topology"]),
   title: Description,
   authorityIds: Schema.NonEmptyArray(ArtifactId),
   lawIds: Schema.Array(LawId),
-  caseIds: Schema.Array(CaseId),
-  probeIds: Schema.Array(ProbeId),
+  caseIds: Schema.Array(V2CaseId),
+  probeIds: Schema.Array(V2ProbeId),
   command: Schema.NonEmptyArray(Description),
   expectedExit: Schema.Literal(0),
   resultSchemaId: ArtifactId,
@@ -700,8 +655,8 @@ const SelectionRuleFields = {
 } as const
 
 const MachineSelectionPolicy = Schema.Struct({
-  candidateIds: Schema.Array(MachineCandidateId),
-  hardGateIds: Schema.Array(GateId),
+  candidateIds: Schema.Array(V2MachineCandidateId),
+  hardGateIds: Schema.Array(V2GateId),
   objectiveMetricIds: Schema.Array(MetricId),
   sourceBudget: Schema.Struct({
     numerator: Schema.Literal(3),
@@ -713,8 +668,8 @@ const MachineSelectionPolicy = Schema.Struct({
 })
 
 const TopologySelectionPolicy = Schema.Struct({
-  candidateIds: Schema.Array(TopologyCandidateId),
-  hardGateIds: Schema.Array(GateId),
+  candidateIds: Schema.Array(V2TopologyCandidateId),
+  hardGateIds: Schema.Array(V2GateId),
   objectiveMetricIds: Schema.Array(MetricId),
   marginalBudget: Schema.Struct({
     sampleUnit: Schema.Literal("one-nonzero-observation-per-predeclared-probe"),
@@ -727,11 +682,14 @@ const TopologySelectionPolicy = Schema.Struct({
   ...SelectionRuleFields
 })
 
-export class ArchitectureTrialSpecV1 extends Schema.Class<ArchitectureTrialSpecV1>(
-  "ArchitectureTrialSpecV1"
+export class ArchitectureTrialSpecV2 extends Schema.Class<ArchitectureTrialSpecV2>(
+  "ArchitectureTrialSpecV2"
 )({
-  schemaVersion: Schema.Literal("ts-release/architecture-trial-spec/v1"),
+  schemaVersion: Schema.Literal("ts-release/architecture-trial-spec/v2"),
   programId: ProgramId,
+  inputBindings: Schema.Array(InputBinding),
+  executionContract: ExecutionContract,
+  measurementContract: MeasurementContract,
   authorities: Schema.Array(Authority),
   laws: Schema.Array(Law),
   machineCases: Schema.Array(MachineCase),
@@ -741,7 +699,8 @@ export class ArchitectureTrialSpecV1 extends Schema.Class<ArchitectureTrialSpecV
   marginalProbes: Schema.Array(MarginalProbe),
   gateRequirements: Schema.Array(GateRequirement),
   machineSelectionPolicy: MachineSelectionPolicy,
-  topologySelectionPolicy: TopologySelectionPolicy
+  topologySelectionPolicy: TopologySelectionPolicy,
+  receiptContract: ReceiptContract
 }) {}
 
 export class TrialSpecInvariantError extends Schema.TaggedError<TrialSpecInvariantError>()(
@@ -807,7 +766,120 @@ const expectedProviderInstances = [
   ["external-provider-primary", "role-packed-external-provider", "primary"]
 ] as const
 
-export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV1): ReadonlyArray<string> => {
+const expectedTopologyConstructionActions = [
+  "fixture.construct-kernel",
+  "fixture.construct-machine",
+  "fixture.construct-two-first-party-providers",
+  "fixture.construct-two-provider-instances",
+  "fixture.pack-external-provider",
+  "fixture.construct-node-bun-cli-action-hosts",
+  "fixture.construct-effect-build-adopter",
+  "fixture.generate-public-surface"
+] as const
+
+const expectedAdapter = (mode: "case" | "probe" | "gate") => ({
+  executorId: "candidate-harness-v2",
+  argv: ["bun", "run", "trial-adapter.ts", mode],
+  inputTransport: "canonical-json-stdin",
+  outputTransport: "canonical-json-stdout",
+  stderrPolicy: "empty",
+  workingDirectoryPolicy: "isolated-candidate-copy",
+  timeoutMilliseconds: 30_000,
+  outputLimitBytes: 1_048_576,
+  networkAccess: false,
+  credentials: false,
+  mutatesExternalState: false
+}) as const
+
+const expectedReceiptIdentityFields = [
+  "schema-version",
+  "program-id",
+  "run-context-sha256",
+  "run-context",
+  "preflight-failures",
+  "case-receipts",
+  "probe-receipts",
+  "gate-receipts",
+  "objective-metrics",
+  "qualification"
+] as const
+
+export const machineCaseFixtureSha256 = (
+  machineCase: ArchitectureTrialSpecV2["machineCases"][number]
+) => caseFixtureSha256V2(machineCase.fixture)
+
+export const machineCaseDefinitionSha256 = (
+  machineCase: ArchitectureTrialSpecV2["machineCases"][number]
+) => definitionSha256("case", {
+  caseId: machineCase.id,
+  definitionId: machineCase.execution.definitionId,
+  fixtureSha256: machineCase.execution.fixtureSha256,
+  expectedEvidenceSha256: machineCase.execution.expectedEvidenceSha256,
+  executionContractSha256: machineCase.execution.executionContractSha256,
+  executorId: machineCase.execution.executorId,
+  assertionIds: machineCase.execution.assertionIds,
+  requiredObservationIds: machineCase.requiredObservationIds,
+  requiredTerminalOutcome: machineCase.requiredTerminalOutcome,
+  inputSchemaId: machineCase.execution.inputSchemaId,
+  outputSchemaId: machineCase.execution.outputSchemaId
+})
+
+export const topologyFixtureSha256 = (
+  topologyFixture: ArchitectureTrialSpecV2["topologyFixture"]
+) => fixtureSha256("topology", {
+  artifactId: topologyFixture.artifactId,
+  constructionActionIds: topologyFixture.constructionActionIds,
+  roles: topologyFixture.roles,
+  providerInstances: topologyFixture.providerInstances,
+  finalizedArtifactKinds: topologyFixture.finalizedArtifactKinds,
+  actionPlacement: topologyFixture.actionPlacement,
+  externalProviderLoading: topologyFixture.externalProviderLoading,
+  sharedLawIds: topologyFixture.sharedLawIds,
+  sharedCaseIds: topologyFixture.sharedCaseIds,
+  sharedProbeIds: topologyFixture.sharedProbeIds
+})
+
+export const marginalProbeDefinitionSha256 = (
+  probe: ArchitectureTrialSpecV2["marginalProbes"][number]
+) => definitionSha256("probe", {
+  probeId: probe.id,
+  definitionId: probe.execution.definitionId,
+  fixtureId: probe.execution.fixtureId,
+  baseFixtureSha256: probe.execution.baseFixtureSha256,
+  changeDefinitionSha256: probe.execution.changeDefinitionSha256,
+  executionContractSha256: probe.execution.executionContractSha256,
+  measurementContractSha256: probe.execution.measurementContractSha256,
+  executorId: probe.execution.executorId,
+  actionId: probe.execution.actionId,
+  inputSchemaId: probe.execution.inputSchemaId,
+  outputSchemaId: probe.execution.outputSchemaId,
+  nonZeroObservationRequired: probe.execution.nonZeroObservationRequired,
+  requiredZeroTouchRoleIds: probe.requiredZeroTouchRoleIds,
+  requiredChangeKinds: probe.requiredChangeKinds,
+  requiredMeasurementIds: probe.requiredMeasurementIds
+})
+
+export const gateDefinitionSha256 = (
+  gate: ArchitectureTrialSpecV2["gateRequirements"][number]
+) => definitionSha256("gate", {
+  id: gate.id,
+  scope: gate.scope,
+  title: gate.title,
+  authorityIds: gate.authorityIds,
+  lawIds: gate.lawIds,
+  caseIds: gate.caseIds,
+  probeIds: gate.probeIds,
+  command: gate.command,
+  expectedExit: gate.expectedExit,
+  resultSchemaId: gate.resultSchemaId,
+  hard: gate.hard,
+  networkAccess: gate.networkAccess,
+  credentials: gate.credentials,
+  mutatesExternalState: gate.mutatesExternalState,
+  onFailure: gate.onFailure
+})
+
+export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV2): ReadonlyArray<string> => {
   const issues: Array<string> = []
   const authorityIds = spec.authorities.map(({ id }) => id)
   const lawIds = spec.laws.map(({ id }) => id)
@@ -820,6 +892,91 @@ export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV1): Readonl
   if (spec.programId !== "ts-release-architecture-program") {
     issues.push("programId must remain ts-release-architecture-program")
   }
+  issues.push(...exactOrderedIssues("inputBindings", spec.inputBindings, REQUIRED_INPUT_BINDINGS))
+
+  const executionContract = spec.executionContract
+  issues.push(...exactOrderedIssues(
+    "executionContract.caseActions",
+    executionContract.caseActions.map(({ id, semantics }) => [id, semantics]),
+    REQUIRED_CASE_ACTIONS
+  ))
+  issues.push(...exactOrderedIssues(
+    "executionContract.probeActions",
+    executionContract.probeActions.map(({ id, semantics }) => [id, semantics]),
+    REQUIRED_PROBE_ACTIONS
+  ))
+  for (const [mode, actual] of [
+    ["case", executionContract.caseAdapter],
+    ["probe", executionContract.probeAdapter],
+    ["gate", executionContract.gateAdapter]
+  ] as const) {
+    if (JSON.stringify(actual) !== JSON.stringify(expectedAdapter(mode))) {
+      issues.push(`executionContract ${mode} adapter must preserve the closed candidate-harness-v2 argv`)
+    }
+  }
+  if (executionContract.candidateOutputAuthority !== "raw-evidence-only" ||
+    executionContract.evaluationAuthority !== "runner-only") {
+    issues.push("executionContract must keep candidate output raw and runner evaluation authoritative")
+  }
+  if (JSON.stringify(executionContract.closedEnvironment) !== JSON.stringify({
+    inheritedVariableNames: ["PATH"],
+    locale: "C",
+    timezone: "UTC",
+    credentialVariablePolicy: "reject-and-strip",
+    proxyVariablePolicy: "reject-and-strip"
+  })) {
+    issues.push("executionContract must preserve the closed PATH-only C/UTC environment")
+  }
+  if (executionContract.contractSha256 !== executionContractSha256(executionContract)) {
+    issues.push("executionContract contractSha256 does not bind its canonical v2 body")
+  }
+
+  const measurementContract = spec.measurementContract
+  issues.push(...exactOrderedIssues(
+    "measurementContract.sourceLanes",
+    measurementContract.sourceLanes.map(({ id, countsTowardProductSource }) => [id, countsTowardProductSource]),
+    REQUIRED_TRIAL_LANES
+  ))
+  issues.push(...exactOrderedIssues(
+    "measurementContract.methods",
+    measurementContract.methods.map(({ id, unit, algorithmId, classificationAuthority }) => [
+      id,
+      unit,
+      algorithmId,
+      classificationAuthority
+    ]),
+    REQUIRED_MEASUREMENT_METHODS
+  ))
+  if (measurementContract.candidateManifestPath !== "trial-candidate.json" ||
+    measurementContract.candidateAdapterPath !== "trial-adapter.ts" ||
+    JSON.stringify(measurementContract.diffArgv) !== JSON.stringify([
+      "git", "diff", "--no-index", "--numstat", "--no-renames", "--diff-algorithm=myers", "--"
+    ]) ||
+    JSON.stringify(measurementContract.requiredToolchainBindings) !== JSON.stringify([
+      "bun", "typescript", "effect", "git"
+    ])) {
+    issues.push("measurementContract changed its fixed candidate files, diff argv, or toolchain bindings")
+  }
+  if (measurementContract.contractSha256 !== measurementContractSha256(measurementContract)) {
+    issues.push("measurementContract contractSha256 does not bind its canonical v2 body")
+  }
+
+  const receiptContract = spec.receiptContract
+  if (receiptContract.machineResultRoot !== "docs/refactor/architecture-program/results/machine" ||
+    receiptContract.topologyResultRoot !== "docs/refactor/architecture-program/results/topology" ||
+    receiptContract.runnerSourceRoot !== "tools/architecture-program/src") {
+    issues.push("receiptContract changed a prescribed result or runner source path")
+  }
+  issues.push(...exactOrderedIssues(
+    "receiptContract.requiredInputBindingIds",
+    receiptContract.requiredInputBindingIds,
+    REQUIRED_INPUT_BINDINGS.map(({ id }) => id)
+  ))
+  issues.push(...exactOrderedIssues(
+    "receiptContract.identityFieldIds",
+    receiptContract.identityFieldIds,
+    expectedReceiptIdentityFields
+  ))
   exactOrderedIds("authorities", authorityIds, REQUIRED_AUTHORITY_IDS, issues)
   exactOrderedIds("laws", lawIds, REQUIRED_LAW_IDS, issues)
   exactOrderedIds("machineCases", caseIds, REQUIRED_CASE_IDS, issues)
@@ -896,12 +1053,46 @@ export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV1): Readonl
     if (machineCase.requiredTerminalOutcome !== requiredTerminalOutcome) {
       issues.push(`case ${machineCase.id} terminal outcome must be ${requiredTerminalOutcome ?? "defined"}`)
     }
-    if (machineCase.id === "C16-journal-bound-symmetry") {
-      if (machineCase.trialParameters._tag !== "JournalBoundTrialParameters") {
-        issues.push("C16 must bind the non-authoritative 64-byte trial fixture")
-      }
-    } else if (machineCase.trialParameters._tag !== "NoTrialParameters") {
-      issues.push(`case ${machineCase.id} must not invent trial parameters`)
+    if (caseFixtureSha256V2(machineCase.fixture) !==
+      caseFixtureSha256V2(REQUIRED_CASE_FIXTURES[caseId])) {
+      issues.push(`case ${machineCase.id} must preserve the exact runner-owned fixture payload`)
+    }
+    if (expectedCaseEvidenceSha256V2(machineCase.expectedEvidence) !==
+      expectedCaseEvidenceSha256V2(REQUIRED_EXPECTED_CASE_EVIDENCE[caseId])) {
+      issues.push(`case ${machineCase.id} must preserve the exact runner-owned expected evidence`)
+    }
+    const expectedExecution = REQUIRED_CASE_EXECUTIONS[caseId]
+    if (machineCase.execution.definitionId !== `${machineCase.id}-executable-definition` ||
+      machineCase.execution.fixtureId !== `${machineCase.id}-canonical-fixture` ||
+      machineCase.execution.executionContractSha256 !== executionContract.contractSha256) {
+      issues.push(`case ${machineCase.id} changed its v2 definition, fixture, or execution-contract binding`)
+    }
+    if (expectedExecution !== undefined) {
+      issues.push(...exactOrderedIssues(
+        `case ${machineCase.id} actionIds`,
+        machineCase.execution.actionIds,
+        expectedExecution.actionIds
+      ))
+      issues.push(...exactOrderedIssues(
+        `case ${machineCase.id} faultIds`,
+        machineCase.execution.faultIds,
+        expectedExecution.faultIds
+      ))
+    }
+    issues.push(...exactOrderedIssues(
+      `case ${machineCase.id} assertionIds`,
+      machineCase.execution.assertionIds,
+      requiredObservationIds ?? []
+    ))
+    if (machineCase.execution.fixtureSha256 !== machineCaseFixtureSha256(machineCase)) {
+      issues.push(`case ${machineCase.id} fixtureSha256 does not bind its executable fixture`)
+    }
+    if (machineCase.execution.expectedEvidenceSha256 !==
+      expectedCaseEvidenceSha256V2(machineCase.expectedEvidence)) {
+      issues.push(`case ${machineCase.id} expectedEvidenceSha256 does not bind runner-owned evidence`)
+    }
+    if (machineCase.execution.definitionSha256 !== machineCaseDefinitionSha256(machineCase)) {
+      issues.push(`case ${machineCase.id} definitionSha256 does not bind its executable definition`)
     }
   }
   for (const probe of spec.marginalProbes) {
@@ -933,6 +1124,34 @@ export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV1): Readonl
       REQUIRED_PROBE_MEASUREMENT_IDS,
       issues
     )
+    const expectedChangeDefinition = {
+      schemaVersion: "architecture-probe-change-definition-v2",
+      probeId,
+      changeId: REQUIRED_PROBE_CHANGE_IDS[probeId],
+      baseFixtureSha256: spec.topologyFixture.fixtureSha256,
+      actionId: REQUIRED_PROBE_ACTION_IDS[probeId],
+      parameters: REQUIRED_PROBE_PARAMETER_ENTRIES[probeId],
+      requiredZeroTouchRoleIds: REQUIRED_PROBE_ZERO_TOUCH_ROLE_IDS[probeId],
+      requiredChangeKinds: REQUIRED_PROBE_CHANGE_KINDS[probeId]
+    }
+    if (probeChangeDefinitionSha256V2(probe.changeDefinition) !==
+      probeChangeDefinitionSha256V2(expectedChangeDefinition)) {
+      issues.push(`probe ${probe.id} must preserve the exact runner-owned change definition`)
+    }
+    if (probe.execution.definitionId !== `${probe.id}-executable-definition` ||
+      probe.execution.baseFixtureSha256 !== spec.topologyFixture.fixtureSha256 ||
+      probe.execution.executionContractSha256 !== executionContract.contractSha256 ||
+      probe.execution.measurementContractSha256 !== measurementContract.contractSha256 ||
+      probe.execution.actionId !== REQUIRED_PROBE_ACTION_IDS[probeId]) {
+      issues.push(`probe ${probe.id} changed its v2 definition, fixture, action, or contract binding`)
+    }
+    if (probe.execution.changeDefinitionSha256 !==
+      probeChangeDefinitionSha256V2(probe.changeDefinition)) {
+      issues.push(`probe ${probe.id} changeDefinitionSha256 does not bind its change payload`)
+    }
+    if (probe.execution.definitionSha256 !== marginalProbeDefinitionSha256(probe)) {
+      issues.push(`probe ${probe.id} definitionSha256 does not bind its executable definition`)
+    }
   }
   for (const gate of spec.gateRequirements) {
     const requiredGateId = gate.id as RequiredGateId
@@ -949,7 +1168,7 @@ export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV1): Readonl
       [gate.scope === "machine" ? "A03-machine-contract" : "A04-topology-contract"],
       issues
     )
-    const expectedResultSchemaId = gate.scope === "machine" ? "machine-trial-result-v1" : "topology-trial-result-v1"
+    const expectedResultSchemaId = gate.scope === "machine" ? "machine-trial-result-v2" : "topology-trial-result-v2"
     if (gate.resultSchemaId !== expectedResultSchemaId) {
       issues.push(`gate ${gate.id} must bind ${expectedResultSchemaId}`)
     }
@@ -1017,6 +1236,14 @@ export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV1): Readonl
   if (spec.topologyFixture.artifactId !== "F01-shared-topology-fixture") {
     issues.push("topologyFixture artifactId must remain F01-shared-topology-fixture")
   }
+  issues.push(...exactOrderedIssues(
+    "topologyFixture.constructionActionIds",
+    spec.topologyFixture.constructionActionIds,
+    expectedTopologyConstructionActions
+  ))
+  if (spec.topologyFixture.fixtureSha256 !== topologyFixtureSha256(spec.topologyFixture)) {
+    issues.push("topologyFixture fixtureSha256 does not bind its canonical v2 fixture")
+  }
   const actualRoles = spec.topologyFixture.roles.map(({ id, kind, parentRoleId }) => [id, kind, parentRoleId] as const)
   if (JSON.stringify(actualRoles) !== JSON.stringify(expectedFixtureRoles)) {
     issues.push("topologyFixture roles must preserve the exact kernel/provider/host/Action/artifact fixture")
@@ -1083,9 +1310,9 @@ export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV1): Readonl
 }
 
 const strictOptions = { errors: "all", onExcessProperty: "error" } as const
-const decodeTrialSpec = Schema.decodeUnknownEffect(ArchitectureTrialSpecV1, strictOptions)
+const decodeTrialSpec = Schema.decodeUnknownEffect(ArchitectureTrialSpecV2, strictOptions)
 
-export const decodeArchitectureTrialSpec = Effect.fn("ArchitectureTrialSpecV1.decode")(
+export const decodeArchitectureTrialSpec = Effect.fn("ArchitectureTrialSpecV2.decode")(
   function* (input: unknown) {
     const spec = yield* decodeTrialSpec(input)
     const issues = trialSpecInvariantIssues(spec)
@@ -1096,9 +1323,9 @@ export const decodeArchitectureTrialSpec = Effect.fn("ArchitectureTrialSpecV1.de
   }
 )
 
-const encodeTrialSpecStructure = Schema.encodeUnknownSync(ArchitectureTrialSpecV1, strictOptions)
+const encodeTrialSpecStructure = Schema.encodeUnknownSync(ArchitectureTrialSpecV2, strictOptions)
 
-export const encodeArchitectureTrialSpec = (spec: ArchitectureTrialSpecV1): unknown => {
+export const encodeArchitectureTrialSpec = (spec: ArchitectureTrialSpecV2): unknown => {
   const issues = trialSpecInvariantIssues(spec)
   if (issues.length > 0) {
     throw new TrialSpecInvariantError(issues as [string, ...Array<string>])
@@ -1109,6 +1336,9 @@ export const encodeArchitectureTrialSpec = (spec: ArchitectureTrialSpecV1): unkn
 export const candidateNeutralTopLevelKeys = [
   "schemaVersion",
   "programId",
+  "inputBindings",
+  "executionContract",
+  "measurementContract",
   "authorities",
   "laws",
   "machineCases",
@@ -1118,5 +1348,6 @@ export const candidateNeutralTopLevelKeys = [
   "marginalProbes",
   "gateRequirements",
   "machineSelectionPolicy",
-  "topologySelectionPolicy"
+  "topologySelectionPolicy",
+  "receiptContract"
 ] as const

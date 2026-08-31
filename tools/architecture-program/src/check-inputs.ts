@@ -7,9 +7,11 @@ import { canonicalJsonBytes, parseCanonicalJsonBytes } from "./canonical-documen
 import { checkArchitectureBaseline } from "./check-baseline.js"
 import { checkOwnershipDecisions } from "./check-ownership-decisions.js"
 import { checkResearchTraceability } from "./check-research-traceability.js"
+import { checkTrialContractOracle } from "./check-trial-contract.js"
 import {
-  type ArchitectureTrialSpecV1,
+  type ArchitectureTrialSpecV2,
   type SourceAnchor,
+  WholeFileSourceAnchor,
   decodeArchitectureTrialSpec,
   encodeArchitectureTrialSpec
 } from "./schema/trial-spec.js"
@@ -71,7 +73,7 @@ const lineCount = (bytes: Uint8Array): number => {
   return bytes[bytes.length - 1] === 0x0a ? lines : lines + 1
 }
 
-export const checkSourceAnchor = Effect.fn("ArchitectureTrialSpecV1.checkSourceAnchor")(
+export const checkSourceAnchor = Effect.fn("ArchitectureTrialSpecV2.checkSourceAnchor")(
   function* (repositoryRoot: string, sourceAnchor: SourceAnchor) {
     const realRoot = yield* tryPromise("resolve repository root", () => realpath(repositoryRoot))
     const lexicalPath = resolve(repositoryRoot, sourceAnchor.path)
@@ -119,15 +121,26 @@ export const checkSourceAnchor = Effect.fn("ArchitectureTrialSpecV1.checkSourceA
   }
 )
 
-export const checkSourceAnchors = Effect.fn("ArchitectureTrialSpecV1.checkSourceAnchors")(
-  function* (repositoryRoot: string, spec: ArchitectureTrialSpecV1) {
+export const checkSourceAnchors = Effect.fn("ArchitectureTrialSpecV2.checkSourceAnchors")(
+  function* (repositoryRoot: string, spec: ArchitectureTrialSpecV2) {
     for (const authority of spec.authorities) {
       yield* checkSourceAnchor(repositoryRoot, authority.sourceAnchor)
     }
   }
 )
 
-export const checkInputs = Effect.fn("ArchitectureTrialSpecV1.checkInputs")(
+export const checkInputBindings = Effect.fn("ArchitectureTrialSpecV2.checkInputBindings")(
+  function* (repositoryRoot: string, spec: ArchitectureTrialSpecV2) {
+    for (const binding of spec.inputBindings) {
+      yield* checkSourceAnchor(repositoryRoot, new WholeFileSourceAnchor({
+        path: binding.path,
+        sha256: binding.sha256
+      }))
+    }
+  }
+)
+
+export const checkInputs = Effect.fn("ArchitectureTrialSpecV2.checkInputs")(
   function* (repositoryRoot: string = defaultRepositoryRoot) {
     const inputPath = resolve(repositoryRoot, trialSpecInputPath)
     const inputBytes = yield* tryPromise(`read ${trialSpecInputPath}`, () => readFile(inputPath))
@@ -135,6 +148,7 @@ export const checkInputs = Effect.fn("ArchitectureTrialSpecV1.checkInputs")(
     const spec = yield* decodeArchitectureTrialSpec(parsed)
 
     yield* checkSourceAnchors(repositoryRoot, spec)
+    yield* checkInputBindings(repositoryRoot, spec)
 
     const encoded = yield* trySync("encode decoded trial specification", () =>
       canonicalJsonBytes(encodeArchitectureTrialSpec(spec)))
@@ -145,11 +159,18 @@ export const checkInputs = Effect.fn("ArchitectureTrialSpecV1.checkInputs")(
       ))
     }
 
+    const trialContract = yield* checkTrialContractOracle(
+      repositoryRoot,
+      spec,
+      encodeArchitectureTrialSpec(spec),
+      inputBytes
+    )
+
     const traceability = yield* checkResearchTraceability(repositoryRoot)
     const ownership = yield* checkOwnershipDecisions(repositoryRoot)
     const baseline = yield* checkArchitectureBaseline(repositoryRoot)
 
-    return { trialSpec: spec, traceability, ownership, baseline }
+    return { trialSpec: spec, trialContract, traceability, ownership, baseline }
   }
 )
 
@@ -161,7 +182,7 @@ if (import.meta.main) {
   Effect.runPromise(cliProgram).then(
     (result) => {
       if (result._tag === "Success") {
-        const { baseline, ownership, traceability, trialSpec } = result.spec
+        const { baseline, ownership, traceability, trialContract, trialSpec } = result.spec
         console.log(
           `architecture program inputs valid (${trialSpec.authorities.length} trial anchors, ` +
           `${traceability.document.propositions.length} propositions, ` +
@@ -169,7 +190,9 @@ if (import.meta.main) {
           `${ownership.document.decisions.length} ownership decisions, ` +
           `${ownership.document.freezeBlockerIds.length} freeze blockers, ` +
           `${baseline.document.baselines.length} immutable baselines, ` +
-          `${baseline.document.candidateBaselines.length} pending candidate baselines)`
+          `${baseline.document.candidateBaselines.length} pending candidate baselines, ` +
+          `${trialContract.checkedCaseDefinitions} executable cases, ` +
+          `${trialContract.checkedProbeDefinitions} executable probes)`
         )
         return
       }

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "@effect/vitest"
 import { Effect, Exit } from "effect"
 import { parseCanonicalJsonBytes } from "../src/canonical-document.js"
+import { trialContractOracleIssues } from "../src/check-trial-contract.js"
 import { checkSourceAnchor } from "../src/check-inputs.js"
 import {
   type SourceAnchor,
@@ -36,15 +37,29 @@ const expectDecodeFailure = Effect.fn("trialSpecTest.expectDecodeFailure")(
   }
 )
 
-describe("ArchitectureTrialSpecV1", () => {
+describe("ArchitectureTrialSpecV2", () => {
   it.effect("decodes the committed canonical trial specification", () =>
     Effect.gen(function* () {
       const document = yield* loadValidDocument()
       const spec = yield* decodeArchitectureTrialSpec(document)
 
-      expect(spec.schemaVersion).toBe("ts-release/architecture-trial-spec/v1")
+      expect(spec.schemaVersion).toBe("ts-release/architecture-trial-spec/v2")
       expect(spec.machineCandidates).toHaveLength(2)
       expect(spec.topologyCandidates).toHaveLength(3)
+      expect(spec.machineCases.every(({ execution }) => execution.definitionSha256.length === 64)).toBe(true)
+      expect(spec.marginalProbes.every(({ execution }) => execution.definitionSha256.length === 64)).toBe(true)
+    }))
+
+  it.effect("hard-cuts v1 without a compatibility decoder", () =>
+    expectDecodeFailure((document) => {
+      document.schemaVersion = "ts-release/architecture-trial-spec/v1"
+    }))
+
+  it.effect("matches the independently authored v2 contract oracle", () =>
+    Effect.gen(function* () {
+      const document = yield* loadValidDocument()
+      const spec = yield* decodeArchitectureTrialSpec(document)
+      expect(trialContractOracleIssues(spec, encodeArchitectureTrialSpec(spec))).toEqual([])
     }))
 
   it.effect("rejects premature selection and target-publication fields at the top level", () =>
@@ -177,6 +192,60 @@ describe("ArchitectureTrialSpecV1", () => {
       for (const mutate of mutations) yield* expectDecodeFailure(mutate)
     }))
 
+  it.effect("hash-binds immutable inputs, execution, measurement, and fixture definitions", () =>
+    Effect.gen(function* () {
+      const mutations: ReadonlyArray<Mutation> = [
+        (document) => {
+          document.inputBindings[0].sha256 = "0".repeat(64)
+        },
+        (document) => {
+          document.executionContract.caseActions[0].semantics += " weakened"
+        },
+        (document) => {
+          document.measurementContract.methods[0].algorithmId = "untrusted-method"
+        },
+        (document) => {
+          document.machineCases[0].execution.actionIds[0] = "action.derive-terminal-report"
+        },
+        (document) => {
+          document.machineCases[0].execution.definitionSha256 = "0".repeat(64)
+        },
+        (document) => {
+          document.topologyFixture.roles[0].kind = "machine"
+        },
+        (document) => {
+          document.marginalProbes[0].execution.actionId = "probe.add-public-export"
+        }
+      ]
+      for (const mutate of mutations) yield* expectDecodeFailure(mutate)
+    }))
+
+  it.effect("forbids timestamp and receipt-path drift in the v2 contract", () =>
+    Effect.gen(function* () {
+      for (const mutate of [
+        (document: MutableDocument) => {
+          document.receiptContract.generatedAt = "2026-08-31T00:00:00Z"
+        },
+        (document: MutableDocument) => {
+          document.receiptContract.machineResultRoot = "tmp/results"
+        },
+        (document: MutableDocument) => {
+          document.receiptContract.identityFieldIds[0] = "trial-spec-sha256"
+        },
+        (document: MutableDocument) => {
+          document.receiptContract.gateObservationSchemaId = "architecture-gate-observation-v1"
+        },
+        (document: MutableDocument) => {
+          document.receiptContract.aggregateResultSchemaId = "aggregate-trial-result-v2"
+        },
+        (document: MutableDocument) => {
+          document.executionContract.caseAdapter.argv = ["sh", "-c", "run"]
+        }
+      ]) {
+        yield* expectDecodeFailure(mutate)
+      }
+    }))
+
   it.effect("forbids weighted scoring and weak tie breakers", () =>
     Effect.gen(function* () {
       const mutations: ReadonlyArray<Mutation> = [
@@ -210,22 +279,33 @@ describe("ArchitectureTrialSpecV1", () => {
     Effect.gen(function* () {
       const mutateC16 = (
         document: MutableDocument,
-        mutate: (parameters: MutableDocument) => void
+        factName: string,
+        mutate: (value: MutableDocument) => void
       ): void => {
         const c16 = document.machineCases.find((machineCase: MutableDocument) =>
           machineCase.id === "C16-journal-bound-symmetry")
-        mutate(c16.trialParameters)
+        const fact = c16.fixture.inputFacts.find((entry: MutableDocument) => entry.name === factName)
+        mutate(fact.value)
       }
       const mutations: ReadonlyArray<Mutation> = [
-        (document) => mutateC16(document, (parameters) => {
-          parameters.limitBytes = 65
+        (document) => mutateC16(document, "journal.limit-bytes", (value) => {
+          value.value = 65
         }),
-        (document) => mutateC16(document, (parameters) => {
-          parameters.limitSource = "product-configuration"
+        (document) => mutateC16(document, "journal.limit-source", (value) => {
+          value.value = "product-configuration"
         }),
-        (document) => mutateC16(document, (parameters) => {
-          parameters.hasProductAuthority = true
-        })
+        (document) => mutateC16(document, "journal.has-product-authority", (value) => {
+          value.value = true
+        }),
+        (document) => {
+          const c15 = document.machineCases.find((machineCase: MutableDocument) =>
+            machineCase.id === "C15-host-dependency-shadowing")
+          c15.fixture.inputFacts.push({
+            sequence: c15.fixture.inputFacts.length + 1,
+            name: "journal.limit-bytes",
+            value: { _tag: "Integer", value: 64 }
+          })
+        }
       ]
       for (const mutate of mutations) yield* expectDecodeFailure(mutate)
     }))

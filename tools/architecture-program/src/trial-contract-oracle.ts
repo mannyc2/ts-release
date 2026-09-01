@@ -398,13 +398,14 @@ export const V2_EXPECTED_ISOLATION_POLICY = {
     hashDomain: "ts-release/architecture-runtime-dependency-tree/v2",
     manifestEncoding: "CanonicalJsonV1",
     manifestShape: "ordered-array-of-RegularFile-or-SymbolicLink",
-    sourceAuthority: "runner-node-modules-realpath",
+    sourceAuthority: "retained-preflight-realpath-verified-then-snapshotted",
     mountDestination: "/candidate/node_modules",
     runContextSha256Field: "runnerNodeModulesSha256",
     pathSyntax: "NFC slash-relative with no empty, dot, dot-dot, or backslash segments",
     entryOrder: "Unicode-code-point ascending by slash-relative path",
     entryTypes: ["regular-file", "symbolic-link"],
-    directoryPolicy: "traverse-without-manifest-entry",
+    directoryPolicy: "empty-directories-rejected-topology-implied-by-descendants",
+    snapshotDirectoryMode: "0755",
     regularFileEntryShape: "RegularFile(path,mode,byteLength,bytesSha256)",
     regularFileModePolicy: "canonical-git-modes-100644-or-100755",
     regularFileBytesPolicy: "bytesSha256-is-sha256-of-exact-file-bytes",
@@ -440,14 +441,14 @@ export const V2_EXPECTED_ISOLATION_POLICY = {
         kind: "directory"
       },
       {
-        sourceAuthority: "run-context-bun-executable",
-        source: "exact-bun-executable-realpath",
+        sourceAuthority: "verified-run-context-bun-snapshot",
+        source: "exact-hash-bun-executable-snapshot",
         destination: "/runtime/bun",
         kind: "file"
       },
       {
-        sourceAuthority: "runner-node-modules",
-        source: "exact-runner-node-modules-realpath",
+        sourceAuthority: "verified-run-context-runner-node-modules-snapshot",
+        source: "exact-hash-runner-node-modules-snapshot",
         destination: "/candidate/node_modules",
         kind: "directory"
       }
@@ -494,7 +495,7 @@ export const V2_EXPECTED_ISOLATION_POLICY = {
 } as const
 
 export const V2_EXPECTED_CONTRACT_HASHES = {
-  execution: "12926d98efe184135375c32cf19b3360efedfb94196ecb8b6050ffc1670b195a",
+  execution: "458f1e0912278f04ade655d6cb6422b46b12f2a18220e29ac24cc3d81dddd5de",
   measurement: "703f898ccbc053cfc6ab4c79e1f40317d1f883e35ffdec5acb2b016d57a8c40c"
 } as const
 
@@ -505,121 +506,121 @@ export const V2_EXPECTED_CASE_COMPONENT_HASHES = {
   "C01-initial-success": {
     fixtureSha256: "4031e2df467e71c72754e27460350f8c3de8d3ad730823ad39d217ad2aec3c76",
     expectedEvidenceSha256: "18e7b850d5d037d3086221e3ca0240778bda450c8cb2bf7195490b46113da46d",
-    definitionSha256: "d8c29a7d21d8e32bf8ddfaa8f578704152b83c0729762fe9dcad0b4d166a2915"
+    definitionSha256: "8ad939dfafdfb2621c69318031ce47b22136d50c6e76855d3c9d5a113f185588"
   },
   "C02-rejection-before-commit": {
     fixtureSha256: "6277cb0898098d95100f37a364811962ad102158c6bf24eb57d89988b1ea0740",
     expectedEvidenceSha256: "b137b1b7e9ac7a32a736a58403f2efb1b3ea0471e7029904b5cbfca9d508adf6",
-    definitionSha256: "4f785a363c99ad8cbb5f0dc595b8a2f62224e8a1b29aae043f60c493991726ca"
+    definitionSha256: "7c5101f76a16b1756dd5a08ace8069634054eba540952f8ce2c3122ad50fa6c5"
   },
   "C03-response-loss-satisfied-observation": {
     fixtureSha256: "e7e94ec53227e5ee88c6a2a547d4812df6573aff3252eba027509757a068c6af",
     expectedEvidenceSha256: "1fc3f5b5490342f36398d8348a94038f3379b43fbe0f2e910604dc91d0bc75ad",
-    definitionSha256: "90d659720b66bcb7e2de069ccf2438f0e2d13fafdefa2c6bd5ae15be039036af"
+    definitionSha256: "058a68fd477288b867230101a0d447c7b5f7102a34084b5ab22c5cca78bac198"
   },
   "C04-response-loss-inconclusive-stop": {
     fixtureSha256: "735f0887ed2cdc2d423381f471442552d688addcc48103822b67cae295b293fa",
     expectedEvidenceSha256: "530994b85c712590378fc7a0b9f550b0887ae74fa24b20fc0896c82cdaa8fe6c",
-    definitionSha256: "0cbc24b606c59244b546abab5c5a9d539bdf340523573b27237ea7332622b451"
+    definitionSha256: "7d388539cec6e68e6c85b68ff301a37011ff4f851be52c883e1094b0e11d6375"
   },
   "C05-core-git-cas-protected-replay": {
     fixtureSha256: "bbca5de6550b41d9754b6a69c7fe5737f4e51a6a3efcb764a54e2cebe8705dda",
     expectedEvidenceSha256: "06bfdba783498525b5191afcf339ce7428887c0e3804f21047161774f11902ef",
-    definitionSha256: "a2be090a725b590926810a361dde14f113c491de3e84aac35aba02fcc1c7c61a"
+    definitionSha256: "6f9f1ca382e6b4c2cd59219087b29f4b296dcf97a5993b8a40e969597f766fac"
   },
   "C06-explicit-risk-acceptance": {
     fixtureSha256: "4f25888da564bf5878db6103d9aa454f6e2d82a8963a02d41debaaa69c37ede4",
     expectedEvidenceSha256: "4d911d242ff93dc57e79e5475d709a31f1fdc8ded6d9a05f37f9d3a2360f23bb",
-    definitionSha256: "3489f7283ce0863a9b971e01650c2015110acaffdffd3d19ed457e7345e6bc26"
+    definitionSha256: "09bee109cfa7c5371e2beec0329eca8d51e0b5d2c96ad95c1e6d4db6de9abd1d"
   },
   "C07-concurrent-runners-single-cas-winner": {
     fixtureSha256: "5aa7f41669adf48bde01722bdd4d2f09d8ff1a406c720a40fa944c886036cf7a",
     expectedEvidenceSha256: "306794061f4a95691d25d35322556fe674de98fa0690de6d464cfcf84ce7edfc",
-    definitionSha256: "70a9b1003652c9fb50abb12a8d8198b4019795f086863b21031ab6fea35bcb42"
+    definitionSha256: "0dabb0f15a367adf49380c41fe79c6c8e2fff17940d62bef0ac72a4dcfeb0d0f"
   },
   "C08-request-endpoint-mismatch": {
     fixtureSha256: "9020c116b0430cd571767f6c88cb3a67186129f075c3c6882e212c044b11649c",
     expectedEvidenceSha256: "c15964ec1095879dbe576e05ff3980847f3992f3782123e8713e4a35c2e5e9b4",
-    definitionSha256: "e26cb029f469946b85e3fb7c0500668ab328eae16753144b88c64923b7243138"
+    definitionSha256: "8d950f8736bf44a679ecc40df896c0b6f4d62a7a58e944c2ba65fb6bd7513c07"
   },
   "C09-supersession-late-evidence": {
     fixtureSha256: "431758d521bba092879249ca2017231afaa4a765ed87dcee0a1dcc86786804b2",
     expectedEvidenceSha256: "983ca444c8d1dd3d57ab39ff82f52d922974cb73c33115c02c668b547d9ec146",
-    definitionSha256: "3b566e791777485410a25342890aab38550b84d487b2f27f6af6fa9f0eccfd89"
+    definitionSha256: "5a7a78f0b2804c5bc8debed88871b093d872fcd7ccef9d6e34631920d3560824"
   },
   "C10-ambiguous-append-readback": {
     fixtureSha256: "ed4fc4ca8409ed7b6c6389715adb1c0c349ca4d50bdd3b9ac57ca82fc40684bc",
     expectedEvidenceSha256: "22e325733122843e091be6405c5d3e61bff32a0aefdc511f3cc21a5997055025",
-    definitionSha256: "5ca8ae1af12bfd322b502544cdb82505690d756bece823cb0597fbe3d75f2cb8"
+    definitionSha256: "63dc858b92594f55bf07e0bed7d543ea36597078e69bcb307058f3fae141b219"
   },
   "C11-malformed-provider-graph": {
     fixtureSha256: "a848d61ea2ff3a8a2ee7741700d629b5dc13f5cbd56ff3c0e24d2d0ed87f9b66",
     expectedEvidenceSha256: "4ce983b998bc34784685d54d641278d8a548ab96df16c92c8ec16c3a62f28790",
-    definitionSha256: "d6d14d22962f6bfaaa54b46db2e1ab81f776ecb10f71f00372d0a0f117749796"
+    definitionSha256: "82a47f904f5b70c9c7a072b202072e6962233fdf9bbd977b15147a5542471127"
   },
   "C12-external-provider-two-instances": {
     fixtureSha256: "5670686adb4cb59b37cda4dfa3abf5164886cd3defaf31f72bd1547e6d1eedef",
     expectedEvidenceSha256: "6c54be412b454ade571b3368ba5125618eae970498e64da27a96da3c203d6637",
-    definitionSha256: "9ce5c51ec6988f38543691e4ad83398129d9665c73dee9b42bab2313b3e0f63e"
+    definitionSha256: "2ad032433cc5474a7b572ac18e5b847cd9af41c4cfc4cebbbae4bd70d73a3080"
   },
   "C13-apple-commit-before-id-loss": {
     fixtureSha256: "c11f35f97c6c7afe43aa02e92a56daf285dfecf7e0ee262d7db21d16fe3c12fe",
     expectedEvidenceSha256: "b9ba3ecda9821be0dbe78ccb1a2536573db8f4fba2cffd4dc0be779a5754cc9c",
-    definitionSha256: "1e963beaad2f87ae2f325e58d2d19b0d7d24ae0c3fdb7983f34c0f39a5d0d22d"
+    definitionSha256: "abbfc5704244ee0a22594eca78269b9983387a41106d2262bf87812d14bcbd88"
   },
   "C14-finalized-file-tree-adoption": {
     fixtureSha256: "c6e692639352b321e076ebd5060f6e628e71e51910e17049428cf1b9469d723b",
     expectedEvidenceSha256: "3cffcdd2989b3c927da82d1b4a04368fd259ab5c749a8f5535ad91f1cc31eee9",
-    definitionSha256: "9abefa64a4df283210c9a576d5017ac64a33dfd3f62e9e97e2ad2eebc9773d25"
+    definitionSha256: "caa6d47f9dba96776b9378de9ba9e731947ffbbbd452c90bf26bcfebb8b59eae"
   },
   "C15-host-dependency-shadowing": {
     fixtureSha256: "ff13febc77ffac5ab5d2b38743f7615af78b259bca3d00a4ac046c8a2bc81541",
     expectedEvidenceSha256: "f484a1ddb47aba63ad93fd756b7f849fb58225725eb62d12203b9691ec25d403",
-    definitionSha256: "a2895baf9d9600a5b736998a158bd8d27c0c3631490cc79fb4e43c07dc48efe5"
+    definitionSha256: "f518f94b766791906f37ada770182b6a066d3318032534c97278e2c0ba47cd97"
   },
   "C16-journal-bound-symmetry": {
     fixtureSha256: "fe343cdbf26caeefbafbaab7f625de0da6733fc357e384ed48ef2345c809ec5a",
     expectedEvidenceSha256: "69f2948934f3e2647bde9bc6a6dceb8d852661bdc8c74369cc75079363eeee87",
-    definitionSha256: "4cc51b9c93ad289ecb46d6ed80f67f04159cd5d855866f952074893e0ccc8164"
+    definitionSha256: "abc6a7a0d6ebd19c735d0037148cf7cd06aabbb24c895dfffe56c42c7b7693bd"
   }
 } as const
 
 export const V2_EXPECTED_PROBE_COMPONENT_HASHES = {
   "P01-second-provider-instance": {
     changeDefinitionSha256: "ccc7fa1b9f479b37cd6870fd993f3adaa39a2570ad4bfde8858ca36c91b8ca70",
-    definitionSha256: "a40d983b4fc427d33969f9914271688e56a14f922d916bfe4956e2cdf2b9459d"
+    definitionSha256: "009cf2811bf4ac2a7f53f6c5b4785de7c0cf543cc289dfa691697311d205b3ee"
   },
   "P02-packed-external-provider": {
     changeDefinitionSha256: "58822565f0c48df602d5a6e1c54b21f7e28f4aa972994c6fc76c5efaff74d4e8",
-    definitionSha256: "018788c0fc820c88cbefdd7eb2cbb61c83246611abd15fab65ab9ad82a4cb1d3"
+    definitionSha256: "bc1e44dc25835ac466d6fafdb396a5cf61fad843bde6305156a16a2949bae282"
   },
   "P03-new-first-party-provider": {
     changeDefinitionSha256: "cea72cc0f0373d17b47e8bb5e7c9a25fc0a2ae62e4608f002257f3952a6dead7",
-    definitionSha256: "17b06cad2367c78c0fece5928191ebf24cf0c4db10a3ab8d60a43aac19b759df"
+    definitionSha256: "8221357956e66eac1f6699b5029063c68f2a04b1c53b20cfffce34441be945d2"
   },
   "P04-new-commitment-mechanism": {
     changeDefinitionSha256: "2f58805d33654a325deaf188a82b1d80961b68e9bf005cc3f6c2a2547c9b1343",
-    definitionSha256: "72b1bc2fec7c2e7b5168d0a0792b6bb3db899d4cdb79ef9a23c779e8fee8f04c"
+    definitionSha256: "9613cd67a4673fe9ac87b3467613a5d4d40db5c1d59a867ff6b1c92594d18774"
   },
   "P05-existing-provider-operation": {
     changeDefinitionSha256: "56b15710925c2096ee235f3f2505e96ac2c1a162fdce99356cea9f3806120ef8",
-    definitionSha256: "247df41398e2367e2af9957678c352e89de4c1ef391e9a98043229724902fcc6"
+    definitionSha256: "c9ae55aca85487330a056da9037c2efbdb5e49628a2de6ada0dcdf14fa863abb"
   },
   "P06-journal-store-backend": {
     changeDefinitionSha256: "95c25087037f170bc986d9c0cf5649245043db717344871ec7ede3a6cac9ab06",
-    definitionSha256: "2e005803d2fe804eec1c8fc57e31914dd702d05bb8d0e3aa479b633450653a3f"
+    definitionSha256: "8416c218a4be1babd21841885533c4037a1381f19401a41e99c5fbd88fd4616d"
   },
   "P07-file-tree-producer-adapter": {
     changeDefinitionSha256: "5298d10d3398e3eda4efe5dba9c5475aada2f2d181a2a19229cf388efbe1ae7d",
-    definitionSha256: "68696b7364bba6a166d51a0a046ae5e01617d1436badb3412c5e3b1b229faedf"
+    definitionSha256: "64e00315874003ffcf07f5efe329cf6b1fd07ecd039602cb3e17a34fcd9013d9"
   },
   "P08-deliberate-public-export": {
     changeDefinitionSha256: "f2935b719246b6d731745de770cb0a098f1b444fbb2d9782e852b47c7d9d2f7b",
-    definitionSha256: "42ef8b86c9887dcf5fc20fb207e129ac039ee4c62606ca1c9aba560834889966"
+    definitionSha256: "5943eda5f9bd3484f6fe78f5ddf95cc9c630530776ca2772052d96258ac82979"
   },
   "P09-difficult-recovery-transition": {
     changeDefinitionSha256: "088977544a3d38ef263b90ab30cb7794552438151ecb798d900a5d6ca5e7c0a5",
-    definitionSha256: "052d0cf06a30573717f2682fa1b7ebd51d5ed1722ad83fbe2b779381596e98a6"
+    definitionSha256: "2cebdc7b27c63a700ba0e81443d16f259a03c6ea316e5e8ef62fdee2186a2da9"
   }
 } as const
 

@@ -218,13 +218,14 @@ export const REQUIRED_ISOLATION_POLICY = {
     hashDomain: "ts-release/architecture-runtime-dependency-tree/v2",
     manifestEncoding: "CanonicalJsonV1",
     manifestShape: "ordered-array-of-RegularFile-or-SymbolicLink",
-    sourceAuthority: "runner-node-modules-realpath",
+    sourceAuthority: "retained-preflight-realpath-verified-then-snapshotted",
     mountDestination: "/candidate/node_modules",
     runContextSha256Field: "runnerNodeModulesSha256",
     pathSyntax: "NFC slash-relative with no empty, dot, dot-dot, or backslash segments",
     entryOrder: "Unicode-code-point ascending by slash-relative path",
     entryTypes: ["regular-file", "symbolic-link"],
-    directoryPolicy: "traverse-without-manifest-entry",
+    directoryPolicy: "empty-directories-rejected-topology-implied-by-descendants",
+    snapshotDirectoryMode: "0755",
     regularFileEntryShape: "RegularFile(path,mode,byteLength,bytesSha256)",
     regularFileModePolicy: "canonical-git-modes-100644-or-100755",
     regularFileBytesPolicy: "bytesSha256-is-sha256-of-exact-file-bytes",
@@ -260,14 +261,14 @@ export const REQUIRED_ISOLATION_POLICY = {
         kind: "directory"
       },
       {
-        sourceAuthority: "run-context-bun-executable",
-        source: "exact-bun-executable-realpath",
+        sourceAuthority: "verified-run-context-bun-snapshot",
+        source: "exact-hash-bun-executable-snapshot",
         destination: "/runtime/bun",
         kind: "file"
       },
       {
-        sourceAuthority: "runner-node-modules",
-        source: "exact-runner-node-modules-realpath",
+        sourceAuthority: "verified-run-context-runner-node-modules-snapshot",
+        source: "exact-hash-runner-node-modules-snapshot",
         destination: "/candidate/node_modules",
         kind: "directory"
       }
@@ -373,7 +374,9 @@ const IsolationPolicy = Schema.Struct({
     hashDomain: Schema.Literal("ts-release/architecture-runtime-dependency-tree/v2"),
     manifestEncoding: Schema.Literal("CanonicalJsonV1"),
     manifestShape: Schema.Literal("ordered-array-of-RegularFile-or-SymbolicLink"),
-    sourceAuthority: Schema.Literal("runner-node-modules-realpath"),
+    sourceAuthority: Schema.Literal(
+      "retained-preflight-realpath-verified-then-snapshotted"
+    ),
     mountDestination: Schema.Literal("/candidate/node_modules"),
     runContextSha256Field: Schema.Literal("runnerNodeModulesSha256"),
     pathSyntax: Schema.Literal(
@@ -381,7 +384,10 @@ const IsolationPolicy = Schema.Struct({
     ),
     entryOrder: Schema.Literal("Unicode-code-point ascending by slash-relative path"),
     entryTypes: Schema.Array(Schema.Literals(["regular-file", "symbolic-link"])),
-    directoryPolicy: Schema.Literal("traverse-without-manifest-entry"),
+    directoryPolicy: Schema.Literal(
+      "empty-directories-rejected-topology-implied-by-descendants"
+    ),
+    snapshotDirectoryMode: Schema.Literal("0755"),
     regularFileEntryShape: Schema.Literal(
       "RegularFile(path,mode,byteLength,bytesSha256)"
     ),
@@ -420,13 +426,13 @@ const IsolationPolicy = Schema.Struct({
     readOnlyBinds: Schema.Array(Schema.Struct({
       sourceAuthority: Schema.Literals([
         "literal-host-runtime",
-        "run-context-bun-executable",
-        "runner-node-modules"
+        "verified-run-context-bun-snapshot",
+        "verified-run-context-runner-node-modules-snapshot"
       ]),
       source: Schema.Literals([
         "/usr",
-        "exact-bun-executable-realpath",
-        "exact-runner-node-modules-realpath"
+        "exact-hash-bun-executable-snapshot",
+        "exact-hash-runner-node-modules-snapshot"
       ]),
       destination: Schema.Literals(["/usr", "/runtime/bun", "/candidate/node_modules"]),
       kind: Schema.Literals(["directory", "file"])

@@ -132,7 +132,9 @@ and `id-token: write`. It admits the sole npm prepared reference without a tag,
 rejects ambient npm tokens/configuration, validates a live RS256 GitHub token
 against discovery/JWKS and the exact immutable repository-ID environment
 subject, and requires protected `main`, exact actor/run/workflow identity, plus
-absence of reusable-workflow-only claims. Pinned Node 22.22.2/npm 11.11.0 then
+exact direct-job `job_workflow_ref`/`job_workflow_sha` claims bound to
+`release.yml@refs/heads/main` and the candidate SHA. Pinned Node 22.22.2/npm
+11.11.0 then
 performs an exact-package dry-run with its logs kept private. The strict
 `ts-release/npm-oidc-certification/v1` receipt records only
 `certified-no-upload`, exact bytes, one exchange marker, and unchanged anonymous

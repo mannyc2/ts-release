@@ -222,7 +222,9 @@ describe("self-release npm OIDC claim certification", () => {
   })
 })
 
-const preparedFixture = (): { readonly root: string, readonly bundle: PreparedBundle } => {
+const preparedFixture = (
+  repository?: string
+): { readonly root: string, readonly bundle: PreparedBundle } => {
   const root = mkdtempSync(join(tmpdir(), "ts-release-npm-oidc-prepared-"))
   const bytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 1, 2, 3, 4])
   const digest = sha256Digest(bytes)
@@ -286,7 +288,7 @@ const preparedFixture = (): { readonly root: string, readonly bundle: PreparedBu
       packageName: NonEmptyName.make("@mannyc1/ts-release"),
       version: Version.make("0.3.0"),
       tag: NonEmptyName.make("v0.3.0"),
-      repository: "mannyc2/ts-release"
+      ...(repository === undefined ? {} : { repository })
     }),
     provenance: fixturePreparedProvenance,
     artifacts: [artifact],
@@ -298,6 +300,7 @@ const preparedFixture = (): { readonly root: string, readonly bundle: PreparedBu
 
 test("admits only the sole exact prepared npm tarball with its durable authority", () => {
   const current = preparedFixture()
+  const contradictory = preparedFixture("attacker/other")
   try {
     expect(admitNpmPreparedBundle(current.bundle, candidateSha, preparedDigest)).toMatchObject({
       preparedDigest,
@@ -305,7 +308,11 @@ test("admits only the sole exact prepared npm tarball with its durable authority
       tarballSha256: current.bundle.manifest.artifacts[0]!.digest.hex
     })
     expect(() => admitNpmPreparedBundle(current.bundle, "e".repeat(40), preparedDigest)).toThrow()
-  } finally { rmSync(current.root, { recursive: true, force: true }) }
+    expect(() => admitNpmPreparedBundle(contradictory.bundle, candidateSha, preparedDigest)).toThrow()
+  } finally {
+    rmSync(current.root, { recursive: true, force: true })
+    rmSync(contradictory.root, { recursive: true, force: true })
+  }
 })
 
 test("anonymous registry snapshots prove v0.3.0 and attestations absent with latest unchanged", async () => {

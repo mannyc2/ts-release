@@ -388,7 +388,8 @@ export const admitNpmPreparedBundle = (
       basename(bundle.directory) !== preparedDigest || manifest.source.commit.toString() !== candidateSha ||
       manifest.project.name.toString() !== packageName || manifest.project.packageName?.toString() !== packageName ||
       manifest.project.version.toString() !== version || manifest.project.tag.toString() !== `v${version}` ||
-      manifest.project.repository !== repository || manifest.collections.length !== 0 ||
+      (manifest.project.repository !== undefined && manifest.project.repository !== repository) ||
+      manifest.collections.length !== 0 ||
       manifest.publications.length !== 1 || manifest.artifacts.length !== 1) {
     return fail("prepared bundle is not the sole exact npm v0.3.0 candidate")
   }

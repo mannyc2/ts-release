@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+### Canonical operation journal
+
+- Add a provider-neutral `operation-journal` subpath with one opaque canonical
+  event envelope, one finite transition reducer, and one versioned S3
+  conditional-write protocol. Durable acknowledgments require exact retained
+  event/head re-read and full-chain validation; response loss, CAS conflict,
+  and fresh-process orphan recovery are bounded and fail closed. Every retained
+  attempt that shares a transaction ID must carry the same opaque logical
+  record and workflow, including attempts already reachable from the head.
+- Keep provider codecs and provider calls outside the journal package boundary.
+  Add the sole package-owned `operation-journal/aws` adapter: it rejects
+  ambient AWS configuration, exchanges a GitHub OIDC token directly for one
+  short-lived role session, re-observes STS/IAM/S3 authority, parses the exact
+  role/trust/bucket policies, and emits only single-part conditional S3 writes.
+  Serialized SDK requests and fakes qualify this code without claiming live
+  AWS policy or retained-object qualification. No SQLite, Git ref, Actions
+  artifact, alternate endpoint, credential chain, or fallback store is added.
+- Bind caller and called reusable-workflow OIDC refs and source SHAs as
+  distinct claims, derive event run coordinates from the observed session, and
+  include the exact OIDC trust-policy digest in authority drift checks. Pin the
+  called workflow at one immutable commit, admit one frozen name- or
+  immutable-ID-bound environment subject, and locally require hosted public
+  workflow-dispatch branch claims from the same STS-admitted token. Bound every
+  OIDC fetch, AWS SDK send, and object stream by a fixed wall-clock deadline.
+  Operation identities, payloads, retained objects, request/response
+  coordinates, and JWT bytes are independently bounded, and Actions request
+  coordinates are consumed from the environment before use. The
+  checked-in reusable workflow remains permissionless and always fails until a
+  released adapter, exact infrastructure, opaque-byte call topology, and live
+  retained-object protocol are separately qualified.
+
 ### PyPI embedded-binary distributions
 
 - Reopen the repository-specific PyPI wrapper-wheel decision with four

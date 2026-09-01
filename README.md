@@ -339,6 +339,47 @@ The public operations are `inspect`, `prepare`, `observe`, `publish`,
 prepared paths. The derived graph is ephemeral; the verified prepared
 manifest and blobs are the durable cross-process boundary.
 
+The separate `@mannyc1/ts-release/operation-journal` subpath exposes the
+provider-neutral canonical envelope and one S3 CAS protocol for durable
+external-operation continuation. It stores consumer-owned opaque bytes and
+never decodes provider fields. Workflow repository/run coordinates are derived
+from the re-observed GitHub OIDC session rather than accepted from an append
+request. A host can supply one already-authenticated, exact-policy S3 boundary
+as the credential-agnostic qualification seam. The separate
+`@mannyc1/ts-release/operation-journal/aws` subpath is the only operational
+backend implementation: it accepts one sealed activation contract, rejects
+ambient AWS variables and shared files, requests GitHub OIDC directly, uses
+only the returned short-lived role session, and parses live STS, IAM, bucket,
+Object Lock, ownership, public-access, and policy responses. It accepts no
+profile, credential, endpoint, alternate bucket, or fallback-store input.
+Operation identities are bounded to 65,536 bytes, payloads to 1,048,576 bytes,
+and retained objects to 1,500,000 bytes before hashing or allocation. The AWS
+trust and activation contract require the
+reusable workflow to be called as `uses: .../operational-journal.yml@<40-hex>`;
+a branch or tag ref is not authority, and the observed `job_workflow_ref` SHA
+must equal `job_workflow_sha`. The frozen subject selects exactly one GitHub
+environment-subject form: name-bound `repo:owner/repository:environment:name`
+or immutable-ID-bound
+`repo:owner@ownerId/repository@repositoryId:environment:name`; observed IDs
+must reconstruct the latter exactly, and there is no runtime fallback between
+forms. The same STS-admitted token must also report `workflow_dispatch`, a
+branch ref, a public repository, and a GitHub-hosted runner. Every OIDC fetch,
+AWS SDK send, and retained-object stream has a fixed 10,000 ms wall-clock
+deadline in addition to single-attempt retry policy.
+
+The checked-in `operational-journal.yml` is intentionally inert: it has no
+OIDC permission, AWS coordinate, credential input, checkout, or executable
+adapter and always stops. Activating it requires the separately provisioned
+bucket/role, a released adapter version, a reviewed opaque-byte caller/callee
+transport, and qualification of the exact retained object protocol. The
+serialized SDK requests, structural boundary, and fake tests are not live AWS
+or workflow qualification.
+An activated reusable job must install the package-supported Node 22.22.2
+runtime independently of the caller and launch the adapter through an
+`env -i` allowlist containing only the exact Actions OIDC request coordinates
+and non-secret activation inputs. The caller's Node 24.14.1 runtime is below a
+transitive dependency's admitted Node 24 floor and must not run this package.
+
 ## Agent bundles and development
 
 The single tracked agent source owner is `apps/ts-release-agents`. Generated

@@ -1,0 +1,44 @@
+name: Operational journal (inert)
+
+# Future activation is admitted only through an immutable 40-hex `uses` ref
+# and a pinned Node 22.22.2 process launched from an `env -i` allowlist. This
+# checked-in interface intentionally does neither and cannot acquire authority.
+
+on:
+  workflow_call:
+    inputs:
+      release_point:
+        description: Exact lowercase 40-hex caller commit.
+        required: true
+        type: string
+      operation_key:
+        description: Exact lowercase 64-hex canonical operation key.
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  unavailable:
+    name: STOP until the exact S3 authority is activated
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    env:
+      RELEASE_POINT: ${{ inputs.release_point }}
+      OPERATION_KEY: ${{ inputs.operation_key }}
+    steps:
+      - name: Validate the inert interface and stop
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_POINT" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "::error title=Invalid release point::Expected one lowercase 40-hex commit."
+            exit 1
+          fi
+          if [[ ! "$OPERATION_KEY" =~ ^[a-f0-9]{64}$ ]]; then
+            echo "::error title=Invalid operation key::Expected one lowercase 64-hex digest."
+            exit 1
+          fi
+          echo "::error title=Operational journal unavailable::The reusable interface is inert until exact AWS authority, OIDC trust, and a released live adapter are qualified."
+          exit 1

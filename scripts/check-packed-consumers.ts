@@ -50,12 +50,14 @@ interface PackageManifest {
 interface BunSmokeResult {
   readonly references: ReadonlyArray<string>
   readonly artifactCounts: ReadonlyArray<number>
+  readonly journalAdapter: string
 }
 
 interface NodeSmokeResult {
   readonly artifactCounts: ReadonlyArray<number>
   readonly versions: Readonly<Record<string, string>>
   readonly node: string
+  readonly journalAdapter: string
 }
 
 const root = process.cwd()
@@ -270,6 +272,7 @@ import {
 import { makeBunReleaseLayer } from "@mannyc1/ts-release/bun"
 import { sha256Digest } from "@mannyc1/ts-release/host"
 import { makeLocalPreparedReleaseStore } from "@mannyc1/ts-release/store"
+import { makeAwsS3JournalBoundary } from "@mannyc1/ts-release/operation-journal/aws"
 
 const [storeDirectory, ...workspaces] = Bun.argv.slice(2)
 if (storeDirectory === undefined || workspaces.length !== 2) throw new Error("usage: smoke store one two")
@@ -300,6 +303,7 @@ try {
   console.log(JSON.stringify({
     references,
     artifactCounts,
+    journalAdapter: typeof makeAwsS3JournalBoundary,
     digest: sha256Digest(new TextEncoder().encode("packed-consumer")),
     storeMethods: [typeof store.commit, typeof store.load]
   }))
@@ -316,6 +320,7 @@ import {
 import { makeNodeReleaseLayer } from "@mannyc1/ts-release/node"
 import { sha256Digest } from "@mannyc1/ts-release/host"
 import { makeLocalPreparedReleaseStore } from "@mannyc1/ts-release/store"
+import { makeAwsS3JournalBoundary } from "@mannyc1/ts-release/operation-journal/aws"
 import * as Effect from "effect/Effect"
 import { readFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
@@ -349,6 +354,7 @@ try {
     artifactCounts,
     versions,
     node: process.version,
+    journalAdapter: typeof makeAwsS3JournalBoundary,
     digest: sha256Digest(new TextEncoder().encode("packed-consumer")),
     storeMethods: [typeof store.commit, typeof store.load]
   }))
@@ -485,7 +491,8 @@ const main = async (): Promise<void> => {
       "bun", "run", "smoke.ts", storeDirectory, workspaceOne, workspaceTwo
     ], bunConsumer, bunEnvironment)
     const bunSmoke = parseJson<BunSmokeResult>(bunSmokeCommand.stdout.trim(), "Bun consumer smoke")
-    if (bunSmoke.references.length !== 2 || bunSmoke.artifactCounts.join(",") !== "1,2") {
+    if (bunSmoke.references.length !== 2 || bunSmoke.artifactCounts.join(",") !== "1,2" ||
+        bunSmoke.journalAdapter !== "function") {
       throw new Error("Bun consumer did not prepare one- and two-artifact bundles.")
     }
 
@@ -494,7 +501,7 @@ const main = async (): Promise<void> => {
       selectedRuntime.node, "smoke.mjs", storeDirectory, effectVersion, ...bunSmoke.references
     ], npmConsumer)
     const nodeSmoke = parseJson<NodeSmokeResult>(nodeSmokeCommand.stdout.trim(), "Node consumer smoke")
-    if (nodeSmoke.artifactCounts.join(",") !== "1,2") {
+    if (nodeSmoke.artifactCounts.join(",") !== "1,2" || nodeSmoke.journalAdapter !== "function") {
       throw new Error("Node consumer did not load one- and two-artifact bundles.")
     }
 

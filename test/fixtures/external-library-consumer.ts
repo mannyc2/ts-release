@@ -25,6 +25,8 @@ import {
   conservativeUnknownRecoveryProfile,
   makeProviderAdapter
 } from "@mannyc1/ts-release/provider-sdk"
+import { deriveOperationKey } from "@mannyc1/ts-release/operation-journal"
+import { makeAwsS3JournalBoundary } from "@mannyc1/ts-release/operation-journal/aws"
 
 const externalAdapter = makeProviderAdapter({
   id: "publish.external-fixture",
@@ -68,6 +70,8 @@ export const exerciseCustomHost = async (input: {
   readonly workspace: string
   readonly storeDirectory: string
 }) => {
+  void deriveOperationKey(new TextEncoder().encode("external-operation/v1\n"))
+  void makeAwsS3JournalBoundary
   const calls = { source: 0, run: 0, commit: 0, load: 0, credential: 0, http: 0 }
   const localStore = makeLocalPreparedReleaseStore(input.storeDirectory)
   const preparedStore: PreparedReleaseStoreShape = {

@@ -25,6 +25,17 @@ export const runtimeBearingSourcePaths: ReadonlyArray<string> = [
   "drivers/utils.ts",
   "drivers/workspace.ts",
   "model/canonical.ts",
+  "operation-journal.ts",
+  "operation-journal/aws.ts",
+  "operation-journal/aws/deadline.ts",
+  "operation-journal/aws/oidc.ts",
+  "operation-journal/aws/policy.ts",
+  "operation-journal/aws/s3-boundary.ts",
+  "operation-journal/authority.ts",
+  "operation-journal/canonical.ts",
+  "operation-journal/model.ts",
+  "operation-journal/reducer.ts",
+  "operation-journal/s3.ts",
   "host.ts",
   "provider-sdk.ts",
   "extensions/provider-adapter.ts",
@@ -105,6 +116,38 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
       "provider-sdk.ts",
       "extensions/provider-adapter.ts",
       "model/canonical.ts"
+    ],
+    allowedExternalPrefixes: ["node:"],
+    allowsBunGlobal: false
+  },
+  {
+    subpath: "./operation-journal",
+    allowedRuntimeSourcePaths: [
+      "operation-journal.ts",
+      "operation-journal/authority.ts",
+      "operation-journal/canonical.ts",
+      "operation-journal/model.ts",
+      "operation-journal/reducer.ts",
+      "operation-journal/s3.ts",
+      "model/canonical.ts",
+      "model/digest.ts"
+    ],
+    allowedExternalPrefixes: ["node:"],
+    allowsBunGlobal: false
+  },
+  {
+    subpath: "./operation-journal/aws",
+    allowedRuntimeSourcePaths: [
+      "operation-journal/aws.ts",
+      "operation-journal/aws/deadline.ts",
+      "operation-journal/aws/oidc.ts",
+      "operation-journal/aws/policy.ts",
+      "operation-journal/aws/s3-boundary.ts",
+      "operation-journal/authority.ts",
+      "operation-journal/canonical.ts",
+      "operation-journal/model.ts",
+      "model/canonical.ts",
+      "model/digest.ts"
     ],
     allowedExternalPrefixes: ["node:"],
     allowsBunGlobal: false

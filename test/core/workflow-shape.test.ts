@@ -157,9 +157,10 @@ const expectOnlyRedactedReportUploads = (value: string, count: number): void => 
   expect(value).not.toContain("actions/download-artifact@v4")
 }
 
-test("repository workflow topology has only CI and the two explicit release paths", () => {
+test("repository workflow topology has CI, two release paths, and the inert journal interface", () => {
   expect(readdirSync(".github/workflows").filter((name) => name.endsWith(".yml")).sort()).toEqual([
     "ci.yml",
+    "operational-journal.yml",
     "pypi-release.yml",
     "release.yml"
   ])

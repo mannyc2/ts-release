@@ -108,7 +108,26 @@ const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> 
     "ProviderAlreadyEquivalent", "ProviderBlocked", "ProviderId", "RejectedByProvider",
     "SafeReason", "Started", "SubjectId", "conservativeUnknownRecoveryProfile",
     "customProviderSubjects", "makeProviderAdapter", "makeRecoveryCapabilityProfile"
-  ])
+  ]),
+  "./operation-journal": new Set([
+    "JournalAuthorityMismatch",
+    "JournalConflict",
+    "JournalInputError",
+    "JournalIntegrityError",
+    "JournalStorageOutcomeUnknown",
+    "JournalStorageUnavailable",
+    "JournalTransitionError",
+    "S3JournalBoundaryError",
+    "admitJournalTransition",
+    "deriveOperationKey",
+    "journalEventKey",
+    "journalHeadKey",
+    "journalNamespace",
+    "journalRecordTags",
+    "makeS3CanonicalOperationJournal",
+    "operationJournalByteLimits"
+  ]),
+  "./operation-journal/aws": new Set(["makeAwsS3JournalBoundary"])
 }
 
 // SPEC §13 is normative about the root surface, so it is asserted, not
@@ -419,6 +438,8 @@ const checkExternalLibraryConsumer = async (
       packageName,
       `${packageName}/host`,
       `${packageName}/provider-sdk`,
+      `${packageName}/operation-journal`,
+      `${packageName}/operation-journal/aws`,
       `${packageName}/store`
     ])
     const observedPackageImports = new Set<string>()

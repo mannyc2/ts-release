@@ -346,6 +346,18 @@ describe("ArchitectureTrialSpecV2", () => {
           document.receiptContract.machineResultRoot = "tmp/results"
         },
         (document: MutableDocument) => {
+          document.receiptContract.runnerPackageManifestPath = "package.json"
+        },
+        (document: MutableDocument) => {
+          document.receiptContract.runnerTypeScriptConfigPath = "tsconfig.json"
+        },
+        (document: MutableDocument) => {
+          document.receiptContract.runnerSourceClosureAlgorithmId = "path-only-v1"
+        },
+        (document: MutableDocument) => {
+          document.receiptContract.runnerSourceClosureHashDomain = "unbound"
+        },
+        (document: MutableDocument) => {
           document.receiptContract.identityFieldIds[0] = "trial-spec-sha256"
         },
         (document: MutableDocument) => {

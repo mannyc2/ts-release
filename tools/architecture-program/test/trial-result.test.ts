@@ -12,22 +12,49 @@ import {
   encodeCandidateManifest
 } from "../src/schema/candidate-manifest.js"
 import {
+  ArchitectureCaseInvocationV2,
+  ArchitectureCaseObservationV2,
+  ArchitectureGateInvocationV2,
+  ArchitectureGateObservationV2,
+  ArchitectureProbeInvocationV2,
+  ArchitectureProbeObservationV2,
+  caseInvocationStructureCodec,
+  caseObservationStructureCodec,
+  gateInvocationStructureCodec,
+  gateObservationStructureCodec,
+  probeInvocationStructureCodec,
+  probeObservationStructureCodec
+} from "../src/schema/harness-protocol.js"
+import {
   computeTrialRunContextSha256,
   makeTrialRunContext
 } from "../src/schema/run-context.js"
 import {
+  type TrialResultEvaluationAuthority,
+  type TrialResultValidationAuthority,
   type MachineTrialResultBodyEncoded,
   type CaseTerminalOutputBodyEncoded,
   type GateTerminalOutputBodyEncoded,
+  type GateEvaluationRecordBodyEncoded,
   type ObjectiveMetricEvidenceContextEncoded,
+  type ObjectiveDerivationRecordBodyEncoded,
   type ProbeMeasurementEvidenceContextEncoded,
+  type ProbeEvaluationRecordBodyEncoded,
   type ProbeMeasurementValueEncoded,
   type TopologyTrialResultBodyEncoded,
+  DEFAULT_DENY_PROBE_EVALUATOR_ID,
+  DEFAULT_UNAVAILABLE_OBJECTIVE_DERIVATION_ID,
+  FROZEN_TRIAL_PROCESS_OUTPUT_LIMIT_BYTES,
+  FROZEN_TRIAL_PROCESS_TIMEOUT_MILLISECONDS,
   TRIAL_RESULT_RECEIPT_HASH_DOMAIN,
   computeCaseTerminalResultSha256,
+  computeGateCommandInputSha256,
+  computeGateEvaluationRecordSha256,
   computeGateTerminalResultSha256,
   computeMachineTrialResultReceiptId,
+  computeObjectiveDerivationRecordSha256,
   computeObjectiveMetricEvidenceSha256,
+  computeProbeEvaluationRecordSha256,
   computeProbeMeasurementEvidenceSha256,
   computeProbeTerminalResultSha256,
   computeTopologyTrialResultReceiptId,
@@ -37,6 +64,7 @@ import {
   encodeMachineTrialResult,
   encodeTopologyTrialResult,
   makeMachineTrialResult,
+  makeGateCommandInput,
   makeTopologyTrialResult
 } from "../src/schema/trial-result.js"
 import { REQUIRED_TRIAL_LANES } from "../src/schema/trial-contract.js"
@@ -62,20 +90,47 @@ import {
   sha256Bytes
 } from "../src/trial-hash.js"
 import { codePointCompare } from "../src/schema/trial-evidence.js"
-import type { PlannedRepositoryPath } from "../src/schema/primitives.js"
+import { ArtifactId, type PlannedRepositoryPath } from "../src/schema/primitives.js"
 
 type MutableDocument = Record<string, any>
 type Scope = "machine" | "topology"
+type MutableTrialResultValidationAuthority = Omit<
+  TrialResultValidationAuthority,
+  "evaluationAuthority" | "expectedReceiptId"
+> & {
+  evaluationAuthority: TrialResultEvaluationAuthority
+  expectedReceiptId: ReturnType<typeof exactSha256>
+}
 
 const fixturePath = resolve(
   typeof import.meta.dir === "string" ? import.meta.dir : dirname(fileURLToPath(import.meta.url)),
   "../../../docs/refactor/architecture-program/inputs/trial-spec.json"
 )
 const textEncoder = new TextEncoder()
-const testEvidenceDomain = "ts-release/architecture-trial-result-test-evidence/v2"
-
 const exactSha256 = (text: string) => sha256Bytes(textEncoder.encode(text))
-const evidenceSha256 = (value: unknown) => hashCanonicalValue(testEvidenceDomain, value)
+const invocationSha256 = (value: unknown) => sha256Bytes(canonicalJsonBytes(value))
+const streamEvidence = <Tag extends "Complete" | "Prefix">(
+  _tag: Tag,
+  text: string
+) => ({
+  _tag,
+  byteLength: textEncoder.encode(text).byteLength,
+  sha256: exactSha256(text)
+})
+const completeStreamEvidence = (bytes: Uint8Array) => ({
+  _tag: "Complete" as const,
+  byteLength: bytes.byteLength,
+  sha256: sha256Bytes(bytes)
+})
+const exitedProcessAttempt = (
+  stdout: Uint8Array<ArrayBufferLike> = new Uint8Array(),
+  stderr: Uint8Array<ArrayBufferLike> = new Uint8Array()
+) => ({
+  _tag: "Exited" as const,
+  exitCode: 0,
+  stdout: completeStreamEvidence(stdout),
+  stderr: completeStreamEvidence(stderr)
+})
 const sorted = <A extends string>(values: ReadonlyArray<A>): Array<A> =>
   [...values].sort(codePointCompare)
 
@@ -197,7 +252,7 @@ const loadAuthority = Effect.fn("trialResultTest.loadAuthority")(function* (scop
       definitionSha256: gateDefinitionSha256(gate)
     }))
   })
-  const authority = {
+  const authority: MutableTrialResultValidationAuthority = {
     trialSpec,
     rawTrialSpecSha256,
     candidateManifest,
@@ -205,7 +260,13 @@ const loadAuthority = Effect.fn("trialResultTest.loadAuthority")(function* (scop
     candidateTreeSha256: candidateTree.sha256,
     runnerSourceSha256,
     runnerNodeModulesSha256,
-    toolchain: runContext.toolchain
+    toolchain: runContext.toolchain,
+    expectedReceiptId: exactSha256("unbound test receipt"),
+    evaluationAuthority: {
+      probeEvaluations: [],
+      gateEvaluations: [],
+      objectiveDerivations: []
+    }
   }
   return { authority, runContext, candidateTree }
 })
@@ -214,6 +275,43 @@ const delta = (prefix: string) => ({
   addedIds: [`${prefix}.added`],
   removedIds: []
 })
+
+const bindEvaluationAuthority = (
+  fixture: Effect.Success<ReturnType<typeof loadAuthority>>,
+  body: MutableDocument
+): void => {
+  fixture.authority.evaluationAuthority = {
+    probeEvaluations: body.probeReceipts.map((receipt: MutableDocument) => {
+      const execution = receipt.execution
+      const record = execution._tag === "NotRun" || execution.terminalOutput === null
+        ? null
+        : execution.terminalOutput.evaluationRecord
+      return {
+        probeId: receipt.probeId,
+        evaluatorId: record?.evaluatorId ?? null,
+        recordSha256: record?.recordSha256 ?? null
+      }
+    }),
+    gateEvaluations: body.gateReceipts.map((receipt: MutableDocument) => {
+      const record = receipt.execution._tag === "NotRun"
+        ? null
+        : receipt.execution.evaluationRecord
+      return {
+        gateId: receipt.gateId,
+        evaluatorId: record?.evaluatorId ?? null,
+        recordSha256: record?.recordSha256 ?? null
+      }
+    }),
+    objectiveDerivations: body.objectiveMetrics.map((metric: MutableDocument) => ({
+      metricId: metric.id,
+      derivationId: metric.derivationRecord.derivationId,
+      recordSha256: metric.derivationRecord.recordSha256
+    }))
+  }
+  fixture.authority.expectedReceiptId = body.schemaVersion === "machine-trial-result-v2"
+    ? computeMachineTrialResultReceiptId(body as MachineTrialResultBodyEncoded)
+    : computeTopologyTrialResultReceiptId(body as TopologyTrialResultBodyEncoded)
+}
 
 const makeProbeOutput = (
   fixture: Effect.Success<ReturnType<typeof loadAuthority>>,
@@ -246,6 +344,23 @@ const makeProbeOutput = (
   const publicSurfaceDelta = delta(`public.${probe.id.toLowerCase()}`)
   const durableFormatDelta = delta(`format.${probe.id.toLowerCase()}`)
   const dependencyDagDelta = delta(`dependency.${probe.id.toLowerCase()}`)
+  const evaluationBody: ProbeEvaluationRecordBodyEncoded = {
+    evaluatorId: "probe-evaluator.test-v1",
+    probeId: probe.id,
+    inspectedTreeSha256: afterTreeSha256,
+    disposition: {
+      _tag: "Accepted" as const,
+      facts: [{
+        sequence: 1,
+        name: "runner.evaluation.accepted",
+        value: { _tag: "Boolean" as const, value: true }
+      }]
+    }
+  }
+  const evaluationRecord = {
+    recordSha256: computeProbeEvaluationRecordSha256(evaluationBody),
+    ...evaluationBody
+  }
   const measurementContext: ProbeMeasurementEvidenceContextEncoded = {
     beforeTreeSha256: fixture.candidateTree.sha256,
     afterTreeSha256,
@@ -266,6 +381,19 @@ const makeProbeOutput = (
     dependencyDagDelta,
     zeroTouchRoleIds: [...probe.requiredZeroTouchRoleIds],
     changeKinds: [...probe.requiredChangeKinds],
+    facts: [
+      ...probe.requiredChangeKinds.map((kind) => ({
+        name: `change-kind.${kind}.path`,
+        value: { _tag: "Text" as const, value: changedPath }
+      })),
+      {
+        name: "probe.observed-change",
+        value: { _tag: "Text" as const, value: probe.id }
+      }
+    ].sort((left, right) => codePointCompare(left.name, right.name))
+      .map((fact, index) => ({ sequence: index + 1, ...fact })) as unknown as
+        ProbeMeasurementEvidenceContextEncoded["facts"],
+    evaluationRecord,
     observationCount: 1 as const
   }
   const values = new Map<string, ProbeMeasurementValueEncoded>([
@@ -326,6 +454,18 @@ const makePassedBody = (
       trace: machineCase.expectedEvidence.trace,
       facts: machineCase.expectedEvidence.facts
     }
+    const observation = new ArchitectureCaseObservationV2({
+      schemaVersion: "architecture-case-observation-v2",
+      runContextSha256: fixture.runContext.runContextSha256,
+      candidateId: fixture.runContext.candidateId,
+      candidateTreeSha256: fixture.runContext.candidateTreeSha256,
+      definitionSha256: machineCase.execution.definitionSha256,
+      caseId: machineCase.id,
+      fixtureSha256: machineCase.execution.fixtureSha256,
+      trace: terminalBody.trace as ArchitectureCaseObservationV2["trace"],
+      facts: terminalBody.facts as ArchitectureCaseObservationV2["facts"],
+      terminalOutcome: terminalBody.actualOutcome
+    })
     return {
       caseId: machineCase.id,
       definitionSha256: machineCase.execution.definitionSha256,
@@ -333,8 +473,21 @@ const makePassedBody = (
       expectedEvidenceSha256: machineCase.execution.expectedEvidenceSha256,
       execution: {
         _tag: "Passed",
-        processOutcome: { _tag: "Exited", exitCode: 0 },
-        invocationSha256: evidenceSha256({ kind: "case-invocation", caseId: machineCase.id }),
+        processAttempt: exitedProcessAttempt(canonicalJsonBytes(
+          caseObservationStructureCodec.encode(observation)
+        )),
+        invocationSha256: invocationSha256(caseInvocationStructureCodec.encode(
+          new ArchitectureCaseInvocationV2({
+          schemaVersion: "architecture-case-invocation-v2",
+          runContextSha256: fixture.runContext.runContextSha256,
+          candidateId: fixture.runContext.candidateId,
+          candidateTreeSha256: fixture.runContext.candidateTreeSha256,
+          definitionSha256: machineCase.execution.definitionSha256,
+          caseId: machineCase.id,
+          fixtureSha256: machineCase.execution.fixtureSha256,
+          fixture: machineCase.fixture
+          })
+        )),
         terminalOutput: {
           resultSha256: computeCaseTerminalResultSha256(terminalBody),
           ...terminalBody
@@ -342,19 +495,82 @@ const makePassedBody = (
       }
     }
   })
-  const probeReceipts = spec.marginalProbes.map((probe, index) => ({
-    probeId: probe.id,
-    definitionSha256: probe.execution.definitionSha256,
-    baseFixtureSha256: probe.execution.baseFixtureSha256,
-    changeDefinitionSha256: probe.execution.changeDefinitionSha256,
-    execution: {
-      _tag: "Passed",
-      processOutcome: { _tag: "Exited", exitCode: 0 },
-      invocationSha256: evidenceSha256({ kind: "probe-invocation", probeId: probe.id }),
-      terminalOutput: makeProbeOutput(fixture, index)
+  const probeReceipts = spec.marginalProbes.map((probe, index) => {
+    const terminalOutput = makeProbeOutput(fixture, index)
+    const observation = new ArchitectureProbeObservationV2({
+      schemaVersion: "architecture-probe-observation-v2",
+      runContextSha256: fixture.runContext.runContextSha256,
+      candidateId: fixture.runContext.candidateId,
+      candidateTreeSha256: fixture.runContext.candidateTreeSha256,
+      definitionSha256: probe.execution.definitionSha256,
+      probeId: probe.id,
+      baseFixtureSha256: probe.execution.baseFixtureSha256,
+      changeDefinitionSha256: probe.execution.changeDefinitionSha256,
+      changeId: probe.changeDefinition.changeId,
+      facts: terminalOutput.facts as ArchitectureProbeObservationV2["facts"]
+    })
+    return {
+      probeId: probe.id,
+      definitionSha256: probe.execution.definitionSha256,
+      baseFixtureSha256: probe.execution.baseFixtureSha256,
+      changeDefinitionSha256: probe.execution.changeDefinitionSha256,
+      execution: {
+        _tag: "Passed",
+        processAttempt: exitedProcessAttempt(canonicalJsonBytes(
+          probeObservationStructureCodec.encode(observation)
+        )),
+        invocationSha256: invocationSha256(probeInvocationStructureCodec.encode(
+          new ArchitectureProbeInvocationV2({
+            schemaVersion: "architecture-probe-invocation-v2",
+            runContextSha256: fixture.runContext.runContextSha256,
+            candidateId: fixture.runContext.candidateId,
+            candidateTreeSha256: fixture.runContext.candidateTreeSha256,
+            definitionSha256: probe.execution.definitionSha256,
+            probeId: probe.id,
+            baseFixtureSha256: probe.execution.baseFixtureSha256,
+            changeDefinitionSha256: probe.execution.changeDefinitionSha256,
+            changeDefinition: probe.changeDefinition
+          })
+        )),
+        terminalOutput
+      }
     }
-  }))
+  })
   const gateReceipts = gates.map((gate) => {
+    const invocation = new ArchitectureGateInvocationV2({
+      schemaVersion: "architecture-gate-invocation-v2",
+      runContextSha256: fixture.runContext.runContextSha256,
+      candidateId: fixture.runContext.candidateId,
+      candidateTreeSha256: fixture.runContext.candidateTreeSha256,
+      definitionSha256: gateDefinitionSha256(gate),
+      gateId: gate.id,
+      lawIds: gate.lawIds.map((id) => ArtifactId.make(id)),
+      caseIds: gate.caseIds,
+      probeIds: gate.probeIds
+    })
+    const commandInput = makeGateCommandInput(invocation, fixture.candidateTree.sha256)
+    const commandAttempt = {
+      _tag: "Exited" as const,
+      exitCode: gate.expectedExit,
+      stdout: streamEvidence("Complete", `gate-command:${gate.id}\n`),
+      stderr: streamEvidence("Complete", "")
+    }
+    const evaluationBody: GateEvaluationRecordBodyEncoded = {
+      evaluatorId: "gate-evaluator.test-v1",
+      gateId: gate.id,
+      inspectedTreeSha256: fixture.candidateTree.sha256,
+      declaredCommand: gate.command,
+      commandInputSha256: computeGateCommandInputSha256(commandInput),
+      commandAttempt,
+      disposition: {
+        _tag: "Accepted" as const,
+        facts: [{
+          sequence: 1,
+          name: "runner.evaluation.accepted",
+          value: { _tag: "Boolean" as const, value: true }
+        }]
+      }
+    }
     const terminalBody: GateTerminalOutputBodyEncoded = {
       facts: [{
         sequence: 1,
@@ -362,6 +578,15 @@ const makePassedBody = (
         value: { _tag: "Boolean" as const, value: true }
       }]
     }
+    const observation = new ArchitectureGateObservationV2({
+      schemaVersion: "architecture-gate-observation-v2",
+      runContextSha256: fixture.runContext.runContextSha256,
+      candidateId: fixture.runContext.candidateId,
+      candidateTreeSha256: fixture.runContext.candidateTreeSha256,
+      definitionSha256: gateDefinitionSha256(gate),
+      gateId: gate.id,
+      facts: terminalBody.facts as ArchitectureGateObservationV2["facts"]
+    })
     return {
       gateId: gate.id,
       definitionSha256: gateDefinitionSha256(gate),
@@ -371,11 +596,17 @@ const makePassedBody = (
       expectedExit: gate.expectedExit,
       execution: {
         _tag: "Passed",
-        processOutcome: { _tag: "Exited", exitCode: 0 },
-        invocationSha256: evidenceSha256({ kind: "gate-invocation", gateId: gate.id }),
+        processAttempt: exitedProcessAttempt(canonicalJsonBytes(
+          gateObservationStructureCodec.encode(observation)
+        )),
+        invocationSha256: invocationSha256(gateInvocationStructureCodec.encode(invocation)),
         terminalOutput: {
           resultSha256: computeGateTerminalResultSha256(terminalBody),
           ...terminalBody
+        },
+        evaluationRecord: {
+          recordSha256: computeGateEvaluationRecordSha256(evaluationBody),
+          ...evaluationBody
         }
       }
     }
@@ -399,16 +630,39 @@ const makePassedBody = (
     probeReceipts: body.probeReceipts,
     gateReceipts: body.gateReceipts
   }
-  body.objectiveMetrics = objectiveIds.map((id, value) => ({
-    _tag: "Measured",
-    id,
-    value,
-    evidenceSha256: computeObjectiveMetricEvidenceSha256(
-      objectiveContext,
+  body.objectiveMetrics = objectiveIds.map((id, value) => {
+    const derivationBody: ObjectiveDerivationRecordBodyEncoded = {
+      derivationId: "objective-derivation.test-v1",
+      metricId: id,
+      value,
+      inspectedTreeSha256: fixture.candidateTree.sha256,
+      disposition: {
+        _tag: "Accepted" as const,
+        facts: [{
+          sequence: 1,
+          name: "objective.value",
+          value: { _tag: "Integer" as const, value }
+        }]
+      }
+    }
+    const derivationRecord = {
+      recordSha256: computeObjectiveDerivationRecordSha256(derivationBody),
+      ...derivationBody
+    }
+    return {
+      _tag: "Measured",
       id,
-      value
-    )
-  }))
+      value,
+      derivationRecord,
+      evidenceSha256: computeObjectiveMetricEvidenceSha256(
+        objectiveContext,
+        id,
+        value,
+        derivationRecord
+      )
+    }
+  })
+  bindEvaluationAuthority(fixture, body)
   return body
 }
 
@@ -428,12 +682,29 @@ const makeEarlyFailureBody = (
   body.gateReceipts.forEach((receipt: MutableDocument) => {
     receipt.execution = { _tag: "NotRun", failureIds: [failureId] }
   })
-  body.objectiveMetrics = body.objectiveMetrics.map(({ id }: MutableDocument) => ({
-    _tag: "Unavailable",
-    id,
-    failureId
-  }))
+  body.objectiveMetrics = body.objectiveMetrics.map(({ id }: MutableDocument) => {
+    const derivationBody: ObjectiveDerivationRecordBodyEncoded = {
+      derivationId: "objective-derivation.test-v1",
+      metricId: id,
+      value: null,
+      inspectedTreeSha256: fixture.candidateTree.sha256,
+      disposition: {
+        _tag: "Rejected" as const,
+        failureIds: [failureId]
+      }
+    }
+    return {
+      _tag: "Unavailable",
+      id,
+      failureId,
+      derivationRecord: {
+        recordSha256: computeObjectiveDerivationRecordSha256(derivationBody),
+        ...derivationBody
+      }
+    }
+  })
   body.qualification = "Rejected"
+  bindEvaluationAuthority(fixture, body)
   return body
 }
 
@@ -458,7 +729,12 @@ const rebindObjectiveEvidence = (document: MutableDocument): void => {
   }
   document.objectiveMetrics.forEach((metric: MutableDocument) => {
     if (metric._tag === "Measured") {
-      metric.evidenceSha256 = computeObjectiveMetricEvidenceSha256(context, metric.id, metric.value)
+      metric.evidenceSha256 = computeObjectiveMetricEvidenceSha256(
+        context,
+        metric.id,
+        metric.value,
+        metric.derivationRecord
+      )
     }
   })
 }
@@ -547,31 +823,144 @@ describe("architecture trial result v2", () => {
       expect(decoded.objectiveMetrics.every(({ _tag }) => _tag === "Unavailable")).toBe(true)
     }))
 
-  it.effect("round-trips every factual process outcome on a failed execution", () =>
+  it.effect("round-trips every factual process attempt on a failed execution", () =>
     Effect.gen(function* () {
       const fixture = yield* loadAuthority("machine")
-      const outcomes: ReadonlyArray<MutableDocument> = [
-        { _tag: "Exited", exitCode: 0 },
-        { _tag: "TimedOut", timeoutMilliseconds: 30_000 },
-        { _tag: "Signaled", signal: "SIGKILL" },
-        { _tag: "SpawnFailed", executable: "bun" },
-        { _tag: "ProtocolRejected", outputSha256: null }
+      const attempts: ReadonlyArray<MutableDocument> = [
+        exitedProcessAttempt(),
+        {
+          _tag: "TimedOut",
+          timeoutMilliseconds: FROZEN_TRIAL_PROCESS_TIMEOUT_MILLISECONDS,
+          stdout: streamEvidence("Prefix", "partial stdout"),
+          stderr: streamEvidence("Complete", "")
+        },
+        {
+          _tag: "Signaled",
+          signal: "SIGKILL",
+          stdout: streamEvidence("Prefix", "signal stdout"),
+          stderr: streamEvidence("Complete", "signal stderr")
+        },
+        { _tag: "NotStarted", executable: "bun" },
+        {
+          _tag: "OutputLimited",
+          stream: "stdout",
+          limitBytes: FROZEN_TRIAL_PROCESS_OUTPUT_LIMIT_BYTES,
+          observedBytes: FROZEN_TRIAL_PROCESS_OUTPUT_LIMIT_BYTES + 1,
+          stdout: {
+            _tag: "Prefix",
+            byteLength: FROZEN_TRIAL_PROCESS_OUTPUT_LIMIT_BYTES + 1,
+            sha256: exactSha256("oversized stdout prefix")
+          },
+          stderr: streamEvidence("Prefix", "")
+        },
+        {
+          _tag: "IoFailed",
+          operation: "stdout",
+          stdout: streamEvidence("Prefix", "partial stdout"),
+          stderr: streamEvidence("Complete", "complete stderr")
+        }
       ]
-      for (const processOutcome of outcomes) {
+      for (const processAttempt of attempts) {
+        const exactInvocationSha256 = makePassedBody("machine", fixture)
+          .caseReceipts[0].execution.invocationSha256
         const body = makeEarlyFailureBody("machine", fixture)
         body.caseReceipts[0].execution = {
           _tag: "Failed",
-          processOutcome,
-          invocationSha256: null,
+          processAttempt,
+          invocationSha256: exactInvocationSha256,
           terminalOutput: null,
           failureIds: ["failure.execution"]
         }
+        bindEvaluationAuthority(fixture, body)
         const result = makeMachineTrialResult(body as MachineTrialResultBodyEncoded, fixture.authority)
         const decoded = yield* decodeMachineTrialResult(
           encodeMachineTrialResult(result, fixture.authority),
           fixture.authority
         )
         expect(decoded.caseReceipts[0]?.execution._tag).toBe("Failed")
+      }
+    }))
+
+  it.effect("rejects rehashed non-frozen timeout and output-limit evidence", () =>
+    Effect.gen(function* () {
+      const fixture = yield* loadAuthority("machine")
+      const original = encodeMachineTrialResult(
+        makeMachineTrialResult(
+          makePassedBody("machine", fixture) as MachineTrialResultBodyEncoded,
+          fixture.authority
+        ),
+        fixture.authority
+      ) as MutableDocument
+      const attempts = [
+        {
+          _tag: "TimedOut",
+          timeoutMilliseconds: FROZEN_TRIAL_PROCESS_TIMEOUT_MILLISECONDS - 1,
+          stdout: streamEvidence("Prefix", "partial timeout stdout"),
+          stderr: streamEvidence("Complete", "")
+        },
+        {
+          _tag: "OutputLimited",
+          stream: "stdout",
+          limitBytes: FROZEN_TRIAL_PROCESS_OUTPUT_LIMIT_BYTES - 1,
+          observedBytes: FROZEN_TRIAL_PROCESS_OUTPUT_LIMIT_BYTES,
+          stdout: {
+            _tag: "Prefix",
+            byteLength: FROZEN_TRIAL_PROCESS_OUTPUT_LIMIT_BYTES,
+            sha256: exactSha256("hostile output-limit prefix")
+          },
+          stderr: streamEvidence("Prefix", "")
+        }
+      ]
+      for (const processAttempt of attempts) {
+        const changed = structuredClone(original)
+        const execution = changed.caseReceipts[0].execution
+        changed.caseReceipts[0].execution = {
+          _tag: "Failed",
+          processAttempt,
+          invocationSha256: execution.invocationSha256,
+          terminalOutput: null,
+          failureIds: ["failure.execution"]
+        }
+        changed.qualification = "Rejected"
+        rebindObjectiveEvidence(changed)
+        rehashResult(changed)
+        yield* expectMachineStructureFailure(changed)
+      }
+    }))
+
+  it.effect("rejects fully rehashed candidate-adapter transcript substitutions", () =>
+    Effect.gen(function* () {
+      const fixture = yield* loadAuthority("machine")
+      const original = encodeMachineTrialResult(
+        makeMachineTrialResult(
+          makePassedBody("machine", fixture) as MachineTrialResultBodyEncoded,
+          fixture.authority
+        ),
+        fixture.authority
+      ) as MutableDocument
+      const mutations = [
+        (document: MutableDocument) => document.caseReceipts[0].execution.processAttempt.stdout =
+          completeStreamEvidence(textEncoder.encode("hostile case observation")),
+        (document: MutableDocument) => document.probeReceipts[0].execution.processAttempt.stdout =
+          completeStreamEvidence(textEncoder.encode("hostile probe observation")),
+        (document: MutableDocument) => document.gateReceipts[0].execution.processAttempt.stdout =
+          completeStreamEvidence(textEncoder.encode("hostile gate observation")),
+        (document: MutableDocument) => document.caseReceipts[0].execution.processAttempt.stderr =
+          completeStreamEvidence(textEncoder.encode("hostile case stderr")),
+        (document: MutableDocument) => document.probeReceipts[0].execution.processAttempt.stderr =
+          completeStreamEvidence(textEncoder.encode("hostile probe stderr")),
+        (document: MutableDocument) => document.gateReceipts[0].execution.processAttempt.stderr =
+          completeStreamEvidence(textEncoder.encode("hostile gate stderr"))
+      ]
+      for (const mutate of mutations) {
+        const changed = structuredClone(original)
+        mutate(changed)
+        rebindObjectiveEvidence(changed)
+        rehashResult(changed)
+
+        yield* decodeMachineTrialResultStructure(changed)
+        const exit = yield* decodeMachineTrialResult(changed, fixture.authority).pipe(Effect.exit)
+        expect(Exit.isFailure(exit)).toBe(true)
       }
     }))
 
@@ -651,7 +1040,7 @@ describe("architecture trial result v2", () => {
       ) as MutableDocument
       const mutations = [
         (document: MutableDocument) => {
-          document.caseReceipts[0].execution.processOutcome.exitCode = 1
+          document.caseReceipts[0].execution.processAttempt.exitCode = 1
         },
         (document: MutableDocument) => {
           const measurement = document.probeReceipts[0].execution.terminalOutput.measurements[0]
@@ -699,6 +1088,12 @@ describe("architecture trial result v2", () => {
           document.probeReceipts[0].execution.terminalOutput.resultSha256 = "0".repeat(64)
         },
         (document: MutableDocument) => {
+          const output = document.probeReceipts[0].execution.terminalOutput
+          output.facts[0].value.value = "hostile-observation-substitution"
+          const { resultSha256: _oldResultSha256, ...terminalBody } = output
+          output.resultSha256 = computeProbeTerminalResultSha256(terminalBody)
+        },
+        (document: MutableDocument) => {
           document.probeReceipts[0].execution.terminalOutput.measurements[0].evidenceSha256 =
             "0".repeat(64)
         },
@@ -707,6 +1102,17 @@ describe("architecture trial result v2", () => {
         },
         (document: MutableDocument) => {
           document.objectiveMetrics[0].evidenceSha256 = "0".repeat(64)
+        },
+        (document: MutableDocument) => {
+          document.probeReceipts[0].execution.terminalOutput.evaluationRecord.recordSha256 =
+            "0".repeat(64)
+        },
+        (document: MutableDocument) => {
+          document.gateReceipts[0].execution.evaluationRecord.recordSha256 =
+            "0".repeat(64)
+        },
+        (document: MutableDocument) => {
+          document.objectiveMetrics[0].derivationRecord.recordSha256 = "0".repeat(64)
         },
         (document: MutableDocument) => {
           document.probeReceipts[0].execution.terminalOutput.observationCount = 2
@@ -736,6 +1142,206 @@ describe("architecture trial result v2", () => {
       rehashResult(changed)
 
       yield* expectMachineStructureFailure(changed)
+    }))
+
+  it.effect("rejects fully rehashed evaluator and derivation record substitutions", () =>
+    Effect.gen(function* () {
+      const fixture = yield* loadAuthority("machine")
+      const original = encodeMachineTrialResult(
+        makeMachineTrialResult(
+          makePassedBody("machine", fixture) as MachineTrialResultBodyEncoded,
+          fixture.authority
+        ),
+        fixture.authority
+      ) as MutableDocument
+
+      const rejectedProbe = structuredClone(original)
+      const probeOutput = rejectedProbe.probeReceipts[0].execution.terminalOutput
+      probeOutput.evaluationRecord.disposition = {
+        _tag: "Rejected",
+        failureIds: ["probe.hostile-substitution"]
+      }
+      const {
+        recordSha256: _probeRecordSha256,
+        ...probeEvaluationBody
+      } = probeOutput.evaluationRecord
+      probeOutput.evaluationRecord.recordSha256 = computeProbeEvaluationRecordSha256(
+        probeEvaluationBody
+      )
+      rebindProbeEvidence(rejectedProbe.probeReceipts[0])
+      rebindObjectiveEvidence(rejectedProbe)
+      rehashResult(rejectedProbe)
+      yield* expectMachineStructureFailure(rejectedProbe)
+
+      const wrongGateExit = structuredClone(original)
+      const gateExecution = wrongGateExit.gateReceipts[0].execution
+      gateExecution.evaluationRecord.commandAttempt.exitCode = 9
+      const {
+        recordSha256: _gateRecordSha256,
+        ...gateEvaluationBody
+      } = gateExecution.evaluationRecord
+      gateExecution.evaluationRecord.recordSha256 = computeGateEvaluationRecordSha256(
+        gateEvaluationBody
+      )
+      rebindObjectiveEvidence(wrongGateExit)
+      rehashResult(wrongGateExit)
+      yield* expectMachineStructureFailure(wrongGateExit)
+
+      const wrongObjectiveValue = structuredClone(original)
+      const metric = wrongObjectiveValue.objectiveMetrics[0]
+      metric.derivationRecord.value = metric.value + 1
+      const {
+        recordSha256: _derivationRecordSha256,
+        ...derivationBody
+      } = metric.derivationRecord
+      metric.derivationRecord.recordSha256 = computeObjectiveDerivationRecordSha256(
+        derivationBody
+      )
+      rebindObjectiveEvidence(wrongObjectiveValue)
+      rehashResult(wrongObjectiveValue)
+      yield* expectMachineStructureFailure(wrongObjectiveValue)
+    }))
+
+  it.effect("rejects externally unbound aligned evaluation and objective rewrites", () =>
+    Effect.gen(function* () {
+      const fixture = yield* loadAuthority("machine")
+      const original = encodeMachineTrialResult(
+        makeMachineTrialResult(
+          makePassedBody("machine", fixture) as MachineTrialResultBodyEncoded,
+          fixture.authority
+        ),
+        fixture.authority
+      ) as MutableDocument
+
+      const alignedObjective = structuredClone(original)
+      const metric = alignedObjective.objectiveMetrics[0]
+      metric.value += 7
+      metric.derivationRecord.value = metric.value
+      metric.derivationRecord.disposition.facts[0].value.value = metric.value
+      const {
+        recordSha256: _objectiveRecordSha256,
+        ...objectiveRecordBody
+      } = metric.derivationRecord
+      metric.derivationRecord.recordSha256 = computeObjectiveDerivationRecordSha256(
+        objectiveRecordBody
+      )
+      rebindObjectiveEvidence(alignedObjective)
+      rehashResult(alignedObjective)
+      yield* decodeMachineTrialResultStructure(alignedObjective)
+      expect(Exit.isFailure(yield* decodeMachineTrialResult(
+        alignedObjective,
+        fixture.authority
+      ).pipe(Effect.exit))).toBe(true)
+
+      const substitutedProbeIdentity = structuredClone(original)
+      const probeOutput = substitutedProbeIdentity.probeReceipts[0].execution.terminalOutput
+      probeOutput.evaluationRecord.evaluatorId = "probe-evaluator.hostile-v1"
+      const {
+        recordSha256: _probeRecordSha256,
+        ...probeRecordBody
+      } = probeOutput.evaluationRecord
+      probeOutput.evaluationRecord.recordSha256 = computeProbeEvaluationRecordSha256(
+        probeRecordBody
+      )
+      rebindProbeEvidence(substitutedProbeIdentity.probeReceipts[0])
+      rebindObjectiveEvidence(substitutedProbeIdentity)
+      rehashResult(substitutedProbeIdentity)
+      yield* decodeMachineTrialResultStructure(substitutedProbeIdentity)
+      expect(Exit.isFailure(yield* decodeMachineTrialResult(
+        substitutedProbeIdentity,
+        fixture.authority
+      ).pipe(Effect.exit))).toBe(true)
+
+      const impossibleDefaults = structuredClone(original)
+      const impossibleProbe = impossibleDefaults.probeReceipts[0].execution.terminalOutput
+        .evaluationRecord
+      impossibleProbe.evaluatorId = DEFAULT_DENY_PROBE_EVALUATOR_ID
+      const {
+        recordSha256: _impossibleProbeSha256,
+        ...impossibleProbeBody
+      } = impossibleProbe
+      impossibleProbe.recordSha256 = computeProbeEvaluationRecordSha256(impossibleProbeBody)
+      const impossibleObjective = impossibleDefaults.objectiveMetrics[0].derivationRecord
+      impossibleObjective.derivationId = DEFAULT_UNAVAILABLE_OBJECTIVE_DERIVATION_ID
+      const {
+        recordSha256: _impossibleObjectiveSha256,
+        ...impossibleObjectiveBody
+      } = impossibleObjective
+      impossibleObjective.recordSha256 = computeObjectiveDerivationRecordSha256(
+        impossibleObjectiveBody
+      )
+      rebindProbeEvidence(impossibleDefaults.probeReceipts[0])
+      rebindObjectiveEvidence(impossibleDefaults)
+      rehashResult(impossibleDefaults)
+      const impossibleAuthority: TrialResultValidationAuthority = {
+        ...fixture.authority,
+        expectedReceiptId: impossibleDefaults.receiptId,
+        evaluationAuthority: {
+          ...fixture.authority.evaluationAuthority,
+          probeEvaluations: fixture.authority.evaluationAuthority.probeEvaluations.map(
+            (binding, index) => index === 0
+              ? {
+                probeId: impossibleDefaults.probeReceipts[0].probeId,
+                evaluatorId: impossibleProbe.evaluatorId,
+                recordSha256: impossibleProbe.recordSha256
+              }
+              : binding
+          ),
+          objectiveDerivations: fixture.authority.evaluationAuthority.objectiveDerivations.map(
+            (binding, index) => index === 0
+              ? {
+                metricId: impossibleDefaults.objectiveMetrics[0].id,
+                derivationId: impossibleObjective.derivationId,
+                recordSha256: impossibleObjective.recordSha256
+              }
+              : binding
+          )
+        }
+      }
+      yield* decodeMachineTrialResultStructure(impossibleDefaults)
+      expect(Exit.isFailure(yield* decodeMachineTrialResult(
+        impossibleDefaults,
+        impossibleAuthority
+      ).pipe(Effect.exit))).toBe(true)
+    }))
+
+  it.effect("rejects fully rehashed evaluator-input evidence under the retained receipt address", () =>
+    Effect.gen(function* () {
+      const fixture = yield* loadAuthority("machine")
+      const original = encodeMachineTrialResult(
+        makeMachineTrialResult(
+          makePassedBody("machine", fixture) as MachineTrialResultBodyEncoded,
+          fixture.authority
+        ),
+        fixture.authority
+      ) as MutableDocument
+      const changed = structuredClone(original)
+      const gateReceipt = changed.gateReceipts[0]
+      const terminalOutput = gateReceipt.execution.terminalOutput
+      terminalOutput.facts[0].value.value = false
+      const { resultSha256: _terminalSha256, ...terminalBody } = terminalOutput
+      terminalOutput.resultSha256 = computeGateTerminalResultSha256(terminalBody)
+      const observation = new ArchitectureGateObservationV2({
+        schemaVersion: "architecture-gate-observation-v2",
+        runContextSha256: changed.runContext.runContextSha256,
+        candidateId: changed.runContext.candidateId,
+        candidateTreeSha256: changed.runContext.candidateTreeSha256,
+        definitionSha256: gateReceipt.definitionSha256,
+        gateId: gateReceipt.gateId,
+        facts: terminalOutput.facts
+      })
+      gateReceipt.execution.processAttempt.stdout = completeStreamEvidence(
+        canonicalJsonBytes(gateObservationStructureCodec.encode(observation))
+      )
+      rebindObjectiveEvidence(changed)
+      rehashResult(changed)
+
+      yield* decodeMachineTrialResultStructure(changed)
+      expect(changed.receiptId).not.toBe(fixture.authority.expectedReceiptId)
+      expect(Exit.isFailure(yield* decodeMachineTrialResult(
+        changed,
+        fixture.authority
+      ).pipe(Effect.exit))).toBe(true)
     }))
 
   it.effect("rejects a self-consistent receipt whose context mismatches exact external authority", () =>
@@ -801,5 +1407,98 @@ describe("architecture trial result v2", () => {
       yield* decodeMachineTrialResultStructure(changed)
       const exit = yield* decodeMachineTrialResult(changed, fixture.authority).pipe(Effect.exit)
       expect(Exit.isFailure(exit)).toBe(true)
+    }))
+
+  it.effect("rejects rehashed or null invocation, change-kind path, and gate-prerequisite claims", () =>
+    Effect.gen(function* () {
+      const fixture = yield* loadAuthority("machine")
+      const original = encodeMachineTrialResult(
+        makeMachineTrialResult(
+          makePassedBody("machine", fixture) as MachineTrialResultBodyEncoded,
+          fixture.authority
+        ),
+        fixture.authority
+      ) as MutableDocument
+
+      for (const mutate of [
+        (document: MutableDocument) => {
+          document.caseReceipts[0].execution.invocationSha256 = exactSha256("hostile case invocation")
+        },
+        (document: MutableDocument) => {
+          document.probeReceipts[0].execution.invocationSha256 = exactSha256("hostile probe invocation")
+        },
+        (document: MutableDocument) => {
+          document.gateReceipts[0].execution.invocationSha256 = exactSha256("hostile gate invocation")
+        },
+        (document: MutableDocument) => {
+          const evaluation = document.gateReceipts[0].execution.evaluationRecord
+          evaluation.commandInputSha256 = exactSha256("hostile command input")
+          const { recordSha256: _recordSha256, ...body } = evaluation
+          evaluation.recordSha256 = computeGateEvaluationRecordSha256(body)
+        },
+        (document: MutableDocument) => {
+          document.caseReceipts[0].execution = {
+            ...document.caseReceipts[0].execution,
+            _tag: "Failed",
+            invocationSha256: null,
+            failureIds: ["failure.null-invocation"]
+          }
+          document.qualification = "Rejected"
+        },
+        (document: MutableDocument) => {
+          document.probeReceipts[0].execution = {
+            ...document.probeReceipts[0].execution,
+            _tag: "Failed",
+            invocationSha256: null,
+            failureIds: ["failure.null-invocation"]
+          }
+          document.qualification = "Rejected"
+        },
+        (document: MutableDocument) => {
+          document.gateReceipts[0].execution = {
+            ...document.gateReceipts[0].execution,
+            _tag: "Failed",
+            invocationSha256: null,
+            failureIds: ["failure.null-invocation"]
+          }
+          document.qualification = "Rejected"
+        }
+      ]) {
+        const changed = structuredClone(original)
+        mutate(changed)
+        rebindObjectiveEvidence(changed)
+        rehashResult(changed)
+        yield* decodeMachineTrialResultStructure(changed)
+        const exit = yield* decodeMachineTrialResult(changed, fixture.authority).pipe(Effect.exit)
+        expect(Exit.isFailure(exit)).toBe(true)
+      }
+
+      const hostilePathFact = structuredClone(original)
+      const output = hostilePathFact.probeReceipts[1].execution.terminalOutput
+      output.facts.find((fact: MutableDocument) => fact.name.startsWith("change-kind."))
+        .value.value = "src/index.ts"
+      rebindProbeEvidence(hostilePathFact.probeReceipts[1])
+      rebindObjectiveEvidence(hostilePathFact)
+      rehashResult(hostilePathFact)
+      yield* decodeMachineTrialResultStructure(hostilePathFact)
+      expect(Exit.isFailure(yield* decodeMachineTrialResult(
+        hostilePathFact,
+        fixture.authority
+      ).pipe(Effect.exit))).toBe(true)
+
+      const hostileGatePrerequisite = structuredClone(original)
+      hostileGatePrerequisite.caseReceipts[0].execution = {
+        ...hostileGatePrerequisite.caseReceipts[0].execution,
+        _tag: "Failed",
+        failureIds: ["failure.hostile-prerequisite"]
+      }
+      hostileGatePrerequisite.qualification = "Rejected"
+      rebindObjectiveEvidence(hostileGatePrerequisite)
+      rehashResult(hostileGatePrerequisite)
+      yield* decodeMachineTrialResultStructure(hostileGatePrerequisite)
+      expect(Exit.isFailure(yield* decodeMachineTrialResult(
+        hostileGatePrerequisite,
+        fixture.authority
+      ).pipe(Effect.exit))).toBe(true)
     }))
 })

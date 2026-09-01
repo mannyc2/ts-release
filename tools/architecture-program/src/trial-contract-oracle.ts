@@ -155,6 +155,15 @@ export const V2_EXPECTED_GIT_EXECUTABLE_POLICY = {
 export const V2_EXPECTED_BINARY_NON_PRODUCT_LINE_DELTA_POLICY =
   "git-binary-marker-maps-to-zero-lines" as const
 
+export const V2_EXPECTED_RUNNER_SOURCE_CLOSURE = {
+  runnerSourceRoot: "tools/architecture-program/src",
+  runnerPackageManifestPath: "tools/architecture-program/package.json",
+  runnerTypeScriptConfigPath: "tools/architecture-program/tsconfig.json",
+  runnerSourceClosureAlgorithmId:
+    "canonical-source-tree-plus-execution-inputs-sha256-v2",
+  runnerSourceClosureHashDomain: "ts-release/architecture-runner-source-closure/v2"
+} as const
+
 export const V2_EXPECTED_TOP_LEVEL_KEYS = [
   "schemaVersion",
   "programId",
@@ -637,31 +646,31 @@ export const V2_EXPECTED_PROBE_COMPONENT_HASHES = {
 } as const
 
 export const V2_EXPECTED_GATE_DEFINITION_HASHES = {
-  "GM01-shared-case-semantics": "5ea6fe88a4dfc1340581cbe456069b565886f3c6c53e73b972b81bcce5166264",
-  "GM02-law-and-owner-invariants": "f3c90bd1ae7cd6c114991217640130c471c2f37c4ede3ef62dbf9ae8cb91632e",
-  "GM03-construction-boundaries": "539ef96b0c98040a9936c74a8d681b446ad7caecef8ce2959799f4520013e608",
-  "GM04-result-provenance": "4a6b299f0808efd8de9e7f65c535f6adfde1f57e970ea8ef40f09b81e4f3760f",
-  "GM05-machine-source-budget": "17a6aca8e34b2718e6aba8d040f816fb6cacbae2c69bac6e3da0c88b4cea5f43",
-  "GM06-marginal-measurement": "19a164c969851b59309cb4c57d750d025e7f476fbad853767e77e13854f57c59",
-  "GM07-candidate-equivalence": "219f550a1a4c5accfd948bc16cf43f0abef0b110f2b3fbbf8dd90200bf0b409f",
-  "GM08-metric-and-readability-completeness": "07ce2226777f71883945a8f30aa1d15e6a8dcc0f8b52b0608abc421c3cc601ae",
-  "GM09-offline-nonmutation": "f05b51242709287ef1ba423cf4a475eedae0edc0132fac382c9d76dce9c5bd03",
-  "GT01-shared-fixture-machine-and-cases": "cd09f652cbeefa2c221c4bdc387721cb03f9131577a9429205902219a724718c",
-  "GT02-packed-library-node": "e06432cb79d57bef6e4227e6ac388c5580f5cce70b189ea5b10bc61085e87ff5",
-  "GT03-packed-library-bun": "c80b3422ffe85867b7a9f814dd12703af484c18bae02488e598f9c228e829392",
-  "GT04-packed-cli": "062d489bac4af4e9e00ccccf9c6eb74f68e6fb90419c779bd3c569dec3a8e3c2",
-  "GT05-packed-github-action": "1df602bd38fe2fa42a2a4dd7406356568cae92b16920b1e5cd5ca35e6e362cc8",
-  "GT06-packed-external-provider-two-instances": "36b8b3b9ae0415eaa90a77df6621dc0c17e7c00f60c4c0d10a39a5ac287ac487",
-  "GT07-lossless-effect-build-file-tree-adoption": "9e5cef894315cc4e1a6f8867fa6814911d75fc1ef24ca8bd43aa733490546d64",
-  "GT08-exact-runtime-declaration-surface": "5a424cb397065a2d3a6ec483913296338f84cd96c5dad4e4f148ed3842443359",
-  "GT09-exact-emitted-packed-inventory": "5d9b0081204a4a52d6cc8902c011942638ae7969355c6e4e4fcbe825d3cbc234",
-  "GT10-exact-static-type-dynamic-manifest-graph": "25011f65808be889e65084b36771f92759db6517a1225f602ddd6d774c706c89",
-  "GT11-no-cycle-sibling-reversal-or-host-edge": "5307230c02e018e2d32a656e27371a8f6a88e7a9170a1a3e8f35e668bc85db7d",
-  "GT12-version-skew-partial-publication": "5c7979586623d9e9a0ec1dc76c40f73f5070ddfa182280c896afa844c8d3a5b7",
-  "GT13-dry-run-build-publication-self-release": "9030719dcffd8454d5183459f27b1df8c681b5692aa6aebe6713276884c6632f",
-  "GT14-tree-shaking-and-packed-bytes": "c8d4c6ffd7980cb8baeba47091e57aa021831acfc77a4f28d9d1781700a4a74c",
-  "GT15-all-nine-marginal-probes": "cba712d1c316746d5576395700f105f9582cdc66285b3a6fc7b6f522e0d0b88b",
-  "GT16-offline-nonmutation": "63f94aec434a158c7682b07ba346a71efd3811f557deee929cfa9d4208426d95"
+  "GM01-shared-case-semantics": "626de170b2a1c55552e313a046c3517559dd6b47b0b173be7fdeb7aca37a0292",
+  "GM02-law-and-owner-invariants": "2cf0c36a788a40b14b2a77aa4ea06dd0ffd17302c2a3085401dc3c915830696e",
+  "GM03-construction-boundaries": "dd5ad2ead5c418bfadc4cfd391766bb9dc39a95d193d1fd0b1942a44616f6453",
+  "GM04-result-provenance": "730c8d8524d62e993e02f52bea0d75b38ad0c3bf6bc8cc53e97196d26f0b1c97",
+  "GM05-machine-source-budget": "91569a69b477ba45c40bd2f1b386d56e4e113bddc18c70f8d97826e1bf4852fc",
+  "GM06-marginal-measurement": "bdfdc74aa5e7cab1d8822f795d01383320e19a927b9a6b9be3303003f637851c",
+  "GM07-candidate-equivalence": "64c0e905abf7b9c04d90eba1b1cc2afb1143ebfec8e2d6a8aa7c8f91b81e7b22",
+  "GM08-metric-and-readability-completeness": "e3d4631665e24df2e6092b9772c0560080090b0cd542323b116d730ccc8d3f34",
+  "GM09-offline-nonmutation": "42e852ab7cbe1b37c11af315dedabf03151c665aa333f8000b2fc68ea6b4fcf1",
+  "GT01-shared-fixture-machine-and-cases": "cb3426507be7cbdd46cac99e5c269fba6bc7a945bc0f8dbe7d4cae32d1b0b0cd",
+  "GT02-packed-library-node": "8a9354a5e067e182ea293f8ad69b98e4ed0807ad6efef3ac6675a0dd18b2b52e",
+  "GT03-packed-library-bun": "d7cb235280b6e16dd64567c07ffcaadb76b9ffa0cfa8d99ffa68be58c52ca500",
+  "GT04-packed-cli": "420f0b3a6132c87551dd92e65416981490694ea6d1aa9be6d60dea466a615207",
+  "GT05-packed-github-action": "f5c31b7969390b4a0c87b23e26efe1b423de082ca7728cf6dc40dfa8f17cf333",
+  "GT06-packed-external-provider-two-instances": "db0fa79183aff80a00d6e16f7c9e4c8883250e136023d38d45f9fe5fb760e2dd",
+  "GT07-lossless-effect-build-file-tree-adoption": "c3764bfbc1a00b30fbaf0f5f73de2a5a77618d6ca0e1a546ef7fb891d13761bd",
+  "GT08-exact-runtime-declaration-surface": "400202add563b7f02ef4a3d1e46a453de8d99f284fd6714bcbbad1ddb948a4ea",
+  "GT09-exact-emitted-packed-inventory": "38291b29cc443bf70ac31bdc03d7bc397bf98f85b921452b0014b67a8bcad3ef",
+  "GT10-exact-static-type-dynamic-manifest-graph": "4d6db935e3907c890fcf3538d7f8b022888df8daae864d9b58dd0cf8a2c7d953",
+  "GT11-no-cycle-sibling-reversal-or-host-edge": "f8ee4aacb05df78742b98785573f7626ca3f24fd4ce3fef6409891b396f43435",
+  "GT12-version-skew-partial-publication": "8f64be0cb3b480efe791a0d646092a7b0a1b794b761e25d5059c8a21cae4e201",
+  "GT13-dry-run-build-publication-self-release": "be4939762a25d2b164a806ea9809b7177810b9d32314d22f8a24a3eddc43dce7",
+  "GT14-tree-shaking-and-packed-bytes": "3398823b4c8dc2b74de9c41d810f7ea0803b1ee4c1d97b08c423065af8880a46",
+  "GT15-all-nine-marginal-probes": "fdf61fa08b58396ce96f58a5674c90fcc916a9137d91c75599a68dd48927c27f",
+  "GT16-offline-nonmutation": "c35a47dfd1f5f6b67672a262b646fb6fd1b0a659faf8a8cb6d7a8e9b66fb8a7f"
 } as const
 
 export const V2_EXPECTED_SCHEMA_IDS = {

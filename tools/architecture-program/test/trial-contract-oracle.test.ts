@@ -155,4 +155,21 @@ describe("architecture trial v2 independent contract oracle", () => {
       expect(issues).toContain("stored measurement contract hash differs from the independent v2 oracle")
       expect(issues).toContain("computed measurement contract hash differs from the independent v2 oracle")
     }))
+
+  it.effect("independently rejects runner package-script source-closure drift", () =>
+    Effect.gen(function* () {
+      const { encoded, spec } = yield* loadValidSpec()
+      ;(spec.receiptContract as unknown as MutableDocument).runnerPackageManifestPath =
+        "tools/architecture-program/other-package.json"
+      ;(spec.receiptContract as unknown as MutableDocument).runnerSourceClosureAlgorithmId =
+        "source-tree-only-v1"
+
+      const issues = trialContractOracleIssues(spec, encoded)
+      expect(issues).toContain(
+        "receipt runner source closure runnerPackageManifestPath differs from the independent v2 oracle"
+      )
+      expect(issues).toContain(
+        "receipt runner source closure runnerSourceClosureAlgorithmId differs from the independent v2 oracle"
+      )
+    }))
 })

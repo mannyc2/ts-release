@@ -620,6 +620,14 @@ export const ReceiptContract = Schema.Struct({
   candidateFileNamePolicy: Schema.Literal("<candidate-id>.json"),
   requiredInputBindingIds: Schema.Array(ArtifactId),
   runnerSourceRoot: ExistingRepositoryPath,
+  runnerPackageManifestPath: ExistingRepositoryPath,
+  runnerTypeScriptConfigPath: ExistingRepositoryPath,
+  runnerSourceClosureAlgorithmId: Schema.Literal(
+    "canonical-source-tree-plus-execution-inputs-sha256-v2"
+  ),
+  runnerSourceClosureHashDomain: Schema.Literal(
+    "ts-release/architecture-runner-source-closure/v2"
+  ),
   identityFieldIds: Schema.Array(ArtifactId)
 })
 export type ReceiptContract = typeof ReceiptContract.Type

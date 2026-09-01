@@ -7,6 +7,8 @@
   "scripts": {
     "check": "tsc -p tsconfig.json --noEmit",
     "check:inputs": "bun run src/check-inputs.ts",
+    "gate:machine": "false",
+    "gate:topology": "false",
     "generate:traceability": "bun run src/generate-research-traceability.ts",
     "test": "vitest run"
   },

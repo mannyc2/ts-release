@@ -992,7 +992,13 @@ export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV2): Readonl
   const receiptContract = spec.receiptContract
   if (receiptContract.machineResultRoot !== "docs/refactor/architecture-program/results/machine" ||
     receiptContract.topologyResultRoot !== "docs/refactor/architecture-program/results/topology" ||
-    receiptContract.runnerSourceRoot !== "tools/architecture-program/src") {
+    receiptContract.runnerSourceRoot !== "tools/architecture-program/src" ||
+    receiptContract.runnerPackageManifestPath !== "tools/architecture-program/package.json" ||
+    receiptContract.runnerTypeScriptConfigPath !== "tools/architecture-program/tsconfig.json" ||
+    receiptContract.runnerSourceClosureAlgorithmId !==
+      "canonical-source-tree-plus-execution-inputs-sha256-v2" ||
+    receiptContract.runnerSourceClosureHashDomain !==
+      "ts-release/architecture-runner-source-closure/v2") {
     issues.push("receiptContract changed a prescribed result or runner source path")
   }
   issues.push(...exactOrderedIssues(
@@ -1206,6 +1212,10 @@ export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV2): Readonl
     const expectedCommand = [
       "bun",
       "run",
+      "--no-env-file",
+      "--config=/dev/null",
+      "--no-install",
+      "--shell=bun",
       "--cwd",
       "tools/architecture-program",
       gate.scope === "machine" ? "gate:machine" : "gate:topology",

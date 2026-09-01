@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect"
-import { hashCanonicalValue } from "../trial-hash.js"
+import { canonicalJsonBytes } from "../canonical-document.js"
+import { hashCanonicalValue, sha256Bytes } from "../trial-hash.js"
 import {
   type ArchitectureCandidateManifestV2,
   candidateManifestInvariantIssues
@@ -17,6 +18,20 @@ import {
   TrialRunContextV2,
   trialRunContextInvariantIssues
 } from "./run-context.js"
+import {
+  ArchitectureCaseInvocationV2,
+  ArchitectureCaseObservationV2,
+  ArchitectureGateInvocationV2,
+  ArchitectureGateObservationV2,
+  ArchitectureProbeInvocationV2,
+  ArchitectureProbeObservationV2,
+  caseInvocationStructureCodec,
+  caseObservationStructureCodec,
+  gateInvocationStructureCodec,
+  gateObservationStructureCodec,
+  probeInvocationStructureCodec,
+  probeObservationStructureCodec
+} from "./harness-protocol.js"
 import { REQUIRED_TRIAL_LANES } from "./trial-contract.js"
 import {
   CaseTraceStep,
@@ -78,42 +93,200 @@ export const TRIAL_RESULT_RECEIPT_HASH_DOMAIN = "ts-release/architecture-trial-r
 export const CASE_TERMINAL_RESULT_HASH_DOMAIN = "ts-release/architecture-case-terminal-result/v2"
 export const PROBE_TERMINAL_RESULT_HASH_DOMAIN = "ts-release/architecture-probe-terminal-result/v2"
 export const GATE_TERMINAL_RESULT_HASH_DOMAIN = "ts-release/architecture-gate-terminal-result/v2"
+export const PROBE_EVALUATION_RECORD_HASH_DOMAIN =
+  "ts-release/architecture-probe-evaluation-record/v2"
+export const GATE_EVALUATION_RECORD_HASH_DOMAIN =
+  "ts-release/architecture-gate-evaluation-record/v2"
+export const GATE_COMMAND_INPUT_HASH_DOMAIN =
+  "ts-release/architecture-gate-command-input/v2"
+export const OBJECTIVE_DERIVATION_RECORD_HASH_DOMAIN =
+  "ts-release/architecture-objective-derivation-record/v2"
 export const PROBE_MEASUREMENT_EVIDENCE_HASH_DOMAIN =
   "ts-release/architecture-probe-measurement-evidence/v2"
 export const OBJECTIVE_METRIC_EVIDENCE_HASH_DOMAIN =
   "ts-release/architecture-objective-metric-evidence/v2"
+export const FROZEN_TRIAL_PROCESS_TIMEOUT_MILLISECONDS = 30_000
+export const FROZEN_TRIAL_PROCESS_OUTPUT_LIMIT_BYTES = 1_048_576
+export const DEFAULT_DENY_GATE_EVALUATOR_ID = ArtifactId.make(
+  "gate-evaluator.default-deny-v1"
+)
+export const DEFAULT_DENY_PROBE_EVALUATOR_ID = ArtifactId.make(
+  "probe-evaluator.default-deny-v1"
+)
+export const DEFAULT_UNAVAILABLE_OBJECTIVE_DERIVATION_ID = ArtifactId.make(
+  "objective-derivation.default-unavailable-v1"
+)
 
-/** The child exited normally. An exit of zero is not, by itself, semantic success. */
-export class ExitedProcessOutcome extends Schema.TaggedClass<ExitedProcessOutcome>()("Exited", {
-  exitCode: Natural
+export class CompleteProcessStreamEvidence extends Schema.TaggedClass<
+  CompleteProcessStreamEvidence
+>()("Complete", {
+  byteLength: Natural,
+  sha256: Sha256Hex
 }) {}
 
-export class TimedOutProcessOutcome extends Schema.TaggedClass<TimedOutProcessOutcome>()("TimedOut", {
-  timeoutMilliseconds: PositiveInteger
+export class PrefixProcessStreamEvidence extends Schema.TaggedClass<
+  PrefixProcessStreamEvidence
+>()("Prefix", {
+  byteLength: Natural,
+  sha256: Sha256Hex
 }) {}
 
-export class SignaledProcessOutcome extends Schema.TaggedClass<SignaledProcessOutcome>()("Signaled", {
-  signal: CanonicalNonEmptyText
-}) {}
-
-export class SpawnFailedProcessOutcome extends Schema.TaggedClass<SpawnFailedProcessOutcome>()(
-  "SpawnFailed",
-  { executable: CanonicalNonEmptyText }
-) {}
-
-export class ProtocolRejectedProcessOutcome extends Schema.TaggedClass<ProtocolRejectedProcessOutcome>()(
-  "ProtocolRejected",
-  { outputSha256: Schema.Union([Sha256Hex, Schema.Null]) }
-) {}
-
-export const ProcessOutcome = Schema.Union([
-  ExitedProcessOutcome,
-  TimedOutProcessOutcome,
-  SignaledProcessOutcome,
-  SpawnFailedProcessOutcome,
-  ProtocolRejectedProcessOutcome
+export const ProcessStreamEvidence = Schema.Union([
+  CompleteProcessStreamEvidence,
+  PrefixProcessStreamEvidence
 ])
-export type ProcessOutcome = typeof ProcessOutcome.Type
+export type ProcessStreamEvidence = typeof ProcessStreamEvidence.Type
+
+/** The child exited normally and both output streams reached EOF. */
+export class ExitedProcessAttempt extends Schema.TaggedClass<ExitedProcessAttempt>()("Exited", {
+  exitCode: Natural,
+  stdout: CompleteProcessStreamEvidence,
+  stderr: CompleteProcessStreamEvidence
+}) {}
+
+export class TimedOutProcessAttempt extends Schema.TaggedClass<TimedOutProcessAttempt>()("TimedOut", {
+  timeoutMilliseconds: PositiveInteger,
+  stdout: ProcessStreamEvidence,
+  stderr: ProcessStreamEvidence
+}) {}
+
+export class SignaledProcessAttempt extends Schema.TaggedClass<SignaledProcessAttempt>()("Signaled", {
+  signal: CanonicalNonEmptyText,
+  stdout: ProcessStreamEvidence,
+  stderr: ProcessStreamEvidence
+}) {}
+
+export class OutputLimitedProcessAttempt extends Schema.TaggedClass<OutputLimitedProcessAttempt>()(
+  "OutputLimited",
+  {
+    stream: Schema.Literals(["stdout", "stderr"]),
+    limitBytes: PositiveInteger,
+    observedBytes: PositiveInteger,
+    stdout: ProcessStreamEvidence,
+    stderr: ProcessStreamEvidence
+  }
+ ) {}
+
+/** The child started, but a process or stdio channel failed before a factual exit was available. */
+export class IoFailedProcessAttempt extends Schema.TaggedClass<IoFailedProcessAttempt>()(
+  "IoFailed",
+  {
+    operation: Schema.Literals(["stdin", "stdout", "stderr", "child", "close"]),
+    stdout: ProcessStreamEvidence,
+    stderr: ProcessStreamEvidence
+  }
+) {}
+
+/** No candidate adapter process began, so no process stream is claimed. */
+export class NotStartedProcessAttempt extends Schema.TaggedClass<NotStartedProcessAttempt>()(
+  "NotStarted",
+  { executable: Schema.Union([CanonicalNonEmptyText, Schema.Null]) }
+) {}
+
+export const ProcessAttemptEvidence = Schema.Union([
+  ExitedProcessAttempt,
+  TimedOutProcessAttempt,
+  SignaledProcessAttempt,
+  OutputLimitedProcessAttempt,
+  IoFailedProcessAttempt,
+  NotStartedProcessAttempt
+])
+export type ProcessAttemptEvidence = typeof ProcessAttemptEvidence.Type
+
+const GateCommandInputBodyFields = {
+  schemaVersion: Schema.Literal("architecture-gate-command-input-v2"),
+  invocation: ArchitectureGateInvocationV2,
+  invocationSha256: Sha256Hex,
+  inspectedTreeSha256: Sha256Hex,
+  inspectionAuthority: Schema.Literal("runner-no-follow-snapshot-v1"),
+  inspectionRootChannel: Schema.Literal("execution-local-envelope-v1")
+} as const
+
+/**
+ * Stable, receipt-identifying gate command input. The execution-local snapshot path is
+ * deliberately carried in a separate process envelope and is never part of this identity.
+ */
+export class GateCommandInputV2 extends Schema.Class<GateCommandInputV2>(
+  "GateCommandInputV2"
+)({ ...GateCommandInputBodyFields }) {}
+export type GateCommandInputV2Encoded = typeof GateCommandInputV2.Encoded
+
+export class AcceptedRunnerEvaluationDisposition extends Schema.TaggedClass<
+  AcceptedRunnerEvaluationDisposition
+>()("Accepted", {
+  facts: Schema.NonEmptyArray(EvidenceEntryV2)
+}) {}
+
+export class RejectedRunnerEvaluationDisposition extends Schema.TaggedClass<
+  RejectedRunnerEvaluationDisposition
+>()("Rejected", {
+  failureIds: Schema.NonEmptyArray(ArtifactId)
+}) {}
+
+export const RunnerEvaluationDisposition = Schema.Union([
+  AcceptedRunnerEvaluationDisposition,
+  RejectedRunnerEvaluationDisposition
+])
+export type RunnerEvaluationDisposition = typeof RunnerEvaluationDisposition.Type
+
+const ProbeEvaluationRecordBodyFields = {
+  evaluatorId: ArtifactId,
+  probeId: V2ProbeId,
+  inspectedTreeSha256: Sha256Hex,
+  disposition: RunnerEvaluationDisposition
+} as const
+
+export const ProbeEvaluationRecordBody = Schema.Struct(ProbeEvaluationRecordBodyFields)
+export type ProbeEvaluationRecordBody = typeof ProbeEvaluationRecordBody.Type
+export type ProbeEvaluationRecordBodyEncoded = typeof ProbeEvaluationRecordBody.Encoded
+
+export class ProbeEvaluationRecord extends Schema.Class<ProbeEvaluationRecord>(
+  "ProbeEvaluationRecord"
+)({
+  recordSha256: Sha256Hex,
+  ...ProbeEvaluationRecordBodyFields
+}) {}
+
+const GateEvaluationRecordBodyFields = {
+  evaluatorId: ArtifactId,
+  gateId: V2GateId,
+  inspectedTreeSha256: Sha256Hex,
+  declaredCommand: Schema.NonEmptyArray(CanonicalNonEmptyText),
+  commandInputSha256: Sha256Hex,
+  commandAttempt: ProcessAttemptEvidence,
+  disposition: RunnerEvaluationDisposition
+} as const
+
+export const GateEvaluationRecordBody = Schema.Struct(GateEvaluationRecordBodyFields)
+export type GateEvaluationRecordBody = typeof GateEvaluationRecordBody.Type
+export type GateEvaluationRecordBodyEncoded = typeof GateEvaluationRecordBody.Encoded
+
+export class GateEvaluationRecord extends Schema.Class<GateEvaluationRecord>(
+  "GateEvaluationRecord"
+)({
+  recordSha256: Sha256Hex,
+  ...GateEvaluationRecordBodyFields
+}) {}
+
+const ObjectiveDerivationRecordBodyFields = {
+  derivationId: ArtifactId,
+  metricId: MetricId,
+  value: Schema.Union([Natural, Schema.Null]),
+  inspectedTreeSha256: Sha256Hex,
+  disposition: RunnerEvaluationDisposition
+} as const
+
+export const ObjectiveDerivationRecordBody = Schema.Struct(ObjectiveDerivationRecordBodyFields)
+export type ObjectiveDerivationRecordBody = typeof ObjectiveDerivationRecordBody.Type
+export type ObjectiveDerivationRecordBodyEncoded = typeof ObjectiveDerivationRecordBody.Encoded
+
+export class ObjectiveDerivationRecord extends Schema.Class<ObjectiveDerivationRecord>(
+  "ObjectiveDerivationRecord"
+)({
+  recordSha256: Sha256Hex,
+  ...ObjectiveDerivationRecordBodyFields
+}) {}
+export type ObjectiveDerivationRecordEncoded = typeof ObjectiveDerivationRecord.Encoded
 
 /** Raw runner measurement values retained as the inventory boundary API. */
 export class IdentifierSetDelta extends Schema.Class<IdentifierSetDelta>("IdentifierSetDelta")({
@@ -207,13 +380,13 @@ export class CaseTerminalOutputV2 extends Schema.Class<CaseTerminalOutputV2>("Ca
 }) {}
 
 export class PassedCaseExecution extends Schema.TaggedClass<PassedCaseExecution>()("Passed", {
-  processOutcome: ExitedProcessOutcome,
+  processAttempt: ExitedProcessAttempt,
   invocationSha256: Sha256Hex,
   terminalOutput: CaseTerminalOutputV2
 }) {}
 
 export class FailedCaseExecution extends Schema.TaggedClass<FailedCaseExecution>()("Failed", {
-  processOutcome: ProcessOutcome,
+  processAttempt: ProcessAttemptEvidence,
   invocationSha256: Schema.Union([Sha256Hex, Schema.Null]),
   terminalOutput: Schema.Union([CaseTerminalOutputV2, Schema.Null]),
   failureIds: Schema.NonEmptyArray(ArtifactId)
@@ -255,6 +428,8 @@ const ProbeTerminalOutputBodyFields = {
   dependencyDagDelta: IdentifierSetDelta,
   zeroTouchRoleIds: Schema.Array(RoleId),
   changeKinds: Schema.Array(ChangeKind),
+  facts: Schema.NonEmptyArray(EvidenceEntryV2),
+  evaluationRecord: Schema.Union([ProbeEvaluationRecord, Schema.Null]),
   observationCount: Schema.Literal(1)
 } as const
 
@@ -280,13 +455,13 @@ export class ProbeTerminalOutputV2 extends Schema.Class<ProbeTerminalOutputV2>(
 }) {}
 
 export class PassedProbeExecution extends Schema.TaggedClass<PassedProbeExecution>()("Passed", {
-  processOutcome: ExitedProcessOutcome,
+  processAttempt: ExitedProcessAttempt,
   invocationSha256: Sha256Hex,
   terminalOutput: ProbeTerminalOutputV2
 }) {}
 
 export class FailedProbeExecution extends Schema.TaggedClass<FailedProbeExecution>()("Failed", {
-  processOutcome: ProcessOutcome,
+  processAttempt: ProcessAttemptEvidence,
   invocationSha256: Schema.Union([Sha256Hex, Schema.Null]),
   terminalOutput: Schema.Union([ProbeTerminalOutputV2, Schema.Null]),
   failureIds: Schema.NonEmptyArray(ArtifactId)
@@ -325,15 +500,17 @@ export class GateTerminalOutputV2 extends Schema.Class<GateTerminalOutputV2>("Ga
 }) {}
 
 export class PassedGateExecution extends Schema.TaggedClass<PassedGateExecution>()("Passed", {
-  processOutcome: ExitedProcessOutcome,
+  processAttempt: ExitedProcessAttempt,
   invocationSha256: Sha256Hex,
-  terminalOutput: GateTerminalOutputV2
+  terminalOutput: GateTerminalOutputV2,
+  evaluationRecord: GateEvaluationRecord
 }) {}
 
 export class FailedGateExecution extends Schema.TaggedClass<FailedGateExecution>()("Failed", {
-  processOutcome: ProcessOutcome,
+  processAttempt: ProcessAttemptEvidence,
   invocationSha256: Schema.Union([Sha256Hex, Schema.Null]),
   terminalOutput: Schema.Union([GateTerminalOutputV2, Schema.Null]),
+  evaluationRecord: GateEvaluationRecord,
   failureIds: Schema.NonEmptyArray(ArtifactId)
 }) {}
 
@@ -371,12 +548,13 @@ export type ObjectiveMetricEvidenceContextEncoded = typeof ObjectiveMetricEviden
 export class MeasuredObjectiveMetric extends Schema.TaggedClass<MeasuredObjectiveMetric>()("Measured", {
   id: MetricId,
   value: Natural,
-  evidenceSha256: Sha256Hex
+  evidenceSha256: Sha256Hex,
+  derivationRecord: ObjectiveDerivationRecord
 }) {}
 
 export class UnavailableObjectiveMetric extends Schema.TaggedClass<UnavailableObjectiveMetric>()(
   "Unavailable",
-  { id: MetricId, failureId: ArtifactId }
+  { id: MetricId, failureId: ArtifactId, derivationRecord: ObjectiveDerivationRecord }
 ) {}
 
 export const ObjectiveMetric = Schema.Union([
@@ -445,7 +623,7 @@ export class TrialResultInvariantError extends Schema.TaggedError<TrialResultInv
   }
 }
 
-export interface TrialResultValidationAuthority {
+export interface TrialResultPreflightAuthority {
   readonly trialSpec: ArchitectureTrialSpecV2
   /** SHA-256 of the exact canonical trial-spec document bytes accepted by the runner. */
   readonly rawTrialSpecSha256: Sha256HexType
@@ -460,6 +638,41 @@ export interface TrialResultValidationAuthority {
   readonly runnerNodeModulesSha256: Sha256HexType
   /** Exact externally observed toolchain; receipt claims are not self-authoritative. */
   readonly toolchain: TrialRunContextToolchain
+}
+
+export interface ProbeEvaluationAuthorityBinding {
+  readonly probeId: typeof V2ProbeId.Type
+  readonly evaluatorId: typeof ArtifactId.Type | null
+  readonly recordSha256: Sha256HexType | null
+}
+
+export interface GateEvaluationAuthorityBinding {
+  readonly gateId: typeof V2GateId.Type
+  readonly evaluatorId: typeof ArtifactId.Type | null
+  readonly recordSha256: Sha256HexType | null
+}
+
+export interface ObjectiveDerivationAuthorityBinding {
+  readonly metricId: typeof MetricId.Type
+  readonly derivationId: typeof ArtifactId.Type
+  readonly recordSha256: Sha256HexType
+}
+
+/**
+ * Exact records produced by the trusted runner-owned evaluators and objective
+ * derivations. These bindings are external validation inputs: a receipt must
+ * never construct them from the same untrusted bytes it is validating.
+ */
+export interface TrialResultEvaluationAuthority {
+  readonly probeEvaluations: ReadonlyArray<ProbeEvaluationAuthorityBinding>
+  readonly gateEvaluations: ReadonlyArray<GateEvaluationAuthorityBinding>
+  readonly objectiveDerivations: ReadonlyArray<ObjectiveDerivationAuthorityBinding>
+}
+
+export interface TrialResultValidationAuthority extends TrialResultPreflightAuthority {
+  /** Externally retained content address of the exact durable receipt bytes. */
+  readonly expectedReceiptId: Sha256HexType
+  readonly evaluationAuthority: TrialResultEvaluationAuthority
 }
 
 type ResultScope = "machine" | "topology"
@@ -481,6 +694,40 @@ const decodeProbeTerminalBodyStructure = Schema.decodeUnknownSync(ProbeTerminalO
 const encodeProbeTerminalBodyStructure = Schema.encodeUnknownSync(ProbeTerminalOutputBody, strictOptions)
 const decodeGateTerminalBodyStructure = Schema.decodeUnknownSync(GateTerminalOutputBody, strictOptions)
 const encodeGateTerminalBodyStructure = Schema.encodeUnknownSync(GateTerminalOutputBody, strictOptions)
+const decodeGateCommandInputStructure = Schema.decodeUnknownSync(GateCommandInputV2, strictOptions)
+const encodeGateCommandInputStructure = Schema.encodeUnknownSync(GateCommandInputV2, strictOptions)
+const decodeProbeEvaluationRecordBodyStructure = Schema.decodeUnknownSync(
+  ProbeEvaluationRecordBody,
+  strictOptions
+)
+const encodeProbeEvaluationRecordBodyStructure = Schema.encodeUnknownSync(
+  ProbeEvaluationRecordBody,
+  strictOptions
+)
+const decodeGateEvaluationRecordBodyStructure = Schema.decodeUnknownSync(
+  GateEvaluationRecordBody,
+  strictOptions
+)
+const encodeGateEvaluationRecordBodyStructure = Schema.encodeUnknownSync(
+  GateEvaluationRecordBody,
+  strictOptions
+)
+const decodeObjectiveDerivationRecordBodyStructure = Schema.decodeUnknownSync(
+  ObjectiveDerivationRecordBody,
+  strictOptions
+)
+const encodeObjectiveDerivationRecordBodyStructure = Schema.encodeUnknownSync(
+  ObjectiveDerivationRecordBody,
+  strictOptions
+)
+const decodeObjectiveDerivationRecordStructure = Schema.decodeUnknownSync(
+  ObjectiveDerivationRecord,
+  strictOptions
+)
+const encodeObjectiveDerivationRecordStructure = Schema.encodeUnknownSync(
+  ObjectiveDerivationRecord,
+  strictOptions
+)
 const decodeProbeMeasurementValueStructure = Schema.decodeUnknownSync(ProbeMeasurementValue, strictOptions)
 const encodeProbeMeasurementValueStructure = Schema.encodeUnknownSync(ProbeMeasurementValue, strictOptions)
 const decodeProbeMeasurementEvidenceContextStructure = Schema.decodeUnknownSync(
@@ -521,6 +768,58 @@ export const computeGateTerminalResultSha256 = (
   return hashCanonicalValue(GATE_TERMINAL_RESULT_HASH_DOMAIN, encodeGateTerminalBodyStructure(body))
 }
 
+export const makeGateCommandInput = (
+  invocation: ArchitectureGateInvocationV2,
+  inspectedTreeSha256: Sha256HexType
+): GateCommandInputV2 => new GateCommandInputV2({
+  schemaVersion: "architecture-gate-command-input-v2",
+  invocation,
+  invocationSha256: sha256Bytes(canonicalJsonBytes(gateInvocationStructureCodec.encode(invocation))),
+  inspectedTreeSha256,
+  inspectionAuthority: "runner-no-follow-snapshot-v1",
+  inspectionRootChannel: "execution-local-envelope-v1"
+})
+
+export const encodeGateCommandInput = (
+  input: GateCommandInputV2 | GateCommandInputV2Encoded
+): GateCommandInputV2Encoded => encodeGateCommandInputStructure(
+  decodeGateCommandInputStructure(input)
+)
+
+export const computeGateCommandInputSha256 = (
+  input: GateCommandInputV2 | GateCommandInputV2Encoded
+) => hashCanonicalValue(GATE_COMMAND_INPUT_HASH_DOMAIN, encodeGateCommandInput(input))
+
+export const computeProbeEvaluationRecordSha256 = (
+  input: ProbeEvaluationRecordBody | ProbeEvaluationRecordBodyEncoded
+) => {
+  const body = decodeProbeEvaluationRecordBodyStructure(input)
+  return hashCanonicalValue(
+    PROBE_EVALUATION_RECORD_HASH_DOMAIN,
+    encodeProbeEvaluationRecordBodyStructure(body)
+  )
+}
+
+export const computeGateEvaluationRecordSha256 = (
+  input: GateEvaluationRecordBody | GateEvaluationRecordBodyEncoded
+) => {
+  const body = decodeGateEvaluationRecordBodyStructure(input)
+  return hashCanonicalValue(
+    GATE_EVALUATION_RECORD_HASH_DOMAIN,
+    encodeGateEvaluationRecordBodyStructure(body)
+  )
+}
+
+export const computeObjectiveDerivationRecordSha256 = (
+  input: ObjectiveDerivationRecordBody | ObjectiveDerivationRecordBodyEncoded
+) => {
+  const body = decodeObjectiveDerivationRecordBodyStructure(input)
+  return hashCanonicalValue(
+    OBJECTIVE_DERIVATION_RECORD_HASH_DOMAIN,
+    encodeObjectiveDerivationRecordBodyStructure(body)
+  )
+}
+
 export const computeProbeMeasurementEvidenceSha256 = (
   probeId: typeof V2ProbeId.Type,
   id: string,
@@ -540,10 +839,16 @@ export const computeProbeMeasurementEvidenceSha256 = (
 export const computeObjectiveMetricEvidenceSha256 = (
   context: ObjectiveMetricEvidenceContext | ObjectiveMetricEvidenceContextEncoded,
   id: string,
-  value: number
+  value: number,
+  derivationRecord: ObjectiveDerivationRecord | ObjectiveDerivationRecordEncoded
 ) => {
   const decoded = decodeObjectiveMetricEvidenceContextStructure(context)
   const encoded = encodeObjectiveMetricEvidenceContextStructure(decoded)
+  const decodedDerivation = decodeObjectiveDerivationRecordStructure(derivationRecord)
+  const { recordSha256: _recordSha256, ...derivationBody } = decodedDerivation
+  if (decodedDerivation.recordSha256 !== computeObjectiveDerivationRecordSha256(derivationBody)) {
+    throw new Error("objective derivation recordSha256 does not bind its canonical body")
+  }
   return hashCanonicalValue(OBJECTIVE_METRIC_EVIDENCE_HASH_DOMAIN, {
     runContextSha256: encoded.runContextSha256,
     id,
@@ -551,7 +856,8 @@ export const computeObjectiveMetricEvidenceSha256 = (
     preflightFailures: encoded.preflightFailures,
     caseReceipts: encoded.caseReceipts,
     probeReceipts: encoded.probeReceipts,
-    gateReceipts: encoded.gateReceipts
+    gateReceipts: encoded.gateReceipts,
+    derivationRecord: encodeObjectiveDerivationRecordStructure(decodedDerivation)
   })
 }
 
@@ -582,6 +888,164 @@ const sameValue = (left: unknown, right: unknown): boolean => JSON.stringify(lef
 
 const checkFailureIds = (label: string, ids: ReadonlyArray<string>): ReadonlyArray<string> =>
   sortedUniqueStringIssues(`${label}.failureIds`, ids)
+
+const processAttemptInvariantIssues = (
+  label: string,
+  attempt: ProcessAttemptEvidence
+): ReadonlyArray<string> => {
+  const issues: Array<string> = []
+  if (attempt._tag === "TimedOut" &&
+    attempt.timeoutMilliseconds !== FROZEN_TRIAL_PROCESS_TIMEOUT_MILLISECONDS) {
+    issues.push(
+      `${label}.timeoutMilliseconds must equal the frozen ${FROZEN_TRIAL_PROCESS_TIMEOUT_MILLISECONDS}ms limit`
+    )
+  }
+  if (attempt._tag !== "OutputLimited") return issues
+  if (attempt.limitBytes !== FROZEN_TRIAL_PROCESS_OUTPUT_LIMIT_BYTES) {
+    issues.push(
+      `${label}.limitBytes must equal the frozen ${FROZEN_TRIAL_PROCESS_OUTPUT_LIMIT_BYTES}-byte limit`
+    )
+  }
+  const observed = attempt.stream === "stdout" ? attempt.stdout : attempt.stderr
+  issues.push(
+    ...(attempt.observedBytes > attempt.limitBytes
+      ? []
+      : [`${label}.observedBytes must exceed limitBytes`]),
+    ...(observed._tag === "Prefix"
+      ? []
+      : [`${label}.${attempt.stream} must be a Prefix capture`]),
+    ...(observed.byteLength === attempt.observedBytes
+      ? []
+      : [`${label}.${attempt.stream}.byteLength must equal observedBytes`])
+  )
+  return issues
+}
+
+const emptyProcessStreamSha256 = sha256Bytes(new Uint8Array())
+
+const passedAdapterTranscriptInvariantIssues = (
+  label: string,
+  attempt: ExitedProcessAttempt,
+  expectedStdout: Uint8Array
+): ReadonlyArray<string> => [
+  ...(attempt.stdout.byteLength === expectedStdout.byteLength
+    ? []
+    : [`${label}.stdout.byteLength must equal the exact canonical candidate observation bytes`]),
+  ...(attempt.stdout.sha256 === sha256Bytes(expectedStdout)
+    ? []
+    : [`${label}.stdout.sha256 must bind the exact canonical candidate observation bytes`]),
+  ...(attempt.stderr.byteLength === 0
+    ? []
+    : [`${label}.stderr.byteLength must be zero for Passed candidate adapter execution`]),
+  ...(attempt.stderr.sha256 === emptyProcessStreamSha256
+    ? []
+    : [`${label}.stderr.sha256 must bind the empty byte sequence for Passed candidate adapter execution`])
+]
+
+const runnerEvaluationDispositionInvariantIssues = (
+  label: string,
+  disposition: RunnerEvaluationDisposition
+): ReadonlyArray<string> => disposition._tag === "Accepted"
+  ? evidenceEntriesInvariantIssues(`${label}.facts`, disposition.facts)
+  : sortedUniqueStringIssues(`${label}.failureIds`, disposition.failureIds)
+
+const probeEvaluationRecordInvariantIssues = (
+  label: string,
+  record: ProbeEvaluationRecord,
+  expectedProbeId: typeof V2ProbeId.Type,
+  expectedTreeSha256: Sha256HexType
+): ReadonlyArray<string> => {
+  const { recordSha256: _recordSha256, ...body } = record
+  return [
+    ...(record.recordSha256 === computeProbeEvaluationRecordSha256(body)
+      ? []
+      : [`${label}.recordSha256 must bind the canonical probe evaluation record body`]),
+    ...(record.probeId === expectedProbeId
+      ? []
+      : [`${label}.probeId must equal ${expectedProbeId}`]),
+    ...(record.inspectedTreeSha256 === expectedTreeSha256
+      ? []
+      : [`${label}.inspectedTreeSha256 must equal the runner-observed after tree`]),
+    ...runnerEvaluationDispositionInvariantIssues(`${label}.disposition`, record.disposition)
+  ]
+}
+
+const gateEvaluationRecordInvariantIssues = (
+  label: string,
+  record: GateEvaluationRecord,
+  expected: {
+    readonly gateId: typeof V2GateId.Type
+    readonly treeSha256: Sha256HexType
+    readonly command: ReadonlyArray<string>
+    readonly commandInputSha256?: Sha256HexType
+    readonly expectedExit: number
+  }
+): ReadonlyArray<string> => {
+  const { recordSha256: _recordSha256, ...body } = record
+  return [
+    ...(record.recordSha256 === computeGateEvaluationRecordSha256(body)
+      ? []
+      : [`${label}.recordSha256 must bind the canonical gate evaluation record body`]),
+    ...(record.gateId === expected.gateId
+      ? []
+      : [`${label}.gateId must equal ${expected.gateId}`]),
+    ...(record.inspectedTreeSha256 === expected.treeSha256
+      ? []
+      : [`${label}.inspectedTreeSha256 must equal the run-context candidate tree`]),
+    ...(sameOrdered(record.declaredCommand, expected.command)
+      ? []
+      : [`${label}.declaredCommand must equal the receipt's exact declared gate command`]),
+    ...(expected.commandInputSha256 === undefined ||
+      record.commandInputSha256 === expected.commandInputSha256
+      ? []
+      : [`${label}.commandInputSha256 must bind the exact gate invocation and inspected tree`]),
+    ...processAttemptInvariantIssues(`${label}.commandAttempt`, record.commandAttempt),
+    ...runnerEvaluationDispositionInvariantIssues(`${label}.disposition`, record.disposition),
+    ...(record.disposition._tag === "Accepted" &&
+      (record.commandAttempt._tag !== "Exited" ||
+        record.commandAttempt.exitCode !== expected.expectedExit)
+      ? [`${label} Accepted requires its command attempt to exit with expectedExit`]
+      : [])
+  ]
+}
+
+const objectiveDerivationRecordInvariantIssues = (
+  label: string,
+  record: ObjectiveDerivationRecord,
+  expected: {
+    readonly metricId: string
+    readonly value: number | null
+    readonly treeSha256: Sha256HexType
+    readonly failureId?: string
+  }
+): ReadonlyArray<string> => {
+  const { recordSha256: _recordSha256, ...body } = record
+  return [
+    ...(record.recordSha256 === computeObjectiveDerivationRecordSha256(body)
+      ? []
+      : [`${label}.recordSha256 must bind the canonical objective derivation record body`]),
+    ...(record.metricId === expected.metricId
+      ? []
+      : [`${label}.metricId must equal ${expected.metricId}`]),
+    ...(record.value === expected.value
+      ? []
+      : [`${label}.value must equal the objective metric value`]),
+    ...(record.inspectedTreeSha256 === expected.treeSha256
+      ? []
+      : [`${label}.inspectedTreeSha256 must equal the run-context candidate tree`]),
+    ...runnerEvaluationDispositionInvariantIssues(`${label}.disposition`, record.disposition),
+    ...(expected.value !== null && record.disposition._tag !== "Accepted"
+      ? [`${label} measured objective derivation must be Accepted`]
+      : []),
+    ...(expected.value === null && record.disposition._tag !== "Rejected"
+      ? [`${label} unavailable objective derivation must be Rejected`]
+      : []),
+    ...(expected.failureId !== undefined && record.disposition._tag === "Rejected" &&
+      !record.disposition.failureIds.includes(expected.failureId as typeof ArtifactId.Type)
+      ? [`${label}.disposition.failureIds must include the unavailable metric failureId`]
+      : [])
+  ]
+}
 
 const deltaInvariantIssues = (label: string, delta: IdentifierSetDelta): ReadonlyArray<string> => {
   const issues = [
@@ -648,6 +1112,8 @@ const probeMeasurementEvidenceContext = (
   dependencyDagDelta: output.dependencyDagDelta,
   zeroTouchRoleIds: output.zeroTouchRoleIds,
   changeKinds: output.changeKinds,
+  facts: output.facts,
+  evaluationRecord: output.evaluationRecord,
   observationCount: output.observationCount
 })
 
@@ -660,6 +1126,15 @@ const probeOutputInvariantIssues = (
   const { resultSha256: _resultSha256, ...body } = output
   if (output.resultSha256 !== computeProbeTerminalResultSha256(body)) {
     issues.push(`${label}.resultSha256 must bind the canonical terminal result body`)
+  }
+  issues.push(...evidenceEntriesInvariantIssues(`${label}.facts`, output.facts))
+  if (output.evaluationRecord !== null) {
+    issues.push(...probeEvaluationRecordInvariantIssues(
+      `${label}.evaluationRecord`,
+      output.evaluationRecord,
+      probeId,
+      output.afterTreeSha256
+    ))
   }
   issues.push(...exactOrderedIds(
     `${label}.measurements`,
@@ -818,7 +1293,8 @@ export const trialResultBodyInvariantIssues = (body: SharedBody): ReadonlyArray<
     }
     const execution = receipt.execution
     if (execution._tag === "Passed") {
-      if (execution.processOutcome.exitCode !== 0) {
+      issues.push(...processAttemptInvariantIssues(`${label}.processAttempt`, execution.processAttempt))
+      if (execution.processAttempt.exitCode !== 0) {
         issues.push(`${label} Passed requires an Exited process outcome with exit code 0`)
       }
       issues.push(...caseOutputInvariantIssues(`${label}.terminalOutput`, execution.terminalOutput))
@@ -830,6 +1306,9 @@ export const trialResultBodyInvariantIssues = (body: SharedBody): ReadonlyArray<
       }
     } else {
       issues.push(...checkFailureIds(label, execution.failureIds))
+      issues.push(...("processAttempt" in execution
+        ? processAttemptInvariantIssues(`${label}.processAttempt`, execution.processAttempt)
+        : []))
       if (execution._tag === "Failed" && execution.terminalOutput !== null) {
         issues.push(...caseOutputInvariantIssues(`${label}.terminalOutput`, execution.terminalOutput))
       }
@@ -847,11 +1326,15 @@ export const trialResultBodyInvariantIssues = (body: SharedBody): ReadonlyArray<
     }
     const execution = receipt.execution
     if (execution._tag === "Passed") {
-      if (execution.processOutcome.exitCode !== 0) {
+      issues.push(...processAttemptInvariantIssues(`${label}.processAttempt`, execution.processAttempt))
+      if (execution.processAttempt.exitCode !== 0) {
         issues.push(`${label} Passed requires an Exited process outcome with exit code 0`)
       }
       const output = execution.terminalOutput
       issues.push(...probeOutputInvariantIssues(`${label}.terminalOutput`, receipt.probeId, output))
+      if (output.evaluationRecord?.disposition._tag !== "Accepted") {
+        issues.push(`${label} Passed requires an Accepted runner evaluation record`)
+      }
       if (output.measurements.some((measurement) => measurement._tag !== "Measured")) {
         issues.push(`${label} Passed requires every probe measurement to be Measured`)
       }
@@ -864,6 +1347,9 @@ export const trialResultBodyInvariantIssues = (body: SharedBody): ReadonlyArray<
       }
     } else {
       issues.push(...checkFailureIds(label, execution.failureIds))
+      issues.push(...("processAttempt" in execution
+        ? processAttemptInvariantIssues(`${label}.processAttempt`, execution.processAttempt)
+        : []))
       if (execution._tag === "Failed" && execution.terminalOutput !== null) {
         issues.push(...probeOutputInvariantIssues(
           `${label}.terminalOutput`,
@@ -885,12 +1371,35 @@ export const trialResultBodyInvariantIssues = (body: SharedBody): ReadonlyArray<
     issues.push(...sortedUniqueStringIssues(`${label}.probeIds`, receipt.probeIds))
     const execution = receipt.execution
     if (execution._tag === "Passed") {
-      if (execution.processOutcome.exitCode !== receipt.expectedExit) {
+      issues.push(...processAttemptInvariantIssues(`${label}.processAttempt`, execution.processAttempt))
+      if (execution.processAttempt.exitCode !== receipt.expectedExit) {
         issues.push(`${label} Passed requires its actual exit to equal expectedExit`)
       }
       issues.push(...gateOutputInvariantIssues(`${label}.terminalOutput`, execution.terminalOutput))
+      issues.push(...gateEvaluationRecordInvariantIssues(`${label}.evaluationRecord`,
+        execution.evaluationRecord, {
+        gateId: receipt.gateId,
+        treeSha256: body.runContext.candidateTreeSha256,
+        command: receipt.command,
+        expectedExit: receipt.expectedExit
+      }))
+      if (execution.evaluationRecord.disposition._tag !== "Accepted") {
+        issues.push(`${label} Passed requires an Accepted runner evaluation record`)
+      }
     } else {
       issues.push(...checkFailureIds(label, execution.failureIds))
+      issues.push(...("processAttempt" in execution
+        ? processAttemptInvariantIssues(`${label}.processAttempt`, execution.processAttempt)
+        : []))
+      if (execution._tag === "Failed") {
+        issues.push(...gateEvaluationRecordInvariantIssues(`${label}.evaluationRecord`,
+          execution.evaluationRecord, {
+          gateId: receipt.gateId,
+          treeSha256: body.runContext.candidateTreeSha256,
+          command: receipt.command,
+          expectedExit: receipt.expectedExit
+        }))
+      }
       if (execution._tag === "Failed" && execution.terminalOutput !== null) {
         issues.push(...gateOutputInvariantIssues(`${label}.terminalOutput`, execution.terminalOutput))
       }
@@ -905,9 +1414,32 @@ export const trialResultBodyInvariantIssues = (body: SharedBody): ReadonlyArray<
     gateReceipts: body.gateReceipts
   }
   body.objectiveMetrics.forEach((metric, index) => {
-    if (metric._tag === "Measured" && metric.evidenceSha256 !==
-      computeObjectiveMetricEvidenceSha256(objectiveEvidenceContext, metric.id, metric.value)) {
-      issues.push(`objectiveMetrics[${index}].evidenceSha256 does not bind exact receipt evidence`)
+    const derivationIssues = objectiveDerivationRecordInvariantIssues(
+      `objectiveMetrics[${index}].derivationRecord`,
+      metric.derivationRecord,
+      {
+        metricId: metric.id,
+        value: metric._tag === "Measured" ? metric.value : null,
+        treeSha256: body.runContext.candidateTreeSha256,
+        ...(metric._tag === "Unavailable" ? { failureId: metric.failureId } : {})
+      }
+    )
+    issues.push(...derivationIssues)
+    if (metric._tag === "Measured") {
+      try {
+        if (metric.evidenceSha256 !== computeObjectiveMetricEvidenceSha256(
+          objectiveEvidenceContext,
+          metric.id,
+          metric.value,
+          metric.derivationRecord
+        )) {
+          issues.push(`objectiveMetrics[${index}].evidenceSha256 does not bind exact receipt evidence`)
+        }
+      } catch {
+        issues.push(
+          `objectiveMetrics[${index}].evidenceSha256 requires a valid hash-bound derivation record`
+        )
+      }
     }
   })
 
@@ -995,6 +1527,24 @@ const contextualCaseIssues = (
       return
     }
     const execution = receipt.execution
+    if (execution._tag !== "NotRun") {
+      const invocation = new ArchitectureCaseInvocationV2({
+        schemaVersion: "architecture-case-invocation-v2",
+        runContextSha256: result.runContext.runContextSha256,
+        candidateId: result.runContext.candidateId,
+        candidateTreeSha256: result.runContext.candidateTreeSha256,
+        definitionSha256: definition.execution.definitionSha256,
+        caseId: definition.id,
+        fixtureSha256: definition.execution.fixtureSha256,
+        fixture: definition.fixture
+      })
+      const expectedInvocationSha256 = sha256Bytes(canonicalJsonBytes(
+        caseInvocationStructureCodec.encode(invocation)
+      ))
+      if (execution.invocationSha256 !== expectedInvocationSha256) {
+        issues.push(`case ${receipt.caseId} invocationSha256 does not bind its exact canonical invocation`)
+      }
+    }
     const output = execution._tag === "NotRun" ? null : execution.terminalOutput
     if (output !== null) {
       if (output.expectedOutcome !== definition.requiredTerminalOutcome ||
@@ -1007,6 +1557,25 @@ const contextualCaseIssues = (
           output.actualOutcome !== definition.expectedEvidence.terminalOutcome)) {
         issues.push(`case ${receipt.caseId} Passed evidence does not match runner-owned expected evidence`)
       }
+    }
+    if (execution._tag === "Passed") {
+      const observation = new ArchitectureCaseObservationV2({
+        schemaVersion: "architecture-case-observation-v2",
+        runContextSha256: result.runContext.runContextSha256,
+        candidateId: result.runContext.candidateId,
+        candidateTreeSha256: result.runContext.candidateTreeSha256,
+        definitionSha256: definition.execution.definitionSha256,
+        caseId: definition.id,
+        fixtureSha256: definition.execution.fixtureSha256,
+        trace: execution.terminalOutput.trace,
+        facts: execution.terminalOutput.facts,
+        terminalOutcome: execution.terminalOutput.actualOutcome
+      })
+      issues.push(...passedAdapterTranscriptInvariantIssues(
+        `case ${receipt.caseId}.processAttempt`,
+        execution.processAttempt,
+        canonicalJsonBytes(caseObservationStructureCodec.encode(observation))
+      ))
     }
   })
   return issues
@@ -1030,12 +1599,67 @@ const contextualProbeIssues = (
     }
     const execution = receipt.execution
     const output = execution._tag === "NotRun" ? null : execution.terminalOutput
+    if (execution._tag !== "NotRun") {
+      const invocation = new ArchitectureProbeInvocationV2({
+        schemaVersion: "architecture-probe-invocation-v2",
+        runContextSha256: result.runContext.runContextSha256,
+        candidateId: result.runContext.candidateId,
+        candidateTreeSha256: result.runContext.candidateTreeSha256,
+        definitionSha256: definition.execution.definitionSha256,
+        probeId: definition.id,
+        baseFixtureSha256: definition.execution.baseFixtureSha256,
+        changeDefinitionSha256: definition.execution.changeDefinitionSha256,
+        changeDefinition: definition.changeDefinition
+      })
+      const expectedInvocationSha256 = sha256Bytes(canonicalJsonBytes(
+        probeInvocationStructureCodec.encode(invocation)
+      ))
+      if (execution.invocationSha256 !== expectedInvocationSha256) {
+        issues.push(`probe ${receipt.probeId} invocationSha256 does not bind its exact canonical invocation`)
+      }
+    }
     if (output !== null && (
       !sameOrdered(output.zeroTouchRoleIds, definition.requiredZeroTouchRoleIds) ||
       !sameOrdered(output.changeKinds, definition.requiredChangeKinds) ||
       !sameOrdered(output.measurements.map(measurementId), definition.requiredMeasurementIds)
     )) {
       issues.push(`probe ${receipt.probeId} output does not match its decoded trial-spec contract`)
+    }
+    if (execution._tag === "Passed") {
+      const requiredFactNames = new Set(
+        definition.requiredChangeKinds.map((kind) => `change-kind.${kind}.path`)
+      )
+      for (const kind of definition.requiredChangeKinds) {
+        const name = `change-kind.${kind}.path`
+        const fact = output?.facts.find((candidate) => candidate.name === name)
+        if (fact === undefined || fact.value._tag !== "Text" ||
+          !output?.touchedPathIds.includes(fact.value.value as PlannedRepositoryPath)) {
+          issues.push(
+            `probe ${receipt.probeId} Passed change-kind fact ${name} must name a runner-observed touched path`
+          )
+        }
+      }
+      if (output?.facts.some((fact) =>
+        fact.name.startsWith("change-kind.") && !requiredFactNames.has(fact.name))) {
+        issues.push(`probe ${receipt.probeId} Passed contains unexpected change-kind evidence`)
+      }
+      const observation = new ArchitectureProbeObservationV2({
+        schemaVersion: "architecture-probe-observation-v2",
+        runContextSha256: result.runContext.runContextSha256,
+        candidateId: result.runContext.candidateId,
+        candidateTreeSha256: result.runContext.candidateTreeSha256,
+        definitionSha256: definition.execution.definitionSha256,
+        probeId: definition.id,
+        baseFixtureSha256: definition.execution.baseFixtureSha256,
+        changeDefinitionSha256: definition.execution.changeDefinitionSha256,
+        changeId: definition.changeDefinition.changeId,
+        facts: execution.terminalOutput.facts
+      })
+      issues.push(...passedAdapterTranscriptInvariantIssues(
+        `probe ${receipt.probeId}.processAttempt`,
+        execution.processAttempt,
+        canonicalJsonBytes(probeObservationStructureCodec.encode(observation))
+      ))
     }
   })
   return issues
@@ -1062,7 +1686,150 @@ const contextualGateIssues = (
       receipt.expectedExit !== definition.expectedExit) {
       issues.push(`gate ${receipt.gateId} execution definition does not match the decoded trial spec`)
     }
+    if (receipt.execution._tag !== "NotRun") {
+      const invocation = new ArchitectureGateInvocationV2({
+        schemaVersion: "architecture-gate-invocation-v2",
+        runContextSha256: result.runContext.runContextSha256,
+        candidateId: result.runContext.candidateId,
+        candidateTreeSha256: result.runContext.candidateTreeSha256,
+        definitionSha256: gateDefinitionSha256(definition),
+        gateId: definition.id,
+        lawIds: definition.lawIds.map((id) => ArtifactId.make(id)),
+        caseIds: definition.caseIds,
+        probeIds: definition.probeIds
+      })
+      const expectedInvocationSha256 = sha256Bytes(canonicalJsonBytes(
+        gateInvocationStructureCodec.encode(invocation)
+      ))
+      if (receipt.execution.invocationSha256 !== expectedInvocationSha256) {
+        issues.push(`gate ${receipt.gateId} invocationSha256 does not bind its exact canonical invocation`)
+      }
+      const expectedCommandInputSha256 = computeGateCommandInputSha256(
+        makeGateCommandInput(invocation, result.runContext.candidateTreeSha256)
+      )
+      if (receipt.execution.evaluationRecord.commandInputSha256 !== expectedCommandInputSha256) {
+        issues.push(
+          `gate ${receipt.gateId} commandInputSha256 does not bind its exact invocation and inspected tree`
+        )
+      }
+    }
+    if (receipt.execution._tag === "Passed" && (
+      receipt.caseIds.some((caseId) =>
+        result.caseReceipts.find((candidate) => candidate.caseId === caseId)?.execution._tag !== "Passed") ||
+      receipt.probeIds.some((probeId) =>
+        result.probeReceipts.find((candidate) => candidate.probeId === probeId)?.execution._tag !== "Passed")
+    )) {
+      issues.push(`gate ${receipt.gateId} Passed requires every referenced receipt prerequisite to be Passed`)
+    }
+    if (receipt.execution._tag === "Passed") {
+      const observation = new ArchitectureGateObservationV2({
+        schemaVersion: "architecture-gate-observation-v2",
+        runContextSha256: result.runContext.runContextSha256,
+        candidateId: result.runContext.candidateId,
+        candidateTreeSha256: result.runContext.candidateTreeSha256,
+        definitionSha256: gateDefinitionSha256(definition),
+        gateId: definition.id,
+        facts: receipt.execution.terminalOutput.facts
+      })
+      issues.push(...passedAdapterTranscriptInvariantIssues(
+        `gate ${receipt.gateId}.processAttempt`,
+        receipt.execution.processAttempt,
+        canonicalJsonBytes(gateObservationStructureCodec.encode(observation))
+      ))
+    }
   })
+  return issues
+}
+
+const contextualEvaluationAuthorityIssues = (
+  result: SharedResult,
+  authority: TrialResultEvaluationAuthority
+): ReadonlyArray<string> => {
+  const issues: Array<string> = []
+
+  if (authority.probeEvaluations.length !== result.probeReceipts.length) {
+    issues.push("evaluation authority must contain exactly one ordered probe binding per receipt")
+  }
+  result.probeReceipts.forEach((receipt, index) => {
+    const binding = authority.probeEvaluations[index]
+    const execution = receipt.execution
+    const record = execution._tag === "NotRun" || execution.terminalOutput === null
+      ? null
+      : execution.terminalOutput.evaluationRecord
+    if (binding === undefined || binding.probeId !== receipt.probeId) {
+      issues.push(`probe ${receipt.probeId} evaluation authority binding is absent or out of order`)
+      return
+    }
+    if (record === null) {
+      if (binding.evaluatorId !== null || binding.recordSha256 !== null) {
+        issues.push(`probe ${receipt.probeId} absent evaluation record must have an exact null authority binding`)
+      }
+      return
+    }
+    if (record.evaluatorId !== binding.evaluatorId) {
+      issues.push(`probe ${receipt.probeId} evaluatorId does not match external evaluation authority`)
+    }
+    if (record.recordSha256 !== binding.recordSha256) {
+      issues.push(`probe ${receipt.probeId} evaluation record does not match external evaluation authority`)
+    }
+    if (record.evaluatorId === DEFAULT_DENY_PROBE_EVALUATOR_ID &&
+      record.disposition._tag === "Accepted") {
+      issues.push(`probe ${receipt.probeId} default-deny evaluator cannot produce Accepted evidence`)
+    }
+  })
+
+  if (authority.gateEvaluations.length !== result.gateReceipts.length) {
+    issues.push("evaluation authority must contain exactly one ordered gate binding per receipt")
+  }
+  result.gateReceipts.forEach((receipt, index) => {
+    const binding = authority.gateEvaluations[index]
+    const record = receipt.execution._tag === "NotRun"
+      ? null
+      : receipt.execution.evaluationRecord
+    if (binding === undefined || binding.gateId !== receipt.gateId) {
+      issues.push(`gate ${receipt.gateId} evaluation authority binding is absent or out of order`)
+      return
+    }
+    if (record === null) {
+      if (binding.evaluatorId !== null || binding.recordSha256 !== null) {
+        issues.push(`gate ${receipt.gateId} absent evaluation record must have an exact null authority binding`)
+      }
+      return
+    }
+    if (record.evaluatorId !== binding.evaluatorId) {
+      issues.push(`gate ${receipt.gateId} evaluatorId does not match external evaluation authority`)
+    }
+    if (record.recordSha256 !== binding.recordSha256) {
+      issues.push(`gate ${receipt.gateId} evaluation record does not match external evaluation authority`)
+    }
+    if (record.evaluatorId === DEFAULT_DENY_GATE_EVALUATOR_ID &&
+      record.disposition._tag === "Accepted") {
+      issues.push(`gate ${receipt.gateId} default-deny evaluator cannot produce Accepted evidence`)
+    }
+  })
+
+  if (authority.objectiveDerivations.length !== result.objectiveMetrics.length) {
+    issues.push("evaluation authority must contain exactly one ordered objective binding per metric")
+  }
+  result.objectiveMetrics.forEach((metric, index) => {
+    const binding = authority.objectiveDerivations[index]
+    const record = metric.derivationRecord
+    if (binding === undefined || binding.metricId !== metric.id) {
+      issues.push(`objective ${metric.id} derivation authority binding is absent or out of order`)
+      return
+    }
+    if (record.derivationId !== binding.derivationId) {
+      issues.push(`objective ${metric.id} derivationId does not match external evaluation authority`)
+    }
+    if (record.recordSha256 !== binding.recordSha256) {
+      issues.push(`objective ${metric.id} derivation record does not match external evaluation authority`)
+    }
+    if (record.derivationId === DEFAULT_UNAVAILABLE_OBJECTIVE_DERIVATION_ID &&
+      metric._tag === "Measured") {
+      issues.push(`objective ${metric.id} default-unavailable derivation cannot produce a Measured value`)
+    }
+  })
+
   return issues
 }
 
@@ -1080,6 +1847,10 @@ export const trialResultContextInvariantIssues = (
   const manifest = authority.candidateManifest
   const scope = bodyScope(result)
 
+  if (result.receiptId !== authority.expectedReceiptId) {
+    issues.push("receiptId does not match the externally retained receipt content address")
+  }
+
   if (context.trialSpecSha256 !== authority.rawTrialSpecSha256) {
     issues.push("run context trialSpecSha256 does not match the exact raw trial-spec document hash")
   }
@@ -1090,7 +1861,7 @@ export const trialResultContextInvariantIssues = (
     issues.push("run context candidateTreeSha256 does not match the runner-observed tree hash")
   }
   if (context.runnerSourceSha256 !== authority.runnerSourceSha256) {
-    issues.push("run context runnerSourceSha256 does not match the exact runner source hash")
+    issues.push("run context runnerSourceSha256 does not match the exact runner source closure hash")
   }
   if (context.runnerNodeModulesSha256 !== authority.runnerNodeModulesSha256) {
     issues.push(
@@ -1120,6 +1891,7 @@ export const trialResultContextInvariantIssues = (
   issues.push(...contextualCaseIssues(result, authority.trialSpec))
   issues.push(...contextualProbeIssues(result, authority.trialSpec))
   issues.push(...contextualGateIssues(result, authority.trialSpec))
+  issues.push(...contextualEvaluationAuthorityIssues(result, authority.evaluationAuthority))
   return canonicalIssues(issues)
 }
 

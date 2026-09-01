@@ -21,6 +21,7 @@ import {
   V2_EXPECTED_PROBE_IDS,
   V2_EXPECTED_PROBE_MEASUREMENT_IDS,
   V2_EXPECTED_REQUIRED_TOOLCHAIN_BINDINGS,
+  V2_EXPECTED_RUNNER_SOURCE_CLOSURE,
   V2_EXPECTED_SCHEMA_IDS,
   V2_EXPECTED_TOPOLOGY_CANDIDATE_IDS,
   V2_EXPECTED_TOPOLOGY_FIXTURE_SHA256,
@@ -150,6 +151,14 @@ export const trialContractOracleIssues = (
     V2_EXPECTED_BINARY_NON_PRODUCT_LINE_DELTA_POLICY,
     issues
   )
+  for (const [field, expected] of Object.entries(V2_EXPECTED_RUNNER_SOURCE_CLOSURE)) {
+    literal(
+      `receipt runner source closure ${field}`,
+      spec.receiptContract[field as keyof typeof V2_EXPECTED_RUNNER_SOURCE_CLOSURE],
+      expected,
+      issues
+    )
+  }
 
   literal(
     "stored execution contract hash",

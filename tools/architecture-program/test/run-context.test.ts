@@ -1,11 +1,17 @@
 import { describe, expect, it } from "@effect/vitest"
 import { Effect, Exit } from "effect"
 import {
+  TRIAL_RUN_CONTEXT_HASH_DOMAIN,
   computeTrialRunContextSha256,
   decodeTrialRunContext,
   encodeTrialRunContext,
   makeTrialRunContext
 } from "../src/schema/run-context.js"
+import { hashCanonicalValue } from "../src/trial-hash.js"
+import {
+  V2_EXPECTED_RUN_CONTEXT_KEYS,
+  V2_EXPECTED_RUN_CONTEXT_TOOLCHAIN_KEYS
+} from "../src/trial-contract-oracle.js"
 import {
   V2_CASE_IDS,
   V2_MACHINE_GATE_IDS,
@@ -28,11 +34,16 @@ const validBody = {
   candidateManifestSha256: digest0,
   candidateTreeSha256: digest0,
   runnerSourceSha256: digest0,
+  runnerNodeModulesSha256: digest0,
   toolchain: {
     bun: "1.3.14",
+    bunExecutableSha256: digest0,
     typescript: "6.0.3",
     effect: "4.0.0-rc.108",
-    git: "2.43.0"
+    git: "2.43.0",
+    gitExecutableSha256: digest0,
+    bubblewrapVersion: "0.11.0",
+    bubblewrapExecutableSha256: digest0
   },
   caseDefinitionBindings: V2_CASE_IDS.map((caseId) => ({
     caseId,
@@ -59,13 +70,24 @@ describe("trial run context v2", () => {
       expect(context.runContextSha256).toBe(computeTrialRunContextSha256(validBody))
       const encoded = encodeTrialRunContext(context)
       expect(yield* decodeTrialRunContext(encoded)).toEqual(context)
+      const encodedRecord = encoded as Record<string, any>
+      expect(Object.keys(encodedRecord).sort()).toEqual(V2_EXPECTED_RUN_CONTEXT_KEYS)
+      expect(Object.keys(encodedRecord.toolchain).sort()).toEqual(
+        V2_EXPECTED_RUN_CONTEXT_TOOLCHAIN_KEYS
+      )
     }))
 
-  it("changes the context hash when an immutable execution binding changes", () => {
-    expect(computeTrialRunContextSha256({
-      ...validBody,
-      runnerSourceSha256: digest1
-    })).not.toBe(computeTrialRunContextSha256(validBody))
+  it("changes the context hash when source or mounted-executable provenance changes", () => {
+    for (const changed of [
+      { ...validBody, runnerSourceSha256: digest1 },
+      { ...validBody, runnerNodeModulesSha256: digest1 },
+      { ...validBody, toolchain: { ...validBody.toolchain, bunExecutableSha256: digest1 } },
+      { ...validBody, toolchain: { ...validBody.toolchain, gitExecutableSha256: digest1 } },
+      { ...validBody, toolchain: { ...validBody.toolchain, bubblewrapVersion: "0.12.0" } },
+      { ...validBody, toolchain: { ...validBody.toolchain, bubblewrapExecutableSha256: digest1 } }
+    ]) {
+      expect(computeTrialRunContextSha256(changed)).not.toBe(computeTrialRunContextSha256(validBody))
+    }
   })
 
   it.effect("rejects a forged self-hash and excess fields", () =>
@@ -78,6 +100,29 @@ describe("trial run context v2", () => {
         const exit = yield* decodeTrialRunContext(input).pipe(Effect.exit)
         expect(Exit.isFailure(exit)).toBe(true)
       }
+    }))
+
+  it.effect("rejects missing mounted-executable provenance even with a refreshed context hash", () =>
+    Effect.gen(function* () {
+      for (const field of [
+        "bunExecutableSha256",
+        "gitExecutableSha256",
+        "bubblewrapVersion",
+        "bubblewrapExecutableSha256"
+      ]) {
+        const input = structuredClone(makeTrialRunContext(validBody)) as Record<string, any>
+        delete input.toolchain[field]
+        const { runContextSha256: _runContextSha256, ...body } = input
+        input.runContextSha256 = hashCanonicalValue(TRIAL_RUN_CONTEXT_HASH_DOMAIN, body)
+        const exit = yield* decodeTrialRunContext(input).pipe(Effect.exit)
+        expect(Exit.isFailure(exit)).toBe(true)
+      }
+      const input = structuredClone(makeTrialRunContext(validBody)) as Record<string, any>
+      delete input.runnerNodeModulesSha256
+      const { runContextSha256: _runContextSha256, ...body } = input
+      input.runContextSha256 = hashCanonicalValue(TRIAL_RUN_CONTEXT_HASH_DOMAIN, body)
+      const exit = yield* decodeTrialRunContext(input).pipe(Effect.exit)
+      expect(Exit.isFailure(exit)).toBe(true)
     }))
 
   it("rejects candidate mapping drift and incomplete or reordered exact bindings", () => {

@@ -5,9 +5,14 @@ import {
   V2_EXPECTED_CASE_COMPONENT_HASHES,
   V2_EXPECTED_CASE_EXECUTIONS,
   V2_EXPECTED_CASE_IDS,
+  V2_EXPECTED_BINARY_NON_PRODUCT_LINE_DELTA_POLICY,
   V2_EXPECTED_CONTRACT_HASHES,
   V2_EXPECTED_COUNTS,
+  V2_EXPECTED_DIFF_ARGV,
   V2_EXPECTED_GATE_DEFINITION_HASHES,
+  V2_EXPECTED_GIT_ENVIRONMENT,
+  V2_EXPECTED_GIT_EXECUTABLE_POLICY,
+  V2_EXPECTED_ISOLATION_POLICY,
   V2_EXPECTED_LAW_IDS,
   V2_EXPECTED_MACHINE_CANDIDATE_IDS,
   V2_EXPECTED_MACHINE_GATE_IDS,
@@ -15,6 +20,7 @@ import {
   V2_EXPECTED_PROBE_COMPONENT_HASHES,
   V2_EXPECTED_PROBE_IDS,
   V2_EXPECTED_PROBE_MEASUREMENT_IDS,
+  V2_EXPECTED_REQUIRED_TOOLCHAIN_BINDINGS,
   V2_EXPECTED_SCHEMA_IDS,
   V2_EXPECTED_TOPOLOGY_CANDIDATE_IDS,
   V2_EXPECTED_TOPOLOGY_FIXTURE_SHA256,
@@ -119,6 +125,31 @@ export const trialContractOracleIssues = (
     V2_EXPECTED_PROBE_MEASUREMENT_IDS,
     issues
   )
+  exact(
+    "required toolchain bindings",
+    spec.measurementContract.requiredToolchainBindings,
+    V2_EXPECTED_REQUIRED_TOOLCHAIN_BINDINGS,
+    issues
+  )
+  exact("measurement diff argv", spec.measurementContract.diffArgv, V2_EXPECTED_DIFF_ARGV, issues)
+  exact(
+    "measurement Git environment",
+    [spec.measurementContract.gitEnvironment],
+    [V2_EXPECTED_GIT_ENVIRONMENT],
+    issues
+  )
+  exact(
+    "measurement Git executable policy",
+    [spec.measurementContract.gitExecutablePolicy],
+    [V2_EXPECTED_GIT_EXECUTABLE_POLICY],
+    issues
+  )
+  literal(
+    "binary non-product line-delta policy",
+    spec.measurementContract.binaryNonProductLineDeltaPolicy,
+    V2_EXPECTED_BINARY_NON_PRODUCT_LINE_DELTA_POLICY,
+    issues
+  )
 
   literal(
     "stored execution contract hash",
@@ -130,6 +161,12 @@ export const trialContractOracleIssues = (
     "computed execution contract hash",
     executionContractSha256(spec.executionContract),
     V2_EXPECTED_CONTRACT_HASHES.execution,
+    issues
+  )
+  exact(
+    "execution isolation policy",
+    [spec.executionContract.isolationPolicy],
+    [V2_EXPECTED_ISOLATION_POLICY],
     issues
   )
   literal(

@@ -152,6 +152,7 @@ const loadAuthority = Effect.fn("trialResultTest.loadAuthority")(function* (scop
   const candidateManifestBytes = canonicalJsonBytes(encodeCandidateManifest(candidateManifest))
   const candidateTree = makeCandidateTree(scope)
   const runnerSourceSha256 = exactSha256("candidate-neutral architecture runner source closure v2\n")
+  const runnerNodeModulesSha256 = exactSha256("exact mounted runtime dependency tree v2\n")
   const rawTrialSpecSha256 = hashCanonicalDocumentBytes(trialSpecBytes)
   const rawCandidateManifestSha256 = hashCanonicalDocumentBytes(candidateManifestBytes)
   const gates = trialSpec.gateRequirements.filter(({ scope: gateScope }) => gateScope === scope)
@@ -168,11 +169,16 @@ const loadAuthority = Effect.fn("trialResultTest.loadAuthority")(function* (scop
     candidateManifestSha256: rawCandidateManifestSha256,
     candidateTreeSha256: candidateTree.sha256,
     runnerSourceSha256,
+    runnerNodeModulesSha256,
     toolchain: {
       bun: "1.3.14",
+      bunExecutableSha256: exactSha256("bun executable"),
       typescript: "6.0.3",
       effect: "4.0.0-rc.108",
-      git: "2.51.0"
+      git: "2.51.0",
+      gitExecutableSha256: exactSha256("git executable"),
+      bubblewrapVersion: "0.11.0",
+      bubblewrapExecutableSha256: exactSha256("bubblewrap executable")
     },
     caseDefinitionBindings: trialSpec.machineCases.map(({ id: caseId, execution }) => ({
       caseId,
@@ -198,6 +204,7 @@ const loadAuthority = Effect.fn("trialResultTest.loadAuthority")(function* (scop
     rawCandidateManifestSha256,
     candidateTreeSha256: candidateTree.sha256,
     runnerSourceSha256,
+    runnerNodeModulesSha256,
     toolchain: runContext.toolchain
   }
   return { authority, runContext, candidateTree }
@@ -737,14 +744,20 @@ describe("architecture trial result v2", () => {
       const body = makePassedBody("machine", fixture)
       const result = makeMachineTrialResult(body as MachineTrialResultBodyEncoded, fixture.authority)
       const encoded = encodeMachineTrialResult(result, fixture.authority)
-      const mismatchedAuthority = {
-        ...fixture.authority,
-        candidateTreeSha256: exactSha256("different runner-observed tree\n")
-      }
-
       yield* decodeMachineTrialResultStructure(encoded)
-      const exit = yield* decodeMachineTrialResult(encoded, mismatchedAuthority).pipe(Effect.exit)
-      expect(Exit.isFailure(exit)).toBe(true)
+      for (const mismatchedAuthority of [
+        {
+          ...fixture.authority,
+          candidateTreeSha256: exactSha256("different runner-observed tree\n")
+        },
+        {
+          ...fixture.authority,
+          runnerNodeModulesSha256: exactSha256("different mounted dependency tree\n")
+        }
+      ]) {
+        const exit = yield* decodeMachineTrialResult(encoded, mismatchedAuthority).pipe(Effect.exit)
+        expect(Exit.isFailure(exit)).toBe(true)
+      }
     }))
 
   it.effect("rejects a self-hashed toolchain claim that differs from external observation", () =>

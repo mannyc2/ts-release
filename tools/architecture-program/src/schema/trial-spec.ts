@@ -22,6 +22,7 @@ import {
   REQUIRED_CASE_ACTIONS,
   REQUIRED_CASE_EXECUTIONS,
   REQUIRED_INPUT_BINDINGS,
+  REQUIRED_ISOLATION_POLICY,
   REQUIRED_MEASUREMENT_METHODS,
   REQUIRED_PROBE_ACTION_IDS,
   REQUIRED_PROBE_ACTIONS,
@@ -918,6 +919,10 @@ export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV2): Readonl
     executionContract.evaluationAuthority !== "runner-only") {
     issues.push("executionContract must keep candidate output raw and runner evaluation authoritative")
   }
+  if (JSON.stringify(executionContract.isolationPolicy) !==
+    JSON.stringify(REQUIRED_ISOLATION_POLICY)) {
+    issues.push("executionContract must preserve the exact bubblewrap isolation policy")
+  }
   if (JSON.stringify(executionContract.closedEnvironment) !== JSON.stringify({
     inheritedVariableNames: ["PATH"],
     locale: "C",
@@ -950,10 +955,33 @@ export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV2): Readonl
   if (measurementContract.candidateManifestPath !== "trial-candidate.json" ||
     measurementContract.candidateAdapterPath !== "trial-adapter.ts" ||
     JSON.stringify(measurementContract.diffArgv) !== JSON.stringify([
-      "git", "diff", "--no-index", "--numstat", "--no-renames", "--diff-algorithm=myers", "--"
+      "git", "diff", "--no-index", "--numstat", "--no-renames", "--diff-algorithm=myers",
+      "--no-ext-diff", "--no-textconv", "--"
     ]) ||
+    JSON.stringify(measurementContract.gitEnvironment) !== JSON.stringify({
+      inheritedVariableNames: ["PATH"],
+      fixedVariables: [
+        { name: "LC_ALL", value: "C" },
+        { name: "LANG", value: "C" },
+        { name: "TZ", value: "UTC" },
+        { name: "NO_COLOR", value: "1" },
+        { name: "GIT_CONFIG_NOSYSTEM", value: "1" },
+        { name: "GIT_CONFIG_GLOBAL", value: "/dev/null" },
+        { name: "GIT_CONFIG_SYSTEM", value: "/dev/null" },
+        { name: "GIT_ATTR_NOSYSTEM", value: "1" }
+      ]
+    }) ||
+    JSON.stringify(measurementContract.gitExecutablePolicy) !== JSON.stringify({
+      resolution: "preflight-resolve-once",
+      executableSha256Field: "toolchain.gitExecutableSha256",
+      measurementInvocation: "retained-resolved-absolute-path",
+      postPreflightPathLookup: "forbidden"
+    }) ||
+    measurementContract.binaryProductSourcePolicy !== "reject" ||
+    measurementContract.binaryNonProductLineDeltaPolicy !==
+      "git-binary-marker-maps-to-zero-lines" ||
     JSON.stringify(measurementContract.requiredToolchainBindings) !== JSON.stringify([
-      "bun", "typescript", "effect", "git"
+      "bun", "typescript", "effect", "git", "bubblewrap"
     ])) {
     issues.push("measurementContract changed its fixed candidate files, diff argv, or toolchain bindings")
   }

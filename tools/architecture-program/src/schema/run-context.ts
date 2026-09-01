@@ -30,9 +30,13 @@ export class TrialRunContextToolchain extends Schema.Class<TrialRunContextToolch
   "TrialRunContextToolchain"
 )({
   bun: ToolchainVersion,
+  bunExecutableSha256: Sha256Hex,
   typescript: ToolchainVersion,
   effect: ToolchainVersion,
-  git: ToolchainVersion
+  git: ToolchainVersion,
+  gitExecutableSha256: Sha256Hex,
+  bubblewrapVersion: ToolchainVersion,
+  bubblewrapExecutableSha256: Sha256Hex
 }) {}
 
 export class CaseDefinitionBindingV2 extends Schema.Class<CaseDefinitionBindingV2>(
@@ -73,6 +77,7 @@ const TrialRunContextBodyFields = {
   candidateManifestSha256: Sha256Hex,
   candidateTreeSha256: Sha256Hex,
   runnerSourceSha256: Sha256Hex,
+  runnerNodeModulesSha256: Sha256Hex,
   toolchain: TrialRunContextToolchain,
   caseDefinitionBindings: Schema.Array(CaseDefinitionBindingV2),
   probeDefinitionBindings: Schema.Array(ProbeDefinitionBindingV2),

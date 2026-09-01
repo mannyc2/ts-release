@@ -9,6 +9,10 @@ import { parseCanonicalJsonBytes } from "../src/canonical-document.js"
 import { trialContractOracleIssues } from "../src/check-trial-contract.js"
 import { checkSourceAnchor } from "../src/check-inputs.js"
 import {
+  executionContractSha256,
+  measurementContractSha256
+} from "../src/schema/trial-contract.js"
+import {
   type SourceAnchor,
   TrialSpecInvariantError,
   decodeArchitectureTrialSpec,
@@ -190,6 +194,107 @@ describe("ArchitectureTrialSpecV2", () => {
         }
       ]
       for (const mutate of mutations) yield* expectDecodeFailure(mutate)
+    }))
+
+  it.effect("rejects removal or weakening of the exact bubblewrap isolation policy", () =>
+    Effect.gen(function* () {
+      const executionMutations: ReadonlyArray<Mutation> = [
+        (document) => {
+          delete document.executionContract.isolationPolicy
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.namespaceArguments.pop()
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.capabilityArguments = []
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.rootFilesystem.hostRootMount = "read-only"
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.rootFilesystem.readOnlyBinds.pop()
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.rootFilesystem.writableBinds.push({
+            sourceAuthority: "fresh-candidate-copy",
+            destination: "/candidate",
+            persistence: "invocation-private"
+          })
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.environment.variables.pop()
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.forbiddenMountClasses.pop()
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.runtimeDependencyTree.hashDomain =
+            "ts-release/architecture-runtime-dependency-tree/v1"
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.runtimeDependencyTree.entryTypes.pop()
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.hostRuntimeTrust.hermeticityClaim =
+            "fully-hermetic"
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.threatModelBoundary.hostAvailabilityGuarantee =
+            "guaranteed"
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.receiptBindings
+            .runnerNodeModulesSha256Field = "runnerSourceSha256"
+        }
+      ]
+      for (const mutate of executionMutations) {
+        yield* expectDecodeFailure((document) => {
+          mutate(document)
+          if (document.executionContract.isolationPolicy !== undefined) {
+            document.executionContract.contractSha256 = executionContractSha256(
+              document.executionContract
+            )
+          }
+        })
+      }
+      yield* expectDecodeFailure((document) => {
+        document.measurementContract.requiredToolchainBindings.pop()
+        document.measurementContract.contractSha256 = measurementContractSha256(
+          document.measurementContract
+        )
+      })
+    }))
+
+  it.effect("rejects config-sensitive Git diff or ambiguous binary-line measurement drift", () =>
+    Effect.gen(function* () {
+      const mutations: ReadonlyArray<Mutation> = [
+        (document) => {
+          document.measurementContract.diffArgv.splice(-3, 1)
+        },
+        (document) => {
+          document.measurementContract.gitEnvironment.inheritedVariableNames = []
+        },
+        (document) => {
+          document.measurementContract.gitEnvironment.fixedVariables[5].value = "/tmp/gitconfig"
+        },
+        (document) => {
+          document.measurementContract.gitEnvironment.fixedVariables.pop()
+        },
+        (document) => {
+          document.measurementContract.binaryNonProductLineDeltaPolicy = "ignore"
+        },
+        (document) => {
+          document.measurementContract.gitExecutablePolicy.postPreflightPathLookup = "allowed"
+        }
+      ]
+      for (const mutate of mutations) {
+        yield* expectDecodeFailure((document) => {
+          mutate(document)
+          document.measurementContract.contractSha256 = measurementContractSha256(
+            document.measurementContract
+          )
+        })
+      }
     }))
 
   it.effect("hash-binds immutable inputs, execution, measurement, and fixture definitions", () =>

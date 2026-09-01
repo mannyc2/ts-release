@@ -181,6 +181,138 @@ export const REQUIRED_MEASUREMENT_METHODS = [
   ["dependency-dag-delta", "identifier-delta", "candidate-manifest-dependency-edge-set-delta-v2", "candidate-manifest"]
 ] as const
 
+/**
+ * The exact Linux isolation policy used for every candidate-controlled process.
+ * Dynamic host sources are named by their runner-owned authority; their exact
+ * executable bytes are bound into TrialRunContextToolchain before execution.
+ */
+export const REQUIRED_ISOLATION_POLICY = {
+  policyId: "bubblewrap-linux-offline-v1",
+  platform: "linux",
+  bubblewrapExecutable: "/usr/bin/bwrap",
+  namespaceArguments: [
+    "--unshare-all",
+    "--disable-userns",
+    "--assert-userns-disabled"
+  ],
+  networkPolicy: "unshared-by-unshare-all",
+  sessionArguments: ["--new-session", "--die-with-parent"],
+  capabilityArguments: ["--cap-drop", "ALL"],
+  hostname: "architecture-trial",
+  receiptBindings: {
+    bunVersionField: "toolchain.bun",
+    bunExecutableSha256Field: "toolchain.bunExecutableSha256",
+    bubblewrapVersionField: "toolchain.bubblewrapVersion",
+    bubblewrapExecutableSha256Field: "toolchain.bubblewrapExecutableSha256",
+    runnerNodeModulesSha256Field: "runnerNodeModulesSha256"
+  },
+  hostRuntimeTrust: {
+    mountSource: "/usr",
+    mountDestination: "/usr",
+    mountMode: "read-only",
+    trustStatus: "host-runtime-trust-base",
+    hermeticityClaim: "not-fully-hermetic"
+  },
+  runtimeDependencyTree: {
+    algorithmId: "canonical-runtime-dependency-tree-manifest-sha256-v2",
+    hashDomain: "ts-release/architecture-runtime-dependency-tree/v2",
+    manifestEncoding: "CanonicalJsonV1",
+    manifestShape: "ordered-array-of-RegularFile-or-SymbolicLink",
+    sourceAuthority: "runner-node-modules-realpath",
+    mountDestination: "/candidate/node_modules",
+    runContextSha256Field: "runnerNodeModulesSha256",
+    pathSyntax: "NFC slash-relative with no empty, dot, dot-dot, or backslash segments",
+    entryOrder: "Unicode-code-point ascending by slash-relative path",
+    entryTypes: ["regular-file", "symbolic-link"],
+    directoryPolicy: "traverse-without-manifest-entry",
+    regularFileEntryShape: "RegularFile(path,mode,byteLength,bytesSha256)",
+    regularFileModePolicy: "canonical-git-modes-100644-or-100755",
+    regularFileBytesPolicy: "bytesSha256-is-sha256-of-exact-file-bytes",
+    symlinkEntryShape: "SymbolicLink(path,target)",
+    symlinkTraversalPolicy: "lstat-and-do-not-follow",
+    symlinkTargetPolicy: "NFC relative target text resolving within dependency root",
+    dotBinSymlinkPolicy: "include",
+    absoluteSymlinkTargetPolicy: "reject",
+    escapingSymlinkTargetPolicy: "reject",
+    specialEntryPolicy: "reject"
+  },
+  threatModelBoundary: {
+    isolationGuarantees: [
+      "filesystem-confidentiality-and-integrity",
+      "network-isolation",
+      "credential-nonexposure"
+    ],
+    hostAvailabilityGuarantee: "none",
+    candidateResourceExhaustion: "out-of-scope",
+    memoryQuota: "not-enforced",
+    blockQuota: "not-enforced",
+    inodeQuota: "not-enforced",
+    timeoutRole: "wall-clock-termination-only-not-resource-containment"
+  },
+  rootFilesystem: {
+    base: "empty",
+    hostRootMount: "forbidden",
+    readOnlyBinds: [
+      {
+        sourceAuthority: "literal-host-runtime",
+        source: "/usr",
+        destination: "/usr",
+        kind: "directory"
+      },
+      {
+        sourceAuthority: "run-context-bun-executable",
+        source: "exact-bun-executable-realpath",
+        destination: "/runtime/bun",
+        kind: "file"
+      },
+      {
+        sourceAuthority: "runner-node-modules",
+        source: "exact-runner-node-modules-realpath",
+        destination: "/candidate/node_modules",
+        kind: "directory"
+      }
+    ],
+    symlinks: [
+      { target: "usr/bin", destination: "/bin" },
+      { target: "usr/lib", destination: "/lib" },
+      { target: "usr/lib64", destination: "/lib64" }
+    ],
+    deviceFilesystem: { destination: "/dev", policy: "new-minimal-dev" },
+    procFilesystem: { destination: "/proc", policy: "new-proc" },
+    privateTmpfs: [{ destination: "/tmp" }],
+    writableBinds: [{
+      sourceAuthority: "fresh-candidate-copy",
+      destination: "/candidate",
+      persistence: "invocation-private"
+    }],
+    onlyPersistentWritableBindDestination: "/candidate"
+  },
+  workingDirectory: "/candidate",
+  environment: {
+    clear: true,
+    inheritedVariableNames: [],
+    variables: [
+      { name: "PATH", value: "/runtime:/usr/bin" },
+      { name: "LC_ALL", value: "C" },
+      { name: "LANG", value: "C" },
+      { name: "TZ", value: "UTC" },
+      { name: "NO_COLOR", value: "1" },
+      { name: "TMPDIR", value: "/tmp" }
+    ]
+  },
+  forbiddenMountClasses: [
+    "host-root",
+    "home-directory",
+    "root-home",
+    "repository",
+    "credential-store",
+    "ssh-agent-socket",
+    "gpg-agent-socket",
+    "container-runtime-socket",
+    "arbitrary-host-socket"
+  ]
+} as const
+
 export const InputBinding = Schema.Struct({
   id: ArtifactId,
   path: ExistingRepositoryPath,
@@ -207,6 +339,140 @@ const AdapterDefinition = Schema.Struct({
   mutatesExternalState: Schema.Literal(false)
 })
 
+const IsolationPolicy = Schema.Struct({
+  policyId: Schema.Literal("bubblewrap-linux-offline-v1"),
+  platform: Schema.Literal("linux"),
+  bubblewrapExecutable: Schema.Literal("/usr/bin/bwrap"),
+  namespaceArguments: Schema.Array(Schema.Literals([
+    "--unshare-all",
+    "--disable-userns",
+    "--assert-userns-disabled"
+  ])),
+  networkPolicy: Schema.Literal("unshared-by-unshare-all"),
+  sessionArguments: Schema.Array(Schema.Literals(["--new-session", "--die-with-parent"])),
+  capabilityArguments: Schema.Array(Schema.Literals(["--cap-drop", "ALL"])),
+  hostname: Schema.Literal("architecture-trial"),
+  receiptBindings: Schema.Struct({
+    bunVersionField: Schema.Literal("toolchain.bun"),
+    bunExecutableSha256Field: Schema.Literal("toolchain.bunExecutableSha256"),
+    bubblewrapVersionField: Schema.Literal("toolchain.bubblewrapVersion"),
+    bubblewrapExecutableSha256Field: Schema.Literal(
+      "toolchain.bubblewrapExecutableSha256"
+    ),
+    runnerNodeModulesSha256Field: Schema.Literal("runnerNodeModulesSha256")
+  }),
+  hostRuntimeTrust: Schema.Struct({
+    mountSource: Schema.Literal("/usr"),
+    mountDestination: Schema.Literal("/usr"),
+    mountMode: Schema.Literal("read-only"),
+    trustStatus: Schema.Literal("host-runtime-trust-base"),
+    hermeticityClaim: Schema.Literal("not-fully-hermetic")
+  }),
+  runtimeDependencyTree: Schema.Struct({
+    algorithmId: Schema.Literal("canonical-runtime-dependency-tree-manifest-sha256-v2"),
+    hashDomain: Schema.Literal("ts-release/architecture-runtime-dependency-tree/v2"),
+    manifestEncoding: Schema.Literal("CanonicalJsonV1"),
+    manifestShape: Schema.Literal("ordered-array-of-RegularFile-or-SymbolicLink"),
+    sourceAuthority: Schema.Literal("runner-node-modules-realpath"),
+    mountDestination: Schema.Literal("/candidate/node_modules"),
+    runContextSha256Field: Schema.Literal("runnerNodeModulesSha256"),
+    pathSyntax: Schema.Literal(
+      "NFC slash-relative with no empty, dot, dot-dot, or backslash segments"
+    ),
+    entryOrder: Schema.Literal("Unicode-code-point ascending by slash-relative path"),
+    entryTypes: Schema.Array(Schema.Literals(["regular-file", "symbolic-link"])),
+    directoryPolicy: Schema.Literal("traverse-without-manifest-entry"),
+    regularFileEntryShape: Schema.Literal(
+      "RegularFile(path,mode,byteLength,bytesSha256)"
+    ),
+    regularFileModePolicy: Schema.Literal("canonical-git-modes-100644-or-100755"),
+    regularFileBytesPolicy: Schema.Literal(
+      "bytesSha256-is-sha256-of-exact-file-bytes"
+    ),
+    symlinkEntryShape: Schema.Literal("SymbolicLink(path,target)"),
+    symlinkTraversalPolicy: Schema.Literal("lstat-and-do-not-follow"),
+    symlinkTargetPolicy: Schema.Literal(
+      "NFC relative target text resolving within dependency root"
+    ),
+    dotBinSymlinkPolicy: Schema.Literal("include"),
+    absoluteSymlinkTargetPolicy: Schema.Literal("reject"),
+    escapingSymlinkTargetPolicy: Schema.Literal("reject"),
+    specialEntryPolicy: Schema.Literal("reject")
+  }),
+  threatModelBoundary: Schema.Struct({
+    isolationGuarantees: Schema.Array(Schema.Literals([
+      "filesystem-confidentiality-and-integrity",
+      "network-isolation",
+      "credential-nonexposure"
+    ])),
+    hostAvailabilityGuarantee: Schema.Literal("none"),
+    candidateResourceExhaustion: Schema.Literal("out-of-scope"),
+    memoryQuota: Schema.Literal("not-enforced"),
+    blockQuota: Schema.Literal("not-enforced"),
+    inodeQuota: Schema.Literal("not-enforced"),
+    timeoutRole: Schema.Literal(
+      "wall-clock-termination-only-not-resource-containment"
+    )
+  }),
+  rootFilesystem: Schema.Struct({
+    base: Schema.Literal("empty"),
+    hostRootMount: Schema.Literal("forbidden"),
+    readOnlyBinds: Schema.Array(Schema.Struct({
+      sourceAuthority: Schema.Literals([
+        "literal-host-runtime",
+        "run-context-bun-executable",
+        "runner-node-modules"
+      ]),
+      source: Schema.Literals([
+        "/usr",
+        "exact-bun-executable-realpath",
+        "exact-runner-node-modules-realpath"
+      ]),
+      destination: Schema.Literals(["/usr", "/runtime/bun", "/candidate/node_modules"]),
+      kind: Schema.Literals(["directory", "file"])
+    })),
+    symlinks: Schema.Array(Schema.Struct({
+      target: Schema.Literals(["usr/bin", "usr/lib", "usr/lib64"]),
+      destination: Schema.Literals(["/bin", "/lib", "/lib64"])
+    })),
+    deviceFilesystem: Schema.Struct({
+      destination: Schema.Literal("/dev"),
+      policy: Schema.Literal("new-minimal-dev")
+    }),
+    procFilesystem: Schema.Struct({
+      destination: Schema.Literal("/proc"),
+      policy: Schema.Literal("new-proc")
+    }),
+    privateTmpfs: Schema.Array(Schema.Struct({ destination: Schema.Literal("/tmp") })),
+    writableBinds: Schema.Array(Schema.Struct({
+      sourceAuthority: Schema.Literal("fresh-candidate-copy"),
+      destination: Schema.Literal("/candidate"),
+      persistence: Schema.Literal("invocation-private")
+    })),
+    onlyPersistentWritableBindDestination: Schema.Literal("/candidate")
+  }),
+  workingDirectory: Schema.Literal("/candidate"),
+  environment: Schema.Struct({
+    clear: Schema.Literal(true),
+    inheritedVariableNames: Schema.Array(Schema.Never),
+    variables: Schema.Array(Schema.Struct({
+      name: Schema.Literals(["PATH", "LC_ALL", "LANG", "TZ", "NO_COLOR", "TMPDIR"]),
+      value: Schema.Literals(["/runtime:/usr/bin", "C", "UTC", "1", "/tmp"])
+    }))
+  }),
+  forbiddenMountClasses: Schema.Array(Schema.Literals([
+    "host-root",
+    "home-directory",
+    "root-home",
+    "repository",
+    "credential-store",
+    "ssh-agent-socket",
+    "gpg-agent-socket",
+    "container-runtime-socket",
+    "arbitrary-host-socket"
+  ]))
+})
+
 export const ExecutionContract = Schema.Struct({
   contractSha256: Sha256Hex,
   caseActions: Schema.Array(ExecutionAction),
@@ -214,6 +480,7 @@ export const ExecutionContract = Schema.Struct({
   caseAdapter: AdapterDefinition,
   probeAdapter: AdapterDefinition,
   gateAdapter: AdapterDefinition,
+  isolationPolicy: IsolationPolicy,
   candidateOutputAuthority: Schema.Literal("raw-evidence-only"),
   evaluationAuthority: Schema.Literal("runner-only"),
   closedEnvironment: Schema.Struct({
@@ -260,6 +527,7 @@ export const MeasurementContract = Schema.Struct({
   inventoryPolicy: Schema.Literal("every-regular-file-exactly-once-no-symlinks"),
   physicalLineDefinition: Schema.Literal("UTF-8 LF count; a final unterminated segment counts as one line"),
   binaryProductSourcePolicy: Schema.Literal("reject"),
+  binaryNonProductLineDeltaPolicy: Schema.Literal("git-binary-marker-maps-to-zero-lines"),
   canonicalTreeHashDomain: Schema.Literal("ts-release/architecture-canonical-tree/v2"),
   canonicalTreeEntryShape: Schema.Literal("path-mode-bytes-sha256"),
   patchHashDomain: Schema.Literal("ts-release/architecture-canonical-patch/v2"),
@@ -267,10 +535,38 @@ export const MeasurementContract = Schema.Struct({
     "path-lane-before-mode-before-sha256-after-mode-after-sha256-additions-deletions"
   ),
   diffArgv: Schema.NonEmptyArray(Description),
+  gitEnvironment: Schema.Struct({
+    inheritedVariableNames: Schema.Array(Schema.Literal("PATH")),
+    fixedVariables: Schema.Array(Schema.Struct({
+      name: Schema.Literals([
+        "LC_ALL",
+        "LANG",
+        "TZ",
+        "NO_COLOR",
+        "GIT_CONFIG_NOSYSTEM",
+        "GIT_CONFIG_GLOBAL",
+        "GIT_CONFIG_SYSTEM",
+        "GIT_ATTR_NOSYSTEM"
+      ]),
+      value: Schema.Literals(["C", "UTC", "1", "/dev/null"])
+    }))
+  }),
+  gitExecutablePolicy: Schema.Struct({
+    resolution: Schema.Literal("preflight-resolve-once"),
+    executableSha256Field: Schema.Literal("toolchain.gitExecutableSha256"),
+    measurementInvocation: Schema.Literal("retained-resolved-absolute-path"),
+    postPreflightPathLookup: Schema.Literal("forbidden")
+  }),
   quantileMethod: Schema.Literal("nearest-rank"),
   sourceLanes: Schema.Array(SourceLane),
   methods: Schema.Array(MeasurementMethod),
-  requiredToolchainBindings: Schema.Array(Schema.Literals(["bun", "typescript", "effect", "git"]))
+  requiredToolchainBindings: Schema.Array(Schema.Literals([
+    "bun",
+    "typescript",
+    "effect",
+    "git",
+    "bubblewrap"
+  ]))
 })
 export type MeasurementContract = typeof MeasurementContract.Type
 

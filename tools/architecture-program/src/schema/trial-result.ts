@@ -456,6 +456,8 @@ export interface TrialResultValidationAuthority {
   readonly candidateTreeSha256: Sha256HexType
   /** Hash of the exact runner source closure used for the trial. */
   readonly runnerSourceSha256: Sha256HexType
+  /** Hash of the exact dependency tree mounted read-only at /candidate/node_modules. */
+  readonly runnerNodeModulesSha256: Sha256HexType
   /** Exact externally observed toolchain; receipt claims are not self-authoritative. */
   readonly toolchain: TrialRunContextToolchain
 }
@@ -1089,6 +1091,11 @@ export const trialResultContextInvariantIssues = (
   }
   if (context.runnerSourceSha256 !== authority.runnerSourceSha256) {
     issues.push("run context runnerSourceSha256 does not match the exact runner source hash")
+  }
+  if (context.runnerNodeModulesSha256 !== authority.runnerNodeModulesSha256) {
+    issues.push(
+      "run context runnerNodeModulesSha256 does not match the exact mounted dependency-tree hash"
+    )
   }
   if (!sameValue(context.toolchain, authority.toolchain)) {
     issues.push("run context toolchain does not match the exact externally observed toolchain")

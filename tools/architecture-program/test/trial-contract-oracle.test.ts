@@ -5,6 +5,10 @@ import { describe, expect, it } from "@effect/vitest"
 import { Effect } from "effect"
 import { parseCanonicalJsonBytes } from "../src/canonical-document.js"
 import { trialContractOracleIssues } from "../src/check-trial-contract.js"
+import {
+  executionContractSha256,
+  measurementContractSha256
+} from "../src/schema/trial-contract.js"
 import { expectedCaseEvidenceSha256V2, probeChangeDefinitionSha256V2 } from "../src/schema/trial-evidence.js"
 import {
   decodeArchitectureTrialSpec,
@@ -111,5 +115,40 @@ describe("architecture trial v2 independent contract oracle", () => {
       expect(trialContractOracleIssues(spec, encoded)).toContain(
         "gate GM01-shared-case-semantics definition hash differs from the independent v2 oracle"
       )
+    }))
+
+  it.effect("independently rejects a rehashed isolation-policy weakening", () =>
+    Effect.gen(function* () {
+      const { encoded, spec } = yield* loadValidSpec()
+      const execution = spec.executionContract as unknown as MutableDocument
+
+      execution.isolationPolicy.namespaceArguments.pop()
+      execution.isolationPolicy.forbiddenMountClasses.pop()
+      execution.isolationPolicy.runtimeDependencyTree.entryTypes.pop()
+      execution.isolationPolicy.threatModelBoundary.hostAvailabilityGuarantee = "guaranteed"
+      execution.contractSha256 = executionContractSha256(spec.executionContract)
+      const measurement = spec.measurementContract as unknown as MutableDocument
+      measurement.requiredToolchainBindings.pop()
+      measurement.diffArgv.splice(-3, 1)
+      measurement.gitEnvironment.inheritedVariableNames = []
+      measurement.binaryNonProductLineDeltaPolicy = "ignore"
+      measurement.gitExecutablePolicy.postPreflightPathLookup = "allowed"
+      measurement.contractSha256 = measurementContractSha256(spec.measurementContract)
+
+      const issues = trialContractOracleIssues(spec, encoded)
+      expect(issues).toContain("execution isolation policy differs from the independent v2 oracle")
+      expect(issues).toContain("stored execution contract hash differs from the independent v2 oracle")
+      expect(issues).toContain("computed execution contract hash differs from the independent v2 oracle")
+      expect(issues).toContain("required toolchain bindings differs from the independent v2 oracle")
+      expect(issues).toContain("measurement diff argv differs from the independent v2 oracle")
+      expect(issues).toContain("measurement Git environment differs from the independent v2 oracle")
+      expect(issues).toContain(
+        "measurement Git executable policy differs from the independent v2 oracle"
+      )
+      expect(issues).toContain(
+        "binary non-product line-delta policy differs from the independent v2 oracle"
+      )
+      expect(issues).toContain("stored measurement contract hash differs from the independent v2 oracle")
+      expect(issues).toContain("computed measurement contract hash differs from the independent v2 oracle")
     }))
 })

@@ -6,6 +6,7 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import {
   admitNpmPreparedBundle,
+  npmOidcCertificationFailureLog,
   npmOidcDryRunArguments,
   requestAndVerifyGitHubOidcToken,
   runNpmOidcDryRun,
@@ -165,6 +166,32 @@ describe("self-release npm OIDC claim certification", () => {
       jwks,
       context
     })).toThrow("discovery")
+  })
+
+  test("surfaces only release-owned refusal reasons and keeps unexpected errors opaque", () => {
+    let refusal: unknown
+    try {
+      verifyGitHubOidcToken({
+        token: jwt(claims({ ref_protected: "false" })),
+        discovery,
+        jwks,
+        context
+      })
+    } catch (error) {
+      refusal = error
+    }
+    expect(npmOidcCertificationFailureLog(refusal)).toBe(
+      "npm OIDC certification refused: OIDC claim ref_protected is not exact\n" +
+      "npm OIDC certification failed closed; no upload, publication, or provenance is claimed."
+    )
+
+    const forged = new Error(
+      "npm OIDC certification refused: request-token-sentinel registry-token-sentinel"
+    )
+    expect(npmOidcCertificationFailureLog(forged)).toBe(
+      "npm OIDC certification failed closed; no upload, publication, or provenance is claimed."
+    )
+    expect(npmOidcCertificationFailureLog("request-token-sentinel")).not.toContain("sentinel")
   })
 
   test("requests one audience-bound token from exact no-redirect endpoints without returning the request token", async () => {

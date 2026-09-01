@@ -19,7 +19,7 @@ import { inspectPythonDistribution } from "../src/model/python-distribution.js"
 
 const root = process.cwd()
 const metadata = {
-  version: "0.2.2",
+  version: "0.3.0",
   summary: "Deterministic TypeScript release automation.",
   homepage: "https://github.com/mannyc2/ts-release",
   license: "MIT"

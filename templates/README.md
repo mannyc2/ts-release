@@ -29,7 +29,7 @@ its publish job fails after preparation, rerun that failed job in the same
 workflow run so `${{ needs.prepare.outputs.prepared-ref }}` continues to name
 the original bundle. Do not create a new prepare run as recovery.
 
-The trusted-publishing job installs the Node 22.22.2 and npm 11.5.1
+The trusted-publishing job installs the Node 22.22.2 and npm 11.11.0
 publisher boundary explicitly. The reviewed prepare job has no OIDC or publish
 authority; only its publish job installs that publisher toolchain.
 Trusted configuration must name the invoking workflow and exact ref: the
@@ -49,7 +49,7 @@ explicit token-mode migration template for non-OIDC hosts; it names a
 credential reference but never contains a credential value.
 
 All public Action templates use the exact intended monorepo coordinate
-`mannyc2/ts-release/apps/ts-release-action@v0.2.2`. Do not switch it to a
+`mannyc2/ts-release/apps/ts-release-action@v0.3.0`. Do not switch it to a
 floating branch. Candidate certification must stop unless the immutable tag
 can exist at the exact result commit before a package README naming it is
 published.

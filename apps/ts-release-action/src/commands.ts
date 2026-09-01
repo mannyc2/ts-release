@@ -8,7 +8,7 @@ import {
 } from "@mannyc1/ts-release"
 import * as Effect from "effect/Effect"
 
-export const actionCommands = ["release", "prepare", "publish"] as const
+export const actionCommands = ["release", "prepare", "inspect", "publish"] as const
 export const actionInputs = ["command", "config", "prepared"] as const
 export const actionOutputs = ["prepared-ref", "report-ref"] as const
 export type ActionCommand = typeof actionCommands[number]
@@ -144,7 +144,7 @@ const confirmedPrepared = (
 }
 
 export const runAction = async (
-  api: Pick<ReleaseApi, "release" | "prepare" | "publish">,
+  api: Pick<ReleaseApi, "release" | "prepare" | "inspect" | "publish">,
   runtime: ActionRuntime
 ): Promise<void> => {
   const root = realpathSync(runtime.workspace)
@@ -155,15 +155,21 @@ export const runAction = async (
   }
   try {
     const selected = command(values.command)
-    rejectExtra(values, selected === "publish" ? ["command", "prepared"] : ["command", "config"])
+    rejectExtra(values, selected === "publish" || selected === "inspect"
+      ? ["command", "prepared"]
+      : ["command", "config"])
 
     let prepared: string
     let report: Awaited<ReturnType<ReleaseApi["publish"]>> | undefined
-    if (selected === "publish") {
-      const reference = await decodePrepared(values.prepared || fail("publish requires prepared."))
+    if (selected === "publish" || selected === "inspect") {
+      const reference = await decodePrepared(values.prepared || fail(`${selected} requires prepared.`))
       prepared = encodeCompletePreparedReleaseRef(reference)
       await runtime.preparedReference.emit(prepared)
-      report = await api.publish({ prepared: reference })
+      if (selected === "publish") report = await api.publish({ prepared: reference })
+      else {
+        await api.inspect({ prepared: reference })
+        report = undefined
+      }
     } else {
       const config = configJson(runtime, pathInWorkspace(root, values.config || fail(`${selected} requires config.`)))
       if (selected === "release") {

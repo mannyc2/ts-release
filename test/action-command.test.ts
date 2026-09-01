@@ -41,9 +41,9 @@ const sectionKeys = (manifest: string, start: string, end: string): ReadonlyArra
   return [...body.matchAll(/^  ([a-z-]+):$/gmu)].map((match) => match[1]!)
 }
 
-test("Action metadata exposes only release, prepare, publish and two reference outputs", () => {
+test("Action metadata exposes release, prepare, inspect, publish and two reference outputs", () => {
   const manifest = readFileSync("apps/ts-release-action/action.yml", "utf8")
-  expect(actionCommands).toEqual(["release", "prepare", "publish"])
+  expect(actionCommands).toEqual(["release", "prepare", "inspect", "publish"])
   expect(actionInputs).toEqual(["command", "config", "prepared"])
   expect(actionOutputs).toEqual(["prepared-ref", "report-ref"])
   expect(sectionKeys(manifest, "inputs", "outputs")).toEqual(actionInputs)
@@ -51,7 +51,7 @@ test("Action metadata exposes only release, prepare, publish and two reference o
   expect(manifest).toContain("using: node24")
   expect(manifest).toContain("main: dist/launcher.cjs")
   expect(manifest).not.toMatch(/\b(?:steps|shell|run):/u)
-  expect(manifest).not.toMatch(/\b(?:ship|inspect|correct|status|prepared_path|report_path|approval|reviewer)\b/iu)
+  expect(manifest).not.toMatch(/\b(?:ship|correct|status|prepared_path|report_path|approval|reviewer)\b/iu)
 })
 
 test("Action errors retain structured Effect diagnostics and redact credentials", async () => {
@@ -64,6 +64,7 @@ test("Action errors retain structured Effect diagnostics and redact credentials"
   await expect(runAction({
     release: async () => { throw silent },
     prepare: async () => preparedReference(),
+    inspect: async () => ({} as never),
     publish: async () => completeReport
   }, fixture.runtime)).rejects.toThrow("Missing certified runtime near [REDACTED]")
   const report = JSON.parse(readFileSync(join(root, fixture.outputs["report-ref"]!), "utf8")) as Record<string, unknown>
@@ -90,6 +91,7 @@ test("release makes one public call and receives the durable reference before it
       return { prepared, report: completeReport }
     },
     prepare: async () => prepared,
+    inspect: async () => ({} as never),
     publish: async () => completeReport
   }, fixture.runtime)
   expect(calls).toBe(1)
@@ -129,6 +131,7 @@ test("Action report JSON preserves one-element arrays and ordinary one-field rec
       return { prepared, report: structuredReport }
     },
     prepare: async () => prepared,
+    inspect: async () => ({} as never),
     publish: async () => structuredReport
   }, fixture.runtime)
 
@@ -154,6 +157,7 @@ test("prepare emits only a reference projection, never its local bundle path", a
       await fixture.preparedReference.emit(preparedRef)
       return prepared
     },
+    inspect: async () => ({} as never),
     publish: async () => completeReport
   }, fixture.runtime)
   const report = readFileSync(join(root, fixture.outputs["report-ref"]!), "utf8")

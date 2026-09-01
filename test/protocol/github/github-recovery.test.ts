@@ -55,21 +55,21 @@ const publication = (faults: Array<GithubProtocolFaultV1>) => {
 }
 
 describe("GitHub provider read convergence protocol", () => {
-  it.effect("one post-create hidden 404 becomes VisibilityPending and then converges without another mutation", () =>
+  it.effect("one post-create hidden 404 converges to an exact draft but still requires a fresh promotion invocation", () =>
     Effect.gen(function*() {
       const fixture = publication([visibilityFault(), visibilityFault()])
       const fiber = yield* fixture.run.pipe(Effect.forkChild)
       yield* TestClock.adjust(Duration.seconds(1))
       const report = yield* Fiber.join(fiber)
 
-      expect(report.status).toBe("complete")
+      expect(report.status).toBe("uncertain")
       expect(report.subjects[1]).toMatchObject({
-        _tag: "ConvergedAfterMutation",
+        _tag: "UncertainSubject",
         attempt: { _tag: "Applied" },
-        postObservations: [
+        trace: [
           { _tag: "Inconclusive" },
           { _tag: "VisibilityPending" },
-          { _tag: "PresentEquivalent" }
+          { _tag: "AuthoritativelyAbsent" }
         ]
       })
       expect(fixture.double.mutationCount()).toBe(1)

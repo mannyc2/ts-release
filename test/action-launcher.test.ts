@@ -10,6 +10,7 @@ const node = "/fixture/node"
 const environment = (command: string): Record<string, string> => ({
   PATH: "/fixture/bin",
   HOME: "/fixture/home",
+  TS_RELEASE_BUN_BIN: "/fixture/bin/bun-1.3.14",
   BUN_INSTALL_CACHE_DIR: "/fixture/cache",
   ACTIONS_RUNTIME_TOKEN: "runtime-token-sentinel",
   ACTIONS_RESULTS_URL: "https://results.example.invalid/",
@@ -30,7 +31,7 @@ test("native Action launcher confines runner credentials to the Bun release chil
   })).toBe(0)
   expect(calls).toHaveLength(2)
   expect(calls[0]).toEqual({
-    executable: "bun",
+    executable: "/fixture/bin/bun-1.3.14",
     argv: ["--no-env-file", "--no-install", join(root, "scripts", "preload-bun-compile-runtimes.ts")],
     environment: {
       PATH: "/fixture/bin",
@@ -38,7 +39,7 @@ test("native Action launcher confines runner credentials to the Bun release chil
     }
   })
   expect(calls[1]).toEqual({
-    executable: "bun",
+    executable: "/fixture/bin/bun-1.3.14",
     argv: [join(root, "dist", "index.js")],
     environment: {
       ...source,
@@ -49,16 +50,18 @@ test("native Action launcher confines runner credentials to the Bun release chil
   expect(JSON.stringify(calls[0])).not.toContain("sentinel")
 })
 
-test("native Action launcher skips preload for publish and stops on preload failure", () => {
-  const publishCalls: ActionLauncherSpawnInput[] = []
-  expect(runActionLauncher({
-    actionDirectory: root,
-    nodeExecutable: node,
-    environment: environment("publish"),
-    spawn: (input) => { publishCalls.push(input); return 0 }
-  })).toBe(0)
-  expect(publishCalls).toHaveLength(1)
-  expect(publishCalls[0]?.argv).toEqual([join(root, "dist", "index.js")])
+test("native Action launcher skips preload for inspect/publish and stops on preload failure", () => {
+  for (const command of ["inspect", "publish"]) {
+    const calls: ActionLauncherSpawnInput[] = []
+    expect(runActionLauncher({
+      actionDirectory: root,
+      nodeExecutable: node,
+      environment: environment(command),
+      spawn: (input) => { calls.push(input); return 0 }
+    })).toBe(0)
+    expect(calls).toHaveLength(1)
+    expect(calls[0]?.argv).toEqual([join(root, "dist", "index.js")])
+  }
 
   const failedCalls: ActionLauncherSpawnInput[] = []
   expect(runActionLauncher({
@@ -70,8 +73,8 @@ test("native Action launcher skips preload for publish and stops on preload fail
   expect(failedCalls).toHaveLength(1)
 })
 
-test("native Action launcher refuses before preparation without runner artifact credentials", () => {
-  for (const name of ["ACTIONS_RUNTIME_TOKEN", "ACTIONS_RESULTS_URL"] as const) {
+test("native Action launcher refuses before preparation without resolved tools or runner artifact credentials", () => {
+  for (const name of ["TS_RELEASE_BUN_BIN", "ACTIONS_RUNTIME_TOKEN", "ACTIONS_RESULTS_URL"] as const) {
     const selected = environment("release")
     delete selected[name]
     let calls = 0

@@ -5,11 +5,21 @@ import { cwd } from "node:process"
 export const root = cwd()
 export const packagePath = "package.json"
 export const appPackagePath = "apps/release-ts/package.json"
-export const releaseConfigPath = "apps/release-ts/release.config.json"
+export const githubReleaseConfigPath = "apps/release-ts/github-release.config.json"
+export const npmReleaseConfigPath = "apps/release-ts/npm-release.config.json"
 export const releaseWorkflowPath = ".github/workflows/release.yml"
 export const preparedRoot = ".release/ts-release/prepared"
 
-export const selfReleaseConfig = (): unknown => readJson(releaseConfigPath)
+export const githubSelfReleaseConfig = (): unknown => readJson(githubReleaseConfigPath)
+export const npmSelfReleaseConfig = (): unknown => readJson(npmReleaseConfigPath)
+export const selfReleaseConfigs = (): ReadonlyArray<{
+  readonly lane: "github" | "npm"
+  readonly path: string
+  readonly config: unknown
+}> => [
+  { lane: "github", path: githubReleaseConfigPath, config: githubSelfReleaseConfig() },
+  { lane: "npm", path: npmReleaseConfigPath, config: npmSelfReleaseConfig() }
+]
 
 export type JsonObject = Record<string, unknown>
 export const isJsonObject = (value: unknown): value is JsonObject =>

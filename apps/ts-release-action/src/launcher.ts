@@ -40,6 +40,8 @@ export const runActionLauncher = (input: {
   const command = required(input.environment, "INPUT_COMMAND")
   const path = required(input.environment, "PATH")
   const home = required(input.environment, "HOME")
+  const bunExecutable = required(input.environment, "TS_RELEASE_BUN_BIN")
+  if (!isAbsolute(bunExecutable)) throw new Error("Native Action launcher requires an absolute TS_RELEASE_BUN_BIN.")
 
   // These credentials are injected only by GitHub's native JavaScript Action
   // handler. Refuse before preparation if the durable artifact boundary cannot
@@ -49,9 +51,9 @@ export const runActionLauncher = (input: {
 
   const cache = input.environment.BUN_INSTALL_CACHE_DIR?.trim() ||
     join(home, ".bun", "install", "cache")
-  if (command !== "publish") {
+  if (command !== "publish" && command !== "inspect") {
     const preload = spawn({
-      executable: "bun",
+      executable: bunExecutable,
       argv: [
         "--no-env-file", "--no-install",
         join(input.actionDirectory, "scripts", "preload-bun-compile-runtimes.ts")
@@ -62,7 +64,7 @@ export const runActionLauncher = (input: {
   }
 
   return spawn({
-    executable: "bun",
+    executable: bunExecutable,
     argv: [join(input.actionDirectory, "dist", "index.js")],
     environment: {
       ...input.environment,

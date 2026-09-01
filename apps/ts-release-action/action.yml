@@ -1,15 +1,15 @@
 name: ts-release
-description: Durably prepare, publish, or automatically release one exact release boundary.
+description: Durably prepare, inspect, publish, or automatically release one exact release boundary.
 author: mannyc2
 inputs:
   command:
-    description: One of release, prepare, or publish.
+    description: One of release, prepare, inspect, or publish.
     required: true
   config:
     description: Workspace-contained authored configuration path for release or prepare.
     required: false
   prepared:
-    description: Canonical prepared:gha reference for publish.
+    description: Canonical prepared:gha reference for inspect or publish.
     required: false
 outputs:
   prepared-ref:

@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+## 0.3.0 - 2026-09-01
+
+### Self-release hardening
+
+- Split credential-free preparation, lightweight tag creation, npm
+  publication, and later GitHub publication into four exact-SHA dispatch
+  modes. GitHub and npm consume distinct content-addressed prepared bundles
+  under separately named environments and least-privilege job permissions;
+  no default path receives publication authority.
+- Pin GitHub-hosted runner labels, third-party Actions, Node 22.22.2, Bun
+  1.3.14, and the self-release npm CLI at 11.11.0. Reauthenticate the exact
+  checkout against the current public `main` tip immediately before every
+  preparation or publication boundary, and reject ambient npm credentials.
+- After npm publication, bind the adopted tarball bytes to registry integrity,
+  the exact GitHub SLSA v1 provenance statement and run identity, and npm's
+  cryptographic signature audit. Select same-run proof for a fresh mutation
+  and authenticate the provenance-named prior run for an exact
+  `AlreadyEquivalent` response-loss recovery. Pin Sigstore 4.1.0 from the
+  audited npm archive and require the exact Fulcio workflow SAN, OIDC issuer,
+  environment-bound ID-qualified repository subject, source/workflow SHA, and
+  run-invocation certificate extensions. Preserve
+  GitHub tag, release, and asset equivalence checks inside the provider-native
+  publisher.
+- Keep every credentialed job free of nonlocal Actions by natively checking
+  out the exact current-main candidate and executing its local Action. Stage
+  GitHub assets only in a private draft; a fresh later full asset reread is the
+  sole authority for PATCH-only public promotion. Bind trusted npm children to
+  an empty private home and explicit empty mode-0600 user/global configs.
+
 ### Canonical operation journal
 
 - Add a provider-neutral `operation-journal` subpath with one opaque canonical

@@ -3,79 +3,105 @@ import { makeReleaseApi } from "../../../src/api/api.js"
 import { NodeReleaseLayer } from "../../../src/platform/node.js"
 import { AuthoredConfig } from "../../../src/resolve/authored.js"
 import {
-  appPackagePath, candidateActionReference, isJsonObject, packagePath, readJson,
-  releaseConfigPath, report, root, selfReleaseConfig, stringField
+  appPackagePath, candidateActionReference, githubReleaseConfigPath,
+  isJsonObject, npmReleaseConfigPath, packagePath, readJson, report, root,
+  selfReleaseConfigs, stringField
 } from "./self-release-facts.js"
 
 const failures: Array<string> = []
 const manifest = readJson(packagePath)
-const appManifest = readJson(appPackagePath)
-const config = readJson(releaseConfigPath)
 const packageName = stringField(manifest, "name")
 const version = stringField(manifest, "version")
+const workspaceManifests = [
+  appPackagePath,
+  "apps/ts-release-action/package.json",
+  "apps/ts-release-agents/package.json"
+]
 
 if (packageName !== "@mannyc1/ts-release") failures.push("The root package name is not the canonical release identity.")
 if (version === undefined) failures.push("The root package version is missing.")
-if (version !== stringField(appManifest, "version")) failures.push("The app and root package versions differ.")
-if (!isJsonObject(config)) failures.push("The self-release config must be a JSON object.")
-else {
+for (const path of workspaceManifests) {
+  if (version !== stringField(readJson(path), "version")) failures.push(`${path} and the root package versions differ.`)
+}
+
+const configs = selfReleaseConfigs()
+for (const { lane, path, config } of configs) {
+  if (!isJsonObject(config)) {
+    failures.push(`${path} must be a JSON object.`)
+    continue
+  }
   try {
     Schema.decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" })(config)
   } catch (cause) {
-    failures.push(`Authored self-release configuration is invalid: ${String(cause)}`)
+    failures.push(`${path} is invalid: ${String(cause)}`)
   }
   const project = config.project
-  if (!isJsonObject(project) || project.repository !== "mannyc2/ts-release" || Object.keys(project).some((key) => key !== "repository")) {
-    failures.push("config.project must declare only the canonical repository required by trusted publishing.")
+  if (!isJsonObject(project) || project.repository !== "mannyc2/ts-release" ||
+      Object.keys(project).some((key) => key !== "repository")) {
+    failures.push(`${path} project must declare only the canonical trusted-publishing repository.`)
   }
-  if (config.versionFrom !== "manifest") failures.push("config.versionFrom must be manifest.")
-  if (!isJsonObject(config.npmPackage) || config.npmPackage.path !== ".") failures.push("config.npmPackage.path must be the root package.")
-  const builds = Array.isArray(config.builds) ? config.builds : []
-  const requiredTargets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64"]
-  if (builds.length !== 1 || !isJsonObject(builds[0]) || !Array.isArray(builds[0].targets) ||
-      builds[0].targets.join(",") !== requiredTargets.join(",")) {
-    failures.push("Self-release build must contain exactly the four advertised Linux/macOS artifact targets.")
+  if (config.versionFrom !== "manifest") failures.push(`${path} must derive its version from the manifest.`)
+  const publish = isJsonObject(config.publish) ? config.publish : {}
+  if (Object.keys(publish).join(",") !== lane) {
+    failures.push(`${path} must contain only the ${lane} publication authority.`)
   }
-  if (!isJsonObject(builds[0]) || builds[0].entry !== "apps/release-ts/src/cli/main.ts") {
-    failures.push("Self-release native builds must use the version-bearing Bun CLI entrypoint.")
+}
+
+const npmConfig = readJson(npmReleaseConfigPath)
+if (!isJsonObject(npmConfig) || !isJsonObject(npmConfig.npmPackage) || npmConfig.npmPackage.path !== ".") {
+  failures.push("The npm self-release lane must package only the root package.")
+}
+if (isJsonObject(npmConfig) && ["builds", "preparations", "archives", "checksum"].some((key) => key in npmConfig)) {
+  failures.push("The npm self-release lane must not adopt GitHub release artifacts.")
+}
+
+const githubConfig = readJson(githubReleaseConfigPath)
+const requiredTargets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64"]
+if (!isJsonObject(githubConfig)) {
+  failures.push("The GitHub self-release lane must be an object.")
+} else {
+  if ("npmPackage" in githubConfig) failures.push("The GitHub self-release lane must not adopt npm package bytes.")
+  const builds = Array.isArray(githubConfig.builds) ? githubConfig.builds : []
+  if (builds.length !== 1 || !isJsonObject(builds[0]) || builds[0].entry !== "apps/release-ts/src/cli/main.ts" ||
+      !Array.isArray(builds[0].targets) || builds[0].targets.join(",") !== requiredTargets.join(",")) {
+    failures.push("The GitHub self-release lane must build exactly the four advertised targets from the version-bearing CLI entrypoint.")
   }
-  const archives = Array.isArray(config.archives) ? config.archives : []
+  const archives = Array.isArray(githubConfig.archives) ? githubConfig.archives : []
   if (archives.length !== requiredTargets.length || requiredTargets.some((target) => {
     const archive = archives.find((item) => isJsonObject(item) && item.id === `cli-${target}`)
     return !isJsonObject(archive) || !Array.isArray(archive.ids) || archive.ids.join(",") !== `cli-${target}` ||
       !Array.isArray(archive.formats) || archive.formats.join(",") !== "tar.gz,zip"
-  })) {
-    failures.push("Self-release archives must partition the four binaries into one tar.gz and ZIP pair per target.")
-  }
-  const publish = isJsonObject(config.publish) ? config.publish : {}
-  if (Object.keys(publish).some((key) => !["npm", "github"].includes(key))) failures.push("Self-release config contains an unconfigured publication destination.")
-  if (!Array.isArray(config.preparations) || !config.preparations.some((item) => isJsonObject(item) && item.id === "agents" && item.kind === "artifact")) {
-    failures.push("Self-release config must declare the agent generator as one artifact preparation.")
-  } else {
-    const agents = config.preparations.find((item) => isJsonObject(item) && item.id === "agents")
-    const collection = isJsonObject(agents) && isJsonObject(agents.collection) ? agents.collection : undefined
-    if (collection?.root !== ".release/agents/archives" || collection.artifactKind !== "archive" ||
-        collection.pathSuffix !== ".zip" || collection.mediaType !== "application/zip") {
-      failures.push("Self-release agent preparation must declare the canonical ZIP collection contract.")
-    }
+  })) failures.push("The GitHub self-release lane must partition every executable into one tar.gz/ZIP pair.")
+  const preparations = Array.isArray(githubConfig.preparations) ? githubConfig.preparations : []
+  const agents = preparations.find((item) => isJsonObject(item) && item.id === "agents" && item.kind === "artifact")
+  const collection = isJsonObject(agents) && isJsonObject(agents.collection) ? agents.collection : undefined
+  if (collection?.root !== ".release/agents/archives" || collection.artifactKind !== "archive" ||
+      collection.pathSuffix !== ".zip" || collection.mediaType !== "application/zip") {
+    failures.push("The GitHub self-release lane must retain the provider-native agent ZIP collection.")
   }
 }
 
 const api = makeReleaseApi(NodeReleaseLayer)
+const inspected: Record<string, number> = {}
 try {
-  const inspection = await api.inspect({ config: selfReleaseConfig(), workspace: root })
-  if (!("preparations" in inspection)) failures.push("Self-release context inspection did not return the authored graph projection.")
-  else {
-    if (packageName !== undefined && inspection.package.name.toString() !== packageName) failures.push("Observed package name disagrees with package.json.")
-    if (version !== undefined && inspection.package.version.toString() !== version) failures.push("Observed package version disagrees with package.json.")
-    if (inspection.publications.filter((publication) => !["npm", "github"].includes(publication.destination)).length > 0) failures.push("Inspection contains an unconfigured publication destination.")
-    if (inspection.publications.map((publication) => publication.destination).join(",") !== "github,npm") {
-      failures.push("Self-release publication order must make the immutable GitHub Action ref available before npm publishes its README.")
+  for (const { lane, config } of configs) {
+    const inspection = await api.inspect({ config, workspace: root })
+    if (!("preparations" in inspection)) {
+      failures.push(`${lane} self-release inspection did not return the authored graph projection.`)
+      continue
     }
-    if (!inspection.preparations.some((preparation) => preparation.id.toString() === "preparation:agents")) failures.push("Inspection omitted the agent preparation.")
-    const agents = inspection.collections.find((collection) => collection.id.toString() === "agents")
-    if (agents?.producer.toString() !== "preparation:agents" || agents.root.toString() !== ".release/agents/archives") {
-      failures.push("Inspection omitted or changed the agent artifact collection contract.")
+    if (packageName !== undefined && inspection.package.name.toString() !== packageName) failures.push(`${lane} inspection changed the package name.`)
+    if (version !== undefined && inspection.package.version.toString() !== version) failures.push(`${lane} inspection changed the package version.`)
+    if (inspection.publications.length !== 1 || inspection.publications[0]?.destination !== lane) {
+      failures.push(`${lane} inspection must contain exactly its one provider-native publication.`)
+    }
+    inspected[lane] = inspection.publications.length
+    if (lane === "github") {
+      const agents = inspection.collections.find((collection) => collection.id.toString() === "agents")
+      if (!inspection.preparations.some((preparation) => preparation.id.toString() === "preparation:agents") ||
+          agents?.producer.toString() !== "preparation:agents" || agents.root.toString() !== ".release/agents/archives") {
+        failures.push("GitHub inspection omitted or changed the agent artifact collection contract.")
+      }
     }
   }
 } catch (cause) {
@@ -84,6 +110,11 @@ try {
   await api.dispose()
 }
 
-report("self-release-context-report/v1", failures, {
-  packageName, version, actionReference: candidateActionReference(), evidenceState: "source-derived"
+report("self-release-context-report/v2", failures, {
+  packageName,
+  version,
+  actionReference: candidateActionReference(),
+  configs: { github: githubReleaseConfigPath, npm: npmReleaseConfigPath },
+  inspected,
+  evidenceState: "source-derived"
 })

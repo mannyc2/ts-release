@@ -51,6 +51,11 @@ test("each Action command invokes exactly its same-named public operation", asyn
       await channel.emit(preparedRef)
       return prepared
     },
+    inspect: async (input: { readonly prepared?: typeof prepared }) => {
+      calls.push("inspect")
+      expect(input.prepared).toEqual(prepared)
+      return {} as never
+    },
     publish: async (input: { readonly prepared: typeof prepared }) => {
       calls.push("publish")
       expect(input.prepared).toEqual(prepared)
@@ -61,6 +66,7 @@ test("each Action command invokes exactly its same-named public operation", asyn
   for (const [command, extra] of [
     ["release", { config: "release.config.json" }],
     ["prepare", { config: "release.config.json" }],
+    ["inspect", { prepared: preparedRef }],
     ["publish", { prepared: preparedRef }]
   ] as const) {
     const current = fixture(command, root, extra)
@@ -68,7 +74,7 @@ test("each Action command invokes exactly its same-named public operation", asyn
     await runAction(api, current.runtime)
     expect(Object.keys(current.outputs).sort()).toEqual(["prepared-ref", "report-ref"])
   }
-  expect(calls).toEqual(["release", "prepare", "publish"])
+  expect(calls).toEqual(["release", "prepare", "inspect", "publish"])
 })
 
 test("publish decodes a canonical reference object and emits it before the public operation", async () => {
@@ -80,6 +86,7 @@ test("publish decodes a canonical reference object and emits it before the publi
   await runAction({
     release: async () => ({ prepared: expected, report: report("complete") }),
     prepare: async () => expected,
+    inspect: async () => ({} as never),
     publish: async (input) => {
       expect(current.outputs["prepared-ref"]).toBe(preparedRef)
       received = input.prepared
@@ -103,6 +110,7 @@ test("publish rejects filesystem paths before the public operation", async () =>
   await expect(runAction({
     release: async () => { calls += 1; return {} as never },
     prepare: async () => { calls += 1; return {} as never },
+    inspect: async () => { calls += 1; return {} as never },
     publish: async () => { calls += 1; return report("complete") }
   }, current.runtime)).rejects.toThrow()
 
@@ -117,6 +125,7 @@ test("invalid combinations and escaping paths fail before the API call", async (
   const api = {
     release: async () => { calls += 1; return {} as never },
     prepare: async () => { calls += 1; return {} as never },
+    inspect: async () => { calls += 1; return {} as never },
     publish: async () => { calls += 1; return report("complete") }
   }
   const invalid = fixture("publish", root, { config: "release.config.json" })
@@ -140,6 +149,7 @@ test("a non-complete report fails closed after preserving recovery outputs", asy
       return { prepared, report: report("blocked") }
     },
     prepare: async () => prepared,
+    inspect: async () => ({} as never),
     publish: async () => report("complete")
   }, current.runtime)).rejects.toThrow("report is blocked")
 
@@ -161,6 +171,7 @@ test("a non-complete publish report fails only after both recovery outputs are w
   await expect(runAction({
     release: async () => ({ prepared, report: report("complete") }),
     prepare: async () => prepared,
+    inspect: async () => ({} as never),
     publish: async () => report("uncertain")
   }, current.runtime)).rejects.toThrow("report is uncertain")
 
@@ -183,6 +194,7 @@ test("a caught post-commit failure emits hosted rerun guidance without a local c
       throw new Error("forced post-commit failure")
     },
     prepare: async () => prepared,
+    inspect: async () => ({} as never),
     publish: async () => report("complete")
   }, current.runtime)).rejects.toThrow("forced post-commit failure")
 

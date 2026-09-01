@@ -6,12 +6,9 @@ import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import { makeReleaseApi } from "../../../src/api/api.js"
 import { makeNodeReleaseLayer } from "../../../src/platform/node.js"
-import {
-  makeLocalPreparedReleaseStore,
-  type PreparedBundle
-} from "../../../src/release/prepared-store.js"
+import { makeLocalPreparedReleaseStore, type PreparedBundle } from "../../../src/release/prepared-store.js"
 import { encodeCompletePreparedReleaseRef } from "../../../src/release/prepared-ref.js"
-import { report, root, selfReleaseConfig } from "./self-release-facts.js"
+import { report, root, selfReleaseConfigs } from "./self-release-facts.js"
 
 interface PreparationRun {
   readonly reference: string
@@ -21,15 +18,17 @@ interface PreparationRun {
   readonly elapsedMs: number
 }
 
-const sha256 = (bytes: Uint8Array): string =>
-  createHash("sha256").update(bytes).digest("hex")
+const sha256 = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
+const equal = (left: Uint8Array, right: Uint8Array): boolean =>
+  left.length === right.length && left.every((byte, index) => byte === right[index])
+const json = (bytes: Uint8Array): unknown => JSON.parse(new TextDecoder().decode(bytes))
 
-const prepareOnce = async (storeRoot: string): Promise<PreparationRun> => {
+const prepareOnce = async (config: unknown, storeRoot: string): Promise<PreparationRun> => {
   const store = makeLocalPreparedReleaseStore(storeRoot)
   const api = makeReleaseApi(makeNodeReleaseLayer(store))
   const startedAt = performance.now()
   try {
-    const prepared = await api.prepare({ config: selfReleaseConfig(), workspace: root })
+    const prepared = await api.prepare({ config, workspace: root })
     const bundle = await Effect.runPromise(store.load(prepared))
     const manifestBytes = new Uint8Array(readFileSync(join(bundle.directory, "prepared-release.json")))
     return {
@@ -43,11 +42,6 @@ const prepareOnce = async (storeRoot: string): Promise<PreparationRun> => {
     await api.dispose()
   }
 }
-
-const equal = (left: Uint8Array, right: Uint8Array): boolean =>
-  left.length === right.length && left.every((byte, index) => byte === right[index])
-
-const json = (bytes: Uint8Array): unknown => JSON.parse(new TextDecoder().decode(bytes))
 
 const structuredFailure = (failure: unknown): string => {
   if (Cause.isCause(failure)) return Cause.pretty(failure)
@@ -65,7 +59,6 @@ const structuredFailure = (failure: unknown): string => {
 const sourcePreconditionFailure = (rendered: string): boolean =>
   /(?:dirty|not clean|requires a clean|source\.clean|source tree|working (?:tree|copy)|uncommitted)/iu.test(rendered)
 
-/** Stable leaf paths make a non-reproduction report actionable without copying prepared bytes. */
 const differencePaths = (left: unknown, right: unknown, path = "$", output: Array<string> = []): ReadonlyArray<string> => {
   if (Object.is(left, right)) return output
   if (Array.isArray(left) && Array.isArray(right)) {
@@ -97,72 +90,53 @@ const artifactRows = (bundle: PreparedBundle) => bundle.manifest.artifacts.map((
 
 const failures: Array<string> = []
 const scratch = mkdtempSync(join(tmpdir(), "ts-release-reproducibility-"))
+const results: Array<Record<string, unknown>> = []
 try {
-  const first = await prepareOnce(join(scratch, "first"))
-  const second = await prepareOnce(join(scratch, "second"))
-  const manifestsEqual = equal(first.manifestBytes, second.manifestBytes)
-  const firstArtifacts = artifactRows(first.bundle)
-  const secondArtifacts = artifactRows(second.bundle)
-  const artifactBytesEqual = JSON.stringify(firstArtifacts) === JSON.stringify(secondArtifacts)
-  const differences = manifestsEqual
-    ? []
-    : differencePaths(json(first.manifestBytes), json(second.manifestBytes))
+  for (const { lane, config } of selfReleaseConfigs()) {
+    const first = await prepareOnce(config, join(scratch, lane, "first"))
+    const second = await prepareOnce(config, join(scratch, lane, "second"))
+    const manifestsEqual = equal(first.manifestBytes, second.manifestBytes)
+    const firstArtifacts = artifactRows(first.bundle)
+    const secondArtifacts = artifactRows(second.bundle)
+    const artifactBytesEqual = JSON.stringify(firstArtifacts) === JSON.stringify(secondArtifacts)
+    const differences = manifestsEqual ? [] : differencePaths(json(first.manifestBytes), json(second.manifestBytes))
 
-  if (first.bundle.manifest.source.commit !== second.bundle.manifest.source.commit) {
-    failures.push("Independent preparations observed different exact source commits.")
-  }
-  if (first.bundle.manifest.source.tree !== second.bundle.manifest.source.tree) {
-    failures.push("Independent preparations observed different exact source trees.")
-  }
-  if (firstArtifacts.map((artifact) => artifact.id).join(",") !==
-      secondArtifacts.map((artifact) => artifact.id).join(",")) {
-    failures.push("Independent preparations produced different artifact identities.")
-  }
-  if (!manifestsEqual) {
-    failures.push(`Independent prepared manifests differ at ${differences.length === 0 ? "an unclassified path" : differences.join(", ")}.`)
-  }
-  if (!artifactBytesEqual) {
-    failures.push(differences.length === 0
-      ? "Independent artifact bytes differ without a corresponding manifest difference."
-      : "Independent artifact bytes differ; the manifest paths above record the changed prepared basis.")
+    if (first.bundle.manifest.source.commit !== second.bundle.manifest.source.commit) failures.push(`${lane} preparations observed different exact source commits.`)
+    if (first.bundle.manifest.source.tree !== second.bundle.manifest.source.tree) failures.push(`${lane} preparations observed different exact source trees.`)
+    if (firstArtifacts.map((artifact) => artifact.id).join(",") !== secondArtifacts.map((artifact) => artifact.id).join(",")) {
+      failures.push(`${lane} preparations produced different artifact identities.`)
+    }
+    if (!manifestsEqual) failures.push(`${lane} prepared manifests differ at ${differences.length === 0 ? "an unclassified path" : differences.join(", ")}.`)
+    if (!artifactBytesEqual) failures.push(`${lane} prepared artifact bytes differ${differences.length === 0 ? " without a corresponding manifest difference" : ""}.`)
+
+    results.push({
+      lane,
+      sourceCommit: first.bundle.manifest.source.commit.toString(),
+      sourceTree: first.bundle.manifest.source.tree.toString(),
+      first: { preparedReference: first.reference, manifestSha256: first.manifestSha256, elapsedMs: first.elapsedMs },
+      second: { preparedReference: second.reference, manifestSha256: second.manifestSha256, elapsedMs: second.elapsedMs },
+      manifestsEqual,
+      artifactBytesEqual,
+      differingManifestPaths: differences,
+      artifactCount: firstArtifacts.length
+    })
   }
 
-  report("self-release-reproducibility-report/v1", failures, {
-    sourceCommit: first.bundle.manifest.source.commit.toString(),
-    sourceTree: first.bundle.manifest.source.tree.toString(),
-    first: {
-      preparedReference: first.reference,
-      manifestSha256: first.manifestSha256,
-      elapsedMs: first.elapsedMs
-    },
-    second: {
-      preparedReference: second.reference,
-      manifestSha256: second.manifestSha256,
-      elapsedMs: second.elapsedMs
-    },
-    manifestsEqual,
-    artifactBytesEqual,
-    differingManifestPaths: differences,
-    artifactCount: firstArtifacts.length,
+  report("self-release-reproducibility-report/v2", failures, {
+    lanes: results,
     peakRssKiB: process.resourceUsage().maxRSS,
-    cacheState: "host cache not controlled; each run used a distinct prepared store and private staging root",
-    reproducibility: manifestsEqual && artifactBytesEqual ? "complete-bytes-equal" : "not-reproduced",
+    cacheState: "host cache not controlled; every lane/run used a distinct prepared store and private staging root",
+    reproducibility: failures.length === 0 ? "complete-bytes-equal" : "not-reproduced",
     evidenceState: "contract-tested"
   })
 } catch (cause) {
   const rendered = structuredFailure(cause)
-  const failureKind = sourcePreconditionFailure(rendered)
-    ? "source-precondition-failed"
-    : "independent-preparation-failed"
-  report("self-release-reproducibility-report/v1", [
+  const failureKind = sourcePreconditionFailure(rendered) ? "source-precondition-failed" : "independent-preparation-failed"
+  report("self-release-reproducibility-report/v2", [
     failureKind === "source-precondition-failed"
       ? `Candidate source precondition failed before reproducibility comparison: ${rendered}`
       : `Independent preparation failed before reproducibility comparison: ${rendered}`
-  ], {
-    failureKind,
-    comparisonCompleted: false,
-    evidenceState: "contract-tested"
-  })
+  ], { failureKind, completedLanes: results, comparisonCompleted: false, evidenceState: "contract-tested" })
 } finally {
   rmSync(scratch, { recursive: true, force: true })
 }

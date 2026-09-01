@@ -1,61 +1,316 @@
 name: Release
 
+# Preparation, lightweight tagging, npm publication, and GitHub publication
+# are four separate exact-byte authorities. Credentialed jobs contain no
+# third-party Actions: they bootstrap a digest-bound repository-owned closure,
+# then execute only the exact detached candidate's local Action as mutation code.
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: Exact self-release authority
+        required: true
+        type: choice
+        options:
+          - prepare-exact-sha
+          - create-tag
+          - publish-npm
+          - publish-github
       candidate_sha:
-        description: Exact candidate commit; it must be the current main tip.
+        description: Exact lowercase 40-hex current main commit.
         required: true
         type: string
       prepared_ref:
-        description: Optional prepared:gha reference for recovery; leave empty for a fresh release.
+        description: GitHub or npm prepared:gha reference; mode-specific.
+        required: false
+        default: ""
+        type: string
+      npm_prepared_ref:
+        description: Distinct npm prepared:gha reference; required only before GitHub publication.
         required: false
         default: ""
         type: string
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: ts-release-0.3.0
   cancel-in-progress: false
 
 jobs:
-  release:
-    if: ${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha }}
-    runs-on: ubuntu-latest
+  prepare:
+    if: ${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'prepare-exact-sha' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      github-prepared-ref: ${{ steps.github-prepare.outputs.prepared-ref }}
+      npm-prepared-ref: ${{ steps.npm-prepare.outputs.prepared-ref }}
+    steps:
+      - name: Refuse ambient release-tool controls
+        shell: bash
+        run: |-
+          set -euo pipefail
+          while IFS='=' read -r name _; do
+            normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+            case "$normalized" in
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*)
+                echo "::error title=Unsafe release host::$name must be absent."
+                exit 1
+                ;;
+            esac
+          done < <(/usr/bin/env)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          persist-credentials: false
+      - id: setup-node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22.22.2"
+      - id: setup-bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+      - id: release-tools
+        name: Bind exact release tool paths
+        env:
+          SETUP_BUN_PATH: ${{ steps.setup-bun.outputs.bun-path }}
+        shell: bash
+        run: |-
+          set -euo pipefail
+          node_path="$(type -P node)"
+          bun_path="$(type -P bun)"
+          [[ "$node_path" = /* && "$bun_path" = /* && -x "$node_path" && -x "$bun_path" ]]
+          [[ "$("$node_path" --version)" == v22.22.2 ]]
+          [[ "$("$bun_path" --version)" == 1.3.14 ]]
+          [[ "$(realpath "$bun_path")" == "$(realpath "$SETUP_BUN_PATH")" ]]
+          echo "node-bin=$node_path" >> "$GITHUB_OUTPUT"
+          echo "bun-bin=$bun_path" >> "$GITHUB_OUTPUT"
+      - name: Install audited npm release tool
+        env:
+          TS_RELEASE_NODE_BIN: ${{ steps.release-tools.outputs.node-bin }}
+          TS_RELEASE_BUN_BIN: ${{ steps.release-tools.outputs.bun-bin }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install apps/release-ts/scripts/install-self-release-npm.ts'
+      - name: Prime isolated Bun dependency cache
+        env:
+          TS_RELEASE_BUN_BIN: ${{ steps.release-tools.outputs.bun-bin }}
+        run: |-
+          "$TS_RELEASE_BUN_BIN" install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted
+          "$TS_RELEASE_BUN_BIN" --no-env-file --no-install -e 'await (await import("node:fs/promises")).rm("node_modules", { recursive: true, force: true })'
+      - name: Reauthenticate exact main before GitHub-byte adoption
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          PREPARED_REF: ${{ inputs.prepared_ref }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+          RELEASE_MODE: ${{ inputs.mode }}
+          TS_RELEASE_NODE_BIN: ${{ steps.release-tools.outputs.node-bin }}
+          TS_RELEASE_BUN_BIN: ${{ steps.release-tools.outputs.bun-bin }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install apps/release-ts/scripts/check-self-release-dispatch.ts'
+      - id: github-prepare
+        uses: ./apps/ts-release-action
+        env:
+          TS_RELEASE_NODE_BIN: ${{ steps.release-tools.outputs.node-bin }}
+          TS_RELEASE_BUN_BIN: ${{ steps.release-tools.outputs.bun-bin }}
+        with:
+          command: prepare
+          config: apps/release-ts/github-release.config.json
+      - name: Upload redacted GitHub preparation report
+        if: ${{ always() && steps.github-prepare.outputs.report-ref != '' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ts-release-github-prepare-report-${{ github.run_attempt }}
+          path: ${{ steps.github-prepare.outputs.report-ref }}
+          if-no-files-found: error
+          retention-days: 7
+      - name: Reauthenticate exact main before npm-byte adoption
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          PREPARED_REF: ${{ inputs.prepared_ref }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+          RELEASE_MODE: ${{ inputs.mode }}
+          TS_RELEASE_NODE_BIN: ${{ steps.release-tools.outputs.node-bin }}
+          TS_RELEASE_BUN_BIN: ${{ steps.release-tools.outputs.bun-bin }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install apps/release-ts/scripts/check-self-release-dispatch.ts'
+      - id: npm-prepare
+        uses: ./apps/ts-release-action
+        env:
+          TS_RELEASE_NODE_BIN: ${{ steps.release-tools.outputs.node-bin }}
+          TS_RELEASE_BUN_BIN: ${{ steps.release-tools.outputs.bun-bin }}
+        with:
+          command: prepare
+          config: apps/release-ts/npm-release.config.json
+      - name: Upload redacted npm preparation report
+        if: ${{ always() && steps.npm-prepare.outputs.report-ref != '' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ts-release-npm-prepare-report-${{ github.run_attempt }}
+          path: ${{ steps.npm-prepare.outputs.report-ref }}
+          if-no-files-found: error
+          retention-days: 7
+
+  create-tag:
+    if: ${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'create-tag' }}
+    runs-on: ubuntu-24.04
+    environment: github-tag
+    permissions:
+      contents: write
+    steps:
+      - name: Bootstrap exact repository-owned mutation tools
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |-
+          set -euo pipefail
+          while IFS='=' read -r name _; do
+            normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+            case "$normalized" in
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*) exit 1 ;;
+            esac
+          done < <(/usr/bin/env)
+          bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
+          /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
+          printf '%s  %s\n' df3cdb1d01225ff516a045175f08b4c39c6f49170305eb93c5a1ca98de2b7437 "$bootstrap" | /usr/bin/sha256sum --check --status
+          /bin/bash "$bootstrap" "$CANDIDATE_SHA"
+      - name: Reauthenticate exact main before tag mutation
+        shell: bash
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          PREPARED_REF: ${{ inputs.prepared_ref }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+          RELEASE_MODE: ${{ inputs.mode }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_DISPATCH_BIN"'
+      - name: Converge exact lightweight v0.3.0 tag
+        shell: bash
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_TAG_BIN"'
+
+  publish-npm:
+    if: ${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'publish-npm' }}
+    runs-on: ubuntu-24.04
+    environment: npm
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    steps:
+      - name: Bootstrap exact repository-owned mutation tools
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |-
+          set -euo pipefail
+          while IFS='=' read -r name _; do
+            normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+            case "$normalized" in
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*) exit 1 ;;
+            esac
+          done < <(/usr/bin/env)
+          bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
+          /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
+          printf '%s  %s\n' df3cdb1d01225ff516a045175f08b4c39c6f49170305eb93c5a1ca98de2b7437 "$bootstrap" | /usr/bin/sha256sum --check --status
+          /bin/bash "$bootstrap" "$CANDIDATE_SHA"
+      - name: Reauthenticate exact main and tag before npm publication
+        shell: bash
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          PREPARED_REF: ${{ inputs.prepared_ref }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+          RELEASE_MODE: ${{ inputs.mode }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_DISPATCH_BIN"'
+      - id: npm-publish
+        uses: ./apps/ts-release-action
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          GITHUB_TOKEN: ${{ github.token }}
+          TS_RELEASE_NODE_BIN: ${{ env.TS_RELEASE_NODE_BIN }}
+          TS_RELEASE_BUN_BIN: ${{ env.TS_RELEASE_BUN_BIN }}
+        with:
+          command: publish
+          prepared: ${{ inputs.prepared_ref }}
+      - name: Verify exact public npm bytes and report-bound provenance
+        shell: bash
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PREPARED_REF: ${{ inputs.prepared_ref }}
+          ACTION_REPORT: ${{ steps.npm-publish.outputs.report-ref }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_NPM_VERIFIER_BIN" "$PREPARED_REF" "${{ inputs.candidate_sha }}" action-report "$ACTION_REPORT"'
+
+  publish-github:
+    if: ${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'publish-github' }}
+    runs-on: ubuntu-24.04
+    environment: github-release
     permissions:
       actions: read
       contents: write
-      id-token: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22.22.2"
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-      - run: bun add --global npm@11.5.1
-      - name: Prime isolated Bun dependency cache
-        if: ${{ inputs.prepared_ref == '' }}
+      - name: Bootstrap exact repository-owned mutation tools
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |-
-          bun install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted
-          bun --no-env-file --no-install -e 'await (await import("node:fs/promises")).rm("node_modules", { recursive: true, force: true })'
-      - id: release
+          set -euo pipefail
+          while IFS='=' read -r name _; do
+            normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+            case "$normalized" in
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*) exit 1 ;;
+            esac
+          done < <(/usr/bin/env)
+          bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
+          /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
+          printf '%s  %s\n' df3cdb1d01225ff516a045175f08b4c39c6f49170305eb93c5a1ca98de2b7437 "$bootstrap" | /usr/bin/sha256sum --check --status
+          /bin/bash "$bootstrap" "$CANDIDATE_SHA"
+      - name: Reauthenticate exact main, tag, and both prepared references
+        shell: bash
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          PREPARED_REF: ${{ inputs.prepared_ref }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+          RELEASE_MODE: ${{ inputs.mode }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_DISPATCH_BIN"'
+      - id: npm-inspect
         uses: ./apps/ts-release-action
         env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
           GITHUB_TOKEN: ${{ github.token }}
+          TS_RELEASE_NODE_BIN: ${{ env.TS_RELEASE_NODE_BIN }}
+          TS_RELEASE_BUN_BIN: ${{ env.TS_RELEASE_BUN_BIN }}
         with:
-          command: ${{ inputs.prepared_ref == '' && 'release' || 'publish' }}
-          config: ${{ inputs.prepared_ref == '' && 'apps/release-ts/release.config.json' || '' }}
+          command: inspect
+          prepared: ${{ inputs.npm_prepared_ref }}
+      - name: Verify npm is already public with exact bytes and provenance
+        shell: bash
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          GITHUB_TOKEN: ${{ github.token }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_NPM_VERIFIER_BIN" "$NPM_PREPARED_REF" "${{ inputs.candidate_sha }}" published-run'
+      - name: Reauthenticate exact main immediately before GitHub publication
+        shell: bash
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          PREPARED_REF: ${{ inputs.prepared_ref }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+          RELEASE_MODE: ${{ inputs.mode }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_DISPATCH_BIN"'
+      - id: github-publish
+        uses: ./apps/ts-release-action
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          GITHUB_TOKEN: ${{ github.token }}
+          TS_RELEASE_NODE_BIN: ${{ env.TS_RELEASE_NODE_BIN }}
+          TS_RELEASE_BUN_BIN: ${{ env.TS_RELEASE_BUN_BIN }}
+        with:
+          command: publish
           prepared: ${{ inputs.prepared_ref }}
-      - name: Upload redacted release report
-        if: ${{ always() && steps.release.outputs.report-ref != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ts-release-report-${{ github.run_attempt }}
-          path: ${{ steps.release.outputs.report-ref }}
-          if-no-files-found: error

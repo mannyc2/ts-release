@@ -14,8 +14,10 @@ import {
 } from "./build-action-bundle.js"
 
 const root = cwd()
+const exactNode = process.env.TS_RELEASE_NODE_BIN ?? Bun.which("node") ?? ""
+const exactBun = process.env.TS_RELEASE_BUN_BIN ?? process.execPath
 const manifest = readFileSync(join(root, "apps/ts-release-action/action.yml"), "utf8")
-const removed = /\b(?:plan|apply|ship|inspect|correct|doctor|review|ledger|approval|status|prepared_path|report_path)\b/iu
+const removed = /\b(?:plan|apply|ship|correct|doctor|review|ledger|approval|status|prepared_path|report_path)\b/iu
 
 try {
   if (removed.test(manifest)) throw new Error("action.yml contains an obsolete lifecycle term.")
@@ -75,7 +77,7 @@ try {
     const response = join(bridgeProbeRoot, "response.json")
     writeFileSync(request, '{"operation":"unknown"}\n')
     const bridgeProbe = Bun.spawnSync([
-      process.env.TS_RELEASE_NODE_BIN ?? "node", checkedBridge, request, response
+      exactNode, checkedBridge, request, response
     ], { cwd: root, stdout: "pipe", stderr: "pipe", env: process.env })
     if (bridgeProbe.exitCode === 0 || !readFileSync(response, "utf8").includes("unknown operation")) {
       throw new Error("Node did not execute the checked-in artifact bridge protocol.")
@@ -97,6 +99,8 @@ try {
       ACTIONS_RUNTIME_TOKEN: "runtime-token-fixture",
       ACTIONS_RESULTS_URL: "https://results.example.invalid/",
       INPUT_COMMAND: "publish",
+      TS_RELEASE_NODE_BIN: exactNode,
+      TS_RELEASE_BUN_BIN: exactBun,
       INPUT_CONFIG: "",
       INPUT_PREPARED: ""
     }

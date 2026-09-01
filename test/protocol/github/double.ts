@@ -66,6 +66,8 @@ export interface GithubProtocolScenarioV1 {
   tagRef?: GithubTagTargetV1
   readonly tagObjects?: Readonly<Record<string, GithubTagTargetV1>>
   release?: GithubReleaseStateV1
+  /** Controls the provider digest field on newly accepted uploads. */
+  readonly uploadedAssetDigest?: GithubAssetStateV1["digest"]
   readonly faults?: Array<GithubProtocolFaultV1>
 }
 
@@ -245,7 +247,7 @@ export const makeGithubProtocolDouble = (
   })
 
   const applyMutation = (request: MutationHttpRequest): HttpResponse => {
-    if (request.url === `${apiBase}/releases`) {
+    if (request.method === "POST" && request.url === `${apiBase}/releases`) {
       const body = JSON.parse(new TextDecoder().decode(bodyBytes(request.body))) as {
         readonly tag_name: string
         readonly target_commitish: string
@@ -267,6 +269,15 @@ export const makeGithubProtocolDouble = (
       }
       return json(201, releaseJson(scenario, scenario.release))
     }
+    if (request.method === "PATCH" && request.url === `${apiBase}/releases/${scenario.release?.id ?? 0}`) {
+      const body = JSON.parse(new TextDecoder().decode(bodyBytes(request.body))) as { readonly draft?: unknown }
+      if (scenario.release === undefined || scenario.release.draft !== true || body.draft !== false) {
+        return json(422, {})
+      }
+      scenario.release = { ...scenario.release, draft: false }
+      return json(200, releaseJson(scenario, scenario.release))
+    }
+    if (request.method !== "POST") return json(404, {})
     const upload = new RegExp(`^https://uploads\\.github\\.com/repos/${scenario.repository.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}/releases/([1-9][0-9]*)/assets\\?name=([^&]+)$`, "u").exec(request.url)
     if (upload === null || scenario.release?.id !== Number(upload[1])) return json(404, {})
     const name = decodeURIComponent(upload[2]!)
@@ -277,7 +288,7 @@ export const makeGithubProtocolDouble = (
       name,
       mediaType: request.headers?.["content-type"] ?? "application/octet-stream",
       bytes,
-      digest: "present"
+      digest: scenario.uploadedAssetDigest ?? "present"
     }
     scenario.release.assets.push(asset)
     return json(201, assetJson(scenario, asset))
@@ -304,7 +315,7 @@ export const makeGithubProtocolDouble = (
       let response: HttpResponse | undefined
       if (fault?.outcome._tag === "TransportUnknown" && fault.outcome.afterApply === true) {
         response = applyMutation(request)
-        mutations += response.status === 201 ? 1 : 0
+        mutations += response.status === 201 || response.status === 200 ? 1 : 0
       }
       if (fault?.outcome._tag === "TransportUnknown") {
         events.push(faultInjected({
@@ -330,7 +341,7 @@ export const makeGithubProtocolDouble = (
         })
       }
       response = applyMutation(request)
-      mutations += response.status === 201 ? 1 : 0
+      mutations += response.status === 201 || response.status === 200 ? 1 : 0
       recordExchange(events, {
         phase: "mutate", method: request.method, url: request.url,
         ...(request.headers === undefined ? {} : { headers: request.headers }),

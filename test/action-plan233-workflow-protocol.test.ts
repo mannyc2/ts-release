@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -165,6 +166,9 @@ const automaticConfig = "${{ inputs.prepared_ref == '' && 'release.config.json' 
 const automaticPrepared = "${{ inputs.prepared_ref }}"
 const templateAdmission = "${{ github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha }}"
 const freshDispatch = "${{ inputs.prepared_ref == '' }}"
+const setupBunAction = "oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6"
+const setupNodeAction = "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
+const uploadArtifactAction = "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
 const cachePrimeRun = [
   "bun install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted",
   "bun --no-env-file --no-install -e 'await (await import(\"node:fs/promises\")).rm(\"node_modules\", { recursive: true, force: true })'"
@@ -191,7 +195,7 @@ const parseWorkflow = (name: string): {
       }
       if (step.id === undefined) throw new Error(`${name}:${jobName}:${command} has no step id.`)
       const upload = steps.slice(index + 1).find((candidate) =>
-        candidate.uses === "actions/upload-artifact@v4" &&
+        candidate.uses === uploadArtifactAction &&
         candidate.with?.path === `\${{ steps.${step.id}.outputs.report-ref }}`
       )
       if (upload?.with?.path === undefined || upload.if?.includes("always()") !== true) {
@@ -290,7 +294,8 @@ interface ProtocolHarness {
 
 const makeProtocolHarness = (
   workflow: "release.yml" | "reviewed-release.yml",
-  runAttempt = "1"
+  runAttempt: string,
+  trustedHome: string
 ): ProtocolHarness => {
   let github: GithubProtocolDouble | undefined
   let npm: NpmScenario | undefined
@@ -303,6 +308,13 @@ const makeProtocolHarness = (
     return { github, npm }
   }
   const platformCredentials = makeEnvironmentCredentialProvider()
+  mkdirSync(trustedHome, { recursive: true, mode: 0o700 })
+  chmodSync(trustedHome, 0o700)
+  for (const name of ["npm-userconfig", "npm-globalconfig"]) {
+    const path = join(trustedHome, name)
+    writeFileSync(path, "", { mode: 0o600 })
+    chmodSync(path, 0o600)
+  }
   const hostEnvironment = ConfigProvider.layer(ConfigProvider.fromEnv({ env: {
     PLAN233_GITHUB_TOKEN: sentinels.github,
     GITHUB_ACTIONS: "true",
@@ -318,7 +330,8 @@ const makeProtocolHarness = (
     GITHUB_RUN_ID: "23301",
     GITHUB_RUN_ATTEMPT: runAttempt,
     ACTIONS_ID_TOKEN_REQUEST_URL: sentinels.oidcUrl,
-    ACTIONS_ID_TOKEN_REQUEST_TOKEN: sentinels.oidcToken
+    ACTIONS_ID_TOKEN_REQUEST_TOKEN: sentinels.oidcToken,
+    TS_RELEASE_HOME: trustedHome
   } }))
   const recordGrant = (request: CredentialRequest, grant: CredentialGrant): void => {
     if (grant._tag === "ScopedSecret") consumedSecrets.push(sentinels.github)
@@ -519,6 +532,26 @@ const runWithDiagnostics = async (
   }
 }
 
+const runExpectingUncertain = async (
+  api: Parameters<typeof runAction>[0],
+  runtime: ActionRuntime,
+  events: ReadonlyArray<string>
+): Promise<void> => {
+  try {
+    await runAction(api, runtime)
+  } catch (cause) {
+    const report = readReport(runtime.workspace)
+    if (report.status === "uncertain" &&
+        cause instanceof Error && cause.message.includes("report is uncertain")) return
+    throw new Error([
+      cause instanceof Error ? cause.message : String(cause),
+      JSON.stringify(report),
+      JSON.stringify(events)
+    ].join("\n"))
+  }
+  throw new Error("Expected private-draft staging to end uncertain before a fresh promotion invocation.")
+}
+
 const assertNoLeak = (value: unknown): void => {
   const encoded = typeof value === "string" ? value : JSON.stringify(value)
   for (const secret of Object.values(sentinels)) expect(encoded).not.toContain(secret)
@@ -563,7 +596,7 @@ describe("Plan 233 advertised workflow protocol", () => {
         for (const [index, step] of steps.entries()) {
           if (typeof step.uses !== "string" || !step.uses.includes("ts-release-action")) continue
           const before = steps.slice(0, index)
-          expect(before.some((candidate) => candidate.uses === "oven-sh/setup-bun@v2")).toBe(true)
+          expect(before.some((candidate) => candidate.uses === setupBunAction)).toBe(true)
           if (step.with?.command === "publish") {
             expect(before.some((candidate) => candidate.run?.includes("bun install"))).toBe(false)
             continue
@@ -572,8 +605,8 @@ describe("Plan 233 advertised workflow protocol", () => {
           expect(prime).toHaveLength(1)
           expect(prime[0]?.run).toBe(cachePrimeRun)
           expect(prime[0]?.if).toBe(step.with?.command === automaticCommand ? freshDispatch : undefined)
-          expect(before.some((candidate) => candidate.uses === "actions/setup-node@v4")).toBe(true)
-          expect(before.some((candidate) => candidate.run === "bun add --global npm@11.5.1")).toBe(true)
+          expect(before.some((candidate) => candidate.uses === setupNodeAction)).toBe(true)
+          expect(before.some((candidate) => candidate.run === "bun add --global npm@11.11.0")).toBe(true)
         }
       }
     }
@@ -614,7 +647,7 @@ describe("Plan 233 advertised workflow protocol", () => {
     }
   })
 
-  test("automatic fresh/recovery dispatches and reviewed same-run rerun traverse real boundaries", async () => {
+  test("automatic and reviewed fresh staging/recovery dispatches traverse real boundaries", async () => {
     await Effect.runPromise(decodeConfig(configForWorkflow("release.yml")))
     await Effect.runPromise(decodeConfig(configForWorkflow("reviewed-release.yml")))
     const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-action-plan233-"))
@@ -637,7 +670,11 @@ describe("Plan 233 advertised workflow protocol", () => {
         const modeRoot = join(root, mode)
         const artifactRoot = join(modeRoot, "artifacts")
         const events: Array<string> = []
-        const protocol = makeProtocolHarness(workflow, mode === "reviewed" ? "2" : "1")
+        const protocol = makeProtocolHarness(
+          workflow,
+          mode === "reviewed" ? "2" : "1",
+          join(modeRoot, "trusted-npm-home")
+        )
         const counts = { preparations: 0 }
         const runtime = preparationRuntime(counts)
         const runId = mode === "automatic" ? "23301" : "23302"
@@ -668,14 +705,14 @@ describe("Plan 233 advertised workflow protocol", () => {
             })
             const api = makeReleaseApi(actionLayer(store, runtime, protocol))
             apis.push(api)
-            await runWithDiagnostics(api, action.runtime, events)
+            await runExpectingUncertain(api, action.runtime, events)
             expect(action.outputs["report-ref"]).toBe(reportRelativePath)
             expect(action.outputs["prepared-ref"]).toMatch(/^prepared:gha:/u)
             const report = readReport(workspace)
-            expect(report).toMatchObject({ command: "release", status: "complete" })
+            expect(report).toMatchObject({ command: "release", status: "uncertain" })
             const prepared = action.outputs["prepared-ref"]!
             const preparationsAfterRelease = counts.preparations
-            const mutationsAfterRelease = protocol.events.filter((event) => event.includes(":mutate:")).length
+            const mutationsAfterStaging = protocol.events.filter((event) => event.includes(":mutate:")).length
 
             const recoveryWorkspace = join(modeRoot, "recovery")
             initializeWorkspace(recoveryWorkspace, workflow, configPath)
@@ -722,7 +759,8 @@ describe("Plan 233 advertised workflow protocol", () => {
               prepared
             })
             expect(counts.preparations).toBe(preparationsAfterRelease)
-            expect(protocol.events.filter((event) => event.includes(":mutate:")).length).toBe(mutationsAfterRelease)
+            expect(protocol.events.filter((event) => event.includes(":mutate:")).length)
+              .toBeGreaterThan(mutationsAfterStaging)
             expect(events).toContain("artifact:authenticate:23301:1")
             expect(events.some((event) => event.endsWith(":23301") && event.startsWith("artifact:download:"))).toBe(true)
             executions.push({
@@ -771,22 +809,44 @@ describe("Plan 233 advertised workflow protocol", () => {
             })
             const publishApi = makeReleaseApi(actionLayer(publishStore, runtime, protocol))
             apis.push(publishApi)
-            await runWithDiagnostics(publishApi, publishAction.runtime, events)
+            await runExpectingUncertain(publishApi, publishAction.runtime, events)
             expect(publishAction.outputs).toMatchObject({
               "prepared-ref": prepared,
               "report-ref": reportRelativePath
             })
             expect(counts.preparations).toBe(preparationsAfterPrepare)
+            const stagingReport = readReport(publishWorkspace)
+            expect(stagingReport).toMatchObject({ command: "publish", status: "uncertain", prepared })
+
+            const promotionWorkspace = join(modeRoot, "promotion")
+            initializeWorkspace(promotionWorkspace, workflow, configPath)
+            const promotionAction = actionRuntime(promotionWorkspace, {
+              command: "publish",
+              prepared
+            }, events)
+            const promotionStore = makeActionPreparedReleaseStore({
+              workspace: promotionWorkspace,
+              context: { ...producer, runAttempt: "3" },
+              artifacts: transport
+            })
+            const promotionApi = makeReleaseApi(actionLayer(promotionStore, runtime, protocol))
+            apis.push(promotionApi)
+            await runWithDiagnostics(promotionApi, promotionAction.runtime, events)
+            expect(promotionAction.outputs).toMatchObject({
+              "prepared-ref": prepared,
+              "report-ref": reportRelativePath
+            })
+            expect(counts.preparations).toBe(preparationsAfterPrepare)
             expect(events.filter((event) => event.startsWith("artifact:upload:"))).toHaveLength(1)
-            expect(events.filter((event) => event.startsWith("artifact:download:"))).toHaveLength(2)
+            expect(events.filter((event) => event.startsWith("artifact:download:"))).toHaveLength(3)
             const prepareReport = readReport(prepareWorkspace)
-            const publishReport = readReport(publishWorkspace)
+            const publishReport = readReport(promotionWorkspace)
             expect(publishReport).toMatchObject({ command: "publish", status: "complete", prepared })
             executions.push({
               name: mode,
-              outputs: { ...prepareAction.outputs, ...publishAction.outputs },
-              summaries: [...prepareAction.summaries, ...publishAction.summaries],
-              reports: [prepareReport, publishReport],
+              outputs: { ...prepareAction.outputs, ...publishAction.outputs, ...promotionAction.outputs },
+              summaries: [...prepareAction.summaries, ...publishAction.summaries, ...promotionAction.summaries],
+              reports: [prepareReport, stagingReport, publishReport],
               events: [...events, ...protocol.events],
               transcripts: protocol.transcripts(),
               consumedSecrets: protocol.consumedSecrets
@@ -809,7 +869,8 @@ describe("Plan 233 advertised workflow protocol", () => {
 
       expect(executions.map((execution) => execution.name)).toEqual(["automatic", "reviewed"])
       for (const execution of executions) {
-        expect(execution.reports.every((report) => report.status === "complete")).toBe(true)
+        expect(execution.reports.at(-1)?.status).toBe("complete")
+        expect(execution.reports.some((report) => report.status === "uncertain")).toBe(true)
         assertNoLeak({
           outputs: execution.outputs,
           summaries: execution.summaries,

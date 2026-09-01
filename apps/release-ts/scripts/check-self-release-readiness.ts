@@ -1,131 +1,223 @@
 import { makeReleaseApi } from "../../../src/api/api.js"
 import { NodeReleaseLayer } from "../../../src/platform/node.js"
 import {
-  candidateActionReference, readText, report, releaseConfigPath, releaseWorkflowPath,
-  root, selfReleaseConfig
+  candidateActionReference, packagePath, readJson, readText, releaseWorkflowPath,
+  report, root, selfReleaseConfigs, stringField
 } from "./self-release-facts.js"
 
-const failures: Array<string> = []
-const actionReference = candidateActionReference()
-const candidatePlaceholder = ["__TS_RELEASE_ACTION_", "REF__"].join("")
-const publicDocuments = [
-  "README.md", "templates/github-actions/release.yml", "templates/github-actions/reviewed-release.yml"
-]
-for (const path of publicDocuments) {
-  const text = readText(path)
-  if (!text.includes(actionReference)) failures.push(`${path} does not bind the exact candidate Action reference ${actionReference}.`)
-  if (text.includes(candidatePlaceholder)) failures.push(`${path} retains the Action candidate placeholder.`)
+interface WorkflowStep {
+  readonly name?: string
+  readonly uses?: string
+  readonly run?: string
+  readonly env?: Readonly<Record<string, unknown>>
+  readonly with?: Readonly<Record<string, unknown>>
 }
-const workflow = readText(releaseWorkflowPath)
+interface WorkflowJob {
+  readonly if?: string
+  readonly environment?: string
+  readonly permissions?: Readonly<Record<string, string>>
+  readonly "runs-on"?: string
+  readonly steps?: ReadonlyArray<WorkflowStep>
+}
 interface WorkflowDocument {
+  readonly permissions?: Readonly<Record<string, string>>
   readonly on?: Readonly<Record<string, {
     readonly inputs?: Readonly<Record<string, {
       readonly required?: boolean
       readonly default?: unknown
       readonly type?: string
+      readonly options?: ReadonlyArray<string>
     }>>
   } | null>>
-  readonly jobs?: Readonly<Record<string, {
-    readonly if?: string
-    readonly permissions?: Readonly<Record<string, string>>
-    readonly steps?: ReadonlyArray<{
-      readonly name?: string
-      readonly if?: string
-      readonly run?: string
-      readonly uses?: string
-      readonly env?: Readonly<Record<string, unknown>>
-      readonly with?: Readonly<Record<string, unknown>>
-    }>
-  }>>
+  readonly jobs?: Readonly<Record<string, WorkflowJob>>
 }
-const parsedWorkflow = Bun.YAML.parse(workflow) as WorkflowDocument
-if (Object.keys(parsedWorkflow.on ?? {}).join("\0") !== "workflow_dispatch") {
-  failures.push("The automatic release workflow must expose workflow_dispatch as its only trigger.")
+
+const failures: Array<string> = []
+const actionReference = candidateActionReference()
+const version = stringField(readJson(packagePath), "version")
+const publicDocuments = [
+  "README.md", "templates/github-actions/release.yml", "templates/github-actions/reviewed-release.yml"
+]
+for (const path of publicDocuments) {
+  const text = readText(path)
+  if (!text.includes(actionReference)) failures.push(`${path} does not bind ${actionReference}.`)
+  if (text.includes(["__TS_RELEASE_ACTION_", "REF__"].join(""))) failures.push(`${path} retains the Action candidate placeholder.`)
 }
-const dispatchInputs = parsedWorkflow.on?.workflow_dispatch?.inputs
-if (dispatchInputs?.candidate_sha?.required !== true || dispatchInputs.candidate_sha.type !== "string") {
-  failures.push("The automatic release workflow must require the canonical candidate_sha input.")
+
+const workflow = readText(releaseWorkflowPath)
+const parsed = Bun.YAML.parse(workflow) as WorkflowDocument
+if (Object.keys(parsed.on ?? {}).join("\0") !== "workflow_dispatch") failures.push("Self-release must remain manual-only.")
+if (Object.keys(parsed.permissions ?? {}).length !== 0) failures.push("Self-release top-level permissions must be empty.")
+const inputs = parsed.on?.workflow_dispatch?.inputs
+if (inputs?.candidate_sha?.required !== true || inputs.candidate_sha.type !== "string") failures.push("Self-release must require candidate_sha.")
+if (inputs?.prepared_ref?.required !== false || inputs.prepared_ref.default !== "" || inputs.prepared_ref.type !== "string") {
+  failures.push("Self-release must expose one optional empty-by-default prepared_ref.")
 }
-if (dispatchInputs?.prepared_ref?.required !== false || dispatchInputs.prepared_ref.type !== "string" ||
-    dispatchInputs.prepared_ref.default !== "") {
-  failures.push("The automatic release workflow must expose an optional empty-by-default prepared_ref recovery input.")
+if (inputs?.npm_prepared_ref?.required !== false || inputs.npm_prepared_ref.default !== "" || inputs.npm_prepared_ref.type !== "string") {
+  failures.push("Self-release must expose one optional empty-by-default npm_prepared_ref.")
 }
-const jobs = Object.entries(parsedWorkflow.jobs ?? {})
-if (jobs.length !== 1 || jobs[0]?.[0] !== "release") failures.push("The automatic release workflow must remain one job.")
-const releaseJob = parsedWorkflow.jobs?.release
-const repositoryAdmission = "${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha }}"
-if (releaseJob?.if !== repositoryAdmission) {
-  failures.push("The automatic release job must reject a repository, main-ref, or exact candidate SHA mismatch before checkout.")
+if (inputs?.mode?.required !== true || inputs.mode.type !== "choice" ||
+    inputs.mode.options?.join(",") !== "prepare-exact-sha,create-tag,publish-npm,publish-github") {
+  failures.push("Self-release must expose only the four hard-cut authority modes.")
 }
-if (releaseJob?.permissions?.actions !== "read") {
-  failures.push("The automatic release job must grant actions: read for exact prepared-ref recovery.")
+
+const jobs = parsed.jobs ?? {}
+if (Object.keys(jobs).join(",") !== "prepare,create-tag,publish-npm,publish-github") failures.push("Self-release must contain exactly the four authority jobs.")
+const admissions = {
+  prepare: "${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'prepare-exact-sha' }}",
+  "create-tag": "${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'create-tag' }}",
+  "publish-npm": "${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'publish-npm' }}",
+  "publish-github": "${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'publish-github' }}"
+} as const
+for (const [name, expected] of Object.entries(admissions)) {
+  if (jobs[name]?.if !== expected) failures.push(`${name} does not fail closed at the exact repository/ref/SHA/mode boundary.`)
+  if (jobs[name]?.["runs-on"] !== "ubuntu-24.04") failures.push(`${name} does not use the fixed runner image.`)
 }
-const actionSteps = (releaseJob?.steps ?? []).filter((step) => step.uses === "./apps/ts-release-action")
-if (actionSteps.length !== 1) failures.push("The automatic release workflow must invoke the first-party Action exactly once.")
-const actionInputs = actionSteps[0]?.with
-if (actionSteps[0]?.env?.GITHUB_TOKEN !== "${{ github.token }}") {
-  failures.push("The automatic release Action must receive the job-scoped GITHUB_TOKEN for provider and recovery authentication.")
+if (jobs.prepare?.environment !== undefined || JSON.stringify(jobs.prepare?.permissions) !== JSON.stringify({ contents: "read" })) {
+  failures.push("Preparation must be environment-free and contents-read-only.")
 }
-if (actionInputs?.command !== "${{ inputs.prepared_ref == '' && 'release' || 'publish' }}") {
-  failures.push("The automatic release Action must select release only when prepared_ref is empty and publish otherwise.")
+if (jobs["create-tag"]?.environment !== "github-tag" ||
+    JSON.stringify(jobs["create-tag"]?.permissions) !== JSON.stringify({ contents: "write" })) {
+  failures.push("Tag creation must use only the github-tag environment and contents-write authority.")
 }
-if (actionInputs?.config !== `\${{ inputs.prepared_ref == '' && '${releaseConfigPath}' || '' }}` ||
-    actionInputs.prepared !== "${{ inputs.prepared_ref }}") {
-  failures.push("The automatic release Action must pass config and prepared inputs mutually exclusively.")
+if (jobs["publish-github"]?.environment !== "github-release" ||
+    JSON.stringify(jobs["publish-github"]?.permissions) !== JSON.stringify({ actions: "read", contents: "write" })) {
+  failures.push("GitHub publication must use only the github-release environment and GitHub mutation authority.")
 }
-const releaseSteps = releaseJob?.steps ?? []
-const actionIndex = releaseSteps.findIndex((step) => step.uses === "./apps/ts-release-action")
-const beforeAction = actionIndex < 0 ? [] : releaseSteps.slice(0, actionIndex)
-const primeSteps = beforeAction.filter((step) => step.name === "Prime isolated Bun dependency cache")
-const expectedPrimeRun = [
-  "bun install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted",
-  "bun --no-env-file --no-install -e 'await (await import(\"node:fs/promises\")).rm(\"node_modules\", { recursive: true, force: true })'"
-].join("\n")
-if (primeSteps.length !== 1 || primeSteps[0]?.if !== "${{ inputs.prepared_ref == '' }}" ||
-    primeSteps[0]?.run !== expectedPrimeRun) {
-  failures.push("The automatic release workflow must prime Bun's cache once, remove root node_modules, and skip both operations during recovery.")
+if (jobs["publish-npm"]?.environment !== "npm" ||
+    JSON.stringify(jobs["publish-npm"]?.permissions) !== JSON.stringify({ actions: "read", contents: "read", "id-token": "write" })) {
+  failures.push("npm publication must use only the npm environment, prepared-store read, and OIDC authority.")
 }
-if (!beforeAction.some((step) => step.uses === "actions/setup-node@v4") ||
-    !beforeAction.some((step) => step.run === "bun add --global npm@11.5.1")) {
-  failures.push("The automatic release workflow must provision the pinned Node and npm tools before preparation.")
+
+const expectedPins = new Map([
+  ["actions/checkout", "11d5960a326750d5838078e36cf38b85af677262"],
+  ["actions/setup-node", "49933ea5288caeca8642d1e84afbd3f7d6820020"],
+  ["oven-sh/setup-bun", "0c5077e51419868618aeaa5fe8019c62421857d6"],
+  ["actions/upload-artifact", "ea165f8d65b6e75b540449e92b4886f43607fa02"]
+])
+const actionSteps: Array<{ readonly job: string, readonly step: WorkflowStep }> = []
+let reportUploads = 0
+for (const [job, definition] of Object.entries(jobs)) for (const step of definition.steps ?? []) {
+  if (step.uses === "./apps/ts-release-action" || step.uses === "mannyc2/ts-release/apps/ts-release-action@v0.3.0") {
+    actionSteps.push({ job, step })
+  }
+  if (typeof step.uses === "string" && step.uses.startsWith("actions/upload-artifact@")) reportUploads += 1
+  if (typeof step.uses === "string" && !step.uses.startsWith("./")) {
+    const [ownerRepository, ref] = step.uses.split("@")
+    const expected = expectedPins.get(ownerRepository!)
+    if (expected !== undefined && ref !== expected) failures.push(`${step.uses} is not the admitted full-SHA pin.`)
+  }
 }
-if (beforeAction.filter((step) => step.run?.includes("bun install")).length !== 1) {
-  failures.push("The automatic release workflow must contain exactly one dependency install, confined to cache priming.")
+const actionShape = actionSteps.map(({ job, step }) => ({
+  job,
+  command: step.with?.command,
+  config: step.with?.config,
+  prepared: step.with?.prepared
+}))
+const expectedActionShape = [
+  { job: "prepare", command: "prepare", config: "apps/release-ts/github-release.config.json", prepared: undefined },
+  { job: "prepare", command: "prepare", config: "apps/release-ts/npm-release.config.json", prepared: undefined },
+  { job: "publish-npm", command: "publish", config: undefined, prepared: "${{ inputs.prepared_ref }}" },
+  { job: "publish-github", command: "inspect", config: undefined, prepared: "${{ inputs.npm_prepared_ref }}" },
+  { job: "publish-github", command: "publish", config: undefined, prepared: "${{ inputs.prepared_ref }}" }
+]
+if (JSON.stringify(actionShape) !== JSON.stringify(expectedActionShape)) failures.push("Self-release Action invocations do not preserve the two-config/five-boundary hard cut.")
+for (const { job, step } of actionSteps) {
+  if (job === "prepare" && step.env?.GITHUB_TOKEN !== undefined) failures.push("Credential-free preparation received GITHUB_TOKEN.")
+  if (job !== "prepare" && step.env?.GITHUB_TOKEN !== "${{ github.token }}") failures.push(`${job} does not receive only its job-scoped GitHub token.`)
+  if (job !== "prepare" && step.uses !== "./apps/ts-release-action") {
+    failures.push(`${job} does not execute the exact detached candidate's local Action.`)
+  }
 }
-if (workflow.includes("${{ false }}") || workflow.includes("__ts_release_quarantined__")) {
-  failures.push("The automatic release workflow retains a dead trigger or false guard.")
+if ((workflow.match(/node-version: "22\.22\.2"/gu)?.length ?? 0) !== 1 ||
+    (workflow.match(/bun-version: 1\.3\.14/gu)?.length ?? 0) !== 1 ||
+    (workflow.match(/install-self-release-npm\.ts/gu)?.length ?? 0) !== 1 ||
+    (workflow.match(/bootstrap-self-release-tools\.sh/gu)?.length ?? 0) !== 3) {
+  failures.push("Preparation must pin setup tools once and each credentialed authority must use the exact native bootstrap.")
 }
-const reportUploads = workflow.match(/uses: actions\/upload-artifact@v4/gu)?.length ?? 0
-if (reportUploads !== 1 ||
-    !workflow.includes("path: ${{ steps.release.outputs.report-ref }}") ||
-    !workflow.includes("always() && steps.release.outputs.report-ref != ''")) {
-  failures.push("The automatic release workflow must upload exactly one redacted Action report artifact.")
+if (workflow.includes("bun add --global npm@")) failures.push("Repository self-release bypasses the audited npm archive installer.")
+if ((workflow.match(/check-self-release-dispatch\.ts/gu)?.length ?? 0) !== 2 ||
+    (workflow.match(/TS_RELEASE_DISPATCH_BIN/gu)?.length ?? 0) !== 4) {
+  failures.push("Every adoption/mutation boundary needs immediate exact-main reauthentication.")
 }
-if (workflow.includes("actions/download-artifact@v4") ||
+if ((workflow.match(/TS_RELEASE_NPM_VERIFIER_BIN/gu)?.length ?? 0) !== 2 ||
+    !workflow.includes('action-report "$ACTION_REPORT"') || !workflow.includes("published-run") ||
+    !workflow.includes("ACTION_REPORT: ${{ steps.npm-publish.outputs.report-ref }}")) {
+  failures.push("npm publication and recovery must select provenance verification from the exact Action report; later GitHub publication must verify the authenticated publishing run.")
+}
+if (reportUploads !== 2 || (workflow.match(/path: \$\{\{ steps\.[a-z-]+\.outputs\.report-ref \}\}/gu)?.length ?? 0) !== 2) {
+  failures.push("Credential-free preparation must upload only its two redacted Action reports.")
+}
+if (/(?:\bNPM_(?:TOKEN|ID_TOKEN)\b|\bNODE_AUTH_TOKEN\b)/u.test(workflow)) failures.push("Self-release workflow contains an ambient npm credential channel.")
+if (workflow.includes("${{ false }}") || workflow.includes("__ts_release_quarantined__") ||
     /(?:name|path):[^\n]*(?:prepared-ref|ts-release-prepared)/u.test(workflow)) {
-  failures.push("The automatic release workflow duplicates the Action's durable prepared store.")
+    failures.push("Self-release retains a dead path or duplicates the content-addressed prepared store.")
 }
-if (!workflow.includes("persist-credentials: false")) failures.push("The automatic release checkout retains Git credentials.")
-if (/\benvironment:/u.test(workflow)) failures.push("The automatic self-release workflow imposes a host review gate.")
-if (/\b(?:plan|apply|doctor|ship)\b/u.test(workflow)) failures.push("The automatic self-release workflow retains a retired lifecycle command.")
+for (const jobName of ["create-tag", "publish-npm", "publish-github"] as const) {
+  for (const step of jobs[jobName]?.steps ?? []) {
+    if (typeof step.uses === "string" && step.uses !== "./apps/ts-release-action") {
+      failures.push(`${jobName} exposes mutation authority to non-repository Action ${step.uses}.`)
+    }
+  }
+}
 
 const api = makeReleaseApi(NodeReleaseLayer)
 try {
-  const inspection = await api.inspect({ config: selfReleaseConfig(), workspace: root })
-  if (!("preparations" in inspection)) failures.push("Readiness inspection did not return the authored graph projection.")
-  else if (inspection.publications.length !== 2) failures.push(`Readiness expected npm and GitHub publication intents, found ${inspection.publications.length}.`)
+  for (const { lane, config } of selfReleaseConfigs()) {
+    const inspection = await api.inspect({ config, workspace: root })
+    if (!("preparations" in inspection) || inspection.publications.length !== 1 ||
+        inspection.publications[0]?.destination !== lane) {
+      failures.push(`${lane} readiness inspection is not one isolated provider-native publication.`)
+    }
+  }
 } catch (cause) {
   failures.push(`Readiness inspection failed: ${cause instanceof Error && cause.message.length > 0 ? cause.message : JSON.stringify(cause)}`)
 } finally {
   await api.dispose()
 }
 
-const npmState = process.env.NPM_TOKEN === undefined ? "UNVERIFIED: NPM_TOKEN unavailable; no registry read attempted." : "UNVERIFIED: credential present; remote read is reserved for the operator packet."
-const githubState = process.env.GITHUB_TOKEN === undefined && process.env.GH_TOKEN === undefined
-  ? "UNVERIFIED: GITHUB_TOKEN/GH_TOKEN unavailable; no GitHub read attempted."
-  : "UNVERIFIED: credential present; remote read is reserved for the operator packet."
-report("self-release-readiness-report/v1", failures, {
-  actionReference, npm: npmState, github: githubState,
-  selectedCoordinates: { npmVersion: "0.2.2", githubTag: "v0.2.2", action: actionReference },
-  evidenceState: "UNVERIFIED", readOnlyNetworkChecks: 0
+report("self-release-readiness-report/v2", failures, {
+  actionReference,
+  selectedCoordinates: { npmVersion: version, githubTag: version === undefined ? undefined : `v${version}`, action: actionReference },
+  exactToolchain: { node: "22.22.2", bun: "1.3.14", npm: "11.11.0" },
+  remoteAuthority: {
+    npmTrustedPublisher: "UNVERIFIED",
+    githubTagEnvironment: {
+      state: "LAST-OBSERVED-2026-09-01; REQUERY-REQUIRED",
+      id: "20986778371",
+      reviewer: "mannyc2",
+      branch: "main",
+      secrets: 0,
+      variables: 0
+    },
+    npmEnvironment: {
+      state: "LAST-OBSERVED-2026-09-01; REQUERY-REQUIRED",
+      id: "20985327992",
+      reviewer: "mannyc2",
+      branch: "main",
+      secrets: 0,
+      variables: 0
+    },
+    githubReleaseEnvironment: {
+      state: "LAST-OBSERVED-2026-09-01; REQUERY-REQUIRED",
+      id: "20985328229",
+      reviewer: "mannyc2",
+      branch: "main",
+      secrets: 0,
+      variables: 0
+    },
+    githubReleaseImmutability: {
+      state: "LAST-OBSERVED-2026-09-01; REQUERY-REQUIRED",
+      enabled: true,
+      enforcedByOwner: false
+    },
+    githubOidcSubjectPolicy: {
+      state: "LAST-OBSERVED-2026-09-01; DOES-NOT-PROVE-NPM-TRUST",
+      useDefault: true,
+      useImmutableSubject: false,
+      prefix: "repo:mannyc2/ts-release"
+    }
+  },
+  evidenceState: "source-derived; no remote authority inferred",
+  readOnlyNetworkChecks: 0
 })

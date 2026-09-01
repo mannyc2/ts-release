@@ -954,7 +954,7 @@ const runtimeIdentity = (
     : encodeCanonicalJson(bunCompileRuntimes),
   npmPack: npmPack === undefined ? "not-used" : encodeCanonicalJson(npmPack),
   releaseGraph,
-  preparer: "@mannyc1/ts-release@0.2.2"
+  preparer: "@mannyc1/ts-release@0.3.0"
 })
 
 export const prepareRelease = Effect.fn("prepareRelease")(function*(input: PreparationRequest) {

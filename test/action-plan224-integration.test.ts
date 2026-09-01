@@ -339,6 +339,7 @@ test("Action release durably verifies and exposes its artifact before mutation, 
         return releaseApi!.release(input)
       },
       prepare: (input) => releaseApi!.prepare(input),
+      inspect: (input) => releaseApi!.inspect(input),
       publish: (input) => releaseApi!.publish(input)
     }, releaseAction.runtime)
 
@@ -382,6 +383,7 @@ test("Action release durably verifies and exposes its artifact before mutation, 
     await runAction({
       release: (input) => retryApi!.release(input),
       prepare: (input) => retryApi!.prepare(input),
+      inspect: (input) => retryApi!.inspect(input),
       publish: async (input) => {
         publishCalls += 1
         return retryApi!.publish(input)

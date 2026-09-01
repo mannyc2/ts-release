@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   readdirSync,
   rmSync,
   statSync,
@@ -67,6 +68,13 @@ const tarballBytes = Buffer.from("fixture npm tarball bytes")
 const tarballPath = join(publisherWorkspace, "blobs", "a".repeat(64))
 mkdirSync(join(publisherWorkspace, "blobs"))
 writeFileSync(tarballPath, tarballBytes)
+const trustedReleaseHomePath = join(publisherWorkspace, "trusted-release-home")
+mkdirSync(trustedReleaseHomePath, { mode: 0o700 })
+const trustedReleaseHome = realpathSync(trustedReleaseHomePath)
+const trustedUserConfig = join(trustedReleaseHome, "npm-userconfig")
+const trustedGlobalConfig = join(trustedReleaseHome, "npm-globalconfig")
+writeFileSync(trustedUserConfig, "", { mode: 0o600 })
+writeFileSync(trustedGlobalConfig, "", { mode: 0o600 })
 afterAll(() => rmSync(publisherWorkspace, { recursive: true, force: true }))
 const publisherFields = {
   cwd: publisherWorkspace,
@@ -133,6 +141,7 @@ const anonymousRequest = (
 
 const environment = {
   PATH: "/fixture/bin",
+  TS_RELEASE_HOME: trustedReleaseHome,
   FIXTURE_NPM_TOKEN: secret,
   ACTIONS_ID_TOKEN_REQUEST_URL: "https://oidc.example.test/token",
   ACTIONS_ID_TOKEN_REQUEST_TOKEN: "sentinel-oidc-request-token-73c1",
@@ -450,7 +459,9 @@ describe("environment credential platform", () => {
       expect(existsSync(configPath)).toBe(false)
       expect(commands[0]?.env).toEqual({
         PATH: "/fixture/bin",
+        HOME: join(configPath, ".."),
         NPM_CONFIG_USERCONFIG: configPath,
+        NPM_CONFIG_GLOBALCONFIG: join(configPath, "..", "globalconfig"),
         NPM_CONFIG_IGNORE_SCRIPTS: "true"
       })
       expect(commands[0]?.env).not.toHaveProperty("AMBIENT_MUST_NOT_LEAK")
@@ -631,6 +642,12 @@ describe("environment credential platform", () => {
   test("trusted publishing passes only certified OIDC and provenance facts in a closed environment", async () => {
     const root = mkdtempSync(join(tmpdir(), "ts-release-platform-workload-"))
     try {
+      const hostileHome = join(root, "ambient-runner-home")
+      mkdirSync(hostileHome, { mode: 0o700 })
+      writeFileSync(join(hostileHome, ".npmrc"), "//registry.npmjs.org/:_authToken=ambient-hostile-token\n", {
+        mode: 0o600
+      })
+      const hostileEnvironment = { ...environment, HOME: hostileHome }
       let transportPath = ""
       const { platform, commands } = platformFixture(root, (command) => {
         transportPath = command.argv[2] ?? ""
@@ -640,19 +657,25 @@ describe("environment credential platform", () => {
           stdout: environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN
         }
       })
-      const grant = await Effect.runPromise(provideEnvironment(
+      const grant = await Effect.runPromise(provideEnvironmentValues(hostileEnvironment,
         platform.credentialProvider.acquireForMutation(trustedRequest(), decision).pipe(
           Effect.flatMap((value) => value._tag === "WorkloadIdentity"
             ? Effect.succeed(value as WorkloadIdentity)
             : Effect.die("expected workload identity")))
       ))
-      const result = await Effect.runPromise(provideEnvironment(platform.certifiedPublisherSpawn.spawn({
+      const result = await Effect.runPromise(provideEnvironmentValues(
+        hostileEnvironment,
+        platform.certifiedPublisherSpawn.spawn({
         _tag: "WorkloadPublisherSpec",
         operation,
         ...publisherFields
-      }, grant)))
+        }, grant)
+      ))
       expect(commands[0]?.env).toEqual({
         PATH: "/fixture/bin",
+        HOME: trustedReleaseHome,
+        NPM_CONFIG_USERCONFIG: trustedUserConfig,
+        NPM_CONFIG_GLOBALCONFIG: trustedGlobalConfig,
         ACTIONS_ID_TOKEN_REQUEST_URL: environment.ACTIONS_ID_TOKEN_REQUEST_URL,
         ACTIONS_ID_TOKEN_REQUEST_TOKEN: environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN,
         GITHUB_ACTIONS: "true",
@@ -669,6 +692,9 @@ describe("environment credential platform", () => {
         GITHUB_RUN_ATTEMPT: environment.GITHUB_RUN_ATTEMPT,
         NPM_CONFIG_IGNORE_SCRIPTS: "true"
       })
+      expect(commands[0]?.env?.HOME).not.toBe(hostileHome)
+      expect(readFileSync(commands[0]?.env?.NPM_CONFIG_USERCONFIG ?? "", "utf8")).toBe("")
+      expect(readFileSync(commands[0]?.env?.NPM_CONFIG_GLOBALCONFIG ?? "", "utf8")).toBe("")
       expect(result._tag === "PublisherExited" ? result.stdout : "")
         .toContain("[redacted:ACTIONS_ID_TOKEN_REQUEST_TOKEN]")
       expect(JSON.stringify(result)).not.toContain(environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN)
@@ -683,7 +709,7 @@ describe("environment credential platform", () => {
         "--json"
       ])
       expect(existsSync(transportPath)).toBe(false)
-      expect(readdirSync(root)).toEqual([])
+      expect(readdirSync(root)).toEqual(["ambient-runner-home"])
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

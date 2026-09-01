@@ -1,5 +1,8 @@
 #!/usr/bin/env bun
 
+import { readFileSync, statSync } from "node:fs"
+import { dirname } from "node:path"
+
 const fail = (reason: string): never => {
   console.error(`fixture npm publisher rejected: ${reason}`)
   process.exit(1)
@@ -24,7 +27,10 @@ const expectedEnvironment = [
   "GITHUB_SERVER_URL",
   "GITHUB_SHA",
   "GITHUB_WORKFLOW_REF",
+  "HOME",
+  "NPM_CONFIG_GLOBALCONFIG",
   "NPM_CONFIG_IGNORE_SCRIPTS",
+  "NPM_CONFIG_USERCONFIG",
   "PATH",
   "RUNNER_ENVIRONMENT"
 ]
@@ -35,9 +41,21 @@ if (JSON.stringify(environmentNames) !== JSON.stringify(expectedEnvironment)) {
 if (process.env.GITHUB_ACTIONS !== "true" || process.env.NPM_CONFIG_IGNORE_SCRIPTS !== "true") {
   fail("the certified GitHub Actions or lifecycle marker was absent")
 }
-if (process.env.NPM_TOKEN !== undefined || process.env.NODE_AUTH_TOKEN !== undefined ||
-  process.env.NPM_CONFIG_USERCONFIG !== undefined) {
+if (process.env.NPM_TOKEN !== undefined || process.env.NODE_AUTH_TOKEN !== undefined) {
   fail("long-lived npm authority entered the workload publisher")
+}
+const privateHome = process.env.HOME
+const userConfig = process.env.NPM_CONFIG_USERCONFIG
+const globalConfig = process.env.NPM_CONFIG_GLOBALCONFIG
+if (privateHome === undefined || userConfig === undefined || globalConfig === undefined ||
+  dirname(userConfig) !== privateHome || dirname(globalConfig) !== privateHome) {
+  fail("the workload publisher did not bind one private npm home")
+}
+const privateConfigPaths: ReadonlyArray<string> = [userConfig!, globalConfig!]
+for (const path of privateConfigPaths) {
+  if ((statSync(path).mode & 0o777) !== 0o600 || readFileSync(path).length !== 0) {
+    fail("the workload publisher npm config was not empty and private")
+  }
 }
 
 const argv = process.argv.slice(2)

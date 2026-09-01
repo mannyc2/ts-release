@@ -50,21 +50,40 @@ bundle. The Bun release process delegates only Actions-artifact upload and
 download to the checked-in Node 24 bridge; cross-run tokens are reconstructed
 at that Node sink and are never serialized into its request file. Each
 advertised workflow installs pinned Bun before invoking it. Credentialed
-self-release producers are followed, even on failure, by a separate private
-Node 24 Action that admits one exact redacted report, uploads it once, and
-rereads its artifact identity and bytes without blind resubmission. That
-retention process rejects GitHub, npm, and OIDC publication credentials. The
-npm OIDC jobs blank their request coordinates on every step except the sole
-certifier or publisher, and GitHub publication moves npm inspection into a
+self-release producers are followed, even on failure, by a repository-owned
+retention boundary. Tag and GitHub operations retain their reports in the
+producer job. The two `id-token: write` npm jobs instead use a minimal native
+Node 24 bootstrap before loading any dependency. The workflow first clears all
+Node/native loader, trust, proxy, Bun-preload, and dynamic-library injection
+variables; the bootstrap rejects any nonempty normalized alias, validates the
+injected Actions OIDC request coordinates, scans and binds the private report
+bytes, deletes those coordinates, wipes the temporary secret-derived buffers, and
+only then loads the handoff worker. That worker commits and exactly rereads one
+run-attempt-bound, explicitly non-final handoff artifact. A separate job with
+no environment, no `id-token` permission, and no publication credential
+downloads and validates that exact handoff before it alone commits the final
+retained report and v2 receipt. That receipt binds the exact producer-job result;
+a retained `failure` is diagnostic and never release evidence. Only fixed-size artifact name/id/digest and
+report-digest values cross as job outputs; report bytes never do. Missing or
+suppressed outputs fail the downstream job.
+
+Both handoff and final retention upload once and reread after response loss;
+neither blindly resubmits an unknown mutation. A failed producer remains
+failed even when its report is retained. A cancelled producer has no complete
+evidence and requires a fresh dispatch. If only downstream retention is rerun,
+the incremented run attempt is rejected; rerun all jobs or start a new
+dispatch. Every final retention process rejects GitHub, npm, and OIDC
+publication credentials. GitHub publication also moves npm inspection into a
 separate read-only preflight whose retained identity is handed to the writer.
-Its strict
+The strict
 kind set includes the non-mutating `npm-oidc-certification` receipt as well as
 tag, npm publish/inspect, and GitHub publish reports. The direct self-release
 certification job stays in `release.yml`, adopts the prepared npm bytes without
 repacking, and proves only one OIDC dry-run exchange with no registry mutation;
-it does not claim upload, provenance, or publication. All four
-checked-in bundles have disposable rebuild and entrypoint gates; installed
-library and CLI consumers still follow the root package engine.
+it does not claim upload, provenance, or publication. All five checked-in
+bundles plus the audited authority-dropping bootstrap have disposable rebuild
+and entrypoint gates; installed library and CLI consumers still follow the
+root package engine.
 
 ```sh
 bun run --cwd apps/ts-release-action check

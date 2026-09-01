@@ -3,6 +3,8 @@ dist/
 !apps/ts-release-action/dist/index.js
 !apps/ts-release-action/report-retainer/dist/
 !apps/ts-release-action/report-retainer/dist/index.cjs
+!apps/ts-release-action/report-handoff/dist/
+!apps/ts-release-action/report-handoff/dist/index.cjs
 coverage/
 node_modules/
 .repos/

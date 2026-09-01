@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { createHash } from "node:crypto"
 import * as Result from "effect/Result"
 import {
   linkSync,
@@ -15,6 +16,7 @@ import { basename, dirname, join } from "node:path"
 import type { ActionArtifactTransport } from "../apps/ts-release-action/src/artifact-client.js"
 import {
   retainSelfReleaseReport,
+  stageSelfReleaseReportHandoff,
   type SelfReleaseReportKind,
   type SelfReleaseReportRetentionEnvironment
 } from "../apps/ts-release-action/src/report-retainer.js"
@@ -60,12 +62,12 @@ const reportPath = (root: string, kind: SelfReleaseReportKind): string => join(
       : "action-report.json"
 )
 
-const jobFor = (kind: SelfReleaseReportKind): string => kind === "tag"
+const jobFor = (kind: SelfReleaseReportKind, phase: "producer" | "retention" = "retention"): string => kind === "tag"
   ? "create-tag"
   : kind === "npm-oidc-certification"
-    ? "certify-npm-oidc"
+    ? phase === "producer" ? "certify-npm-oidc" : "retain-npm-oidc-certification"
   : kind === "npm-publish"
-    ? "publish-npm"
+    ? phase === "producer" ? "publish-npm" : "retain-npm-publication"
     : kind === "npm-inspect"
       ? "preflight-github"
       : "publish-github"
@@ -73,7 +75,8 @@ const jobFor = (kind: SelfReleaseReportKind): string => kind === "tag"
 const environmentFor = (
   root: string,
   kind: SelfReleaseReportKind,
-  patch: Readonly<Record<string, string | undefined>> = {}
+  patch: Readonly<Record<string, string | undefined>> = {},
+  phase: "producer" | "retention" = "retention"
 ): SelfReleaseReportRetentionEnvironment => ({
   GITHUB_WORKSPACE: realpathSync(root),
   GITHUB_REPOSITORY: "mannyc2/ts-release",
@@ -87,7 +90,7 @@ const environmentFor = (
   GITHUB_WORKFLOW_SHA: candidateSha,
   GITHUB_RUN_ID: "992",
   GITHUB_RUN_ATTEMPT: "2",
-  GITHUB_JOB: jobFor(kind),
+  GITHUB_JOB: jobFor(kind, phase),
   ...patch
 })
 
@@ -246,28 +249,41 @@ interface StoredArtifact {
 class MemoryArtifactTransport implements ActionArtifactTransport {
   uploadCalls = 0
   downloadCalls = 0
+  readonly artifacts = new Map<string, StoredArtifact>()
   artifact: StoredArtifact | undefined
 
   constructor(readonly fault: "none" | "response-loss" | "response-loss-and-absence" |
-    "tamper" | "extra-file" | "wrong-identity" | "digest-mismatch" | "missing-digest-proof" = "none") {}
+    "stage-response-loss" | "final-response-loss" | "stage-response-loss-and-absence" |
+    "final-response-loss-and-absence" | "tamper" | "extra-file" |
+    "wrong-identity" | "digest-mismatch" | "missing-digest-proof" = "none") {}
 
-  readonly upload: ActionArtifactTransport["upload"] = async ({ files }) => {
+  readonly upload: ActionArtifactTransport["upload"] = async ({ name, files }) => {
     this.uploadCalls += 1
     const stored: StoredArtifact = {
-      id: 71,
+      id: 70 + this.uploadCalls,
       digest: artifactDigest,
       files: Object.fromEntries(files.map((path) => [basename(path), new Uint8Array(readFileSync(path))]))
     }
-    if (this.fault !== "response-loss-and-absence") this.artifact = stored
-    if (this.fault === "response-loss" || this.fault === "response-loss-and-absence") {
+    const absentAfterResponseLoss =
+      (this.fault === "stage-response-loss-and-absence" && this.uploadCalls === 1) ||
+      (this.fault === "final-response-loss-and-absence" && this.uploadCalls === 2)
+    if (this.fault !== "response-loss-and-absence" && !absentAfterResponseLoss) {
+      this.artifact = stored
+      this.artifacts.set(name, stored)
+    }
+    if (this.fault === "response-loss" || this.fault === "response-loss-and-absence" ||
+        (this.fault === "stage-response-loss" && this.uploadCalls === 1) ||
+        (this.fault === "final-response-loss" && this.uploadCalls === 2) ||
+        (this.fault === "stage-response-loss-and-absence" && this.uploadCalls === 1) ||
+        (this.fault === "final-response-loss-and-absence" && this.uploadCalls === 2)) {
       throw new Error("simulated response loss")
     }
     return { id: stored.id, digest: stored.digest }
   }
 
-  readonly download: ActionArtifactTransport["download"] = async ({ destination }) => {
+  readonly download: ActionArtifactTransport["download"] = async ({ name, destination }) => {
     this.downloadCalls += 1
-    const artifact = this.artifact
+    const artifact = this.artifacts.get(name)
     if (artifact === undefined) throw new Error("artifact not observable")
     for (const [name, bytes] of Object.entries(artifact.files)) {
       const value = this.fault === "tamper" && name === "report.json"
@@ -295,6 +311,7 @@ const fixture = (
     readonly environment?: Readonly<Record<string, string | undefined>>
     readonly transport?: MemoryArtifactTransport
     readonly preparedReference?: string
+    readonly producerResult?: "success" | "failure"
   } = {}
 ) => {
   const root = mkdtempSync(join(tmpdir(), "ts-release-report-retainer-test-"))
@@ -308,15 +325,43 @@ const fixture = (
     path,
     text,
     transport,
-    run: () => retainSelfReleaseReport({
-      kind,
-      candidateSha,
-      prepared: kind === "tag" ? "" : (options.preparedReference ?? prepared),
-      workspace: root,
-      environment: environmentFor(root, kind, options.environment),
-      artifacts: transport,
-      temporaryRoot: root
-    })
+    run: async () => {
+      const expectedPrepared = kind === "tag" ? "" : (options.preparedReference ?? prepared)
+      const split = kind === "npm-oidc-certification" || kind === "npm-publish"
+      const handoff = split
+        ? await stageSelfReleaseReportHandoff({
+            kind,
+            candidateSha,
+            prepared: expectedPrepared,
+            workspace: root,
+            environment: environmentFor(root, kind, {}, "producer"),
+            sourceProof: {
+              reportBytes: String(Buffer.byteLength(text)),
+              reportSha256: createHash("sha256").update(text).digest("hex")
+            },
+            artifacts: transport,
+            temporaryRoot: root
+          })
+        : undefined
+      return retainSelfReleaseReport({
+        kind,
+        candidateSha,
+        prepared: expectedPrepared,
+        workspace: root,
+        environment: environmentFor(root, kind, options.environment),
+        artifacts: transport,
+        ...(handoff === undefined ? {} : {
+          handoff: {
+            artifactName: handoff.artifactName,
+            artifactId: String(handoff.artifactId),
+            artifactDigest: handoff.artifactDigest,
+            reportSha256: handoff.reportSha256
+          },
+          producerResult: options.producerResult ?? "success"
+        }),
+        temporaryRoot: root
+      })
+    }
   }
 }
 
@@ -337,7 +382,7 @@ test("retains one exact tag report and a run-attempt-bound canonical receipt", a
     expect(new TextDecoder().decode(stored.files["report.json"]!)).toBe(current.text)
     const receipt = JSON.parse(new TextDecoder().decode(stored.files["receipt.json"]!)) as Record<string, unknown>
     expect(receipt).toEqual({
-      schemaVersion: "ts-release/retained-report/v1",
+      schemaVersion: "ts-release/retained-report/v2",
       repository: "mannyc2/ts-release",
       repositoryId: "1271545637",
       repositoryOwnerId: "126291407",
@@ -348,11 +393,299 @@ test("retains one exact tag report and a run-attempt-bound canonical receipt", a
       runId: "992",
       runAttempt: "2",
       reportKind: "tag",
+      producerJob: "create-tag",
+      producerResult: "same-job",
+      retentionJob: "create-tag",
       artifactName: "ts-release-tag-report-2",
       candidateSha,
       prepared: "",
+      sourceTransport: "same-job-private-file",
+      handoffArtifactName: null,
+      handoffArtifactId: null,
+      handoffArtifactDigest: null,
       reportSha256: result.reportSha256
     })
+  } finally {
+    rmSync(current.root, { recursive: true, force: true })
+  }
+})
+
+test("moves npm evidence through one verified handoff before no-authority final retention", async () => {
+  const current = fixture("npm-oidc-certification", npmOidcReport())
+  try {
+    const result = await current.run()
+    expect(result).toMatchObject({
+      artifactName: "ts-release-npm-oidc-certification-report-2",
+      artifactId: 72,
+      reportSha256: createHash("sha256").update(current.text).digest("hex")
+    })
+    expect(current.transport.uploadCalls).toBe(2)
+    expect(current.transport.downloadCalls).toBe(3)
+    const handoff = current.transport.artifacts.get("ts-release-npm-oidc-certification-handoff-2")!
+    expect(JSON.parse(new TextDecoder().decode(handoff.files["handoff.json"]!))).toMatchObject({
+      schemaVersion: "ts-release/report-handoff/v1",
+      producerJob: "certify-npm-oidc",
+      reportKind: "npm-oidc-certification",
+      runId: "992",
+      runAttempt: "2"
+    })
+    const finalReceipt = JSON.parse(new TextDecoder().decode(
+      current.transport.artifact!.files["receipt.json"]!
+    )) as Record<string, unknown>
+    expect(finalReceipt).toMatchObject({
+      schemaVersion: "ts-release/retained-report/v2",
+      producerJob: "certify-npm-oidc",
+      producerResult: "success",
+      retentionJob: "retain-npm-oidc-certification",
+      sourceTransport: "verified-actions-handoff",
+      handoffArtifactName: "ts-release-npm-oidc-certification-handoff-2",
+      handoffArtifactId: 71,
+      handoffArtifactDigest: `sha256:${artifactDigest}`
+    })
+  } finally {
+    rmSync(current.root, { recursive: true, force: true })
+  }
+})
+
+test("marks a retained split report ineligible when the producer job failed", async () => {
+  const current = fixture("npm-oidc-certification", npmOidcReport(), { producerResult: "failure" })
+  try {
+    await current.run()
+    const finalReceipt = JSON.parse(new TextDecoder().decode(
+      current.transport.artifact!.files["receipt.json"]!
+    )) as Record<string, unknown>
+    expect(finalReceipt).toMatchObject({
+      schemaVersion: "ts-release/retained-report/v2",
+      producerJob: "certify-npm-oidc",
+      producerResult: "failure",
+      retentionJob: "retain-npm-oidc-certification"
+    })
+  } finally {
+    rmSync(current.root, { recursive: true, force: true })
+  }
+})
+
+test("requires producer result only at the split job boundary", async () => {
+  const split = fixture("npm-oidc-certification", npmOidcReport())
+  const sameJob = fixture("tag", tagReport())
+  try {
+    const staged = await stageSelfReleaseReportHandoff({
+      kind: "npm-oidc-certification",
+      candidateSha,
+      prepared,
+      workspace: split.root,
+      environment: environmentFor(split.root, "npm-oidc-certification", {}, "producer"),
+      sourceProof: {
+        reportBytes: String(Buffer.byteLength(split.text)),
+        reportSha256: createHash("sha256").update(split.text).digest("hex")
+      },
+      artifacts: split.transport,
+      temporaryRoot: split.root
+    })
+    await expect(retainSelfReleaseReport({
+      kind: "npm-oidc-certification",
+      candidateSha,
+      prepared,
+      workspace: split.root,
+      environment: environmentFor(split.root, "npm-oidc-certification"),
+      artifacts: split.transport,
+      handoff: {
+        artifactName: staged.artifactName,
+        artifactId: String(staged.artifactId),
+        artifactDigest: staged.artifactDigest,
+        reportSha256: staged.reportSha256
+      },
+      temporaryRoot: split.root
+    })).rejects.toThrow("producer result")
+    expect(split.transport.uploadCalls).toBe(1)
+    await expect(retainSelfReleaseReport({
+      kind: "tag",
+      candidateSha,
+      prepared: "",
+      workspace: sameJob.root,
+      environment: environmentFor(sameJob.root, "tag"),
+      artifacts: sameJob.transport,
+      producerResult: "success",
+      temporaryRoot: sameJob.root
+    })).rejects.toThrow("producer result")
+    expect(sameJob.transport.uploadCalls).toBe(0)
+  } finally {
+    rmSync(split.root, { recursive: true, force: true })
+    rmSync(sameJob.root, { recursive: true, force: true })
+  }
+})
+
+test("rejects missing, malformed, stale-attempt, or mismatched handoff outputs before final upload", async () => {
+  const current = fixture("npm-oidc-certification", npmOidcReport())
+  try {
+    const staged = await stageSelfReleaseReportHandoff({
+      kind: "npm-oidc-certification",
+      candidateSha,
+      prepared,
+      workspace: current.root,
+      environment: environmentFor(current.root, "npm-oidc-certification", {}, "producer"),
+      sourceProof: {
+        reportBytes: String(Buffer.byteLength(current.text)),
+        reportSha256: createHash("sha256").update(current.text).digest("hex")
+      },
+      artifacts: current.transport,
+      temporaryRoot: current.root
+    })
+    const exact = {
+      artifactName: staged.artifactName,
+      artifactId: String(staged.artifactId),
+      artifactDigest: staged.artifactDigest,
+      reportSha256: staged.reportSha256
+    }
+    for (const [name, handoff] of [
+      ["missing id", { ...exact, artifactId: "" }],
+      ["stale attempt", { ...exact, artifactName: "ts-release-npm-oidc-certification-handoff-1" }],
+      ["noncanonical id", { ...exact, artifactId: "071" }],
+      ["bare digest", { ...exact, artifactDigest: artifactDigest }],
+      ["uppercase report digest", { ...exact, reportSha256: exact.reportSha256.toUpperCase() }],
+      ["foreign artifact id", { ...exact, artifactId: String(staged.artifactId + 1) }]
+    ] as const) {
+      await expect(retainSelfReleaseReport({
+        kind: "npm-oidc-certification",
+        candidateSha,
+        prepared,
+        workspace: current.root,
+        environment: environmentFor(current.root, "npm-oidc-certification"),
+        artifacts: current.transport,
+        handoff,
+        producerResult: "success",
+        temporaryRoot: current.root
+      }), name).rejects.toThrow()
+      expect(current.transport.uploadCalls, `${name} reached final upload`).toBe(1)
+    }
+  } finally {
+    rmSync(current.root, { recursive: true, force: true })
+  }
+})
+
+test("rejects a handoff receipt with foreign producer coordinates", async () => {
+  for (const [field, value] of [
+    ["runId", "993"],
+    ["runAttempt", "1"],
+    ["producerJob", "publish-npm"],
+    ["candidateSha", "e".repeat(40)],
+    ["prepared", prepared.replace(/a/gu, "e")],
+    ["reportSha256", "e".repeat(64)]
+  ] as const) {
+    const current = fixture("npm-oidc-certification", npmOidcReport())
+    try {
+      const staged = await stageSelfReleaseReportHandoff({
+        kind: "npm-oidc-certification",
+        candidateSha,
+        prepared,
+        workspace: current.root,
+        environment: environmentFor(current.root, "npm-oidc-certification", {}, "producer"),
+        sourceProof: {
+          reportBytes: String(Buffer.byteLength(current.text)),
+          reportSha256: createHash("sha256").update(current.text).digest("hex")
+        },
+        artifacts: current.transport,
+        temporaryRoot: current.root
+      })
+      const artifact = current.transport.artifacts.get(staged.artifactName)!
+      const receipt = JSON.parse(new TextDecoder().decode(artifact.files["handoff.json"]!)) as Record<string, unknown>
+      receipt[field] = value
+      current.transport.artifacts.set(staged.artifactName, {
+        ...artifact,
+        files: {
+          ...artifact.files,
+          "handoff.json": new TextEncoder().encode(`${JSON.stringify(receipt, null, 2)}\n`)
+        }
+      })
+      await expect(retainSelfReleaseReport({
+        kind: "npm-oidc-certification",
+        candidateSha,
+        prepared,
+        workspace: current.root,
+        environment: environmentFor(current.root, "npm-oidc-certification"),
+        artifacts: current.transport,
+        handoff: {
+          artifactName: staged.artifactName,
+          artifactId: String(staged.artifactId),
+          artifactDigest: staged.artifactDigest,
+          reportSha256: staged.reportSha256
+        },
+        producerResult: "success",
+        temporaryRoot: current.root
+      }), field).rejects.toThrow()
+      expect(current.transport.uploadCalls, `${field} reached final upload`).toBe(1)
+    } finally {
+      rmSync(current.root, { recursive: true, force: true })
+    }
+  }
+})
+
+test("split final retention rejects every publication authority without a final artifact", async () => {
+  const current = fixture("npm-oidc-certification", npmOidcReport())
+  try {
+    const staged = await stageSelfReleaseReportHandoff({
+      kind: "npm-oidc-certification",
+      candidateSha,
+      prepared,
+      workspace: current.root,
+      environment: environmentFor(current.root, "npm-oidc-certification", {}, "producer"),
+      sourceProof: {
+        reportBytes: String(Buffer.byteLength(current.text)),
+        reportSha256: createHash("sha256").update(current.text).digest("hex")
+      },
+      artifacts: current.transport,
+      temporaryRoot: current.root
+    })
+    const handoff = {
+      artifactName: staged.artifactName,
+      artifactId: String(staged.artifactId),
+      artifactDigest: staged.artifactDigest,
+      reportSha256: staged.reportSha256
+    }
+    for (const name of [
+      "GITHUB_TOKEN",
+      "GH_TOKEN",
+      "NPM_TOKEN",
+      "NPM_ID_TOKEN",
+      "NODE_AUTH_TOKEN",
+      "ACTIONS_ID_TOKEN_REQUEST_URL",
+      "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+    ]) {
+      await expect(retainSelfReleaseReport({
+        kind: "npm-oidc-certification",
+        candidateSha,
+        prepared,
+        workspace: current.root,
+        environment: environmentFor(current.root, "npm-oidc-certification", { [name]: "forbidden-authority" }),
+        artifacts: current.transport,
+        handoff,
+        producerResult: "success",
+        temporaryRoot: current.root
+      }), name).rejects.toThrow()
+      expect(current.transport.uploadCalls, `${name} reached final upload`).toBe(1)
+    }
+  } finally {
+    rmSync(current.root, { recursive: true, force: true })
+  }
+})
+
+test("refuses a producer report changed after the authority-dropping bootstrap scan", async () => {
+  const current = fixture("npm-oidc-certification", npmOidcReport())
+  try {
+    await expect(stageSelfReleaseReportHandoff({
+      kind: "npm-oidc-certification",
+      candidateSha,
+      prepared,
+      workspace: current.root,
+      environment: environmentFor(current.root, "npm-oidc-certification", {}, "producer"),
+      sourceProof: {
+        reportBytes: String(Buffer.byteLength(current.text)),
+        reportSha256: "e".repeat(64)
+      },
+      artifacts: current.transport,
+      temporaryRoot: current.root
+    })).rejects.toThrow("changed after the authority-dropping bootstrap scan")
+    expect(current.transport.uploadCalls).toBe(0)
   } finally {
     rmSync(current.root, { recursive: true, force: true })
   }
@@ -386,9 +719,40 @@ test("rereads once after upload response loss and never blindly resubmits", asyn
   }
 })
 
+test("recovers handoff and final-retention response loss independently without resubmission", async () => {
+  for (const fault of ["stage-response-loss", "final-response-loss"] as const) {
+    const transport = new MemoryArtifactTransport(fault)
+    const current = fixture("npm-oidc-certification", npmOidcReport(), { transport })
+    try {
+      expect(await current.run(), fault).toMatchObject({ artifactName: "ts-release-npm-oidc-certification-report-2" })
+      expect(transport.uploadCalls, fault).toBe(2)
+      expect(transport.downloadCalls, fault).toBe(3)
+    } finally {
+      rmSync(current.root, { recursive: true, force: true })
+    }
+  }
+})
+
+test("leaves each split upload absence unknown without resubmission", async () => {
+  for (const [fault, uploads, downloads] of [
+    ["stage-response-loss-and-absence", 1, 1],
+    ["final-response-loss-and-absence", 2, 3]
+  ] as const) {
+    const transport = new MemoryArtifactTransport(fault)
+    const current = fixture("npm-oidc-certification", npmOidcReport(), { transport })
+    try {
+      await expect(current.run(), fault).rejects.toThrow("outcome is unknown")
+      expect(transport.uploadCalls, fault).toBe(uploads)
+      expect(transport.downloadCalls, fault).toBe(downloads)
+    } finally {
+      rmSync(current.root, { recursive: true, force: true })
+    }
+  }
+})
+
 test("leaves an unobservable upload outcome unknown without a second mutation dispatch", async () => {
   const transport = new MemoryArtifactTransport("response-loss-and-absence")
-  const current = fixture("npm-publish", actionReport("npm-publish"), { transport })
+  const current = fixture("github-publish", actionReport("github-publish"), { transport })
   try {
     await expect(current.run()).rejects.toThrow("outcome is unknown")
     expect(transport.uploadCalls).toBe(1)
@@ -439,13 +803,13 @@ test("rejects nonprivate, linked, oversized, non-strict, unredacted, or differen
     },
     {
       name: "OIDC request URL",
-      make: () => fixture("npm-oidc-certification", npmOidcReport(), {
+      make: () => fixture("tag", tagReport(), {
         environment: { ACTIONS_ID_TOKEN_REQUEST_URL: "https://example.invalid/oidc" }
       })
     },
     {
       name: "OIDC request token",
-      make: () => fixture("npm-publish", actionReport("npm-publish"), {
+      make: () => fixture("tag", tagReport(), {
         environment: { ACTIONS_ID_TOKEN_REQUEST_TOKEN: "forbidden-token" }
       })
     },
@@ -458,7 +822,7 @@ test("rejects nonprivate, linked, oversized, non-strict, unredacted, or differen
     },
     {
       name: "wrong job",
-      make: () => fixture("npm-publish", actionReport("npm-publish"), { environment: { GITHUB_JOB: "publish-github" } })
+      make: () => fixture("tag", tagReport(), { environment: { GITHUB_JOB: "publish-github" } })
     }
   ]
   for (const entry of cases) {

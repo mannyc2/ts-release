@@ -126,9 +126,12 @@ inspects the exact generated configuration before writing it.
 ## Repository 0.3 self-release
 
 The checked-in `.github/workflows/release.yml` is a manual, fail-closed
-four-mode workflow. `prepare-exact-sha` has read-only repository authority
+five-mode workflow. `prepare-exact-sha` has read-only repository authority
 and independently commits one GitHub-assets bundle and one npm-tarball bundle
-to the content-addressed Actions store. `create-tag` has only the separate
+to the content-addressed Actions store. `certify-npm-oidc` adopts the exact npm
+bundle, proves one trusted-publisher exchange through pinned npm's dry-run, and
+proves unchanged anonymous registry state without upload, provenance, or
+publication. `create-tag` has only the separate
 `github-tag` environment and creates or reobserves the lightweight `v0.3.0`
 tag at the exact candidate; it creates no Release. `publish-npm` accepts only
 the npm bundle under the `npm` environment with `id-token: write`, then
@@ -152,8 +155,9 @@ rematerialized before every boundary. Any nonempty `npm_config_*`, `PREFIX`,
 `DESTDIR`, token variable, project/user npmrc, or default global npmrc stops
 before repository or provider work.
 
-The exact order is preparation, lightweight tag creation, npm publication and
-report-bound public/provenance verification, then GitHub publication. A fresh
+The exact order is preparation, no-upload npm OIDC certification, lightweight
+tag creation, npm publication and report-bound public/provenance verification,
+then GitHub publication. A fresh
 npm mutation must carry provenance for that exact workflow run attempt. If a
 prior run applied the bytes but lost its response, an exact `AlreadyEquivalent`
 retry instead authenticates the earlier canonical publishing run named by the
@@ -173,9 +177,11 @@ stop that transition. On 2026-09-01, repository environments `github-tag`
 admin bypass disabled, a custom deployment policy selecting exactly `main`,
 and no environment secrets or variables. Re-query those mutable facts before
 every dispatch. Repository Release immutability was also observed enabled on
-2026-09-01; re-query it before GitHub staging or promotion. GitHub's repository
-OIDC customization remained the default subject policy, which does not prove
-any npm-side trusted-publisher record. The exact npm trusted-publisher subject
+2026-09-01; re-query it before GitHub staging or promotion. The repository OIDC
+policy was observed on that date with the immutable ID-qualified subject
+`repo:mannyc2@126291407/ts-release@1271545637:environment:npm`; re-query it
+before certification or publication. That GitHub-side policy does not prove an
+npm-side trusted-publisher record. The exact npm trusted-publisher subject
 remains a separate prerequisite and is not inferred from an environment.
 
 ## Automatic GitHub Actions template

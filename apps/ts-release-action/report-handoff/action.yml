@@ -1,0 +1,25 @@
+name: ts-release private report handoff
+description: Stage and reread one exact redacted producer report after dropping npm OIDC authority.
+author: mannyc2
+inputs:
+  kind:
+    description: Exact private self-release report kind.
+    required: true
+  candidate-sha:
+    description: Exact lowercase 40-hex current main commit.
+    required: true
+  prepared:
+    description: Exact prepared reference for the producer report.
+    required: true
+outputs:
+  artifact-name:
+    description: Exact run-attempt-bound handoff artifact name.
+  artifact-id:
+    description: Exact GitHub Actions handoff artifact identifier returned by verified readback.
+  artifact-digest:
+    description: Canonical sha256 digest returned by verified Actions artifact lookup.
+  report-sha256:
+    description: SHA-256 of the staged redacted source report bytes.
+runs:
+  using: node24
+  main: bootstrap.cjs

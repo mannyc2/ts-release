@@ -111,20 +111,33 @@ certification:
 
 The workflow output contract is no longer ornamental. Preparation Action
 invocations have ids, and pinned `always()` upload steps retain only their
-redacted `report-ref`. Each credentialed tag/publish/inspect producer is
-followed, including on failure, by the repository-owned private Node 24 report
-retainer. It admits only a private bounded exact-schema report, uploads once,
-then verifies the exact artifact identity and downloaded bytes; response loss
-causes one reread and never a blind resubmission. The unconditional admission
+redacted `report-ref`. Tag and GitHub producers are followed, including on
+failure, by the repository-owned private Node 24 report retainer. The two npm
+OIDC producers instead cross a hard job boundary: the step clears all
+pre-execution loader/trust/proxy injection variables, then a dependency-free
+bootstrap rejects normalized aliases and validates then deletes runner-injected OIDC coordinates before loading the
+handoff bundle, binds and uploads one non-final report artifact, and a separate
+no-environment/no-id-token job verifies it before alone committing the final v2
+receipt. The final receipt binds the exact producer-job result so a retained
+post-producer failure is unmistakably diagnostic, not releasable. Report bytes do not cross job outputs. Each artifact is uploaded once
+and exactly reread; response loss never causes blind resubmission. The
+unconditional admission
 job hard-fails invalid identity/mode/reference topology and emits the sole job
 selection output, so an all-skipped mutation matrix cannot look successful.
-The retainer rejects live GitHub, npm, and OIDC publication credentials. Each
-non-authority step in the two OIDC jobs receives empty OIDC request coordinates,
-and the npm-before-GitHub inspection/provenance check runs in a separate
+The final retainer rejects live GitHub, npm, and OIDC publication credentials.
+The npm-before-GitHub inspection/provenance check runs in a separate
 contents-read-only preflight whose retained artifact identity is an exact input
 to the environment-gated writer.
 The workflow test continues to forbid generic prepared-bundle upload/download
 duplication and proves retention cannot mask its producer's failure.
+
+Hosted run `33528259252` proved the npm trusted-publisher dry-run producer but
+invalidated its retention evidence: GitHub's Node Action handler re-injected
+OIDC request coordinates after step-environment merging, so the former
+same-job retainer failed before upload. The run performed no npm mutation and
+issued no usable certificate. Its candidate is stale. Hosted certification
+must repeat from the exact post-fix candidate and requires both the producer
+and the separate no-authority final-retention job to pass.
 
 The fifth direct self-release mode, `certify-npm-oidc`, runs on
 `ubuntu-24.04` in environment `npm` with only `actions: read`, `contents: read`,
@@ -344,7 +357,7 @@ canonical two-field projection before the bridge serializes its response.
 | Package metadata/changelog | outcome, coordinates, files, and pending changelog corrected; current-worktree local PASS; clean-X repeat OPEN | The root Node engine is `^22.22.2 || ^24.15.0 || >=26.0.0`, matching the authoritative transitive dependency floor. The complete offline consumer gate passed under genuine Node 24.15.0 / npm 11.17.0. Separately repeat the Action's native Node launcher with workflow-installed Bun 1.3.14. |
 | Packed package | final inventory and admitted-Node consumer matrix PASS; clean-X/normal-registry rows OPEN | The current npm 11.17.0 dry-run tarball contains 463 files and is 745,959 compressed bytes / 3,816,656 unpacked bytes. Offline Bun/npm installs, exact Effect alignment, Promise API, Node CLI inspection, and 1/2-artifact bundle reloads passed under Node 24.15.0. Repeat the matrix from X. A normal-registry install remains a separate `UNVERIFIED` row. |
 | Immutable Action bootstrap | `v0.2.0` does not exist | The self-release context/prepared gates now assert GitHub-before-npm order. Run them on clean X and prove the workflow/provider sequence makes the Action coordinate usable before npm exposes its README; source ordering alone is insufficient. |
-| Hosted npm OIDC no-upload certification | local implementation and exact npm 11.11 loopback PASS; hosted evidence OPEN | Protect exact-main, re-read the immutable OIDC subject policy and sole npm trusted-publisher record, approve only the no-upload `npm` environment dispatch, then retain/reread the exact receipt. The local loopback does not establish a hosted npm exchange. |
+| Hosted npm OIDC no-upload certification | prior hosted producer PASS but same-job retention invalid; post-fix hosted evidence OPEN | From a fresh exact post-fix candidate, protect exact-main, re-read the immutable OIDC subject policy and sole npm trusted-publisher record, approve only the no-upload `npm` environment dispatch, then require both producer and separate no-authority retention jobs to pass and validate the final v2 artifact. The earlier dry-run exchange does not establish a usable retained certificate. |
 
 The package `files` list excludes `docs/`, while `README.md`, `SPEC.md`,
 `ARCHITECTURE.md`, `CHANGELOG.md`, and `LICENSE` are included. The
@@ -386,8 +399,9 @@ new exact-X audit.
 - **LOCAL PASS / CLEAN-X REPEAT REQUIRED:** the Action declares a native Node
   24 launcher, every advertised workflow installs Bun 1.3.14 before the Action,
   and `check:action-bundle` byte-compares the main, launcher, artifact-bridge,
-  and private report-retainer bundles while executing both native Node
-  boundaries.
+  private report-retainer, and private report-handoff bundles while executing
+  the native Node boundaries and proving the handoff dependency bundle loads
+  only after OIDC authority is deleted.
 - **LOCAL PASS / CLEAN-X REPEAT REQUIRED:** the Promise consumer against built
   declarations and JavaScript plus the packed Bun and admitted-Node operation
   smokes passed, including exact 1/2-element artifact arrays.

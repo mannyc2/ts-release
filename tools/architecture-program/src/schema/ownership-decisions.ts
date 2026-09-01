@@ -15,7 +15,7 @@ import {
 } from "./source-coordinate.js"
 
 const OwnershipDecisionId = Schema.NonEmptyString.check(
-  Schema.isPattern(/^OD0[1-9]-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u)
+  Schema.isPattern(/^OD(?:0[1-9]|10)-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u)
 ).pipe(Schema.brand("OwnershipDecisionId"))
 
 const OwnershipBlockerId = Schema.NonEmptyString.check(
@@ -43,7 +43,8 @@ export const REQUIRED_OWNERSHIP_DECISION_IDS = [
   "OD06-effect-build-certification-classification",
   "OD07-apple-history-correlation",
   "OD08-hashed-file-tree-adoption",
-  "OD09-durable-format-disposition"
+  "OD09-durable-format-disposition",
+  "OD10-package-topology"
 ] as const
 
 export const REQUIRED_OWNERSHIP_BLOCKER_IDS = [
@@ -143,6 +144,18 @@ const SOURCES = {
   v1Manifest: currentSource(
     "advisor-plans/evidence/v1-reference-manifest.json",
     "87e7271f668c4ba821b7935b0082d9b9b7987f6ee29a9a5639557983aa4941ea"
+  ),
+  competitiveScope: currentSource(
+    "docs/refactor/research/competitive-scope.md",
+    "eeef07c49a90eab683bd58f164be41ec9cf5d951a3eb940fc118911c2d221cc0"
+  ),
+  providerExtensionRuntime: currentSource(
+    "docs/refactor/research/provider-extension-runtime.md",
+    "bd3a1f8320719291df7746a706e7cedf452ff37a33684d4c5741288f7244fa0e"
+  ),
+  topologyContract: currentSource(
+    "docs/refactor/architecture-program/topology-contract.md",
+    "0151c993b865e789a96e52a83558a3d92c2095badd3389103a316fbec9b2704c"
   )
 } as const
 
@@ -411,6 +424,39 @@ const REQUIRED_DECISIONS = [
       "GT15-all-nine-marginal-probes"
     ],
     sourceCoordinates: [SOURCES.plan005, SOURCES.lineage, SOURCES.v1Manifest]
+  },
+  {
+    id: "OD10-package-topology",
+    title: "Physical package topology and version policy",
+    status: "selected",
+    ownerId: "architecture-program",
+    decision: "The physical topology is T3 provider verticals, resolved by maintainer decision through the trial policy's MaintainerDecisionRequired outcome without building the T1, T2, or T3 prototype slices: one neutral kernel package plus one package per first-party provider vertical, with hosts as applications or kernel subpaths and no separate host, aggregate-provider, or shared-artifact packages. The kernel owns the canonical durable chain, pure transition owner, effect interpreter, journal law, strict adoption envelope, and provider SDK surface, and imports no concrete provider. Each first-party vertical is its own package owning its Intent and wire codecs, preparation, observation, dispatch, recovery law, tests, and docs; the only provider manifest edge is an exact-pinned dependency on the kernel, so sibling imports are unrepresentable rather than lint-guarded, and packed third-party providers are structurally identical to first-party verticals. All first-party packages version in lockstep as one atomically self-released set, collapsing kernel-provider version skew to the states gate GT12 rejects. Every package manifest, export map, bin, host entrypoint, and TypeScript project reference is generated and checked from one topology specification; names currently use the @mannyc1 scope and remain a rename-safe generated field until first publication of the new packages. The topology hard gates and nine marginal probes remain mandatory acceptance obligations on the real implementation, the machine selection stays open, and this decision creates no packages tree, workspace manifest, publication, or remote mutation authority.",
+    requiredEvidence: [],
+    externalEvidenceIds: [],
+    blockerIds: [],
+    dependentGateIds: [
+      "GT02-packed-library-node",
+      "GT03-packed-library-bun",
+      "GT04-packed-cli",
+      "GT05-packed-github-action",
+      "GT06-packed-external-provider-two-instances",
+      "GT07-lossless-effect-build-file-tree-adoption",
+      "GT08-exact-runtime-declaration-surface",
+      "GT09-exact-emitted-packed-inventory",
+      "GT10-exact-static-type-dynamic-manifest-graph",
+      "GT11-no-cycle-sibling-reversal-or-host-edge",
+      "GT12-version-skew-partial-publication",
+      "GT13-dry-run-build-publication-self-release",
+      "GT14-tree-shaking-and-packed-bytes",
+      "GT15-all-nine-marginal-probes",
+      "GT16-offline-nonmutation"
+    ],
+    sourceCoordinates: [
+      SOURCES.plan005,
+      SOURCES.topologyContract,
+      SOURCES.competitiveScope,
+      SOURCES.providerExtensionRuntime
+    ]
   }
 ] as const
 

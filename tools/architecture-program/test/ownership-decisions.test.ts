@@ -39,7 +39,7 @@ const expectDecodeFailure = Effect.fn("ownershipDecisionsTest.expectDecodeFailur
 )
 
 describe("OwnershipDecisionsV1", () => {
-  it.effect("decodes the canonical nine-decision ownership input", () =>
+  it.effect("decodes the canonical ten-decision ownership input", () =>
     Effect.gen(function* () {
       const raw = yield* loadValidDocument()
       const document = yield* decodeOwnershipDecisions(raw)
@@ -54,9 +54,10 @@ describe("OwnershipDecisionsV1", () => {
         "OD06-effect-build-certification-classification",
         "OD07-apple-history-correlation",
         "OD08-hashed-file-tree-adoption",
-        "OD09-durable-format-disposition"
+        "OD09-durable-format-disposition",
+        "OD10-package-topology"
       ])
-      expect(document.decisions.filter(({ status }) => status === "selected")).toHaveLength(3)
+      expect(document.decisions.filter(({ status }) => status === "selected")).toHaveLength(4)
       expect(document.externalEvidence).toHaveLength(2)
       expect(document.blockers).toHaveLength(6)
       expect(document.freezeBlockerIds).toHaveLength(6)
@@ -80,7 +81,7 @@ describe("OwnershipDecisionsV1", () => {
         const actualSha256 = createHash("sha256").update(contents).digest("hex")
         expect(actualSha256, coordinate.path).toBe(coordinate.sha256)
       }
-      expect(uniqueCoordinates).toHaveLength(10)
+      expect(uniqueCoordinates).toHaveLength(13)
     }))
 
   it.effect("rejects missing, duplicate, reordered, and renamed decisions", () =>

@@ -14,6 +14,7 @@ interface WorkflowJob {
   readonly needs?: string
   readonly environment?: string
   readonly permissions?: Readonly<Record<string, string>>
+  readonly "runs-on"?: string
   readonly steps?: ReadonlyArray<WorkflowStep>
 }
 
@@ -55,18 +56,26 @@ describe("official PyPA trusted-publishing workflow", () => {
     const build = workflow.jobs?.build
     const publish = workflow.jobs?.publish
     expect(build?.if).toBe("${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha }}")
+    expect(build?.["runs-on"]).toBe("ubuntu-24.04")
     expect(build?.permissions).toEqual({ contents: "read" })
     expect(build?.environment).toBeUndefined()
-    expect(build?.steps?.some(({ uses }) => uses === "actions/upload-artifact@v4")).toBe(true)
-    const upload = build?.steps?.find(({ uses }) => uses === "actions/upload-artifact@v4")
+    expect(build?.steps?.map(({ uses }) => uses).filter(Boolean)).toEqual([
+      "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+      "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+      "oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6",
+      "actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830",
+      "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+    ])
+    const upload = build?.steps?.find(({ uses }) => uses?.startsWith("actions/upload-artifact@"))
     expect(upload?.with).not.toHaveProperty("retention-days")
 
     expect(publish?.needs).toBe("build")
+    expect(publish?.["runs-on"]).toBe("ubuntu-24.04")
     expect(publish?.environment).toBe("pypi")
     expect(publish?.permissions).toEqual({ "id-token": "write" })
     expect(publish?.steps?.map(({ uses }) => uses)).toEqual([
-      "actions/download-artifact@v4",
-      "pypa/gh-action-pypi-publish@release/v1"
+      "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
+      "pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33"
     ])
     expect(JSON.stringify(publish?.steps)).not.toMatch(/password|username|api-token|secret/iu)
   })
@@ -75,13 +84,13 @@ describe("official PyPA trusted-publishing workflow", () => {
     const resolved = resolveConfig(config, {
       commit: "c".repeat(40),
       manifestName: "@mannyc1/ts-release",
-      manifestVersion: "0.2.2",
+      manifestVersion: "0.3.0",
       repository: "mannyc2/ts-release"
     })
     expect(resolved.project).toMatchObject({
       name: "ts-release",
       packageName: "@mannyc1/ts-release",
-      version: "0.2.2"
+      version: "0.3.0"
     })
     expect(config.builds.map(({ entry }) => entry)).toEqual(["apps/release-ts/src/cli/main.ts"])
     const pypi = config.publish.pypi

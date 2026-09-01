@@ -123,9 +123,64 @@ ts-release init --preset bun-npm-github
 It refuses to guess when no repository coordinate is observable and strictly
 inspects the exact generated configuration before writing it.
 
-## Automatic GitHub Actions release
+## Repository 0.3 self-release
 
-The default workflow is one job and one Action invocation. Copy the exact
+The checked-in `.github/workflows/release.yml` is a manual, fail-closed
+four-mode workflow. `prepare-exact-sha` has read-only repository authority
+and independently commits one GitHub-assets bundle and one npm-tarball bundle
+to the content-addressed Actions store. `create-tag` has only the separate
+`github-tag` environment and creates or reobserves the lightweight `v0.3.0`
+tag at the exact candidate; it creates no Release. `publish-npm` accepts only
+the npm bundle under the `npm` environment with `id-token: write`, then
+rereads the public registry to prove exact tarball bytes and the exact GitHub
+SLSA provenance identity. The pinned npm archive's Sigstore 4.1.0 verifier
+requires the exact Fulcio workflow SAN and GitHub OIDC issuer, then binds the
+certificate's workflow/source SHA and run-invocation extensions to the same
+candidate and provenance statement. Its repository-subject extension must be
+the ID-qualified `repo:mannyc2@126291407/ts-release@1271545637:environment:npm`
+identity issued for the protected npm environment; the historical ref-bound
+subject is rejected. Generic signature validity is insufficient.
+Only afterward, `publish-github` accepts the GitHub
+bundle plus the already-published npm bundle under the `github-release`
+environment with `contents: write`. Every boundary
+reauthenticates the checkout against the current public `main` tip immediately
+before it can adopt or mutate anything.
+
+The npm client itself is fetched from the canonical npm 11.11.0 tarball,
+checked against its fixed SHA-512 and SHA-1 registry digests, and freshly
+rematerialized before every boundary. Any nonempty `npm_config_*`, `PREFIX`,
+`DESTDIR`, token variable, project/user npmrc, or default global npmrc stops
+before repository or provider work.
+
+The exact order is preparation, lightweight tag creation, npm publication and
+report-bound public/provenance verification, then GitHub publication. A fresh
+npm mutation must carry provenance for that exact workflow run attempt. If a
+prior run applied the bytes but lost its response, an exact `AlreadyEquivalent`
+retry instead authenticates the earlier canonical publishing run named by the
+public provenance; it never demands impossible same-run provenance from a
+no-op retry. Any uncertain, blocked, malformed, or differently bound Action
+report stops verification. The first
+GitHub publication invocation creates or resumes a private draft and uploads
+only missing exact assets. For a desired public Release that staging result is
+deliberately `uncertain`, not success, and the Release remains nonpublic. A
+fresh invocation with the same candidate and both exact `prepared:gha:`
+references must fully reread draft metadata and every paginated asset, download
+and hash any asset whose API digest is absent, and only then perform a
+PATCH-only public transition. Extra, duplicate, missing, or different assets
+stop that transition. On 2026-09-01, repository environments `github-tag`
+(ID `20986778371`), `npm` (ID `20985327992`), and `github-release`
+(ID `20985328229`) were observed with reviewer `mannyc2`, self-review allowed,
+admin bypass disabled, a custom deployment policy selecting exactly `main`,
+and no environment secrets or variables. Re-query those mutable facts before
+every dispatch. Repository Release immutability was also observed enabled on
+2026-09-01; re-query it before GitHub staging or promotion. GitHub's repository
+OIDC customization remained the default subject policy, which does not prove
+any npm-side trusted-publisher record. The exact npm trusted-publisher subject
+remains a separate prerequisite and is not inferred from an environment.
+
+## Automatic GitHub Actions template
+
+The reusable automatic template is one job and one Action invocation. Copy the exact
 [automatic workflow template](templates/github-actions/release.yml). It is
 manual-only and requires `candidate_sha` to equal the current commit on
 `refs/heads/main` before the job can reach checkout. Its
@@ -137,7 +192,7 @@ recovery artifact.
 
 ```yaml
 - id: release
-  uses: mannyc2/ts-release/apps/ts-release-action@v0.2.2
+  uses: mannyc2/ts-release/apps/ts-release-action@v0.3.0
   env:
     GITHUB_TOKEN: ${{ github.token }}
   with:
@@ -151,7 +206,7 @@ preparation, dispatch the same candidate with the exact emitted
 `prepared:gha:` reference; the job selects `publish`, loads and verifies the
 original bundle, and does not rebuild.
 
-`v0.2.2` is the immutable monorepo-subpath coordinate intended for this
+`v0.3.0` is the immutable monorepo-subpath coordinate intended for this
 candidate. Packaging and release certification must stop unless that tag is
 created from the exact certified result commit before consumers can see a
 README that names it. A floating Action branch is never an alternative.

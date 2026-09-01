@@ -1,6 +1,6 @@
 import artifactClient, { type ArtifactClient } from "@actions/artifact"
 
-const artifactLookupDigestPattern = /^sha256:[a-f0-9]{64}$/u
+const artifactLookupDigestPattern = /^sha256:([a-f0-9]{64})$/u
 const positiveDecimalPattern = /^[1-9][0-9]*$/u
 
 export interface ActionArtifactFindBy {
@@ -20,7 +20,12 @@ export interface ActionArtifactTransport {
     readonly name: string
     readonly destination: string
     readonly findBy?: ActionArtifactFindBy
-  }) => Promise<{ readonly path?: string, readonly digestMismatch?: boolean }>
+  }) => Promise<{
+    readonly id?: number
+    readonly digest?: string
+    readonly path?: string
+    readonly digestMismatch?: boolean
+  }>
 }
 
 const positiveSafeInteger = (value: string, field: string): number => {
@@ -54,16 +59,23 @@ export const makeActionsArtifactTransport = (
       }
     }
     const found = await client.getArtifact(name, options)
+    const lookupDigest = artifactLookupDigestPattern.exec(found.artifact.digest ?? "")
+    const lookupDigestHex = lookupDigest?.[1]
     if (found.artifact.name !== name || !Number.isSafeInteger(found.artifact.id) || found.artifact.id <= 0 ||
-      found.artifact.digest === undefined || !artifactLookupDigestPattern.test(found.artifact.digest)) {
+      lookupDigestHex === undefined) {
       throw new Error("Actions artifact lookup returned non-canonical artifact identity metadata.")
     }
     const downloaded = await client.downloadArtifact(found.artifact.id, {
       path: destination,
-      expectedHash: found.artifact.digest,
+      // The lookup API canonicalizes the hash as `sha256:<hex>`, while the
+      // official download client compares expectedHash to its bare computed
+      // SHA-256 hex. Normalize only at that native-client boundary.
+      expectedHash: lookupDigestHex,
       ...options
     })
     return {
+      id: found.artifact.id,
+      digest: `sha256:${lookupDigestHex}`,
       ...(downloaded.downloadPath === undefined ? {} : { path: downloaded.downloadPath }),
       ...(downloaded.digestMismatch === undefined ? {} : { digestMismatch: downloaded.digestMismatch })
     }

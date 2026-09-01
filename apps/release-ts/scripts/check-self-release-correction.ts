@@ -1,17 +1,36 @@
 import { join } from "node:path"
-import { existsSync, readdirSync } from "node:fs"
+import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 import { makeReleaseApi } from "../../../src/api/api.js"
 import { NodeReleaseLayer } from "../../../src/platform/node.js"
-import { preparedRoot, report, root, selfReleaseConfig } from "./self-release-facts.js"
+import { preparedRoot, report, root, selfReleaseConfigs } from "./self-release-facts.js"
 
 const failures: Array<string> = []
 const api = makeReleaseApi(NodeReleaseLayer)
 try {
-  const inspection = await api.inspect({ config: selfReleaseConfig(), workspace: root })
-  if (!("preparations" in inspection)) failures.push("Correction check could not inspect the self-release graph.")
+  for (const { lane, config } of selfReleaseConfigs()) {
+    const inspection = await api.inspect({ config, workspace: root })
+    if (!("preparations" in inspection) || inspection.publications.length !== 1 ||
+        inspection.publications[0]?.destination !== lane) {
+      failures.push(`Correction check could not inspect the isolated ${lane} self-release graph.`)
+    }
+  }
   const store = join(root, preparedRoot)
-  if (!existsSync(store) || readdirSync(store).filter((entry) => !entry.startsWith(".")).length === 0) failures.push("Correction check requires the candidate prepared bundle.")
+  const publicationTags = new Set<string>()
+  if (existsSync(store)) for (const entry of readdirSync(store, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name.startsWith(".")) continue
+    try {
+      const manifest = JSON.parse(readFileSync(join(store, entry.name, "prepared-release.json"), "utf8")) as {
+        readonly publications?: ReadonlyArray<{ readonly _tag?: string }>
+      }
+      for (const publication of manifest.publications ?? []) if (typeof publication._tag === "string") publicationTags.add(publication._tag)
+    } catch {
+      failures.push(`Prepared store entry ${entry.name} is not a readable canonical manifest.`)
+    }
+  }
+  for (const tag of ["PreparedGitHubPublication", "PreparedNpmPublication"]) {
+    if (!publicationTags.has(tag)) failures.push(`Correction check requires the candidate ${tag} bundle.`)
+  }
 } catch (cause) {
   failures.push(`Correction preflight inspection failed: ${cause instanceof Error && cause.message.length > 0 ? cause.message : JSON.stringify(cause)}`)
 } finally {

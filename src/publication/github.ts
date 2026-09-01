@@ -135,6 +135,10 @@ type GithubMutationPlan =
     readonly uploadUrl: string
     readonly assetIndexes: ReadonlyArray<number>
   }
+  | {
+    readonly _tag: "PublishRelease"
+    readonly releaseId: number
+  }
 
 type PageResult =
   | { readonly _tag: "Complete", readonly assets: ReadonlyArray<ReleaseAssetFacts> }
@@ -451,7 +455,8 @@ const listAllAssets = Effect.fn("GitHubReleaseSubject.listAllAssets")(function*(
 
 const compareReleaseMetadata = (
   publication: PreparedGitHubPublication,
-  facts: ReleaseFacts
+  facts: ReleaseFacts,
+  options: { readonly ignoreDraft?: boolean } = {}
 ): ReadonlyArray<Difference> => {
   const differences: Array<Difference> = []
   if (facts.tag !== publication.tag.toString()) {
@@ -462,7 +467,7 @@ const compareReleaseMetadata = (
   }
   const expectedBody = publication.body ?? ""
   if (facts.body !== expectedBody) differences.push(textDifference("release.body", expectedBody, facts.body))
-  if (facts.draft !== publication.draft) {
+  if (options.ignoreDraft !== true && facts.draft !== publication.draft) {
     differences.push(scalarDifference("release.draft", publication.draft, facts.draft))
   }
   if (facts.prerelease !== publication.prerelease) {
@@ -521,6 +526,14 @@ const decideFor = (
           })
         })
       }
+      if (plan?._tag === "PublishRelease") {
+        return NeedsMutation.make({
+          subject: publication.authority.subject,
+          precondition: MutationPrecondition.make({
+            kind: NonEmptyName.make("github-exact-draft-assets-complete")
+          })
+        })
+      }
       return ProviderBlocked.make({
         subject: publication.authority.subject,
         reason: SafeReason.make("GitHub absence carried no exact mutation plan.")
@@ -557,7 +570,9 @@ const appliedAttempt = (publication: PreparedGitHubPublication): Applied => Appl
   subject: publication.authority.subject,
   fact: ProviderMutationFact.make({
     subject: publication.authority.subject,
-    detail: SafeReason.make("GitHub accepted the release mutation and every planned asset upload.")
+    detail: SafeReason.make(
+      "GitHub accepted every mutation dispatched in this convergence phase; final equivalence still requires provider reobservation."
+    )
   })
 })
 
@@ -720,7 +735,10 @@ export const makeGithubSubjects = (
     if (release === undefined || !validateUploadUrl(publication, release.id, release.uploadUrl)) {
       return inconclusive(publication, "The GitHub release response omitted identity facts or carried an invalid repository-scoped upload template.")
     }
-    const releaseDifferences = compareReleaseMetadata(publication, release)
+    const stagedForPublicPromotion = publication.draft === false && release.draft === true
+    const releaseDifferences = compareReleaseMetadata(publication, release, {
+      ignoreDraft: stagedForPublicPromotion
+    })
     if (releaseDifferences.length > 0) return presentDifferent(publication, releaseDifferences)
 
     const listed = yield* listAllAssets(publication, http, grant, release.id)
@@ -799,6 +817,11 @@ export const makeGithubSubjects = (
       }
     }
     if (missingIndexes.length > 0) {
+      if (!release.draft) {
+        return presentDifferent(publication, missingIndexes.map((index) => scalarDifference(
+          `asset.${publication.assets[index]!.name}.count`, 1, 0
+        )))
+      }
       if (mutationMayStillBecomeVisible) {
         return pending(publication, "One or more intended GitHub assets are not yet visible after the accepted mutation.")
       }
@@ -812,6 +835,14 @@ export const makeGithubSubjects = (
         publication,
         "github-intended-assets-absent",
         "A full paginated release-asset enumeration proved at least one intended asset name absent."
+      )
+    }
+    if (stagedForPublicPromotion) {
+      mutationPlan = { _tag: "PublishRelease", releaseId: release.id }
+      return absent(
+        publication,
+        "github-exact-draft-assets-complete",
+        "The exact private draft and complete asset set are ready for one final public transition."
       )
     }
     return PresentEquivalent.make({ subject: publication.authority.subject })
@@ -837,14 +868,19 @@ export const makeGithubSubjects = (
         decision.proof.kind === "github-authenticated-repository-and-unique-tag"
       : plan._tag === "CreateRelease"
       ? decision._tag === "NeedsMutation" && decision.precondition.kind === "github-release-absent-at-exact-tag"
-      : decision._tag === "NeedsMutation" &&
+      : plan._tag === "UploadAssets"
+      ? decision._tag === "NeedsMutation" &&
         decision.precondition.kind === "github-intended-assets-authoritatively-absent"
+      : decision._tag === "NeedsMutation" &&
+        decision.precondition.kind === "github-exact-draft-assets-complete"
     if (!expectedDecision) {
       return yield* mutationFailure(publication, "The GitHub mutation decision does not match its observed precondition.")
     }
     const indexes = plan._tag === "CreateRelease"
       ? publication.assets.map((_, index) => index)
-      : [...plan.assetIndexes]
+      : plan._tag === "UploadAssets"
+      ? [...plan.assetIndexes]
+      : []
     const bytesByIndex = new Map<number, Uint8Array>()
     for (const index of indexes) {
       const asset = publication.assets[index]
@@ -866,7 +902,10 @@ export const makeGithubSubjects = (
       decision
     }
     let acceptedWrites = 0
-    const dispatch = Effect.fn("GitHubReleaseSubject.dispatch")(function*(request: MutationHttpRequest) {
+    const dispatch = Effect.fn("GitHubReleaseSubject.dispatch")(function*(
+      request: MutationHttpRequest,
+      acceptedStatus: 200 | 201
+    ) {
       const exchange = yield* executeMutation(mutationHttp, operation, request, grant)
       if (exchange._tag === "Failure") {
         if (acceptedWrites > 0 || exchange.error.commitment === "unknown") {
@@ -881,7 +920,7 @@ export const makeGithubSubjects = (
           "before-dispatch"
         )
       }
-      if (exchange.response.status === 201) {
+      if (exchange.response.status === acceptedStatus) {
         acceptedWrites += 1
         return { _tag: "Accepted", response: exchange.response } as const
       }
@@ -891,14 +930,15 @@ export const makeGithubSubjects = (
       ) } as const
     })
 
-    let uploadUrl: string
+    let releaseId: number
+    let uploadUrl: string | undefined
     if (plan._tag === "CreateRelease") {
       const body = JSON.stringify({
         tag_name: publication.tag.toString(),
         target_commitish: publication.targetCommit.toString(),
         name: publication.title.toString(),
         body: publication.body ?? "",
-        draft: publication.draft,
+        draft: true,
         prerelease: publication.prerelease
       })
       const created = yield* dispatch({
@@ -910,23 +950,28 @@ export const makeGithubSubjects = (
           "content-length": String(new TextEncoder().encode(body).length)
         },
         body
-      })
+      }, 201)
       if (created._tag === "Attempt") return created.attempt
       const facts = releaseFacts(parseJson(created.response.body))
-      if (facts === undefined || !validateUploadUrl(publication, facts.id, facts.uploadUrl) ||
-        compareReleaseMetadata(publication, facts).length > 0) {
+      if (facts === undefined || facts.draft !== true ||
+        !validateUploadUrl(publication, facts.id, facts.uploadUrl) ||
+        compareReleaseMetadata(publication, facts, { ignoreDraft: publication.draft === false }).length > 0) {
         return unknownAttempt(
           publication,
           "GitHub accepted release creation but its response did not establish the exact release identity and repository-scoped upload template."
         )
       }
+      releaseId = facts.id
       uploadUrl = facts.uploadUrl
-    } else {
+    } else if (plan._tag === "UploadAssets") {
+      releaseId = plan.releaseId
       uploadUrl = plan.uploadUrl
+    } else {
+      releaseId = plan.releaseId
     }
     for (const index of indexes) {
       const bytes = bytesByIndex.get(index)!
-      const uploaded = yield* dispatch(uploadRequest(publication, uploadUrl, index, bytes))
+      const uploaded = yield* dispatch(uploadRequest(publication, uploadUrl!, index, bytes), 201)
       if (uploaded._tag === "Attempt") return uploaded.attempt
       const intended = publication.assets[index]!
       const facts = releaseAssetFacts(publication, parseJson(uploaded.response.body))
@@ -936,6 +981,29 @@ export const makeGithubSubjects = (
         return unknownAttempt(
           publication,
           "GitHub accepted an asset upload but its response did not establish the exact uploaded asset identity."
+        )
+      }
+    }
+    if (plan._tag === "PublishRelease") {
+      const body = JSON.stringify({ draft: false })
+      const published = yield* dispatch({
+        method: "PATCH",
+        url: `${publication.authority.audience}/releases/${releaseId}`,
+        headers: {
+          ...githubJsonHeaders,
+          "content-type": "application/json",
+          "content-length": String(new TextEncoder().encode(body).length)
+        },
+        body
+      }, 200)
+      if (published._tag === "Attempt") return published.attempt
+      const facts = releaseFacts(parseJson(published.response.body))
+      if (facts === undefined || facts.id !== releaseId || facts.draft !== false ||
+        !validateUploadUrl(publication, releaseId, facts.uploadUrl) ||
+        compareReleaseMetadata(publication, facts).length > 0) {
+        return unknownAttempt(
+          publication,
+          "GitHub accepted final release publication but its response did not establish the exact public release identity."
         )
       }
     }

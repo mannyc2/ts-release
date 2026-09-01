@@ -304,7 +304,7 @@ describe("GitHub protocol contract v1", () => {
     }
   })
 
-  test("anonymous hidden 404 is inconclusive, authenticated absence authorizes create, and draft mismatch conflicts", async () => {
+  test("anonymous hidden 404 is inconclusive, authenticated absence authorizes create, and an exact draft is promotable", async () => {
     const fixture = makeGithubFixture()
     const absentDouble = makeGithubProtocolDouble(protocolScenario({}))
     const absentSubject = makeGithubSubjects(
@@ -329,10 +329,14 @@ describe("GitHub protocol contract v1", () => {
     }))
     const draftReport = await runGithubProtocol(fixture, draftDouble)
     expect(draftReport.subjects[1]).toMatchObject({
-      _tag: "BlockedSubject",
-      cause: { _tag: "Conflict", differences: [{ field: "release.draft" }] }
+      _tag: "ConvergedAfterMutation",
+      decision: { _tag: "NeedsMutation" },
+      attempt: { _tag: "Applied" }
     })
-    expect(draftDouble.mutationCount()).toBe(0)
+    expect(draftDouble.scenario.release?.draft).toBe(false)
+    expect(mutationEvents(draftDouble.events).map((event) => `${event.method} ${event.url}`)).toEqual([
+      `PATCH ${apiBase}/releases/700`
+    ])
   })
 
   test("validates a missing API digest by downloading and hashing exact asset bytes", async () => {
@@ -389,11 +393,23 @@ describe("GitHub protocol contract v1", () => {
       { name: "checksums.txt", mediaType: "text/plain", contents: "checksum bytes\n" }
     ])
     const double = makeGithubProtocolDouble(protocolScenario({}))
-    const report = await runGithubProtocol(fixture, double)
+    const staged = await runGithubProtocol(fixture, double)
 
+    expect(staged.subjects[1]).toMatchObject({
+      _tag: "UncertainSubject",
+      decision: { _tag: "ProviderAuthorizedCreate" },
+      attempt: { _tag: "Applied" }
+    })
+    expect(double.scenario.release?.draft).toBe(true)
+    expect(mutationEvents(double.events)).toHaveLength(3)
+
+    const report = await runGithubProtocol(fixture, double)
     expect(report.subjects[1]).toMatchObject({
       _tag: "ConvergedAfterMutation",
-      decision: { _tag: "ProviderAuthorizedCreate" },
+      decision: {
+        _tag: "NeedsMutation",
+        precondition: { kind: "github-exact-draft-assets-complete" }
+      },
       attempt: { _tag: "Applied" }
     })
     expect(double.scenario.tagRef).toEqual({ type: "commit", sha: preparedCommit })
@@ -410,19 +426,20 @@ describe("GitHub protocol contract v1", () => {
     expect(posts.map((event) => event.url)).toEqual([
       `${apiBase}/releases`,
       "https://uploads.github.com/repos/owner/project/releases/700/assets?name=asset%20one.zip",
-      "https://uploads.github.com/repos/owner/project/releases/700/assets?name=checksums.txt"
+      "https://uploads.github.com/repos/owner/project/releases/700/assets?name=checksums.txt",
+      `${apiBase}/releases/700`
     ])
-    expect(posts.slice(1).map((event) => event.requestHeaders?.["content-type"])).toEqual([
+    expect(posts.slice(1, -1).map((event) => event.requestHeaders?.["content-type"])).toEqual([
       "application/zip",
       "text/plain"
     ])
-    expect(posts.slice(1).map((event) => event.requestBodyLength)).toEqual(
+    expect(posts.slice(1, -1).map((event) => event.requestBodyLength)).toEqual(
       fixture.assets.map((asset) => asset.bytes.length)
     )
     expect(encodeProtocolJsonLines(double.events)).toBe(golden("create-and-upload"))
   })
 
-  test("reruns only missing uploads and preserves existing exact assets", async () => {
+  test("resumes only missing draft uploads, then publishes once and preserves exact assets", async () => {
     const fixture = makeGithubFixture([
       { name: "existing.zip", mediaType: "application/zip" },
       { name: "missing.txt", mediaType: "text/plain" }
@@ -430,31 +447,98 @@ describe("GitHub protocol contract v1", () => {
     const existing = protocolAsset(fixture, 0)
     const double = makeGithubProtocolDouble(protocolScenario({
       tagRef: { type: "commit", sha: preparedCommit },
-      release: releaseState(fixture, [existing])
+      release: { ...releaseState(fixture, [existing]), draft: true }
     }))
-    const report = await runGithubProtocol(fixture, double)
+    const staged = await runGithubProtocol(fixture, double)
 
-    expect(report.subjects[1]).toMatchObject({
-      _tag: "ConvergedAfterMutation",
+    expect(staged.subjects[1]).toMatchObject({
+      _tag: "UncertainSubject",
       decision: { _tag: "NeedsMutation" },
       attempt: { _tag: "Applied" }
     })
+    expect(double.scenario.release?.draft).toBe(true)
     expect(mutationEvents(double.events)).toHaveLength(1)
+
+    const report = await runGithubProtocol(fixture, double)
+    expect(report.subjects[1]).toMatchObject({
+      _tag: "ConvergedAfterMutation",
+      decision: {
+        _tag: "NeedsMutation",
+        precondition: { kind: "github-exact-draft-assets-complete" }
+      }
+    })
+    expect(mutationEvents(double.events)).toHaveLength(2)
     expect(mutationEvents(double.events)[0]?.url).toBe(
       "https://uploads.github.com/repos/owner/project/releases/700/assets?name=missing.txt"
     )
+    expect(mutationEvents(double.events)[1]).toMatchObject({
+      method: "PATCH",
+      url: `${apiBase}/releases/700`
+    })
     expect(double.scenario.release?.assets[0]).toEqual(existing)
     expect(encodeProtocolJsonLines(double.events)).toBe(golden("partial-rerun"))
   })
 
-  test("preserves unknown transport outcomes and converges by exact reobservation", async () => {
-    const fixture = makeGithubFixture([])
-    const createUrl = `${apiBase}/releases`
+  test("never appends missing assets to an already-public incomplete release", async () => {
+    const fixture = makeGithubFixture([
+      { name: "existing.zip", mediaType: "application/zip" },
+      { name: "missing.txt", mediaType: "text/plain" }
+    ])
     const double = makeGithubProtocolDouble(protocolScenario({
+      tagRef: { type: "commit", sha: preparedCommit },
+      release: releaseState(fixture, [protocolAsset(fixture, 0)])
+    }))
+    const report = await runGithubProtocol(fixture, double)
+    expect(report.subjects[1]).toMatchObject({
+      _tag: "BlockedSubject",
+      cause: { _tag: "Conflict", differences: [{ field: "asset.missing.txt.count" }] }
+    })
+    expect(double.mutationCount()).toBe(0)
+  })
+
+  test("a raced extra draft asset blocks public promotion after staging", async () => {
+    const fixture = makeGithubFixture([{ name: "intended.zip", mediaType: "application/zip" }])
+    const double = makeGithubProtocolDouble(protocolScenario({}))
+    const staged = await runGithubProtocol(fixture, double)
+    expect(staged.subjects[1]?._tag).toBe("UncertainSubject")
+    double.scenario.release!.assets.push({
+      id: 999,
+      name: "raced-extra.bin",
+      mediaType: "application/octet-stream",
+      bytes: new TextEncoder().encode("foreign bytes"),
+      digest: "present"
+    })
+    const next = await runGithubProtocol(fixture, double)
+    expect(next.subjects[1]).toMatchObject({
+      _tag: "BlockedSubject",
+      cause: { _tag: "Conflict", differences: [{ field: "assets.extra-name" }] }
+    })
+    expect(double.scenario.release?.draft).toBe(true)
+    expect(mutationEvents(double.events).some((event) => event.method === "PATCH")).toBe(false)
+  })
+
+  test("a missing upload-response digest is downloaded and hashed before a later public transition", async () => {
+    const fixture = makeGithubFixture([{ name: "asset.zip", mediaType: "application/zip" }])
+    const double = makeGithubProtocolDouble(protocolScenario({ uploadedAssetDigest: "missing" }))
+    const staged = await runGithubProtocol(fixture, double)
+    expect(staged.subjects[1]?._tag).toBe("UncertainSubject")
+    const report = await runGithubProtocol(fixture, double)
+    expect(report.subjects[1]?._tag).toBe("ConvergedAfterMutation")
+    expect(double.events.some((event) => event._tag === "HttpExchange" &&
+      event.phase === "observe" && event.url === `${apiBase}/releases/assets/100`)).toBe(true)
+    expect(double.scenario.release?.draft).toBe(false)
+  })
+
+  test("preserves a lost final-promotion response and converges by exact public reobservation", async () => {
+    const fixture = makeGithubFixture([])
+    const publishUrl = `${apiBase}/releases/700`
+    const double = makeGithubProtocolDouble(protocolScenario({
+      tagRef: { type: "commit", sha: preparedCommit },
+      release: { ...releaseState(fixture), draft: true },
       faults: [{
         phase: "mutate",
-        method: "POST",
-        url: createUrl,
+        method: "PATCH",
+        url: publishUrl,
         outcome: { _tag: "TransportUnknown", afterApply: true }
       }]
     }))
@@ -505,9 +589,11 @@ describe("GitHub protocol contract v1", () => {
     }))
 
     expect(attempts.map((attempt) => attempt._tag)).toEqual(["Applied", "OutcomeUnknown"])
-    expect(loserAfter._tag).toBe("PresentEquivalent")
-    expect(double.mutationCount()).toBe(1)
-    expect(mutationEvents(double.events)).toHaveLength(2)
+    expect(loserAfter._tag).toBe("AuthoritativelyAbsent")
+    const final = await runGithubProtocol(fixture, double)
+    expect(final.subjects[1]?._tag).toBe("ConvergedAfterMutation")
+    expect(double.mutationCount()).toBe(2)
+    expect(mutationEvents(double.events)).toHaveLength(3)
   })
 
   test("classifies received statuses conservatively before any accepted write", async () => {

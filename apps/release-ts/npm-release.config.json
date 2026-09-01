@@ -1,0 +1,29 @@
+{
+  "project": { "repository": "mannyc2/ts-release" },
+  "versionFrom": "manifest",
+  "npmPackage": {
+    "path": ".",
+    "build": {
+      "run": ["bun", "--no-env-file", "--no-install", "run", "build"],
+      "outputRoots": ["dist"]
+    }
+  },
+  "publish": {
+    "npm": {
+      "registry": "https://registry.npmjs.org/",
+      "authentication": {
+        "strategy": "trusted-publishing",
+        "attestation": {
+          "provider": "github-actions",
+          "runner": "github-hosted",
+          "repository": "mannyc2/ts-release",
+          "workflow": "release.yml",
+          "workflowRef": "refs/heads/main",
+          "allowedAction": "npm-publish-direct"
+        }
+      },
+      "access": "public",
+      "provenance": "automatic"
+    }
+  }
+}

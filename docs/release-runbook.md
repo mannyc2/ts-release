@@ -2,11 +2,16 @@
 
 This source tree is not release authority. The repository release workflow is
 manually dispatchable, but its existence is not permission to run it. It has
-no automatic trigger and rejects the job before checkout unless the event is
-for `mannyc2/ts-release`, `refs/heads/main`, and an exact required
-`candidate_sha` equal to `github.sha`. Do not provide production write
-credentials, dispatch publication, create a tag or GitHub release, or publish
-npm bytes during Plan 233 candidate certification.
+no automatic trigger. Its unconditional `admit` job fails the workflow unless
+the repository ids, manual event, `refs/heads/main`, workflow ref/SHA, run
+coordinates, exact required `candidate_sha`, selected mode, and mode-specific
+prepared-reference topology all agree. It emits exactly one `selected_job`;
+the five authority jobs and the read-only npm-before-GitHub preflight depend on
+that output, while the GitHub writer also depends on the successful preflight,
+so an invalid dispatch cannot appear green merely because every mutation job
+skipped. Do not provide
+production write credentials, dispatch publication, create a tag or GitHub
+release, or publish npm bytes during Plan 233 candidate certification.
 
 ## Non-mutating candidate sequence
 
@@ -25,9 +30,15 @@ npm bytes during Plan 233 candidate certification.
    verified runtime at a time into a disposable read-only cache; self-preparation
    must not download a target runtime.
    The native Node 24 Action launcher performs this host bootstrap before
-   `release` or `prepare`: it downloads only the versioned Bun runtime files in
-   a closed, credential-free child and verifies their pinned SHA-256 values
-   before the offline preparation boundary starts. The runner's private
+   `release` or `prepare`: its closed, credential-free Bun child downloads the
+   exact versioned `@oven` platform archives directly from
+   `registry.npmjs.org`, forbids redirects, applies one 120-second deadline to
+   each request and complete response body, bounds the response to its pinned
+   size, verifies the published SHA-512 integrity, requires exactly three
+   unlinked regular tar members, and verifies the extracted runtime's pinned
+   size and SHA-256. It atomically installs a previously absent cache file
+   without overwriting conflicts. Only then does the offline preparation
+   boundary start. The runner's private
    Actions-artifact transport enters only the subsequent Bun release child,
    which delegates artifact upload/download to the checked-in native Node 24
    bridge. The bridge request contains paths and public coordinates but never
@@ -43,8 +54,8 @@ npm bytes during Plan 233 candidate certification.
    do not install workspace dependencies.
 3. Run the complete release-candidate gate and every public-entrypoint smoke
    matrix. A skipped execution host is removed from the support claim. Rebuild
-   and byte-compare the Bun release bundle, native launcher, and native
-   artifact bridge.
+   and byte-compare the Bun release bundle, native launcher, native artifact
+   bridge, and private native report-retainer bundle.
 4. Prepare the self-release independently twice. Verify exact-commit
    materialization, every manifest/blob, agent bundle, npm tarball, archive,
    checksum, and target file format. Record whether complete bytes reproduce;
@@ -73,16 +84,19 @@ unsupported advertised row, or unexercised claimed host stops certification.
 ## Bootstrap requirement
 
 The packaged README names the immutable Action coordinate
-`mannyc2/ts-release/apps/ts-release-action@v0.2.2`. Consumers must not see that
-README before the tag exists at exact result commit X. The live-release packet
-therefore needs a proven order that makes the immutable GitHub Action ref
-available before npm publication, or another tested bootstrap with the same
-property.
+`mannyc2/ts-release/apps/ts-release-action@v0.3.0`. Consumers must not see that
+README before the lightweight tag exists at exact result commit X. The
+self-release therefore creates only that tag before npm publication. It does
+not use the tag as privileged workflow code: each credentialed job performs a
+native exact detached checkout of current `main` and invokes the candidate's
+local Action.
 
-The self-release context and prepared-bundle gates assert GitHub-before-npm
-ordering. Candidate certification remains open until those assertions pass on
-clean X and the workflow/provider fixture proves the GitHub coordinate is
-usable before npm publication, without rebuilding or changing X.
+The self-release gates now certify two disjoint prepared bundles: one carries
+only GitHub tag/Release/assets and one carries only the npm tarball. Candidate
+certification remains open until both exact references pass on clean X and the
+operator sequence proves the lightweight Action coordinate is usable before
+npm publication, without rebuilding or changing X. A public GitHub Release is
+deliberately later than npm.
 
 ## Live-release boundary
 
@@ -94,27 +108,199 @@ reference, sole mutation command, mutation order, response-loss recovery
 command, and STOP outcomes. A generic request to release, a green protocol
 double, or the presence of credentials is not that authority.
 
-Once that exact Plan 234 authority exists, first verify that `main` still
-resolves to X. Dispatch `.github/workflows/release.yml` at `ref: main` with
-`candidate_sha: X` and an empty `prepared_ref`. The one admitted job selects
-`release`, passes the self-release configuration, prepares X once, persists
-its exact `prepared:gha:` reference, and publishes GitHub before npm. A
-repository, ref, or SHA mismatch leaves checkout, installation, and the Action
-unreached. Y must remain only on its evidence branch while this run executes.
+The 2026-09-01 governance observation found `github-tag` environment ID
+`20986778371`, `npm` environment ID `20985327992`, and `github-release`
+environment ID `20985328229`. All three selected reviewer `mannyc2`, allowed
+self-review, disabled admin bypass, admitted only the custom `main` deployment
+branch, and contained no environment secrets or variables. Treat this as a
+dated observation, not durable authority: re-read the applicable environment
+immediately before every dispatch. It does not establish the npm
+trusted-publisher package subject. Repository Release immutability was
+separately observed enabled that day. A prior GitHub OIDC observation used the
+default subject policy; it is not acceptable certification evidence. Before
+the no-upload dispatch, re-read the repository OIDC policy and require the
+immutable ID-qualified subject
+`repo:mannyc2@126291407/ts-release@1271545637:environment:npm`. Re-read Release
+immutability again before GitHub publication. Neither GitHub observation
+establishes the npm-side trusted-publisher record.
 
-For an automatic-workflow retry after durable preparation, keep X at the
-`main` tip and dispatch the same workflow with `candidate_sha: X` and the exact
-emitted `prepared_ref`. The job then selects `publish`, passes no configuration,
-loads the prior Actions artifact under `actions: read`, reobserves every
-subject, and does not rebuild. Never substitute a local path or prepare a new
-candidate to recover an uncertain outcome.
+Every live dispatch must show a successful mandatory `admit` job and exactly
+one selected authority job. Treat an absent `selected_job`, a failed admission,
+or any surprising additional runnable authority as STOP. Preparation retains
+its two credential-free redacted Action reports through the pinned
+`actions/upload-artifact` boundary. Credentialed jobs instead invoke only the
+repository-owned native Node 24 report retainer after each producer, including
+when the producer fails. The retainer accepts one private, regular, unlinked,
+bounded, strict-JSON, redacted report with exact run/attempt/candidate/prepared
+bindings; rejects GitHub, npm, and OIDC publication credentials in its process;
+uploads once; and performs one exact name/id/digest/file-set/byte reread. In the
+two `id-token: write` jobs, every bootstrap, reauthentication, retention, and
+verification step explicitly receives empty OIDC request coordinates; only the
+certifier or publisher step retains them. If the upload response is lost, the
+retainer rereads without resubmitting. A
+failed or uncertain producer remains failed even when retention succeeds, and
+missing or invalid report evidence fails retention rather than replacing the
+producer outcome.
+
+The preparation artifacts are
+`ts-release-github-prepare-report-${run_attempt}` and
+`ts-release-npm-prepare-report-${run_attempt}`. The credentialed artifacts are
+`ts-release-tag-report-${run_attempt}`,
+`ts-release-npm-oidc-certification-report-${run_attempt}`,
+`ts-release-npm-publish-report-${run_attempt}`,
+`ts-release-npm-inspect-report-${run_attempt}`, and
+`ts-release-github-publish-report-${run_attempt}`. Each credentialed artifact
+contains only `report.json` plus `receipt.json`; the receipt records the
+report SHA-256, run, attempt, workflow SHA, candidate, kind, and prepared
+reference. The retainer outputs separately expose the artifact id and canonical
+`sha256:<64 lowercase hex>` lookup digest proven by exact reread. Preserve the
+downloaded exact bytes and those outputs before authorizing the next mutation.
+
+Once the exact live authorities exist, first verify that `main` still resolves
+to X. Dispatch `.github/workflows/release.yml` at `ref: main` with mode
+`prepare-exact-sha`, `candidate_sha: X`, and both reference inputs empty:
+
+```sh
+gh workflow run release.yml \
+  -R mannyc2/ts-release \
+  --ref main \
+  -f mode=prepare-exact-sha \
+  -f candidate_sha="$X" \
+  -f prepared_ref= \
+  -f npm_prepared_ref=
+```
+
+The read-only job prepares X twice under disjoint GitHub-only and npm-only configs
+and emits their exact `prepared:gha:` references. A repository, ref, SHA, or
+mode mismatch leaves checkout, installation, and the Action unreached. Y must
+remain only on its evidence branch while this run executes.
+
+Before creating the tag, lock `main` so the live OIDC `ref_protected` claim is
+the exact string `true`, authenticate npm operator access, and verify that the
+sole trusted-publisher record for `@mannyc1/ts-release` names GitHub repository
+`mannyc2/ts-release`, workflow `release.yml`, and environment `npm`. Under a
+separate approval of the `npm` environment for no-upload certification only,
+dispatch `certify-npm-oidc` with X, the exact npm prepared reference in
+`prepared_ref`, and an empty `npm_prepared_ref`. This mode requires no tag and
+cannot call a package-upload or dist-tag mutation endpoint. It adopts the
+prepared tarball without repacking, obtains and validates one GitHub OIDC token
+only in memory,
+and runs pinned Node 22.22.2/npm 11.11.0's exact `npm publish exact.tgz
+--dry-run` command. It requires one private npm token-exchange marker, exact
+tarball bytes, and byte-identical anonymous registry snapshots proving 0.3.0
+and its attestations remain absent and `latest` is unchanged.
+
+The retained `ts-release/npm-oidc-certification/v1` receipt has status
+`certified-no-upload`. It binds X, the prepared reference and tarball, exact
+workflow/run/actor/environment claims, the protected main ref, the immutable
+ID-qualified subject, and the before/after registry snapshots. A direct
+`release.yml` job must carry exact `workflow_ref`/`workflow_sha` and must omit
+the reusable-workflow-only `job_workflow_ref`/`job_workflow_sha` claims. The
+receipt proves only the OIDC exchange, dry-run package calculation, exact-byte
+adoption, and no registry mutation. It does not certify upload, provenance, or
+publication.
+
+Under separately approved `github-tag` authority, dispatch `create-tag` with X
+and both prepared-reference inputs empty. It may create only the lightweight
+`v0.3.0` ref at X, then must reread it exactly; it creates no Release. Next,
+under a new, separate `npm` publication approval, dispatch `publish-npm` with X
+and the same exact npm prepared reference. That job publishes only the adopted
+tarball and must converge its public byte, latest-tag, provenance, and signature
+verifier before GitHub Release authority is reached. A fresh mutation must
+prove provenance from that same workflow run attempt. On response loss, a later
+exact `AlreadyEquivalent` retry uses the Action report to select recovery mode
+and authenticates the earlier canonical publishing run attempt named by the
+public provenance. It does not require the no-op retry to own the earlier
+provenance. The publication certificate must carry the exact Fulcio SAN and
+GitHub issuer plus the ID-qualified environment subject above; a ref-bound or
+otherwise different repository subject is a STOP outcome. Uncertain or blocked
+reports remain STOP outcomes.
+
+```sh
+gh workflow run release.yml \
+  -R mannyc2/ts-release \
+  --ref main \
+  -f mode=certify-npm-oidc \
+  -f candidate_sha="$X" \
+  -f prepared_ref="$NPM_PREPARED" \
+  -f npm_prepared_ref=
+
+gh workflow run release.yml \
+  -R mannyc2/ts-release \
+  --ref main \
+  -f mode=create-tag \
+  -f candidate_sha="$X" \
+  -f prepared_ref= \
+  -f npm_prepared_ref=
+
+gh workflow run release.yml \
+  -R mannyc2/ts-release \
+  --ref main \
+  -f mode=publish-npm \
+  -f candidate_sha="$X" \
+  -f prepared_ref="$NPM_PREPARED" \
+  -f npm_prepared_ref=
+```
+
+The first command reaches the `npm` environment for a non-mutating OIDC
+certification and must complete before tag authority. The second reaches the
+`github-tag` environment immediately before the only possible tag mutation.
+The third reaches the `npm` environment before the Action can request a fresh
+OIDC token or execute the real `npm publish`. Do not reuse the certification
+approval as publication authority, and do not approve any of these boundaries
+from one generic release authorization.
+
+Only then, under separately approved `github-release` authority, dispatch
+`publish-github` with X, the exact GitHub prepared reference in `prepared_ref`,
+and the already-published npm reference in `npm_prepared_ref`. An
+environment-free `preflight-github` job with only `actions: read` and
+`contents: read` first inspects the npm prepared reference, reverifies the
+public npm bytes and published-run provenance, retains/rereads the exact npm
+inspection receipt, and hands its artifact name, id, digest, and report digest
+to the writer. Only after that job succeeds may the `github-release`
+environment writer start; it validates the exact handoff shape before its sole
+write-token Action. GitHub creation
+always POSTs a private draft, and upload recovery appends only provider-proven
+missing intended assets while that Release remains private. When a desired
+public Release was newly created or received uploads, the Action report is
+expected to be `uncertain`; this is not success and no public Release exists.
+After that run stops, authorize a fresh rerun or dispatch with exactly the same
+X and both references. That invocation must fully reread the exact draft and
+paginated asset aggregate, download and hash any missing-digest asset, and may
+then issue only `PATCH {"draft":false}`. If another missing-asset staging phase
+was necessary, repeat the same-reference fresh invocation; never blindly
+resubmit creation or promotion. Extra, duplicate, missing, different, or
+inconclusive provider state is a STOP outcome.
+
+```sh
+gh workflow run release.yml \
+  -R mannyc2/ts-release \
+  --ref main \
+  -f mode=publish-github \
+  -f candidate_sha="$X" \
+  -f prepared_ref="$GITHUB_PREPARED" \
+  -f npm_prepared_ref="$NPM_PREPARED"
+```
+
+This command reaches the `github-release` environment before any GitHub
+Release mutation. The first private-draft staging invocation is expected to
+fail with an `uncertain` Action report; nevertheless its
+`ts-release-github-publish-report-${run_attempt}` artifact is mandatory durable
+evidence. Authorize continuation only after downloading and validating that
+exact artifact, then rerun the failed job or repeat the exact same command and
+references. Never reinterpret the failed staging run as publication success.
+
+Every retry reuses the same lane-specific reference; never swap lanes,
+substitute a local path, rebuild the candidate, or reinterpret a private draft
+as a completed release.
 
 For the reviewed two-job template, dispatch with the exact `candidate_sha`.
 If publication fails after preparation, rerun the failed `publish` job in the
 same workflow run so it consumes the original prepare output and artifact; do
 not start a new prepare job. In both topologies, conflict or inconclusive
-observation is a STOP outcome, and npm remains not reached unless the immutable
-GitHub Action/tag subject has converged first.
+observation is a STOP outcome. The lightweight GitHub Action tag must converge
+before npm; the public GitHub Release must not precede exact npm publication
+and verification.
 
 Only after the authorized live run and its redacted report have converged may
 the operator fast-forward `main` from X to its direct child Y. That evidence

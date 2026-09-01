@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer"
-import { chmod, copyFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { chmod, copyFile, mkdir, mkdtemp, readFile, realpath, rm, stat, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { basename, isAbsolute, join, resolve } from "node:path"
 import * as Config from "effect/Config"
@@ -588,6 +588,7 @@ const makeAuthorizedMutationHttp = (
 type NpmUserConfigMetadata = {
   readonly directory: string
   readonly path: string
+  readonly globalConfigPath: string
   readonly subject: SubjectId
   readonly grant: ScopedSecret
   readonly token: Redacted.Redacted<string>
@@ -620,9 +621,18 @@ const makeNpmUserConfigResource = (
         const directory = await mkdtemp(join(root, "ts-release-npm-"))
         try {
           const path = join(directory, "userconfig")
+          const globalConfigPath = join(directory, "globalconfig")
           const contents = `${npmAuthLine(input.registryUrl, token)}\nignore-scripts=true\n`
           await writeFile(path, contents, { mode: 0o600, flag: "wx" })
-          npmUserConfigs.set(handle, { directory, path, subject: input.operation.subject, grant, token })
+          await writeFile(globalConfigPath, "", { mode: 0o600, flag: "wx" })
+          npmUserConfigs.set(handle, {
+            directory,
+            path,
+            globalConfigPath,
+            subject: input.operation.subject,
+            grant,
+            token
+          })
           return handle
         } catch (cause) {
           await rm(directory, { recursive: true, force: true })
@@ -671,6 +681,58 @@ const optionalPath = Config.option(Config.string("PATH")).pipe(
 const closedBaseEnvironment = (path: string | undefined): Record<string, string> =>
   path === undefined ? {} : { PATH: path }
 
+const optionalReleaseHome = Config.option(Config.string("TS_RELEASE_HOME")).pipe(
+  Effect.map(Option.getOrUndefined),
+  Effect.orElseSucceed(() => undefined)
+)
+
+const privateTrustedNpmEnvironment = Effect.fn("CertifiedPublisherSpawn.privateTrustedNpmEnvironment")(
+  function*(grant: WorkloadIdentity) {
+    const configured = yield* optionalReleaseHome
+    if (configured === undefined || !isAbsolute(configured) || resolve(configured) !== configured) {
+      return yield* new CredentialUnavailable({
+        subject: grant.subject,
+        provider: grant.provider,
+        purpose: "publish",
+        reason: "Trusted npm publishing requires one canonical absolute TS_RELEASE_HOME."
+      })
+    }
+    return yield* Effect.tryPromise({
+      try: async () => {
+        const canonicalHome = await realpath(configured)
+        if (canonicalHome !== configured) throw new Error("TS_RELEASE_HOME is not canonical.")
+        const homeMetadata = await stat(canonicalHome)
+        const owner = typeof process.getuid === "function" ? process.getuid() : undefined
+        if (!homeMetadata.isDirectory() || (homeMetadata.mode & 0o077) !== 0 ||
+          (owner !== undefined && homeMetadata.uid !== owner)) {
+          throw new Error("TS_RELEASE_HOME is not one private caller-owned directory.")
+        }
+        const userConfig = join(canonicalHome, "npm-userconfig")
+        const globalConfig = join(canonicalHome, "npm-globalconfig")
+        for (const path of [userConfig, globalConfig]) {
+          if (await realpath(path) !== path) throw new Error("A trusted npm config path is not canonical.")
+          const metadata = await stat(path)
+          if (!metadata.isFile() || (metadata.mode & 0o777) !== 0o600 ||
+            (owner !== undefined && metadata.uid !== owner) || (await readFile(path)).length !== 0) {
+            throw new Error("A trusted npm config is not an empty private caller-owned file.")
+          }
+        }
+        return {
+          HOME: canonicalHome,
+          NPM_CONFIG_USERCONFIG: userConfig,
+          NPM_CONFIG_GLOBALCONFIG: globalConfig
+        }
+      },
+      catch: () => new CredentialUnavailable({
+        subject: grant.subject,
+        provider: grant.provider,
+        purpose: "publish",
+        reason: "Trusted npm publishing requires validated empty private npm configuration files."
+      })
+    })
+  }
+)
+
 const workloadEnvironment = Effect.fn("CertifiedPublisherSpawn.workloadEnvironment")(function*(
   trustedWorkloads: TrustedWorkloadVault,
   grant: WorkloadIdentity
@@ -693,7 +755,11 @@ const workloadEnvironment = Effect.fn("CertifiedPublisherSpawn.workloadEnvironme
     })
   }
   const path = yield* optionalPath
-  const env = closedBaseEnvironment(path)
+  const privateEnvironment = yield* privateTrustedNpmEnvironment(grant)
+  const env: Record<string, string> = {
+    ...closedBaseEnvironment(path),
+    ...privateEnvironment
+  }
   for (const name of oidcNames) {
     const value = material.oidc.get(name)
     if (value === undefined) {
@@ -858,7 +924,9 @@ const publisherEnvironment = Effect.fn("CertifiedPublisherSpawn.environment")(fu
     const path = yield* optionalPath
     return {
       ...closedBaseEnvironment(path),
+      HOME: metadata.directory,
       NPM_CONFIG_USERCONFIG: metadata.path,
+      NPM_CONFIG_GLOBALCONFIG: metadata.globalConfigPath,
       NPM_CONFIG_IGNORE_SCRIPTS: "true"
     }
   }

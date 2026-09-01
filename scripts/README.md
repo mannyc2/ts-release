@@ -30,6 +30,7 @@ Individual gates:
 
 - `check` — `tsc --noEmit` over the root project.
 - `check:versions` — one version per pinned thing: packageManager, engines,
+  fixed runner labels, third-party Actions, Node, npm,
   workflow pins, README, and the Effect version agreement across manifests.
 - `check:import-rules` (`check-import-rules.ts`) — enforces the source import
   layering rules.

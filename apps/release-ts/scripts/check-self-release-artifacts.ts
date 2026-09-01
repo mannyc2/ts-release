@@ -1,5 +1,5 @@
 import {
-  chmodSync, closeSync, mkdtempSync, openSync, readFileSync, readdirSync, rmSync, writeFileSync
+  chmodSync, closeSync, mkdtempSync, openSync, readFileSync, rmSync, writeFileSync
 } from "node:fs"
 import { basename, isAbsolute, join } from "node:path"
 import { spawnSync } from "node:child_process"
@@ -9,10 +9,10 @@ import { makeNodeReleaseLayer } from "../../../src/platform/node.js"
 import { makeLocalPreparedReleaseStore } from "../../../src/release/prepared-store.js"
 import { bunArtifactTargets } from "../../../src/capabilities/bun-targets.js"
 import { inspectBunBinaryHeader } from "../../../scripts/lib/bun-targets.js"
+import { encodeCompletePreparedReleaseRef } from "../../../src/release/prepared-ref.js"
 import {
-  encodeCompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef
-} from "../../../src/release/prepared-ref.js"
-import { preparedRoot, report, root, selfReleaseConfig } from "./self-release-facts.js"
+  githubSelfReleaseConfig, npmSelfReleaseConfig, preparedRoot, report, root
+} from "./self-release-facts.js"
 
 type Artifact = {
   readonly id: string
@@ -53,20 +53,29 @@ const store = makeLocalPreparedReleaseStore(storeDirectory)
 const api = makeReleaseApi(makeNodeReleaseLayer(store))
 let scratch: string | undefined
 try {
-  const directories = (() => {
-    try { return readdirSync(storeDirectory, { withFileTypes: true }).filter((entry) => entry.isDirectory() && !entry.name.startsWith(".")).map((entry) => entry.name) } catch { return [] }
-  })()
-  const prepared = directories.length === 0
-    ? await api.prepare({ config: selfReleaseConfig(), workspace: root })
-    : await Effect.runPromise(makeLocalCompletePreparedReleaseRef(directories.sort()[0]!))
-  const bundle = await Effect.runPromise(store.load(prepared))
+  const githubPrepared = await api.prepare({ config: githubSelfReleaseConfig(), workspace: root })
+  const npmPrepared = await api.prepare({ config: npmSelfReleaseConfig(), workspace: root })
+  const bundle = await Effect.runPromise(store.load(githubPrepared))
+  const npmBundle = await Effect.runPromise(store.load(npmPrepared))
   const preparedDirectory = bundle.directory
-  const inspection = await api.inspect({ prepared })
-  if (!("project" in inspection)) failures.push("Prepared artifact inspection did not return the durable bundle projection.")
+  const npmPreparedDirectory = npmBundle.directory
+  const [githubInspection, npmInspection] = await Promise.all([
+    api.inspect({ prepared: githubPrepared }),
+    api.inspect({ prepared: npmPrepared })
+  ])
+  if (!("project" in githubInspection) || !("project" in npmInspection)) {
+    failures.push("Both prepared artifact inspections must return durable bundle projections.")
+  }
+  if (bundle.manifest.source.commit.toString() !== npmBundle.manifest.source.commit.toString() ||
+      bundle.manifest.source.tree.toString() !== npmBundle.manifest.source.tree.toString() ||
+      bundle.manifest.project.version.toString() !== npmBundle.manifest.project.version.toString()) {
+    failures.push("The GitHub and npm prepared bundles do not bind the same exact source and version.")
+  }
   const manifest = JSON.parse(readFileSync(join(preparedDirectory, "prepared-release.json"), "utf8")) as Manifest
-  const npmPublication = bundle.manifest.publications.find((publication) =>
+  const npmManifest = JSON.parse(readFileSync(join(npmPreparedDirectory, "prepared-release.json"), "utf8")) as Manifest
+  const npmPublication = npmBundle.manifest.publications.find((publication) =>
     publication._tag === "PreparedNpmPublication")
-  const npm = npmPublication === undefined ? undefined : artifact(manifest, npmPublication.artifactId.toString())
+  const npm = npmPublication === undefined ? undefined : artifact(npmManifest, npmPublication.artifactId.toString())
   const native = artifact(manifest, "cli-linux-x64")
   if (npm === undefined) failures.push("Prepared bundle has no npm tarball artifact.")
   if (native === undefined) failures.push("Prepared bundle has no executable for the current Linux host.")
@@ -120,7 +129,7 @@ try {
   })
   if (npm !== undefined) {
     const tarball = join(scratch, "ts-release.tgz")
-    writeFileSync(tarball, artifactBytes(preparedDirectory, npm))
+    writeFileSync(tarball, artifactBytes(npmPreparedDirectory, npm))
     writeFileSync(join(scratch, "package.json"), JSON.stringify({ name: "candidate-consumer", private: true }))
     const install = run("bun", ["add", "--offline", tarball], scratch)
     if (install.status !== 0) failures.push(`Bun tarball installation failed: ${install.stderr.trim()}`)
@@ -154,9 +163,10 @@ try {
     root,
     join(scratch, "node-cli.stdout")
   )
-  if (cli.status !== 0 || !/^ts-release v0\.2\.2$/u.test(outputText(cli.stdout).trim())) {
+  const expectedCliVersion = `ts-release v${bundle.manifest.project.version.toString()}`
+  if (cli.status !== 0 || outputText(cli.stdout).trim() !== expectedCliVersion) {
     failures.push(
-      `The Node CLI bundle did not report candidate version 0.2.2: status=${String(cli.status)} ` +
+      `The Node CLI bundle did not report candidate version ${bundle.manifest.project.version}: status=${String(cli.status)} ` +
       `stdout=${JSON.stringify(outputText(cli.stdout).trim())} stderr=${JSON.stringify(outputText(cli.stderr).trim())}.`
     )
   }
@@ -182,7 +192,11 @@ try {
     if (check.status !== 0) failures.push(`Generated ${member.key} archive failed unzip validation.`)
   }
   report("self-release-artifacts-report/v4", failures, {
-    preparedReference: encodeCompletePreparedReleaseRef(prepared), npmTarball: npm !== undefined, nativeLinuxBinary: native !== undefined,
+    preparedReferences: {
+      github: encodeCompletePreparedReleaseRef(githubPrepared),
+      npm: encodeCompletePreparedReleaseRef(npmPrepared)
+    },
+    npmTarball: npm !== undefined, nativeLinuxBinary: native !== undefined,
     actionBundle: true, agentArchives: agentArchives.filter((entry) => entry.artifact !== undefined).length,
     artifactCount: manifest.artifacts.length,
     totalArtifactBytes: manifest.artifacts.reduce((total, item) => total + item.size, 0),

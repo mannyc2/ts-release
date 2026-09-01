@@ -102,16 +102,43 @@ certification:
 | `bun run check:capabilities` | PASS; generated capability inventory matches the current executable registry and dated evidence, and all four advertised targets real-cross-compile with matching ELF/Mach-O architecture headers | source-derived + contract-tested |
 | `bun run check:feature-translation` | PASS; 260 historical paths / 44 families, all 87 accepted fields joined once to 86 executable witnesses; 82 resolved-intent effects, 61 graph effects/refusals, 57 release-graph-digest effects, and 14 paired/discriminant refusal invariants | contract-tested |
 | Plan 225 least-authority/host-admission focus | PASS; anonymous npm observation and exact GitHub repository/workflow/ref/hosted-runner/direct-sink admission were exercised without a public provider; final aggregate clean-X repeat remains required | contract-tested |
+| `bun test test/script-self-release-npm-oidc-certifier.test.ts` with exact npm 11.11 integration enabled | LOCAL PASS; mocked RS256/JWKS/claims, prepared-byte and registry contracts plus the real pinned npm executable exercised one in-memory OIDC exchange and zero registry mutations; no public-provider token was requested | contract-tested |
 | `bun run check:package-exports` | PASS after the stabilized build | contract-tested |
 | `bun run check:packed-consumers` with runner-bundled Node 24.15.0 / cached npm 11.17.0 | PASS; offline Bun and npm installs, exact Effect beta.83 alignment, Promise API plus Node CLI operation, 1/2-artifact durable reloads, 23 Markdown files and 5 relative links audited | contract-tested |
 | `bun test` with the cached npm 11.17.0 source contract enabled | PASS; 348 tests, 0 skips, 0 failures, 1,948 expectations | contract-tested |
 | `npm 11.17.0 pack --json --ignore-scripts --dry-run` | PASS after rebuilding the public root package; 419 files, 627,276 compressed bytes, 3,172,117 unpacked bytes | source-derived |
 | Scoped handoff `git diff --check` plus explicit untracked-file whitespace audit | PASS; repository-wide exact-X rerun remains required | source-derived |
 
-The workflow output contract is no longer ornamental. Each Action invocation
-has an id, and an `always()` step uploads only that step's redacted
-`report-ref`. The workflow test continues to forbid generic prepared-bundle
-upload/download duplication.
+The workflow output contract is no longer ornamental. Preparation Action
+invocations have ids, and pinned `always()` upload steps retain only their
+redacted `report-ref`. Each credentialed tag/publish/inspect producer is
+followed, including on failure, by the repository-owned private Node 24 report
+retainer. It admits only a private bounded exact-schema report, uploads once,
+then verifies the exact artifact identity and downloaded bytes; response loss
+causes one reread and never a blind resubmission. The unconditional admission
+job hard-fails invalid identity/mode/reference topology and emits the sole job
+selection output, so an all-skipped mutation matrix cannot look successful.
+The retainer rejects live GitHub, npm, and OIDC publication credentials. Each
+non-authority step in the two OIDC jobs receives empty OIDC request coordinates,
+and the npm-before-GitHub inspection/provenance check runs in a separate
+contents-read-only preflight whose retained artifact identity is an exact input
+to the environment-gated writer.
+The workflow test continues to forbid generic prepared-bundle upload/download
+duplication and proves retention cannot mask its producer's failure.
+
+The fifth direct self-release mode, `certify-npm-oidc`, runs on
+`ubuntu-24.04` in environment `npm` with only `actions: read`, `contents: read`,
+and `id-token: write`. It admits the sole npm prepared reference without a tag,
+rejects ambient npm tokens/configuration, validates a live RS256 GitHub token
+against discovery/JWKS and the exact immutable repository-ID environment
+subject, and requires protected `main`, exact actor/run/workflow identity, plus
+absence of reusable-workflow-only claims. Pinned Node 22.22.2/npm 11.11.0 then
+performs an exact-package dry-run with its logs kept private. The strict
+`ts-release/npm-oidc-certification/v1` receipt records only
+`certified-no-upload`, exact bytes, one exchange marker, and unchanged anonymous
+registry state; it explicitly records provenance as `not-certified`. This is
+local implementation evidence only. No hosted token, trusted-publisher
+exchange, upload, provenance, or publication has been certified.
 
 ## Rejected rehearsal candidates
 
@@ -281,7 +308,7 @@ binds the absolute runner Node executable and bridge path into the Bun child;
 bridge requests contain only paths and public repository/run coordinates, not
 `GITHUB_TOKEN`. Cross-run authority is reconstructed at the Node sink and the
 existing producer/run/digest verification remains unchanged. A later
-candidate must rebuild all three checked-in bundles and repeat the complete
+candidate must rebuild every checked-in Action bundle and repeat the complete
 certification and fresh-runner matrices.
 
 Candidate `832999295e4c2f035cb28f8b56b98fbeb0451772` passed those
@@ -315,6 +342,7 @@ canonical two-field projection before the bridge serializes its response.
 | Package metadata/changelog | outcome, coordinates, files, and pending changelog corrected; current-worktree local PASS; clean-X repeat OPEN | The root Node engine is `^22.22.2 || ^24.15.0 || >=26.0.0`, matching the authoritative transitive dependency floor. The complete offline consumer gate passed under genuine Node 24.15.0 / npm 11.17.0. Separately repeat the Action's native Node launcher with workflow-installed Bun 1.3.14. |
 | Packed package | final inventory and admitted-Node consumer matrix PASS; clean-X/normal-registry rows OPEN | The current npm 11.17.0 dry-run tarball contains 463 files and is 745,959 compressed bytes / 3,816,656 unpacked bytes. Offline Bun/npm installs, exact Effect alignment, Promise API, Node CLI inspection, and 1/2-artifact bundle reloads passed under Node 24.15.0. Repeat the matrix from X. A normal-registry install remains a separate `UNVERIFIED` row. |
 | Immutable Action bootstrap | `v0.2.0` does not exist | The self-release context/prepared gates now assert GitHub-before-npm order. Run them on clean X and prove the workflow/provider sequence makes the Action coordinate usable before npm exposes its README; source ordering alone is insufficient. |
+| Hosted npm OIDC no-upload certification | local implementation and exact npm 11.11 loopback PASS; hosted evidence OPEN | Protect exact-main, re-read the immutable OIDC subject policy and sole npm trusted-publisher record, approve only the no-upload `npm` environment dispatch, then retain/reread the exact receipt. The local loopback does not establish a hosted npm exchange. |
 
 The package `files` list excludes `docs/`, while `README.md`, `SPEC.md`,
 `ARCHITECTURE.md`, `CHANGELOG.md`, and `LICENSE` are included. The
@@ -355,7 +383,9 @@ new exact-X audit.
   and `libseccomp.so.2`.
 - **LOCAL PASS / CLEAN-X REPEAT REQUIRED:** the Action declares a native Node
   24 launcher, every advertised workflow installs Bun 1.3.14 before the Action,
-  and `check:action-bundle` executes the exact launcher-to-Bun entrypoint.
+  and `check:action-bundle` byte-compares the main, launcher, artifact-bridge,
+  and private report-retainer bundles while executing both native Node
+  boundaries.
 - **LOCAL PASS / CLEAN-X REPEAT REQUIRED:** the Promise consumer against built
   declarations and JavaScript plus the packed Bun and admitted-Node operation
   smokes passed, including exact 1/2-element artifact arrays.

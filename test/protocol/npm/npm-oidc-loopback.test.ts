@@ -8,6 +8,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync
@@ -250,7 +251,10 @@ const expectedEnvironment = [
   "GITHUB_SERVER_URL",
   "GITHUB_SHA",
   "GITHUB_WORKFLOW_REF",
+  "HOME",
+  "NPM_CONFIG_GLOBALCONFIG",
   "NPM_CONFIG_IGNORE_SCRIPTS",
+  "NPM_CONFIG_USERCONFIG",
   "PATH",
   "RUNNER_ENVIRONMENT"
 ].join(",")
@@ -385,6 +389,16 @@ const runScenario = async (scenario: LoopbackScenario) => {
     const loopback = startLoopback(scenario, packed.bytes, sentinels)
     server = loopback.server
     const bin = configureBin(root)
+    const ambientHome = join(root, "ambient-runner-home")
+    mkdirSync(ambientHome, { mode: 0o700 })
+    writeFileSync(join(ambientHome, ".npmrc"), "//registry.npmjs.org/:_authToken=ambient-hostile-token\n", {
+      mode: 0o600
+    })
+    const releaseHomePath = join(root, "private-release-home")
+    mkdirSync(releaseHomePath, { mode: 0o700 })
+    const releaseHome = realpathSync(releaseHomePath)
+    writeFileSync(join(releaseHome, "npm-userconfig"), "", { mode: 0o600 })
+    writeFileSync(join(releaseHome, "npm-globalconfig"), "", { mode: 0o600 })
     const temporaryRoot = join(root, "credentials")
     mkdirSync(temporaryRoot)
     const platform = makeEnvironmentCredentialPlatform(noNetworkHttp, spawner, { temporaryRoot })
@@ -404,6 +418,8 @@ const runScenario = async (scenario: LoopbackScenario) => {
     )
     const environment = {
       PATH: bin,
+      HOME: ambientHome,
+      TS_RELEASE_HOME: releaseHome,
       GITHUB_ACTIONS: "true",
       GITHUB_REPOSITORY: authentication.attestation.repository,
       GITHUB_WORKFLOW_REF:

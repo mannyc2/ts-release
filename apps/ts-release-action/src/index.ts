@@ -59,7 +59,7 @@ try {
     read: (path) => readFileSync(path, "utf8"),
     write: (path, value) => {
       mkdirSync(dirname(path), { recursive: true })
-      writeFileSync(path, value)
+      writeFileSync(path, value, { mode: 0o600 })
     },
     preparedReference,
     summarize

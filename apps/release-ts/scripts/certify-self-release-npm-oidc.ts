@@ -75,13 +75,28 @@ const maximumTarballBytes = 64 * 1024 * 1024
 const requestTimeoutMs = 30_000
 const npmTimeoutMs = 120_000
 const receiptPath = ".release/ts-release/npm-oidc-certification.json"
+const failurePrefix = "npm OIDC certification refused: "
+const genericFailureMessage =
+  "npm OIDC certification failed closed; no upload, publication, or provenance is claimed."
 
 type ObjectValue = Readonly<Record<string, unknown>>
 type FetchShape = (input: string | URL, init?: RequestInit) => Promise<Response>
 
-const fail = (reason: string): never => {
-  throw new Error(`npm OIDC certification refused: ${reason}`)
+class NpmOidcCertificationRefusal extends Error {
+  constructor(reason: string) {
+    super(`${failurePrefix}${reason}`)
+    this.name = "NpmOidcCertificationRefusal"
+  }
 }
+
+const fail = (reason: string): never => {
+  throw new NpmOidcCertificationRefusal(reason)
+}
+
+export const npmOidcCertificationFailureLog = (error: unknown): string =>
+  error instanceof NpmOidcCertificationRefusal
+    ? `${error.message}\n${genericFailureMessage}`
+    : genericFailureMessage
 
 const object = (value: unknown, name: string): ObjectValue => {
   if (typeof value !== "object" || value === null || Array.isArray(value)) fail(`${name} is not an object`)
@@ -799,8 +814,8 @@ const main = async (): Promise<void> => {
 }
 
 if (import.meta.main) {
-  try { await main() } catch {
-    console.error("npm OIDC certification failed closed; no upload, publication, or provenance is claimed.")
+  try { await main() } catch (error) {
+    console.error(npmOidcCertificationFailureLog(error))
     process.exitCode = 1
   }
 }

@@ -229,6 +229,8 @@ export interface VerifiedGitHubOidcToken {
   readonly audience: typeof audience
   readonly subject: typeof immutableSubject
   readonly algorithm: "RS256"
+  readonly jobWorkflowRef: typeof workflowRef
+  readonly jobWorkflowSha: string
 }
 
 const expectedClaim = (claims: ObjectValue, name: string, expected: string): void => {
@@ -315,9 +317,8 @@ export const verifyGitHubOidcToken = (input: {
     run_attempt: input.context.runAttempt
   } as const
   for (const [name, value] of Object.entries(expected)) expectedClaim(claims, name, value)
-  if ("job_workflow_ref" in claims || "job_workflow_sha" in claims) {
-    fail("direct release.yml job unexpectedly delegated OIDC authority to a reusable workflow")
-  }
+  expectedClaim(claims, "job_workflow_ref", workflowRef)
+  expectedClaim(claims, "job_workflow_sha", input.context.candidateSha)
   for (const name of ["iat", "nbf", "exp"] as const) {
     if (typeof claims[name] !== "number" || !Number.isSafeInteger(claims[name])) {
       fail(`OIDC claim ${name} is not an integer NumericDate`)
@@ -332,7 +333,15 @@ export const verifyGitHubOidcToken = (input: {
     fail("OIDC token temporal validity is outside the short-lived GitHub boundary")
   }
   boundedText(claims.jti, "OIDC jti", 4096)
-  return { token: input.token, issuer, audience, subject: immutableSubject, algorithm: "RS256" }
+  return {
+    token: input.token,
+    issuer,
+    audience,
+    subject: immutableSubject,
+    algorithm: "RS256",
+    jobWorkflowRef: workflowRef,
+    jobWorkflowSha: input.context.candidateSha
+  }
 }
 
 export const requestAndVerifyGitHubOidcToken = async (input: {
@@ -781,7 +790,8 @@ const main = async (): Promise<void> => {
         workflow,
         workflowRef,
         workflowSha: candidateSha,
-        directJobWorkflowClaims: "absent",
+        jobWorkflowRef: oidc.jobWorkflowRef,
+        jobWorkflowSha: oidc.jobWorkflowSha,
         ref: exactRef,
         eventName: "workflow_dispatch",
         environment: exactEnvironment,

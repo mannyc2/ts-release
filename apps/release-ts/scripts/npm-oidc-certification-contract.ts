@@ -55,7 +55,8 @@ export interface NpmOidcCertificationReceipt {
     readonly workflow: "Release"
     readonly workflowRef: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main"
     readonly workflowSha: string
-    readonly directJobWorkflowClaims: "absent"
+    readonly jobWorkflowRef: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main"
+    readonly jobWorkflowSha: string
     readonly ref: "refs/heads/main"
     readonly eventName: "workflow_dispatch"
     readonly environment: "npm"
@@ -180,7 +181,7 @@ export const decodeNpmOidcCertificationReceipt = (
   exactKeys(github, [
     "repository", "repositoryId", "repositoryOwner", "repositoryOwnerId", "repositoryVisibility",
     "actor", "actorId", "refProtected", "workflow", "workflowRef", "workflowSha",
-    "directJobWorkflowClaims", "ref", "eventName",
+    "jobWorkflowRef", "jobWorkflowSha", "ref", "eventName",
     "environment", "runnerEnvironment", "runId", "runAttempt"
   ], "github")
   if (github.repository !== "mannyc2/ts-release" || github.repositoryId !== "1271545637" ||
@@ -188,7 +189,9 @@ export const decodeNpmOidcCertificationReceipt = (
       github.repositoryVisibility !== "public" || github.actor !== "mannyc2" ||
       github.actorId !== "126291407" || github.refProtected !== "true" || github.workflow !== "Release" ||
       github.workflowRef !== "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main" ||
-      github.workflowSha !== candidateSha || github.directJobWorkflowClaims !== "absent" ||
+      github.workflowSha !== candidateSha ||
+      github.jobWorkflowRef !== "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main" ||
+      github.jobWorkflowSha !== candidateSha ||
       github.ref !== "refs/heads/main" || github.eventName !== "workflow_dispatch" ||
       github.environment !== "npm" || github.runnerEnvironment !== "github-hosted" ||
       typeof github.runId !== "string" || !positiveDecimal.test(github.runId) ||

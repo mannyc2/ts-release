@@ -91,6 +91,8 @@ const claims = (patch: Readonly<Record<string, unknown>> = {}) => ({
   workflow: "Release",
   workflow_ref: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main",
   workflow_sha: candidateSha,
+  job_workflow_ref: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main",
+  job_workflow_sha: candidateSha,
   event_name: "workflow_dispatch",
   environment: "npm",
   runner_environment: "github-hosted",
@@ -123,7 +125,9 @@ describe("self-release npm OIDC claim certification", () => {
       issuer: "https://token.actions.githubusercontent.com",
       audience: "npm:registry.npmjs.org",
       subject: "repo:mannyc2@126291407/ts-release@1271545637:environment:npm",
-      algorithm: "RS256"
+      algorithm: "RS256",
+      jobWorkflowRef: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main",
+      jobWorkflowSha: candidateSha
     })
   })
 
@@ -143,8 +147,10 @@ describe("self-release npm OIDC claim certification", () => {
       environment: { environment: "production" },
       runner: { runner_environment: "self-hosted" },
       run: { run_id: "991" },
+      missingJobWorkflowRef: { job_workflow_ref: undefined },
+      missingJobWorkflowSha: { job_workflow_sha: undefined },
       reusableRef: { job_workflow_ref: "mannyc2/ts-release/.github/workflows/called.yml@refs/heads/main" },
-      reusableSha: { job_workflow_sha: candidateSha }
+      reusableSha: { job_workflow_sha: "e".repeat(40) }
     })) {
       expect(() => verifyGitHubOidcToken({ token: jwt(claims(patch)), discovery, jwks, context }), name).toThrow()
     }
@@ -448,7 +454,8 @@ const receiptFixture = (): NpmOidcCertificationReceipt => {
       workflow: "Release",
       workflowRef: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main",
       workflowSha: candidateSha,
-      directJobWorkflowClaims: "absent",
+      jobWorkflowRef: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main",
+      jobWorkflowSha: candidateSha,
       ref: "refs/heads/main",
       eventName: "workflow_dispatch",
       environment: "npm",
@@ -480,6 +487,14 @@ test("receipt is bounded to exact claims and unchanged public state", () => {
   expect(() => decodeNpmOidcCertificationReceipt({
     ...receipt,
     registry: { ...receipt.registry, unchanged: false }
+  })).toThrow()
+  expect(() => decodeNpmOidcCertificationReceipt({
+    ...receipt,
+    github: { ...receipt.github, jobWorkflowRef: "mannyc2/ts-release/.github/workflows/called.yml@refs/heads/main" }
+  })).toThrow()
+  expect(() => decodeNpmOidcCertificationReceipt({
+    ...receipt,
+    github: { ...receipt.github, jobWorkflowSha: "e".repeat(40) }
   })).toThrow()
 })
 

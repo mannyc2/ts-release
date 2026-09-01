@@ -194,8 +194,9 @@ The retained `ts-release/npm-oidc-certification/v1` receipt has status
 `certified-no-upload`. It binds X, the prepared reference and tarball, exact
 workflow/run/actor/environment claims, the protected main ref, the immutable
 ID-qualified subject, and the before/after registry snapshots. A direct
-`release.yml` job must carry exact `workflow_ref`/`workflow_sha` and must omit
-the reusable-workflow-only `job_workflow_ref`/`job_workflow_sha` claims. The
+`release.yml` job must carry exact `workflow_ref`/`workflow_sha` and exact
+`job_workflow_ref`/`job_workflow_sha`; both workflow references must identify
+`release.yml@refs/heads/main`, and both workflow SHAs must equal X. The
 receipt proves only the OIDC exchange, dry-run package calculation, exact-byte
 adoption, and no registry mutation. It does not certify upload, provenance, or
 publication.

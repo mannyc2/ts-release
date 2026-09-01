@@ -118,7 +118,7 @@
     "measure:release-candidate": "bun run scripts/measure-release-candidate.ts",
     "replay:provider-reads": "bun run scripts/replay-provider-reads.ts",
     "check:app": "bun run --cwd apps/release-ts check && bun test test/core/cli-cutover.test.ts test/cli-command.test.ts",
-    "check:action": "bun run --cwd apps/ts-release-action check && bun run check:action-bundle && bun test test/core/action-cutover.test.ts test/action-command.test.ts test/action-launcher.test.ts test/action-artifact-bridge.test.ts test/action-report-retainer.test.ts",
+    "check:action": "bun run --cwd apps/ts-release-action check && bun run check:action-bundle && bun test test/core/action-cutover.test.ts test/action-command.test.ts test/action-launcher.test.ts test/action-artifact-bridge.test.ts test/action-report-handoff.test.ts test/action-report-retainer.test.ts",
     "check:portable": "bun run check:core && bun run check:app && bun run check:action && bun run check:self-release-tools",
     "check:release-candidate": "bun run build && bun run check:self-release-context && bun run check:self-release-prepare && bun run check:self-release-reproducibility && bun run check:self-release-readiness && bun run check:self-release-artifacts && bun run check:self-release-correction && bun run check:portable && bun run check:agents",
     "cli": "bun run apps/release-ts/src/cli/main.ts"

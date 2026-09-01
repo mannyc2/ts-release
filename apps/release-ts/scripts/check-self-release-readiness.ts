@@ -67,8 +67,8 @@ if (inputs?.mode?.required !== true || inputs.mode.type !== "choice" ||
 }
 
 const jobs = parsed.jobs ?? {}
-if (Object.keys(jobs).join(",") !== "admit,prepare,create-tag,certify-npm-oidc,publish-npm,preflight-github,publish-github") {
-  failures.push("Self-release must contain one mandatory admission job, one read-only GitHub preflight, and exactly five authority jobs.")
+if (Object.keys(jobs).join(",") !== "admit,prepare,create-tag,certify-npm-oidc,publish-npm,retain-npm-oidc-certification,retain-npm-publication,preflight-github,publish-github") {
+  failures.push("Self-release must contain admission, five authorities, read-only preflight, and two no-authority npm retention jobs.")
 }
 const admission = jobs.admit
 const admissionStep = admission?.steps?.[0]
@@ -130,6 +130,51 @@ if (jobs["certify-npm-oidc"]?.environment !== "npm" ||
     JSON.stringify(jobs["certify-npm-oidc"]?.permissions) !== JSON.stringify({ actions: "read", contents: "read", "id-token": "write" })) {
   failures.push("npm OIDC certification must use only the npm environment, prepared-store read, and OIDC authority.")
 }
+const handoffOutputs = (step: string) => ({
+  "handoff-artifact-name": `\${{ steps.${step}.outputs.artifact-name }}`,
+  "handoff-artifact-id": `\${{ steps.${step}.outputs.artifact-id }}`,
+  "handoff-artifact-digest": `\${{ steps.${step}.outputs.artifact-digest }}`,
+  "handoff-report-sha256": `\${{ steps.${step}.outputs.report-sha256 }}`
+})
+const clearedHandoffEnvironment = Object.fromEntries([
+  "NODE_OPTIONS", "NODE_PATH", "NODE_EXTRA_CA_CERTS", "NODE_DEBUG", "NODE_DEBUG_NATIVE",
+  "NODE_REDIRECT_WARNINGS", "NODE_V8_COVERAGE", "NODE_TLS_REJECT_UNAUTHORIZED",
+  "NODE_USE_ENV_PROXY", "SSL_CERT_FILE", "SSL_CERT_DIR", "OPENSSL_CONF", "OPENSSL_MODULES",
+  "OPENSSL_ENGINES", "SSLKEYLOGFILE", "HTTP_PROXY",
+  "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "CURL_CA_BUNDLE", "BUN_OPTIONS",
+  "BUN_CONFIG_PRELOAD", "LD_PRELOAD", "LD_LIBRARY_PATH", "LD_AUDIT", "DYLD_INSERT_LIBRARIES",
+  "DYLD_LIBRARY_PATH", "DYLD_FRAMEWORK_PATH"
+].map((name) => [name, ""]))
+if (JSON.stringify(jobs["certify-npm-oidc"]?.outputs) !== JSON.stringify(handoffOutputs("npm-oidc-handoff")) ||
+    JSON.stringify(jobs["publish-npm"]?.outputs) !== JSON.stringify(handoffOutputs("npm-publish-handoff"))) {
+  failures.push("Each npm authority job must expose only one exact verified handoff artifact identity.")
+}
+for (const [jobName, producer, selected, kind] of [
+  ["retain-npm-oidc-certification", "certify-npm-oidc", "certify-npm-oidc", "npm-oidc-certification"],
+  ["retain-npm-publication", "publish-npm", "publish-npm", "npm-publish"]
+] as const) {
+  const job = jobs[jobName]
+  const exactCondition = `\${{ !cancelled() && needs.admit.result == 'success' && ` +
+    `needs.admit.outputs.selected_job == '${selected}' && ` +
+    `(needs.${producer}.result == 'success' || needs.${producer}.result == 'failure') }}`
+  const steps = job?.steps ?? []
+  if (JSON.stringify(job?.needs) !== JSON.stringify(["admit", producer]) ||
+      job?.environment !== undefined || job?.["runs-on"] !== "ubuntu-24.04" ||
+      JSON.stringify(job?.permissions) !== JSON.stringify({ actions: "read", contents: "read" }) ||
+      job?.outputs !== undefined || job?.if !== exactCondition || steps.length !== 4 ||
+      !steps[0]?.name?.startsWith("Admit one exact no-authority") ||
+      steps[0]?.uses !== undefined ||
+      steps[1]?.uses !== "actions/checkout@11d5960a326750d5838078e36cf38b85af677262" ||
+      steps[1]?.with?.ref !== "${{ inputs.candidate_sha }}" ||
+      steps[1]?.with?.["persist-credentials"] !== false ||
+      !steps[2]?.name?.startsWith("Verify exact clean candidate checkout") ||
+      !steps[2]?.run?.includes("rev-parse HEAD") ||
+      !steps[2]?.run?.includes("status --porcelain=v1 --untracked-files=all") ||
+      steps[3]?.uses !== "./apps/ts-release-action/report-retainer" ||
+      steps[3]?.with?.kind !== kind || steps[3]?.if !== undefined) {
+    failures.push(`${jobName} is not one unconditional-on-result, no-authority exact handoff retainer.`)
+  }
+}
 
 const expectedPins = new Map([
   ["actions/checkout", "11d5960a326750d5838078e36cf38b85af677262"],
@@ -139,12 +184,14 @@ const expectedPins = new Map([
 ])
 const actionSteps: Array<{ readonly job: string, readonly step: WorkflowStep }> = []
 const retainedReportSteps: Array<{ readonly job: string, readonly step: WorkflowStep }> = []
+const reportHandoffSteps: Array<{ readonly job: string, readonly step: WorkflowStep }> = []
 let reportUploads = 0
 for (const [job, definition] of Object.entries(jobs)) for (const step of definition.steps ?? []) {
   if (step.uses === "./apps/ts-release-action" || step.uses === "mannyc2/ts-release/apps/ts-release-action@v0.3.0") {
     actionSteps.push({ job, step })
   }
   if (step.uses === "./apps/ts-release-action/report-retainer") retainedReportSteps.push({ job, step })
+  if (step.uses === "./apps/ts-release-action/report-handoff") reportHandoffSteps.push({ job, step })
   if (typeof step.uses === "string" && step.uses.startsWith("actions/upload-artifact@")) reportUploads += 1
   if (typeof step.uses === "string" && !step.uses.startsWith("./")) {
     const [ownerRepository, ref] = step.uses.split("@")
@@ -159,38 +206,83 @@ const retainedReportShape = retainedReportSteps.map(({ job, step }) => ({
   kind: step.with?.kind,
   candidateSha: step.with?.["candidate-sha"],
   prepared: step.with?.prepared,
+  handoffArtifactName: step.with?.["handoff-artifact-name"],
+  handoffArtifactId: step.with?.["handoff-artifact-id"],
+  handoffArtifactDigest: step.with?.["handoff-artifact-digest"],
+  handoffReportSha256: step.with?.["handoff-report-sha256"],
+  producerResult: step.with?.["producer-result"],
   env: step.env,
   continueOnError: step["continue-on-error"]
 }))
 const expectedRetainedReportShape = [
   {
     job: "create-tag", id: undefined, if: "${{ always() && steps.tag.outcome != 'skipped' }}", kind: "tag",
-    candidateSha: "${{ inputs.candidate_sha }}", prepared: "", env: undefined, continueOnError: undefined
+    candidateSha: "${{ inputs.candidate_sha }}", prepared: "", handoffArtifactName: undefined,
+    handoffArtifactId: undefined, handoffArtifactDigest: undefined, handoffReportSha256: undefined,
+    producerResult: undefined,
+    env: undefined, continueOnError: undefined
   },
   {
-    job: "certify-npm-oidc", id: undefined, if: "${{ always() && steps.npm-oidc-certification.outcome != 'skipped' }}",
+    job: "retain-npm-oidc-certification", id: undefined, if: undefined,
     kind: "npm-oidc-certification", candidateSha: "${{ inputs.candidate_sha }}",
-    prepared: "${{ inputs.prepared_ref }}", env: {
-      ACTIONS_ID_TOKEN_REQUEST_TOKEN: "", ACTIONS_ID_TOKEN_REQUEST_URL: ""
-    }, continueOnError: undefined
+    prepared: "${{ inputs.prepared_ref }}",
+    handoffArtifactName: "${{ needs.certify-npm-oidc.outputs.handoff-artifact-name }}",
+    handoffArtifactId: "${{ needs.certify-npm-oidc.outputs.handoff-artifact-id }}",
+    handoffArtifactDigest: "${{ needs.certify-npm-oidc.outputs.handoff-artifact-digest }}",
+    handoffReportSha256: "${{ needs.certify-npm-oidc.outputs.handoff-report-sha256 }}",
+    producerResult: "${{ needs.certify-npm-oidc.result }}",
+    env: undefined, continueOnError: undefined
   },
   {
-    job: "publish-npm", id: undefined, if: "${{ always() && steps.npm-publish.outcome != 'skipped' }}", kind: "npm-publish",
-    candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.prepared_ref }}", env: {
-      ACTIONS_ID_TOKEN_REQUEST_TOKEN: "", ACTIONS_ID_TOKEN_REQUEST_URL: ""
-    }, continueOnError: undefined
+    job: "retain-npm-publication", id: undefined, if: undefined, kind: "npm-publish",
+    candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.prepared_ref }}",
+    handoffArtifactName: "${{ needs.publish-npm.outputs.handoff-artifact-name }}",
+    handoffArtifactId: "${{ needs.publish-npm.outputs.handoff-artifact-id }}",
+    handoffArtifactDigest: "${{ needs.publish-npm.outputs.handoff-artifact-digest }}",
+    handoffReportSha256: "${{ needs.publish-npm.outputs.handoff-report-sha256 }}",
+    producerResult: "${{ needs.publish-npm.result }}",
+    env: undefined, continueOnError: undefined
   },
   {
     job: "preflight-github", id: "npm-inspect-report", if: "${{ always() && steps.npm-inspect.outcome != 'skipped' }}", kind: "npm-inspect",
-    candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.npm_prepared_ref }}", env: undefined, continueOnError: undefined
+    candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.npm_prepared_ref }}",
+    handoffArtifactName: undefined, handoffArtifactId: undefined, handoffArtifactDigest: undefined,
+    handoffReportSha256: undefined, producerResult: undefined, env: undefined, continueOnError: undefined
   },
   {
     job: "publish-github", id: undefined, if: "${{ always() && steps.github-publish.outcome != 'skipped' }}", kind: "github-publish",
-    candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.prepared_ref }}", env: undefined, continueOnError: undefined
+    candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.prepared_ref }}",
+    handoffArtifactName: undefined, handoffArtifactId: undefined, handoffArtifactDigest: undefined,
+    handoffReportSha256: undefined, producerResult: undefined, env: undefined, continueOnError: undefined
   }
 ]
 if (JSON.stringify(retainedReportShape) !== JSON.stringify(expectedRetainedReportShape)) {
-  failures.push("Every credentialed producer must always retain and exact-reread its run-bound report without a credential environment.")
+  failures.push("Every final report must be retained and exact-reread in its exact no-authority or same-job boundary.")
+}
+const reportHandoffShape = reportHandoffSteps.map(({ job, step }) => ({
+  job,
+  id: step.id,
+  if: step.if,
+  kind: step.with?.kind,
+  candidateSha: step.with?.["candidate-sha"],
+  prepared: step.with?.prepared,
+  env: step.env
+}))
+if (JSON.stringify(reportHandoffShape) !== JSON.stringify([
+  {
+    job: "certify-npm-oidc", id: "npm-oidc-handoff",
+    if: "${{ !cancelled() && steps.npm-oidc-certification.outcome != 'skipped' }}",
+    kind: "npm-oidc-certification", candidateSha: "${{ inputs.candidate_sha }}",
+    prepared: "${{ inputs.prepared_ref }}", env: clearedHandoffEnvironment
+  },
+  {
+    job: "publish-npm", id: "npm-publish-handoff",
+    if: "${{ !cancelled() && steps.npm-publish.outcome != 'skipped' }}",
+    kind: "npm-publish", candidateSha: "${{ inputs.candidate_sha }}",
+    prepared: "${{ inputs.prepared_ref }}", env: clearedHandoffEnvironment
+  }
+])) {
+  failures.push("Each npm authority must stage one exact report handoff after its producer outcome.")
 }
 const actionShape = actionSteps.map(({ job, step }) => ({
   job,
@@ -258,7 +350,8 @@ if (JSON.stringify(githubHandoff?.env) !== JSON.stringify({
 for (const jobName of ["create-tag", "certify-npm-oidc", "publish-npm", "preflight-github", "publish-github"] as const) {
   for (const step of jobs[jobName]?.steps ?? []) {
     if (typeof step.uses === "string" && step.uses !== "./apps/ts-release-action" &&
-        step.uses !== "./apps/ts-release-action/report-retainer") {
+        step.uses !== "./apps/ts-release-action/report-retainer" &&
+        step.uses !== "./apps/ts-release-action/report-handoff") {
       failures.push(`${jobName} exposes mutation authority to non-repository Action ${step.uses}.`)
     }
   }
@@ -266,7 +359,7 @@ for (const jobName of ["create-tag", "certify-npm-oidc", "publish-npm", "preflig
 for (const jobName of ["certify-npm-oidc", "publish-npm"] as const) {
   const authorityStep = jobName === "certify-npm-oidc" ? "npm-oidc-certification" : "npm-publish"
   for (const step of jobs[jobName]?.steps ?? []) {
-    if (step.id === authorityStep) {
+    if (step.id === authorityStep || step.uses === "./apps/ts-release-action/report-handoff") {
       if (step.env?.ACTIONS_ID_TOKEN_REQUEST_URL !== undefined ||
           step.env?.ACTIONS_ID_TOKEN_REQUEST_TOKEN !== undefined) {
         failures.push(`${jobName} overrides OIDC coordinates on its sole authority step.`)

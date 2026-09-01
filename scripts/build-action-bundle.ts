@@ -16,6 +16,8 @@ export const actionArtifactBridgeEntryPath = join(root, "apps", "ts-release-acti
 export const actionArtifactBridgePath = join(root, "apps", "ts-release-action", "dist", "artifact-bridge.cjs")
 export const actionReportRetainerEntryPath = join(root, "apps", "ts-release-action", "src", "report-retainer-main.ts")
 export const actionReportRetainerPath = join(root, "apps", "ts-release-action", "report-retainer", "dist", "index.cjs")
+export const actionReportHandoffEntryPath = join(root, "apps", "ts-release-action", "src", "report-handoff-main.ts")
+export const actionReportHandoffPath = join(root, "apps", "ts-release-action", "report-handoff", "dist", "index.cjs")
 
 export const buildActionBundle = async (outputPath: string = actionBundlePath): Promise<void> => {
   const built = await Bun.build({
@@ -89,16 +91,36 @@ export const buildActionReportRetainer = async (outputPath: string = actionRepor
   writeFileSync(outputPath, canonical)
 }
 
+export const buildActionReportHandoff = async (outputPath: string = actionReportHandoffPath): Promise<void> => {
+  const built = await Bun.build({
+    entrypoints: [actionReportHandoffEntryPath],
+    target: "node",
+    format: "cjs",
+    minify: true
+  })
+  if (!built.success || built.outputs[0] === undefined) {
+    throw new Error([
+      "Action report-handoff build failed.",
+      ...built.logs.map((entry) => String(entry))
+    ].join("\n"))
+  }
+  const canonical = (await built.outputs[0].text()).replace(/[ \t]+$/gmu, "")
+  mkdirSync(dirname(outputPath), { recursive: true })
+  writeFileSync(outputPath, canonical)
+}
+
 if (import.meta.main) {
   try {
     await buildActionBundle()
     await buildActionLauncher()
     await buildActionArtifactBridge()
     await buildActionReportRetainer()
+    await buildActionReportHandoff()
     console.log(`Built ${relative(root, actionBundlePath)} from ${relative(root, actionBundleEntryPath)}.`)
     console.log(`Built ${relative(root, actionLauncherPath)} from ${relative(root, actionLauncherEntryPath)}.`)
     console.log(`Built ${relative(root, actionArtifactBridgePath)} from ${relative(root, actionArtifactBridgeEntryPath)}.`)
     console.log(`Built ${relative(root, actionReportRetainerPath)} from ${relative(root, actionReportRetainerEntryPath)}.`)
+    console.log(`Built ${relative(root, actionReportHandoffPath)} from ${relative(root, actionReportHandoffEntryPath)}.`)
   } catch (cause) {
     console.error(cause instanceof Error ? cause.message : String(cause))
     exit(1)

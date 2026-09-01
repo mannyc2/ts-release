@@ -12,6 +12,26 @@ inputs:
     description: Exact prepared reference for Action reports; empty only for the tag report.
     required: false
     default: ""
+  handoff-artifact-name:
+    description: Exact producer handoff artifact name; empty for same-job retention.
+    required: false
+    default: ""
+  handoff-artifact-id:
+    description: Exact producer handoff artifact identifier.
+    required: false
+    default: ""
+  handoff-artifact-digest:
+    description: Canonical producer handoff artifact digest.
+    required: false
+    default: ""
+  handoff-report-sha256:
+    description: Exact producer report SHA-256.
+    required: false
+    default: ""
+  producer-result:
+    description: Exact split producer job result; empty for same-job retention.
+    required: false
+    default: ""
 outputs:
   artifact-name:
     description: Exact run-attempt-bound retained report artifact name.

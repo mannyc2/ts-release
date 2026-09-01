@@ -6,10 +6,11 @@ no automatic trigger. Its unconditional `admit` job fails the workflow unless
 the repository ids, manual event, `refs/heads/main`, workflow ref/SHA, run
 coordinates, exact required `candidate_sha`, selected mode, and mode-specific
 prepared-reference topology all agree. It emits exactly one `selected_job`;
-the five authority jobs and the read-only npm-before-GitHub preflight depend on
-that output, while the GitHub writer also depends on the successful preflight,
-so an invalid dispatch cannot appear green merely because every mutation job
-skipped. Do not provide
+the five authority jobs, two downstream no-authority npm retention jobs, and
+the read-only npm-before-GitHub preflight depend on that output or its selected
+producer, while the GitHub writer also depends on the successful preflight. An
+invalid dispatch therefore cannot appear green merely because every mutation
+job skipped. Do not provide
 production write credentials, dispatch publication, create a tag or GitHub
 release, or publish npm bytes during Plan 233 candidate certification.
 
@@ -55,7 +56,9 @@ release, or publish npm bytes during Plan 233 candidate certification.
 3. Run the complete release-candidate gate and every public-entrypoint smoke
    matrix. A skipped execution host is removed from the support claim. Rebuild
    and byte-compare the Bun release bundle, native launcher, native artifact
-   bridge, and private native report-retainer bundle.
+   bridge, private native report-retainer bundle, and private native
+   report-handoff bundle. Execute the handoff bootstrap gate that proves OIDC
+   request authority is absent before the dependency bundle loads.
 4. Prepare the self-release independently twice. Verify exact-commit
    materialization, every manifest/blob, agent bundle, npm tarball, archive,
    checksum, and target file format. Record whether complete bytes reproduce;
@@ -128,23 +131,46 @@ Every live dispatch must show a successful mandatory `admit` job and exactly
 one selected authority job. Treat an absent `selected_job`, a failed admission,
 or any surprising additional runnable authority as STOP. Preparation retains
 its two credential-free redacted Action reports through the pinned
-`actions/upload-artifact` boundary. Credentialed jobs instead invoke only the
-repository-owned native Node 24 report retainer after each producer, including
-when the producer fails. The retainer accepts one private, regular, unlinked,
-bounded, strict-JSON, redacted report with exact run/attempt/candidate/prepared
-bindings; rejects GitHub, npm, and OIDC publication credentials in its process;
-uploads once; and performs one exact name/id/digest/file-set/byte reread. In the
-two `id-token: write` jobs, every bootstrap, reauthentication, retention, and
-verification step explicitly receives empty OIDC request coordinates; only the
-certifier or publisher step retains them. If the upload response is lost, the
-retainer rereads without resubmitting. A
-failed or uncertain producer remains failed even when retention succeeds, and
-missing or invalid report evidence fails retention rather than replacing the
-producer outcome.
+`actions/upload-artifact` boundary. Tag and GitHub jobs invoke the
+repository-owned native Node 24 report retainer in the producer job, including
+when the producer fails. It accepts one private, regular, unlinked, bounded,
+strict-JSON, redacted report with exact run/attempt/candidate/prepared bindings;
+rejects GitHub, npm, and OIDC publication credentials; uploads once; and
+performs one exact name/id/digest/file-set/byte reread.
+
+The npm certification and publication producers cannot directly run that
+final retainer: GitHub injects Actions OIDC request coordinates into every
+JavaScript Action process in an `id-token: write` job. Their local handoff
+Action therefore clears every Node/native loader, trust, proxy, Bun-preload,
+and dynamic-library injection variable, then starts with a dependency-free Node
+bootstrap. Before loading `@actions/core`, `@actions/artifact`, Effect, or any
+generated bundle, it rejects any nonempty normalized injection alias, validates
+the exact request URL/token aliases, scans and binds the private
+report bytes, deletes the OIDC variables, wipes and drops secret-derived
+buffers, then loads the handoff worker. The worker validates the same byte
+count and SHA-256, uploads exactly one explicitly non-final handoff artifact,
+and performs one exact reread without blind resubmission.
+
+The corresponding final retention job runs after producer success or failure
+and has no environment, no `id-token` permission, and no publication
+credential. It requires all four fixed-size handoff outputs, verifies the exact
+candidate checkout, downloads the precise name/id/digest, revalidates the
+handoff receipt and report schema/bindings, and alone creates the final retained
+report plus `ts-release/retained-report/v2` receipt. The receipt records the
+exact upstream producer result; `failure` is durable diagnostic evidence and is
+never eligible release evidence. Report bytes never cross a
+job output. A missing, suppressed, partial, malformed, foreign, or changed
+output fails retention. Upload response loss at either stage causes one exact
+reread and never a blind resubmission. A failed or uncertain producer remains
+failed even when retention succeeds.
 
 The preparation artifacts are
 `ts-release-github-prepare-report-${run_attempt}` and
-`ts-release-npm-prepare-report-${run_attempt}`. The credentialed artifacts are
+`ts-release-npm-prepare-report-${run_attempt}`. The two intermediate artifacts
+are `ts-release-npm-oidc-certification-handoff-${run_attempt}` and
+`ts-release-npm-publish-handoff-${run_attempt}`. They contain only
+`handoff.json` plus `report.json`, are explicitly non-final, and cannot serve as
+release evidence. The final credentialed artifacts are
 `ts-release-tag-report-${run_attempt}`,
 `ts-release-npm-oidc-certification-report-${run_attempt}`,
 `ts-release-npm-publish-report-${run_attempt}`,
@@ -152,9 +178,10 @@ The preparation artifacts are
 `ts-release-github-publish-report-${run_attempt}`. Each credentialed artifact
 contains only `report.json` plus `receipt.json`; the receipt records the
 report SHA-256, run, attempt, workflow SHA, candidate, kind, and prepared
-reference. The retainer outputs separately expose the artifact id and canonical
-`sha256:<64 lowercase hex>` lookup digest proven by exact reread. Preserve the
-downloaded exact bytes and those outputs before authorizing the next mutation.
+reference. For split npm retention, that receipt also binds the intermediate
+artifact name, id, and canonical `sha256:<64 lowercase hex>` lookup digest.
+Preserve and validate the downloaded final bytes before authorizing the next
+mutation.
 
 Once the exact live authorities exist, first verify that `main` still resolves
 to X. Dispatch `.github/workflows/release.yml` at `ref: main` with mode
@@ -250,6 +277,15 @@ The third reaches the `npm` environment before the Action can request a fresh
 OIDC token or execute the real `npm publish`. Do not reuse the certification
 approval as publication authority, and do not approve any of these boundaries
 from one generic release authorization.
+
+For either split npm path, both the producer and its final retention job must
+succeed before the result is evidence. Cancellation produces no complete
+evidence and requires a new dispatch. Do not use a failed-jobs-only rerun when
+the producer succeeded but final retention failed: GitHub increments
+`GITHUB_RUN_ATTEMPT` while reusing upstream outputs, and exact attempt binding
+must reject them. Rerun all jobs or start a fresh same-input dispatch. Preserve
+the original failure and both artifacts for diagnosis; never relabel an
+intermediate handoff as the final receipt.
 
 Only then, under separately approved `github-release` authority, dispatch
 `publish-github` with X, the exact GitHub prepared reference in `prepared_ref`,

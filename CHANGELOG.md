@@ -6,9 +6,10 @@
 
 ### Self-release hardening
 
-- Split credential-free preparation, lightweight tag creation, npm
-  publication, and later GitHub publication into four exact-SHA dispatch
-  modes. GitHub and npm consume distinct content-addressed prepared bundles
+- Split credential-free preparation, no-upload npm OIDC certification,
+  lightweight tag creation, npm publication, and later GitHub publication
+  into five exact-SHA dispatch modes. GitHub and npm consume distinct
+  content-addressed prepared bundles
   under separately named environments and least-privilege job permissions;
   no default path receives publication authority.
 - Pin GitHub-hosted runner labels, third-party Actions, Node 22.22.2, Bun
@@ -30,6 +31,12 @@
   GitHub assets only in a private draft; a fresh later full asset reread is the
   sole authority for PATCH-only public promotion. Bind trusted npm children to
   an empty private home and explicit empty mode-0600 user/global configs.
+- Move final npm certification/publication evidence out of the `id-token:
+  write` producer jobs. A dependency-free Node bootstrap validates then drops
+  the runner-injected OIDC request authority, binds the exact private report,
+  and commits one explicitly non-final handoff. A separate no-environment,
+  no-id-token job verifies that artifact and alone retains the final v2
+  receipt; missing outputs, changed attempts, and unknown writes fail closed.
 
 ### Canonical operation journal
 

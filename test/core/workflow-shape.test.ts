@@ -72,6 +72,15 @@ const freshDispatch = "${{ inputs.prepared_ref == '' }}"
 const cachePrimeCommand = "bun install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted"
 const dependencyCleanupCommand = "bun --no-env-file --no-install -e 'await (await import(\"node:fs/promises\")).rm(\"node_modules\", { recursive: true, force: true })'"
 const cachePrimeRun = `${cachePrimeCommand}\n${dependencyCleanupCommand}`
+const clearedHandoffEnvironment = Object.fromEntries([
+  "NODE_OPTIONS", "NODE_PATH", "NODE_EXTRA_CA_CERTS", "NODE_DEBUG", "NODE_DEBUG_NATIVE",
+  "NODE_REDIRECT_WARNINGS", "NODE_V8_COVERAGE", "NODE_TLS_REJECT_UNAUTHORIZED",
+  "NODE_USE_ENV_PROXY", "SSL_CERT_FILE", "SSL_CERT_DIR", "OPENSSL_CONF", "OPENSSL_MODULES",
+  "OPENSSL_ENGINES", "SSLKEYLOGFILE", "HTTP_PROXY",
+  "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "CURL_CA_BUNDLE", "BUN_OPTIONS",
+  "BUN_CONFIG_PRELOAD", "LD_PRELOAD", "LD_LIBRARY_PATH", "LD_AUDIT", "DYLD_INSERT_LIBRARIES",
+  "DYLD_LIBRARY_PATH", "DYLD_FRAMEWORK_PATH"
+].map((name) => [name, ""]))
 
 const parseWorkflow = (value: string): ParsedWorkflow => Bun.YAML.parse(value) as ParsedWorkflow
 const isPublicReleaseAction = (value: unknown): value is string =>
@@ -235,7 +244,8 @@ test("repository release hard-cuts prepare, npm OIDC certification, tag, npm, an
     required: false, default: "", type: "string"
   })
   expect(Object.keys(parsed.jobs ?? {})).toEqual([
-    "admit", "prepare", "create-tag", "certify-npm-oidc", "publish-npm", "preflight-github", "publish-github"
+    "admit", "prepare", "create-tag", "certify-npm-oidc", "publish-npm",
+    "retain-npm-oidc-certification", "retain-npm-publication", "preflight-github", "publish-github"
   ])
   expect(parsed.jobs?.admit).toMatchObject({
     outputs: { selected_job: "${{ steps.admit.outputs.selected_job }}" },
@@ -274,6 +284,63 @@ test("repository release hard-cuts prepare, npm OIDC certification, tag, npm, an
     permissions: { actions: "read", contents: "read", "id-token": "write" },
     "runs-on": "ubuntu-24.04"
   })
+  const handoffOutputs = (step: string) => ({
+    "handoff-artifact-name": `\${{ steps.${step}.outputs.artifact-name }}`,
+    "handoff-artifact-id": `\${{ steps.${step}.outputs.artifact-id }}`,
+    "handoff-artifact-digest": `\${{ steps.${step}.outputs.artifact-digest }}`,
+    "handoff-report-sha256": `\${{ steps.${step}.outputs.report-sha256 }}`
+  })
+  expect(parsed.jobs?.["certify-npm-oidc"]?.outputs).toEqual(handoffOutputs("npm-oidc-handoff"))
+  expect(parsed.jobs?.["publish-npm"]?.outputs).toEqual(handoffOutputs("npm-publish-handoff"))
+  for (const [jobName, producer, selected, kind, verifyName, retainName] of [
+    [
+      "retain-npm-oidc-certification", "certify-npm-oidc", "certify-npm-oidc",
+      "npm-oidc-certification", "Verify exact clean candidate checkout before npm OIDC retention",
+      "Retain and reread the exact npm OIDC no-upload receipt"
+    ],
+    [
+      "retain-npm-publication", "publish-npm", "publish-npm", "npm-publish",
+      "Verify exact clean candidate checkout before npm publication retention",
+      "Retain and reread the exact npm publication report"
+    ]
+  ] as const) {
+    const job = parsed.jobs?.[jobName]
+    expect(job).toMatchObject({
+      needs: ["admit", producer],
+      permissions: { actions: "read", contents: "read" },
+      "runs-on": "ubuntu-24.04"
+    })
+    expect(job?.if).toBe(
+      `\${{ !cancelled() && needs.admit.result == 'success' && ` +
+      `needs.admit.outputs.selected_job == '${selected}' && ` +
+      `(needs.${producer}.result == 'success' || needs.${producer}.result == 'failure') }}`
+    )
+    expect(job?.environment).toBeUndefined()
+    expect(job?.permissions?.["id-token"]).toBeUndefined()
+    expect(job?.outputs).toBeUndefined()
+    const steps = job?.steps ?? []
+    expect(steps).toHaveLength(4)
+    expect(steps[0]?.name).toContain("Admit one exact no-authority")
+    expect(steps[0]?.uses).toBeUndefined()
+    expect(Object.keys(steps[0]?.env ?? {}).sort()).toEqual([
+      "CANDIDATE_SHA", "HANDOFF_ARTIFACT_DIGEST", "HANDOFF_ARTIFACT_ID",
+      "HANDOFF_ARTIFACT_NAME", "HANDOFF_REPORT_SHA256", "PRODUCER_RESULT"
+    ])
+    expect(steps[0]?.run).toContain(`$GITHUB_JOB\" == ${jobName}`)
+    expect(steps[1]).toMatchObject({
+      uses: "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+      with: { ref: "${{ inputs.candidate_sha }}", "persist-credentials": false }
+    })
+    expect(steps[2]?.name).toBe(verifyName)
+    expect(steps[2]?.run).toContain("rev-parse HEAD")
+    expect(steps[2]?.run).toContain("status --porcelain=v1 --untracked-files=all")
+    expect(steps[3]).toMatchObject({
+      name: retainName,
+      uses: "./apps/ts-release-action/report-retainer",
+      with: { kind, "producer-result": `\${{ needs.${producer}.result }}` }
+    })
+    expect(steps[3]?.if).toBeUndefined()
+  }
   expect(parsed.jobs?.["publish-github"]).toMatchObject({
     if: repositoryGitHubPublishAdmission,
     needs: ["admit", "preflight-github"],
@@ -336,35 +403,55 @@ test("repository release hard-cuts prepare, npm OIDC certification, tag, npm, an
     kind: step.with?.kind,
     candidateSha: step.with?.["candidate-sha"],
     prepared: step.with?.prepared,
+    handoffArtifactName: step.with?.["handoff-artifact-name"],
+    handoffArtifactId: step.with?.["handoff-artifact-id"],
+    handoffArtifactDigest: step.with?.["handoff-artifact-digest"],
+    handoffReportSha256: step.with?.["handoff-report-sha256"],
+    producerResult: step.with?.["producer-result"],
     env: step.env,
     continueOnError: step["continue-on-error"]
   }))).toEqual([
     {
       job: "create-tag", id: undefined, if: "${{ always() && steps.tag.outcome != 'skipped' }}", kind: "tag",
-      candidateSha: "${{ inputs.candidate_sha }}", prepared: "", env: undefined, continueOnError: undefined
+      candidateSha: "${{ inputs.candidate_sha }}", prepared: "", handoffArtifactName: undefined,
+      handoffArtifactId: undefined, handoffArtifactDigest: undefined, handoffReportSha256: undefined,
+      producerResult: undefined,
+      env: undefined, continueOnError: undefined
     },
     {
-      job: "certify-npm-oidc", id: undefined, if: "${{ always() && steps.npm-oidc-certification.outcome != 'skipped' }}",
+      job: "retain-npm-oidc-certification", id: undefined, if: undefined,
       kind: "npm-oidc-certification", candidateSha: "${{ inputs.candidate_sha }}",
-      prepared: "${{ inputs.prepared_ref }}", env: {
-        ACTIONS_ID_TOKEN_REQUEST_TOKEN: "", ACTIONS_ID_TOKEN_REQUEST_URL: ""
-      }, continueOnError: undefined
+      prepared: "${{ inputs.prepared_ref }}",
+      handoffArtifactName: "${{ needs.certify-npm-oidc.outputs.handoff-artifact-name }}",
+      handoffArtifactId: "${{ needs.certify-npm-oidc.outputs.handoff-artifact-id }}",
+      handoffArtifactDigest: "${{ needs.certify-npm-oidc.outputs.handoff-artifact-digest }}",
+      handoffReportSha256: "${{ needs.certify-npm-oidc.outputs.handoff-report-sha256 }}",
+      producerResult: "${{ needs.certify-npm-oidc.result }}",
+      env: undefined, continueOnError: undefined
     },
     {
-      job: "publish-npm", id: undefined, if: "${{ always() && steps.npm-publish.outcome != 'skipped' }}", kind: "npm-publish",
-      candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.prepared_ref }}", env: {
-        ACTIONS_ID_TOKEN_REQUEST_TOKEN: "", ACTIONS_ID_TOKEN_REQUEST_URL: ""
-      },
+      job: "retain-npm-publication", id: undefined, if: undefined, kind: "npm-publish",
+      candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.prepared_ref }}",
+      handoffArtifactName: "${{ needs.publish-npm.outputs.handoff-artifact-name }}",
+      handoffArtifactId: "${{ needs.publish-npm.outputs.handoff-artifact-id }}",
+      handoffArtifactDigest: "${{ needs.publish-npm.outputs.handoff-artifact-digest }}",
+      handoffReportSha256: "${{ needs.publish-npm.outputs.handoff-report-sha256 }}",
+      producerResult: "${{ needs.publish-npm.result }}",
+      env: undefined,
       continueOnError: undefined
     },
     {
       job: "preflight-github", id: "npm-inspect-report", if: "${{ always() && steps.npm-inspect.outcome != 'skipped' }}", kind: "npm-inspect",
-      candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.npm_prepared_ref }}", env: undefined,
+      candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.npm_prepared_ref }}",
+      handoffArtifactName: undefined, handoffArtifactId: undefined, handoffArtifactDigest: undefined,
+      handoffReportSha256: undefined, producerResult: undefined, env: undefined,
       continueOnError: undefined
     },
     {
       job: "publish-github", id: undefined, if: "${{ always() && steps.github-publish.outcome != 'skipped' }}", kind: "github-publish",
-      candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.prepared_ref }}", env: undefined,
+      candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.prepared_ref }}",
+      handoffArtifactName: undefined, handoffArtifactId: undefined, handoffArtifactDigest: undefined,
+      handoffReportSha256: undefined, producerResult: undefined, env: undefined,
       continueOnError: undefined
     }
   ])
@@ -376,10 +463,43 @@ test("repository release hard-cuts prepare, npm OIDC certification, tag, npm, an
     const job = parsed.jobs?.[jobName]
     const external = (job?.steps ?? []).flatMap((step) => typeof step.uses === "string" ? [step.uses] : [])
     for (const uses of external) {
-      expect(["./apps/ts-release-action", "./apps/ts-release-action/report-retainer"]).toContain(uses)
+      expect([
+        "./apps/ts-release-action", "./apps/ts-release-action/report-retainer",
+        "./apps/ts-release-action/report-handoff"
+  ]).toContain(uses)
     }
     expect((job?.steps ?? []).some((step) =>
       typeof step.uses === "string" && /^(?:actions|oven-sh)\//u.test(step.uses)
+    )).toBe(false)
+  }
+  const handoffs = Object.entries(parsed.jobs ?? {}).flatMap(([job, definition]) =>
+    (definition.steps ?? []).filter((step) => step.uses === "./apps/ts-release-action/report-handoff")
+      .map((step) => ({ job, step })))
+  expect(handoffs.map(({ job, step }) => ({
+    job,
+    id: step.id,
+    if: step.if,
+    kind: step.with?.kind,
+    candidateSha: step.with?.["candidate-sha"],
+    prepared: step.with?.prepared,
+    env: step.env
+  }))).toEqual([
+    {
+      job: "certify-npm-oidc", id: "npm-oidc-handoff",
+      if: "${{ !cancelled() && steps.npm-oidc-certification.outcome != 'skipped' }}",
+      kind: "npm-oidc-certification", candidateSha: "${{ inputs.candidate_sha }}",
+      prepared: "${{ inputs.prepared_ref }}", env: clearedHandoffEnvironment
+    },
+    {
+      job: "publish-npm", id: "npm-publish-handoff",
+      if: "${{ !cancelled() && steps.npm-publish.outcome != 'skipped' }}",
+      kind: "npm-publish", candidateSha: "${{ inputs.candidate_sha }}",
+      prepared: "${{ inputs.prepared_ref }}", env: clearedHandoffEnvironment
+    }
+  ])
+  for (const jobName of ["certify-npm-oidc", "publish-npm"] as const) {
+    expect((parsed.jobs?.[jobName]?.steps ?? []).some((step) =>
+      step.uses === "./apps/ts-release-action/report-retainer"
     )).toBe(false)
   }
   const tagTokenSteps = parsed.jobs?.["create-tag"]?.steps?.filter((step) => step.env?.GITHUB_TOKEN !== undefined) ?? []
@@ -426,7 +546,7 @@ test("repository release hard-cuts prepare, npm OIDC certification, tag, npm, an
     ["publish-npm", "npm-publish"]
   ] as const) {
     for (const step of parsed.jobs?.[jobName]?.steps ?? []) {
-      if (step.id === authorityStep) {
+      if (step.id === authorityStep || step.uses === "./apps/ts-release-action/report-handoff") {
         expect(step.env?.ACTIONS_ID_TOKEN_REQUEST_URL).toBeUndefined()
         expect(step.env?.ACTIONS_ID_TOKEN_REQUEST_TOKEN).toBeUndefined()
       } else {
@@ -463,7 +583,10 @@ test("credentialed self-release bootstraps one exact detached candidate before l
     expect(bootstrapIndex).toBe(0)
     for (const step of steps.slice(bootstrapIndex + 1)) {
       if (typeof step.uses === "string") {
-        expect(["./apps/ts-release-action", "./apps/ts-release-action/report-retainer"]).toContain(step.uses)
+        expect([
+          "./apps/ts-release-action", "./apps/ts-release-action/report-retainer",
+          "./apps/ts-release-action/report-handoff"
+        ]).toContain(step.uses)
       }
     }
   }
@@ -492,6 +615,9 @@ test("every self-release job refuses hostile tool transport before checkout, net
       ["GIT_EXEC_PATH", "/tmp/hostile"],
       ["gIt_DiR", "/tmp/hostile"],
       ["NODE_OPTIONS", "--require=/tmp/hostile"],
+      ["Node_Debug", "http"],
+      ["OPENSSL_MODULES", "/tmp/hostile"],
+      ["LD_AUDIT", "/tmp/hostile.so"],
       ["Https_Proxy", "http://hostile.invalid"],
       ["BUN_CONFIG_PRELOAD", "/tmp/hostile"]
     ] as const) {

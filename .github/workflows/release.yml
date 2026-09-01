@@ -58,7 +58,7 @@ jobs:
           while IFS='=' read -r name _; do
             normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
             case "$normalized" in
-              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*)
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_debug|node_debug_native|node_redirect_warnings|node_v8_coverage|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|sslkeylogfile|openssl_*|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_*|dyld_*|git_*)
                 echo "::error title=Unsafe release host::$name must be absent."
                 exit 1
                 ;;
@@ -138,7 +138,7 @@ jobs:
           while IFS='=' read -r name _; do
             normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
             case "$normalized" in
-              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*)
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_debug|node_debug_native|node_redirect_warnings|node_v8_coverage|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|sslkeylogfile|openssl_*|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_*|dyld_*|git_*)
                 echo "::error title=Unsafe release host::$name must be absent."
                 exit 1
                 ;;
@@ -250,7 +250,7 @@ jobs:
           while IFS='=' read -r name _; do
             normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
             case "$normalized" in
-              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*) exit 1 ;;
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_debug|node_debug_native|node_redirect_warnings|node_v8_coverage|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|sslkeylogfile|openssl_*|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_*|dyld_*|git_*) exit 1 ;;
             esac
           done < <(/usr/bin/env)
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
@@ -292,6 +292,11 @@ jobs:
       actions: read
       contents: read
       id-token: write
+    outputs:
+      handoff-artifact-name: ${{ steps.npm-oidc-handoff.outputs.artifact-name }}
+      handoff-artifact-id: ${{ steps.npm-oidc-handoff.outputs.artifact-id }}
+      handoff-artifact-digest: ${{ steps.npm-oidc-handoff.outputs.artifact-digest }}
+      handoff-report-sha256: ${{ steps.npm-oidc-handoff.outputs.report-sha256 }}
     steps:
       - name: Bootstrap exact repository-owned certification tools
         shell: bash
@@ -304,7 +309,7 @@ jobs:
           while IFS='=' read -r name _; do
             normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
             case "$normalized" in
-              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*) exit 1 ;;
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_debug|node_debug_native|node_redirect_warnings|node_v8_coverage|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|sslkeylogfile|openssl_*|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_*|dyld_*|git_*) exit 1 ;;
             esac
           done < <(/usr/bin/env)
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
@@ -334,12 +339,39 @@ jobs:
           NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
           RELEASE_MODE: ${{ inputs.mode }}
         run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_NPM_OIDC_CERTIFIER_BIN"'
-      - name: Retain and reread the exact npm OIDC no-upload receipt
-        if: ${{ always() && steps.npm-oidc-certification.outcome != 'skipped' }}
-        uses: ./apps/ts-release-action/report-retainer
+      - id: npm-oidc-handoff
+        name: Stage and reread the exact npm OIDC no-upload receipt handoff
+        if: ${{ !cancelled() && steps.npm-oidc-certification.outcome != 'skipped' }}
+        uses: ./apps/ts-release-action/report-handoff
         env:
-          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ""
-          ACTIONS_ID_TOKEN_REQUEST_URL: ""
+          NODE_OPTIONS: ""
+          NODE_PATH: ""
+          NODE_EXTRA_CA_CERTS: ""
+          NODE_DEBUG: ""
+          NODE_DEBUG_NATIVE: ""
+          NODE_REDIRECT_WARNINGS: ""
+          NODE_V8_COVERAGE: ""
+          NODE_TLS_REJECT_UNAUTHORIZED: ""
+          NODE_USE_ENV_PROXY: ""
+          SSL_CERT_FILE: ""
+          SSL_CERT_DIR: ""
+          OPENSSL_CONF: ""
+          OPENSSL_MODULES: ""
+          OPENSSL_ENGINES: ""
+          SSLKEYLOGFILE: ""
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          ALL_PROXY: ""
+          NO_PROXY: ""
+          CURL_CA_BUNDLE: ""
+          BUN_OPTIONS: ""
+          BUN_CONFIG_PRELOAD: ""
+          LD_PRELOAD: ""
+          LD_LIBRARY_PATH: ""
+          LD_AUDIT: ""
+          DYLD_INSERT_LIBRARIES: ""
+          DYLD_LIBRARY_PATH: ""
+          DYLD_FRAMEWORK_PATH: ""
         with:
           kind: npm-oidc-certification
           candidate-sha: ${{ inputs.candidate_sha }}
@@ -354,6 +386,11 @@ jobs:
       actions: read
       contents: read
       id-token: write
+    outputs:
+      handoff-artifact-name: ${{ steps.npm-publish-handoff.outputs.artifact-name }}
+      handoff-artifact-id: ${{ steps.npm-publish-handoff.outputs.artifact-id }}
+      handoff-artifact-digest: ${{ steps.npm-publish-handoff.outputs.artifact-digest }}
+      handoff-report-sha256: ${{ steps.npm-publish-handoff.outputs.report-sha256 }}
     steps:
       - name: Bootstrap exact repository-owned mutation tools
         shell: bash
@@ -366,7 +403,7 @@ jobs:
           while IFS='=' read -r name _; do
             normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
             case "$normalized" in
-              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*) exit 1 ;;
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_debug|node_debug_native|node_redirect_warnings|node_v8_coverage|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|sslkeylogfile|openssl_*|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_*|dyld_*|git_*) exit 1 ;;
             esac
           done < <(/usr/bin/env)
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
@@ -395,12 +432,39 @@ jobs:
         with:
           command: publish
           prepared: ${{ inputs.prepared_ref }}
-      - name: Retain and reread the exact npm publication report
-        if: ${{ always() && steps.npm-publish.outcome != 'skipped' }}
-        uses: ./apps/ts-release-action/report-retainer
+      - id: npm-publish-handoff
+        name: Stage and reread the exact npm publication report handoff
+        if: ${{ !cancelled() && steps.npm-publish.outcome != 'skipped' }}
+        uses: ./apps/ts-release-action/report-handoff
         env:
-          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ""
-          ACTIONS_ID_TOKEN_REQUEST_URL: ""
+          NODE_OPTIONS: ""
+          NODE_PATH: ""
+          NODE_EXTRA_CA_CERTS: ""
+          NODE_DEBUG: ""
+          NODE_DEBUG_NATIVE: ""
+          NODE_REDIRECT_WARNINGS: ""
+          NODE_V8_COVERAGE: ""
+          NODE_TLS_REJECT_UNAUTHORIZED: ""
+          NODE_USE_ENV_PROXY: ""
+          SSL_CERT_FILE: ""
+          SSL_CERT_DIR: ""
+          OPENSSL_CONF: ""
+          OPENSSL_MODULES: ""
+          OPENSSL_ENGINES: ""
+          SSLKEYLOGFILE: ""
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          ALL_PROXY: ""
+          NO_PROXY: ""
+          CURL_CA_BUNDLE: ""
+          BUN_OPTIONS: ""
+          BUN_CONFIG_PRELOAD: ""
+          LD_PRELOAD: ""
+          LD_LIBRARY_PATH: ""
+          LD_AUDIT: ""
+          DYLD_INSERT_LIBRARIES: ""
+          DYLD_LIBRARY_PATH: ""
+          DYLD_FRAMEWORK_PATH: ""
         with:
           kind: npm-publish
           candidate-sha: ${{ inputs.candidate_sha }}
@@ -415,6 +479,134 @@ jobs:
           PREPARED_REF: ${{ inputs.prepared_ref }}
           ACTION_REPORT: ${{ steps.npm-publish.outputs.report-ref }}
         run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_NPM_VERIFIER_BIN" "$PREPARED_REF" "${{ inputs.candidate_sha }}" action-report "$ACTION_REPORT"'
+
+  retain-npm-oidc-certification:
+    needs:
+      - admit
+      - certify-npm-oidc
+    if: ${{ !cancelled() && needs.admit.result == 'success' && needs.admit.outputs.selected_job == 'certify-npm-oidc' && (needs.certify-npm-oidc.result == 'success' || needs.certify-npm-oidc.result == 'failure') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Admit one exact no-authority npm OIDC retention handoff
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          HANDOFF_ARTIFACT_NAME: ${{ needs.certify-npm-oidc.outputs.handoff-artifact-name }}
+          HANDOFF_ARTIFACT_ID: ${{ needs.certify-npm-oidc.outputs.handoff-artifact-id }}
+          HANDOFF_ARTIFACT_DIGEST: ${{ needs.certify-npm-oidc.outputs.handoff-artifact-digest }}
+          HANDOFF_REPORT_SHA256: ${{ needs.certify-npm-oidc.outputs.handoff-report-sha256 }}
+          PRODUCER_RESULT: ${{ needs.certify-npm-oidc.result }}
+        run: |-
+          set -euo pipefail
+          while IFS='=' read -r name _; do
+            normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+            case "$normalized" in
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_debug|node_debug_native|node_redirect_warnings|node_v8_coverage|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|sslkeylogfile|openssl_*|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_*|dyld_*|git_*) exit 1 ;;
+            esac
+          done < <(/usr/bin/env)
+          [[ "$GITHUB_REPOSITORY" == mannyc2/ts-release && "$GITHUB_REPOSITORY_ID" == 1271545637 ]]
+          [[ "$GITHUB_REPOSITORY_OWNER_ID" == 126291407 && "$GITHUB_JOB" == retain-npm-oidc-certification ]]
+          [[ "$GITHUB_SHA" == "$CANDIDATE_SHA" && "$GITHUB_WORKFLOW_SHA" == "$CANDIDATE_SHA" ]]
+          [[ "$HANDOFF_ARTIFACT_NAME" == "ts-release-npm-oidc-certification-handoff-$GITHUB_RUN_ATTEMPT" ]]
+          [[ "$HANDOFF_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$HANDOFF_ARTIFACT_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          [[ "$HANDOFF_REPORT_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          [[ "$PRODUCER_RESULT" == success || "$PRODUCER_RESULT" == failure ]]
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          persist-credentials: false
+      - name: Verify exact clean candidate checkout before npm OIDC retention
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |-
+          set -euo pipefail
+          git_exact() {
+            /usr/bin/env -i HOME="$RUNNER_TEMP" LANG=C.UTF-8 PATH=/usr/bin:/bin \
+              GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_TERMINAL_PROMPT=0 \
+              /usr/bin/git -C "$GITHUB_WORKSPACE" "$@"
+          }
+          [[ "$(git_exact rev-parse HEAD)" == "$CANDIDATE_SHA" ]]
+          [[ "$(git_exact status --porcelain=v1 --untracked-files=all)" == "" ]]
+      - name: Retain and reread the exact npm OIDC no-upload receipt
+        uses: ./apps/ts-release-action/report-retainer
+        with:
+          kind: npm-oidc-certification
+          candidate-sha: ${{ inputs.candidate_sha }}
+          prepared: ${{ inputs.prepared_ref }}
+          handoff-artifact-name: ${{ needs.certify-npm-oidc.outputs.handoff-artifact-name }}
+          handoff-artifact-id: ${{ needs.certify-npm-oidc.outputs.handoff-artifact-id }}
+          handoff-artifact-digest: ${{ needs.certify-npm-oidc.outputs.handoff-artifact-digest }}
+          handoff-report-sha256: ${{ needs.certify-npm-oidc.outputs.handoff-report-sha256 }}
+          producer-result: ${{ needs.certify-npm-oidc.result }}
+
+  retain-npm-publication:
+    needs:
+      - admit
+      - publish-npm
+    if: ${{ !cancelled() && needs.admit.result == 'success' && needs.admit.outputs.selected_job == 'publish-npm' && (needs.publish-npm.result == 'success' || needs.publish-npm.result == 'failure') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Admit one exact no-authority npm publication retention handoff
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          HANDOFF_ARTIFACT_NAME: ${{ needs.publish-npm.outputs.handoff-artifact-name }}
+          HANDOFF_ARTIFACT_ID: ${{ needs.publish-npm.outputs.handoff-artifact-id }}
+          HANDOFF_ARTIFACT_DIGEST: ${{ needs.publish-npm.outputs.handoff-artifact-digest }}
+          HANDOFF_REPORT_SHA256: ${{ needs.publish-npm.outputs.handoff-report-sha256 }}
+          PRODUCER_RESULT: ${{ needs.publish-npm.result }}
+        run: |-
+          set -euo pipefail
+          while IFS='=' read -r name _; do
+            normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+            case "$normalized" in
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_debug|node_debug_native|node_redirect_warnings|node_v8_coverage|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|sslkeylogfile|openssl_*|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_*|dyld_*|git_*) exit 1 ;;
+            esac
+          done < <(/usr/bin/env)
+          [[ "$GITHUB_REPOSITORY" == mannyc2/ts-release && "$GITHUB_REPOSITORY_ID" == 1271545637 ]]
+          [[ "$GITHUB_REPOSITORY_OWNER_ID" == 126291407 && "$GITHUB_JOB" == retain-npm-publication ]]
+          [[ "$GITHUB_SHA" == "$CANDIDATE_SHA" && "$GITHUB_WORKFLOW_SHA" == "$CANDIDATE_SHA" ]]
+          [[ "$HANDOFF_ARTIFACT_NAME" == "ts-release-npm-publish-handoff-$GITHUB_RUN_ATTEMPT" ]]
+          [[ "$HANDOFF_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$HANDOFF_ARTIFACT_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          [[ "$HANDOFF_REPORT_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          [[ "$PRODUCER_RESULT" == success || "$PRODUCER_RESULT" == failure ]]
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          persist-credentials: false
+      - name: Verify exact clean candidate checkout before npm publication retention
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |-
+          set -euo pipefail
+          git_exact() {
+            /usr/bin/env -i HOME="$RUNNER_TEMP" LANG=C.UTF-8 PATH=/usr/bin:/bin \
+              GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_TERMINAL_PROMPT=0 \
+              /usr/bin/git -C "$GITHUB_WORKSPACE" "$@"
+          }
+          [[ "$(git_exact rev-parse HEAD)" == "$CANDIDATE_SHA" ]]
+          [[ "$(git_exact status --porcelain=v1 --untracked-files=all)" == "" ]]
+      - name: Retain and reread the exact npm publication report
+        uses: ./apps/ts-release-action/report-retainer
+        with:
+          kind: npm-publish
+          candidate-sha: ${{ inputs.candidate_sha }}
+          prepared: ${{ inputs.prepared_ref }}
+          handoff-artifact-name: ${{ needs.publish-npm.outputs.handoff-artifact-name }}
+          handoff-artifact-id: ${{ needs.publish-npm.outputs.handoff-artifact-id }}
+          handoff-artifact-digest: ${{ needs.publish-npm.outputs.handoff-artifact-digest }}
+          handoff-report-sha256: ${{ needs.publish-npm.outputs.handoff-report-sha256 }}
+          producer-result: ${{ needs.publish-npm.result }}
 
   preflight-github:
     needs: admit
@@ -438,7 +630,7 @@ jobs:
           while IFS='=' read -r name _; do
             normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
             case "$normalized" in
-              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*) exit 1 ;;
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_debug|node_debug_native|node_redirect_warnings|node_v8_coverage|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|sslkeylogfile|openssl_*|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_*|dyld_*|git_*) exit 1 ;;
             esac
           done < <(/usr/bin/env)
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
@@ -501,7 +693,7 @@ jobs:
           while IFS='=' read -r name _; do
             normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
             case "$normalized" in
-              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*) exit 1 ;;
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_debug|node_debug_native|node_redirect_warnings|node_v8_coverage|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|sslkeylogfile|openssl_*|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_*|dyld_*|git_*) exit 1 ;;
             esac
           done < <(/usr/bin/env)
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"

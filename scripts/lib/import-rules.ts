@@ -179,8 +179,10 @@ const fileSystemFiles: ReadonlySet<string> = new Set([
 const credentialEliminationOwners: ReadonlySet<string> = new Set([
   "src/platform/credentials.ts",
   "src/operation-journal/aws/oidc.ts",
-  // The private report retainer must prove that a producer's durable evidence
-  // is uploaded by a process with no GitHub/npm/OIDC publication authority.
+  // The private report retainer owns typed OIDC-absence admission after the
+  // dependency-free report-handoff/bootstrap.cjs gate deletes the two runner
+  // aliases. The non-TypeScript bootstrap is separately executed and audited
+  // by the canonical Action bundle gate.
   "apps/ts-release-action/src/report-retainer.ts"
 ])
 const credentialEliminationOwnerLabel = [...credentialEliminationOwners].join(" or ")

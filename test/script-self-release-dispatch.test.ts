@@ -14,7 +14,7 @@ const npmPrepared =
 
 const input = (
   mode: SelfReleaseMode,
-  preparedRef = mode === "publish-npm" || mode === "publish-github" ? prepared : "",
+  preparedRef = mode === "certify-npm-oidc" || mode === "publish-npm" || mode === "publish-github" ? prepared : "",
   npmPreparedRef = mode === "publish-github" ? npmPrepared : ""
 ) => ({
   mode,
@@ -31,7 +31,7 @@ const input = (
 })
 
 describe("self-release dispatch admission", () => {
-  test("admits exactly four disjoint authorities and two refs only for final GitHub publication", () => {
+  test("admits exactly five disjoint authorities and two refs only for final GitHub publication", () => {
     expect(admitSelfReleaseCoordinates(input("prepare-exact-sha"))).toEqual({
       mode: "prepare-exact-sha",
       candidateSha: sha
@@ -43,6 +43,10 @@ describe("self-release dispatch admission", () => {
     })
     expect(admitSelfReleaseCoordinates(input("publish-npm"))).toMatchObject({
       mode: "publish-npm",
+      preparedDigest: digest
+    })
+    expect(admitSelfReleaseCoordinates(input("certify-npm-oidc"))).toMatchObject({
+      mode: "certify-npm-oidc",
       preparedDigest: digest
     })
     expect(admitSelfReleaseCoordinates(input("create-tag"))).toEqual({

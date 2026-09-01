@@ -1,0 +1,26 @@
+name: ts-release private report retainer
+description: Retain and reread one exact redacted self-release report without publication authority.
+author: mannyc2
+inputs:
+  kind:
+    description: Exact private self-release report kind.
+    required: true
+  candidate-sha:
+    description: Exact lowercase 40-hex current main commit.
+    required: true
+  prepared:
+    description: Exact prepared reference for Action reports; empty only for the tag report.
+    required: false
+    default: ""
+outputs:
+  artifact-name:
+    description: Exact run-attempt-bound retained report artifact name.
+  artifact-id:
+    description: Exact GitHub Actions artifact identifier returned by verified readback.
+  artifact-digest:
+    description: Canonical sha256 digest returned by verified Actions artifact lookup.
+  report-sha256:
+    description: SHA-256 of the retained redacted source report bytes.
+runs:
+  using: node24
+  main: dist/index.cjs

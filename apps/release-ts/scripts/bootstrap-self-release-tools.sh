@@ -5,8 +5,9 @@ umask 077
 NODE_SHA256=88fd1ce767091fd8d4a99fdb2356e98c819f93f3b1f8663853a2dee9b438068a
 BUN_SHA256=951ee2aee855f08595aeec6225226a298d3fea83a3dcd6465c09cbccdf7e848f
 NPM_SHA256=cbcf4cc03148ccdb586a8bf2093c952f093fb43d5cbc97593c98b67ef8c003b0
-DISPATCH_SHA256=6cbff1e5e9af65dcb6867e8d72e64bb025b83652487074bb9f3edba1a419d161
-TAG_SHA256=b72569d1bda4de8444e2a3bcd286fdf7948bf3b1d6e65b843e00a2620aa04a79
+DISPATCH_SHA256=ec5d3be50d9df329c38887c99079aae70ff1f04f3f481296f60b6cf01cfa737f
+NPM_OIDC_CERTIFIER_SHA256=ee59bc4708c09e76c04167d45f37e7eabb783a98293838cbd3358d0b83b62823
+TAG_SHA256=c22798cbdc8b5adaf0fec9e2526ee099e24fa1167ad011f780fa986480aad1b3
 NPM_VERIFIER_SHA256=0947b060bc7555ac09b7c4d1517a34f533d2c0bf27732fcf00b6b2fb9ac3f28b
 
 candidate_sha="${1:-}"
@@ -136,14 +137,16 @@ copy_exact() {
 
 candidate_tools="$GITHUB_WORKSPACE/apps/release-ts/release-tools"
 copy_exact "$candidate_tools/dispatch.js" "$bundle_root/dispatch.js" "$DISPATCH_SHA256"
+copy_exact "$candidate_tools/npm-oidc-certifier.js" "$bundle_root/npm-oidc-certifier.js" "$NPM_OIDC_CERTIFIER_SHA256"
 copy_exact "$candidate_tools/tag.js" "$bundle_root/tag.js" "$TAG_SHA256"
 copy_exact "$candidate_tools/npm-verifier.js" "$bundle_root/npm-verifier.js" "$NPM_VERIFIER_SHA256"
-/bin/chmod 0500 "$bundle_root/dispatch.js" "$bundle_root/tag.js" "$bundle_root/npm-verifier.js"
+/bin/chmod 0500 "$bundle_root/dispatch.js" "$bundle_root/npm-oidc-certifier.js" "$bundle_root/tag.js" "$bundle_root/npm-verifier.js"
 
 {
   printf 'TS_RELEASE_NODE_BIN=%s\n' "$node_bin"
   printf 'TS_RELEASE_BUN_BIN=%s\n' "$bun_bin"
   printf 'TS_RELEASE_DISPATCH_BIN=%s\n' "$bundle_root/dispatch.js"
+  printf 'TS_RELEASE_NPM_OIDC_CERTIFIER_BIN=%s\n' "$bundle_root/npm-oidc-certifier.js"
   printf 'TS_RELEASE_TAG_BIN=%s\n' "$bundle_root/tag.js"
   printf 'TS_RELEASE_NPM_VERIFIER_BIN=%s\n' "$bundle_root/npm-verifier.js"
   printf 'TS_RELEASE_HOME=%s\n' "$release_home"

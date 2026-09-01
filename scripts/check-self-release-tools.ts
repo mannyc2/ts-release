@@ -23,7 +23,7 @@ try {
     if (checked.length !== generated.length || checked.some((byte, index) => byte !== generated[index])) {
       throw new Error(`Checked-in ${tool} self-release tool differs from a canonical rebuild.`)
     }
-    const matched = new RegExp(`^${tool.replace("-", "_").toUpperCase()}_SHA256=([a-f0-9]{64})$`, "mu").exec(bootstrap)
+    const matched = new RegExp(`^${tool.replaceAll("-", "_").toUpperCase()}_SHA256=([a-f0-9]{64})$`, "mu").exec(bootstrap)
     if (matched?.[1] === undefined || !expectedDigestPattern.test(matched[1]) || matched[1] !== digest(checked)) {
       throw new Error(`Bootstrap digest for ${tool} does not bind the checked-in tool.`)
     }

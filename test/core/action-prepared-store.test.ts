@@ -121,9 +121,11 @@ describe("GitHub Actions durable prepared store", () => {
 
     const uploadSource = readFileSync(join(artifactRoot, "upload/upload-artifact.js"), "utf8")
     const lookupSource = readFileSync(join(artifactRoot, "find/get-artifact.js"), "utf8")
+    const downloadSource = readFileSync(join(artifactRoot, "download/download-artifact.js"), "utf8")
     expect(uploadSource).toMatch(/digest:\s*uploadResult\.sha256Hash/u)
     expect(uploadSource).toContain("value: `sha256:${uploadResult.sha256Hash}`")
     expect(lookupSource).toMatch(/digest:\s*artifact\.digest/u)
+    expect(downloadSource).toContain("options.expectedHash) !== extractResponse.sha256Digest")
   })
 
   test("uploads before returning a hosted reference and reloads in a fresh invocation", async () => {
@@ -403,7 +405,7 @@ describe("GitHub Actions durable prepared store", () => {
         id: 17,
         options: {
           path: "/tmp/destination",
-          expectedHash: `sha256:${"b".repeat(64)}`,
+          expectedHash: "b".repeat(64),
           ...publicOptions
         }
       }
@@ -416,7 +418,7 @@ describe("GitHub Actions durable prepared store", () => {
       {
         operation: "download",
         id: 17,
-        options: { path: "/tmp/current", expectedHash: `sha256:${"b".repeat(64)}` }
+        options: { path: "/tmp/current", expectedHash: "b".repeat(64) }
       }
     ])
   })

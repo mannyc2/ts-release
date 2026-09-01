@@ -5,12 +5,14 @@ const root = join(import.meta.dir, "..")
 
 export const selfReleaseToolEntries = {
   dispatch: join(root, "apps/release-ts/scripts/check-self-release-dispatch.ts"),
+  "npm-oidc-certifier": join(root, "apps/release-ts/scripts/certify-self-release-npm-oidc.ts"),
   tag: join(root, "apps/release-ts/scripts/create-self-release-tag.ts"),
   "npm-verifier": join(root, "apps/release-ts/scripts/verify-self-release-npm.ts")
 } as const
 
 export const selfReleaseToolOutputs = {
   dispatch: join(root, "apps/release-ts/release-tools/dispatch.js"),
+  "npm-oidc-certifier": join(root, "apps/release-ts/release-tools/npm-oidc-certifier.js"),
   tag: join(root, "apps/release-ts/release-tools/tag.js"),
   "npm-verifier": join(root, "apps/release-ts/release-tools/npm-verifier.js")
 } as const

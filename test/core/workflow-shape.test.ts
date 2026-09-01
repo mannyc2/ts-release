@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test"
-import { readFileSync, readdirSync } from "node:fs"
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs"
 import { spawnSync } from "node:child_process"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 
 const workflow = (name: string): string => readFileSync(`.github/workflows/${name}`, "utf8")
 const reportUploads = (value: string): ReadonlyArray<string> =>
@@ -19,12 +21,16 @@ interface ParsedWorkflow {
   } | null>>
   readonly jobs?: Readonly<Record<string, {
     readonly if?: string
+    readonly needs?: string | ReadonlyArray<string>
     readonly environment?: string
     readonly permissions?: Readonly<Record<string, string>>
+    readonly outputs?: Readonly<Record<string, string>>
     readonly "runs-on"?: string
     readonly steps?: ReadonlyArray<{
+      readonly id?: unknown
       readonly name?: unknown
       readonly if?: unknown
+      readonly "continue-on-error"?: unknown
       readonly run?: unknown
       readonly uses?: unknown
       readonly env?: Readonly<Record<string, unknown>>
@@ -56,16 +62,20 @@ const trustedConfig = (name: string): TrustedTemplateConfig =>
 const automaticCommand = "${{ inputs.prepared_ref == '' && 'release' || 'publish' }}"
 const automaticPrepared = "${{ inputs.prepared_ref }}"
 const templateAdmission = "${{ github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha }}"
-const repositoryPrepareAdmission = "${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'prepare-exact-sha' }}"
-const repositoryTagAdmission = "${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'create-tag' }}"
-const repositoryNpmAdmission = "${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'publish-npm' }}"
-const repositoryGitHubAdmission = "${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'publish-github' }}"
+const repositoryPrepareAdmission = "${{ needs.admit.outputs.selected_job == 'prepare' }}"
+const repositoryNpmOidcAdmission = "${{ needs.admit.outputs.selected_job == 'certify-npm-oidc' }}"
+const repositoryTagAdmission = "${{ needs.admit.outputs.selected_job == 'create-tag' }}"
+const repositoryNpmAdmission = "${{ needs.admit.outputs.selected_job == 'publish-npm' }}"
+const repositoryGitHubAdmission = "${{ needs.admit.outputs.selected_job == 'publish-github' }}"
+const repositoryGitHubPublishAdmission = "${{ needs.admit.outputs.selected_job == 'publish-github' && needs.preflight-github.result == 'success' }}"
 const freshDispatch = "${{ inputs.prepared_ref == '' }}"
 const cachePrimeCommand = "bun install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted"
 const dependencyCleanupCommand = "bun --no-env-file --no-install -e 'await (await import(\"node:fs/promises\")).rm(\"node_modules\", { recursive: true, force: true })'"
 const cachePrimeRun = `${cachePrimeCommand}\n${dependencyCleanupCommand}`
 
 const parseWorkflow = (value: string): ParsedWorkflow => Bun.YAML.parse(value) as ParsedWorkflow
+const isPublicReleaseAction = (value: unknown): value is string =>
+  value === "./apps/ts-release-action" || value === "mannyc2/ts-release/apps/ts-release-action@v0.3.0"
 
 const actionPins = new Map([
   ["actions/checkout", "11d5960a326750d5838078e36cf38b85af677262"],
@@ -114,7 +124,7 @@ const actionSteps = (value: string): ReadonlyArray<{
   const parsed = parseWorkflow(value)
   return Object.entries(parsed.jobs ?? {}).flatMap(([job, definition]) =>
     (definition.steps ?? []).flatMap((step) =>
-      typeof step.uses === "string" && step.uses.includes("ts-release-action")
+      isPublicReleaseAction(step.uses)
         ? [{
           job,
           ...(definition.if === undefined ? {} : { if: definition.if }),
@@ -138,7 +148,7 @@ const expectBunBeforeEveryActionInvocation = (value: string): void => {
   for (const [jobName, job] of Object.entries(parsed.jobs ?? {})) {
     const steps = job.steps ?? []
     for (const [index, step] of steps.entries()) {
-      if (typeof step.uses !== "string" || !step.uses.includes("ts-release-action")) continue
+      if (!isPublicReleaseAction(step.uses)) continue
       expect(
         steps.slice(0, index).some((candidate) =>
           (typeof candidate.uses === "string" && candidate.uses.startsWith("oven-sh/setup-bun@")) ||
@@ -154,7 +164,7 @@ const expectIsolatedCacheBeforePreparingActions = (value: string): void => {
   for (const [jobName, job] of Object.entries(parsed.jobs ?? {})) {
     const steps = job.steps ?? []
     for (const [index, step] of steps.entries()) {
-      if (typeof step.uses !== "string" || !step.uses.includes("ts-release-action")) continue
+      if (!isPublicReleaseAction(step.uses)) continue
       const before = steps.slice(0, index)
       const command = step.with?.command
       if (command === "publish" || command === "inspect") {
@@ -210,7 +220,7 @@ test("CI separates portable gates from installed agent-host validation", () => {
   expect(packageJson.scripts["check:release-candidate"]).toContain("bun run check:portable && bun run check:agents")
 })
 
-test("repository release hard-cuts prepare, tag, npm, and GitHub authorities", () => {
+test("repository release hard-cuts prepare, npm OIDC certification, tag, npm, and GitHub authorities", () => {
   const release = workflow("release.yml")
   expectDispatchInputs(release, { recovery: true })
   const parsed = parseWorkflow(release)
@@ -219,36 +229,71 @@ test("repository release hard-cuts prepare, tag, npm, and GitHub authorities", (
     description: "Exact self-release authority",
     required: true,
     type: "choice",
-    options: ["prepare-exact-sha", "create-tag", "publish-npm", "publish-github"]
+    options: ["prepare-exact-sha", "certify-npm-oidc", "create-tag", "publish-npm", "publish-github"]
   })
   expect(parsed.on?.workflow_dispatch?.inputs?.npm_prepared_ref).toMatchObject({
     required: false, default: "", type: "string"
   })
-  expect(Object.keys(parsed.jobs ?? {})).toEqual(["prepare", "create-tag", "publish-npm", "publish-github"])
+  expect(Object.keys(parsed.jobs ?? {})).toEqual([
+    "admit", "prepare", "create-tag", "certify-npm-oidc", "publish-npm", "preflight-github", "publish-github"
+  ])
+  expect(parsed.jobs?.admit).toMatchObject({
+    outputs: { selected_job: "${{ steps.admit.outputs.selected_job }}" },
+    "runs-on": "ubuntu-24.04"
+  })
+  expect(parsed.jobs?.admit?.if).toBeUndefined()
+  expect(parsed.jobs?.admit?.environment).toBeUndefined()
+  expect(parsed.jobs?.admit?.permissions).toBeUndefined()
+  expect(parsed.jobs?.admit?.steps).toHaveLength(1)
+  expect(parsed.jobs?.admit?.steps?.[0]?.id).toBe("admit")
   expect(parsed.jobs?.prepare).toMatchObject({
     if: repositoryPrepareAdmission,
+    needs: "admit",
     permissions: { contents: "read" },
     "runs-on": "ubuntu-24.04"
   })
   expect(parsed.jobs?.prepare?.environment).toBeUndefined()
   expect(parsed.jobs?.["create-tag"]).toMatchObject({
     if: repositoryTagAdmission,
+    needs: "admit",
     environment: "github-tag",
     permissions: { contents: "write" },
     "runs-on": "ubuntu-24.04"
   })
   expect(parsed.jobs?.["publish-npm"]).toMatchObject({
     if: repositoryNpmAdmission,
+    needs: "admit",
+    environment: "npm",
+    permissions: { actions: "read", contents: "read", "id-token": "write" },
+    "runs-on": "ubuntu-24.04"
+  })
+  expect(parsed.jobs?.["certify-npm-oidc"]).toMatchObject({
+    if: repositoryNpmOidcAdmission,
+    needs: "admit",
     environment: "npm",
     permissions: { actions: "read", contents: "read", "id-token": "write" },
     "runs-on": "ubuntu-24.04"
   })
   expect(parsed.jobs?.["publish-github"]).toMatchObject({
-    if: repositoryGitHubAdmission,
+    if: repositoryGitHubPublishAdmission,
+    needs: ["admit", "preflight-github"],
     environment: "github-release",
     permissions: { actions: "read", contents: "write" },
     "runs-on": "ubuntu-24.04"
   })
+  expect(parsed.jobs?.["preflight-github"]).toMatchObject({
+    if: repositoryGitHubAdmission,
+    needs: "admit",
+    permissions: { actions: "read", contents: "read" },
+    "runs-on": "ubuntu-24.04",
+    outputs: {
+      "artifact-name": "${{ steps.npm-inspect-report.outputs.artifact-name }}",
+      "artifact-id": "${{ steps.npm-inspect-report.outputs.artifact-id }}",
+      "artifact-digest": "${{ steps.npm-inspect-report.outputs.artifact-digest }}",
+      "report-sha256": "${{ steps.npm-inspect-report.outputs.report-sha256 }}"
+    }
+  })
+  expect(parsed.jobs?.["preflight-github"]?.environment).toBeUndefined()
   expect(parsed.jobs?.["publish-github"]?.permissions?.["id-token"]).toBeUndefined()
   expect(parsed.jobs?.["publish-npm"]?.permissions?.contents).not.toBe("write")
 
@@ -262,7 +307,7 @@ test("repository release hard-cuts prepare, tag, npm, and GitHub authorities", (
     { job: "prepare", command: "prepare", config: "apps/release-ts/github-release.config.json", prepared: undefined },
     { job: "prepare", command: "prepare", config: "apps/release-ts/npm-release.config.json", prepared: undefined },
     { job: "publish-npm", command: "publish", config: undefined, prepared: "${{ inputs.prepared_ref }}" },
-    { job: "publish-github", command: "inspect", config: undefined, prepared: "${{ inputs.npm_prepared_ref }}" },
+    { job: "preflight-github", command: "inspect", config: undefined, prepared: "${{ inputs.npm_prepared_ref }}" },
     { job: "publish-github", command: "publish", config: undefined, prepared: "${{ inputs.prepared_ref }}" }
   ])
   for (const action of actions.filter(({ job }) => job === "prepare")) {
@@ -272,23 +317,66 @@ test("repository release hard-cuts prepare, tag, npm, and GitHub authorities", (
     expect(action.env?.GITHUB_TOKEN).toBe("${{ github.token }}")
   }
   expect(release.match(/install-self-release-npm\.ts/gu)?.length).toBe(1)
-  expect(release.match(/bootstrap-self-release-tools\.sh/gu)?.length).toBe(3)
+  expect(release.match(/bootstrap-self-release-tools\.sh/gu)?.length).toBe(5)
   expect(release).not.toContain("bun add --global npm@")
   expect(release.match(/node-version: "22\.22\.2"/gu)?.length).toBe(1)
   expect(release.match(/bun-version: 1\.3\.14/gu)?.length).toBe(1)
   expect(release.match(/check-self-release-dispatch\.ts/gu)?.length).toBe(2)
-  expect(release.match(/TS_RELEASE_DISPATCH_BIN/gu)?.length).toBe(4)
+  expect(release.match(/TS_RELEASE_DISPATCH_BIN/gu)?.length).toBe(5)
+  expect(release.match(/TS_RELEASE_NPM_OIDC_CERTIFIER_BIN/gu)?.length).toBe(1)
   expect(release.match(/TS_RELEASE_NPM_VERIFIER_BIN/gu)?.length).toBe(2)
   expectOnlyRedactedReportUploads(release, 2)
+  const retainers = Object.entries(parsed.jobs ?? {}).flatMap(([job, definition]) =>
+    (definition.steps ?? []).filter((step) => step.uses === "./apps/ts-release-action/report-retainer")
+      .map((step) => ({ job, step })))
+  expect(retainers.map(({ job, step }) => ({
+    job,
+    id: step.id,
+    if: step.if,
+    kind: step.with?.kind,
+    candidateSha: step.with?.["candidate-sha"],
+    prepared: step.with?.prepared,
+    env: step.env,
+    continueOnError: step["continue-on-error"]
+  }))).toEqual([
+    {
+      job: "create-tag", id: undefined, if: "${{ always() && steps.tag.outcome != 'skipped' }}", kind: "tag",
+      candidateSha: "${{ inputs.candidate_sha }}", prepared: "", env: undefined, continueOnError: undefined
+    },
+    {
+      job: "certify-npm-oidc", id: undefined, if: "${{ always() && steps.npm-oidc-certification.outcome != 'skipped' }}",
+      kind: "npm-oidc-certification", candidateSha: "${{ inputs.candidate_sha }}",
+      prepared: "${{ inputs.prepared_ref }}", env: {
+        ACTIONS_ID_TOKEN_REQUEST_TOKEN: "", ACTIONS_ID_TOKEN_REQUEST_URL: ""
+      }, continueOnError: undefined
+    },
+    {
+      job: "publish-npm", id: undefined, if: "${{ always() && steps.npm-publish.outcome != 'skipped' }}", kind: "npm-publish",
+      candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.prepared_ref }}", env: {
+        ACTIONS_ID_TOKEN_REQUEST_TOKEN: "", ACTIONS_ID_TOKEN_REQUEST_URL: ""
+      },
+      continueOnError: undefined
+    },
+    {
+      job: "preflight-github", id: "npm-inspect-report", if: "${{ always() && steps.npm-inspect.outcome != 'skipped' }}", kind: "npm-inspect",
+      candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.npm_prepared_ref }}", env: undefined,
+      continueOnError: undefined
+    },
+    {
+      job: "publish-github", id: undefined, if: "${{ always() && steps.github-publish.outcome != 'skipped' }}", kind: "github-publish",
+      candidateSha: "${{ inputs.candidate_sha }}", prepared: "${{ inputs.prepared_ref }}", env: undefined,
+      continueOnError: undefined
+    }
+  ])
   expect(release).toContain("persist-credentials: false")
   expect(release).not.toMatch(/\bNPM_(?:TOKEN|ID_TOKEN)\b/u)
   expect(release).not.toMatch(/\bNODE_AUTH_TOKEN\b/u)
 
-  for (const jobName of ["create-tag", "publish-npm", "publish-github"] as const) {
+  for (const jobName of ["create-tag", "certify-npm-oidc", "publish-npm", "preflight-github", "publish-github"] as const) {
     const job = parsed.jobs?.[jobName]
-    const external = (job?.steps ?? []).filter((step) => typeof step.uses === "string")
-    for (const step of external) {
-      expect(step.uses).toBe("./apps/ts-release-action")
+    const external = (job?.steps ?? []).flatMap((step) => typeof step.uses === "string" ? [step.uses] : [])
+    for (const uses of external) {
+      expect(["./apps/ts-release-action", "./apps/ts-release-action/report-retainer"]).toContain(uses)
     }
     expect((job?.steps ?? []).some((step) =>
       typeof step.uses === "string" && /^(?:actions|oven-sh)\//u.test(step.uses)
@@ -297,17 +385,56 @@ test("repository release hard-cuts prepare, tag, npm, and GitHub authorities", (
   const tagTokenSteps = parsed.jobs?.["create-tag"]?.steps?.filter((step) => step.env?.GITHUB_TOKEN !== undefined) ?? []
   expect(tagTokenSteps).toHaveLength(1)
   expect(tagTokenSteps[0]?.name).toBe("Converge exact lightweight v0.3.0 tag")
+  const certificationTokenSteps = parsed.jobs?.["certify-npm-oidc"]?.steps
+    ?.filter((step) => step.env?.GITHUB_TOKEN !== undefined) ?? []
+  expect(certificationTokenSteps.map((step) => ({ name: step.name, uses: step.uses }))).toEqual([
+    { name: "Certify exact npm OIDC exchange without upload", uses: undefined }
+  ])
   const npmTokenSteps = parsed.jobs?.["publish-npm"]?.steps?.filter((step) => step.env?.GITHUB_TOKEN !== undefined) ?? []
   expect(npmTokenSteps.map((step) => ({ name: step.name, uses: step.uses }))).toEqual([
     { name: undefined, uses: "./apps/ts-release-action" },
     { name: "Verify exact public npm bytes and report-bound provenance", uses: undefined }
   ])
+  const preflightTokenSteps = parsed.jobs?.["preflight-github"]?.steps
+    ?.filter((step) => step.env?.GITHUB_TOKEN !== undefined) ?? []
+  expect(preflightTokenSteps.map((step) => ({ name: step.name, uses: step.uses }))).toEqual([
+    { name: undefined, uses: "./apps/ts-release-action" },
+    { name: "Verify npm is already public with exact bytes and provenance", uses: undefined }
+  ])
   const githubTokenSteps = parsed.jobs?.["publish-github"]?.steps?.filter((step) => step.env?.GITHUB_TOKEN !== undefined) ?? []
   expect(githubTokenSteps.map((step) => ({ name: step.name, uses: step.uses }))).toEqual([
-    { name: undefined, uses: "./apps/ts-release-action" },
-    { name: "Verify npm is already public with exact bytes and provenance", uses: undefined },
     { name: undefined, uses: "./apps/ts-release-action" }
   ])
+  const githubPublishSteps = parsed.jobs?.["publish-github"]?.steps ?? []
+  const handoffIndex = githubPublishSteps.findIndex((step) => step.name === "Admit exact retained npm preflight evidence")
+  const reauthenticateIndex = githubPublishSteps.findIndex((step) =>
+    step.name === "Reauthenticate exact main immediately before GitHub publication")
+  const publishIndex = githubPublishSteps.findIndex((step) => step.id === "github-publish")
+  expect(handoffIndex).toBeGreaterThan(0)
+  expect(reauthenticateIndex).toBeGreaterThan(handoffIndex)
+  expect(publishIndex).toBeGreaterThan(reauthenticateIndex)
+  expect(githubPublishSteps[handoffIndex]?.env).toEqual({
+    NPM_INSPECT_ARTIFACT_NAME: "${{ needs.preflight-github.outputs.artifact-name }}",
+    NPM_INSPECT_ARTIFACT_ID: "${{ needs.preflight-github.outputs.artifact-id }}",
+    NPM_INSPECT_ARTIFACT_DIGEST: "${{ needs.preflight-github.outputs.artifact-digest }}",
+    NPM_INSPECT_REPORT_SHA256: "${{ needs.preflight-github.outputs.report-sha256 }}"
+  })
+  expect(githubPublishSteps[handoffIndex]?.run).toContain("ts-release-npm-inspect-report-$GITHUB_RUN_ATTEMPT")
+  expect(githubPublishSteps[handoffIndex]?.run).toContain("^sha256:[a-f0-9]{64}$")
+  for (const [jobName, authorityStep] of [
+    ["certify-npm-oidc", "npm-oidc-certification"],
+    ["publish-npm", "npm-publish"]
+  ] as const) {
+    for (const step of parsed.jobs?.[jobName]?.steps ?? []) {
+      if (step.id === authorityStep) {
+        expect(step.env?.ACTIONS_ID_TOKEN_REQUEST_URL).toBeUndefined()
+        expect(step.env?.ACTIONS_ID_TOKEN_REQUEST_TOKEN).toBeUndefined()
+      } else {
+        expect(step.env?.ACTIONS_ID_TOKEN_REQUEST_URL, `${jobName}:${String(step.name)} has OIDC URL authority`).toBe("")
+        expect(step.env?.ACTIONS_ID_TOKEN_REQUEST_TOKEN, `${jobName}:${String(step.name)} has OIDC token authority`).toBe("")
+      }
+    }
+  }
   expect(release).toContain('action-report "$ACTION_REPORT"')
   expect(release).toContain("ACTION_REPORT: ${{ steps.npm-publish.outputs.report-ref }}")
   expectPinnedInfrastructure(release)
@@ -329,13 +456,15 @@ test("credentialed self-release bootstraps one exact detached candidate before l
   expect(bootstrap).not.toContain("raw.githubusercontent.com/mannyc2/ts-release/$candidate_sha/apps/release-ts/release-tools")
 
   const parsed = parseWorkflow(workflow("release.yml"))
-  for (const jobName of ["create-tag", "publish-npm", "publish-github"] as const) {
+  for (const jobName of ["create-tag", "certify-npm-oidc", "publish-npm", "preflight-github", "publish-github"] as const) {
     const steps = parsed.jobs?.[jobName]?.steps ?? []
     const bootstrapIndex = steps.findIndex((step) => typeof step.run === "string" &&
       step.run.includes("bootstrap-self-release-tools.sh"))
     expect(bootstrapIndex).toBe(0)
     for (const step of steps.slice(bootstrapIndex + 1)) {
-      if (typeof step.uses === "string") expect(step.uses).toBe("./apps/ts-release-action")
+      if (typeof step.uses === "string") {
+        expect(["./apps/ts-release-action", "./apps/ts-release-action/report-retainer"]).toContain(step.uses)
+      }
     }
   }
 })
@@ -347,7 +476,12 @@ test("every self-release job refuses hostile tool transport before checkout, net
     expect(first?.uses, `${jobName} must begin with repository-owned admission`).toBeUndefined()
     expect(first?.run).toBeString()
     const source = first!.run as string
-    const guard = source.includes("\nbootstrap=") ? source.slice(0, source.indexOf("\nbootstrap=")) : source
+    const boundary = source.includes("\nbootstrap=")
+      ? source.indexOf("\nbootstrap=")
+      : source.includes('\n[[ "$GITHUB_REPOSITORY"')
+        ? source.indexOf('\n[[ "$GITHUB_REPOSITORY"')
+        : source.length
+    const guard = source.slice(0, boundary)
     expect(guard).toContain("git_*")
     expect(guard).toContain("npm_config_*")
     expect(guard).toContain("node_options")
@@ -412,34 +546,108 @@ test("user templates preserve the same handoff, with the environment gate only o
   expect(reviewedPublish).toContain("environment: release")
 })
 
-test("candidate mismatches are rejected at the job boundary before any Action step can run", () => {
+test("mandatory admission hard-fails wrong identity, mode, and prepared-reference topology", () => {
   const candidate = "c".repeat(40)
-  const admitted = (input: {
-    readonly repository?: string
-    readonly ref: string
-    readonly sha: string
-    readonly candidateSha: string
-  }): boolean =>
-    (input.repository === undefined || input.repository === "mannyc2/ts-release") &&
-    input.ref === "refs/heads/main" &&
-    input.sha === input.candidateSha
-
   const repositoryJobs = parseWorkflow(workflow("release.yml")).jobs ?? {}
+  const source = repositoryJobs.admit?.steps?.[0]?.run
+  expect(source).toBeString()
   expect(repositoryJobs.prepare?.if).toBe(repositoryPrepareAdmission)
+  expect(repositoryJobs["certify-npm-oidc"]?.if).toBe(repositoryNpmOidcAdmission)
   expect(repositoryJobs["create-tag"]?.if).toBe(repositoryTagAdmission)
   expect(repositoryJobs["publish-npm"]?.if).toBe(repositoryNpmAdmission)
-  expect(repositoryJobs["publish-github"]?.if).toBe(repositoryGitHubAdmission)
-  for (const value of [
-    { repository: "fork/ts-release", ref: "refs/heads/main", sha: candidate, candidateSha: candidate },
-    { repository: "mannyc2/ts-release", ref: "refs/heads/evidence", sha: candidate, candidateSha: candidate },
-    { repository: "mannyc2/ts-release", ref: "refs/heads/main", sha: candidate, candidateSha: "d".repeat(40) }
-  ]) expect(admitted(value)).toBe(false)
+  expect(repositoryJobs["preflight-github"]?.if).toBe(repositoryGitHubAdmission)
+  expect(repositoryJobs["publish-github"]?.if).toBe(repositoryGitHubPublishAdmission)
+  for (const name of ["prepare", "certify-npm-oidc", "create-tag", "publish-npm", "preflight-github"] as const) {
+    expect(repositoryJobs[name]?.needs).toBe("admit")
+  }
+  expect(repositoryJobs["publish-github"]?.needs).toEqual(["admit", "preflight-github"])
+
+  const digest = "a".repeat(64)
+  const npmDigest = "b".repeat(64)
+  const githubPrepared = `prepared:gha:mannyc2/ts-release/runs/334/attempts/1/artifacts/ts-release-prepared-1-${digest}#sha256-${digest}`
+  const npmPrepared = `prepared:gha:mannyc2/ts-release/runs/334/attempts/1/artifacts/ts-release-prepared-1-${npmDigest}#sha256-${npmDigest}`
+  const scratch = mkdtempSync(join(tmpdir(), "ts-release-admission-test-"))
+  const baseEnvironment = {
+    LANG: "C",
+    PATH: "/usr/bin:/bin",
+    GITHUB_REPOSITORY: "mannyc2/ts-release",
+    GITHUB_REPOSITORY_ID: "1271545637",
+    GITHUB_REPOSITORY_OWNER_ID: "126291407",
+    GITHUB_EVENT_NAME: "workflow_dispatch",
+    GITHUB_REF: "refs/heads/main",
+    GITHUB_SHA: candidate,
+    GITHUB_WORKFLOW: "Release",
+    GITHUB_WORKFLOW_REF: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main",
+    GITHUB_WORKFLOW_SHA: candidate,
+    GITHUB_RUN_ID: "992",
+    GITHUB_RUN_ATTEMPT: "1",
+    CANDIDATE_SHA: candidate
+  }
+  const run = (
+    label: string,
+    mode: string,
+    prepared = "",
+    npmPreparedReference = "",
+    overrides: Readonly<Record<string, string>> = {}
+  ) => {
+    const output = join(scratch, `${label}.output`)
+    const result = spawnSync("/bin/bash", ["-c", source as string], {
+      env: {
+        ...baseEnvironment,
+        RELEASE_MODE: mode,
+        PREPARED_REF: prepared,
+        NPM_PREPARED_REF: npmPreparedReference,
+        GITHUB_OUTPUT: output,
+        ...overrides
+      },
+      encoding: "utf8",
+      stdio: "pipe"
+    })
+    return {
+      status: result.status,
+      output: result.status === 0 ? readFileSync(output, "utf8") : ""
+    }
+  }
+  try {
+    expect(run("prepare", "prepare-exact-sha")).toEqual({ status: 0, output: "selected_job=prepare\n" })
+    expect(run("npm-oidc", "certify-npm-oidc", githubPrepared)).toEqual({
+      status: 0, output: "selected_job=certify-npm-oidc\n"
+    })
+    expect(run("tag", "create-tag")).toEqual({ status: 0, output: "selected_job=create-tag\n" })
+    expect(run("npm", "publish-npm", githubPrepared)).toEqual({ status: 0, output: "selected_job=publish-npm\n" })
+    expect(run("github", "publish-github", githubPrepared, npmPrepared)).toEqual({
+      status: 0, output: "selected_job=publish-github\n"
+    })
+    for (const [label, result] of [
+      ["fork", run("fork", "create-tag", "", "", { GITHUB_REPOSITORY: "fork/ts-release" })],
+      ["wrong-ref", run("wrong-ref", "create-tag", "", "", { GITHUB_REF: "refs/heads/evidence" })],
+      ["wrong-sha", run("wrong-sha", "create-tag", "", "", { GITHUB_SHA: "d".repeat(40) })],
+      ["wrong-workflow-sha", run("wrong-workflow-sha", "create-tag", "", "", { GITHUB_WORKFLOW_SHA: "d".repeat(40) })],
+      ["wrong-mode", run("wrong-mode", "publish-everything")],
+      ["tag-with-ref", run("tag-with-ref", "create-tag", githubPrepared)],
+      ["npm-with-second-ref", run("npm-with-second-ref", "publish-npm", githubPrepared, npmPrepared)],
+      ["npm-oidc-with-second-ref", run("npm-oidc-with-second-ref", "certify-npm-oidc", githubPrepared, npmPrepared)],
+      ["github-same-ref", run("github-same-ref", "publish-github", githubPrepared, githubPrepared)],
+      ["malformed-ref", run("malformed-ref", "publish-npm", `${githubPrepared}x`)],
+      [
+        "prepared-attempt-mismatch",
+        run("prepared-attempt-mismatch", "publish-npm", githubPrepared.replace("attempts/1/", "attempts/2/"))
+      ],
+      [
+        "prepared-digest-mismatch",
+        run("prepared-digest-mismatch", "publish-npm", githubPrepared.replace(`#sha256-${digest}`, `#sha256-${npmDigest}`))
+      ]
+    ] as const) {
+      expect(result.status, `${label} was admitted`).not.toBe(0)
+      expect(result.output).toBe("")
+    }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true })
+  }
 
   for (const name of ["release.yml", "reviewed-release.yml"]) {
     for (const action of actionSteps(workflowTemplate(name))) expect(action.if).toBe(templateAdmission)
   }
-  expect(admitted({ ref: "refs/heads/evidence", sha: candidate, candidateSha: candidate })).toBe(false)
-  expect(admitted({ ref: "refs/heads/main", sha: candidate, candidateSha: "d".repeat(40) })).toBe(false)
 })
 
 test("each trusted workflow loads the config that attests its exact host identity", () => {

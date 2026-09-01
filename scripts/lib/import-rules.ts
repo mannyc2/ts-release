@@ -178,7 +178,10 @@ const fileSystemFiles: ReadonlySet<string> = new Set([
 ])
 const credentialEliminationOwners: ReadonlySet<string> = new Set([
   "src/platform/credentials.ts",
-  "src/operation-journal/aws/oidc.ts"
+  "src/operation-journal/aws/oidc.ts",
+  // The private report retainer must prove that a producer's durable evidence
+  // is uploaded by a process with no GitHub/npm/OIDC publication authority.
+  "apps/ts-release-action/src/report-retainer.ts"
 ])
 const credentialEliminationOwnerLabel = [...credentialEliminationOwners].join(" or ")
 const oidcRequestEnvironmentNames = new Set([

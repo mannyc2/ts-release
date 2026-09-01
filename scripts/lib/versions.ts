@@ -55,9 +55,9 @@ export const checkVersions = (root: string): VersionsReport => {
     if (name === ".github/workflows/release.yml") {
       sites += 1
       if ((text.match(/install-self-release-npm\.ts/gu)?.length ?? 0) !== 1 ||
-          (text.match(/bootstrap-self-release-tools\.sh/gu)?.length ?? 0) !== 3 ||
+          (text.match(/bootstrap-self-release-tools\.sh/gu)?.length ?? 0) !== 5 ||
           text.includes("bun add --global npm@")) {
-        failures.push(`${name} must use one audited preparation installer and three digest-bound native credential bootstraps`)
+        failures.push(`${name} must use one audited preparation installer and five digest-bound native authority/preflight bootstraps`)
       }
     }
     if (/\b(?:ubuntu|macos)-latest\b/u.test(text)) failures.push(`${name} uses a floating runner label`)

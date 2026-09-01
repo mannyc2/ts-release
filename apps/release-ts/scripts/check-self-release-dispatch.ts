@@ -10,6 +10,7 @@ import {
 
 export const selfReleaseModes = [
   "prepare-exact-sha",
+  "certify-npm-oidc",
   "create-tag",
   "publish-npm",
   "publish-github"
@@ -100,8 +101,8 @@ export const admitSelfReleaseCoordinates = (
   if (preparedDigest === undefined || preparedDigest !== prepared[4]) {
     return fail("publication requires one canonical repository-owned content-addressed prepared reference")
   }
-  if (input.mode === "publish-npm") {
-    if (input.npmPreparedRef !== "") fail("npm publication accepts only its npm prepared reference")
+  if (input.mode === "publish-npm" || input.mode === "certify-npm-oidc") {
+    if (input.npmPreparedRef !== "") fail(`${input.mode} accepts only its npm prepared reference`)
     return { mode: input.mode, candidateSha: input.candidateSha, preparedDigest }
   }
   const npmPrepared = preparedPattern.exec(input.npmPreparedRef)

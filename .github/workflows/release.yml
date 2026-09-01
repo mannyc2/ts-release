@@ -1,7 +1,8 @@
 name: Release
 
-# Preparation, lightweight tagging, npm publication, and GitHub publication
-# are four separate exact-byte authorities. Credentialed jobs contain no
+# Preparation, npm OIDC no-upload certification, lightweight tagging, npm
+# publication, and GitHub publication are five separate authorities. Protected
+# jobs contain no
 # third-party Actions: they bootstrap a digest-bound repository-owned closure,
 # then execute only the exact detached candidate's local Action as mutation code.
 on:
@@ -13,6 +14,7 @@ on:
         type: choice
         options:
           - prepare-exact-sha
+          - certify-npm-oidc
           - create-tag
           - publish-npm
           - publish-github
@@ -38,8 +40,90 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  admit:
+    runs-on: ubuntu-24.04
+    outputs:
+      selected_job: ${{ steps.admit.outputs.selected_job }}
+    steps:
+      - id: admit
+        name: Admit one exact self-release authority
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          PREPARED_REF: ${{ inputs.prepared_ref }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+          RELEASE_MODE: ${{ inputs.mode }}
+        run: |-
+          set -euo pipefail
+          while IFS='=' read -r name _; do
+            normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+            case "$normalized" in
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*)
+                echo "::error title=Unsafe release host::$name must be absent."
+                exit 1
+                ;;
+            esac
+          done < <(/usr/bin/env)
+          refuse() {
+            echo "::error title=Self-release admission refused::$1"
+            exit 1
+          }
+          [[ "$GITHUB_REPOSITORY" == mannyc2/ts-release ]] || refuse "Repository coordinate is not canonical."
+          [[ "$GITHUB_REPOSITORY_ID" == 1271545637 ]] || refuse "Repository identity is not canonical."
+          [[ "$GITHUB_REPOSITORY_OWNER_ID" == 126291407 ]] || refuse "Repository owner identity is not canonical."
+          [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]] || refuse "Event is not workflow_dispatch."
+          [[ "$GITHUB_REF" == refs/heads/main ]] || refuse "Dispatch ref is not exact main."
+          [[ "$GITHUB_WORKFLOW" == Release ]] || refuse "Workflow name is not canonical."
+          [[ "$GITHUB_WORKFLOW_REF" == mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main ]] ||
+            refuse "Workflow ref is not exact main."
+          [[ "$GITHUB_RUN_ID" =~ ^[1-9][0-9]*$ ]] || refuse "Run id is not canonical."
+          [[ "$GITHUB_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]] || refuse "Run attempt is not canonical."
+          [[ "$CANDIDATE_SHA" =~ ^[a-f0-9]{40}$ ]] || refuse "Candidate SHA is not canonical."
+          [[ "$GITHUB_SHA" == "$CANDIDATE_SHA" ]] || refuse "Checked-out workflow SHA differs from the candidate."
+          [[ "$GITHUB_WORKFLOW_SHA" == "$CANDIDATE_SHA" ]] || refuse "Workflow definition SHA differs from the candidate."
+
+          prepared_pattern='^prepared:gha:mannyc2/ts-release/runs/([1-9][0-9]*)/attempts/([1-9][0-9]*)/artifacts/ts-release-prepared-([1-9][0-9]*)-([a-f0-9]{64})#sha256-([a-f0-9]{64})$'
+          admit_prepared() {
+            [[ "$1" =~ $prepared_pattern ]] || return 1
+            [[ "${BASH_REMATCH[2]}" == "${BASH_REMATCH[3]}" ]] || return 1
+            [[ "${BASH_REMATCH[4]}" == "${BASH_REMATCH[5]}" ]] || return 1
+          }
+
+          case "$RELEASE_MODE" in
+            prepare-exact-sha)
+              [[ -z "$PREPARED_REF" && -z "$NPM_PREPARED_REF" ]] || refuse "Preparation rejects prepared references."
+              selected_job=prepare
+              ;;
+            create-tag)
+              [[ -z "$PREPARED_REF" && -z "$NPM_PREPARED_REF" ]] || refuse "Tag creation rejects prepared references."
+              selected_job=create-tag
+              ;;
+            certify-npm-oidc)
+              admit_prepared "$PREPARED_REF" || refuse "npm OIDC certification requires one canonical prepared reference."
+              [[ -z "$NPM_PREPARED_REF" ]] || refuse "npm OIDC certification rejects npm_prepared_ref."
+              selected_job=certify-npm-oidc
+              ;;
+            publish-npm)
+              admit_prepared "$PREPARED_REF" || refuse "npm publication requires one canonical prepared reference."
+              [[ -z "$NPM_PREPARED_REF" ]] || refuse "npm publication rejects npm_prepared_ref."
+              selected_job=publish-npm
+              ;;
+            publish-github)
+              admit_prepared "$PREPARED_REF" || refuse "GitHub publication requires one canonical GitHub prepared reference."
+              admit_prepared "$NPM_PREPARED_REF" || refuse "GitHub publication requires one canonical npm prepared reference."
+              [[ "$PREPARED_REF" != "$NPM_PREPARED_REF" ]] || refuse "GitHub and npm prepared references must be distinct."
+              selected_job=publish-github
+              ;;
+            *)
+              echo "::error title=Invalid self-release authority::Release mode is not admitted."
+              exit 1
+              ;;
+          esac
+          printf 'selected_job=%s\n' "$selected_job" >> "$GITHUB_OUTPUT"
+
   prepare:
-    if: ${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'prepare-exact-sha' }}
+    needs: admit
+    if: ${{ needs.admit.outputs.selected_job == 'prepare' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -150,7 +234,8 @@ jobs:
           retention-days: 7
 
   create-tag:
-    if: ${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'create-tag' }}
+    needs: admit
+    if: ${{ needs.admit.outputs.selected_job == 'create-tag' }}
     runs-on: ubuntu-24.04
     environment: github-tag
     permissions:
@@ -171,7 +256,7 @@ jobs:
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
           /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
             --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
-          printf '%s  %s\n' df3cdb1d01225ff516a045175f08b4c39c6f49170305eb93c5a1ca98de2b7437 "$bootstrap" | /usr/bin/sha256sum --check --status
+          printf '%s  %s\n' b33b3c5347c6e6f330dd5e95070fc315138a82e69f90e3c58eef58b5d3728c05 "$bootstrap" | /usr/bin/sha256sum --check --status
           /bin/bash "$bootstrap" "$CANDIDATE_SHA"
       - name: Reauthenticate exact main before tag mutation
         shell: bash
@@ -182,16 +267,25 @@ jobs:
           NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
           RELEASE_MODE: ${{ inputs.mode }}
         run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_DISPATCH_BIN"'
-      - name: Converge exact lightweight v0.3.0 tag
+      - id: tag
+        name: Converge exact lightweight v0.3.0 tag
         shell: bash
         env:
           HOME: ${{ env.TS_RELEASE_HOME }}
           GITHUB_TOKEN: ${{ github.token }}
           CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_TAG_BIN"'
+      - name: Retain and reread the exact tag convergence report
+        if: ${{ always() && steps.tag.outcome != 'skipped' }}
+        uses: ./apps/ts-release-action/report-retainer
+        with:
+          kind: tag
+          candidate-sha: ${{ inputs.candidate_sha }}
+          prepared: ""
 
-  publish-npm:
-    if: ${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'publish-npm' }}
+  certify-npm-oidc:
+    needs: admit
+    if: ${{ needs.admit.outputs.selected_job == 'certify-npm-oidc' }}
     runs-on: ubuntu-24.04
     environment: npm
     permissions:
@@ -199,9 +293,11 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Bootstrap exact repository-owned mutation tools
+      - name: Bootstrap exact repository-owned certification tools
         shell: bash
         env:
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ""
+          ACTIONS_ID_TOKEN_REQUEST_URL: ""
           CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |-
           set -euo pipefail
@@ -214,11 +310,75 @@ jobs:
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
           /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
             --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
-          printf '%s  %s\n' df3cdb1d01225ff516a045175f08b4c39c6f49170305eb93c5a1ca98de2b7437 "$bootstrap" | /usr/bin/sha256sum --check --status
+          printf '%s  %s\n' b33b3c5347c6e6f330dd5e95070fc315138a82e69f90e3c58eef58b5d3728c05 "$bootstrap" | /usr/bin/sha256sum --check --status
+          /bin/bash "$bootstrap" "$CANDIDATE_SHA"
+      - name: Reauthenticate exact main before npm OIDC certification
+        shell: bash
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ""
+          ACTIONS_ID_TOKEN_REQUEST_URL: ""
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          PREPARED_REF: ${{ inputs.prepared_ref }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+          RELEASE_MODE: ${{ inputs.mode }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_DISPATCH_BIN"'
+      - id: npm-oidc-certification
+        name: Certify exact npm OIDC exchange without upload
+        shell: bash
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          PREPARED_REF: ${{ inputs.prepared_ref }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+          RELEASE_MODE: ${{ inputs.mode }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_NPM_OIDC_CERTIFIER_BIN"'
+      - name: Retain and reread the exact npm OIDC no-upload receipt
+        if: ${{ always() && steps.npm-oidc-certification.outcome != 'skipped' }}
+        uses: ./apps/ts-release-action/report-retainer
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ""
+          ACTIONS_ID_TOKEN_REQUEST_URL: ""
+        with:
+          kind: npm-oidc-certification
+          candidate-sha: ${{ inputs.candidate_sha }}
+          prepared: ${{ inputs.prepared_ref }}
+
+  publish-npm:
+    needs: admit
+    if: ${{ needs.admit.outputs.selected_job == 'publish-npm' }}
+    runs-on: ubuntu-24.04
+    environment: npm
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    steps:
+      - name: Bootstrap exact repository-owned mutation tools
+        shell: bash
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ""
+          ACTIONS_ID_TOKEN_REQUEST_URL: ""
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |-
+          set -euo pipefail
+          while IFS='=' read -r name _; do
+            normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+            case "$normalized" in
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*) exit 1 ;;
+            esac
+          done < <(/usr/bin/env)
+          bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
+          /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
+          printf '%s  %s\n' b33b3c5347c6e6f330dd5e95070fc315138a82e69f90e3c58eef58b5d3728c05 "$bootstrap" | /usr/bin/sha256sum --check --status
           /bin/bash "$bootstrap" "$CANDIDATE_SHA"
       - name: Reauthenticate exact main and tag before npm publication
         shell: bash
         env:
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ""
+          ACTIONS_ID_TOKEN_REQUEST_URL: ""
           HOME: ${{ env.TS_RELEASE_HOME }}
           CANDIDATE_SHA: ${{ inputs.candidate_sha }}
           PREPARED_REF: ${{ inputs.prepared_ref }}
@@ -235,17 +395,97 @@ jobs:
         with:
           command: publish
           prepared: ${{ inputs.prepared_ref }}
+      - name: Retain and reread the exact npm publication report
+        if: ${{ always() && steps.npm-publish.outcome != 'skipped' }}
+        uses: ./apps/ts-release-action/report-retainer
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ""
+          ACTIONS_ID_TOKEN_REQUEST_URL: ""
+        with:
+          kind: npm-publish
+          candidate-sha: ${{ inputs.candidate_sha }}
+          prepared: ${{ inputs.prepared_ref }}
       - name: Verify exact public npm bytes and report-bound provenance
         shell: bash
         env:
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ""
+          ACTIONS_ID_TOKEN_REQUEST_URL: ""
           HOME: ${{ env.TS_RELEASE_HOME }}
           GITHUB_TOKEN: ${{ github.token }}
           PREPARED_REF: ${{ inputs.prepared_ref }}
           ACTION_REPORT: ${{ steps.npm-publish.outputs.report-ref }}
         run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_NPM_VERIFIER_BIN" "$PREPARED_REF" "${{ inputs.candidate_sha }}" action-report "$ACTION_REPORT"'
 
+  preflight-github:
+    needs: admit
+    if: ${{ needs.admit.outputs.selected_job == 'publish-github' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      artifact-name: ${{ steps.npm-inspect-report.outputs.artifact-name }}
+      artifact-id: ${{ steps.npm-inspect-report.outputs.artifact-id }}
+      artifact-digest: ${{ steps.npm-inspect-report.outputs.artifact-digest }}
+      report-sha256: ${{ steps.npm-inspect-report.outputs.report-sha256 }}
+    steps:
+      - name: Bootstrap exact repository-owned read-only verification tools
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |-
+          set -euo pipefail
+          while IFS='=' read -r name _; do
+            normalized="$(printf '%s' "$name" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+            case "$normalized" in
+              npm_token|npm_id_token|node_auth_token|npm_config_*|prefix|destdir|node_options|node_path|node_extra_ca_certs|node_tls_reject_unauthorized|node_use_env_proxy|ssl_cert_file|ssl_cert_dir|openssl_conf|http_proxy|https_proxy|all_proxy|no_proxy|curl_ca_bundle|bun_options|bun_config_*|ld_preload|ld_library_path|dyld_insert_libraries|dyld_library_path|dyld_framework_path|git_*) exit 1 ;;
+            esac
+          done < <(/usr/bin/env)
+          bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
+          /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
+          printf '%s  %s\n' b33b3c5347c6e6f330dd5e95070fc315138a82e69f90e3c58eef58b5d3728c05 "$bootstrap" | /usr/bin/sha256sum --check --status
+          /bin/bash "$bootstrap" "$CANDIDATE_SHA"
+      - name: Reauthenticate exact main, tag, and both prepared references before npm preflight
+        shell: bash
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          PREPARED_REF: ${{ inputs.prepared_ref }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+          RELEASE_MODE: ${{ inputs.mode }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_DISPATCH_BIN"'
+      - id: npm-inspect
+        uses: ./apps/ts-release-action
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          GITHUB_TOKEN: ${{ github.token }}
+          TS_RELEASE_NODE_BIN: ${{ env.TS_RELEASE_NODE_BIN }}
+          TS_RELEASE_BUN_BIN: ${{ env.TS_RELEASE_BUN_BIN }}
+        with:
+          command: inspect
+          prepared: ${{ inputs.npm_prepared_ref }}
+      - name: Retain and reread the exact npm inspection report
+        id: npm-inspect-report
+        if: ${{ always() && steps.npm-inspect.outcome != 'skipped' }}
+        uses: ./apps/ts-release-action/report-retainer
+        with:
+          kind: npm-inspect
+          candidate-sha: ${{ inputs.candidate_sha }}
+          prepared: ${{ inputs.npm_prepared_ref }}
+      - name: Verify npm is already public with exact bytes and provenance
+        shell: bash
+        env:
+          HOME: ${{ env.TS_RELEASE_HOME }}
+          GITHUB_TOKEN: ${{ github.token }}
+          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
+        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_NPM_VERIFIER_BIN" "$NPM_PREPARED_REF" "${{ inputs.candidate_sha }}" published-run'
+
   publish-github:
-    if: ${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.mode == 'publish-github' }}
+    needs:
+      - admit
+      - preflight-github
+    if: ${{ needs.admit.outputs.selected_job == 'publish-github' && needs.preflight-github.result == 'success' }}
     runs-on: ubuntu-24.04
     environment: github-release
     permissions:
@@ -267,34 +507,21 @@ jobs:
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
           /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
             --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
-          printf '%s  %s\n' df3cdb1d01225ff516a045175f08b4c39c6f49170305eb93c5a1ca98de2b7437 "$bootstrap" | /usr/bin/sha256sum --check --status
+          printf '%s  %s\n' b33b3c5347c6e6f330dd5e95070fc315138a82e69f90e3c58eef58b5d3728c05 "$bootstrap" | /usr/bin/sha256sum --check --status
           /bin/bash "$bootstrap" "$CANDIDATE_SHA"
-      - name: Reauthenticate exact main, tag, and both prepared references
+      - name: Admit exact retained npm preflight evidence
         shell: bash
         env:
-          HOME: ${{ env.TS_RELEASE_HOME }}
-          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
-          PREPARED_REF: ${{ inputs.prepared_ref }}
-          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
-          RELEASE_MODE: ${{ inputs.mode }}
-        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_DISPATCH_BIN"'
-      - id: npm-inspect
-        uses: ./apps/ts-release-action
-        env:
-          HOME: ${{ env.TS_RELEASE_HOME }}
-          GITHUB_TOKEN: ${{ github.token }}
-          TS_RELEASE_NODE_BIN: ${{ env.TS_RELEASE_NODE_BIN }}
-          TS_RELEASE_BUN_BIN: ${{ env.TS_RELEASE_BUN_BIN }}
-        with:
-          command: inspect
-          prepared: ${{ inputs.npm_prepared_ref }}
-      - name: Verify npm is already public with exact bytes and provenance
-        shell: bash
-        env:
-          HOME: ${{ env.TS_RELEASE_HOME }}
-          GITHUB_TOKEN: ${{ github.token }}
-          NPM_PREPARED_REF: ${{ inputs.npm_prepared_ref }}
-        run: '"$TS_RELEASE_BUN_BIN" --no-env-file --no-install "$TS_RELEASE_NPM_VERIFIER_BIN" "$NPM_PREPARED_REF" "${{ inputs.candidate_sha }}" published-run'
+          NPM_INSPECT_ARTIFACT_NAME: ${{ needs.preflight-github.outputs.artifact-name }}
+          NPM_INSPECT_ARTIFACT_ID: ${{ needs.preflight-github.outputs.artifact-id }}
+          NPM_INSPECT_ARTIFACT_DIGEST: ${{ needs.preflight-github.outputs.artifact-digest }}
+          NPM_INSPECT_REPORT_SHA256: ${{ needs.preflight-github.outputs.report-sha256 }}
+        run: |-
+          set -euo pipefail
+          [[ "$NPM_INSPECT_ARTIFACT_NAME" == "ts-release-npm-inspect-report-$GITHUB_RUN_ATTEMPT" ]]
+          [[ "$NPM_INSPECT_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$NPM_INSPECT_ARTIFACT_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          [[ "$NPM_INSPECT_REPORT_SHA256" =~ ^[a-f0-9]{64}$ ]]
       - name: Reauthenticate exact main immediately before GitHub publication
         shell: bash
         env:
@@ -313,4 +540,11 @@ jobs:
           TS_RELEASE_BUN_BIN: ${{ env.TS_RELEASE_BUN_BIN }}
         with:
           command: publish
+          prepared: ${{ inputs.prepared_ref }}
+      - name: Retain and reread the exact GitHub publication report
+        if: ${{ always() && steps.github-publish.outcome != 'skipped' }}
+        uses: ./apps/ts-release-action/report-retainer
+        with:
+          kind: github-publish
+          candidate-sha: ${{ inputs.candidate_sha }}
           prepared: ${{ inputs.prepared_ref }}

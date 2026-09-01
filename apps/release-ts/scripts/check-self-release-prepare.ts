@@ -93,7 +93,7 @@ try {
   report("self-release-prepare-report/v2", failures, {
     lanes,
     actionReference: candidateActionReference(),
-    authorityOrder: ["prepare-exact-sha", "create-tag", "publish-npm", "publish-github"],
+    authorityOrder: ["prepare-exact-sha", "certify-npm-oidc", "create-tag", "publish-npm", "publish-github"],
     evidenceState: "contract-tested"
   })
 } catch (cause) {

@@ -1,6 +1,8 @@
 dist/
 !apps/ts-release-action/dist/
 !apps/ts-release-action/dist/index.js
+!apps/ts-release-action/report-retainer/dist/
+!apps/ts-release-action/report-retainer/dist/index.cjs
 coverage/
 node_modules/
 .repos/

@@ -56,7 +56,7 @@ describe("import-rules gate", () => {
     expect(failures.some((item) => item.includes("calls global fetch"))).toBe(true)
   })
 
-  test("secret elimination and OIDC request names are confined to the credential platform", () => {
+  test("secret elimination and OIDC request names are confined to explicit credential-elimination boundaries", () => {
     const redacted = failuresFor({
       "src/model/leak.ts": "import * as Redacted from \"effect/Redacted\"\nvoid Redacted.value\n"
     })

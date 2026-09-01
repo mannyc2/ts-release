@@ -428,7 +428,7 @@ export const retainSelfReleaseReport = async (
     }
     const lookupDigest = artifactLookupDigest.exec(downloaded.digest ?? "")
     if (!Number.isSafeInteger(downloaded.id) || downloaded.id! <= 0 || lookupDigest === null ||
-        downloaded.digestMismatch === true || downloaded.path === undefined ||
+        downloaded.digestMismatch !== false || downloaded.path === undefined ||
         realpathSync(downloaded.path) !== realpathSync(download)) {
       return fail("artifact readback returned noncanonical identity metadata")
     }

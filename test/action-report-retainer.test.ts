@@ -248,7 +248,7 @@ class MemoryArtifactTransport implements ActionArtifactTransport {
   artifact: StoredArtifact | undefined
 
   constructor(readonly fault: "none" | "response-loss" | "response-loss-and-absence" |
-    "tamper" | "extra-file" | "wrong-identity" = "none") {}
+    "tamper" | "extra-file" | "wrong-identity" | "digest-mismatch" | "missing-digest-proof" = "none") {}
 
   readonly upload: ActionArtifactTransport["upload"] = async ({ files }) => {
     this.uploadCalls += 1
@@ -279,7 +279,9 @@ class MemoryArtifactTransport implements ActionArtifactTransport {
       id: this.fault === "wrong-identity" ? artifact.id + 1 : artifact.id,
       digest: `sha256:${artifact.digest}`,
       path: destination,
-      digestMismatch: false
+      ...(this.fault === "missing-digest-proof"
+        ? {}
+        : { digestMismatch: this.fault === "digest-mismatch" })
     }
   }
 }
@@ -470,8 +472,14 @@ test("rejects nonprivate, linked, oversized, non-strict, unredacted, or differen
   }
 })
 
-test("rejects changed bytes, unexpected files, and upload/readback identity disagreement", async () => {
-  for (const fault of ["tamper", "extra-file", "wrong-identity"] as const) {
+test("rejects changed bytes, unexpected files, identity disagreement, and missing digest proof", async () => {
+  for (const fault of [
+    "tamper",
+    "extra-file",
+    "wrong-identity",
+    "digest-mismatch",
+    "missing-digest-proof"
+  ] as const) {
     const transport = new MemoryArtifactTransport(fault)
     const current = fixture("npm-inspect", actionReport("npm-inspect"), { transport })
     try {

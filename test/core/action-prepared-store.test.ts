@@ -125,6 +125,7 @@ describe("GitHub Actions durable prepared store", () => {
     expect(uploadSource).toMatch(/digest:\s*uploadResult\.sha256Hash/u)
     expect(uploadSource).toContain("value: `sha256:${uploadResult.sha256Hash}`")
     expect(lookupSource).toMatch(/digest:\s*artifact\.digest/u)
+    expect(downloadSource).toContain("resolve({ sha256Digest: `sha256:${sha256Digest}` })")
     expect(downloadSource).toContain("options.expectedHash) !== extractResponse.sha256Digest")
   })
 
@@ -371,15 +372,19 @@ describe("GitHub Actions durable prepared store", () => {
 
   test("binds public artifact lookup and download to the authenticated producer run", async () => {
     const calls: unknown[] = []
+    const lookupDigest = `sha256:${"b".repeat(64)}`
     const client = {
       uploadArtifact: async () => ({ id: 1, digest: "a".repeat(64) }),
       getArtifact: async (name: string, options?: unknown) => {
         calls.push({ operation: "get", name, options })
-        return { artifact: { id: 17, name, size: 1, digest: `sha256:${"b".repeat(64)}` } }
+        return { artifact: { id: 17, name, size: 1, digest: lookupDigest } }
       },
       downloadArtifact: async (id: number, options?: unknown) => {
         calls.push({ operation: "download", id, options })
-        return { downloadPath: "/tmp/artifact", digestMismatch: false }
+        return {
+          downloadPath: "/tmp/artifact",
+          digestMismatch: (options as { readonly expectedHash?: string } | undefined)?.expectedHash !== lookupDigest
+        }
       }
     } as unknown as NonNullable<Parameters<typeof makeActionsArtifactTransport>[0]>
     const transport = makeActionsArtifactTransport(client)
@@ -389,7 +394,8 @@ describe("GitHub Actions durable prepared store", () => {
       repositoryOwner: "owner",
       repositoryName: "repository"
     }
-    await transport.download({ name: "prepared", destination: "/tmp/destination", findBy })
+    const recovered = await transport.download({ name: "prepared", destination: "/tmp/destination", findBy })
+    expect(recovered.digestMismatch).toBe(false)
     const publicOptions = {
       findBy: {
         token: findBy.token,
@@ -405,22 +411,66 @@ describe("GitHub Actions durable prepared store", () => {
         id: 17,
         options: {
           path: "/tmp/destination",
-          expectedHash: "b".repeat(64),
+          expectedHash: lookupDigest,
           ...publicOptions
         }
       }
     ])
 
     calls.length = 0
-    await transport.download({ name: "prepared", destination: "/tmp/current" })
+    const sameRun = await transport.download({ name: "prepared", destination: "/tmp/current" })
+    expect(sameRun.digestMismatch).toBe(false)
     expect(calls).toEqual([
       { operation: "get", name: "prepared", options: undefined },
       {
         operation: "download",
         id: 17,
-        options: { path: "/tmp/current", expectedHash: "b".repeat(64) }
+        options: { path: "/tmp/current", expectedHash: lookupDigest }
       }
     ])
+  })
+
+  test("requires an explicit artifact transport digest match before prepared adoption", async () => {
+    for (const digestMismatch of [true, undefined] as const) {
+      const root = mkdtempSync(join(tmpdir(), "ts-release-action-digest-proof-"))
+      const artifactRoot = join(root, "artifacts")
+      let uploads = 0
+      let downloads = 0
+      let handoffs = 0
+      const artifacts: ActionArtifactTransport = {
+        upload: async ({ name, rootDirectory }) => {
+          uploads += 1
+          mkdirSync(artifactRoot, { recursive: true })
+          cpSync(rootDirectory, join(artifactRoot, name), { recursive: true })
+          return { id: 7, digest: "b".repeat(64) }
+        },
+        download: async ({ name, destination }) => {
+          downloads += 1
+          cpSync(join(artifactRoot, name), destination, { recursive: true })
+          return {
+            path: destination,
+            ...(digestMismatch === undefined ? {} : { digestMismatch })
+          }
+        }
+      }
+      try {
+        const store = makeActionPreparedReleaseStore({
+          workspace: join(root, "workspace"),
+          context,
+          artifacts,
+          onCommit: () => { handoffs += 1 }
+        })
+        await expect(Effect.runPromise(store.commit(manifest, new Map()))).rejects.toMatchObject({
+          _tag: "PreparedStoreError",
+          reason: expect.stringContaining("did not prove an exact digest match")
+        })
+        expect(uploads).toBe(1)
+        expect(downloads).toBe(1)
+        expect(handoffs).toBe(0)
+      } finally {
+        rmSync(root, { recursive: true, force: true })
+      }
+    }
   })
 
   test("treats a rejected reference notification as a post-commit failure", async () => {

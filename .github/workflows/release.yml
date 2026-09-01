@@ -256,7 +256,7 @@ jobs:
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
           /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
             --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
-          printf '%s  %s\n' b33b3c5347c6e6f330dd5e95070fc315138a82e69f90e3c58eef58b5d3728c05 "$bootstrap" | /usr/bin/sha256sum --check --status
+          printf '%s  %s\n' bf95091a98324e4b1dfd4677085762143f86c1ac9b9188705879226b0a9db6b2 "$bootstrap" | /usr/bin/sha256sum --check --status
           /bin/bash "$bootstrap" "$CANDIDATE_SHA"
       - name: Reauthenticate exact main before tag mutation
         shell: bash
@@ -310,7 +310,7 @@ jobs:
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
           /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
             --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
-          printf '%s  %s\n' b33b3c5347c6e6f330dd5e95070fc315138a82e69f90e3c58eef58b5d3728c05 "$bootstrap" | /usr/bin/sha256sum --check --status
+          printf '%s  %s\n' bf95091a98324e4b1dfd4677085762143f86c1ac9b9188705879226b0a9db6b2 "$bootstrap" | /usr/bin/sha256sum --check --status
           /bin/bash "$bootstrap" "$CANDIDATE_SHA"
       - name: Reauthenticate exact main before npm OIDC certification
         shell: bash
@@ -372,7 +372,7 @@ jobs:
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
           /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
             --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
-          printf '%s  %s\n' b33b3c5347c6e6f330dd5e95070fc315138a82e69f90e3c58eef58b5d3728c05 "$bootstrap" | /usr/bin/sha256sum --check --status
+          printf '%s  %s\n' bf95091a98324e4b1dfd4677085762143f86c1ac9b9188705879226b0a9db6b2 "$bootstrap" | /usr/bin/sha256sum --check --status
           /bin/bash "$bootstrap" "$CANDIDATE_SHA"
       - name: Reauthenticate exact main and tag before npm publication
         shell: bash
@@ -444,7 +444,7 @@ jobs:
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
           /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
             --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
-          printf '%s  %s\n' b33b3c5347c6e6f330dd5e95070fc315138a82e69f90e3c58eef58b5d3728c05 "$bootstrap" | /usr/bin/sha256sum --check --status
+          printf '%s  %s\n' bf95091a98324e4b1dfd4677085762143f86c1ac9b9188705879226b0a9db6b2 "$bootstrap" | /usr/bin/sha256sum --check --status
           /bin/bash "$bootstrap" "$CANDIDATE_SHA"
       - name: Reauthenticate exact main, tag, and both prepared references before npm preflight
         shell: bash
@@ -507,7 +507,7 @@ jobs:
           bootstrap="$RUNNER_TEMP/ts-release-bootstrap.sh"
           /usr/bin/curl --fail --silent --show-error --location --max-redirs 5 --proto '=https' --proto-redir '=https' --tlsv1.2 \
             --output "$bootstrap" "https://raw.githubusercontent.com/mannyc2/ts-release/$CANDIDATE_SHA/apps/release-ts/scripts/bootstrap-self-release-tools.sh"
-          printf '%s  %s\n' b33b3c5347c6e6f330dd5e95070fc315138a82e69f90e3c58eef58b5d3728c05 "$bootstrap" | /usr/bin/sha256sum --check --status
+          printf '%s  %s\n' bf95091a98324e4b1dfd4677085762143f86c1ac9b9188705879226b0a9db6b2 "$bootstrap" | /usr/bin/sha256sum --check --status
           /bin/bash "$bootstrap" "$CANDIDATE_SHA"
       - name: Admit exact retained npm preflight evidence
         shell: bash

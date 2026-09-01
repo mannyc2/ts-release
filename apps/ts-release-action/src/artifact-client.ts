@@ -67,10 +67,11 @@ export const makeActionsArtifactTransport = (
     }
     const downloaded = await client.downloadArtifact(found.artifact.id, {
       path: destination,
-      // The lookup API canonicalizes the hash as `sha256:<hex>`, while the
-      // official download client compares expectedHash to its bare computed
-      // SHA-256 hex. Normalize only at that native-client boundary.
-      expectedHash: lookupDigestHex,
+      // The lookup API and the official download client both use the
+      // canonical `sha256:<hex>` form. Keep that representation intact at the
+      // native-client boundary so a verified lookup can authenticate the
+      // downloaded transport bytes.
+      expectedHash: `sha256:${lookupDigestHex}`,
       ...options
     })
     return {

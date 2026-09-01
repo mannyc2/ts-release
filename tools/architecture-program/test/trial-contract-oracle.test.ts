@@ -125,6 +125,10 @@ describe("architecture trial v2 independent contract oracle", () => {
       execution.isolationPolicy.namespaceArguments.pop()
       execution.isolationPolicy.forbiddenMountClasses.pop()
       execution.isolationPolicy.runtimeDependencyTree.entryTypes.pop()
+      execution.isolationPolicy.bunExecutableSnapshot.fileMode = "0777"
+      execution.isolationPolicy.candidateSnapshot.rootAndImpliedDirectoryMode = "0755"
+      execution.isolationPolicy.threatModelBoundary.sameUidHostProcessBoundary =
+        "candidate-controlled-same-uid-host-processes-in-scope"
       execution.isolationPolicy.threatModelBoundary.hostAvailabilityGuarantee = "guaranteed"
       execution.contractSha256 = executionContractSha256(spec.executionContract)
       const measurement = spec.measurementContract as unknown as MutableDocument

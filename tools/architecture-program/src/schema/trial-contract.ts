@@ -213,6 +213,16 @@ export const REQUIRED_ISOLATION_POLICY = {
     trustStatus: "host-runtime-trust-base",
     hermeticityClaim: "not-fully-hermetic"
   },
+  bunExecutableSnapshot: {
+    sourceAuthority: "retained-preflight-realpath-verified-then-snapshotted",
+    exactBytesSha256Field: "toolchain.bunExecutableSha256",
+    fileMode: "0555"
+  },
+  candidateSnapshot: {
+    rootAndImpliedDirectoryMode: "0700",
+    emptyDirectoryPolicy: "omit",
+    regularFileModePolicy: "exact-from-canonical-candidate-tree-0644-or-0755"
+  },
   runtimeDependencyTree: {
     algorithmId: "canonical-runtime-dependency-tree-manifest-sha256-v2",
     hashDomain: "ts-release/architecture-runtime-dependency-tree/v2",
@@ -248,6 +258,8 @@ export const REQUIRED_ISOLATION_POLICY = {
     memoryQuota: "not-enforced",
     blockQuota: "not-enforced",
     inodeQuota: "not-enforced",
+    sameUidHostProcessBoundary:
+      "trusted-runner-account-out-of-scope-candidate-inside-bwrap-remains-in-scope",
     timeoutRole: "wall-clock-termination-only-not-resource-containment"
   },
   rootFilesystem: {
@@ -369,6 +381,20 @@ const IsolationPolicy = Schema.Struct({
     trustStatus: Schema.Literal("host-runtime-trust-base"),
     hermeticityClaim: Schema.Literal("not-fully-hermetic")
   }),
+  bunExecutableSnapshot: Schema.Struct({
+    sourceAuthority: Schema.Literal(
+      "retained-preflight-realpath-verified-then-snapshotted"
+    ),
+    exactBytesSha256Field: Schema.Literal("toolchain.bunExecutableSha256"),
+    fileMode: Schema.Literal("0555")
+  }),
+  candidateSnapshot: Schema.Struct({
+    rootAndImpliedDirectoryMode: Schema.Literal("0700"),
+    emptyDirectoryPolicy: Schema.Literal("omit"),
+    regularFileModePolicy: Schema.Literal(
+      "exact-from-canonical-candidate-tree-0644-or-0755"
+    )
+  }),
   runtimeDependencyTree: Schema.Struct({
     algorithmId: Schema.Literal("canonical-runtime-dependency-tree-manifest-sha256-v2"),
     hashDomain: Schema.Literal("ts-release/architecture-runtime-dependency-tree/v2"),
@@ -416,6 +442,9 @@ const IsolationPolicy = Schema.Struct({
     memoryQuota: Schema.Literal("not-enforced"),
     blockQuota: Schema.Literal("not-enforced"),
     inodeQuota: Schema.Literal("not-enforced"),
+    sameUidHostProcessBoundary: Schema.Literal(
+      "trusted-runner-account-out-of-scope-candidate-inside-bwrap-remains-in-scope"
+    ),
     timeoutRole: Schema.Literal(
       "wall-clock-termination-only-not-resource-containment"
     )

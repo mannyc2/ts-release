@@ -235,12 +235,23 @@ describe("ArchitectureTrialSpecV2", () => {
           document.executionContract.isolationPolicy.runtimeDependencyTree.entryTypes.pop()
         },
         (document) => {
+          document.executionContract.isolationPolicy.bunExecutableSnapshot.fileMode = "0777"
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.candidateSnapshot.rootAndImpliedDirectoryMode =
+            "0755"
+        },
+        (document) => {
           document.executionContract.isolationPolicy.hostRuntimeTrust.hermeticityClaim =
             "fully-hermetic"
         },
         (document) => {
           document.executionContract.isolationPolicy.threatModelBoundary.hostAvailabilityGuarantee =
             "guaranteed"
+        },
+        (document) => {
+          document.executionContract.isolationPolicy.threatModelBoundary.sameUidHostProcessBoundary =
+            "candidate-controlled-same-uid-host-processes-in-scope"
         },
         (document) => {
           document.executionContract.isolationPolicy.receiptBindings

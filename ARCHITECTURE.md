@@ -33,6 +33,12 @@ the authority for publication progress.
   coordinator and provider subjects.
 - `src/correction` binds provider-specific correction requests to exact
   prepared subjects; catalog Git installs the sole conditional correction writer.
+- `src/operation-journal` owns the provider-neutral opaque event envelope,
+  finite transition reducer, and the one S3 conditional-write protocol. It
+  does not decode provider payloads or acquire cloud credentials.
+- `src/operation-journal/aws` owns the sole production backend: one sealed
+  GitHub-OIDC/STS session and exact IAM/S3 policy and object boundary. The core
+  subpath does not load the AWS SDK.
 - `src/api` exposes the public lifecycle used by CLI, Action, and library users.
 - `src/platform` supplies Node or Bun filesystem, process, HTTP, durable-store,
   and opaque credential sinks at the host boundary.
@@ -111,6 +117,60 @@ shared publication-claim values behind
 the engine's private service tags. Credential values remain host-owned; the
 public seam carries only prepared requests, opaque grants, safe references,
 typed acquisition failures, and authorized HTTP results.
+
+The separate `operation-journal` subpath is not part of the six-operation
+release API. Its credential-agnostic core receives an exact structural S3
+boundary so the protocol can be qualified without live credentials. The
+separate `operation-journal/aws` subpath is the only admitted backend and
+closes over a directly acquired short-lived purpose-scoped session; it exposes
+no profile, ambient credential-chain, endpoint, bucket-selection, or fallback
+input. Operation identities, payloads, and retained objects have fixed
+pre-hash/pre-allocation byte bounds. The
+journal records an immutable event attempt before conditionally advancing one versioned `head.bin`; the
+head version is the only commit point. Every returned acknowledgment follows
+an exact event/head version re-read and full reachable-chain validation.
+Unacknowledged event attempts may be adopted or rebased by a fresh process only
+when one transaction and one legal reducer transition are unambiguous. Reachable
+and orphan attempts sharing a transaction ID must have the same canonical
+logical record and workflow.
+
+The authority snapshot distinguishes standard GitHub OIDC claims for the
+caller (`repository`, `ref`, `sha`, `workflow_ref`, and
+`workflow_sha`) from `job_workflow_ref` and `job_workflow_sha` for the called
+reusable workflow. The package validates canonical relationships and exact
+expected-versus-observed equality without embedding a consumer repository,
+ID, environment, subject, or caller filename. The consumer-owned activation
+contract must pin its protected caller workflow and branch; a broader release
+workflow must not possess that authority. The
+snapshot also binds the exact OIDC trust-policy digest. Ref and source SHA are
+never collapsed into one invented claim. Append records
+derive repository/run/attempt from this snapshot. The structural boundary is a
+test and host seam, not policy evidence by itself. The package-owned AWS adapter
+decodes the JWT in memory, re-observes STS caller identity, parses live bucket,
+Object Lock, ownership, and public-access configuration, canonicalizes the
+bucket, role, and OIDC trust policies, and derives every boolean and digest it
+returns. Until that adapter is released and the exact infrastructure,
+opaque-byte workflow topology, and retained-object protocol are qualified, the
+reusable workflow is a permissionless, always-failing interface only.
+
+The parsed AWS trust projection is exact `aud`, the frozen environment `sub`,
+repository and immutable repository/owner IDs, caller `workflow`, `ref`,
+`environment`, and called `job_workflow_ref`. Current AWS IAM can condition on
+those GitHub claims directly. `workflow_sha` and `job_workflow_sha` remain
+locally re-observed source evidence; the trust-policy projection does not
+pretend AWS conditions on `job_workflow_sha`.
+The frozen activation selects either the exact name-bound environment subject
+or the exact immutable owner/repository-ID-bound form; validation reconstructs
+the selected form and never falls back to the other. The same STS-admitted
+token is locally pinned to `workflow_dispatch`, a branch ref, public repository
+visibility, and a GitHub-hosted runner. OIDC fetch, every SDK send, and every
+response/body stream have a fixed 10,000 ms wall-clock deadline.
+The reusable `job_workflow_ref` itself is conditioned at an exact lowercase
+40-hex ts-release commit, and the local claim validator requires that suffix to
+equal `job_workflow_sha`. This makes the AWS boundary immutable even though AWS
+does not expose `job_workflow_sha` as a separate condition key. An activated
+job runs the package on Node 22.22.2 through an `env -i` allowlist; it does not
+inherit a caller's Node 24.14.1 process environment.
 
 ## Extension translation
 

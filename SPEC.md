@@ -127,6 +127,57 @@ Read-convergence timing defaults are conservative assumed bounds until live
 post-write evidence measures them. Announcements and unsupported providers
 remain outside the retained product.
 
+The provider-neutral `operation-journal` subpath admits only
+`IntentRecorded`, `ReceiptRecorded`, zero or more `ObservationRecorded`, and
+`TerminalRecorded`, with `OutcomeUnknown` as the terminal alternative from an
+intent. Payload bytes and their codec identifier are opaque to ts-release.
+There is one storage protocol: a versioned, Object-Locked S3 namespace with
+immutable conditional event creates and conditional `head.bin` replacement.
+An acknowledgment exists only after exact retained event/head versions and the
+complete chain are re-read. Conditional conflicts, response loss, and process
+death are reconciled by bounded exact-version reads; ambiguity stops and never
+authorizes a provider resubmission. Credential acquisition, provider codecs,
+and provider calls remain host/consumer responsibilities.
+
+The release point must equal the re-observed caller `sha`. Standard OIDC claims
+identify the caller while `job_workflow_ref` and
+`job_workflow_sha` separately identify the called ts-release workflow and its
+exact source commit. The OIDC trust-policy digest is independent of the bucket
+and role-policy digests. Repository ID, run ID, and run attempt in journal
+events come only from that observed session; they are not append inputs. The
+checked-in reusable workflow is inert and always fails without OIDC permission
+until the package-owned `operation-journal/aws` adapter has been released and
+the exact infrastructure, opaque-byte workflow topology, and retained-object
+protocol have been separately qualified. Local fake and serialized-request
+tests establish implementation behavior, not live AWS certification.
+AWS trust must compare `job_workflow_ref` to the reusable workflow path at one
+lowercase 40-hex ts-release commit. The called workflow ref must end in the
+same value as `job_workflow_sha`; branch and tag refs are rejected before STS.
+
+The library embeds no consumer repository, immutable ID, environment, subject,
+or caller-workflow name. An activation contract supplies those exact expected
+values and the adapter re-observes them. Its parsed trust projection must bind
+`aud`, the frozen environment `sub`, repository/IDs, caller `workflow`, `ref`,
+`environment`, and `job_workflow_ref`. Workflow source SHAs remain separately
+re-observed evidence and are not misrepresented as AWS trust-condition keys.
+The activation contract freezes either the exact name-bound environment
+subject or its immutable owner/repository-ID-bound form; the adapter admits no
+fallback between those forms. After STS admits the token, local equality also
+requires `event_name=workflow_dispatch`, `ref_type=branch`,
+`repository_visibility=public`, and `runner_environment=github-hosted`.
+The adapter accepts no credential, profile, endpoint, or alternate-store input:
+it rejects ambient AWS variables and shared files, directly exchanges GitHub
+OIDC for one short-lived role session, and derives governance facts from signed
+STS/IAM/S3 responses and exact parsed policies rather than caller booleans.
+Operation identities are limited to 65,536 bytes, consumer payloads to
+1,048,576 bytes, and every retained object to 1,500,000 bytes; declared and
+streamed lengths are both enforced before hashing or full object allocation.
+Every OIDC fetch, AWS SDK send, and response/body stream is
+bounded by one fixed 10,000 ms wall-clock deadline. The activated reusable job
+uses pinned Node 22.22.2 and an
+`env -i` allowlist. Node 24.14.1 is not in this package's engine because the
+authoritative transitive floor begins at Node 24.15.0.
+
 ## 10. Product evidence
 
 In the source distribution, the generated capability inventory is joined

@@ -58,6 +58,14 @@
     "./provider-sdk": {
       "types": "./dist/provider-sdk.d.ts",
       "default": "./dist/provider-sdk.js"
+    },
+    "./operation-journal": {
+      "types": "./dist/operation-journal.d.ts",
+      "default": "./dist/operation-journal.js"
+    },
+    "./operation-journal/aws": {
+      "types": "./dist/operation-journal/aws.d.ts",
+      "default": "./dist/operation-journal/aws.js"
     }
   },
   "files": [
@@ -114,6 +122,9 @@
     "cli": "bun run apps/release-ts/src/cli/main.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-iam": "3.1123.0",
+    "@aws-sdk/client-s3": "3.1123.0",
+    "@aws-sdk/client-sts": "3.1123.0",
     "@effect/platform-node-shared": "4.0.0-beta.83",
     "semver": "^7.8.5"
   },

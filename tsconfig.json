@@ -18,6 +18,8 @@
       "@mannyc1/ts-release/bun": ["./src/platform/bun.ts"],
       "@mannyc1/ts-release/store": ["./src/store.ts"],
       "@mannyc1/ts-release/host": ["./src/host.ts"],
+      "@mannyc1/ts-release/operation-journal": ["./src/operation-journal.ts"],
+      "@mannyc1/ts-release/operation-journal/aws": ["./src/operation-journal/aws.ts"],
       "@mannyc1/ts-release/*": ["./src/*.ts"]
     },
     "types": ["bun-types"],

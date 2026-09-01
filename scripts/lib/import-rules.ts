@@ -139,7 +139,8 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   release: ["release", "model", "recipes", "drivers", "capabilities"],
   publication: ["publication", "model", "release", "drivers", "capabilities", "extensions"],
   correction: ["correction", "model", "release", "publication"],
-  extensions: ["extensions", "model", "publication", "capabilities", "release"]
+  extensions: ["extensions", "model", "publication", "capabilities", "release"],
+  "operation-journal": ["operation-journal", "model"]
 }
 
 const sourceDirectory = (file: string): string | undefined => {
@@ -170,11 +171,16 @@ const fileSystemFiles: ReadonlySet<string> = new Set([
   "src/drivers/workspace.ts",
   "src/platform/source-observer.ts",
   "src/platform/credentials.ts",
+  "src/operation-journal/aws/oidc.ts",
   "src/release/prepare.ts",
   "src/release/staging.ts",
   "src/release/prepared-store.ts"
 ])
-const credentialEliminationOwner = "src/platform/credentials.ts"
+const credentialEliminationOwners: ReadonlySet<string> = new Set([
+  "src/platform/credentials.ts",
+  "src/operation-journal/aws/oidc.ts"
+])
+const credentialEliminationOwnerLabel = [...credentialEliminationOwners].join(" or ")
 const oidcRequestEnvironmentNames = new Set([
   ["ACTIONS", "ID", "TOKEN", "REQUEST", "URL"].join("_"),
   ["ACTIONS", "ID", "TOKEN", "REQUEST", "TOKEN"].join("_")
@@ -367,7 +373,7 @@ export const checkImportRules = (
     ))
 
   const credentialEliminationUsage = (file: string): Array<string> => {
-    if (toDisplayPath(file) === credentialEliminationOwner) return []
+    if (credentialEliminationOwners.has(toDisplayPath(file))) return []
     const source = ts.createSourceFile(
       file,
       readFileSync(file, "utf8"),
@@ -382,13 +388,13 @@ export const checkImportRules = (
         && ts.isStringLiteral(node.moduleSpecifier)
         && node.moduleSpecifier.text === "effect/Redacted"
       ) {
-        failures.push(`${location(source, node.getStart(source))} imports effect/Redacted; secret elimination is confined to ${credentialEliminationOwner}.`)
+        failures.push(`${location(source, node.getStart(source))} imports effect/Redacted; secret elimination is confined to ${credentialEliminationOwnerLabel}.`)
       }
       if (
         (ts.isStringLiteralLike(node) || ts.isIdentifier(node))
         && oidcRequestEnvironmentNames.has(node.text)
       ) {
-        failures.push(`${location(source, node.getStart(source))} names a GitHub Actions OIDC request variable; OIDC material is confined to ${credentialEliminationOwner}.`)
+        failures.push(`${location(source, node.getStart(source))} names a GitHub Actions OIDC request variable; OIDC material is confined to ${credentialEliminationOwnerLabel}.`)
       }
       ts.forEachChild(node, visit)
     }

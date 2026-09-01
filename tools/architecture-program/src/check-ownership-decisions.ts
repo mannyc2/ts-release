@@ -2,7 +2,10 @@ import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
 import { Effect, Schema } from "effect"
 import { canonicalJsonBytes, parseCanonicalJsonBytes } from "./canonical-document.js"
-import { checkSourceCoordinate } from "./check-source-coordinate.js"
+import {
+  checkSourceCoordinate,
+  type SourceCoordinateGitAuthority
+} from "./check-source-coordinate.js"
 import {
   decodeOwnershipDecisions,
   encodeOwnershipDecisions,
@@ -47,7 +50,7 @@ const collectCoordinates = (
 ]
 
 export const checkOwnershipDecisions = Effect.fn("OwnershipDecisionsV1.check")(
-  function* (repositoryRoot: string) {
+  function* (repositoryRoot: string, gitAuthority?: SourceCoordinateGitAuthority) {
     const inputBytes = yield* Effect.tryPromise({
       try: () => readFile(resolve(repositoryRoot, ownershipDecisionsInputPath)),
       catch: (cause) => new OwnershipDecisionsCheckError(`read ${ownershipDecisionsInputPath}`, cause)
@@ -82,7 +85,7 @@ export const checkOwnershipDecisions = Effect.fn("OwnershipDecisionsV1.check")(
       coordinates.set(sourceCoordinateKey(coordinate), coordinate)
     }
     for (const coordinate of coordinates.values()) {
-      yield* checkSourceCoordinate(repositoryRoot, coordinate)
+      yield* checkSourceCoordinate(repositoryRoot, coordinate, gitAuthority)
     }
 
     return { document, checkedSourceCoordinates: coordinates.size }

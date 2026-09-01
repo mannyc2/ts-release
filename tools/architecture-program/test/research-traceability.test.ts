@@ -1,16 +1,32 @@
-import { readFile } from "node:fs/promises"
-import { dirname, resolve } from "node:path"
+import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "@effect/vitest"
 import { Effect, Exit } from "effect"
 import { parseCanonicalJsonBytes } from "../src/canonical-document.js"
-import { checkSourceCoordinate } from "../src/check-source-coordinate.js"
+import {
+  SOURCE_COORDINATE_GIT_TIMEOUT_MILLISECONDS,
+  checkSourceCoordinate,
+  type SourceCoordinateGitAuthority
+} from "../src/check-source-coordinate.js"
 import { checkResearchTraceability } from "../src/check-research-traceability.js"
 import {
   decodeResearchTraceability,
   encodeResearchTraceability
 } from "../src/schema/research-traceability.js"
+import {
+  ExistingRepositoryPath,
+  GitRevision,
+  ProgramId
+} from "../src/schema/primitives.js"
+import {
+  CurrentWholeFileSourceCoordinate,
+  GitWholeFileSourceCoordinate
+} from "../src/schema/source-coordinate.js"
 import { buildResearchTraceabilityDocument } from "../src/traceability-normalization.js"
+import { sha256Bytes } from "../src/trial-hash.js"
+import type { TrialProcessRequest } from "../src/trial-process.js"
 
 type MutableDocument = Record<string, any>
 type Mutation = (document: MutableDocument) => void
@@ -196,6 +212,86 @@ describe("ResearchTraceabilityV1", () => {
       if (current !== undefined) yield* checkSourceCoordinate(repositoryRoot, current)
       if (historical !== undefined) yield* checkSourceCoordinate(repositoryRoot, historical)
     }))
+
+  it.effect("uses only the hash-bound absolute Git and closed routing environment", () =>
+    Effect.gen(function* () {
+      const gitExecutablePath = yield* Effect.tryPromise(() => realpath("/usr/bin/git"))
+      const gitExecutableBytes = yield* Effect.tryPromise(() => readFile(gitExecutablePath))
+      const blobBytes = new TextEncoder().encode("bound historical source\n")
+      const revision = GitRevision.make("a".repeat(40))
+      const path = ExistingRepositoryPath.make("docs/bound-source.md")
+      const requests: Array<TrialProcessRequest> = []
+      const authority: SourceCoordinateGitAuthority = {
+        executablePath: gitExecutablePath,
+        executableSha256: sha256Bytes(gitExecutableBytes),
+        process: {
+          run: (request) => {
+            requests.push(request)
+            return Effect.succeed({
+              exitCode: 0,
+              stdout: blobBytes,
+              stderr: new Uint8Array()
+            })
+          }
+        }
+      }
+      const coordinate = new GitWholeFileSourceCoordinate({
+        repositoryId: ProgramId.make("ts-release"),
+        gitRevision: revision,
+        path,
+        sha256: sha256Bytes(blobBytes)
+      })
+
+      yield* checkSourceCoordinate(repositoryRoot, coordinate, authority)
+
+      expect(requests).toHaveLength(1)
+      expect(requests[0]).toEqual({
+        argv: [
+          gitExecutablePath,
+          "-C",
+          repositoryRoot,
+          "cat-file",
+          "blob",
+          `${revision}:${path}`
+        ],
+        cwd: repositoryRoot,
+        stdin: new TextEncoder().encode("{}\n"),
+        timeoutMilliseconds: SOURCE_COORDINATE_GIT_TIMEOUT_MILLISECONDS,
+        closedEnvironment: {
+          PATH: dirname(gitExecutablePath),
+          LC_ALL: "C",
+          LANG: "C",
+          TZ: "UTC",
+          NO_COLOR: "1"
+        },
+        environmentProfile: "git-measurement"
+      })
+      expect(requests[0]?.closedEnvironment).not.toHaveProperty("GIT_DIR")
+      expect(requests[0]?.closedEnvironment).not.toHaveProperty("GIT_WORK_TREE")
+    }))
+
+  it.effect("rejects an in-repository symlink alias even when target bytes match", () =>
+    Effect.acquireUseRelease(
+      Effect.tryPromise(async () => {
+        const root = await mkdtemp(join(tmpdir(), "architecture-source-coordinate-"))
+        const docs = join(root, "docs")
+        const bytes = new TextEncoder().encode("same bytes\n")
+        await mkdir(docs)
+        await writeFile(join(docs, "target.md"), bytes)
+        await symlink("target.md", join(docs, "alias.md"))
+        return { root, bytes }
+      }),
+      ({ root, bytes }) => Effect.gen(function* () {
+        const coordinate = new CurrentWholeFileSourceCoordinate({
+          repositoryId: ProgramId.make("ts-release"),
+          path: ExistingRepositoryPath.make("docs/alias.md"),
+          sha256: sha256Bytes(bytes)
+        })
+        const exit = yield* checkSourceCoordinate(root, coordinate).pipe(Effect.exit)
+        expect(Exit.isFailure(exit)).toBe(true)
+      }),
+      ({ root }) => Effect.promise(() => rm(root, { recursive: true, force: true }))
+    ))
 
   it.effect("rejects a source-coordinate hash mismatch", () =>
     Effect.gen(function* () {

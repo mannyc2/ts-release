@@ -2,7 +2,10 @@ import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
 import { Effect, Schema } from "effect"
 import { canonicalJsonBytes, parseCanonicalJsonBytes } from "./canonical-document.js"
-import { checkSourceCoordinate } from "./check-source-coordinate.js"
+import {
+  checkSourceCoordinate,
+  type SourceCoordinateGitAuthority
+} from "./check-source-coordinate.js"
 import {
   decodeResearchTraceability,
   encodeResearchTraceability
@@ -36,7 +39,7 @@ const equalBytes = (left: Uint8Array, right: Uint8Array): boolean => {
 }
 
 export const checkResearchTraceability = Effect.fn("ResearchTraceabilityV1.check")(
-  function* (repositoryRoot: string) {
+  function* (repositoryRoot: string, gitAuthority?: SourceCoordinateGitAuthority) {
     const normalizerSource = yield* Effect.tryPromise({
       try: () => readFile(resolve(
         repositoryRoot,
@@ -115,7 +118,7 @@ export const checkResearchTraceability = Effect.fn("ResearchTraceabilityV1.check
       for (const coordinate of proposition.sourceCoordinates) {
         const key = sourceCoordinateKey(coordinate)
         if (checkedCoordinates.has(key)) continue
-        yield* checkSourceCoordinate(repositoryRoot, coordinate)
+        yield* checkSourceCoordinate(repositoryRoot, coordinate, gitAuthority)
         checkedCoordinates.add(key)
       }
     }

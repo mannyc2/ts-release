@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto"
-import { readFile, realpath, stat } from "node:fs/promises"
-import { dirname, isAbsolute, relative, resolve } from "node:path"
+import { readFile } from "node:fs/promises"
+import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { Effect, Schema } from "effect"
 import { canonicalJsonBytes, parseCanonicalJsonBytes } from "./canonical-document.js"
@@ -8,6 +8,8 @@ import { checkArchitectureBaseline } from "./check-baseline.js"
 import { checkOwnershipDecisions } from "./check-ownership-decisions.js"
 import { checkResearchTraceability } from "./check-research-traceability.js"
 import { checkTrialContractOracle } from "./check-trial-contract.js"
+import type { SourceCoordinateGitAuthority } from "./check-source-coordinate.js"
+import { readStableContainedRegularFile } from "./stable-contained-file.js"
 import {
   type ArchitectureTrialSpecV2,
   type SourceAnchor,
@@ -57,13 +59,6 @@ const equalBytes = (left: Uint8Array, right: Uint8Array): boolean => {
   return true
 }
 
-const isContainedPath = (root: string, target: string): boolean => {
-  const pathFromRoot = relative(root, target)
-  return pathFromRoot === "" ||
-    (pathFromRoot !== ".." && !pathFromRoot.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) &&
-      !isAbsolute(pathFromRoot))
-}
-
 const lineCount = (bytes: Uint8Array): number => {
   if (bytes.length === 0) return 0
   let lines = 0
@@ -75,26 +70,8 @@ const lineCount = (bytes: Uint8Array): number => {
 
 export const checkSourceAnchor = Effect.fn("ArchitectureTrialSpecV2.checkSourceAnchor")(
   function* (repositoryRoot: string, sourceAnchor: SourceAnchor) {
-    const realRoot = yield* tryPromise("resolve repository root", () => realpath(repositoryRoot))
-    const lexicalPath = resolve(repositoryRoot, sourceAnchor.path)
-    const realSourcePath = yield* tryPromise(`resolve source anchor ${sourceAnchor.path}`, () => realpath(lexicalPath))
-
-    if (!isContainedPath(realRoot, realSourcePath)) {
-      return yield* Effect.fail(new InputCheckError(
-        `validate source anchor ${sourceAnchor.path}`,
-        "resolved path escapes the repository root"
-      ))
-    }
-
-    const metadata = yield* tryPromise(`stat source anchor ${sourceAnchor.path}`, () => stat(realSourcePath))
-    if (!metadata.isFile()) {
-      return yield* Effect.fail(new InputCheckError(
-        `validate source anchor ${sourceAnchor.path}`,
-        "resolved path is not a regular file"
-      ))
-    }
-
-    const bytes = yield* tryPromise(`read source anchor ${sourceAnchor.path}`, () => readFile(realSourcePath))
+    const bytes = yield* tryPromise(`read source anchor ${sourceAnchor.path}`, () =>
+      readStableContainedRegularFile(repositoryRoot, sourceAnchor.path))
     const actualSha256 = createHash("sha256").update(bytes).digest("hex")
     if (actualSha256 !== sourceAnchor.sha256) {
       return yield* Effect.fail(new InputCheckError(
@@ -141,7 +118,10 @@ export const checkInputBindings = Effect.fn("ArchitectureTrialSpecV2.checkInputB
 )
 
 export const checkInputs = Effect.fn("ArchitectureTrialSpecV2.checkInputs")(
-  function* (repositoryRoot: string = defaultRepositoryRoot) {
+  function* (
+    repositoryRoot: string = defaultRepositoryRoot,
+    gitAuthority?: SourceCoordinateGitAuthority
+  ) {
     const inputPath = resolve(repositoryRoot, trialSpecInputPath)
     const inputBytes = yield* tryPromise(`read ${trialSpecInputPath}`, () => readFile(inputPath))
     const parsed = yield* trySync(`parse ${trialSpecInputPath}`, () => parseCanonicalJsonBytes(inputBytes))
@@ -166,9 +146,9 @@ export const checkInputs = Effect.fn("ArchitectureTrialSpecV2.checkInputs")(
       inputBytes
     )
 
-    const traceability = yield* checkResearchTraceability(repositoryRoot)
-    const ownership = yield* checkOwnershipDecisions(repositoryRoot)
-    const baseline = yield* checkArchitectureBaseline(repositoryRoot)
+    const traceability = yield* checkResearchTraceability(repositoryRoot, gitAuthority)
+    const ownership = yield* checkOwnershipDecisions(repositoryRoot, gitAuthority)
+    const baseline = yield* checkArchitectureBaseline(repositoryRoot, gitAuthority)
 
     return { trialSpec: spec, trialContract, traceability, ownership, baseline }
   }

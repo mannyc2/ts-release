@@ -2,7 +2,10 @@ import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
 import { Effect, Schema } from "effect"
 import { canonicalJsonBytes, parseCanonicalJsonBytes } from "./canonical-document.js"
-import { checkSourceCoordinate } from "./check-source-coordinate.js"
+import {
+  checkSourceCoordinate,
+  type SourceCoordinateGitAuthority
+} from "./check-source-coordinate.js"
 import {
   decodeArchitectureBaseline,
   encodeArchitectureBaseline
@@ -35,7 +38,7 @@ const equalBytes = (left: Uint8Array, right: Uint8Array): boolean => {
 }
 
 export const checkArchitectureBaseline = Effect.fn("ArchitectureBaselineV1.check")(
-  function* (repositoryRoot: string) {
+  function* (repositoryRoot: string, gitAuthority?: SourceCoordinateGitAuthority) {
     const inputBytes = yield* Effect.tryPromise({
       try: () => readFile(resolve(repositoryRoot, architectureBaselineInputPath)),
       catch: (cause) => new ArchitectureBaselineCheckError(
@@ -71,7 +74,7 @@ export const checkArchitectureBaseline = Effect.fn("ArchitectureBaselineV1.check
       if (evidence.coordinate.repositoryId !== "ts-release") continue
       const key = sourceCoordinateKey(evidence.coordinate)
       if (checkedCoordinates.has(key)) continue
-      yield* checkSourceCoordinate(repositoryRoot, evidence.coordinate)
+      yield* checkSourceCoordinate(repositoryRoot, evidence.coordinate, gitAuthority)
       checkedCoordinates.add(key)
     }
 

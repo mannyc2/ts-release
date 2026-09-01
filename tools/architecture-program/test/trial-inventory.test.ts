@@ -1,4 +1,4 @@
-import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises"
+import { chmod, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { describe, expect, it } from "vitest"
@@ -14,9 +14,10 @@ import {
   canonicalTreeSha256,
   inventoryCanonicalTree,
   inventoryCandidateTree,
+  makeTrialGitNumstat,
   measureCandidatePatch
 } from "../src/trial-inventory.js"
-import { hashCanonicalValue } from "../src/trial-hash.js"
+import { hashCanonicalValue, sha256Bytes } from "../src/trial-hash.js"
 
 type MutableDocument = Record<string, any>
 
@@ -363,6 +364,39 @@ describe("candidate-neutral trial inventory", () => {
         deletions: 0
       })
     }))
+
+  it("executes the frozen Git Myers heuristic instead of a minimal edit approximation", async () => {
+    let state = 1
+    const random = (): number => {
+      state ^= state << 13
+      state ^= state >>> 17
+      state ^= state << 5
+      return (state >>> 0) / 4_294_967_296
+    }
+    const alphabet = ["A", "B", "C", "D", "E", "F", "G", "H"] as const
+    const line = (): string => alphabet[Math.floor(random() * alphabet.length)]!
+    const encoder = new TextEncoder()
+    const before = encoder.encode(Array.from({ length: 200 }, line).join("\n") + "\n")
+    const after = encoder.encode(Array.from({ length: 700 }, line).join("\n") + "\n")
+
+    expect(before.byteLength).toBe(400)
+    expect(after.byteLength).toBe(1_400)
+    const gitExecutablePath = await realpath("/usr/bin/git")
+    const expectedGitExecutableSha256 = sha256Bytes(new Uint8Array(await readFile(gitExecutablePath)))
+    const git = makeTrialGitNumstat({ gitExecutablePath, expectedGitExecutableSha256 })
+    await expect(Effect.runPromise(git.measure(before, after))).resolves.toEqual({
+      _tag: "Text",
+      additions: 570,
+      deletions: 70
+    })
+    const mismatched = makeTrialGitNumstat({
+      gitExecutablePath,
+      expectedGitExecutableSha256: sha256Bytes(encoder.encode("not git"))
+    })
+    await expect(Effect.runPromise(mismatched.measure(before, after))).rejects.toThrow(
+      "do not equal the run-context digest"
+    )
+  })
 
   it("rejects lane and semantic-metadata reclassification of existing paths", async () =>
     withTempRoot(async (root) => {

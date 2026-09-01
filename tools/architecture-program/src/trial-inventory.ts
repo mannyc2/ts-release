@@ -1,13 +1,35 @@
-import { lstat, readFile, readdir } from "node:fs/promises"
-import { join, resolve } from "node:path"
+import {
+  accessSync,
+  constants,
+  realpathSync,
+  statSync,
+  type Stats
+} from "node:fs"
+import {
+  chmod,
+  lstat,
+  mkdtemp,
+  open,
+  readFile,
+  readdir,
+  rm,
+  type FileHandle
+} from "node:fs/promises"
+import { delimiter, isAbsolute, join, resolve } from "node:path"
 import { Effect, Schema } from "effect"
+import { canonicalJsonBytes } from "./canonical-document.js"
 import {
   type ArchitectureCandidateManifestV2,
   type CandidateManifestFileEntry,
   CandidateManifestLaneId,
   candidateManifestInvariantIssues
 } from "./schema/candidate-manifest.js"
-import { MetricId, PlannedRepositoryPath, Sha256Hex } from "./schema/primitives.js"
+import {
+  MetricId,
+  PlannedRepositoryPath,
+  Sha256Hex,
+  type Sha256Hex as Sha256HexType
+} from "./schema/primitives.js"
 import {
   CountMeasurement,
   HashMeasurement,
@@ -19,6 +41,10 @@ import {
 import { REQUIRED_TRIAL_LANES } from "./schema/trial-contract.js"
 import { REQUIRED_PROBE_MEASUREMENT_IDS } from "./schema/trial-spec.js"
 import { hashCanonicalValue, sha256Bytes } from "./trial-hash.js"
+import {
+  makeTrialProcess,
+  type TrialProcessService
+} from "./trial-process.js"
 
 const NonNegativeInt = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0))
 const FileMode = Schema.Literals(["100644", "100755"])
@@ -27,6 +53,44 @@ const OptionalSha256 = Schema.Union([Sha256Hex, Schema.Null])
 
 export const CANONICAL_TREE_HASH_DOMAIN = "ts-release/architecture-canonical-tree/v2"
 export const CANONICAL_PATCH_HASH_DOMAIN = "ts-release/architecture-canonical-patch/v2"
+export const TRIAL_GIT_DIFF_TIMEOUT_MILLISECONDS = 5_000
+export const TRIAL_GIT_DIFF_ARGV = [
+  "git",
+  "diff",
+  "--no-index",
+  "--numstat",
+  "--no-renames",
+  "--diff-algorithm=myers",
+  "--no-ext-diff",
+  "--no-textconv",
+  "--"
+] as const
+
+export interface TrialGitTextNumstat {
+  readonly _tag: "Text"
+  readonly additions: number
+  readonly deletions: number
+}
+
+export interface TrialGitBinaryNumstat {
+  readonly _tag: "Binary"
+}
+
+export type TrialGitNumstat = TrialGitTextNumstat | TrialGitBinaryNumstat
+
+export interface TrialGitNumstatService {
+  readonly measure: (
+    before: Uint8Array,
+    after: Uint8Array
+  ) => Effect.Effect<TrialGitNumstat, TrialInventoryError>
+}
+
+export interface MakeTrialGitNumstatOptions {
+  readonly expectedGitExecutableSha256?: Sha256HexType
+  readonly gitExecutablePath?: string
+  readonly inheritedPath?: string
+  readonly trialProcess?: TrialProcessService
+}
 
 const productLaneIds: ReadonlySet<string> = new Set(
   REQUIRED_TRIAL_LANES.filter(([, countsTowardProductSource]) => countsTowardProductSource)
@@ -317,7 +381,7 @@ const bytesEqual = (left: Uint8Array, right: Uint8Array): boolean => {
 
 const textLines = (bytes: Uint8Array): ReadonlyArray<string> | undefined => {
   if (bytes.includes(0)) return undefined
-  let text: string
+  let text = ""
   try {
     text = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
   } catch {
@@ -335,46 +399,251 @@ const textLines = (bytes: Uint8Array): ReadonlyArray<string> | undefined => {
   return lines
 }
 
-const shortestEditLength = (before: ReadonlyArray<string>, after: ReadonlyArray<string>): number => {
-  const maximum = before.length + after.length
-  const furthest = new Map<number, number>([[1, 0]])
-  for (let distance = 0; distance <= maximum; distance += 1) {
-    for (let diagonal = -distance; diagonal <= distance; diagonal += 2) {
-      const down = furthest.get(diagonal + 1) ?? 0
-      const right = (furthest.get(diagonal - 1) ?? 0) + 1
-      let x = diagonal === -distance || (diagonal !== distance && right <= down) ? down : right
-      let y = x - diagonal
-      while (x < before.length && y < after.length && before[x] === after[y]) {
-        x += 1
-        y += 1
-      }
-      furthest.set(diagonal, x)
-      if (x >= before.length && y >= after.length) return distance
-    }
-  }
-  return maximum
+interface TrialGitInputPair {
+  readonly root: string
+  readonly rootStat: Stats
+  readonly beforePath: string
+  readonly afterPath: string
 }
 
-const physicalDiff = (
+const resolveGitExecutable = (options: MakeTrialGitNumstatOptions): string => {
+  const requested = options.gitExecutablePath
+  const inheritedPath = options.inheritedPath ?? process.env.PATH
+  const candidates = requested === undefined
+    ? (inheritedPath ?? "").split(delimiter)
+      .filter((part) => part.length > 0)
+      .map((part) => resolve(part, "git"))
+    : [requested]
+  for (const candidate of candidates) {
+    try {
+      const absolute = isAbsolute(candidate) ? candidate : resolve(candidate)
+      const exact = realpathSync(absolute)
+      const stat = statSync(exact)
+      if (!stat.isFile()) continue
+      accessSync(exact, constants.X_OK)
+      return exact
+    } catch {
+      // Continue through the fixed PATH candidates. The retained failure below is authoritative.
+    }
+  }
+  throw new TrialInventoryError(
+    "git-executable",
+    requested ?? "git",
+    requested === undefined
+      ? "unable to resolve an executable regular file from the inherited PATH"
+      : "the supplied executable path is not an executable regular file"
+  )
+}
+
+const writeExclusiveFile = async (path: string, bytes: Uint8Array): Promise<void> => {
+  let handle: FileHandle | undefined
+  try {
+    handle = await open(
+      path,
+      constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW,
+      0o600
+    )
+    await handle.writeFile(bytes)
+    await handle.sync()
+  } finally {
+    await handle?.close()
+  }
+}
+
+const verifyBoundGitExecutable = async (
+  path: string,
+  expectedSha256: Sha256HexType | undefined
+): Promise<void> => {
+  let handle: FileHandle | undefined
+  try {
+    handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW)
+    const before = await handle.stat()
+    if (!before.isFile() || (before.mode & constants.X_OK) === 0) {
+      fail("git-executable", path, "bound path is not an executable regular file")
+    }
+    const bytes = new Uint8Array(await handle.readFile())
+    const after = await handle.stat()
+    if (!after.isFile() || !sameStat(before, after) || after.size !== bytes.byteLength) {
+      fail("git-executable", path, "bound executable changed while its bytes were hashed")
+    }
+    if (expectedSha256 !== undefined && sha256Bytes(bytes) !== expectedSha256) {
+      fail("git-executable", path, "bound executable bytes do not equal the run-context digest")
+    }
+  } finally {
+    await handle?.close()
+  }
+}
+
+const createGitInputPair = async (
+  before: Uint8Array,
+  after: Uint8Array
+): Promise<TrialGitInputPair> => {
+  const root = await mkdtemp("/tmp/ts-release-git-numstat-")
+  await chmod(root, 0o700)
+  const rootStat = await lstat(root)
+  if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) {
+    fail("git-temp", root, "mkdtemp did not create a regular directory")
+  }
+  const beforePath = join(root, "before")
+  const afterPath = join(root, "after")
+  try {
+    await writeExclusiveFile(beforePath, before)
+    await writeExclusiveFile(afterPath, after)
+    return { root, rootStat, beforePath, afterPath }
+  } catch (cause) {
+    await rm(root, { recursive: true, force: true }).catch(() => undefined)
+    throw cause
+  }
+}
+
+const cleanupGitInputPair = async ({ root, rootStat }: TrialGitInputPair): Promise<void> => {
+  const current = await lstat(root)
+  if (!current.isDirectory() || current.isSymbolicLink() ||
+    current.dev !== rootStat.dev || current.ino !== rootStat.ino) {
+    fail("git-cleanup", root, "temporary root identity changed before cleanup")
+  }
+  await rm(root, { recursive: true, force: false })
+}
+
+const parseGitNumstat = (
+  path: string,
+  exitCode: number,
+  stdout: Uint8Array,
+  stderr: Uint8Array
+): TrialGitNumstat => {
+  if (stderr.byteLength !== 0) {
+    fail("git-diff", path, `git wrote ${stderr.byteLength} bytes to stderr`)
+  }
+  if (exitCode === 0) {
+    if (stdout.byteLength !== 0) {
+      fail("git-diff", path, "identical-input exit code 0 must have empty stdout")
+    }
+    return { _tag: "Text", additions: 0, deletions: 0 }
+  }
+  if (exitCode !== 1) {
+    fail("git-diff", path, `git exited with unexpected code ${exitCode}`)
+  }
+  let text = ""
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(stdout)
+  } catch (cause) {
+    fail("git-diff", path, `git stdout is not UTF-8 (${causeMessage(cause)})`)
+  }
+  const match = /^(\d+|-)\t(\d+|-)\t[^\n]+\n$/u.exec(text)
+  if (match === null) {
+    return fail("git-diff", path, "git stdout must be exactly one LF-terminated numstat record")
+  }
+  const additions = match[1]!
+  const deletions = match[2]!
+  if (additions === "-" || deletions === "-") {
+    if (additions !== "-" || deletions !== "-") {
+      fail("git-diff", path, "git binary markers must occur in both numstat fields")
+    }
+    return { _tag: "Binary" }
+  }
+  const parsedAdditions = Number(additions)
+  const parsedDeletions = Number(deletions)
+  if (!Number.isSafeInteger(parsedAdditions) || !Number.isSafeInteger(parsedDeletions)) {
+    fail("git-diff", path, "git numstat counts must be safe nonnegative integers")
+  }
+  return { _tag: "Text", additions: parsedAdditions, deletions: parsedDeletions }
+}
+
+export const makeTrialGitNumstat = (
+  options: MakeTrialGitNumstatOptions = {}
+): TrialGitNumstatService => {
+  let executable: string | TrialInventoryError
+  try {
+    executable = resolveGitExecutable(options)
+  } catch (cause) {
+    executable = cause instanceof TrialInventoryError
+      ? cause
+      : new TrialInventoryError("git-executable", "git", causeMessage(cause))
+  }
+  if ((options.gitExecutablePath === undefined) !==
+    (options.expectedGitExecutableSha256 === undefined)) {
+    executable = new TrialInventoryError(
+      "git-executable",
+      options.gitExecutablePath ?? "git",
+      "an exact executable path and expected SHA-256 must be supplied together"
+    )
+  }
+  const inheritedPath = options.inheritedPath ?? process.env.PATH ?? ""
+  const trialProcess = options.trialProcess ?? makeTrialProcess({
+    inheritedEnvironment: { PATH: inheritedPath }
+  })
+  const measure = Effect.fn("TrialGitNumstat.measure")(function* (
+    before: Uint8Array,
+    after: Uint8Array
+  ) {
+    if (executable instanceof TrialInventoryError) return yield* executable
+    yield* Effect.tryPromise({
+      try: () => verifyBoundGitExecutable(executable, options.expectedGitExecutableSha256),
+      catch: (cause) => cause instanceof TrialInventoryError
+        ? cause
+        : new TrialInventoryError("git-executable", executable, causeMessage(cause))
+    })
+    const pair = yield* Effect.acquireRelease(
+      Effect.tryPromise({
+        try: () => createGitInputPair(before, after),
+        catch: (cause) => cause instanceof TrialInventoryError
+          ? cause
+          : new TrialInventoryError("git-temp", "/tmp", causeMessage(cause))
+      }),
+      (value) => Effect.tryPromise({
+        try: () => cleanupGitInputPair(value),
+        catch: (cause) => cause instanceof TrialInventoryError
+          ? cause
+          : new TrialInventoryError("git-cleanup", value.root, causeMessage(cause))
+      }).pipe(Effect.orDie)
+    )
+    const result = yield* trialProcess.run({
+      argv: [executable, ...TRIAL_GIT_DIFF_ARGV.slice(1), pair.beforePath, pair.afterPath],
+      cwd: pair.root,
+      stdin: canonicalJsonBytes({}),
+      timeoutMilliseconds: TRIAL_GIT_DIFF_TIMEOUT_MILLISECONDS,
+      closedEnvironment: { PATH: inheritedPath },
+      environmentProfile: "git-measurement"
+    }).pipe(Effect.mapError((cause) =>
+      new TrialInventoryError("git-diff", pair.root, causeMessage(cause))))
+    yield* Effect.tryPromise({
+      try: () => verifyBoundGitExecutable(executable, options.expectedGitExecutableSha256),
+      catch: (cause) => cause instanceof TrialInventoryError
+        ? cause
+        : new TrialInventoryError("git-executable", executable, causeMessage(cause))
+    })
+    return parseGitNumstat(pair.root, result.exitCode, result.stdout, result.stderr)
+  })
+  return { measure: (before, after) => Effect.scoped(measure(before, after)) }
+}
+
+const physicalDiff = Effect.fn("trialInventory.physicalDiff")(function* (
+  gitNumstat: TrialGitNumstatService,
   path: string,
   laneId: string,
   before: Uint8Array | undefined,
   after: Uint8Array | undefined
-): { readonly additions: number; readonly deletions: number } => {
-  const beforeLines = textLines(before ?? new Uint8Array())
-  const afterLines = textLines(after ?? new Uint8Array())
-  if (beforeLines === undefined || afterLines === undefined) {
+) {
+  const beforeBytes = before ?? new Uint8Array()
+  const afterBytes = after ?? new Uint8Array()
+  if (textLines(beforeBytes) === undefined || textLines(afterBytes) === undefined) {
     if (productLaneIds.has(laneId)) {
-      fail("diff", path, `binary or invalid UTF-8 change is forbidden in ${laneId}`)
+      return yield* new TrialInventoryError(
+        "diff",
+        path,
+        `binary or invalid UTF-8 change is forbidden in ${laneId}`
+      )
+    }
+  }
+  const measured = yield* gitNumstat.measure(beforeBytes, afterBytes)
+  if (measured._tag === "Binary") {
+    if (productLaneIds.has(laneId)) {
+      return yield* new TrialInventoryError("diff", path, `binary change is forbidden in ${laneId}`)
     }
     return { additions: 0, deletions: 0 }
   }
-  const distance = shortestEditLength(beforeLines, afterLines)
-  return {
-    additions: (distance + afterLines.length - beforeLines.length) / 2,
-    deletions: (distance - afterLines.length + beforeLines.length) / 2
-  }
-}
+  return { additions: measured.additions, deletions: measured.deletions }
+})
 
 const sortedUnique = (values: Iterable<string>): ReadonlyArray<string> =>
   [...new Set(values)].sort(codePointCompare)
@@ -406,7 +675,8 @@ export const measureCandidatePatch = Effect.fn("trialInventory.measureCandidateP
     beforeRoot: string,
     beforeManifest: ArchitectureCandidateManifestV2,
     afterRoot: string,
-    afterManifest: ArchitectureCandidateManifestV2
+    afterManifest: ArchitectureCandidateManifestV2,
+    gitNumstat: TrialGitNumstatService = makeTrialGitNumstat()
   ) {
     if (!sameCandidate(beforeManifest, afterManifest)) {
       yield* new TrialInventoryError(
@@ -439,17 +709,13 @@ export const measureCandidatePatch = Effect.fn("trialInventory.measureCandidateP
       if (!changed) continue
 
       const metadata = afterFile?.metadata ?? beforeFile!.metadata
-      const arithmetic = yield* Effect.try({
-        try: () => physicalDiff(
-          path,
-          metadata.laneId,
-          beforeFile?.content,
-          afterFile?.content
-        ),
-        catch: (cause) => cause instanceof TrialInventoryError
-          ? cause
-          : new TrialInventoryError("diff", path, causeMessage(cause))
-      })
+      const arithmetic = yield* physicalDiff(
+        gitNumstat,
+        path,
+        metadata.laneId,
+        beforeFile?.content,
+        afterFile?.content
+      )
       patchEntries.push(new CanonicalPatchEntry({
         path: PlannedRepositoryPath.make(path),
         laneId: metadata.laneId,

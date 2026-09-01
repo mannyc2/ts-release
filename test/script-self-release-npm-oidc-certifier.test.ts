@@ -223,7 +223,8 @@ describe("self-release npm OIDC claim certification", () => {
 })
 
 const preparedFixture = (
-  repository?: string
+  repository?: string,
+  kind: "archive" | "package" = "archive"
 ): { readonly root: string, readonly bundle: PreparedBundle } => {
   const root = mkdtempSync(join(tmpdir(), "ts-release-npm-oidc-prepared-"))
   const bytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 1, 2, 3, 4])
@@ -263,7 +264,7 @@ const preparedFixture = (
   const artifact = PreparedArtifact.make({
     id: artifactId,
     path: SafeRelativePath.make("ts-release-0.3.0.tgz"),
-    kind: "package",
+    kind,
     size: bytes.length,
     digest,
     blob: digest,
@@ -301,6 +302,7 @@ const preparedFixture = (
 test("admits only the sole exact prepared npm tarball with its durable authority", () => {
   const current = preparedFixture()
   const contradictory = preparedFixture("attacker/other")
+  const wrongKind = preparedFixture(undefined, "package")
   try {
     expect(admitNpmPreparedBundle(current.bundle, candidateSha, preparedDigest)).toMatchObject({
       preparedDigest,
@@ -309,9 +311,11 @@ test("admits only the sole exact prepared npm tarball with its durable authority
     })
     expect(() => admitNpmPreparedBundle(current.bundle, "e".repeat(40), preparedDigest)).toThrow()
     expect(() => admitNpmPreparedBundle(contradictory.bundle, candidateSha, preparedDigest)).toThrow()
+    expect(() => admitNpmPreparedBundle(wrongKind.bundle, candidateSha, preparedDigest)).toThrow()
   } finally {
     rmSync(current.root, { recursive: true, force: true })
     rmSync(contradictory.root, { recursive: true, force: true })
+    rmSync(wrongKind.root, { recursive: true, force: true })
   }
 })
 

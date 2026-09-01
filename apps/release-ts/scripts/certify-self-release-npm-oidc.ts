@@ -409,7 +409,7 @@ export const admitNpmPreparedBundle = (
       publication.authentication.attestation.allowedAction !== "npm-publish-direct" ||
       publication.authority.publishStrategy.kind !== "trusted-publishing" ||
       publication.authority.publishStrategy.sourceCommit.toString() !== candidateSha ||
-      npmPublicationAuthorityIssue(publication) !== undefined || artifact.kind !== "package" ||
+      npmPublicationAuthorityIssue(publication) !== undefined || artifact.kind !== "archive" ||
       artifact.mediaType !== "application/gzip" || artifact.size <= 0 || artifact.size > maximumTarballBytes ||
       artifact.digest.hex !== artifact.blob.hex) {
     return fail("prepared npm publication or tarball identity is not exact")

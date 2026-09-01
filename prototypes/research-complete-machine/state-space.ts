@@ -52,11 +52,10 @@ const STATES = [
   /** DispatchStarted appended for the latest attempt; no receipt or fresh
    *  observation for that attempt. The uncertainty region. */
   "AttemptInFlight",
-  /** ReceiptAccepted for the latest attempt — documented provider success
-   *  is success (research: normal documented success remains success). */
-  "Receipted",
-  /** Fresh authoritative observation proves the intended coordinate/state. */
-  "ObservedSatisfied",
+  /** A provider receipt or fresh authoritative observation proves the
+   *  intended coordinate/state. The evidence kind remains a journal fact;
+   *  it is not a distinct continuation state (law L04). */
+  "ProvenSatisfied",
   /** Fresh observation shows absence or pending — never proof of
    *  non-commit (observed absence cannot fence an in-flight mutation). */
   "ObservedUnproven",
@@ -127,7 +126,7 @@ const FOLD: Record<State, Record<EventKind, FoldCell>> = {
     DispatchStarted: adv("AttemptInFlight", "initial attempt; authority constructed by the CAS append itself"),
     DispatchRejectedBeforeCommit: adv("RejectedBeforeCommit", "pre-boundary failure creates no attempt (C02, C08, C11)"),
     ReceiptAccepted: imp("receipt without any attempt"),
-    ObservationSatisfied: adv("ObservedSatisfied", "intent already satisfied without dispatch; idempotent re-run stops satisfied"),
+    ObservationSatisfied: adv("ProvenSatisfied", "intent already satisfied without dispatch; idempotent re-run stops satisfied"),
     ObservationUnproven: abs("baseline observation (e.g. CAS head at expected-old) recorded before first attempt (C05 seed)"),
     ObservationNonCommitProof: imp("nothing to prove non-commit of"),
     ObservationConflict: adv("ObservedConflict", "coordinate occupied in a conflicting form before any attempt"),
@@ -148,41 +147,30 @@ const FOLD: Record<State, Record<EventKind, FoldCell>> = {
   AttemptInFlight: {
     DispatchStarted: imp("second attempt without an intervening observation — decision table forces ObserveOrWait first"),
     DispatchRejectedBeforeCommit: imp("attempt already crossed the uncertainty boundary"),
-    ReceiptAccepted: adv("Receipted", "provider documented success for the attempt (C01)"),
-    ObservationSatisfied: adv("ObservedSatisfied", "fresh observation proves satisfaction (C03)"),
+    ReceiptAccepted: adv("ProvenSatisfied", "provider documented success for the attempt (C01)"),
+    ObservationSatisfied: adv("ProvenSatisfied", "fresh observation proves satisfaction (C03)"),
     ObservationUnproven: adv("ObservedUnproven", "absence/pending is not non-commit proof (C04, C13)"),
     ObservationNonCommitProof: adv("ObservedNonCommit", "trusted evidence the attempt cannot commit"),
     ObservationConflict: adv("ObservedConflict", "coordinate occupied in a conflicting form"),
     RiskAccepted: imp("risk request derives from an observed-inconclusive state, not from a fresh attempt"),
     PlanSuperseded: adv("Superseded", "supersession wins decision order mid-flight (C09)")
   },
-  Receipted: {
-    DispatchStarted: imp("documented success; further attempts need a new plan revision"),
-    DispatchRejectedBeforeCommit: imp("attempt exists"),
-    ReceiptAccepted: imp("one receipt per attempt (dispatchId dedupe)"),
-    ObservationSatisfied: adv("ObservedSatisfied", "post-receipt verification observation (C01)"),
-    ObservationUnproven: abs("metadata lag after documented success; receipt remains authoritative"),
-    ObservationNonCommitProof: imp("contradicts documented success — surfaces as a store/provider integrity failure, not a fold transition"),
-    ObservationConflict: abs("conflicting observation after documented success recorded for the report; receipt remains the commitment fact"),
-    RiskAccepted: imp("no uncertainty to accept"),
-    PlanSuperseded: adv("Superseded", "supersession recorded after success; late facts preserved")
-  },
-  ObservedSatisfied: {
+  ProvenSatisfied: {
     DispatchStarted: imp("satisfied operations never re-dispatch"),
     DispatchRejectedBeforeCommit: imp("attempt history exists or satisfaction pre-empts it"),
-    ReceiptAccepted: abs("late receipt preserved (C03: late-fact-preserved)"),
-    ObservationSatisfied: abs("re-observation confirms"),
-    ObservationUnproven: abs("later ambiguity does not un-satisfy a proven coordinate; recorded"),
-    ObservationNonCommitProof: imp("contradicts proven satisfaction — integrity failure, not a transition"),
-    ObservationConflict: abs("later drift recorded for the report; satisfaction at decision time stands"),
+    ReceiptAccepted: abs("receipt evidence is preserved; the interpreter rejects a duplicate dispatchId before the fold"),
+    ObservationSatisfied: abs("observation evidence is preserved; re-observation confirms"),
+    ObservationUnproven: abs("later ambiguity does not un-satisfy a proven coordinate; fact recorded"),
+    ObservationNonCommitProof: imp("contradicts proven satisfaction — integrity failure, not a lawful transition"),
+    ObservationConflict: abs("later drift is recorded for the report; satisfaction at decision time stands"),
     RiskAccepted: imp("no uncertainty to accept"),
     PlanSuperseded: adv("Superseded", "supersession after satisfaction; report preserves both")
   },
   ObservedUnproven: {
     DispatchStarted: adv("AttemptInFlight", "lawful re-attempt appended only when the decision table authorized it (C05, C06)"),
     DispatchRejectedBeforeCommit: imp("attempt exists"),
-    ReceiptAccepted: adv("Receipted", "late receipt resolves the uncertainty as documented success"),
-    ObservationSatisfied: adv("ObservedSatisfied", "later observation proves satisfaction (C03 resume path)"),
+    ReceiptAccepted: adv("ProvenSatisfied", "late receipt resolves the uncertainty as documented success"),
+    ObservationSatisfied: adv("ProvenSatisfied", "later observation proves satisfaction (C03 resume path)"),
     ObservationUnproven: abs("repeat ambiguity"),
     ObservationNonCommitProof: adv("ObservedNonCommit", "later evidence proves non-commit"),
     ObservationConflict: adv("ObservedConflict", "later evidence proves conflict"),
@@ -193,7 +181,7 @@ const FOLD: Record<State, Record<EventKind, FoldCell>> = {
     DispatchStarted: adv("AttemptInFlight", "lawful later attempt: earlier attempt proven unable to commit (case 2)"),
     DispatchRejectedBeforeCommit: imp("attempt exists"),
     ReceiptAccepted: imp("contradicts non-commit proof — integrity failure"),
-    ObservationSatisfied: adv("ObservedSatisfied", "satisfied by another lawful actor or corrected evidence"),
+    ObservationSatisfied: adv("ProvenSatisfied", "satisfied by another lawful actor or corrected evidence"),
     ObservationUnproven: abs("weaker evidence does not erase non-commit proof"),
     ObservationNonCommitProof: abs("repeat proof"),
     ObservationConflict: adv("ObservedConflict", "coordinate later occupied conflictingly"),
@@ -204,7 +192,7 @@ const FOLD: Record<State, Record<EventKind, FoldCell>> = {
     DispatchStarted: imp("conflict requires a new plan revision or supersession, never a blind resend"),
     DispatchRejectedBeforeCommit: imp("attempt exists or conflict pre-empts it"),
     ReceiptAccepted: abs("late receipt recorded; conflict decision derives from fresh authoritative state"),
-    ObservationSatisfied: adv("ObservedSatisfied", "conflict resolved externally in the intent's favor"),
+    ObservationSatisfied: adv("ProvenSatisfied", "conflict resolved externally in the intent's favor"),
     ObservationUnproven: abs("ambiguity does not erase an observed conflict"),
     ObservationNonCommitProof: abs("non-commit of our attempt recorded; the conflict fact stands"),
     ObservationConflict: abs("repeat conflict"),
@@ -214,8 +202,8 @@ const FOLD: Record<State, Record<EventKind, FoldCell>> = {
   RiskAuthorized: {
     DispatchStarted: adv("AttemptInFlight", "risk-authorized re-attempt (C06)"),
     DispatchRejectedBeforeCommit: imp("attempt exists"),
-    ReceiptAccepted: adv("Receipted", "late receipt for the earlier attempt arrives before resend — resend is avoided"),
-    ObservationSatisfied: adv("ObservedSatisfied", "observation before resend proves satisfaction — resend avoided"),
+    ReceiptAccepted: adv("ProvenSatisfied", "late receipt for the earlier attempt arrives before resend — resend is avoided"),
+    ObservationSatisfied: adv("ProvenSatisfied", "observation before resend proves satisfaction — resend avoided"),
     ObservationUnproven: abs("still uncertain; risk authority stands"),
     ObservationNonCommitProof: adv("ObservedNonCommit", "proof arrives; structural lawfulness supersedes risk authority"),
     ObservationConflict: adv("ObservedConflict", "conflict voids the resend premise"),
@@ -314,8 +302,7 @@ const DECISION_TABLE: ReadonlyArray<DecisionRow> = [
   },
   { state: "RejectedBeforeCommit", input: "none", cell: { decision: "Stop(rejected)", why: "terminal" } },
   { state: "AttemptInFlight", input: "none", cell: { decision: "ObserveOrWait", why: "observation always precedes any post-attempt decision — collapses this state to one cell (C03, C04, C05, C13 resume shape)" } },
-  { state: "Receipted", input: "none", cell: { decision: "Stop(satisfied)", why: "documented provider success is success; further observation is acceptance evidence, not a lifecycle need (C01)" } },
-  { state: "ObservedSatisfied", input: "none", cell: { decision: "Stop(satisfied)", why: "proven" } },
+  { state: "ProvenSatisfied", input: "none", cell: { decision: "Stop(satisfied)", why: "a receipt or authoritative observation proves satisfaction; evidence kind remains a journal fact" } },
   { state: "ObservedNonCommit", input: "none", cell: { decision: "ReplayFromNonCommitProof", why: "lawful case 2: earlier attempt proven unable to commit; a fresh attempt is lawful" } },
   { state: "ObservedConflict", input: "none", cell: { decision: "Stop(conflict)", why: "conflicting occupation is never overwritten automatically" } },
   {
@@ -348,23 +335,48 @@ const APPEND_TABLE = [
   { outcome: "Ambiguous", readback: "readUnavailable", action: "SafeStopNoReappend", why: "cannot prove the append's fate; never re-append blind (C10 shape)" }
 ] as const
 
+/** Evidence kinds deliberately do not become continuation states. The exact
+ *  receipt append guard still inspects journal facts before the pure fold:
+ *  one receipt per dispatch identity. Repeated observations remain ordinary
+ *  append/absorb facts; this spike does not invent an observation identity. */
+const SATISFACTION_EVIDENCE_KINDS = ["ReceiptAccepted", "ObservationSatisfied"] as const
+const RECEIPT_APPEND_GUARD = {
+  identity: "dispatchId",
+  duplicate: "reject",
+  distinct: "append-and-project-ProvenSatisfied"
+} as const
+
 // ---------------------------------------------------------------------------
 // 6. Terminal report projection (law L01: the report is derived).
 // ---------------------------------------------------------------------------
 
 type TerminalReport = "Succeeded" | "Rejected" | "Inconclusive" | "SafeStop" | "Pending"
+type ReportReason =
+  | "Ready"
+  | "RejectedBeforeCommit"
+  | "AwaitingObservation"
+  | "Satisfied"
+  | "Unproven"
+  | "ReplayAuthorizedByNonCommitProof"
+  | "Conflict"
+  | "RiskAuthorized"
+  | "Superseded"
 
-const REPORT: Record<State, TerminalReport> = {
-  PlannedReady: "Pending",
-  RejectedBeforeCommit: "Rejected",
-  AttemptInFlight: "Pending",
-  Receipted: "Succeeded",
-  ObservedSatisfied: "Succeeded",
-  ObservedUnproven: "Inconclusive",
-  ObservedNonCommit: "Pending",
-  ObservedConflict: "SafeStop",
-  RiskAuthorized: "Pending",
-  Superseded: "SafeStop"
+interface ReportProjection {
+  outcome: TerminalReport
+  reason: ReportReason
+}
+
+const REPORT: Record<State, ReportProjection> = {
+  PlannedReady: { outcome: "Pending", reason: "Ready" },
+  RejectedBeforeCommit: { outcome: "Rejected", reason: "RejectedBeforeCommit" },
+  AttemptInFlight: { outcome: "Pending", reason: "AwaitingObservation" },
+  ProvenSatisfied: { outcome: "Succeeded", reason: "Satisfied" },
+  ObservedUnproven: { outcome: "Inconclusive", reason: "Unproven" },
+  ObservedNonCommit: { outcome: "Pending", reason: "ReplayAuthorizedByNonCommitProof" },
+  ObservedConflict: { outcome: "SafeStop", reason: "Conflict" },
+  RiskAuthorized: { outcome: "Pending", reason: "RiskAuthorized" },
+  Superseded: { outcome: "SafeStop", reason: "Superseded" }
 }
 
 // ---------------------------------------------------------------------------
@@ -579,7 +591,7 @@ const ADVERSARIAL_WALKS: ReadonlyArray<CaseWalk> = [
     id: "T3-warehouse-untouched-file",
     outcome: "Pending",
     steps: [{ expectDecision: "InitialAttempt", at: { prepared: "viable" } }],
-    note: "per-file Intents are independent operations; the never-attempted file C dispatches initially while A stays Receipted and B proves by observation"
+    note: "per-file Intents are independent operations; the never-attempted file C dispatches initially while A is receipt-proven and B proves by observation"
   },
   {
     id: "T4-exact-duplicate-untrusted",
@@ -659,19 +671,34 @@ const ADVERSARIAL_NOTES = [
   { id: "T16-plan-correction", disposition: "PlanSuperseded path plus a new plan revision with its own core-derived identity" }
 ] as const
 
+/** Candidate-specific conformance evidence may add coverage but does not
+ *  replace or amend any of the 16 shared trial cases. This walk closes the
+ *  only state-coverage gap found by adversarial reconciliation. */
+const CONFORMANCE_WALKS: ReadonlyArray<CaseWalk> = [
+  {
+    id: "MC01-conflicting-coordinate-safe-stop",
+    outcome: "SafeStop",
+    steps: [
+      { fold: "ObservationConflict" },
+      { expectDecision: "Stop(conflict)" }
+    ],
+    note: "a conflicting occupied coordinate is never overwritten; the terminal envelope is SafeStop with structured reason Conflict"
+  }
+]
+
 // ---------------------------------------------------------------------------
 // 10. Recorded findings and assumptions (maintainer-visible).
 // ---------------------------------------------------------------------------
 
 const FINDINGS = [
   "F1 decision-codomain reconciliation: the research's eight decision values omit stops for rejected and superseded operations; this table generalizes the three Stop* values to Stop(reason) with reasons satisfied|conflict|inconclusive|rejected|superseded. The five progress decisions are unchanged.",
-  "F2 conflict reporting: ObservedConflict projects to report SafeStop with the conflict preserved as structured explanation; the four-outcome trial vocabulary has no separate Conflict terminal. Confirm or add a fifth report row before freezing report codecs.",
+  "F2 resolved — conflict reporting: ObservedConflict projects to the frozen SafeStop terminal envelope with structured reason Conflict. Conflict remains a first-class fact and continuation reason without inventing a fifth terminal outcome.",
   "F3 pre-attempt observations: observations may lawfully precede the first attempt (CAS baseline, already-satisfied idempotent re-run, occupied-conflicting). Satisfied/conflict advance the state; unproven absorbs as baseline.",
-  "F4 Receipted decides Stop(satisfied) without requiring a verification observation: documented success is success; observation facets (A/M/B/C/J) are acceptance evidence per family, enforced by case fixtures rather than lifecycle policy.",
+  "F4 ProvenSatisfied decides Stop(satisfied) without requiring both evidence forms: documented success is success; observation facets (A/M/B/C/J) are acceptance evidence per family, enforced by case fixtures rather than lifecycle policy.",
   "F5 integrity contradictions (non-commit proof after receipt or after proven satisfaction) are impossible cells: they indicate provider or store integrity failure and must surface as append-guard violations, not as lawful transitions.",
   "F6 the M1 fold grammar survives inside M2: `unprovenCell` is a four-line guard over an otherwise enumerated table — the fold/decision grammar is how cells are COMPUTED, the total table is what is REVIEWED and frozen. The candidates were never exclusive; M2 subsumes M1's grammar as its generator.",
-  "F7 the machine is NOT minimal: partition refinement over reports, decision surfaces, and advance structure collapses Receipted and ObservedSatisfied into one ProvenSatisfied class — their distinction rests solely on the duplicate-receipt append guard and on which evidence kind proved satisfaction. Maintainer choice before freeze: adopt the 9-state quotient with commitment-evidence kind as a journal fact, or keep 10 states to make evidence kind state-visible. The full-labeling partition keeps all 10 states distinct, so the choice is a labeling decision, not a behavioral one.",
-  "F8 adversarial reconciliation: all 16 traces in adversarial-traces.md reconcile with the tables; nine are executable walks here, and T9 (GitHub starter-asset-after-502) exercises ObservedNonCommit, which no trial case reaches. ObservedConflict is now the single state justified by research alone with neither a trial case nor a trace walk — add a conformance case before the machine freeze.",
+  "F7 resolved — minimal quotient: receipt-proven and observation-proven satisfaction are one ProvenSatisfied continuation state. Their evidence kind and identity-specific duplicate guard remain journal/interpreter facts, satisfying the facts-not-decisions law while the nine-state table stays fully labeled and behaviorally minimal.",
+  "F8 resolved — adversarial and conformance coverage: all 16 traces in adversarial-traces.md reconcile with the tables; T9 exercises ObservedNonCommit, and candidate-specific walk MC01 exercises ObservedConflict without changing the shared 16-case contract.",
   "F9 two policies confirmed vertical-owned with zero machine impact: composite facet verdict derivation (T2: version satisfied, tag moved) and occupied-failed-coordinate cleanup before a lawful re-attempt (T9: delete starter asset). Both are recovery/observation law under L06."
 ] as const
 
@@ -707,7 +734,10 @@ const minimize = (mode: "full-labeling" | "behavioral"): ReadonlyArray<ReadonlyA
     const classes = mode === "full-labeling"
       ? EVENTS.map((event) => FOLD[state][event].class).join(",")
       : ""
-    block.set(state, `${REPORT[state]}|${decisionSurface(state)}|${classes}`)
+    // Use only the externally observable coarse outcome here. Including the
+    // state-derived structured reason would make every state distinct by
+    // construction and turn this into a tautology rather than a probe.
+    block.set(state, `${REPORT[state].outcome}|${decisionSurface(state)}|${classes}`)
   }
   for (;;) {
     const next = new Map<State, string>()
@@ -756,7 +786,7 @@ const walkCase = (walk: CaseWalk): TerminalReport => {
       }
     }
   }
-  return walk.id === "C10-ambiguous-append-readback" ? "SafeStop" : REPORT[state]
+  return walk.id === "C10-ambiguous-append-readback" ? "SafeStop" : REPORT[state].outcome
 }
 
 const main = (): void => {
@@ -839,15 +869,31 @@ const main = (): void => {
   const traceCount = ADVERSARIAL_WALKS.length + ADVERSARIAL_NOTES.length
   if (traceCount < 16) fail(`adversarial coverage ${traceCount} < 16 traces`)
 
-  // Exercise census: after case and trace walks, only ObservedConflict may
-  // remain unexercised, and only because it is research-justified (F8).
-  const unexercised = STATES.filter((state) => !exercised.has(state))
-  if (unexercised.length !== 1 || unexercised[0] !== "ObservedConflict") {
-    fail(`unexercised states [${unexercised.join(", ")}] — F8 permits exactly ObservedConflict`)
+  // Candidate-specific conformance walks close coverage gaps without changing
+  // the shared trial-case population or its hash-bound expected outcomes.
+  for (const walk of CONFORMANCE_WALKS) {
+    let state: State = "PlannedReady"
+    for (const step of walk.steps) {
+      if ("fold" in step) {
+        const cell: FoldCell = FOLD[state][step.fold]
+        if (cell.class === "advance") { state = cell.next; exercised.add(state) }
+      }
+    }
+    const outcome = walkCase(walk)
+    if (outcome !== walk.outcome) fail(`${walk.id}: walked to ${outcome}, conformance case requires ${walk.outcome}`)
   }
 
-  // Minimality probe (finding F7): full labeling keeps all states distinct;
-  // the behavioral quotient collapses exactly Receipted + ObservedSatisfied.
+  // Exercise census: shared cases, adversarial traces, and additive
+  // candidate-specific conformance walks must reach every continuation state.
+  const unexercised = STATES.filter((state) => !exercised.has(state))
+  if (unexercised.length !== 0) {
+    fail(`unexercised states [${unexercised.join(", ")}]`)
+  }
+
+  // Minimality probe (finding F7): after adopting the ProvenSatisfied
+  // quotient, both full labeling and behavioral refinement keep every state
+  // distinct. Evidence-specific duplicate guards remain outside continuation
+  // state in SATISFACTION_EVIDENCE_KINDS and RECEIPT_APPEND_GUARD.
   const fullBlocks = minimize("full-labeling")
   if (fullBlocks.length !== STATES.length) {
     fail(`full-labeling partition has ${fullBlocks.length} blocks — states are indistinguishable even with append-guard labels`)
@@ -855,8 +901,13 @@ const main = (): void => {
   const behavioralBlocks = minimize("behavioral")
   const mergedBlocks = behavioralBlocks.filter((group) => group.length > 1)
   const mergedKey = mergedBlocks.map((group) => [...group].sort().join("+")).sort().join(" ")
-  if (mergedKey !== "ObservedSatisfied+Receipted") {
-    fail(`behavioral quotient merged [${mergedKey || "nothing"}] — finding F7 is out of sync with the minimizer`)
+  if (behavioralBlocks.length !== STATES.length || mergedKey !== "") {
+    fail(`behavioral quotient merged [${mergedKey || "unexpected blocks"}] — nine-state quotient is not minimal`)
+  }
+  if (SATISFACTION_EVIDENCE_KINDS.join(",") !== "ReceiptAccepted,ObservationSatisfied" ||
+      RECEIPT_APPEND_GUARD.identity !== "dispatchId" ||
+      RECEIPT_APPEND_GUARD.duplicate !== "reject") {
+    fail("satisfaction evidence kinds or receipt append guard drifted")
   }
 
   // V5: provider projection adds zero states and references real shapes.
@@ -876,11 +927,13 @@ const main = (): void => {
   console.log(`  representable-invalids removed ${impossible} (append-guard obligations on the single interpreter)`)
   console.log(`  decision cells               ${decisionCells}  (V3 <= 128: ${v3 ? "PASS" : "FAIL"})`)
   console.log(`  interpreter append rows      ${APPEND_TABLE.length}`)
-  console.log(`  terminal report rows         ${new Set(Object.values(REPORT)).size} over ${STATES.length} states`)
+  console.log(`  report outcome rows          ${new Set(Object.values(REPORT).map((report) => report.outcome)).size} (4 terminal + Pending) over ${STATES.length} states`)
+  console.log(`  structured projection rows   ${new Set(Object.values(REPORT).map((report) => `${report.outcome}:${report.reason}`)).size}`)
   console.log(`  machine-walk cases           ${CASE_WALKS.length} reproduce trial outcomes; ${OUT_OF_LIFECYCLE.length} owned outside the lifecycle`)
   console.log(`  provider families projected  ${PROVIDER_PROJECTION.length}, added lifecycle states 0 (V5 PASS)`)
   console.log(`  adversarial traces           ${ADVERSARIAL_WALKS.length} executable walks + ${ADVERSARIAL_NOTES.length} classified = 16+ reconciled`)
-  console.log(`  minimality probe             full labeling ${fullBlocks.length}/${STATES.length} distinct; behavioral quotient ${behavioralBlocks.length} (Receipted+ObservedSatisfied merge — F7)`)
+  console.log(`  conformance walks            ${CONFORMANCE_WALKS.length} additive; all ${STATES.length} states exercised`)
+  console.log(`  minimality probe             full labeling ${fullBlocks.length}/${STATES.length} distinct; behavioral quotient ${behavioralBlocks.length}/${STATES.length} distinct`)
   console.log("")
   for (const finding of FINDINGS) console.log(`  ${finding}`)
   console.log("")

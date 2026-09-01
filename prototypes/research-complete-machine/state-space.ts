@@ -548,7 +548,119 @@ const PROVIDER_PROJECTION = [
 ] as const
 
 // ---------------------------------------------------------------------------
-// 9. Recorded findings and assumptions (maintainer-visible).
+// 9. Adversarial-trace reconciliation — docs/refactor/research/
+//    adversarial-traces.md replayed against the tables. Walkable traces are
+//    executed exactly like machine cases; the rest are classified with an
+//    owner. A trace the tables cannot reproduce fails the run.
+// ---------------------------------------------------------------------------
+
+const ADVERSARIAL_WALKS: ReadonlyArray<CaseWalk> = [
+  {
+    id: "T2-lost-npm-response-satisfied",
+    outcome: "Succeeded",
+    steps: [
+      { fold: "DispatchStarted" },
+      { expectDecision: "ObserveOrWait" },
+      { fold: "ObservationSatisfied" },
+      { expectDecision: "Stop(satisfied)" }
+    ]
+  },
+  {
+    id: "T2-lost-npm-response-absent",
+    outcome: "Inconclusive",
+    steps: [
+      { fold: "DispatchStarted" },
+      { fold: "ObservationUnproven" },
+      { expectDecision: "RequiresRiskAcceptance", at: { correspondence: "match", scheme: "replay.none/1", condition: "holds" } }
+    ],
+    note: "version immutability alone never authorizes replay (T2.8): no cell auto-replays scheme none"
+  },
+  {
+    id: "T3-warehouse-untouched-file",
+    outcome: "Pending",
+    steps: [{ expectDecision: "InitialAttempt", at: { prepared: "viable" } }],
+    note: "per-file Intents are independent operations; the never-attempted file C dispatches initially while A stays Receipted and B proves by observation"
+  },
+  {
+    id: "T4-exact-duplicate-untrusted",
+    outcome: "Inconclusive",
+    steps: [
+      { fold: "DispatchStarted" },
+      { fold: "ObservationUnproven" },
+      { expectDecision: "RequiresRiskAcceptance", at: { correspondence: "match", scheme: "replay.exact-duplicate/1", condition: "holds" } }
+    ],
+    note: "request correspondence is insufficient without a trusted protocol-law authority (T4.7)"
+  },
+  {
+    id: "T6-idempotency-header-ignored",
+    outcome: "Inconclusive",
+    steps: [
+      { fold: "DispatchStarted" },
+      { fold: "ObservationUnproven" },
+      { expectDecision: "RequiresRiskAcceptance", at: { correspondence: "match", scheme: "replay.idempotency-key/1", condition: "holds" } }
+    ],
+    note: "the double-commit E1/E2 requires a resend; no cell produces one for this scheme, so the machine cannot cause T6.5"
+  },
+  {
+    id: "T9-github-starter-asset-noncommit",
+    outcome: "Succeeded",
+    steps: [
+      { fold: "DispatchStarted" },
+      { expectDecision: "ObserveOrWait" },
+      { fold: "ObservationNonCommitProof" },
+      { expectDecision: "ReplayFromNonCommitProof" },
+      { fold: "DispatchStarted" },
+      { fold: "ObservationSatisfied" }
+    ],
+    note: "documented starter-asset-after-502 is provider-evidenced non-commit; deleting the starter before re-upload is vertical recovery law (L06), not a lifecycle state"
+  },
+  {
+    id: "T10-write-only-provider",
+    outcome: "Inconclusive",
+    steps: [
+      { fold: "DispatchStarted" },
+      { fold: "ObservationUnproven" },
+      { expectDecision: "RequiresRiskAcceptance", at: { correspondence: "match", scheme: "replay.none/1", condition: "holds" } }
+    ],
+    note: "no status API yields verdict Unproven; the provider stays valid with an explicit resumability ceiling (T10.5)"
+  },
+  {
+    id: "T12-unknown-scheme-version",
+    outcome: "Inconclusive",
+    steps: [
+      { fold: "DispatchStarted" },
+      { fold: "ObservationUnproven" },
+      { expectDecision: "RequiresRiskAcceptance", at: { correspondence: "match", scheme: "unknown", condition: "holds" } }
+    ],
+    note: "replay.idempotency-key/2 is never reinterpreted under /1; the structured stop explanation is a report obligation"
+  },
+  {
+    id: "T15-consumer-failure-after-acceptance",
+    outcome: "Succeeded",
+    steps: [
+      { fold: "DispatchStarted" },
+      { fold: "ReceiptAccepted" },
+      { expectDecision: "Stop(satisfied)" }
+    ],
+    note: "consumer smoke failure is release policy above the operation machine; the journal never reopens the publication (facet C is not a journal event)"
+  }
+]
+
+const ADVERSARIAL_NOTES = [
+  { id: "T1-normal-npm-success", disposition: "identical to case walk C01" },
+  { id: "T2-immutable-facet-tag-moved", disposition: "composite facet verdict derivation is the npm vertical's observation codec (L06); correction is a new tag Intent, not a lifecycle state" },
+  { id: "T3-files-A-and-B", disposition: "C01 and C03 shapes on independent operations" },
+  { id: "T5-git-cas-replay", disposition: "identical to case walk C05" },
+  { id: "T7-equal-wire-facts-different-code", disposition: "wire-sufficient policy: correspondence inputs are fingerprint, endpoint, and authorization only; provenance is explanation, never a decision input" },
+  { id: "T8-provider-controlled-identity", disposition: "operation identity is core-derived upstream of the machine; no state impact" },
+  { id: "T11-two-fresh-runners", disposition: "APPEND_TABLE rows Applied and StaleExpectedRevision" },
+  { id: "T13-journal-backend-race", disposition: "store law territory (OD01-OD04), outside the machine" },
+  { id: "T14-apple-response-loss", disposition: "identical to case walk C13; durable submission-identity recovery is blocker OB06" },
+  { id: "T16-plan-correction", disposition: "PlanSuperseded path plus a new plan revision with its own core-derived identity" }
+] as const
+
+// ---------------------------------------------------------------------------
+// 10. Recorded findings and assumptions (maintainer-visible).
 // ---------------------------------------------------------------------------
 
 const FINDINGS = [
@@ -557,7 +669,10 @@ const FINDINGS = [
   "F3 pre-attempt observations: observations may lawfully precede the first attempt (CAS baseline, already-satisfied idempotent re-run, occupied-conflicting). Satisfied/conflict advance the state; unproven absorbs as baseline.",
   "F4 Receipted decides Stop(satisfied) without requiring a verification observation: documented success is success; observation facets (A/M/B/C/J) are acceptance evidence per family, enforced by case fixtures rather than lifecycle policy.",
   "F5 integrity contradictions (non-commit proof after receipt or after proven satisfaction) are impossible cells: they indicate provider or store integrity failure and must surface as append-guard violations, not as lawful transitions.",
-  "F6 the M1 fold grammar survives inside M2: `unprovenCell` is a four-line guard over an otherwise enumerated table — the fold/decision grammar is how cells are COMPUTED, the total table is what is REVIEWED and frozen. The candidates were never exclusive; M2 subsumes M1's grammar as its generator."
+  "F6 the M1 fold grammar survives inside M2: `unprovenCell` is a four-line guard over an otherwise enumerated table — the fold/decision grammar is how cells are COMPUTED, the total table is what is REVIEWED and frozen. The candidates were never exclusive; M2 subsumes M1's grammar as its generator.",
+  "F7 the machine is NOT minimal: partition refinement over reports, decision surfaces, and advance structure collapses Receipted and ObservedSatisfied into one ProvenSatisfied class — their distinction rests solely on the duplicate-receipt append guard and on which evidence kind proved satisfaction. Maintainer choice before freeze: adopt the 9-state quotient with commitment-evidence kind as a journal fact, or keep 10 states to make evidence kind state-visible. The full-labeling partition keeps all 10 states distinct, so the choice is a labeling decision, not a behavioral one.",
+  "F8 adversarial reconciliation: all 16 traces in adversarial-traces.md reconcile with the tables; nine are executable walks here, and T9 (GitHub starter-asset-after-502) exercises ObservedNonCommit, which no trial case reaches. ObservedConflict is now the single state justified by research alone with neither a trial case nor a trace walk — add a conformance case before the machine freeze.",
+  "F9 two policies confirmed vertical-owned with zero machine impact: composite facet verdict derivation (T2: version satisfied, tag moved) and occupied-failed-coordinate cleanup before a lawful re-attempt (T9: delete starter asset). Both are recovery/observation law under L06."
 ] as const
 
 // ---------------------------------------------------------------------------
@@ -567,6 +682,53 @@ const FINDINGS = [
 const fail = (message: string): never => {
   console.error(`CHECK FAILED: ${message}`)
   process.exit(1)
+}
+
+/** Canonical decision behavior of a state, independent of prose. */
+const decisionSurface = (state: State): string => {
+  const row = DECISION_TABLE.find((r) => r.state === state) ?? fail(`no decision row for ${state}`)
+  if (row.input === "none") return row.cell.decision
+  if (row.input === "prepared") return PREPARED.map((p) => row.cells[p].decision).join(",")
+  if (row.input === "riskBound") return RISK_BOUND.map((r) => row.cells[r].decision).join(",")
+  return CORRESPONDENCE.flatMap((c) => SCHEMES.flatMap((s) => CONDITION.map((k) => row.cells[c][s][k].decision))).join(",")
+}
+
+/**
+ * Moore-style partition refinement — the minimality probe.
+ * "full-labeling": states are distinguished by report, decision surface,
+ *   per-event cell class (advance/absorb/impossible), and advance structure.
+ * "behavioral": absorb and impossible both mean "no state change", so only
+ *   reports, decision surfaces, and advance structure distinguish states —
+ *   this surfaces states that differ ONLY by append-guard labeling.
+ */
+const minimize = (mode: "full-labeling" | "behavioral"): ReadonlyArray<ReadonlyArray<State>> => {
+  let block = new Map<State, string>()
+  for (const state of STATES) {
+    const classes = mode === "full-labeling"
+      ? EVENTS.map((event) => FOLD[state][event].class).join(",")
+      : ""
+    block.set(state, `${REPORT[state]}|${decisionSurface(state)}|${classes}`)
+  }
+  for (;;) {
+    const next = new Map<State, string>()
+    for (const state of STATES) {
+      const successors = EVENTS.map((event) => {
+        const cell: FoldCell = FOLD[state][event]
+        if (cell.class !== "advance") return "self"
+        return block.get(cell.next) === block.get(state) ? "self" : block.get(cell.next)!
+      }).join(";")
+      next.set(state, `${block.get(state)}#${successors}`)
+    }
+    const grewApart = new Set(next.values()).size > new Set(block.values()).size
+    block = next
+    if (!grewApart) break
+  }
+  const groups = new Map<string, Array<State>>()
+  for (const state of STATES) {
+    const key = block.get(state) ?? fail("minimize lost a state")
+    groups.set(key, [...(groups.get(key) ?? []), state])
+  }
+  return [...groups.values()]
 }
 
 const walkCase = (walk: CaseWalk): TerminalReport => {
@@ -662,12 +824,39 @@ const main = (): void => {
   const machineCaseCount = CASE_WALKS.length + OUT_OF_LIFECYCLE.length
   if (machineCaseCount !== 16) fail(`case coverage ${machineCaseCount} != 16`)
 
-  // Exercise census: states no walk reaches must be justified by projection rows.
-  const unexercised = STATES.filter((state) => !exercised.has(state))
-  for (const state of unexercised) {
-    if (state !== "ObservedNonCommit" && state !== "ObservedConflict") {
-      fail(`state ${state} not exercised by any case walk and not a justified extension state`)
+  // Adversarial-trace walks reconcile with the tables (finding F8).
+  for (const walk of ADVERSARIAL_WALKS) {
+    let state: State = "PlannedReady"
+    for (const step of walk.steps) {
+      if ("fold" in step) {
+        const cell: FoldCell = FOLD[state][step.fold]
+        if (cell.class === "advance") { state = cell.next; exercised.add(state) }
+      }
     }
+    const outcome = walkCase(walk)
+    if (outcome !== walk.outcome) fail(`${walk.id}: walked to ${outcome}, trace requires ${walk.outcome}`)
+  }
+  const traceCount = ADVERSARIAL_WALKS.length + ADVERSARIAL_NOTES.length
+  if (traceCount < 16) fail(`adversarial coverage ${traceCount} < 16 traces`)
+
+  // Exercise census: after case and trace walks, only ObservedConflict may
+  // remain unexercised, and only because it is research-justified (F8).
+  const unexercised = STATES.filter((state) => !exercised.has(state))
+  if (unexercised.length !== 1 || unexercised[0] !== "ObservedConflict") {
+    fail(`unexercised states [${unexercised.join(", ")}] — F8 permits exactly ObservedConflict`)
+  }
+
+  // Minimality probe (finding F7): full labeling keeps all states distinct;
+  // the behavioral quotient collapses exactly Receipted + ObservedSatisfied.
+  const fullBlocks = minimize("full-labeling")
+  if (fullBlocks.length !== STATES.length) {
+    fail(`full-labeling partition has ${fullBlocks.length} blocks — states are indistinguishable even with append-guard labels`)
+  }
+  const behavioralBlocks = minimize("behavioral")
+  const mergedBlocks = behavioralBlocks.filter((group) => group.length > 1)
+  const mergedKey = mergedBlocks.map((group) => [...group].sort().join("+")).sort().join(" ")
+  if (mergedKey !== "ObservedSatisfied+Receipted") {
+    fail(`behavioral quotient merged [${mergedKey || "nothing"}] — finding F7 is out of sync with the minimizer`)
   }
 
   // V5: provider projection adds zero states and references real shapes.
@@ -690,6 +879,8 @@ const main = (): void => {
   console.log(`  terminal report rows         ${new Set(Object.values(REPORT)).size} over ${STATES.length} states`)
   console.log(`  machine-walk cases           ${CASE_WALKS.length} reproduce trial outcomes; ${OUT_OF_LIFECYCLE.length} owned outside the lifecycle`)
   console.log(`  provider families projected  ${PROVIDER_PROJECTION.length}, added lifecycle states 0 (V5 PASS)`)
+  console.log(`  adversarial traces           ${ADVERSARIAL_WALKS.length} executable walks + ${ADVERSARIAL_NOTES.length} classified = 16+ reconciled`)
+  console.log(`  minimality probe             full labeling ${fullBlocks.length}/${STATES.length} distinct; behavioral quotient ${behavioralBlocks.length} (Receipted+ObservedSatisfied merge — F7)`)
   console.log("")
   for (const finding of FINDINGS) console.log(`  ${finding}`)
   console.log("")

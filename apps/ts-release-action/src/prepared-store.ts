@@ -345,7 +345,9 @@ export const makeActionPreparedReleaseStore = (input: {
           destination: transfer,
           ...(findBy === undefined ? {} : { findBy })
         })
-        if (downloaded.digestMismatch === true) throw PreparedStoreError.make({ reason: "Actions artifact transport digest mismatch." })
+        if (downloaded.digestMismatch !== false) {
+          throw PreparedStoreError.make({ reason: "Actions artifact transport did not prove an exact digest match." })
+        }
         const root = downloaded.path ?? transfer
         const producer = decodeProducer(readFileSync(join(root, "producer-context.json"), "utf8"))
         const expected = {

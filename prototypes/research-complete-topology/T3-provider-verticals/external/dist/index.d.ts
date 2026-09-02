@@ -1,0 +1,1 @@
+export declare const externalProvider: { readonly instances: readonly ["external-provider-primary", "external-provider-secondary"]; readonly prepare: (instanceId: string, requestId: string) => object };

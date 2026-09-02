@@ -1,6 +1,8 @@
 dist/
 !apps/ts-release-action/dist/
 !apps/ts-release-action/dist/index.js
+!prototypes/research-complete-topology/**/dist/
+!prototypes/research-complete-topology/**/dist/**
 coverage/
 node_modules/
 .repos/

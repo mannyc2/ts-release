@@ -19,7 +19,7 @@ import {
 } from "../release/prepared-ref.js"
 import type { PreparedReleaseStore } from "../release/prepared-store.js"
 import type { ReleaseRuntime } from "./runtime.js"
-import type { CustomProviderAdapter } from "../publication/provider.js"
+import type { ProviderAdapter } from "../publication/provider.js"
 
 export type ReleaseApiServices =
   | ReleaseRuntime
@@ -33,9 +33,13 @@ export type ReleaseApiServices =
 export type ReleaseApiLayer = Layer.Layer<ReleaseApiServices>
 export type InspectOutput = ReleaseInspection | PreparedReleaseInspection
 
-/** Custom application composition only; stock CLI/Action pass no adapters. */
+/**
+ * Custom application composition only; stock CLI/Action pass no adapters.
+ * Composed adapters join the first-party set behind one dispatch and one
+ * validation path, and may not collide with a first-party registration.
+ */
 export interface ReleaseApiOptions {
-  readonly providerAdapters?: ReadonlyArray<CustomProviderAdapter>
+  readonly providerAdapters?: ReadonlyArray<ProviderAdapter>
 }
 
 export interface PrepareInput {

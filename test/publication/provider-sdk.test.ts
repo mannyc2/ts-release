@@ -19,16 +19,17 @@ import {
 } from "../../src/publication/report.js"
 import {
   conservativeUnknownRecoveryProfile,
-  makeRecoveryCapabilityProfile
+  makeRecoveryCapabilityProfile,
+  type PublicationProfileRegistration
 } from "../../src/publication/recovery.js"
 import {
   ProviderAdapterContract,
-  customProviderSubjects,
+  indexProviderAdapters,
   makeProviderAdapter,
-  type PublicationSubjectServices
+  validateProviderSubjects
 } from "../../src/publication/provider.js"
+import { builtinProviderAdapters } from "../../src/capabilities/registry.js"
 import { AuthoredConfig } from "../../src/resolve/authored.js"
-import type { PreparedBundle } from "../../src/release/prepared-store.js"
 
 const provider = ProviderId.make("fixture-observer")
 const audience = CanonicalAudience.make("https://provider.example.test/releases/")
@@ -43,7 +44,7 @@ const contract = ProviderAdapterContract.make({
   recovery: "coordinator-profile",
   certification: "provider-protocol-and-public-boundary-tests"
 })
-const profile = {
+const profile: PublicationProfileRegistration<"PreparedFixtureObserver"> = {
   id: "publish.fixture-observer",
   provider: provider.toString(),
   preparedTag: "PreparedFixtureObserver",
@@ -77,18 +78,14 @@ const subject = (): ReleaseSubject => ({
   decide: () => ProviderAlreadyEquivalent.make({ subject: subjectId }),
   mutate: () => Effect.die("Equivalent observer must never mutate.")
 })
-const services = {} as PublicationSubjectServices
-const bundle = {} as PreparedBundle
 
-describe("custom application provider adapter SDK", () => {
-  test("composes a third-party exact observer through the unchanged coordinator", async () => {
-    const adapter = makeProviderAdapter({
-      id: "publish.fixture-observer",
-      contract,
-      profile,
-      subjects: () => [subject()]
-    })
-    const subjects = customProviderSubjects(bundle, [adapter], services)
+describe("the one provider adapter contract", () => {
+  test("a third-party adapter passes the shared validation path into the unchanged coordinator", async () => {
+    const adapter = makeProviderAdapter({ contract, profile, subjects: () => [subject()] })
+    expect(adapter.id.toString()).toBe("publish.fixture-observer")
+    expect(adapter.profile.preparedTag).toBe("PreparedFixtureObserver")
+    const subjects = [subject()]
+    validateProviderSubjects(adapter, subjects, new Set())
     const credentials = makeCredentialProvider({
       acquire: () => Effect.succeed({ _tag: "AnonymousAccess", purposes: ["observe"] as const })
     })
@@ -100,37 +97,52 @@ describe("custom application provider adapter SDK", () => {
     expect(report.subjects[1]?._tag).toBe("AlreadyEquivalent")
   })
 
-  test("rejects missing contract claims, recovery mismatch, and foreign credential provider authority", () => {
+  test("rejects missing contract claims, recovery mismatch, foreign credential authority, and silent subjects", () => {
     expect(() => makeProviderAdapter({
-      id: "publish.fixture-observer",
       contract: { ...contract, observation: "boolean-success" } as never,
       profile,
       subjects: () => [subject()]
     })).toThrow()
 
-    const adapter = makeProviderAdapter({
-      id: "publish.fixture-observer", contract, profile,
-      subjects: () => [{
-        ...subject(),
-        recovery: makeRecoveryCapabilityProfile({
-          ...conservativeUnknownRecoveryProfile,
-          replay: "conditional"
-        })
-      }]
-    })
-    expect(() => customProviderSubjects(bundle, [adapter], services)).toThrow()
+    const adapter = makeProviderAdapter({ contract, profile, subjects: () => [subject()] })
+    expect(() => validateProviderSubjects(adapter, [{
+      ...subject(),
+      recovery: makeRecoveryCapabilityProfile({
+        ...conservativeUnknownRecoveryProfile,
+        replay: "conditional"
+      })
+    }], new Set())).toThrow()
 
-    const foreign = makeProviderAdapter({
-      id: "publish.fixture-observer", contract, profile,
-      subjects: () => [{
-        ...subject(),
-        mutationRequest: CredentialRequest.make({
-          ...subject().mutationRequest,
-          provider: ProviderId.make("foreign-provider")
-        })
-      }]
+    expect(() => validateProviderSubjects(adapter, [{
+      ...subject(),
+      mutationRequest: CredentialRequest.make({
+        ...subject().mutationRequest,
+        provider: ProviderId.make("foreign-provider")
+      })
+    }], new Set())).toThrow("foreign provider")
+
+    expect(() => validateProviderSubjects(adapter, [], new Set())).toThrow()
+    expect(() => validateProviderSubjects(adapter, [subject()], new Set([subjectId.toString()])))
+      .toThrow("repeats subject")
+  })
+
+  test("indexing refuses colliding registrations, including shadowing a first-party adapter", () => {
+    const adapter = makeProviderAdapter({ contract, profile, subjects: () => [subject()] })
+    expect(indexProviderAdapters([...builtinProviderAdapters, adapter]).size).toBe(5)
+    expect(() => indexProviderAdapters([adapter, adapter])).toThrow("repeat registration id")
+    const shadow = makeProviderAdapter({
+      contract,
+      profile: { ...profile, id: "publish.fixture-shadow" },
+      subjects: () => [subject()]
     })
-    expect(() => customProviderSubjects(bundle, [foreign], services)).toThrow("foreign provider")
+    expect(() => indexProviderAdapters([adapter, shadow])).toThrow("repeat prepared publication tag")
+    const npmShadow = makeProviderAdapter({
+      contract,
+      profile: { ...profile, id: "publish.npm-shadow", preparedTag: "PreparedNpmPublication" },
+      subjects: () => [subject()]
+    })
+    expect(() => indexProviderAdapters([...builtinProviderAdapters, npmShadow]))
+      .toThrow("repeat prepared publication tag")
   })
 
   test("stock authored config rejects dynamic adapters, remote commands, ambient secrets, and supply-chain hooks", () => {

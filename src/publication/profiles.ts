@@ -6,15 +6,17 @@ import {
 } from "./npm.js"
 import { pypiRecoveryCapabilityProfile } from "./pypi.js"
 import { catalogRecoveryCapabilityProfile } from "./catalog-git.js"
-import { validatePublicationProfiles } from "./recovery.js"
+import { validatePublicationProfiles, type PublicationProfileRegistration } from "./recovery.js"
 
 /**
  * Canonical provider registrations shared by executable capability modules,
  * runtime dispatch, and generated recovery documentation. An authored
  * correction proposal is not an installed conditional correction adapter.
+ * Each registration is annotated with its literal prepared tag so the
+ * derived provider adapters dispatch with typed publications.
  */
 export const installedPublicationProfiles = validatePublicationProfiles(Object.freeze({
-  npm: Object.freeze({
+  npm: Object.freeze<PublicationProfileRegistration<"PreparedNpmPublication">>({
     id: "publish.npm",
     provider: "npm",
     preparedTag: "PreparedNpmPublication",
@@ -33,7 +35,7 @@ export const installedPublicationProfiles = validatePublicationProfiles(Object.f
       correctionFinding: "Official npm documentation exposes deprecation but no conditional update bound to an observed package generation."
     })
   }),
-  pypi: Object.freeze({
+  pypi: Object.freeze<PublicationProfileRegistration<"PreparedPyPiPublication">>({
     id: "publish.pypi",
     provider: "pypi",
     preparedTag: "PreparedPyPiPublication",
@@ -51,7 +53,7 @@ export const installedPublicationProfiles = validatePublicationProfiles(Object.f
       correctionFinding: "PyPI documents yanking behavior but no stable exact conditional per-file update API; no correction adapter is installed."
     })
   }),
-  catalogGit: Object.freeze({
+  catalogGit: Object.freeze<PublicationProfileRegistration<"PreparedCatalogPublication">>({
     id: "publish.catalog-git",
     provider: "catalog-git",
     preparedTag: "PreparedCatalogPublication",
@@ -70,7 +72,7 @@ export const installedPublicationProfiles = validatePublicationProfiles(Object.f
       correctionFinding: "Catalog correction is an exact forward SemVer replacement of the managed target/state pair on one observed Git commit; the ref update is non-forced."
     })
   }),
-  github: Object.freeze({
+  github: Object.freeze<PublicationProfileRegistration<"PreparedGitHubPublication">>({
     id: "publish.github",
     provider: "github",
     preparedTag: "PreparedGitHubPublication",

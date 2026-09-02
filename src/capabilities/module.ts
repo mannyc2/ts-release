@@ -1,14 +1,8 @@
 import type { CandidateConfig } from "../recipes/config.js"
-import type { ReleaseSubject } from "../publication/coordinator.js"
-import type { PublicationSubjectServices } from "../publication/provider.js"
-import type { PublicationProfileRegistration } from "../publication/recovery.js"
 import type {
-  PreparedGitHubPublication,
-  PreparedCatalogPublication,
-  PreparedNpmPublication,
-  PreparedPyPiPublication
-} from "../release/prepared.js"
-import type { PreparedBundle } from "../release/prepared-store.js"
+  PreparedPublicationTag,
+  ProviderAdapter
+} from "../publication/provider.js"
 import type { VerifiedReleaseContext } from "../release/context.js"
 import type {
   CapabilityContribution,
@@ -82,58 +76,19 @@ export interface PreparationCapability extends CapabilityCommon {
   readonly contribute: (input: CompilationSnapshot) => CapabilityContribution
 }
 
-interface PublicationCapabilityCommon extends CapabilityCommon {
+/**
+ * One publication capability shape for every provider. The publish half is
+ * the provider adapter itself — profile registration, recovery policy, and
+ * typed subject derivation live on the contract that third parties implement,
+ * not on a parallel first-party surface.
+ */
+export interface PublicationCapability<
+  Tag extends PreparedPublicationTag = PreparedPublicationTag
+> extends CapabilityCommon {
   readonly _tag: "PublicationCapability"
-  /** The exact registration also consumed by recovery documentation. */
-  readonly profile: PublicationProfileRegistration
+  readonly adapter: ProviderAdapter<Tag>
   readonly contribute: (input: CompilationSnapshot) => CapabilityContribution
 }
-
-export interface NpmPublicationCapability extends PublicationCapabilityCommon {
-  readonly id: "publish.npm"
-  readonly preparedTag: "PreparedNpmPublication"
-  readonly subjects: (
-    bundle: PreparedBundle,
-    publication: PreparedNpmPublication,
-    services: PublicationSubjectServices
-  ) => readonly [ReleaseSubject]
-}
-
-export interface GitHubPublicationCapability extends PublicationCapabilityCommon {
-  readonly id: "publish.github"
-  readonly preparedTag: "PreparedGitHubPublication"
-  readonly subjects: (
-    bundle: PreparedBundle,
-    publication: PreparedGitHubPublication,
-    services: PublicationSubjectServices
-  ) => readonly [ReleaseSubject]
-}
-
-export interface PyPiPublicationCapability extends PublicationCapabilityCommon {
-  readonly id: "publish.pypi"
-  readonly preparedTag: "PreparedPyPiPublication"
-  readonly subjects: (
-    bundle: PreparedBundle,
-    publication: PreparedPyPiPublication,
-    services: PublicationSubjectServices
-  ) => ReadonlyArray<ReleaseSubject>
-}
-
-export interface CatalogPublicationCapability extends PublicationCapabilityCommon {
-  readonly id: "publish.catalog-git"
-  readonly preparedTag: "PreparedCatalogPublication"
-  readonly subjects: (
-    bundle: PreparedBundle,
-    publication: PreparedCatalogPublication,
-    services: PublicationSubjectServices
-  ) => readonly [ReleaseSubject]
-}
-
-export type PublicationCapability =
-  | NpmPublicationCapability
-  | PyPiPublicationCapability
-  | CatalogPublicationCapability
-  | GitHubPublicationCapability
 
 export type CapabilityModule =
   | ResolutionCapability

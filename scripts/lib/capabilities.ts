@@ -59,10 +59,10 @@ export const validateCapabilityTruth = (
       failures.push(`${module.id} has no executable graph contributor`)
     }
     if (module._tag === "PublicationCapability") {
-      if (typeof module.contribute !== "function" || typeof module.subjects !== "function") {
+      if (typeof module.contribute !== "function" || typeof module.adapter.subjects !== "function") {
         failures.push(`${module.id} does not bind graph contribution to runtime subjects`)
       }
-      if (module.profile.id !== module.id || module.profile.preparedTag !== module.preparedTag) {
+      if (module.adapter.profile.id !== module.id) {
         failures.push(`${module.id} publication profile does not match its installed module`)
       }
     }
@@ -112,7 +112,7 @@ export const renderCapabilities = (
       ? "resolve"
       : module._tag === "PreparationCapability"
       ? `contribute:${module.phase}`
-      : `contribute + subjects:${module.preparedTag}`
+      : `contribute + subjects:${module.adapter.profile.preparedTag}`
     return `| \`${module.id}\` | installed | ${execution} | ${module.fields.length} | ${module.certification.boundary} | ${module.certification.tests.length} executable test${module.certification.tests.length === 1 ? "" : "s"} | ${display(module.requirements.executionHosts)} | ${display(module.requirements.artifactTargets)} | ${display(module.requirements.nativeTools)} | ${display(module.requirements.credentialStrategies)} | ${record.evidenceClass} | ${record.observedAt} |`
   })
   return `# Executable capabilities

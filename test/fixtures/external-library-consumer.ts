@@ -27,7 +27,6 @@ import {
 } from "@mannyc1/ts-release/provider-sdk"
 
 const externalAdapter = makeProviderAdapter({
-  id: "publish.external-fixture",
   contract: ProviderAdapterContract.make({
     schemaVersion: "ts-release/provider-adapter-contract/v1",
     preparedSubject: "typed-canonical-data",
@@ -51,8 +50,9 @@ const externalAdapter = makeProviderAdapter({
       correctionFinding: "The external fixture installs no correction adapter."
     }
   },
-  // A third-party adapter can be installed without claiming applicability to
-  // every prepared release. Non-empty output is checked by the coordinator.
+  // Composable and validated today; dispatched only when a durable prepared
+  // publication carries this adapter's registered tag, which requires a
+  // prepared-release schema event that opens the publication union.
   subjects: () => []
 })
 

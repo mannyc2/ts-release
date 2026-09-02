@@ -55,7 +55,6 @@ import {
 } from "@mannyc1/ts-release/provider-sdk"
 
 const adapter = makeProviderAdapter({
-  id: "publish.acme",
   contract: ProviderAdapterContract.make({
     schemaVersion: "ts-release/provider-adapter-contract/v1",
     preparedSubject: "typed-canonical-data",
@@ -67,7 +66,7 @@ const adapter = makeProviderAdapter({
     certification: "provider-protocol-and-public-boundary-tests"
   }),
   profile: acmeRecoveryRegistration,
-  subjects: (bundle, services) => makeAcmeSubjects(bundle, services)
+  subjects: (bundle, publication, services) => makeAcmeSubjects(bundle, publication, services)
 })
 
 const api = makeReleaseApi(makeCustomReleaseLayer(host), {
@@ -75,13 +74,21 @@ const api = makeReleaseApi(makeCustomReleaseLayer(host), {
 })
 ```
 
-The registration validates the recovery profile and the emitted subjects must
-use that provider's credential authority and exact profile. The unchanged
-coordinator then validates canonical subject/request identity, observation
-order, mutation purpose, anonymous refusal, prerequisites, and durable history
-requirements. Returning `success: boolean`, an error string, or a command is
-not an adapter. A stock config containing `providerAdapters`, `publish.custom`,
-or similar fields is rejected.
+This is the same contract, constructor, dispatch, and validation path the
+four first-party providers use — the adapter's identity is its registration
+id, and its subjects derive from one prepared publication of its registered
+tag. Dispatch is total over the prepared manifest: a publication whose tag
+has no composed adapter refuses by name, a composed adapter may not collide
+with an installed registration, and every dispatched publication must yield
+at least one subject bound to the registered provider's credential authority
+and exact recovery profile. Because the durable prepared-publication union is
+closed today, a third-party tag composes and validates but cannot yet appear
+in a manifest; that opening is a versioned prepared-release schema event. The
+unchanged coordinator then validates canonical subject/request identity,
+observation order, mutation purpose, anonymous refusal, prerequisites, and
+durable history requirements. Returning `success: boolean`, an error string,
+or a command is not an adapter. A stock config containing `providerAdapters`,
+`publish.custom`, or similar fields is rejected.
 
 ## Supply-chain effects
 

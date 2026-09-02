@@ -2,7 +2,7 @@ import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as ManagedRuntime from "effect/ManagedRuntime"
 import { decodeConfig } from "../config/config.js"
-import { releaseIdentityCapability } from "../capabilities/registry.js"
+import { builtinProviderAdapters, releaseIdentityCapability } from "../capabilities/registry.js"
 import { secretPatterns } from "../model/secret-patterns.js"
 import { CredentialProvider } from "../publication/authority.js"
 import { AuthorizedMutationHttp, HttpAuthorizer } from "../publication/http.js"
@@ -296,7 +296,7 @@ const correctProgram = Effect.fn("correctProgram")(function*(input: CorrectInput
 
 export const makeReleaseApi = (layer: ReleaseApiLayer, options: ReleaseApiOptions = {}): ReleaseApi => {
   const runtime = ManagedRuntime.make(layer)
-  const adapters = options.providerAdapters ?? []
+  const adapters = Object.freeze([...builtinProviderAdapters, ...(options.providerAdapters ?? [])])
   const run = <A, E>(effect: Effect.Effect<A, E, ReleaseApiServices>): Promise<A> =>
     runtime.runPromise(effect)
 

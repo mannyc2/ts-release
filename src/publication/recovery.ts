@@ -198,12 +198,13 @@ export type RecoveryCapabilityProfile = typeof RecoveryCapabilityProfile.Type
  * One executable publication adapter and the durable recovery profile it
  * promises to honor. `correctionAdapters` names only actually installed
  * conditional correction implementations; an authored operator proposal is
- * not an adapter.
+ * not an adapter. The prepared tag carries its literal type so the provider
+ * contract can key typed subject dispatch on it.
  */
-export interface PublicationProfileRegistration {
+export interface PublicationProfileRegistration<Tag extends string = string> {
   readonly id: string
   readonly provider: string
-  readonly preparedTag: string
+  readonly preparedTag: Tag
   readonly recovery: RecoveryCapabilityProfile
   readonly correctionAdapters: ReadonlyArray<CorrectionKind>
   readonly evidence: {

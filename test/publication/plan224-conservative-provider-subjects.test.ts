@@ -28,6 +28,7 @@ import {
   publishPreparedRelease,
   subjectsForPreparedRelease
 } from "../../src/publication/adapter.js"
+import { builtinProviderAdapters } from "../../src/capabilities/registry.js"
 import type { HttpResponse } from "../../src/publication/http.js"
 import { makeNpmSubject } from "../../src/publication/npm.js"
 import {
@@ -247,7 +248,7 @@ const runPublish = async (
   const credentialRequests: Array<CredentialRequest> = []
   const httpRequests: Array<HttpObservationRequest> = []
   const http = recordingHttp(responses, httpRequests)
-  const report = await Effect.runPromise(publishPreparedRelease(bundle).pipe(
+  const report = await Effect.runPromise(publishPreparedRelease(bundle, builtinProviderAdapters).pipe(
     Effect.provideService(HttpAuthorizer, http),
     Effect.provideService(CredentialProvider, recordingCredentials(credentialRequests)),
     Effect.provide(unavailableMutationServicesLayer)
@@ -275,10 +276,15 @@ describe("Plan 224 conservative provider subjects", () => {
       }),
       blobs: new Map([...npm.bundle.blobs, ...github.bundle.blobs])
     }
-    const subjects = await Effect.runPromise(subjectsForPreparedRelease(bundle).pipe(
+    const subjects = await Effect.runPromise(subjectsForPreparedRelease(bundle, builtinProviderAdapters).pipe(
       Effect.provideService(HttpAuthorizer, recordingHttp([], [])),
       Effect.provide(unavailableMutationServicesLayer)
     ))
+
+    await expect(Effect.runPromise(subjectsForPreparedRelease(bundle, []).pipe(
+      Effect.provideService(HttpAuthorizer, recordingHttp([], [])),
+      Effect.provide(unavailableMutationServicesLayer)
+    ))).rejects.toThrow("No composed provider adapter is registered for prepared publication PreparedGitHubPublication.")
 
     expect(subjects).toHaveLength(2)
     expect(subjects.map((subject) => subject.id)).toEqual([

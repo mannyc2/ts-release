@@ -5,12 +5,11 @@
  */
 export {
   ProviderAdapterContract,
-  customProviderSubjects,
   makeProviderAdapter
 } from "./publication/provider.js"
 export type {
-  CustomProviderAdapter,
-  CustomProviderAdapterInput,
+  ProviderAdapter,
+  ProviderAdapterInput,
   PublicationSubjectServices
 } from "./publication/provider.js"
 export type {

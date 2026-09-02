@@ -4,6 +4,12 @@ import { makePyPiSubjects } from "../publication/pypi.js"
 import { makeCatalogPublicationSubject } from "../publication/catalog-git.js"
 import { installedPublicationProfiles } from "../publication/profiles.js"
 import {
+  makeProviderAdapter,
+  ProviderAdapterContract,
+  type PreparedPublicationTag,
+  type ProviderAdapter
+} from "../publication/provider.js"
+import {
   contributeGitHubPublication,
   contributeNpmPublication,
   contributePyPiPublication,
@@ -15,12 +21,9 @@ import {
 import { resolveConfig } from "../resolve/resolve.js"
 import type {
   CapabilityModule,
-  CatalogPublicationCapability,
-  GitHubPublicationCapability,
-  NpmPublicationCapability,
-  PyPiPublicationCapability,
   OwnedConfigField,
   PreparationCapability,
+  PublicationCapability,
   ResolutionCapability
 } from "./module.js"
 import { bunArtifactTargetIds } from "./bun-targets.js"
@@ -164,11 +167,25 @@ export const scoopRenderCapability = Object.freeze({
     contributeCatalogRendering(config, availableArtifacts, "scoop")
 } satisfies PreparationCapability)
 
+/**
+ * First-party adapters sign the exact acknowledgements the SDK demands of a
+ * third-party application adapter: there is one provider contract and one
+ * dispatch path.
+ */
+const firstPartyProviderContract = ProviderAdapterContract.make({
+  schemaVersion: "ts-release/provider-adapter-contract/v1",
+  preparedSubject: "typed-canonical-data",
+  identity: "canonical-subject-id",
+  observation: "exact-equality-and-authoritative-absence",
+  mutation: "typed-precondition-and-commitment",
+  credentials: "audience-and-purpose-scoped",
+  recovery: "coordinator-profile",
+  certification: "provider-protocol-and-public-boundary-tests"
+})
+
 export const npmPublicationCapability = Object.freeze({
   _tag: "PublicationCapability",
   id: "publish.npm",
-  preparedTag: "PreparedNpmPublication",
-  profile: installedPublicationProfiles.npm,
   fields: [
     ...resolvedFields([
       "publish.npm", "publish.npm.access", "publish.npm.authentication",
@@ -198,16 +215,18 @@ export const npmPublicationCapability = Object.freeze({
     ]
   },
   contribute: ({ config, context }) => contributeNpmPublication(config, context),
-  subjects: (bundle, publication, services) => [
-    makeNpmSubject(bundle, publication, services.http, services.userConfigs, services.publisher)
-  ] as const
-} satisfies NpmPublicationCapability)
+  adapter: makeProviderAdapter({
+    contract: firstPartyProviderContract,
+    profile: installedPublicationProfiles.npm,
+    subjects: (bundle, publication, services) => [
+      makeNpmSubject(bundle, publication, services.http, services.userConfigs, services.publisher)
+    ]
+  })
+} satisfies PublicationCapability<"PreparedNpmPublication">)
 
 export const githubPublicationCapability = Object.freeze({
   _tag: "PublicationCapability",
   id: "publish.github",
-  preparedTag: "PreparedGitHubPublication",
-  profile: installedPublicationProfiles.github,
   fields: graphFields([
     "publish.github", "publish.github.body", "publish.github.bodyArtifact",
     "publish.github.collections", "publish.github.collections[].cardinality",
@@ -234,15 +253,17 @@ export const githubPublicationCapability = Object.freeze({
   },
   contribute: ({ config, availableArtifacts }) =>
     contributeGitHubPublication(config, availableArtifacts),
-  subjects: (bundle, publication, services) =>
-    makeGithubSubjects(bundle, publication, services.http, services.mutationHttp)
-} satisfies GitHubPublicationCapability)
+  adapter: makeProviderAdapter({
+    contract: firstPartyProviderContract,
+    profile: installedPublicationProfiles.github,
+    subjects: (bundle, publication, services) =>
+      makeGithubSubjects(bundle, publication, services.http, services.mutationHttp)
+  })
+} satisfies PublicationCapability<"PreparedGitHubPublication">)
 
 export const pyPiPublicationCapability = Object.freeze({
   _tag: "PublicationCapability",
   id: "publish.pypi",
-  preparedTag: "PreparedPyPiPublication",
-  profile: installedPublicationProfiles.pypi,
   fields: [
     ...resolvedFields([
       "publish.pypi", "publish.pypi.artifacts", "publish.pypi.authentication",
@@ -269,15 +290,17 @@ export const pyPiPublicationCapability = Object.freeze({
   },
   contribute: ({ config, context, availableArtifacts }) =>
     contributePyPiPublication(config, context, availableArtifacts),
-  subjects: (bundle, publication, services) =>
-    makePyPiSubjects(bundle, publication, services.http, services.mutationHttp, services.claims)
-} satisfies PyPiPublicationCapability)
+  adapter: makeProviderAdapter({
+    contract: firstPartyProviderContract,
+    profile: installedPublicationProfiles.pypi,
+    subjects: (bundle, publication, services) =>
+      makePyPiSubjects(bundle, publication, services.http, services.mutationHttp, services.claims)
+  })
+} satisfies PublicationCapability<"PreparedPyPiPublication">)
 
 export const catalogPublicationCapability = Object.freeze({
   _tag: "PublicationCapability",
   id: "publish.catalog-git",
-  preparedTag: "PreparedCatalogPublication",
-  profile: installedPublicationProfiles.catalogGit,
   fields: graphFields([
     "publish.catalogGit", "publish.catalogGit[].branch", "publish.catalogGit[].catalog",
     "publish.catalogGit[].repository", "publish.catalogGit[].statePath",
@@ -295,10 +318,14 @@ export const catalogPublicationCapability = Object.freeze({
   },
   contribute: ({ config, availableArtifacts }) =>
     contributeCatalogPublications(config, availableArtifacts),
-  subjects: (bundle, publication, services) => [
-    makeCatalogPublicationSubject(bundle, publication, services.http, services.mutationHttp)
-  ] as const
-} satisfies CatalogPublicationCapability)
+  adapter: makeProviderAdapter({
+    contract: firstPartyProviderContract,
+    profile: installedPublicationProfiles.catalogGit,
+    subjects: (bundle, publication, services) => [
+      makeCatalogPublicationSubject(bundle, publication, services.http, services.mutationHttp)
+    ]
+  })
+} satisfies PublicationCapability<"PreparedCatalogPublication">)
 
 /**
  * The only installed capability registry. There are no support booleans and
@@ -329,5 +356,17 @@ export const publicationCapabilities = Object.freeze([
   githubPublicationCapability,
   catalogPublicationCapability
 ] as const)
+
+/** Compile-time totality: one first-party adapter per durable prepared tag. */
+const builtinAdapterByTag = {
+  PreparedNpmPublication: npmPublicationCapability.adapter,
+  PreparedPyPiPublication: pyPiPublicationCapability.adapter,
+  PreparedGitHubPublication: githubPublicationCapability.adapter,
+  PreparedCatalogPublication: catalogPublicationCapability.adapter
+} as const satisfies { readonly [Tag in PreparedPublicationTag]: ProviderAdapter<Tag> }
+
+export const builtinProviderAdapters: ReadonlyArray<ProviderAdapter> = Object.freeze(
+  Object.values(builtinAdapterByTag)
+)
 
 export const capabilityIds = Object.freeze(capabilityModules.map((module) => module.id))

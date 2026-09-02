@@ -7,12 +7,12 @@ export {
   ProviderAdapterContract,
   customProviderSubjects,
   makeProviderAdapter
-} from "./extensions/provider-adapter.js"
+} from "./publication/provider.js"
 export type {
   CustomProviderAdapter,
-  CustomProviderAdapterInput
-} from "./extensions/provider-adapter.js"
-export type { PublicationSubjectServices } from "./capabilities/module.js"
+  CustomProviderAdapterInput,
+  PublicationSubjectServices
+} from "./publication/provider.js"
 export type {
   ReleaseObservationContext,
   ReleaseSubject

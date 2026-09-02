@@ -27,7 +27,7 @@ export const runtimeBearingSourcePaths: ReadonlyArray<string> = [
   "model/canonical.ts",
   "host.ts",
   "provider-sdk.ts",
-  "extensions/provider-adapter.ts",
+  "publication/provider.ts",
   "store.ts",
   "platform/bun.ts",
   "platform/node.ts",
@@ -103,7 +103,7 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
     subpath: "./provider-sdk",
     allowedRuntimeSourcePaths: [
       "provider-sdk.ts",
-      "extensions/provider-adapter.ts",
+      "publication/provider.ts",
       "model/canonical.ts"
     ],
     allowedExternalPrefixes: ["node:"],

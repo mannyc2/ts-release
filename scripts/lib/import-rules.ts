@@ -135,11 +135,10 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   // vocabulary and the model, and nothing may read IT except the root export
   // and the apps (enforced below).
   resolve: ["resolve", "model", "recipes"],
-  api: ["api", "model", "config", "correction", "release", "publication", "resolve", "drivers", "platform", "capabilities", "extensions"],
+  api: ["api", "model", "config", "correction", "release", "publication", "resolve", "drivers", "platform", "capabilities"],
   release: ["release", "model", "recipes", "drivers", "capabilities"],
-  publication: ["publication", "model", "release", "drivers", "capabilities", "extensions"],
-  correction: ["correction", "model", "release", "publication"],
-  extensions: ["extensions", "model", "publication", "capabilities", "release"]
+  publication: ["publication", "model", "release", "drivers", "capabilities"],
+  correction: ["correction", "model", "release", "publication"]
 }
 
 const sourceDirectory = (file: string): string | undefined => {

@@ -24,11 +24,11 @@ import {
 import {
   ProviderAdapterContract,
   customProviderSubjects,
-  makeProviderAdapter
-} from "../../src/extensions/provider-adapter.js"
+  makeProviderAdapter,
+  type PublicationSubjectServices
+} from "../../src/publication/provider.js"
 import { AuthoredConfig } from "../../src/resolve/authored.js"
 import type { PreparedBundle } from "../../src/release/prepared-store.js"
-import type { PublicationSubjectServices } from "../../src/capabilities/module.js"
 
 const provider = ProviderId.make("fixture-observer")
 const audience = CanonicalAudience.make("https://provider.example.test/releases/")

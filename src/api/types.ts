@@ -19,7 +19,7 @@ import {
 } from "../release/prepared-ref.js"
 import type { PreparedReleaseStore } from "../release/prepared-store.js"
 import type { ReleaseRuntime } from "./runtime.js"
-import type { CustomProviderAdapter } from "../extensions/provider-adapter.js"
+import type { CustomProviderAdapter } from "../publication/provider.js"
 
 export type ReleaseApiServices =
   | ReleaseRuntime

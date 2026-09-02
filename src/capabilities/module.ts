@@ -1,15 +1,7 @@
 import type { CandidateConfig } from "../recipes/config.js"
 import type { ReleaseSubject } from "../publication/coordinator.js"
-import type {
-  AuthorizedMutationHttpShape,
-  HttpAuthorizerShape
-} from "../publication/http.js"
-import type {
-  CertifiedPublisherSpawnShape,
-  NpmUserConfigResourceShape
-} from "../publication/publisher.js"
+import type { PublicationSubjectServices } from "../publication/provider.js"
 import type { PublicationProfileRegistration } from "../publication/recovery.js"
-import type { PublicationClaimStoreShape } from "../publication/claim.js"
 import type {
   PreparedGitHubPublication,
   PreparedCatalogPublication,
@@ -88,15 +80,6 @@ export interface PreparationCapability extends CapabilityCommon {
   readonly _tag: "PreparationCapability"
   readonly phase: "source" | "package" | "render"
   readonly contribute: (input: CompilationSnapshot) => CapabilityContribution
-}
-
-/** Opaque provider services supplied only by the default or custom host layer. */
-export interface PublicationSubjectServices {
-  readonly http: HttpAuthorizerShape
-  readonly mutationHttp: AuthorizedMutationHttpShape
-  readonly userConfigs: NpmUserConfigResourceShape
-  readonly publisher: CertifiedPublisherSpawnShape
-  readonly claims: PublicationClaimStoreShape
 }
 
 interface PublicationCapabilityCommon extends CapabilityCommon {

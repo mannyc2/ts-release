@@ -1,14 +1,31 @@
 import * as Schema from "effect/Schema"
 import { decodeUnknownSync } from "../model/decode.js"
 import { NonEmptyName } from "../model/primitives.js"
-import type { ReleaseSubject } from "../publication/coordinator.js"
+import type { PreparedBundle } from "../release/prepared-store.js"
+import type { PublicationClaimStoreShape } from "./claim.js"
+import type { ReleaseSubject } from "./coordinator.js"
+import type {
+  AuthorizedMutationHttpShape,
+  HttpAuthorizerShape
+} from "./http.js"
+import type {
+  CertifiedPublisherSpawnShape,
+  NpmUserConfigResourceShape
+} from "./publisher.js"
 import {
   assertRecoveryProfileMatches,
   validatePublicationProfiles,
   type PublicationProfileRegistration
-} from "../publication/recovery.js"
-import type { PublicationSubjectServices } from "../capabilities/module.js"
-import type { PreparedBundle } from "../release/prepared-store.js"
+} from "./recovery.js"
+
+/** Opaque provider services supplied only by the default or custom host layer. */
+export interface PublicationSubjectServices {
+  readonly http: HttpAuthorizerShape
+  readonly mutationHttp: AuthorizedMutationHttpShape
+  readonly userConfigs: NpmUserConfigResourceShape
+  readonly publisher: CertifiedPublisherSpawnShape
+  readonly claims: PublicationClaimStoreShape
+}
 
 /**
  * Closed acknowledgements required from every custom application adapter.

@@ -28,7 +28,7 @@ import {
   PublicationClaimStore,
   unavailablePublicationClaimStore
 } from "./claim.js"
-import { customProviderSubjects, type CustomProviderAdapter } from "../extensions/provider-adapter.js"
+import { customProviderSubjects, type CustomProviderAdapter } from "./provider.js"
 export { installedPublicationProfiles } from "./profiles.js"
 
 const registerSubjects = (

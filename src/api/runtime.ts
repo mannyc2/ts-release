@@ -4,7 +4,7 @@ import type { SourceObserverShape } from "../release/context.js"
 import type { RunCommand } from "../drivers/process.js"
 
 export class ReleaseRuntimeError
-  extends Schema.TaggedErrorClass<ReleaseRuntimeError>()("ReleaseRuntimeError", { reason: Schema.String }) {}
+  extends Schema.TaggedError<ReleaseRuntimeError>()("ReleaseRuntimeError", { reason: Schema.String }) {}
 
 export interface ReleaseRuntimeShape {
   readonly source: SourceObserverShape

@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema"
+import { decodeUnknownSync } from "./decode.js"
 import * as Semver from "semver"
 import { encodeCanonicalJson, parseStrictJson } from "./canonical.js"
 import { Sha256Digest } from "./digest.js"
@@ -92,7 +93,7 @@ export const encodeCatalogManagedState = (value: CatalogManagedState): Uint8Arra
 export const decodeCatalogManagedState = (bytes: Uint8Array): CatalogManagedState | undefined => {
   try {
     const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
-    const value = Schema.decodeUnknownSync(CatalogManagedState, { onExcessProperty: "error" })(parseStrictJson(text))
+    const value = decodeUnknownSync(CatalogManagedState, { onExcessProperty: "error" })(parseStrictJson(text))
     if (Semver.valid(value.generation.toString()) !== value.generation.toString()) return undefined
     const canonical = encodeCatalogManagedState(value)
     return canonical.length === bytes.length && canonical.every((byte, index) => byte === bytes[index])

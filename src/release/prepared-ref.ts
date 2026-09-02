@@ -52,12 +52,12 @@ export const CompletePreparedReleaseRef = Schema.Union([
 export type CompletePreparedReleaseRef = typeof CompletePreparedReleaseRef.Type
 
 export class PreparedReleaseRefMalformedError
-  extends Schema.TaggedErrorClass<PreparedReleaseRefMalformedError>()("PreparedReleaseRefMalformedError", {
+  extends Schema.TaggedError<PreparedReleaseRefMalformedError>()("PreparedReleaseRefMalformedError", {
     reason: Schema.String
   }) {}
 
 export class PreparedReleaseRefUnknownSchemeError
-  extends Schema.TaggedErrorClass<PreparedReleaseRefUnknownSchemeError>()("PreparedReleaseRefUnknownSchemeError", {
+  extends Schema.TaggedError<PreparedReleaseRefUnknownSchemeError>()("PreparedReleaseRefUnknownSchemeError", {
     scheme: Schema.String
   }) {}
 

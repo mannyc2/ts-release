@@ -1,5 +1,6 @@
 import { basename } from "node:path"
 import * as Schema from "effect/Schema"
+import { decodeUnknownSync } from "../model/decode.js"
 import {
   ArtifactCardinality,
   ArtifactCollectionContract,
@@ -36,8 +37,8 @@ const output = (id: string | OutputId, location: string, kind: OutputDeclaration
     ...(mediaType === undefined ? {} : { mediaType }) })
 const compact = (name: string) => name.replace(/^@/u, "").replaceAll("/", "-").replace(/[^A-Za-z0-9._-]+/gu, "-")
   .replace(/^-+|-+$/gu, "")
-const decodeCardinality = Schema.decodeUnknownSync(ArtifactCardinality, { onExcessProperty: "error" })
-const decodeCollectionSelector = Schema.decodeUnknownSync(ArtifactCollectionSelector, { onExcessProperty: "error" })
+const decodeCardinality = decodeUnknownSync(ArtifactCardinality, { onExcessProperty: "error" })
+const decodeCollectionSelector = decodeUnknownSync(ArtifactCollectionSelector, { onExcessProperty: "error" })
 const render = (value: string, config: CandidateConfig, target = "", binary = compact(config.project.name)) => {
   const [os = "", arch = ""] = target.split("-")
   return value.replaceAll("{name}", compact(config.project.name)).replaceAll("{version}", config.project.version)
@@ -333,7 +334,7 @@ export const contributeNpmPublication = (
   if (intent === undefined) return CapabilityContribution.make({ artifacts: [], preparations: [], publications: [] })
   // Resolution is intentionally plain durable data. Decode the nested variant
   // exactly once as it enters the class-backed graph IR.
-  const authentication = Schema.decodeUnknownSync(NpmAuthentication, {
+  const authentication = decodeUnknownSync(NpmAuthentication, {
     onExcessProperty: "error"
   })(intent.authentication)
   const publication = GraphNpmPublication.make({
@@ -396,7 +397,7 @@ export const contributePyPiPublication = (
 ): CapabilityContribution => {
   const intent = config.publish?.pypi
   if (intent === undefined) return CapabilityContribution.make({ artifacts: [], preparations: [], publications: [] })
-  const authentication = Schema.decodeUnknownSync(PyPiAuthentication, {
+  const authentication = decodeUnknownSync(PyPiAuthentication, {
     onExcessProperty: "error"
   })(intent.authentication)
   const endpoints = pypiRepositoryEndpoints(intent.repository)

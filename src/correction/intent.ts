@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema"
+import { decodeUnknownSync, describeFailure } from "../model/decode.js"
 import { encodeCanonicalJson, parseStrictJson } from "../model/canonical.js"
 import {
   Sha256Digest,
@@ -92,7 +93,7 @@ export const AuthoredCorrection = Schema.Union([
 ])
 export type AuthoredCorrection = typeof AuthoredCorrection.Type
 
-export const decodeAuthoredCorrection = Schema.decodeUnknownSync(AuthoredCorrection, {
+export const decodeAuthoredCorrection = decodeUnknownSync(AuthoredCorrection, {
   onExcessProperty: "error"
 })
 
@@ -115,13 +116,13 @@ export type CorrectionIntent = typeof CorrectionIntentV2.Type
 export type CorrectionIntentInput = Omit<CorrectionIntent, "correctionId">
 
 export class CorrectionIntentError
-  extends Schema.TaggedErrorClass<CorrectionIntentError>()("CorrectionIntentError", {
+  extends Schema.TaggedError<CorrectionIntentError>()("CorrectionIntentError", {
     reason: Schema.String
   }) {}
 
-const normalizeCorrection = (value: unknown): CorrectionVariant => Schema.decodeUnknownSync(CorrectionVariant)(value)
+const normalizeCorrection = (value: unknown): CorrectionVariant => decodeUnknownSync(CorrectionVariant)(value)
 const normalizeUnsigned = (value: CorrectionIntentInput): CorrectionIntentInput =>
-  Schema.decodeUnknownSync(CorrectionIntentUnsignedV2, { onExcessProperty: "error" })({
+  decodeUnknownSync(CorrectionIntentUnsignedV2, { onExcessProperty: "error" })({
     schemaVersion: value.schemaVersion,
     preparedDigest: value.preparedDigest,
     correction: normalizeCorrection(value.correction)
@@ -147,26 +148,26 @@ const equal = (left: Uint8Array, right: Uint8Array): boolean =>
 
 export const encodeCorrectionIntent = (value: CorrectionIntent): Uint8Array => {
   try {
-    const normalized = Schema.decodeUnknownSync(CorrectionIntentV2, { onExcessProperty: "error" })(value)
+    const normalized = decodeUnknownSync(CorrectionIntentV2, { onExcessProperty: "error" })(value)
     const expected = correctionIdFor(normalized)
     if (!digestEquals(expected, normalized.correctionId)) {
       throw new Error("Correction id does not match canonical unsigned V2 intent bytes.")
     }
     return new TextEncoder().encode(encodeCanonicalJson(Schema.encodeSync(CorrectionIntentV2)(normalized)))
   } catch (cause) {
-    throw CorrectionIntentError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
+    throw CorrectionIntentError.make({ reason: describeFailure(cause) })
   }
 }
 
 export const decodeCorrectionIntent = (bytes: Uint8Array): CorrectionIntent => {
   try {
     const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
-    const value = Schema.decodeUnknownSync(CorrectionIntentV2, { onExcessProperty: "error" })(parseStrictJson(text))
+    const value = decodeUnknownSync(CorrectionIntentV2, { onExcessProperty: "error" })(parseStrictJson(text))
     const canonical = encodeCorrectionIntent(value)
     if (!equal(canonical, bytes)) throw new Error("Correction intent bytes are not canonical.")
     return value
   } catch (cause) {
     if (cause instanceof CorrectionIntentError) throw cause
-    throw CorrectionIntentError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
+    throw CorrectionIntentError.make({ reason: describeFailure(cause) })
   }
 }

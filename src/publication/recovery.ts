@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema"
+import { decodeUnknownSync } from "../model/decode.js"
 import { encodeCanonicalJson } from "../model/canonical.js"
 import { SafeReason } from "./report.js"
 
@@ -214,13 +215,13 @@ export interface PublicationProfileRegistration {
 }
 
 export class RecoveryProfileRegistrationError
-  extends Schema.TaggedErrorClass<RecoveryProfileRegistrationError>()("RecoveryProfileRegistrationError", {
+  extends Schema.TaggedError<RecoveryProfileRegistrationError>()("RecoveryProfileRegistrationError", {
     registration: Schema.NonEmptyString,
     reason: SafeReason
   }) {}
 
 const decodeRecoveryCapabilityProfile = (value: unknown): RecoveryCapabilityProfile =>
-  Schema.decodeUnknownSync(RecoveryCapabilityProfile, { onExcessProperty: "error" })(value)
+  decodeUnknownSync(RecoveryCapabilityProfile, { onExcessProperty: "error" })(value)
 
 /** Canonical profile bytes are shared by registration checks and generators. */
 export const encodeRecoveryCapabilityProfile = (value: unknown): string =>
@@ -257,7 +258,7 @@ export const validatePublicationProfiles = <
       preparedTags.add(registration.preparedTag)
 
       const recovery = decodeRecoveryCapabilityProfile(registration.recovery)
-      const adapters = Schema.decodeUnknownSync(Schema.Array(CorrectionKind), {
+      const adapters = decodeUnknownSync(Schema.Array(CorrectionKind), {
         onExcessProperty: "error"
       })(registration.correctionAdapters)
       if (new Set(adapters).size !== adapters.length) {
@@ -269,7 +270,7 @@ export const validatePublicationProfiles = <
           "Installed correction adapters do not exactly match the recovery profile correction axis."
         )
       }
-      Schema.decodeUnknownSync(calendarDate)(registration.evidence.reviewedAt)
+      decodeUnknownSync(calendarDate)(registration.evidence.reviewedAt)
       if (registration.evidence.observationSources.length === 0 ||
         registration.evidence.correctionSources.length === 0) {
         throw registrationFailure(name, "A publication profile requires observation and correction evidence sources.")
@@ -277,8 +278,8 @@ export const validatePublicationProfiles = <
       for (const url of [
         ...registration.evidence.observationSources,
         ...registration.evidence.correctionSources
-      ]) Schema.decodeUnknownSync(documentedUrl)(url)
-      Schema.decodeUnknownSync(SafeReason)(registration.evidence.correctionFinding)
+      ]) decodeUnknownSync(documentedUrl)(url)
+      decodeUnknownSync(SafeReason)(registration.evidence.correctionFinding)
     } catch (cause) {
       if (cause instanceof RecoveryProfileRegistrationError) throw cause
       throw registrationFailure(name, "Publication profile registration failed strict schema validation.")

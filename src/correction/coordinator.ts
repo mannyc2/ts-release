@@ -33,9 +33,10 @@ import {
   type GithubReleaseCorrection,
   type NpmDeprecationCorrection
 } from "./intent.js"
+import { describeFailure } from "../model/decode.js"
 
 export class CorrectionValidationError
-  extends Schema.TaggedErrorClass<CorrectionValidationError>()("CorrectionValidationError", {
+  extends Schema.TaggedError<CorrectionValidationError>()("CorrectionValidationError", {
     reason: Schema.String
   }) {}
 
@@ -261,7 +262,7 @@ export const correctPreparedRelease = Effect.fn("correctPreparedRelease")(functi
   try {
     verifyCorrectionIntent(input.bundle, input.intent)
   } catch (cause) {
-    return yield* Effect.fail(new CorrectionValidationError({ reason: cause instanceof Error ? cause.message : String(cause) }))
+    return yield* Effect.fail(new CorrectionValidationError({ reason: describeFailure(cause) }))
   }
   const provider = providerOf(input.intent)
   if (input.intent.correction._tag === "CatalogForwardCorrection") {

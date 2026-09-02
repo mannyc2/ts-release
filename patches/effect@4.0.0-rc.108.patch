@@ -1,0 +1,22 @@
+diff --git a/node_modules/effect/.bun-tag-363093e43b3609ed b/.bun-tag-363093e43b3609ed
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/dist/unstable/cli/Param.d.ts b/dist/unstable/cli/Param.d.ts
+index 707f44eef3212747e1b9ad4101ecaa7432c48cce..371ea4e7c8f0ff13f61813876187667b9d0b9a23 100644
+--- a/dist/unstable/cli/Param.d.ts
++++ b/dist/unstable/cli/Param.d.ts
+@@ -2311,3 +2311,14 @@ export declare const orElseResult: {
+ };
+ export {};
+ //# sourceMappingURL=Param.d.ts.map
++/**
++ * Gets param metadata by traversing the structure.
++ *
++ * @internal
++ */
++export declare const getParamMetadata: (param: Any) => {
++    isOptional: boolean;
++    isVariadic: boolean;
++    variadicMin: Option.Option<number>;
++    variadicMax: Option.Option<number>;
++};

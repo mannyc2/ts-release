@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema"
+import { describeFailure } from "./decode.js"
 
 export const PyPiRepository = Schema.Literals(["pypi", "testpypi"])
 export type PyPiRepository = typeof PyPiRepository.Type
@@ -14,7 +15,7 @@ export const PyPiProjectName = Schema.NonEmptyString.check(Schema.makeFilter((va
   try {
     return normalizePyPiProjectName(value) === value ? undefined : "PyPI project name must be normalized."
   } catch (cause) {
-    return cause instanceof Error ? cause.message : String(cause)
+    return describeFailure(cause)
   }
 })).pipe(Schema.brand("PyPiProjectName"))
 export type PyPiProjectName = typeof PyPiProjectName.Type

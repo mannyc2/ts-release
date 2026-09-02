@@ -43,6 +43,7 @@ import {
   type NpmAuthentication as NpmAuthenticationValue,
   type PyPiAuthentication as PyPiAuthenticationValue
 } from "../recipes/config.js"
+import { describeFailure } from "../model/decode.js"
 
 export class OutputDeclaration extends Schema.Class<OutputDeclaration>("OutputDeclaration")({
   id: OutputId, path: SafeRelativePath,
@@ -181,7 +182,7 @@ export class ReleaseGraph extends Schema.Class<ReleaseGraph>("ReleaseGraph")({
 }) {}
 
 export class GraphLinkError
-  extends Schema.TaggedErrorClass<GraphLinkError>()("GraphLinkError", {
+  extends Schema.TaggedError<GraphLinkError>()("GraphLinkError", {
     kind: Schema.Literals(["duplicate", "missing", "cycle", "path", "reference"]),
     value: Schema.String, reason: Schema.String
   }) {}
@@ -198,7 +199,7 @@ export const canonicalizeRegistryUrl = (value: string): string => {
   try { return canonicalizeNpmRegistryEndpoint(value) } catch (cause) {
     throw authorityError(
       "publish.npm.registry",
-      cause instanceof Error ? cause.message : String(cause)
+      describeFailure(cause)
     )
   }
 }
@@ -231,7 +232,7 @@ export const makeNpmPublicationAuthorityIntent = (
   try { tag = NpmDistTag.make(input.distTag) } catch (cause) {
     throw authorityError(
       "publish.npm.distTag",
-      cause instanceof Error ? cause.message : String(cause)
+      describeFailure(cause)
     )
   }
   if (Semver.prerelease(version) !== null && tag === "latest") {
@@ -343,7 +344,7 @@ export const makeCatalogPublicationAuthorityIntent = (input: {
     targetPath = CatalogRepositoryPath.make(input.targetPath)
     statePath = CatalogRepositoryPath.make(input.statePath)
   } catch (cause) {
-    throw authorityError("publish.catalogGit", cause instanceof Error ? cause.message : String(cause))
+    throw authorityError("publish.catalogGit", describeFailure(cause))
   }
   if (targetPath.toString() === statePath.toString()) {
     throw authorityError("publish.catalogGit", "Catalog target and managed-state paths must be distinct.")

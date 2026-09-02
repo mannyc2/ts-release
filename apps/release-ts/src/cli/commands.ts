@@ -40,7 +40,7 @@ export type DisposableCliApi = CliApi & Pick<ReleaseApi, "dispose">
 export type CliApiFactory = (storeDirectory: string) => DisposableCliApi
 
 export class HostedPreparedReferenceUnsupported
-  extends Schema.TaggedErrorClass<HostedPreparedReferenceUnsupported>()(
+  extends Schema.TaggedError<HostedPreparedReferenceUnsupported>()(
     "HostedPreparedReferenceUnsupported",
     {
       prepared: Schema.String,

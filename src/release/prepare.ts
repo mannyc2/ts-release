@@ -91,7 +91,7 @@ import {
 } from "./staging.js"
 
 export class PreparationError
-  extends Schema.TaggedErrorClass<PreparationError>()("PreparationError", {
+  extends Schema.TaggedError<PreparationError>()("PreparationError", {
     reason: Schema.String,
     prepared: Schema.optionalKey(CompletePreparedReleaseRef)
   }) {}

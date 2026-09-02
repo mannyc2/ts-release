@@ -13,13 +13,13 @@ export class PublicationClaimRequest
   }) {}
 
 export class PublicationClaimUnavailable
-  extends Schema.TaggedErrorClass<PublicationClaimUnavailable>()("PublicationClaimUnavailable", {
+  extends Schema.TaggedError<PublicationClaimUnavailable>()("PublicationClaimUnavailable", {
     subject: SubjectId,
     reason: SafeReason
   }) {}
 
 export class PublicationClaimOccupied
-  extends Schema.TaggedErrorClass<PublicationClaimOccupied>()("PublicationClaimOccupied", {
+  extends Schema.TaggedError<PublicationClaimOccupied>()("PublicationClaimOccupied", {
     subject: SubjectId,
     reason: SafeReason
   }) {}

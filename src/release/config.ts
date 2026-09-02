@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema"
+import { decodeUnknownSync } from "../model/decode.js"
 import { CandidateConfig } from "../recipes/config.js"
 
 // The graph kernel consumes the already-decoded candidate value. Keeping this
@@ -7,6 +8,6 @@ import { CandidateConfig } from "../recipes/config.js"
 export const ReleaseIntent = CandidateConfig
 export type ReleaseIntent = typeof CandidateConfig.Type
 
-export const decodeReleaseIntent = Schema.decodeUnknownSync(ReleaseIntent, {
+export const decodeReleaseIntent = decodeUnknownSync(ReleaseIntent, {
   onExcessProperty: "error"
 })

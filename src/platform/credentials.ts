@@ -94,7 +94,7 @@ export type {
 }
 
 export class CredentialPlatformError
-  extends Schema.TaggedErrorClass<CredentialPlatformError>()("CredentialPlatformError", {
+  extends Schema.TaggedError<CredentialPlatformError>()("CredentialPlatformError", {
     phase: Schema.Literals(["observe", "mutate", "resource", "spawn"]),
     commitment: Schema.Literals(["before-dispatch", "unknown"]),
     reason: Schema.NonEmptyString

@@ -8,6 +8,7 @@
 // where each came from. Silence is never an option — a release that guesses its
 // own identity is the defect this module exists to prevent.
 import * as Schema from "effect/Schema"
+import { decodeUnknownSync, describeFailure } from "../model/decode.js"
 import * as Semver from "semver"
 import { MISSING_COMMIT } from "../model/errors.js"
 import { NonEmptyName, OutputId, Version } from "../model/primitives.js"
@@ -39,9 +40,9 @@ const disagreement = (
     } ${source}. Remove the authored value or correct the source; the resolver never picks.`
   )
 
-const decodeAuthored = Schema.decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" })
-const decodeFacts = Schema.decodeUnknownSync(ObservedFacts, { onExcessProperty: "error" })
-const decodeCandidate = Schema.decodeUnknownSync(CandidateConfig, { onExcessProperty: "error" })
+const decodeAuthored = decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" })
+const decodeFacts = decodeUnknownSync(ObservedFacts, { onExcessProperty: "error" })
+const decodeCandidate = decodeUnknownSync(CandidateConfig, { onExcessProperty: "error" })
 
 const version = (
   authored: AuthoredConfig, facts: ObservedFacts
@@ -124,7 +125,7 @@ const canonicalRegistry = (value: string | undefined): CanonicalNpmRegistryEndpo
   } catch (cause) {
     return refuse(
       "publish.npm.registry",
-      cause instanceof Error ? cause.message : String(cause)
+      describeFailure(cause)
     )
   }
 }
@@ -151,7 +152,7 @@ const distTag = (versionValue: Version, authored: string | undefined): NpmDistTa
   try { tag = NpmDistTag.make(authored) } catch (cause) {
     return refuse(
       "publish.npm.distTag",
-      cause instanceof Error ? cause.message : String(cause)
+      describeFailure(cause)
     )
   }
   if (prerelease && tag === "latest") {
@@ -258,7 +259,7 @@ const pypiPublish = (
       projectName = normalizePyPiProjectName(project.name)
       projects = pypi.authentication.projects.map(normalizePyPiProjectName)
     } catch (cause) {
-      return refuse("publish.pypi", cause instanceof Error ? cause.message : String(cause))
+      return refuse("publish.pypi", describeFailure(cause))
     }
     if (!projects.includes(projectName)) {
       return refuse(
@@ -272,7 +273,7 @@ const pypiPublish = (
   }
   let projectName: PyPiProjectName
   try { projectName = PyPiProjectName.make(normalizePyPiProjectName(project.name)) } catch (cause) {
-    return refuse("publish.pypi", cause instanceof Error ? cause.message : String(cause))
+    return refuse("publish.pypi", describeFailure(cause))
   }
   return {
     artifacts,

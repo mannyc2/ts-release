@@ -448,7 +448,7 @@ export const SubjectReport = SubjectReportVariants.pipe(Schema.check(
 export type SubjectReport = typeof SubjectReport.Type
 
 export class ReportConstructionError
-  extends Schema.TaggedErrorClass<ReportConstructionError>()("ReportConstructionError", {
+  extends Schema.TaggedError<ReportConstructionError>()("ReportConstructionError", {
     reason: SafeReason
   }) {}
 

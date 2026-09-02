@@ -56,7 +56,7 @@ export type CredentialGrantDescriptor =
   | { readonly _tag: "WorkloadIdentity", readonly purposes: NonEmptyPurposes, readonly names: NonEmptyEnvironmentNames }
 
 export class CredentialUnavailable
-  extends Schema.TaggedErrorClass<CredentialUnavailable>()("CredentialUnavailable", {
+  extends Schema.TaggedError<CredentialUnavailable>()("CredentialUnavailable", {
     subject: Schema.String,
     provider: Schema.String,
     purpose: Schema.String,
@@ -64,21 +64,21 @@ export class CredentialUnavailable
   }) {}
 
 export class CredentialAudienceMismatch
-  extends Schema.TaggedErrorClass<CredentialAudienceMismatch>()("CredentialAudienceMismatch", {
+  extends Schema.TaggedError<CredentialAudienceMismatch>()("CredentialAudienceMismatch", {
     subject: Schema.String,
     expected: Schema.String,
     observed: Schema.String
   }) {}
 
 export class CredentialPurposeMismatch
-  extends Schema.TaggedErrorClass<CredentialPurposeMismatch>()("CredentialPurposeMismatch", {
+  extends Schema.TaggedError<CredentialPurposeMismatch>()("CredentialPurposeMismatch", {
     subject: Schema.String,
     required: Schema.String,
     granted: Schema.Array(Schema.String)
   }) {}
 
 export class CredentialStrategyUnsupported
-  extends Schema.TaggedErrorClass<CredentialStrategyUnsupported>()("CredentialStrategyUnsupported", {
+  extends Schema.TaggedError<CredentialStrategyUnsupported>()("CredentialStrategyUnsupported", {
     subject: Schema.String,
     provider: Schema.String,
     strategy: Schema.String,
@@ -86,13 +86,13 @@ export class CredentialStrategyUnsupported
   }) {}
 
 export class CredentialSubjectMismatch
-  extends Schema.TaggedErrorClass<CredentialSubjectMismatch>()("CredentialSubjectMismatch", {
+  extends Schema.TaggedError<CredentialSubjectMismatch>()("CredentialSubjectMismatch", {
     expected: Schema.String,
     observed: Schema.String
   }) {}
 
 export class PublisherDispatchError
-  extends Schema.TaggedErrorClass<PublisherDispatchError>()("PublisherDispatchError", {
+  extends Schema.TaggedError<PublisherDispatchError>()("PublisherDispatchError", {
     subject: Schema.String,
     reason: Schema.String
   }) {}

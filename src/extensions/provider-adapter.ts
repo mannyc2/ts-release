@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema"
+import { decodeUnknownSync } from "../model/decode.js"
 import { NonEmptyName } from "../model/primitives.js"
 import type { ReleaseSubject } from "../publication/coordinator.js"
 import {
@@ -46,7 +47,7 @@ export interface CustomProviderAdapter extends Omit<CustomProviderAdapterInput, 
   readonly id: NonEmptyName
 }
 
-const decodeContract = Schema.decodeUnknownSync(ProviderAdapterContract, {
+const decodeContract = decodeUnknownSync(ProviderAdapterContract, {
   onExcessProperty: "error"
 })
 

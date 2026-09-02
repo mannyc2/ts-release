@@ -3,7 +3,7 @@ import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
 
-export class UnsafeScratchPathError extends Schema.TaggedErrorClass<UnsafeScratchPathError>()(
+export class UnsafeScratchPathError extends Schema.TaggedError<UnsafeScratchPathError>()(
   "UnsafeScratchPathError",
   {
     path: Schema.String,

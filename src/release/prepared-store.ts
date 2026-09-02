@@ -8,12 +8,13 @@ import { secureRead, secureWrite } from "../drivers/workspace.js"
 import { digestEquals, sha256Digest, Sha256Hex } from "../model/digest.js"
 import { PreparedArtifact, PreparedReleaseV2, decodePreparedRelease, encodePreparedRelease } from "./prepared.js"
 import { CompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef } from "./prepared-ref.js"
+import { describeFailure } from "../model/decode.js"
 
 export class PreparedStoreError
-  extends Schema.TaggedErrorClass<PreparedStoreError>()("PreparedStoreError", { reason: Schema.String }) {}
+  extends Schema.TaggedError<PreparedStoreError>()("PreparedStoreError", { reason: Schema.String }) {}
 
 export class PreparedStoreProvenanceError
-  extends Schema.TaggedErrorClass<PreparedStoreProvenanceError>()("PreparedStoreProvenanceError", {
+  extends Schema.TaggedError<PreparedStoreProvenanceError>()("PreparedStoreProvenanceError", {
     scheme: Schema.Literals(["local", "gha"]),
     reason: Schema.String
   }) {}
@@ -123,7 +124,7 @@ export const verifyPreparedStoreProvenance = Effect.fn("verifyPreparedStoreProve
  * post-commit abort, never a preparation failure.
  */
 export class PreparedCommitHandoffError
-  extends Schema.TaggedErrorClass<PreparedCommitHandoffError>()("PreparedCommitHandoffError", {
+  extends Schema.TaggedError<PreparedCommitHandoffError>()("PreparedCommitHandoffError", {
     prepared: CompletePreparedReleaseRef,
     reason: Schema.String
   }) {}
@@ -324,11 +325,11 @@ const writeBundle = (
     }
     if (cleanupFailure !== undefined) {
       throw PreparedStoreError.make({
-        reason: `Prepared-store cleanup failed after ${cause instanceof Error ? cause.message : String(cause)}: ${cleanupFailure instanceof Error ? cleanupFailure.message : String(cleanupFailure)}`
+        reason: `Prepared-store cleanup failed after ${describeFailure(cause)}: ${describeFailure(cleanupFailure)}`
       })
     }
     if (cause instanceof PreparedStoreError) throw cause
-    throw PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
+    throw PreparedStoreError.make({ reason: describeFailure(cause) })
   }
   return readBundle(finalDirectory)
 }

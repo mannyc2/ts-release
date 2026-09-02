@@ -19,6 +19,7 @@ import {
   GitBranchName,
   GitHubRepositoryCoordinate
 } from "../model/catalog.js"
+import { describeFailure } from "../model/decode.js"
 export {
   PyPiProjectName,
   PyPiRepository,
@@ -169,7 +170,7 @@ export const CanonicalNpmRegistryEndpoint = Schema.NonEmptyString.check(
         ? undefined
         : "npm registry endpoint must be canonical."
     } catch (cause) {
-      return cause instanceof Error ? cause.message : String(cause)
+      return describeFailure(cause)
     }
   })
 ).pipe(Schema.brand("CanonicalNpmRegistryEndpoint"))

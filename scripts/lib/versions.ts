@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
+import { satisfies, valid, validRange } from "semver"
 
 export interface VersionsReport {
   readonly failures: ReadonlyArray<string>
@@ -45,12 +46,19 @@ export const checkVersions = (root: string): VersionsReport => {
       failures.push(`README.md names bun ${match[1]}, expected ${pin}`)
     }
   }
+  // Peers are consumer-facing ranges (exact pins ERESOLVE real consumers);
+  // the dev pin is the one exact tested version and must satisfy the range.
   for (const name of ["effect", "@effect/platform-bun", "@effect/platform-node"]) {
     sites += 1
     const peer = manifest.peerDependencies?.[name]
     const dev = manifest.devDependencies?.[name]
-    if (peer === undefined || dev === undefined || peer !== dev) {
-      failures.push(`${name} peer (${peer ?? "none"}) and dev (${dev ?? "none"}) must use one exact version`)
+    if (
+      peer === undefined || dev === undefined || valid(dev) === null || validRange(peer) === null
+      || !satisfies(dev, peer, { includePrerelease: true })
+    ) {
+      failures.push(
+        `${name} peer (${peer ?? "none"}) must be a range satisfied by the exact dev pin (${dev ?? "none"})`
+      )
     }
   }
   sites += 1

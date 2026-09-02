@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema"
 import { CompletePreparedReleaseRef } from "../release/prepared-ref.js"
 
 export class ReleaseInputError
-  extends Schema.TaggedErrorClass<ReleaseInputError>()("ReleaseInputError", { reason: Schema.String }) {}
+  extends Schema.TaggedError<ReleaseInputError>()("ReleaseInputError", { reason: Schema.String }) {}
 
 /**
  * Cross-host preparation is deliberately reserved for plan 235. Recognizing
@@ -10,26 +10,26 @@ export class ReleaseInputError
  * typed refusal without publishing a partial-bundle shape prematurely.
  */
 export class PreparationModeUnsupported
-  extends Schema.TaggedErrorClass<PreparationModeUnsupported>()("PreparationModeUnsupported", {
+  extends Schema.TaggedError<PreparationModeUnsupported>()("PreparationModeUnsupported", {
     mode: Schema.Literals(["partition", "merge"]),
     owner: Schema.Literal("plan-235"),
     reason: Schema.String
   }) {}
 
 export class ReleasePreparationError
-  extends Schema.TaggedErrorClass<ReleasePreparationError>()("ReleasePreparationError", {
+  extends Schema.TaggedError<ReleasePreparationError>()("ReleasePreparationError", {
     cause: Schema.String
   }) {}
 
 export class ReleaseAbortedError
-  extends Schema.TaggedErrorClass<ReleaseAbortedError>()("ReleaseAbortedError", {
+  extends Schema.TaggedError<ReleaseAbortedError>()("ReleaseAbortedError", {
     prepared: Schema.optionalKey(CompletePreparedReleaseRef),
     cause: Schema.String
   }) {}
 
 /** Product-boundary failure after a truthful total report has been emitted. */
 export class ReleaseIncompleteError
-  extends Schema.TaggedErrorClass<ReleaseIncompleteError>()("ReleaseIncompleteError", {
+  extends Schema.TaggedError<ReleaseIncompleteError>()("ReleaseIncompleteError", {
     prepared: CompletePreparedReleaseRef,
     status: Schema.Literals(["blocked", "uncertain"]),
     reason: Schema.String

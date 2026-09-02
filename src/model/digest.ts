@@ -53,7 +53,7 @@ export const DigestEncoding = Schema.Literals([
 export type DigestEncoding = typeof DigestEncoding.Type
 
 export class DigestCodecError
-  extends Schema.TaggedErrorClass<DigestCodecError>()("DigestCodecError", {
+  extends Schema.TaggedError<DigestCodecError>()("DigestCodecError", {
     encoding: DigestEncoding,
     reason: Schema.NonEmptyString
   }) {}

@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema"
+import { decodeUnknownSync, describeFailure } from "../model/decode.js"
 import { encodeCanonicalJson, parseStrictJson } from "../model/canonical.js"
 import {
   ArtifactCollectionContract,
@@ -180,7 +181,7 @@ export class PreparedReleaseV2 extends Schema.Class<PreparedReleaseV2>("Prepared
 }) {}
 
 export class PreparedManifestError
-  extends Schema.TaggedErrorClass<PreparedManifestError>()("PreparedManifestError", {
+  extends Schema.TaggedError<PreparedManifestError>()("PreparedManifestError", {
     reason: Schema.String
   }) {}
 
@@ -286,7 +287,7 @@ export const encodePreparedRelease = (manifest: PreparedReleaseV2): Uint8Array =
 export const decodePreparedRelease = (bytes: Uint8Array): PreparedReleaseV2 => {
   try {
     const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
-    const value = Schema.decodeUnknownSync(PreparedReleaseV2, { onExcessProperty: "error" })(parseStrictJson(text))
+    const value = decodeUnknownSync(PreparedReleaseV2, { onExcessProperty: "error" })(parseStrictJson(text))
     assertCompletePreparedRelease(value)
     const canonical = encodePreparedRelease(value)
     if (canonical.length !== bytes.length || canonical.some((byte, index) => byte !== bytes[index])) {
@@ -294,6 +295,6 @@ export const decodePreparedRelease = (bytes: Uint8Array): PreparedReleaseV2 => {
     }
     return value
   } catch (cause) {
-    throw PreparedManifestError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
+    throw PreparedManifestError.make({ reason: describeFailure(cause) })
   }
 }

@@ -4,6 +4,7 @@ import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
+import { decodeUnknownSync } from "../model/decode.js"
 import {
   SubjectId,
   type CredentialRequest
@@ -63,7 +64,7 @@ import {
 } from "./recovery.js"
 
 export class ReleaseSubjectError
-  extends Schema.TaggedErrorClass<ReleaseSubjectError>()("ReleaseSubjectError", {
+  extends Schema.TaggedError<ReleaseSubjectError>()("ReleaseSubjectError", {
     subject: SubjectId,
     phase: Schema.Literals(["observe", "mutate"]),
     commitment: Schema.Literals(["before-dispatch", "unknown"]),
@@ -71,7 +72,7 @@ export class ReleaseSubjectError
   }) {}
 
 export class ReleaseCoordinatorConstructionError
-  extends Schema.TaggedErrorClass<ReleaseCoordinatorConstructionError>()(
+  extends Schema.TaggedError<ReleaseCoordinatorConstructionError>()(
     "ReleaseCoordinatorConstructionError",
     { reason: SafeReason }
   ) {}
@@ -153,7 +154,7 @@ const validateInput = (input: ReleaseSubjectsInput): Effect.Effect<void, Release
         if (subject.observationRequests.length === 0) {
           throw constructionFailure("Every remote subject requires at least one observation strategy.")
         }
-        Schema.decodeUnknownSync(RecoveryCapabilityProfile, { onExcessProperty: "error" })(subject.recovery)
+        decodeUnknownSync(RecoveryCapabilityProfile, { onExcessProperty: "error" })(subject.recovery)
         if (subject.recovery.historyRequirement === "durable-cas-required" && subject.claimMutation === undefined) {
           throw constructionFailure("A durable-cas-required subject has no terminal mutation-claim boundary.")
         }

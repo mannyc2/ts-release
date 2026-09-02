@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { Sha256Digest } from "../model/digest.js"
 import { NonEmptyName, SafeRelativePath, Version, WorkspaceRoot } from "../model/primitives.js"
+import { describeFailure } from "../model/decode.js"
 
 const optional = Schema.optionalKey
 
@@ -67,13 +68,13 @@ export class ExplicitInputSnapshot extends Schema.Class<ExplicitInputSnapshot>("
 }) {}
 
 export class SourceMaterializationError
-  extends Schema.TaggedErrorClass<SourceMaterializationError>()("SourceMaterializationError", {
+  extends Schema.TaggedError<SourceMaterializationError>()("SourceMaterializationError", {
     field: Schema.String,
     reason: Schema.String
   }) {}
 
 export class ReleaseContextError
-  extends Schema.TaggedErrorClass<ReleaseContextError>()("ReleaseContextError", {
+  extends Schema.TaggedError<ReleaseContextError>()("ReleaseContextError", {
     field: Schema.String, reason: Schema.String
   }) {}
 
@@ -110,7 +111,7 @@ export class SourceObserver extends Context.Service<SourceObserver, SourceObserv
 ) {}
 
 const runtimeFailure = (field: string, cause: unknown): ReleaseContextError => ReleaseContextError.make({
-  field, reason: cause instanceof Error ? cause.message : String(cause)
+  field, reason: describeFailure(cause)
 })
 
 const command = (runtime: SourceObserverRuntime, workspace: WorkspaceRoot, argv: ReadonlyArray<string>, field: string) =>
@@ -129,7 +130,7 @@ const jsonObject = (bytes: Uint8Array, path: string): Record<string, unknown> =>
     if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error("manifest root must be an object")
     return value as Record<string, unknown>
   } catch (cause) {
-    throw new Error(`${path} is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`)
+    throw new Error(`${path} is not valid JSON: ${describeFailure(cause)}`)
   }
 }
 
@@ -157,7 +158,7 @@ export const makeSourceObserver = (runtime: SourceObserverRuntime): SourceObserv
     try {
       manifest = jsonObject(bytes, packageManifestPath)
     } catch (cause) {
-      return yield* new ReleaseContextError({ field: "package.manifest", reason: cause instanceof Error ? cause.message : String(cause) })
+      return yield* new ReleaseContextError({ field: "package.manifest", reason: describeFailure(cause) })
     }
     const name = typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : undefined
     const version = typeof manifest.version === "string" && manifest.version.trim().length > 0 ? manifest.version.trim() : undefined
@@ -199,7 +200,7 @@ export const makeSourceObserver = (runtime: SourceObserverRuntime): SourceObserv
         ? cause
         : new SourceMaterializationError({
           field: "source.materialization",
-          reason: cause instanceof Error ? cause.message : String(cause)
+          reason: describeFailure(cause)
         })))
   )
 })

@@ -77,7 +77,7 @@ export const pypiProviderProtocolDocumentation = Object.freeze({
 
 /** No stable exact conditional per-file yank mutation is installed. */
 export class PyPiYankUnsupported
-  extends Schema.TaggedErrorClass<PyPiYankUnsupported>()("PyPiYankUnsupported", {
+  extends Schema.TaggedError<PyPiYankUnsupported>()("PyPiYankUnsupported", {
     filename: Schema.NonEmptyString,
     reason: SafeReason
   }) {}

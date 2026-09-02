@@ -367,8 +367,8 @@ const main = async (): Promise<void> => {
     const manifest = readManifest(join(root, "package.json"))
     const selectedRuntime = selectedNode()
     const effectVersion = manifest.devDependencies?.effect
-    if (effectVersion === undefined || !/^4\.0\.0-beta\.[0-9]+$/u.test(effectVersion)) {
-      throw new Error("Root package must name one exact Effect beta dev dependency.")
+    if (effectVersion === undefined || !/^4\.0\.0-(?:beta|rc)\.[0-9]+$/u.test(effectVersion)) {
+      throw new Error("Root package must name one exact Effect prerelease dev dependency.")
     }
     const nodeRange = manifest.engines?.node
     if (nodeRange === undefined || semver.validRange(nodeRange) === null) {

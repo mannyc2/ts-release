@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema"
+import { decodeUnknownSync } from "../model/decode.js"
 import { existsSync, realpathSync, statSync } from "node:fs"
 import { isAbsolute } from "node:path"
 import { CompletePreparedReleaseRef } from "../release/prepared-ref.js"
@@ -44,7 +45,7 @@ const decode = <S extends Schema.Top & Schema.Decoder<unknown>>(
   value: unknown
 ): S["Type"] => {
   try {
-    return Schema.decodeUnknownSync(schema, { onExcessProperty: "error" })(value) as S["Type"]
+    return decodeUnknownSync(schema, { onExcessProperty: "error" })(value) as S["Type"]
   } catch (cause) {
     throw new ReleaseInputError({
       reason: String(cause).split("\n").slice(0, 8).join("\n").slice(0, 500)

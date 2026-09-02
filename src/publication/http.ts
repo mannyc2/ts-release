@@ -8,11 +8,12 @@ import type {
   PublisherOperation,
   ScopedSecret
 } from "./authority.js"
+import { describeFailure } from "../model/decode.js"
 
 /** Raw host transport failure. Provider meaning is assigned only by the
  * authority-checking sink/adapter that knows whether dispatch started. */
 export class PublicationHttpError
-  extends Schema.TaggedErrorClass<PublicationHttpError>()("PublicationHttpError", {
+  extends Schema.TaggedError<PublicationHttpError>()("PublicationHttpError", {
     commitment: Schema.Literals(["before-dispatch", "unknown"]),
     reason: Schema.String
   }) {}
@@ -92,7 +93,7 @@ export const bodyJson = (response: HttpResponse): unknown => {
   try {
     return JSON.parse(bodyText(response)) as unknown
   } catch (cause) {
-    throw PublicationHttpError.make({ commitment: "before-dispatch", reason: cause instanceof Error ? cause.message : String(cause) })
+    throw PublicationHttpError.make({ commitment: "before-dispatch", reason: describeFailure(cause) })
   }
 }
 

@@ -7,7 +7,7 @@ const metadataLimit = 4 * 1024 * 1024
 const archiveLimit = 512 * 1024 * 1024
 
 export class PythonDistributionError
-  extends Schema.TaggedErrorClass<PythonDistributionError>()("PythonDistributionError", {
+  extends Schema.TaggedError<PythonDistributionError>()("PythonDistributionError", {
     filename: Schema.NonEmptyString,
     reason: Schema.NonEmptyString
   }) {}

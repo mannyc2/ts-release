@@ -1,3 +1,4 @@
+import { builtinProviderAdapters } from "../../../src/capabilities/registry.js"
 import { createHash } from "node:crypto"
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
@@ -20,7 +21,7 @@ import { sha256Digest } from "../../../src/model/digest.js"
 import { NonEmptyName, OutputId, Version } from "../../../src/model/primitives.js"
 import { CredentialProvider, makeCredentialProvider } from "../../../src/publication/authority.js"
 import { bindAuthoredCorrection, correctPreparedRelease } from "../../../src/correction/coordinator.js"
-import { decodeAuthoredCorrection } from "../../../src/correction/intent.js"
+import { decodeAuthoredCorrection } from "../../../src/model/correction-intent.js"
 import { publishReleaseSubjects } from "../../../src/publication/coordinator.js"
 import type {
   AuthorizedMutationHttpShape,
@@ -463,6 +464,7 @@ describe("catalog Git-data provider protocol", () => {
     const outcome = await Effect.runPromise(correctPreparedRelease({
       bundle,
       intent,
+      adapters: builtinProviderAdapters,
       services: { credentials, http: double.http, mutationHttp: double.mutationHttp }
     }))
     expect(outcome._tag).toBe("CorrectionExecuted")

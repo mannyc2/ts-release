@@ -1,3 +1,4 @@
+import { builtinProviderAdapters } from "../../src/capabilities/registry.js"
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
@@ -6,7 +7,7 @@ import {
   decodeAuthoredCorrection,
   decodeCorrectionIntent,
   makeCorrectionIntent
-} from "../../src/correction/intent.js"
+} from "../../src/model/correction-intent.js"
 import { encodeCanonicalJson } from "../../src/model/canonical.js"
 import { CredentialRef } from "../../src/model/authority.js"
 import { digestEquals, sha256Digest } from "../../src/model/digest.js"
@@ -222,7 +223,7 @@ describe("Plan 229 authored correction boundary", () => {
       publicationId: "npm-release",
       message: "Use 1.0.1."
     }))
-    const outcome = await Effect.runPromise(correctPreparedRelease({ bundle, intent }))
+    const outcome = await Effect.runPromise(correctPreparedRelease({ bundle, intent, adapters: builtinProviderAdapters }))
 
     expect(installedPublicationProfiles.npm.correctionAdapters).toEqual([])
     expect(installedPublicationProfiles.npm.recovery.correction).toEqual([])
@@ -230,7 +231,7 @@ describe("Plan 229 authored correction boundary", () => {
       _tag: "CorrectionUnsupported",
       provider: "npm"
     })
-    expect(outcome.reason).toContain("no proved conditional deprecation write")
+    expect(outcome.reason).toContain("no conditional update bound to an observed package generation")
     if (outcome.proposal === undefined) throw new Error("Expected an exact npm operator proposal.")
     expect(decodeCorrectionIntent(new TextEncoder().encode(outcome.proposal))).toEqual(intent)
     expect(encodePreparedRelease(bundle.manifest)).toEqual(before)
@@ -247,7 +248,7 @@ describe("Plan 229 authored correction boundary", () => {
         message
       })))
     const outcomes = await Effect.runPromise(Effect.all(
-      intents.map((intent) => correctPreparedRelease({ bundle, intent })),
+      intents.map((intent) => correctPreparedRelease({ bundle, intent, adapters: builtinProviderAdapters })),
       { concurrency: "unbounded" }
     ))
 

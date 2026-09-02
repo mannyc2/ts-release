@@ -3,19 +3,15 @@ import * as Schema from "effect/Schema"
 import { encodeCanonicalJson } from "../model/canonical.js"
 import { digestEquals, parseSha256Hex, sha256Digest, sha512Digest } from "../model/digest.js"
 import {
-  CatalogManagedState,
   PreparedCatalogDownload,
   compareCatalogVersions,
-  decodeCatalogManagedState,
-  encodeCatalogManagedState,
-  renderCatalog
+  decodeCatalogManagedState
 } from "../model/catalog.js"
-import { SubjectId } from "../model/authority.js"
-import type { CredentialProviderShape } from "../publication/authority.js"
-import { CredentialProvider } from "../publication/authority.js"
-import { publishReleaseSubjects } from "../publication/coordinator.js"
-import type { AuthorizedMutationHttpShape, HttpAuthorizerShape } from "../publication/http.js"
-import { makeCatalogSubject } from "../publication/catalog-git.js"
+import {
+  correctionKindOf,
+  type CorrectionServices,
+  type ProviderAdapter
+} from "../publication/provider.js"
 import type { ReleaseReport } from "../publication/report.js"
 import {
   PreparedPublication,
@@ -32,7 +28,7 @@ import {
   type CatalogForwardCorrection,
   type GithubReleaseCorrection,
   type NpmDeprecationCorrection
-} from "./intent.js"
+} from "../model/correction-intent.js"
 import { describeFailure } from "../model/decode.js"
 
 export class CorrectionValidationError
@@ -41,13 +37,13 @@ export class CorrectionValidationError
   }) {}
 
 export class CorrectionUnsupported extends Schema.TaggedClass<CorrectionUnsupported>()("CorrectionUnsupported", {
-  provider: Schema.Literals(["npm", "github", "catalog-git"]), reason: Schema.String, evidence: Schema.NonEmptyString,
+  provider: Schema.NonEmptyString, reason: Schema.String, evidence: Schema.NonEmptyString,
   proposal: Schema.optionalKey(Schema.String)
 }) {}
 
 export interface CorrectionExecuted {
   readonly _tag: "CorrectionExecuted"
-  readonly provider: "catalog-git"
+  readonly provider: string
   readonly report: ReleaseReport
   readonly reason: string
   readonly evidence: string
@@ -242,89 +238,64 @@ export const verifyCorrectionIntent = (bundle: PreparedBundle, intent: Correctio
   }
 }
 
-const providerOf = (intent: CorrectionIntent): "npm" | "github" | "catalog-git" => intent.correction.provider
-
 /**
- * The only correction entry point. Provider adapters are built at the host
- * boundary. Neither admitted provider currently exposes a conditional write
- * that protects the exact observed generation, so a validated intent becomes
- * an external proposal and never a read-then-unconditional mutation.
+ * The only correction entry point, dispatched through the same composed
+ * provider adapters as publication. A validated intent executes only through
+ * an actually installed conditional correction on the registered adapter;
+ * otherwise the adapter's registered evidence explains the refusal and the
+ * intent becomes an exact external proposal, never a read-then-unconditional
+ * mutation.
  */
 export const correctPreparedRelease = Effect.fn("correctPreparedRelease")(function*(input: {
   readonly bundle: PreparedBundle
   readonly intent: CorrectionIntent
-  readonly services?: {
-    readonly credentials: CredentialProviderShape
-    readonly http: HttpAuthorizerShape
-    readonly mutationHttp: AuthorizedMutationHttpShape
-  }
+  readonly adapters: ReadonlyArray<ProviderAdapter>
+  readonly services?: CorrectionServices
 }) {
   try {
     verifyCorrectionIntent(input.bundle, input.intent)
   } catch (cause) {
     return yield* Effect.fail(new CorrectionValidationError({ reason: describeFailure(cause) }))
   }
-  const provider = providerOf(input.intent)
-  if (input.intent.correction._tag === "CatalogForwardCorrection") {
-    if (input.services === undefined) return CorrectionUnsupported.make({
-      provider,
-      reason: "Catalog correction requires the host-owned credential and GitHub HTTP authority boundary.",
-      evidence: "docs/release-program/remediation/231-catalog-delivery.md",
-      proposal: new TextDecoder().decode(encodeCorrectionIntent(input.intent))
-    })
-    const correction = input.intent.correction
-    const publication = findPublication(input.bundle, correction.publicationId.toString())
-    if (publication?._tag !== "PreparedCatalogPublication") {
-      return yield* new CorrectionValidationError({ reason: "Verified catalog correction publication disappeared." })
-    }
-    const baselineTarget = input.bundle.blobs.get(publication.targetArtifactId.toString())
-    const baselineState = input.bundle.blobs.get(publication.stateArtifactId.toString())
-    if (baselineTarget === undefined || baselineState === undefined) {
-      return yield* new CorrectionValidationError({ reason: "Verified catalog correction baseline bytes disappeared." })
-    }
-    const target = renderCatalog(correction.replacementVersion, publication.renderer.renderer, correction.downloads)
-    const state = encodeCatalogManagedState(CatalogManagedState.make({
-      schemaVersion: "ts-release/catalog-state/v2",
-      catalogId: publication.catalogId,
-      renderer: publication.renderer.renderer._tag,
-      generation: correction.replacementVersion,
-      status: "corrected",
-      targetDigest: sha256Digest(target),
-      sourceRepository: publication.sourceRepository,
-      sourceTag: correction.replacementTag,
-      correctionId: input.intent.correctionId,
-      reason: correction.reason,
-      replacementVersion: correction.replacementVersion
-    }))
-    const subject = makeCatalogSubject(publication, input.services.http, input.services.mutationHttp, {
-      id: SubjectId.make(`${publication.authority.subject}#correction-${input.intent.correctionId.hex}`),
-      purpose: "correct",
-      target,
-      state,
-      baselineTarget,
-      baselineState
-    })
-    const report = yield* publishReleaseSubjects({
-      prepared: SubjectId.make(`correction:sha256-${input.intent.correctionId.hex}`),
-      subjects: [subject]
-    }).pipe(Effect.provideService(CredentialProvider, input.services.credentials))
-    return {
-      _tag: "CorrectionExecuted",
-      provider: "catalog-git",
-      report,
-      reason: "Catalog correction ran through the exact conditional Git-data subject.",
-      evidence: "docs/release-program/remediation/231-catalog-delivery.md",
-      proposal: ""
-    } as const
+  const provider = input.intent.correction.provider
+  const adapter = input.adapters.find((candidate) => candidate.profile.provider === provider)
+  if (adapter === undefined) {
+    throw new Error(`No composed provider adapter is registered for correction provider ${provider}.`)
   }
-  return CorrectionUnsupported.make({
-    provider,
-    reason: provider === "npm"
-      ? "npm exposes no proved conditional deprecation write for the observed package generation; use the exact external proposal instead."
-      : "GitHub exposes no proved conditional release-metadata write for the observed release generation.",
-    evidence: "docs/release-program/remediation/229-provider-recovery.md",
-    proposal: new TextDecoder().decode(encodeCorrectionIntent(input.intent))
+  const evidence = adapter.profile.evidence.correctionSources[0]!
+  const proposal = new TextDecoder().decode(encodeCorrectionIntent(input.intent))
+  const kind = correctionKindOf(input.intent.correction)
+  const installed = adapter.corrections.find((correction) => correction.kind === kind)
+  if (installed === undefined) {
+    return CorrectionUnsupported.make({
+      provider,
+      reason: adapter.profile.evidence.correctionFinding,
+      evidence,
+      proposal
+    })
+  }
+  if (input.services === undefined) {
+    return CorrectionUnsupported.make({
+      provider,
+      reason: `An installed ${kind} correction requires the host-owned credential and provider HTTP authority boundary.`,
+      evidence,
+      proposal
+    })
+  }
+  const report = yield* installed.execute({
+    bundle: input.bundle,
+    correction: input.intent.correction,
+    correctionId: input.intent.correctionId,
+    services: input.services
   })
+  return {
+    _tag: "CorrectionExecuted",
+    provider,
+    report,
+    reason: adapter.profile.evidence.correctionFinding,
+    evidence,
+    proposal: ""
+  } as const
 })
 
 export const correctionEvidenceProjection = (intent: CorrectionIntent): string => {
@@ -332,6 +303,6 @@ export const correctionEvidenceProjection = (intent: CorrectionIntent): string =
   return encodeCanonicalJson({
     correctionId: encoded.correctionId,
     preparedDigest: encoded.preparedDigest,
-    provider: providerOf(intent)
+    provider: intent.correction.provider
   })
 }

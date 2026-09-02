@@ -9,7 +9,7 @@ import {
   sha256Digest
 } from "../../src/model/digest.js"
 import { NonEmptyName, Version } from "../../src/model/primitives.js"
-import * as CorrectionModule from "../../src/correction/intent.js"
+import * as CorrectionModule from "../../src/model/correction-intent.js"
 import {
   CorrectionIntentV2,
   CorrectionVariant,
@@ -18,7 +18,7 @@ import {
   decodeCorrectionIntent,
   encodeCorrectionIntent,
   makeCorrectionIntent
-} from "../../src/correction/intent.js"
+} from "../../src/model/correction-intent.js"
 
 const preparedDigest = parseSha256Hex("a".repeat(64))
 const correction = NpmDeprecationCorrection.make({

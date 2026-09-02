@@ -5,9 +5,13 @@
  */
 export {
   ProviderAdapterContract,
+  makeInstalledCorrection,
   makeProviderAdapter
 } from "./publication/provider.js"
 export type {
+  CorrectionExecutionInput,
+  CorrectionServices,
+  InstalledCorrection,
   ProviderAdapter,
   ProviderAdapterInput,
   PublicationSubjectServices

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import * as Schema from "effect/Schema"
-import * as CorrectionIntentModule from "../../src/correction/intent.js"
-import { CorrectionVariant } from "../../src/correction/intent.js"
+import * as CorrectionIntentModule from "../../src/model/correction-intent.js"
+import { CorrectionVariant } from "../../src/model/correction-intent.js"
 
 test("installed PyPI publication does not imply an unsupported file-yank correction", () => {
   expect(() => Schema.decodeUnknownSync(CorrectionVariant, {

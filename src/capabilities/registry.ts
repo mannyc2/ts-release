@@ -1,7 +1,7 @@
 import { makeGithubSubjects } from "../publication/github.js"
 import { makeNpmSubject } from "../publication/npm.js"
 import { makePyPiSubjects } from "../publication/pypi.js"
-import { makeCatalogPublicationSubject } from "../publication/catalog-git.js"
+import { catalogForwardCorrection, makeCatalogPublicationSubject } from "../publication/catalog-git.js"
 import { installedPublicationProfiles } from "../publication/profiles.js"
 import {
   makeProviderAdapter,
@@ -321,6 +321,7 @@ export const catalogPublicationCapability = Object.freeze({
   adapter: makeProviderAdapter({
     contract: firstPartyProviderContract,
     profile: installedPublicationProfiles.catalogGit,
+    corrections: [catalogForwardCorrection],
     subjects: (bundle, publication, services) => [
       makeCatalogPublicationSubject(bundle, publication, services.http, services.mutationHttp)
     ]

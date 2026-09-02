@@ -1,7 +1,7 @@
 import type * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import type { CredentialProvider } from "../publication/authority.js"
-import type { AuthoredCorrection } from "../correction/intent.js"
+import type { AuthoredCorrection } from "../model/correction-intent.js"
 import type { ObservationReport, ReleaseReport as ReleaseReportType } from "../publication/report.js"
 import { SafeReason } from "../publication/report.js"
 import type {
@@ -85,7 +85,7 @@ export interface CorrectInput {
 export class CorrectionReport extends Schema.Class<CorrectionReport>("CorrectionReport")({
     prepared: CompletePreparedReleaseRef,
     status: Schema.Literals(["unsupported", "complete", "blocked", "uncertain"]),
-    provider: Schema.Literals(["npm", "github", "catalog-git"]),
+    provider: Schema.NonEmptyString,
     reason: SafeReason,
     proposal: Schema.String,
     report: Schema.optionalKey(Schema.Unknown)

@@ -5,14 +5,22 @@ import { CredentialRequest as CredentialRequestSchema, SubjectId } from "../mode
 import {
   CatalogManagedState,
   compareCatalogVersions,
-  decodeCatalogManagedState
+  decodeCatalogManagedState,
+  encodeCatalogManagedState,
+  renderCatalog
 } from "../model/catalog.js"
 import { digestEquals, sha256Digest } from "../model/digest.js"
 import { NonEmptyName } from "../model/primitives.js"
 import type { PreparedCatalogPublication } from "../release/prepared.js"
 import type { PreparedBundle } from "../release/prepared-store.js"
-import type { CredentialGrant, MutationCredentialGrant, PublisherOperation, ScopedSecret } from "./authority.js"
-import { ReleaseSubjectError, type ReleaseObservationContext, type ReleaseSubject } from "./coordinator.js"
+import { CredentialProvider, type CredentialGrant, type MutationCredentialGrant, type PublisherOperation, type ScopedSecret } from "./authority.js"
+import {
+  publishReleaseSubjects,
+  ReleaseSubjectError,
+  type ReleaseObservationContext,
+  type ReleaseSubject
+} from "./coordinator.js"
+import { makeInstalledCorrection } from "./provider.js"
 import type { AuthorizedMutationHttpShape, HttpAuthorizerShape, HttpResponse, MutationHttpRequest } from "./http.js"
 import {
   AbsenceBasis,
@@ -601,3 +609,53 @@ export const makeCatalogPublicationSubject = (
   }
   return makeCatalogSubject(publication, http, mutationHttp, { target, state })
 }
+
+/**
+ * The one installed conditional correction: an exact forward SemVer
+ * replacement of the managed target/state pair, published through the same
+ * conditional Git-data subject and coordinator as first publication. The
+ * correction coordinator has already verified the intent against the exact
+ * prepared bundle; disappearing baselines here are defects, not refusals.
+ */
+export const catalogForwardCorrection = makeInstalledCorrection(
+  "forward-catalog-state",
+  Effect.fn("catalogForwardCorrection")(function*(input) {
+    const { bundle, correction, correctionId, services } = input
+    const publication = bundle.manifest.publications.find((candidate) =>
+      candidate.id.toString() === correction.publicationId.toString())
+    if (publication?._tag !== "PreparedCatalogPublication") {
+      return yield* Effect.die(new Error("Verified catalog correction publication disappeared."))
+    }
+    const baselineTarget = bundle.blobs.get(publication.targetArtifactId.toString())
+    const baselineState = bundle.blobs.get(publication.stateArtifactId.toString())
+    if (baselineTarget === undefined || baselineState === undefined) {
+      return yield* Effect.die(new Error("Verified catalog correction baseline bytes disappeared."))
+    }
+    const target = renderCatalog(correction.replacementVersion, publication.renderer.renderer, correction.downloads)
+    const state = encodeCatalogManagedState(CatalogManagedState.make({
+      schemaVersion: "ts-release/catalog-state/v2",
+      catalogId: publication.catalogId,
+      renderer: publication.renderer.renderer._tag,
+      generation: correction.replacementVersion,
+      status: "corrected",
+      targetDigest: sha256Digest(target),
+      sourceRepository: publication.sourceRepository,
+      sourceTag: correction.replacementTag,
+      correctionId,
+      reason: correction.reason,
+      replacementVersion: correction.replacementVersion
+    }))
+    const subject = makeCatalogSubject(publication, services.http, services.mutationHttp, {
+      id: SubjectId.make(`${publication.authority.subject}#correction-${correctionId.hex}`),
+      purpose: "correct",
+      target,
+      state,
+      baselineTarget,
+      baselineState
+    })
+    return yield* publishReleaseSubjects({
+      prepared: SubjectId.make(`correction:sha256-${correctionId.hex}`),
+      subjects: [subject]
+    }).pipe(Effect.provideService(CredentialProvider, services.credentials))
+  })
+)

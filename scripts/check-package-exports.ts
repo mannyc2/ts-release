@@ -109,7 +109,7 @@ const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> 
     "PresentDifferent", "PresentEquivalent", "ProviderAdapterContract",
     "ProviderAlreadyEquivalent", "ProviderBlocked", "ProviderId", "RejectedByProvider",
     "SafeReason", "Started", "SubjectId", "conservativeUnknownRecoveryProfile",
-    "makeProviderAdapter", "makeRecoveryCapabilityProfile"
+    "makeInstalledCorrection", "makeProviderAdapter", "makeRecoveryCapabilityProfile"
   ])
 }
 

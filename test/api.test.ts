@@ -338,7 +338,7 @@ describe("public lifecycle API", () => {
         status: "unsupported",
         provider: "github"
       })
-      expect(report.reason).toContain("conditional release-metadata")
+      expect(report.reason).toContain("unsafe-method conditions are unsupported")
       expect(report.proposal).toContain("correction-intent/v2")
     } finally {
       await api.dispose()

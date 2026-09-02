@@ -1,15 +1,15 @@
 import * as Schema from "effect/Schema"
-import { decodeUnknownSync, describeFailure } from "../model/decode.js"
-import { encodeCanonicalJson, parseStrictJson } from "../model/canonical.js"
+import { decodeUnknownSync, describeFailure } from "./decode.js"
+import { encodeCanonicalJson, parseStrictJson } from "./canonical.js"
 import {
   Sha256Digest,
   Sha256Hex,
   Sha512Digest,
   digestEquals,
   sha256Digest
-} from "../model/digest.js"
-import { NonEmptyName, Version } from "../model/primitives.js"
-import { CatalogArchitecture, PreparedCatalogDownload } from "../model/catalog.js"
+} from "./digest.js"
+import { NonEmptyName, Version } from "./primitives.js"
+import { CatalogArchitecture, PreparedCatalogDownload } from "./catalog.js"
 
 const optional = Schema.optionalKey
 const boundedText = Schema.String.check(Schema.makeFilter((value: string) =>

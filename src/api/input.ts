@@ -3,7 +3,7 @@ import { decodeUnknownSync } from "../model/decode.js"
 import { existsSync, realpathSync, statSync } from "node:fs"
 import { isAbsolute } from "node:path"
 import { CompletePreparedReleaseRef } from "../release/prepared-ref.js"
-import { AuthoredCorrection } from "../correction/intent.js"
+import { AuthoredCorrection } from "../model/correction-intent.js"
 import { PreparationModeUnsupported, ReleaseInputError } from "./errors.js"
 import type {
   CorrectInput,

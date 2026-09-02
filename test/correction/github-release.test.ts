@@ -1,3 +1,4 @@
+import { builtinProviderAdapters } from "../../src/capabilities/registry.js"
 import { expect, test } from "bun:test"
 import { formatSha256Hex, sha256Digest } from "../../src/model/digest.js"
 import { NonEmptyName, SafeRelativePath, Version } from "../../src/model/primitives.js"
@@ -5,7 +6,7 @@ import { encodePreparedRelease, PreparedGitHubPublication, PreparedProject, Prep
 import type { PreparedBundle } from "../../src/release/prepared-store.js"
 import { makeGitHubPublicationAuthorityIntent } from "../../src/release/graph.js"
 import { bindAuthoredCorrection, correctPreparedRelease } from "../../src/correction/coordinator.js"
-import { decodeAuthoredCorrection } from "../../src/correction/intent.js"
+import { decodeAuthoredCorrection } from "../../src/model/correction-intent.js"
 import { digestEquals } from "../../src/model/digest.js"
 import {
   fixturePreparedProvenance,
@@ -22,7 +23,7 @@ test("GitHub correction remains explicitly unsupported without a durable conditi
     kind: "amend-release-metadata",
     message: "Withdrawn: use v1.0.1."
   }))
-  const result = await import("effect/Effect").then(({ runPromise }) => runPromise(correctPreparedRelease({ bundle, intent })))
+  const result = await import("effect/Effect").then(({ runPromise }) => runPromise(correctPreparedRelease({ bundle, intent, adapters: builtinProviderAdapters })))
   expect(result._tag).toBe("CorrectionUnsupported")
   expect(result._tag === "CorrectionUnsupported" ? result.provider : "").toBe("github")
 })

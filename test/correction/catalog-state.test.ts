@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
-import * as CorrectionIntentModule from "../../src/correction/intent.js"
-import { decodeAuthoredCorrection } from "../../src/correction/intent.js"
+import * as CorrectionIntentModule from "../../src/model/correction-intent.js"
+import { decodeAuthoredCorrection } from "../../src/model/correction-intent.js"
 
 describe("catalog forward-correction grammar", () => {
   test("admits only an explicit replacement version, tag, architecture, URL, and digest", () => {

@@ -1,10 +1,19 @@
+import type * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
+import type {
+  CatalogForwardCorrection,
+  CorrectionVariant,
+  GithubReleaseCorrection,
+  NpmDeprecationCorrection
+} from "../model/correction-intent.js"
 import { decodeUnknownSync } from "../model/decode.js"
+import type { Sha256Digest } from "../model/digest.js"
 import { NonEmptyName } from "../model/primitives.js"
 import type { PreparedPublication } from "../release/prepared.js"
 import type { PreparedBundle } from "../release/prepared-store.js"
+import type { CredentialProviderShape } from "./authority.js"
 import type { PublicationClaimStoreShape } from "./claim.js"
-import type { ReleaseSubject } from "./coordinator.js"
+import type { ReleaseCoordinatorConstructionError, ReleaseSubject } from "./coordinator.js"
 import type {
   AuthorizedMutationHttpShape,
   HttpAuthorizerShape
@@ -13,9 +22,11 @@ import type {
   CertifiedPublisherSpawnShape,
   NpmUserConfigResourceShape
 } from "./publisher.js"
+import type { ReleaseReport } from "./report.js"
 import {
   validatePublicationProfiles,
   validateRecoveryProfileSubjects,
+  type CorrectionKind,
   type PublicationProfileRegistration
 } from "./recovery.js"
 
@@ -57,9 +68,64 @@ export type PreparedPublicationTag = PreparedPublication["_tag"]
  */
 export type PublicationForTag<Tag extends string> = Extract<PreparedPublication, { readonly _tag: Tag }>
 
+/** Host-owned sinks a conditional correction executes through. */
+export interface CorrectionServices {
+  readonly credentials: CredentialProviderShape
+  readonly http: HttpAuthorizerShape
+  readonly mutationHttp: AuthorizedMutationHttpShape
+}
+
+/** Durable correction grammar variant carried by each installed kind. */
+export type CorrectionVariantForKind<Kind extends CorrectionKind> =
+  Kind extends "deprecate" ? NpmDeprecationCorrection
+  : Kind extends "amend-release-metadata" ? GithubReleaseCorrection
+  : Kind extends "forward-catalog-state" ? CatalogForwardCorrection
+  : never
+
+/** Grammar-owned closed map from an intent variant to its correction kind. */
+export const correctionKindOf = (correction: CorrectionVariant): CorrectionKind =>
+  correction._tag === "NpmDeprecationCorrection"
+    ? "deprecate"
+    : correction._tag === "GithubReleaseCorrection"
+    ? "amend-release-metadata"
+    : "forward-catalog-state"
+
+export interface CorrectionExecutionInput<C extends CorrectionVariant = CorrectionVariant> {
+  readonly bundle: PreparedBundle
+  readonly correction: C
+  readonly correctionId: Sha256Digest
+  readonly services: CorrectionServices
+}
+
+/**
+ * One actually installed conditional correction. The stored `execute` is
+ * method-typed over the whole grammar for heterogeneous composition; the
+ * correction coordinator only ever dispatches the variant matching `kind`,
+ * and `makeInstalledCorrection` keeps authoring narrowed to that variant.
+ */
+export interface InstalledCorrection {
+  readonly kind: CorrectionKind
+  execute(
+    input: CorrectionExecutionInput
+  ): Effect.Effect<ReleaseReport, ReleaseCoordinatorConstructionError>
+}
+
+export const makeInstalledCorrection = <const Kind extends CorrectionKind>(
+  kind: Kind,
+  execute: (
+    input: CorrectionExecutionInput<CorrectionVariantForKind<Kind>>
+  ) => Effect.Effect<ReleaseReport, ReleaseCoordinatorConstructionError>
+): InstalledCorrection => Object.freeze({ kind, execute }) as InstalledCorrection
+
 export interface ProviderAdapterInput<Tag extends string> {
   readonly contract: ProviderAdapterContract
   readonly profile: PublicationProfileRegistration<Tag>
+  /**
+   * Executable conditional corrections. Their kinds must exactly equal the
+   * profile's registered correctionAdapters: a declared-but-uninstalled or
+   * installed-but-undeclared correction is unrepresentable.
+   */
+  readonly corrections?: ReadonlyArray<InstalledCorrection>
   /**
    * Derive typed subjects for one prepared publication of the registered tag,
    * from the verified bundle and opaque host sinks. Dispatch is total over
@@ -87,6 +153,7 @@ export interface ProviderAdapter<Tag extends string = string> {
   readonly id: NonEmptyName
   readonly contract: ProviderAdapterContract
   readonly profile: PublicationProfileRegistration<Tag>
+  readonly corrections: ReadonlyArray<InstalledCorrection>
   subjects(
     bundle: PreparedBundle,
     publication: PreparedPublication,
@@ -107,11 +174,20 @@ export const makeProviderAdapter = <const Tag extends string>(
 ): ProviderAdapter<Tag> => {
   const contract = decodeContract(input.contract)
   const profile = validatePublicationProfiles({ [input.profile.id]: input.profile })[input.profile.id]!
+  const corrections = Object.freeze([...(input.corrections ?? [])])
+  const installedKinds = corrections.map((correction) => correction.kind)
+  if (new Set(installedKinds).size !== installedKinds.length ||
+      [...installedKinds].sort().join("\n") !== [...profile.correctionAdapters].sort().join("\n")) {
+    throw new Error(
+      `Provider adapter ${profile.id} must install exactly its registered correction adapters.`
+    )
+  }
   return Object.freeze({
     _tag: "ProviderAdapter" as const,
     id: NonEmptyName.make(profile.id),
     contract,
     profile,
+    corrections,
     subjects: input.subjects
   })
 }

@@ -268,7 +268,10 @@ const releaseProgram = Effect.fn("releaseProgram")(function*(
   return yield* afterCommitFailure(committed.ref, publishCommitted(committed, adapters))
 })
 
-const correctProgram = Effect.fn("correctProgram")(function*(input: CorrectInput) {
+const correctProgram = Effect.fn("correctProgram")(function*(
+  input: CorrectInput,
+  adapters: NonNullable<ReleaseApiOptions["providerAdapters"]>
+) {
   const bundle = yield* loadPrepared(input.prepared)
   const credentials = yield* CredentialProvider
   const http = yield* HttpAuthorizer
@@ -279,13 +282,14 @@ const correctProgram = Effect.fn("correctProgram")(function*(input: CorrectInput
   }).pipe(Effect.flatMap((intent) => correctPreparedRelease({
     bundle,
     intent,
+    adapters,
     services: { credentials, http, mutationHttp }
   })))
   if (outcome._tag === "CorrectionExecuted") return new CorrectionReport({
     prepared: input.prepared,
     status: outcome.report.status,
     provider: outcome.provider,
-    reason: SafeReason.make("Catalog correction completed through the exact conditional Git-data subject report."),
+    reason: SafeReason.make(outcome.reason),
     proposal: "",
     report: outcome.report
   })
@@ -342,7 +346,7 @@ export const makeReleaseApi = (layer: ReleaseApiLayer, options: ReleaseApiOption
 
   const correct = async (value: CorrectInput) => {
     const input = decodeCorrectInput(value)
-    return run(afterCommitFailure(input.prepared, correctProgram(input)))
+    return run(afterCommitFailure(input.prepared, correctProgram(input, adapters)))
   }
 
   return Object.freeze({

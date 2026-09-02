@@ -646,31 +646,31 @@ export const V2_EXPECTED_PROBE_COMPONENT_HASHES = {
 } as const
 
 export const V2_EXPECTED_GATE_DEFINITION_HASHES = {
-  "GM01-shared-case-semantics": "626de170b2a1c55552e313a046c3517559dd6b47b0b173be7fdeb7aca37a0292",
-  "GM02-law-and-owner-invariants": "2cf0c36a788a40b14b2a77aa4ea06dd0ffd17302c2a3085401dc3c915830696e",
-  "GM03-construction-boundaries": "dd5ad2ead5c418bfadc4cfd391766bb9dc39a95d193d1fd0b1942a44616f6453",
-  "GM04-result-provenance": "730c8d8524d62e993e02f52bea0d75b38ad0c3bf6bc8cc53e97196d26f0b1c97",
-  "GM05-machine-source-budget": "91569a69b477ba45c40bd2f1b386d56e4e113bddc18c70f8d97826e1bf4852fc",
-  "GM06-marginal-measurement": "bdfdc74aa5e7cab1d8822f795d01383320e19a927b9a6b9be3303003f637851c",
-  "GM07-candidate-equivalence": "64c0e905abf7b9c04d90eba1b1cc2afb1143ebfec8e2d6a8aa7c8f91b81e7b22",
-  "GM08-metric-and-readability-completeness": "e3d4631665e24df2e6092b9772c0560080090b0cd542323b116d730ccc8d3f34",
-  "GM09-offline-nonmutation": "42e852ab7cbe1b37c11af315dedabf03151c665aa333f8000b2fc68ea6b4fcf1",
-  "GT01-shared-fixture-machine-and-cases": "cb3426507be7cbdd46cac99e5c269fba6bc7a945bc0f8dbe7d4cae32d1b0b0cd",
-  "GT02-packed-library-node": "8a9354a5e067e182ea293f8ad69b98e4ed0807ad6efef3ac6675a0dd18b2b52e",
-  "GT03-packed-library-bun": "d7cb235280b6e16dd64567c07ffcaadb76b9ffa0cfa8d99ffa68be58c52ca500",
-  "GT04-packed-cli": "420f0b3a6132c87551dd92e65416981490694ea6d1aa9be6d60dea466a615207",
-  "GT05-packed-github-action": "f5c31b7969390b4a0c87b23e26efe1b423de082ca7728cf6dc40dfa8f17cf333",
-  "GT06-packed-external-provider-two-instances": "db0fa79183aff80a00d6e16f7c9e4c8883250e136023d38d45f9fe5fb760e2dd",
-  "GT07-lossless-effect-build-file-tree-adoption": "c3764bfbc1a00b30fbaf0f5f73de2a5a77618d6ca0e1a546ef7fb891d13761bd",
-  "GT08-exact-runtime-declaration-surface": "400202add563b7f02ef4a3d1e46a453de8d99f284fd6714bcbbad1ddb948a4ea",
-  "GT09-exact-emitted-packed-inventory": "38291b29cc443bf70ac31bdc03d7bc397bf98f85b921452b0014b67a8bcad3ef",
-  "GT10-exact-static-type-dynamic-manifest-graph": "4d6db935e3907c890fcf3538d7f8b022888df8daae864d9b58dd0cf8a2c7d953",
-  "GT11-no-cycle-sibling-reversal-or-host-edge": "f8ee4aacb05df78742b98785573f7626ca3f24fd4ce3fef6409891b396f43435",
-  "GT12-version-skew-partial-publication": "8f64be0cb3b480efe791a0d646092a7b0a1b794b761e25d5059c8a21cae4e201",
-  "GT13-dry-run-build-publication-self-release": "be4939762a25d2b164a806ea9809b7177810b9d32314d22f8a24a3eddc43dce7",
-  "GT14-tree-shaking-and-packed-bytes": "3398823b4c8dc2b74de9c41d810f7ea0803b1ee4c1d97b08c423065af8880a46",
-  "GT15-all-nine-marginal-probes": "fdf61fa08b58396ce96f58a5674c90fcc916a9137d91c75599a68dd48927c27f",
-  "GT16-offline-nonmutation": "c35a47dfd1f5f6b67672a262b646fb6fd1b0a659faf8a8cb6d7a8e9b66fb8a7f"
+  "GM01-shared-case-semantics": "3b6b9bc1c73e9eef260383fd94d919d248b2094abe3b63d798b9630e182e5391",
+  "GM02-law-and-owner-invariants": "373bad65252c3ba1b94d283d7cf30fb961b8a20af8ea83e12a961215a4cc2465",
+  "GM03-construction-boundaries": "d253088c356d7eb3a1fe724382f9ee87a0c9a76e3a9f878344752d26916a05e5",
+  "GM04-result-provenance": "1e78085a09bc51115e34bc8bbcf86fd8838d3f6b6f8d7bc8e4bffa4211bd9b3a",
+  "GM05-machine-source-budget": "9927bbd7628d142332947825aed59b4b31afbf99f7ee567ac799f99280194ba7",
+  "GM06-marginal-measurement": "10f4a4e9235c552c4f8ab5c528bb2f1583504866eaed63423c561f232e3ea1bb",
+  "GM07-candidate-equivalence": "ac14d85c61d4f68de25be7a5e04326ac98701715b89afacc5e5f9a91570ec41b",
+  "GM08-metric-and-readability-completeness": "1a9f45e7da2b1843594748662940829ede001a8dd4ce8af998dfb657522829d4",
+  "GM09-offline-nonmutation": "f81d3d6b1ae29b5c6a94724b784a716698cdc5d9459921cd651a7314a217d04e",
+  "GT01-shared-fixture-machine-and-cases": "0e9081102fd07f8ed478ec81931a6f51d785d73f245a847cf22460b51aa3a3c6",
+  "GT02-packed-library-node": "752a222aefc4a6f6afa697bf93566e1ee6094c3d13d2b91b584a8c038b9e10a2",
+  "GT03-packed-library-bun": "a838980d143f8bba8f9aa2deb7c5c141e82e1953319bdfa4e22c28f420d14b02",
+  "GT04-packed-cli": "5eeaabb3cd1975bf38a5a0edee27f4bda0e995de7b0f1bcb70cc651b3ee53f02",
+  "GT05-packed-github-action": "974f05ac9ce36b21c88e64a1bc145ddd7263350b20910aefdee124ab22262a9b",
+  "GT06-packed-external-provider-two-instances": "3ecadbd5143dd6a8cf9c31dd3e060376c70d338f39f2a165cce3881de4077624",
+  "GT07-lossless-effect-build-file-tree-adoption": "b3b384bff307bd2011ed7268790b5c7ccbfbde345b1d25fbb57aecaa38bfef5d",
+  "GT08-exact-runtime-declaration-surface": "dc6995b192ca55189aa609ed41114c9308564e525825d96f87be00c81eb21ded",
+  "GT09-exact-emitted-packed-inventory": "70ad1cdd8a76df5bcbc1c3fa22ccf6e923cf6e76ebfe65a83cf8c92563525a6a",
+  "GT10-exact-static-type-dynamic-manifest-graph": "5ef173a196a79b89e48591acb7c9d85df76bebb64dc37d4479a67cdad5311e05",
+  "GT11-no-cycle-sibling-reversal-or-host-edge": "a0201745e0ad231b8565744b2d0cc7f46a84679f5deb2fcd229b6bc25424ef55",
+  "GT12-version-skew-partial-publication": "e06cbc0344322fcb975f66f41964b2e1e78ad3011007ea1996acec301628fcd1",
+  "GT13-dry-run-build-publication-self-release": "62b686d065dbd07af99af6e4b2ef757c2c35be9fde56f1ed19771d4683946897",
+  "GT14-tree-shaking-and-packed-bytes": "ac35453dff050bc363324c0e8fb3116d5fb6f5af68a518614fb6370ad7ad2a8d",
+  "GT15-all-nine-marginal-probes": "61173044b370e0d82f3adee62b8448d9ab5ae7e3ea4c3206e197c52a89effd9b",
+  "GT16-offline-nonmutation": "358279ee2b57c100d5c02b40660d0959d89d1ab6d4923cf85147237ec1b610e3"
 } as const
 
 export const V2_EXPECTED_SCHEMA_IDS = {
@@ -708,7 +708,8 @@ export const V2_EXPECTED_RUN_CONTEXT_KEYS = [
   "schemaVersion",
   "toolchain",
   "topologyFixtureSha256",
-  "trialSpecSha256"
+  "trialSpecSha256",
+  "upstreamMachineReceipt"
 ] as const
 
 export const V2_EXPECTED_RUN_CONTEXT_TOOLCHAIN_KEYS = [

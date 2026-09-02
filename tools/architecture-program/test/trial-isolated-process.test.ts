@@ -21,6 +21,7 @@ import {
   TRIAL_BUBBLEWRAP_EXECUTABLE,
   TRIAL_ISOLATION_FAILURE_EXIT_CODE,
   TRIAL_ISOLATION_FAILURE_PREFIX,
+  TRIAL_SANDBOX_CANDIDATE_ROOT,
   TrialIsolationEstablishmentError,
   TrialIsolationInvalidRequestError,
   TrialIsolationPostcheckError,
@@ -120,9 +121,10 @@ describe("TrialIsolatedProcess", () => {
         candidateRoot
       }
       const argv = buildTrialIsolationArgv(paths, "probe", bindings)
-      expect(argv.slice(0, 8)).toEqual([
+      expect(argv.slice(0, 9)).toEqual([
         TRIAL_BUBBLEWRAP_EXECUTABLE,
         "--unshare-all",
+        "--unshare-user",
         "--disable-userns",
         "--assert-userns-disabled",
         "--new-session",
@@ -131,6 +133,12 @@ describe("TrialIsolatedProcess", () => {
         "ALL"
       ])
       expect(argv).toContain("--clearenv")
+      const pwdBinding = argv.indexOf("PWD")
+      expect(argv.slice(pwdBinding - 1, pwdBinding + 2)).toEqual([
+        "--setenv",
+        "PWD",
+        TRIAL_SANDBOX_CANDIDATE_ROOT
+      ])
       expect(argv).not.toContain("--share-net")
       expect(argv).toContain("--proc")
       expect(argv).toContain("--dev")
@@ -139,6 +147,13 @@ describe("TrialIsolatedProcess", () => {
       expect(argv.filter((value) => value === candidateRoot)).toHaveLength(1)
       expect(argv.filter((value) => value === runnerNodeModules)).toHaveLength(1)
       expect(argv.filter((value) => value === bunExecutable)).toHaveLength(1)
+      const remountRoot = argv.indexOf("--remount-ro")
+      expect(argv.filter((value) => value === "--remount-ro")).toHaveLength(1)
+      expect(argv.slice(remountRoot, remountRoot + 2)).toEqual(["--remount-ro", "/"])
+      expect(remountRoot).toBeGreaterThan(argv.lastIndexOf("--bind"))
+      expect(remountRoot).toBeGreaterThan(argv.lastIndexOf("--ro-bind"))
+      expect(remountRoot).toBeGreaterThan(argv.lastIndexOf("--tmpfs"))
+      expect(remountRoot).toBeLessThan(argv.indexOf("--chdir"))
       const verifier = argv.at(-1)!
       expect(verifier).toContain(`Bun.version !== ${JSON.stringify(bindings.bunVersion)}`)
       expect(verifier).toContain("process.execve")
@@ -491,6 +506,7 @@ describe("TrialIsolatedProcess", () => {
       }).pipe(Effect.result))
 
       if (Result.isFailure(result)) {
+        if (process.env.TRIAL_REQUIRE_LIVE_ISOLATION === "1") throw result.failure
         expect(
           result.failure instanceof TrialIsolationUnavailableError ||
           result.failure instanceof TrialIsolationEstablishmentError

@@ -2,7 +2,8 @@ import { constants, type Stats } from "node:fs"
 import { lstat, open, realpath, type FileHandle } from "node:fs/promises"
 import { isAbsolute, resolve } from "node:path"
 import { Effect, Result } from "effect"
-import { canonicalJsonBytes } from "./canonical-document.js"
+import { canonicalJsonBytes, parseCanonicalJsonBytes } from "./canonical-document.js"
+import { decodeGateObservationForInvocation } from "./schema/harness-protocol.js"
 import { ArtifactId, type Sha256Hex } from "./schema/primitives.js"
 import {
   CompleteProcessStreamEvidence,
@@ -22,7 +23,13 @@ import {
 } from "./schema/trial-result.js"
 import { gateDefinitionSha256, type ArchitectureTrialSpecV2 } from "./schema/trial-spec.js"
 import { sha256Bytes } from "./trial-hash.js"
+import {
+  TRIAL_GATE_SANDBOX_CANDIDATE_ROOT,
+  TRIAL_GATE_SANDBOX_HOME,
+  TRIAL_GATE_SANDBOX_REPOSITORY_ROOT
+} from "./trial-gate-contract.js"
 import { inventoryCanonicalTree } from "./trial-inventory.js"
+import { inventoryRuntimeDependencyTree } from "./trial-runtime-dependency-tree.js"
 import {
   TrialProcessIoError,
   TrialProcessOutputLimitError,
@@ -47,6 +54,10 @@ export interface MakeTrialGateCommandExecutorOptions {
   readonly expectedRunnerTypeScriptConfigSha256: Sha256Hex
   readonly bunExecutablePath: string
   readonly expectedBunExecutableSha256: Sha256Hex
+  readonly bubblewrapExecutablePath: string
+  readonly expectedBubblewrapExecutableSha256: Sha256Hex
+  readonly runnerNodeModulesRoot: string
+  readonly expectedRunnerNodeModulesSha256: Sha256Hex
   readonly inheritedPath: string
   readonly trialProcess?: TrialProcessService
 }
@@ -84,16 +95,17 @@ const sameRetainedNode = (left: Stats, right: Stats): boolean =>
   left.gid === right.gid &&
   left.rdev === right.rdev
 
-const verifyBunExecutable = async (
+const verifyRetainedExecutable = async (
   path: string,
-  expectedSha256: Sha256Hex
+  expectedSha256: Sha256Hex,
+  label: string
 ): Promise<void> => {
   if (!isAbsolute(path) || resolve(path) !== path || await realpath(path) !== path) {
-    throw new Error("retained Bun path must be one canonical resolved absolute path")
+    throw new Error(`retained ${label} path must be one canonical resolved absolute path`)
   }
   const before = await lstat(path)
   if (!before.isFile() || before.isSymbolicLink() || (before.mode & 0o111) === 0) {
-    throw new Error("retained Bun path must identify an executable regular file")
+    throw new Error(`retained ${label} path must identify an executable regular file`)
   }
   if (typeof constants.O_NOFOLLOW !== "number") throw new Error("O_NOFOLLOW is unavailable")
   let handle: FileHandle | undefined
@@ -101,17 +113,17 @@ const verifyBunExecutable = async (
     handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW)
     const opened = await handle.stat()
     if (!opened.isFile() || !sameRetainedNode(before, opened)) {
-      throw new Error("opened Bun inode differs from its retained path snapshot")
+      throw new Error(`opened ${label} inode differs from its retained path snapshot`)
     }
     const bytes = new Uint8Array(await handle.readFile())
     const afterRead = await handle.stat()
     const afterPath = await lstat(path)
     if (!afterRead.isFile() || !sameRetainedNode(opened, afterRead) ||
       !sameRetainedNode(afterRead, afterPath) || bytes.byteLength !== afterRead.size) {
-      throw new Error("retained Bun executable changed while its bytes were verified")
+      throw new Error(`retained ${label} executable changed while its bytes were verified`)
     }
     if (sha256Bytes(bytes) !== expectedSha256) {
-      throw new Error("retained Bun executable does not equal the run-context digest")
+      throw new Error(`retained ${label} executable does not equal the run-context digest`)
     }
   } finally {
     await handle?.close()
@@ -244,6 +256,7 @@ const commandShapeIssues = (
 ): ReadonlyArray<string> => JSON.stringify(gate.command) !== JSON.stringify([
   "bun",
   "run",
+  "--silent",
   "--no-env-file",
   "--config=/dev/null",
   "--no-install",
@@ -292,11 +305,90 @@ const commandInputIssues = (
   ]
 }
 
+const fixedOuterEnvironment = {
+  PATH: "/usr/bin:/bin",
+  LC_ALL: "C",
+  LANG: "C",
+  TZ: "UTC",
+  NO_COLOR: "1"
+} as const
+
+const fixedGateEnvironment = {
+  PATH: "/runtime:/usr/bin",
+  HOME: TRIAL_GATE_SANDBOX_HOME,
+  LC_ALL: "C",
+  LANG: "C",
+  TZ: "UTC",
+  NO_COLOR: "1",
+  TMPDIR: "/tmp"
+} as const
+
+export interface TrialGateIsolationPaths {
+  readonly bubblewrapExecutablePath: string
+  readonly bunExecutablePath: string
+  readonly repositoryRoot: string
+  readonly inspectionRoot: string
+  readonly runnerNodeModulesRoot: string
+}
+
+/** The gate command can observe trusted inputs but has no writable repository or candidate mount. */
+export const buildTrialGateIsolationArgv = (
+  paths: TrialGateIsolationPaths,
+  gate: ArchitectureTrialSpecV2["gateRequirements"][number]
+): readonly [string, ...Array<string>] => [
+  paths.bubblewrapExecutablePath,
+  "--unshare-all",
+  // bubblewrap 0.9 requires the explicit flag before --disable-userns even
+  // though --unshare-all includes the user namespace semantically.
+  "--unshare-user",
+  "--disable-userns",
+  "--assert-userns-disabled",
+  "--new-session",
+  "--die-with-parent",
+  "--cap-drop",
+  "ALL",
+  "--hostname",
+  "architecture-gate",
+  "--clearenv",
+  "--setenv", "PATH", fixedGateEnvironment.PATH,
+  "--setenv", "HOME", fixedGateEnvironment.HOME,
+  "--setenv", "LC_ALL", fixedGateEnvironment.LC_ALL,
+  "--setenv", "LANG", fixedGateEnvironment.LANG,
+  "--setenv", "TZ", fixedGateEnvironment.TZ,
+  "--setenv", "NO_COLOR", fixedGateEnvironment.NO_COLOR,
+  "--setenv", "TMPDIR", fixedGateEnvironment.TMPDIR,
+  "--ro-bind", "/usr", "/usr",
+  "--symlink", "usr/bin", "/bin",
+  "--symlink", "usr/lib", "/lib",
+  "--symlink", "usr/lib64", "/lib64",
+  "--dev", "/dev",
+  "--proc", "/proc",
+  "--tmpfs", "/tmp",
+  "--tmpfs", "/home",
+  "--dir", TRIAL_GATE_SANDBOX_HOME,
+  "--dir", "/runtime",
+  "--ro-bind", paths.repositoryRoot, TRIAL_GATE_SANDBOX_REPOSITORY_ROOT,
+  "--ro-bind", paths.inspectionRoot, TRIAL_GATE_SANDBOX_CANDIDATE_ROOT,
+  "--ro-bind",
+  paths.runnerNodeModulesRoot,
+  `${TRIAL_GATE_SANDBOX_REPOSITORY_ROOT}/tools/architecture-program/node_modules`,
+  "--ro-bind", paths.bunExecutablePath, "/runtime/bun",
+  // Seal bubblewrap's otherwise-writable synthetic root after constructing
+  // every mount. The non-recursive remount preserves only /tmp and /home as
+  // writable scratch while repository, candidate, dependencies, and Bun stay
+  // on their explicit read-only mounts.
+  "--remount-ro", "/",
+  "--chdir", TRIAL_GATE_SANDBOX_REPOSITORY_ROOT,
+  "--",
+  "/runtime/bun",
+  ...gate.command.slice(1)
+]
+
 export const makeTrialGateCommandExecutor = (
   options: MakeTrialGateCommandExecutorOptions
 ): GateCommandExecutor => {
   const trialProcess = options.trialProcess ?? makeTrialProcess({
-    inheritedEnvironment: { PATH: options.inheritedPath }
+    inheritedEnvironment: fixedOuterEnvironment
   })
 
   const execute = Effect.fn("TrialGateCommandExecutor.execute")(function* (
@@ -304,27 +396,33 @@ export const makeTrialGateCommandExecutor = (
   ) {
     const { gate } = request
     const shapeIssues = commandShapeIssues(gate)
-    const manifestPathIssues = shapeIssues.length === 0 && (gate.command[7] === undefined ||
-      resolve(options.repositoryRoot, gate.command[7], "package.json") !==
+    const cwdFlagIndex = gate.command.findIndex((argument) => argument === "--cwd")
+    const declaredWorkingDirectory = gate.command[cwdFlagIndex + 1]
+    const manifestPathIssues = shapeIssues.length === 0 && (declaredWorkingDirectory === undefined ||
+      resolve(options.repositoryRoot, declaredWorkingDirectory, "package.json") !==
         options.runnerPackageManifestPath)
       ? ["gate.command-package-manifest-path"]
       : []
-    const sourcePathIssues = shapeIssues.length === 0 && (gate.command[7] === undefined ||
-      resolve(options.repositoryRoot, gate.command[7], "src") !== options.runnerSourceRoot)
+    const sourcePathIssues = shapeIssues.length === 0 && (declaredWorkingDirectory === undefined ||
+      resolve(options.repositoryRoot, declaredWorkingDirectory, "src") !== options.runnerSourceRoot)
       ? ["gate.command-runner-source-path"]
       : []
-    const configPathIssues = shapeIssues.length === 0 && (gate.command[7] === undefined ||
-      resolve(options.repositoryRoot, gate.command[7], "tsconfig.json") !==
+    const configPathIssues = shapeIssues.length === 0 && (declaredWorkingDirectory === undefined ||
+      resolve(options.repositoryRoot, declaredWorkingDirectory, "tsconfig.json") !==
         options.runnerTypeScriptConfigPath)
       ? ["gate.command-typescript-config-path"]
       : []
     const inputIssues = commandInputIssues(request)
+    const declarationIssues = gate.hard && gate.expectedExit === 0 && !gate.credentials &&
+      !gate.networkAccess && !gate.mutatesExternalState && gate.onFailure === "RejectCandidate"
+      ? []
+      : ["gate.command-declaration-policy"]
     if (shapeIssues.length > 0 || manifestPathIssues.length > 0 ||
       sourcePathIssues.length > 0 || configPathIssues.length > 0 ||
-      inputIssues.length > 0 || request.inspectionRoot === null) {
+      inputIssues.length > 0 || declarationIssues.length > 0 || request.inspectionRoot === null) {
       return {
         processAttempt: new NotStartedProcessAttempt({
-          executable: options.bunExecutablePath
+          executable: options.bubblewrapExecutablePath
         }),
         failureIds: [
           ...shapeIssues,
@@ -332,6 +430,7 @@ export const makeTrialGateCommandExecutor = (
           ...sourcePathIssues,
           ...configPathIssues,
           ...inputIssues,
+          ...declarationIssues,
           ...(request.inspectionRoot === null ? ["gate.command-inspection-snapshot"] : [])
         ].map((id) => ArtifactId.make(id))
       }
@@ -353,23 +452,64 @@ export const makeTrialGateCommandExecutor = (
     }))
     if (Result.isFailure(rootBefore)) {
       return {
-        processAttempt: new NotStartedProcessAttempt({ executable: options.bunExecutablePath }),
+        processAttempt: new NotStartedProcessAttempt({ executable: options.bubblewrapExecutablePath }),
         failureIds: [rootBefore.failure]
       }
     }
+    const inspectionBefore = yield* Effect.result(inventoryCanonicalTree(inspectionRoot).pipe(
+      Effect.mapError(() => ArtifactId.make("gate.command-inspection-preverification"))
+    ))
+    if (Result.isFailure(inspectionBefore) ||
+      inspectionBefore.success.treeSha256 !== request.commandInput.inspectedTreeSha256) {
+      return {
+        processAttempt: new NotStartedProcessAttempt({ executable: options.bubblewrapExecutablePath }),
+        failureIds: [Result.isFailure(inspectionBefore)
+          ? inspectionBefore.failure
+          : ArtifactId.make("gate.command-inspection-tree-preverification")]
+      }
+    }
     const before = yield* Effect.result(Effect.tryPromise({
-      try: () => verifyBunExecutable(
+      try: () => verifyRetainedExecutable(
         options.bunExecutablePath,
-        options.expectedBunExecutableSha256
+        options.expectedBunExecutableSha256,
+        "Bun"
       ),
       catch: () => ArtifactId.make("gate.command-bun-preverification")
     }))
     if (Result.isFailure(before)) {
       return {
         processAttempt: new NotStartedProcessAttempt({
-          executable: options.bunExecutablePath
+          executable: options.bubblewrapExecutablePath
         }),
         failureIds: [before.failure]
+      }
+    }
+    const bubblewrapBefore = yield* Effect.result(Effect.tryPromise({
+      try: () => verifyRetainedExecutable(
+        options.bubblewrapExecutablePath,
+        options.expectedBubblewrapExecutableSha256,
+        "bubblewrap"
+      ),
+      catch: () => ArtifactId.make("gate.command-bubblewrap-preverification")
+    }))
+    if (Result.isFailure(bubblewrapBefore)) {
+      return {
+        processAttempt: new NotStartedProcessAttempt({ executable: options.bubblewrapExecutablePath }),
+        failureIds: [bubblewrapBefore.failure]
+      }
+    }
+    const dependenciesBefore = yield* Effect.result(inventoryRuntimeDependencyTree(
+      options.runnerNodeModulesRoot
+    ).pipe(Effect.mapError(() =>
+      ArtifactId.make("gate.command-runtime-dependencies-preverification"))))
+    if (Result.isFailure(dependenciesBefore) ||
+      dependenciesBefore.success.inventory.treeSha256 !==
+        options.expectedRunnerNodeModulesSha256) {
+      return {
+        processAttempt: new NotStartedProcessAttempt({ executable: options.bubblewrapExecutablePath }),
+        failureIds: [Result.isFailure(dependenciesBefore)
+          ? dependenciesBefore.failure
+          : ArtifactId.make("gate.command-runtime-dependencies-preverification")]
       }
     }
     const manifestBefore = yield* Effect.result(Effect.tryPromise({
@@ -382,7 +522,7 @@ export const makeTrialGateCommandExecutor = (
     }))
     if (Result.isFailure(manifestBefore)) {
       return {
-        processAttempt: new NotStartedProcessAttempt({ executable: options.bunExecutablePath }),
+        processAttempt: new NotStartedProcessAttempt({ executable: options.bubblewrapExecutablePath }),
         failureIds: [manifestBefore.failure]
       }
     }
@@ -396,7 +536,7 @@ export const makeTrialGateCommandExecutor = (
     }))
     if (Result.isFailure(configBefore)) {
       return {
-        processAttempt: new NotStartedProcessAttempt({ executable: options.bunExecutablePath }),
+        processAttempt: new NotStartedProcessAttempt({ executable: options.bubblewrapExecutablePath }),
         failureIds: [configBefore.failure]
       }
     }
@@ -407,29 +547,60 @@ export const makeTrialGateCommandExecutor = (
     ))
     if (Result.isFailure(sourceBefore)) {
       return {
-        processAttempt: new NotStartedProcessAttempt({ executable: options.bunExecutablePath }),
+        processAttempt: new NotStartedProcessAttempt({ executable: options.bubblewrapExecutablePath }),
         failureIds: [sourceBefore.failure]
       }
     }
     const process = yield* Effect.result(trialProcess.run({
-      argv: [options.bunExecutablePath, ...gate.command.slice(1)],
+      argv: buildTrialGateIsolationArgv({
+        bubblewrapExecutablePath: options.bubblewrapExecutablePath,
+        bunExecutablePath: options.bunExecutablePath,
+        repositoryRoot: options.repositoryRoot,
+        inspectionRoot,
+        runnerNodeModulesRoot: options.runnerNodeModulesRoot
+      }, gate),
       cwd: options.repositoryRoot,
       stdin: canonicalJsonBytes({
         commandInput: encodeGateCommandInput(request.commandInput),
-        executionLocal: { inspectionRoot }
+        executionLocal: { inspectionRoot: TRIAL_GATE_SANDBOX_CANDIDATE_ROOT }
       }),
       timeoutMilliseconds: TRIAL_GATE_COMMAND_TIMEOUT_MILLISECONDS,
-      closedEnvironment: { PATH: options.inheritedPath }
+      closedEnvironment: fixedOuterEnvironment
     }))
     const processAttempt = Result.isSuccess(process)
       ? attemptFromResult(process.success)
-      : attemptFromError(process.failure, options.bunExecutablePath)
+      : attemptFromError(process.failure, options.bubblewrapExecutablePath)
+    const commandOutput = Result.isSuccess(process) &&
+      process.success.exitCode === gate.expectedExit
+      ? yield* Effect.result(Effect.gen(function* () {
+          if (process.success.stderr.byteLength !== 0) {
+            return yield* Effect.fail(ArtifactId.make("gate.command-stderr"))
+          }
+          const value = yield* Effect.try({
+            try: () => parseCanonicalJsonBytes(process.success.stdout),
+            catch: () => ArtifactId.make("gate.command-output")
+          })
+          return yield* decodeGateObservationForInvocation(
+            request.commandInput.invocation,
+            value
+          ).pipe(Effect.mapError(() => ArtifactId.make("gate.command-output")))
+        }))
+      : null
     const afterBun = yield* Effect.result(Effect.tryPromise({
-      try: () => verifyBunExecutable(
+      try: () => verifyRetainedExecutable(
         options.bunExecutablePath,
-        options.expectedBunExecutableSha256
+        options.expectedBunExecutableSha256,
+        "Bun"
       ),
       catch: () => ArtifactId.make("gate.command-bun-postverification")
+    }))
+    const afterBubblewrap = yield* Effect.result(Effect.tryPromise({
+      try: () => verifyRetainedExecutable(
+        options.bubblewrapExecutablePath,
+        options.expectedBubblewrapExecutableSha256,
+        "bubblewrap"
+      ),
+      catch: () => ArtifactId.make("gate.command-bubblewrap-postverification")
     }))
     const afterInspection = yield* Effect.result(Effect.tryPromise({
       try: async () => {
@@ -442,6 +613,13 @@ export const makeTrialGateCommandExecutor = (
       },
       catch: () => ArtifactId.make("gate.command-inspection-postverification")
     }))
+    const inspectionTreeAfter = yield* Effect.result(inventoryCanonicalTree(inspectionRoot).pipe(
+      Effect.mapError(() => ArtifactId.make("gate.command-inspection-postverification"))
+    ))
+    const dependenciesAfter = yield* Effect.result(inventoryRuntimeDependencyTree(
+      options.runnerNodeModulesRoot
+    ).pipe(Effect.mapError(() =>
+      ArtifactId.make("gate.command-runtime-dependencies-postverification"))))
     const manifestAfter = yield* Effect.result(Effect.tryPromise({
       try: () => verifyRetainedRegularFile(
         options.runnerPackageManifestPath,
@@ -467,8 +645,23 @@ export const makeTrialGateCommandExecutor = (
       processAttempt,
       failureIds: [
         ...(Result.isFailure(process) ? [ArtifactId.make("gate.command-process-failure")] : []),
+        ...(commandOutput !== null && Result.isFailure(commandOutput)
+          ? [commandOutput.failure]
+          : []),
         ...(Result.isFailure(afterBun) ? [afterBun.failure] : []),
+        ...(Result.isFailure(afterBubblewrap) ? [afterBubblewrap.failure] : []),
         ...(Result.isFailure(afterInspection) ? [afterInspection.failure] : []),
+        ...(Result.isFailure(inspectionTreeAfter) ||
+          inspectionTreeAfter.success.treeSha256 !== inspectionBefore.success.treeSha256
+          ? [ArtifactId.make("gate.command-inspection-tree-postverification")]
+          : []),
+        ...(Result.isFailure(dependenciesAfter) ||
+          dependenciesAfter.success.inventory.treeSha256 !==
+            dependenciesBefore.success.inventory.treeSha256 ||
+          JSON.stringify(dependenciesAfter.success.inventory.entries) !==
+            JSON.stringify(dependenciesBefore.success.inventory.entries)
+          ? [ArtifactId.make("gate.command-runtime-dependencies-postverification")]
+          : []),
         ...(Result.isFailure(manifestAfter) ? [manifestAfter.failure] : []),
         ...(Result.isFailure(configAfter) ? [configAfter.failure] : []),
         ...(Result.isFailure(sourceAfter) ? [sourceAfter.failure] : [])

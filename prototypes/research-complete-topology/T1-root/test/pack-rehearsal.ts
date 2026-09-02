@@ -1,0 +1,46 @@
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs"
+import { isAbsolute, join, resolve } from "node:path"
+import { tmpdir } from "node:os"
+
+interface Coordinate { readonly name: string; readonly root: string; readonly version: string }
+interface Fixture { readonly schemaVersion: string; readonly packages: ReadonlyArray<Coordinate>; readonly libraryPackageName: string; readonly cli: { readonly packageName: string; readonly binName: string }; readonly action: { readonly packageName: string; readonly exportSubpath: string }; readonly externalProviderPackageName: string }
+const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
+const spawn = (argv: ReadonlyArray<string>, cwd: string, cache?: string) => Bun.spawnSync([...argv], { cwd, stdout: "pipe", stderr: "pipe", env: cache === undefined ? process.env : { ...process.env, BUN_INSTALL_CACHE_DIR: cache } })
+const requireExit = (result: ReturnType<typeof spawn>, expected: number, label: string): void => { if (result.exitCode !== expected) throw new Error(`${label}: exit ${result.exitCode}\n${decode(result.stdout)}\n${decode(result.stderr)}`) }
+
+export const runPackRehearsal = async (candidateRoot: string) => {
+  const fixture = JSON.parse(readFileSync(join(candidateRoot, "topology-fixture.json"), "utf8")) as Fixture
+  if (fixture.schemaVersion !== "ts-release/topology-fixture/v1") throw new Error("unexpected topology fixture schema")
+  const work = mkdtempSync(join(tmpdir(), "topology-pack-rehearsal-"))
+  try {
+    const tarRoot = join(work, "tarballs"); await Bun.write(join(tarRoot, ".keep"), "")
+    const tarballs = new Map<string, string>(); const internalNames = new Set(fixture.packages.map(({ name }) => name)); const released = new Set<string>()
+    for (const coordinate of fixture.packages) {
+      const packageRoot = resolve(candidateRoot, coordinate.root); const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as { name: string; version: string; private?: boolean; dependencies?: Record<string, string>; exports?: unknown }
+      if (manifest.name !== coordinate.name || manifest.version !== coordinate.version || manifest.private === true || manifest.exports === undefined) throw new Error(`unpublishable coordinate ${coordinate.name}`)
+      for (const [name, version] of Object.entries(manifest.dependencies ?? {})) if (internalNames.has(name) && (!released.has(name) || version !== "0.0.0-trial")) throw new Error(`non-topological or inexact dependency ${coordinate.name} -> ${name}@${version}`)
+      requireExit(spawn([process.execPath, "pm", "pack", "--dry-run", "--ignore-scripts", "--quiet"], packageRoot), 0, `dry-run pack ${coordinate.name}`)
+      const before = new Set(readdirSync(tarRoot)); const packed = spawn([process.execPath, "pm", "pack", "--ignore-scripts", "--destination", tarRoot, "--quiet"], packageRoot); requireExit(packed, 0, `pack ${coordinate.name}`)
+      const file = readdirSync(tarRoot).find((name) => !before.has(name) && name.endsWith(".tgz")); if (file === undefined) throw new Error(`pack ${coordinate.name} emitted no tarball`)
+      tarballs.set(coordinate.name, join(tarRoot, file)); released.add(coordinate.name)
+    }
+    const install = (directory: string, selected: ReadonlyMap<string, string>, overrides = true) => {
+      const dependencies = Object.fromEntries([...selected].map(([name, path]) => [name, `file:${path}`])); const document = { name: "clean-consumer", private: true, type: "module", dependencies, ...(overrides ? { overrides: dependencies } : {}) }
+      return Bun.write(join(directory, "package.json"), JSON.stringify(document)).then(() => spawn([process.execPath, "install", "--offline", "--ignore-scripts"], directory, join(directory, "cache")))
+    }
+    const consumer = join(work, "consumer"); await Bun.write(join(consumer, ".keep"), ""); requireExit(await install(consumer, tarballs), 0, "offline full install")
+    const program = `const lib=await import(${JSON.stringify(fixture.libraryPackageName)});const action=await import(${JSON.stringify(fixture.action.packageName + fixture.action.exportSubpath.slice(1))});const external=await import(${JSON.stringify(fixture.externalProviderPackageName)});if((await lib.runLibraryConsumer('library')).length!==2)throw Error('library');if((await lib.runNodeHost('node')).length!==2)throw Error('node');if((await lib.runBunHost('bun')).length!==2)throw Error('bun');if((await action.runAction('action')).operations.length!==2)throw Error('action');if((await lib.runPackedExternal('external')).length!==2||external.externalProvider.instances.length!==2)throw Error('external');const source=Uint8Array.from([1,2]);const adopted=lib.adoptFinalizedArtifacts([{logicalName:'file',bytes:source,sizeDecimal:'2',mode:420}]);source[0]=9;if(adopted[0].bytes[0]!==1)throw Error('adopter');`
+    requireExit(spawn(["node", "--input-type=module", "--eval", program], consumer), 0, "clean Node consumer")
+    requireExit(spawn([process.execPath, "--eval", program], consumer), 0, "clean Bun consumer")
+    const cli = spawn([join(consumer, "node_modules", ".bin", fixture.cli.binName), "cli"], consumer); requireExit(cli, 0, "packed CLI"); if (decode(cli.stdout).trim() !== "provider-a,provider-b") throw new Error("packed CLI output drift")
+    const partial = join(work, "partial"); await Bun.write(join(partial, ".keep"), ""); const partialMap = new Map([[fixture.externalProviderPackageName, tarballs.get(fixture.externalProviderPackageName)!]]); const partialInstall = await install(partial, partialMap, false); if (partialInstall.exitCode === 0) throw new Error("partial publication unexpectedly installed offline")
+    const skewName = internalNames.has("@trial/release") ? "@trial/release" : "@trial/kernel"; const skewCoordinate = fixture.packages.find(({ name }) => name === skewName)!; const skewRoot = join(work, "skew-package"); cpSync(resolve(candidateRoot, skewCoordinate.root), skewRoot, { recursive: true })
+    const skewManifestPath = join(skewRoot, "package.json"); const skewManifest = JSON.parse(readFileSync(skewManifestPath, "utf8")); skewManifest.version = "0.0.1-trial"; await Bun.write(skewManifestPath, JSON.stringify(skewManifest))
+    const markerPath = join(skewRoot, skewName === "@trial/release" ? "generated/index.mjs" : "dist/index.mjs"); await Bun.write(markerPath, readFileSync(markerPath, "utf8").replaceAll("0.0.0-trial", "0.0.1-trial"))
+    const beforeSkew = new Set(readdirSync(tarRoot)); const skewPack = spawn([process.execPath, "pm", "pack", "--ignore-scripts", "--destination", tarRoot, "--quiet"], skewRoot); requireExit(skewPack, 0, "pack skewed coordinate"); const skewFile = readdirSync(tarRoot).find((name) => !beforeSkew.has(name) && name.endsWith(".tgz")); if (skewFile === undefined) throw new Error("skew pack emitted no tarball")
+    const skewTarballs = new Map(tarballs); skewTarballs.set(skewName, join(tarRoot, skewFile)); const skewConsumer = join(work, "skew-consumer"); await Bun.write(join(skewConsumer, ".keep"), ""); requireExit(await install(skewConsumer, skewTarballs), 0, "install skew fixture")
+    const skewProgram = `const lib=await import(${JSON.stringify(fixture.libraryPackageName)});const external=await import(${JSON.stringify(fixture.externalProviderPackageName)});if(typeof external.verifyRootConsumer==='function')await external.verifyRootConsumer('skew');else await lib.runLibraryConsumer('skew');`
+    if (spawn(["node", "--input-type=module", "--eval", skewProgram], skewConsumer).exitCode === 0 || spawn([process.execPath, "--eval", skewProgram], skewConsumer).exitCode === 0) throw new Error("hostile version skew was accepted")
+    return { packageCount: fixture.packages.length, node: true, bun: true, cli: true, action: true, external: true, partialPublicationRejected: true, versionSkewRejected: true }
+  } finally { rmSync(work, { recursive: true, force: true }) }
+}

@@ -8,6 +8,7 @@ import {
   V2CandidateScope,
   V2CaseId,
   V2GateId,
+  V2MachineCandidateId,
   V2ProbeId,
   V2_CANDIDATE_DEFINITIONS,
   V2_CASE_IDS,
@@ -64,6 +65,19 @@ export class GateDefinitionBindingV2 extends Schema.Class<GateDefinitionBindingV
   definitionSha256: Sha256Hex
 }) {}
 
+export class SelectedMachineReceiptBindingV2 extends Schema.Class<
+  SelectedMachineReceiptBindingV2
+>("SelectedMachineReceiptBindingV2")({
+  selectedMachineCandidateId: V2MachineCandidateId,
+  selectedMachineReceiptId: Sha256Hex
+}) {}
+
+export const UpstreamMachineReceiptBindingV2 = Schema.NullOr(
+  SelectedMachineReceiptBindingV2
+)
+export type UpstreamMachineReceiptBindingV2 =
+  typeof UpstreamMachineReceiptBindingV2.Type
+
 const TrialRunContextBodyFields = {
   schemaVersion: Schema.Literal("ts-release/architecture-trial-run-context/v2"),
   trialSpecSha256: Sha256Hex,
@@ -76,6 +90,7 @@ const TrialRunContextBodyFields = {
   implementationRoot: PlannedRepositoryPath,
   candidateManifestSha256: Sha256Hex,
   candidateTreeSha256: Sha256Hex,
+  upstreamMachineReceipt: UpstreamMachineReceiptBindingV2,
   runnerSourceSha256: Sha256Hex,
   runnerNodeModulesSha256: Sha256Hex,
   toolchain: TrialRunContextToolchain,
@@ -128,6 +143,14 @@ export const trialRunContextBodyInvariantIssues = (
     issues.push(
       `candidate ${context.candidateId} must use scope ${candidate.scope}, model ${candidate.model}, ` +
       `and implementation root ${candidate.implementationRoot}`
+    )
+  }
+  if (candidate.scope === "machine" && context.upstreamMachineReceipt !== null) {
+    issues.push(`machine candidate ${context.candidateId} must not bind an upstream machine receipt`)
+  }
+  if (candidate.scope === "topology" && context.upstreamMachineReceipt === null) {
+    issues.push(
+      `topology candidate ${context.candidateId} must bind an exact selected machine receipt`
     )
   }
   issues.push(...exactOrderedIdIssues(

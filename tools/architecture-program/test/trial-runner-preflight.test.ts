@@ -6,7 +6,10 @@ import { Effect, Exit } from "effect"
 import { canonicalJsonBytes, parseCanonicalJsonBytes } from "../src/canonical-document.js"
 import { trialSpecInputPath } from "../src/check-inputs.js"
 import type { SourceCoordinateGitAuthority } from "../src/check-source-coordinate.js"
-import { TrialRunContextToolchain } from "../src/schema/run-context.js"
+import {
+  SelectedMachineReceiptBindingV2,
+  TrialRunContextToolchain
+} from "../src/schema/run-context.js"
 import { PlannedRepositoryPath } from "../src/schema/primitives.js"
 import {
   decodeArchitectureTrialSpec,
@@ -52,10 +55,15 @@ const runnerTypeScriptConfigPath = resolve(
 const architectureProgramRoot = resolve(repositoryRoot, "tools/architecture-program")
 const runnerNodeModulesRoot = resolve(architectureProgramRoot, "node_modules")
 const candidateDigest = sha256Bytes(encoder.encode("candidate-tree"))
+const selectedMachineReceipt = new SelectedMachineReceiptBindingV2({
+  selectedMachineCandidateId: "M1-extracted-fold",
+  selectedMachineReceiptId: sha256Bytes(encoder.encode("selected machine result receipt"))
+})
 const runnerSourceTreeDigest = sha256Bytes(encoder.encode("runner-tree"))
 const runnerPackageManifestBytes = encoder.encode(
   '{"name":"@fixture/architecture-program","scripts":' +
-  '{"gate:machine":"false","gate:topology":"false"}}\n'
+  '{"gate:machine":"bun run src/trial-gate-cli.ts",' +
+  '"gate:topology":"bun run src/trial-gate-cli.ts"}}\n'
 )
 const runnerPackageManifestDigest = sha256Bytes(runnerPackageManifestBytes)
 const runnerTypeScriptConfigBytes = encoder.encode('{"compilerOptions":{"strict":true}}\n')
@@ -282,7 +290,8 @@ describe("candidate-neutral trial runner preflight", () => {
       const fixture = makeDependencies()
       const prepared = yield* makeTrialRunnerPreflight(fixture.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       )
 
       expect(fixture.calls.checks).toEqual([repositoryRoot])
@@ -324,6 +333,7 @@ describe("candidate-neutral trial runner preflight", () => {
         candidateModel: "extracted-fold",
         candidateManifestSha256: prepared.rawCandidateManifestSha256,
         candidateTreeSha256: candidateDigest,
+        upstreamMachineReceipt: null,
         runnerSourceSha256: runnerDigest,
         runnerNodeModulesSha256: runnerNodeModulesDigest,
         toolchain: toolchainContext
@@ -366,11 +376,13 @@ describe("candidate-neutral trial runner preflight", () => {
       const fixture = makeDependencies({ candidateId: "T3-provider-verticals" })
       const prepared = yield* makeTrialRunnerPreflight(fixture.dependencies).prepare(
         repositoryRoot,
-        "T3-provider-verticals"
+        "T3-provider-verticals",
+        selectedMachineReceipt
       )
 
       expect(prepared.runContext.candidateScope).toBe("topology")
       expect(prepared.runContext.candidateModel).toBe("provider-verticals")
+      expect(prepared.runContext.upstreamMachineReceipt).toEqual(selectedMachineReceipt)
       expect(prepared.runContext.gateDefinitionBindings).toEqual(
         trialSpec.gateRequirements
           .filter(({ scope }) => scope === "topology")
@@ -383,21 +395,25 @@ describe("candidate-neutral trial runner preflight", () => {
     Effect.gen(function* () {
       const firstBytes = encoder.encode(
         '{"name":"fixture-a","scripts":' +
-        '{"gate:machine":"false","gate:topology":"false"}}\n'
+        '{"gate:machine":"bun run src/trial-gate-cli.ts",' +
+        '"gate:topology":"bun run src/trial-gate-cli.ts"}}\n'
       )
       const secondBytes = encoder.encode(
         '{"name":"fixture-b","scripts":' +
-        '{"gate:machine":"false","gate:topology":"false"}}\n'
+        '{"gate:machine":"bun run src/trial-gate-cli.ts",' +
+        '"gate:topology":"bun run src/trial-gate-cli.ts"}}\n'
       )
       const first = makeDependencies({ runnerPackageManifestBytes: firstBytes })
       const second = makeDependencies({ runnerPackageManifestBytes: secondBytes })
       const firstPrepared = yield* makeTrialRunnerPreflight(first.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       )
       const secondPrepared = yield* makeTrialRunnerPreflight(second.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       )
 
       expect(firstPrepared.runnerSourceInventory.treeSha256).toBe(runnerSourceTreeDigest)
@@ -416,10 +432,10 @@ describe("candidate-neutral trial runner preflight", () => {
       const secondConfigured = makeDependencies({ runnerTypeScriptConfigBytes: secondConfig })
       const firstConfiguredPrepared = yield* makeTrialRunnerPreflight(
         firstConfigured.dependencies
-      ).prepare(repositoryRoot, "M1-extracted-fold")
+      ).prepare(repositoryRoot, "M1-extracted-fold", null)
       const secondConfiguredPrepared = yield* makeTrialRunnerPreflight(
         secondConfigured.dependencies
-      ).prepare(repositoryRoot, "M1-extracted-fold")
+      ).prepare(repositoryRoot, "M1-extracted-fold", null)
       expect(firstConfiguredPrepared.runnerTypeScriptConfigSha256).toBe(sha256Bytes(firstConfig))
       expect(secondConfiguredPrepared.runnerTypeScriptConfigSha256).toBe(sha256Bytes(secondConfig))
       expect(firstConfiguredPrepared.runContext.runnerSourceSha256).not.toBe(
@@ -439,7 +455,8 @@ describe("candidate-neutral trial runner preflight", () => {
         const fixture = makeDependencies({ runnerPackageManifestBytes })
         const error = yield* makeTrialRunnerPreflight(fixture.dependencies).prepare(
           repositoryRoot,
-          "M1-extracted-fold"
+          "M1-extracted-fold",
+          null
         ).pipe(Effect.flip)
 
         expect(error.operation).toBe("validate runner package gate scripts")
@@ -452,7 +469,7 @@ describe("candidate-neutral trial runner preflight", () => {
     const fixture = makeDependencies()
     return Effect.gen(function* () {
       const preflight = yield* TrialRunnerPreflight
-      const prepared = yield* preflight.prepare(repositoryRoot, "M1-extracted-fold")
+      const prepared = yield* preflight.prepare(repositoryRoot, "M1-extracted-fold", null)
       expect(prepared.runContext.candidateId).toBe("M1-extracted-fold")
     }).pipe(Effect.provide(makeTrialRunnerPreflightLayer(fixture.dependencies)))
   })
@@ -462,13 +479,58 @@ describe("candidate-neutral trial runner preflight", () => {
       const fixture = makeDependencies()
       const error = yield* makeTrialRunnerPreflight(fixture.dependencies).prepare(
         repositoryRoot,
-        "M9-caller-selection" as V2CandidateId
+        "M9-caller-selection" as V2CandidateId,
+        null
       ).pipe(Effect.flip)
 
       expect(error).toBeInstanceOf(TrialRunnerPreflightError)
       expect(error.operation).toBe("validate candidate id")
       expect(fixture.calls.realpaths).toEqual([])
       expect(fixture.calls.checks).toEqual([])
+    }))
+
+  it.effect("rejects absent or scope-incompatible machine receipt authority before observation", () =>
+    Effect.gen(function* () {
+      const cases = [
+        {
+          candidateId: "M1-extracted-fold",
+          authority: selectedMachineReceipt,
+          fixture: makeDependencies()
+        },
+        {
+          candidateId: "M1-extracted-fold",
+          authority: undefined,
+          fixture: makeDependencies()
+        },
+        {
+          candidateId: "T3-provider-verticals",
+          authority: null,
+          fixture: makeDependencies({ candidateId: "T3-provider-verticals" })
+        },
+        {
+          candidateId: "T3-provider-verticals",
+          authority: {
+            selectedMachineCandidateId: "T1-root",
+            selectedMachineReceiptId: selectedMachineReceipt.selectedMachineReceiptId
+          },
+          fixture: makeDependencies({ candidateId: "T3-provider-verticals" })
+        }
+      ] as const
+
+      for (const { authority, candidateId, fixture } of cases) {
+        const error = yield* makeTrialRunnerPreflight(fixture.dependencies).prepare(
+          repositoryRoot,
+          candidateId,
+          authority as any
+        ).pipe(Effect.flip)
+
+        expect(error).toBeInstanceOf(TrialRunnerPreflightError)
+        expect(error.operation).toBe("validate upstream machine receipt authority")
+        expect(fixture.calls.realpaths).toEqual([])
+        expect(fixture.calls.checks).toEqual([])
+        expect(fixture.calls.reads).toEqual([])
+        expect(fixture.calls.toolchains).toEqual([])
+      }
     }))
 
   it.effect("rejects checker/document drift at the fixed canonical spec path", () =>
@@ -480,7 +542,8 @@ describe("candidate-neutral trial runner preflight", () => {
       const fixture = makeDependencies({ checkedSpec: drifted })
       const error = yield* makeTrialRunnerPreflight(fixture.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       ).pipe(Effect.flip)
 
       expect(error).toBeInstanceOf(TrialRunnerPreflightError)
@@ -505,7 +568,8 @@ describe("candidate-neutral trial runner preflight", () => {
         const fixture = makeDependencies({ manifestBytes })
         const error = yield* makeTrialRunnerPreflight(fixture.dependencies).prepare(
           repositoryRoot,
-          "M1-extracted-fold"
+          "M1-extracted-fold",
+          null
         ).pipe(Effect.flip)
         expect(error).toBeInstanceOf(TrialRunnerPreflightError)
         expect(error.operation).toMatch(/candidate manifest/u)
@@ -521,7 +585,8 @@ describe("candidate-neutral trial runner preflight", () => {
       })
       const error = yield* makeTrialRunnerPreflight(fixture.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       ).pipe(Effect.flip)
 
       expect(error).toBeInstanceOf(TrialRunnerPreflightError)
@@ -546,7 +611,8 @@ describe("candidate-neutral trial runner preflight", () => {
       })
       const error = yield* makeTrialRunnerPreflight(fixture.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       ).pipe(Effect.flip)
 
       expect(error.operation).toBe("bind candidate manifest to candidate tree")
@@ -580,7 +646,8 @@ describe("candidate-neutral trial runner preflight", () => {
 
       const error = yield* makeTrialRunnerPreflight(fixture.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       ).pipe(Effect.flip)
 
       expect(error.operation).toBe("bind typescript package manifest")
@@ -597,7 +664,8 @@ describe("candidate-neutral trial runner preflight", () => {
       })
       const rootError = yield* makeTrialRunnerPreflight(escapedRoot.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       ).pipe(Effect.flip)
       expect(rootError.operation).toBe("resolve candidate implementation root")
       expect(rootError.reason).toContain("escapes")
@@ -611,7 +679,8 @@ describe("candidate-neutral trial runner preflight", () => {
       })
       const manifestError = yield* makeTrialRunnerPreflight(escapedManifest.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       ).pipe(Effect.flip)
       expect(manifestError.operation).toBe("resolve candidate manifest")
       expect(manifestError.reason).toContain("escapes")
@@ -628,7 +697,8 @@ describe("candidate-neutral trial runner preflight", () => {
       })
       const thrownError = yield* makeTrialRunnerPreflight(thrown.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       ).pipe(Effect.flip)
       expect(thrownError).toBeInstanceOf(TrialRunnerPreflightError)
       expect(thrownError.operation).toBe("check architecture inputs")
@@ -639,12 +709,14 @@ describe("candidate-neutral trial runner preflight", () => {
       })
       const exit = yield* makeTrialRunnerPreflight(rejected.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       ).pipe(Effect.exit)
       expect(Exit.isFailure(exit)).toBe(true)
       const inventoryError = yield* makeTrialRunnerPreflight(rejected.dependencies).prepare(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       ).pipe(Effect.flip)
       expect(inventoryError).toBeInstanceOf(TrialRunnerPreflightError)
       expect(inventoryError.operation).toBe("inventory candidate tree")

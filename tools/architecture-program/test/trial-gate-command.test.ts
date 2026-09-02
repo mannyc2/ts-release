@@ -3,7 +3,7 @@ import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { describe, expect, it } from "@effect/vitest"
 import { Effect } from "effect"
-import { parseCanonicalJsonBytes } from "../src/canonical-document.js"
+import { canonicalJsonBytes, parseCanonicalJsonBytes } from "../src/canonical-document.js"
 import { ArchitectureGateInvocationV2 } from "../src/schema/harness-protocol.js"
 import { ArtifactId } from "../src/schema/primitives.js"
 import {
@@ -14,11 +14,13 @@ import { decodeArchitectureTrialSpec } from "../src/schema/trial-spec.js"
 import { gateDefinitionSha256 } from "../src/schema/trial-spec.js"
 import {
   TRIAL_GATE_COMMAND_TIMEOUT_MILLISECONDS,
+  buildTrialGateIsolationArgv,
   makeTrialGateCommandExecutor,
   type GateCommandExecution
 } from "../src/trial-gate-command.js"
 import { sha256Bytes } from "../src/trial-hash.js"
 import { inventoryCanonicalTree } from "../src/trial-inventory.js"
+import { inventoryRuntimeDependencyTree } from "../src/trial-runtime-dependency-tree.js"
 import {
   TRIAL_PROCESS_OUTPUT_LIMIT_BYTES,
   TrialProcessIoError,
@@ -41,16 +43,40 @@ const spec = Effect.runSync(decodeArchitectureTrialSpec(parseCanonicalJsonBytes(
 )))
 const gate = spec.gateRequirements[0]!
 const bunBytes = new TextEncoder().encode("fixture Bun executable\n")
+const bubblewrapBytes = new TextEncoder().encode("fixture bubblewrap executable\n")
 const empty = new Uint8Array()
-const success = (exitCode = 0): TrialProcessResult => ({
-  exitCode,
-  stdout: new TextEncoder().encode("gate stdout\n"),
-  stderr: empty
-})
+
+const success = (
+  request: TrialProcessRequest,
+  exitCode = 0
+): TrialProcessResult => {
+  const envelope = parseCanonicalJsonBytes(request.stdin) as {
+    readonly commandInput: { readonly invocation: Record<string, unknown> }
+  }
+  const invocation = envelope.commandInput.invocation
+  return {
+    exitCode,
+    stdout: exitCode === 0 ? canonicalJsonBytes({
+      schemaVersion: "architecture-gate-observation-v2",
+      runContextSha256: invocation.runContextSha256,
+      candidateId: invocation.candidateId,
+      candidateTreeSha256: invocation.candidateTreeSha256,
+      definitionSha256: invocation.definitionSha256,
+      gateId: invocation.gateId,
+      facts: [{
+        sequence: 1,
+        name: "runner.gate-command-inspection",
+        value: { _tag: "Boolean", value: true }
+      }]
+    }) : new TextEncoder().encode("gate failed\n"),
+    stderr: empty
+  }
+}
 
 interface Fixture {
   readonly root: string
   readonly bunPath: string
+  readonly bubblewrapPath: string
   readonly packageManifestPath: string
   readonly packageManifestBytes: Uint8Array
   readonly runnerSourceRoot: string
@@ -58,13 +84,16 @@ interface Fixture {
   readonly typescriptConfigPath: string
   readonly typescriptConfigBytes: Uint8Array
   readonly inspectionRoot: string
+  readonly inspectionTreeSha256: ReturnType<typeof sha256Bytes>
+  readonly runnerNodeModulesRoot: string
+  readonly runnerNodeModulesSha256: ReturnType<typeof sha256Bytes>
 }
 
 const commandRequest = (
   fixture: Fixture,
   inputGate = gate
 ) => {
-  const candidateTreeSha256 = sha256Bytes(new TextEncoder().encode("candidate-tree"))
+  const candidateTreeSha256 = fixture.inspectionTreeSha256
   return {
     gate: inputGate,
     commandInput: makeGateCommandInput(new ArchitectureGateInvocationV2({
@@ -85,34 +114,50 @@ const commandRequest = (
 const withFixture = async <A>(use: (fixture: Fixture) => Promise<A>): Promise<A> => {
   const root = await mkdtemp("/tmp/ts-release-gate-command-test-")
   const bunPath = join(root, "bun")
+  const bubblewrapPath = join(root, "bwrap")
   const packageManifestPath = join(root, "tools/architecture-program/package.json")
   const packageManifestBytes = new TextEncoder().encode('{"name":"fixture-runner"}\n')
   const runnerSourceRoot = join(root, "tools/architecture-program/src")
   const typescriptConfigPath = join(root, "tools/architecture-program/tsconfig.json")
   const typescriptConfigBytes = new TextEncoder().encode('{"compilerOptions":{}}\n')
   const inspectionRoot = join(root, "candidate")
+  const runnerNodeModulesRoot = join(root, "tools/architecture-program/node_modules")
   try {
     await writeFile(bunPath, bunBytes, { mode: 0o755 })
     await chmod(bunPath, 0o755)
+    await writeFile(bubblewrapPath, bubblewrapBytes, { mode: 0o755 })
+    await chmod(bubblewrapPath, 0o755)
     await mkdir(join(root, "tools/architecture-program"), { recursive: true })
     await writeFile(packageManifestPath, packageManifestBytes)
     await mkdir(runnerSourceRoot)
     await writeFile(join(runnerSourceRoot, "gate.ts"), "export const gate = true\n")
     await writeFile(typescriptConfigPath, typescriptConfigBytes)
     await mkdir(inspectionRoot)
+    await mkdir(join(runnerNodeModulesRoot, "fixture"), { recursive: true })
+    await writeFile(join(runnerNodeModulesRoot, "fixture/index.js"), "export default true\n")
     const runnerSourceTreeSha256 = (await Effect.runPromise(
       inventoryCanonicalTree(runnerSourceRoot)
     )).treeSha256
+    const inspectionTreeSha256 = (await Effect.runPromise(
+      inventoryCanonicalTree(inspectionRoot)
+    )).treeSha256
+    const runnerNodeModulesSha256 = (await Effect.runPromise(
+      inventoryRuntimeDependencyTree(runnerNodeModulesRoot)
+    )).inventory.treeSha256
     return await use({
       root,
       bunPath,
+      bubblewrapPath,
       packageManifestPath,
       packageManifestBytes,
       runnerSourceRoot,
       runnerSourceTreeSha256,
       typescriptConfigPath,
       typescriptConfigBytes,
-      inspectionRoot
+      inspectionRoot,
+      inspectionTreeSha256,
+      runnerNodeModulesRoot,
+      runnerNodeModulesSha256
     })
   } finally {
     await rm(root, { recursive: true, force: true })
@@ -135,6 +180,10 @@ const execute = async (
     expectedRunnerTypeScriptConfigSha256: sha256Bytes(fixture.typescriptConfigBytes),
     bunExecutablePath: fixture.bunPath,
     expectedBunExecutableSha256: expectedSha256,
+    bubblewrapExecutablePath: fixture.bubblewrapPath,
+    expectedBubblewrapExecutableSha256: sha256Bytes(bubblewrapBytes),
+    runnerNodeModulesRoot: fixture.runnerNodeModulesRoot,
+    expectedRunnerNodeModulesSha256: fixture.runnerNodeModulesSha256,
     inheritedPath: "/fixture/path",
     trialProcess
   }).execute(commandRequest(fixture, inputGate))
@@ -144,25 +193,55 @@ const service = (
   effect: Effect.Effect<TrialProcessResult, TrialProcessError>
 ): TrialProcessService => ({ run: () => effect })
 
+const successfulService = (): TrialProcessService => ({
+  run: (request) => Effect.succeed(success(request))
+})
+
 describe("TrialGateCommandExecutor", () => {
-  it("runs the exact declared command through the retained Bun path and preserves nonzero exit", async () =>
+  it("runs the exact declared command in the read-only offline gate sandbox and preserves nonzero exit", async () =>
     withFixture(async (fixture) => {
       const requests: Array<TrialProcessRequest> = []
       const trialProcess: TrialProcessService = {
         run: (request) => {
           requests.push(request)
-          return Effect.succeed(success(7))
+          return Effect.succeed(success(request, 7))
         }
       }
       const result = await execute(fixture, trialProcess)
 
       expect(requests).toHaveLength(1)
       expect(requests[0]).toMatchObject({
-        argv: [fixture.bunPath, ...gate.command.slice(1)],
+        argv: buildTrialGateIsolationArgv({
+          bubblewrapExecutablePath: fixture.bubblewrapPath,
+          bunExecutablePath: fixture.bunPath,
+          repositoryRoot: fixture.root,
+          inspectionRoot: fixture.inspectionRoot,
+          runnerNodeModulesRoot: fixture.runnerNodeModulesRoot
+        }, gate),
         cwd: fixture.root,
         timeoutMilliseconds: TRIAL_GATE_COMMAND_TIMEOUT_MILLISECONDS,
-        closedEnvironment: { PATH: "/fixture/path" }
+        closedEnvironment: {
+          PATH: "/usr/bin:/bin",
+          LC_ALL: "C",
+          LANG: "C",
+          TZ: "UTC",
+          NO_COLOR: "1"
+        }
       })
+      expect(requests[0]!.argv).not.toContain("--share-net")
+      expect(requests[0]!.argv).not.toContain("--bind")
+      expect(requests[0]!.argv).toContain("--unshare-all")
+      expect(requests[0]!.argv).toContain("--unshare-user")
+      expect(requests[0]!.argv).toContain("--tmpfs")
+      expect(requests[0]!.argv.filter((value) => value === "--ro-bind").length)
+        .toBeGreaterThanOrEqual(4)
+      const remountRoot = requests[0]!.argv.indexOf("--remount-ro")
+      expect(requests[0]!.argv.filter((value) => value === "--remount-ro")).toHaveLength(1)
+      expect(requests[0]!.argv.slice(remountRoot, remountRoot + 2))
+        .toEqual(["--remount-ro", "/"])
+      expect(remountRoot).toBeGreaterThan(requests[0]!.argv.lastIndexOf("--ro-bind"))
+      expect(remountRoot).toBeGreaterThan(requests[0]!.argv.lastIndexOf("--tmpfs"))
+      expect(remountRoot).toBeLessThan(requests[0]!.argv.indexOf("--chdir"))
       const envelope = parseCanonicalJsonBytes(requests[0]!.stdin) as {
         readonly commandInput: ReturnType<typeof encodeGateCommandInput>
         readonly executionLocal: { readonly inspectionRoot: string }
@@ -177,7 +256,7 @@ describe("TrialGateCommandExecutor", () => {
         inspectionAuthority: "runner-no-follow-snapshot-v1",
         inspectionRootChannel: "execution-local-envelope-v1"
       })
-      expect(envelope.executionLocal.inspectionRoot).toBe(fixture.inspectionRoot)
+      expect(envelope.executionLocal.inspectionRoot).toBe("/candidate")
       expect(result.processAttempt._tag).toBe("Exited")
       if (result.processAttempt._tag === "Exited") {
         expect(result.processAttempt.exitCode).toBe(7)
@@ -185,13 +264,26 @@ describe("TrialGateCommandExecutor", () => {
       expect(result.failureIds).toEqual([])
     }))
 
+  it("rejects a zero-exit command whose stdout is not the exact gate observation", async () =>
+    withFixture(async (fixture) => {
+      const result = await execute(fixture, {
+        run: () => Effect.succeed({
+          exitCode: 0,
+          stdout: canonicalJsonBytes({ forged: true }),
+          stderr: empty
+        })
+      })
+      expect(result.processAttempt._tag).toBe("Exited")
+      expect(result.failureIds).toEqual(["gate.command-output"])
+    }))
+
   it("fails before spawn on malformed commands and Bun digest mismatch", async () =>
     withFixture(async (fixture) => {
       let calls = 0
       const trialProcess: TrialProcessService = {
-        run: () => {
+        run: (request) => {
           calls += 1
-          return Effect.succeed(success())
+          return Effect.succeed(success(request))
         }
       }
       const malformed = await execute(fixture, trialProcess, {
@@ -238,10 +330,10 @@ describe("TrialGateCommandExecutor", () => {
   it("retains the real attempt and rejects a post-execution Bun digest change", async () =>
     withFixture(async (fixture) => {
       const trialProcess: TrialProcessService = {
-        run: () => Effect.promise(async () => {
+        run: (request) => Effect.promise(async () => {
           await writeFile(fixture.bunPath, "changed executable\n")
           await chmod(fixture.bunPath, 0o755)
-          return success()
+          return success(request)
         })
       }
       const result = await execute(fixture, trialProcess)
@@ -262,11 +354,15 @@ describe("TrialGateCommandExecutor", () => {
         expectedRunnerTypeScriptConfigSha256: sha256Bytes(fixture.typescriptConfigBytes),
         bunExecutablePath: fixture.bunPath,
         expectedBunExecutableSha256: sha256Bytes(bunBytes),
+        bubblewrapExecutablePath: fixture.bubblewrapPath,
+        expectedBubblewrapExecutableSha256: sha256Bytes(bubblewrapBytes),
+        runnerNodeModulesRoot: fixture.runnerNodeModulesRoot,
+        expectedRunnerNodeModulesSha256: fixture.runnerNodeModulesSha256,
         inheritedPath: "/fixture/path",
         trialProcess: {
-          run: () => {
+          run: (processRequest) => {
             calls += 1
-            return Effect.succeed(success())
+            return Effect.succeed(success(processRequest))
           }
         }
       })
@@ -293,14 +389,14 @@ describe("TrialGateCommandExecutor", () => {
   it("verifies the retained package manifest and inspection-root identity before and after spawn", async () =>
     withFixture(async (fixture) => {
       await writeFile(fixture.packageManifestPath, '{"name":"hostile-pre-spawn"}\n')
-      const pre = await execute(fixture, service(Effect.succeed(success())))
+      const pre = await execute(fixture, successfulService())
       expect(pre.processAttempt._tag).toBe("NotStarted")
       expect(pre.failureIds).toEqual(["gate.command-package-manifest-preverification"])
     }).then(() => withFixture(async (fixture) => {
       const postManifest = await execute(fixture, {
-        run: () => Effect.promise(async () => {
+        run: (request) => Effect.promise(async () => {
           await writeFile(fixture.packageManifestPath, '{"name":"hostile-post-spawn"}\n')
-          return success()
+          return success(request)
         })
       })
       expect(postManifest.processAttempt._tag).toBe("Exited")
@@ -309,48 +405,49 @@ describe("TrialGateCommandExecutor", () => {
       ])
     })).then(() => withFixture(async (fixture) => {
       const postInspection = await execute(fixture, {
-        run: () => Effect.promise(async () => {
+        run: (request) => Effect.promise(async () => {
           await writeFile(join(fixture.inspectionRoot, "mutation"), "changed\n")
-          return success()
+          return success(request)
         })
       })
       expect(postInspection.processAttempt._tag).toBe("Exited")
       expect(postInspection.failureIds).toEqual([
-        "gate.command-inspection-postverification"
+        "gate.command-inspection-postverification",
+        "gate.command-inspection-tree-postverification"
       ])
     })))
 
   it("rejects preflight and post-start runner source or TypeScript config drift", async () =>
     withFixture(async (fixture) => {
       await writeFile(join(fixture.runnerSourceRoot, "gate.ts"), "export const drift = true\n")
-      const result = await execute(fixture, service(Effect.succeed(success())))
+      const result = await execute(fixture, successfulService())
       expect(result.processAttempt._tag).toBe("NotStarted")
       expect(result.failureIds).toEqual(["gate.command-runner-source-preverification"])
     }).then(() => withFixture(async (fixture) => {
       await writeFile(fixture.typescriptConfigPath, '{"compilerOptions":{"strict":false}}\n')
-      const result = await execute(fixture, service(Effect.succeed(success())))
+      const result = await execute(fixture, successfulService())
       expect(result.processAttempt._tag).toBe("NotStarted")
       expect(result.failureIds).toEqual(["gate.command-typescript-config-preverification"])
     })).then(() => withFixture(async (fixture) => {
       const result = await execute(fixture, {
-        run: () => Effect.promise(async () => {
+        run: (request) => Effect.promise(async () => {
           await writeFile(
             join(fixture.runnerSourceRoot, "gate.ts"),
             "export const postStartDrift = true\n"
           )
-          return success()
+          return success(request)
         })
       })
       expect(result.processAttempt._tag).toBe("Exited")
       expect(result.failureIds).toEqual(["gate.command-runner-source-postverification"])
     })).then(() => withFixture(async (fixture) => {
       const result = await execute(fixture, {
-        run: () => Effect.promise(async () => {
+        run: (request) => Effect.promise(async () => {
           await writeFile(
             fixture.typescriptConfigPath,
             '{"compilerOptions":{"strict":false}}\n'
           )
-          return success()
+          return success(request)
         })
       })
       expect(result.processAttempt._tag).toBe("Exited")

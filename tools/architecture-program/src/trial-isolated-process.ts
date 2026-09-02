@@ -65,6 +65,7 @@ const fixedOuterEnvironment = {
 } as const
 const fixedSandboxEnvironment = {
   PATH: "/runtime:/usr/bin",
+  PWD: TRIAL_SANDBOX_CANDIDATE_ROOT,
   LC_ALL: "C",
   LANG: "C",
   TZ: "UTC",
@@ -786,6 +787,9 @@ export const buildTrialIsolationArgv = (
   return [
     paths.bubblewrapExecutable,
     "--unshare-all",
+    // bubblewrap 0.9 requires this explicit spelling before --disable-userns,
+    // although --unshare-all already includes the same namespace semantically.
+    "--unshare-user",
     "--disable-userns",
     "--assert-userns-disabled",
     "--new-session",
@@ -796,6 +800,7 @@ export const buildTrialIsolationArgv = (
     "architecture-trial",
     "--clearenv",
     "--setenv", "PATH", fixedSandboxEnvironment.PATH,
+    "--setenv", "PWD", fixedSandboxEnvironment.PWD,
     "--setenv", "LC_ALL", fixedSandboxEnvironment.LC_ALL,
     "--setenv", "LANG", fixedSandboxEnvironment.LANG,
     "--setenv", "TZ", fixedSandboxEnvironment.TZ,
@@ -812,6 +817,10 @@ export const buildTrialIsolationArgv = (
     "--bind", paths.candidateRoot, TRIAL_SANDBOX_CANDIDATE_ROOT,
     "--ro-bind", paths.runnerNodeModules, TRIAL_SANDBOX_NODE_MODULES,
     "--ro-bind", paths.bunExecutable, TRIAL_SANDBOX_BUN_EXECUTABLE,
+    // The synthetic root created by bubblewrap is writable unless it is
+    // explicitly sealed. This remount is non-recursive, so the candidate and
+    // /tmp submounts retain their independently declared writable policies.
+    "--remount-ro", "/",
     "--chdir", TRIAL_SANDBOX_CANDIDATE_ROOT,
     "--",
     TRIAL_SANDBOX_BUN_EXECUTABLE,

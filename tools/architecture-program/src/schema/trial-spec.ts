@@ -1212,6 +1212,7 @@ export const trialSpecInvariantIssues = (spec: ArchitectureTrialSpecV2): Readonl
     const expectedCommand = [
       "bun",
       "run",
+      "--silent",
       "--no-env-file",
       "--config=/dev/null",
       "--no-install",

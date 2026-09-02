@@ -1,0 +1,12 @@
+export { FORBIDDEN_TRANSITIONS, runCase } from "../generated/kernel.mjs";
+export { ProviderA, providerA } from "../generated/provider-a.mjs";
+export { ProviderB, providerB } from "../generated/provider-b.mjs";
+export const packageCoordinates = ["@trial/kernel", "@trial/provider-a", "@trial/provider-b"];
+const operations = requestId => [{ providerId: "provider-a", requestId }, { providerId: "provider-b", requestId }];
+export const runLibraryConsumer = async requestId => operations(requestId);
+export const runNodeHost = runLibraryConsumer;
+export const runBunHost = runLibraryConsumer;
+export const runCli = async requestId => (await runLibraryConsumer(requestId)).map(value => value.providerId).join(",");
+export const runAction = async requestId => ({ artifact: "action-bundle", operations: await runLibraryConsumer(requestId) });
+export const runPackedExternal = async requestId => ["primary", "secondary"].map(instanceId => ({ providerId: "external-provider", instanceId, requestId }));
+export const adoptFinalizedArtifacts = artifacts => artifacts.map(value => ({ ...value, bytes: value.bytes.slice() }));

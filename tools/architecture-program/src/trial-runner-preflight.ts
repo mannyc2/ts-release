@@ -20,12 +20,15 @@ import {
 import {
   makeTrialRunContext,
   type TrialRunContextToolchain,
-  type TrialRunContextV2
+  type TrialRunContextV2,
+  UpstreamMachineReceiptBindingV2,
+  type UpstreamMachineReceiptBindingV2 as UpstreamMachineReceiptBindingV2Type
 } from "./schema/run-context.js"
 import type { Sha256Hex } from "./schema/primitives.js"
 import {
   V2CandidateId,
-  type V2CandidateId as V2CandidateIdType
+  type V2CandidateId as V2CandidateIdType,
+  V2_CANDIDATE_DEFINITIONS
 } from "./schema/v2-ids.js"
 import type { TrialResultPreflightAuthority } from "./schema/trial-result.js"
 import {
@@ -55,8 +58,13 @@ import {
 
 const architectureProgramPath = "tools/architecture-program"
 const candidateManifestFileName = "trial-candidate.json"
+export const TRIAL_GATE_PACKAGE_SCRIPT = "bun run src/trial-gate-cli.ts"
 const strictOptions = { errors: "all", onExcessProperty: "error" } as const
 const decodeCandidateId = Schema.decodeUnknownEffect(V2CandidateId, strictOptions)
+const decodeUpstreamMachineReceipt = Schema.decodeUnknownEffect(
+  UpstreamMachineReceiptBindingV2,
+  strictOptions
+)
 
 export type TrialRunnerCandidateDefinition =
   | ArchitectureTrialSpecV2["machineCandidates"][number]
@@ -144,7 +152,8 @@ export interface PreparedTrialRun {
 export interface TrialRunnerPreflightService {
   readonly prepare: (
     repositoryRoot: string,
-    candidateId: V2CandidateIdType
+    candidateId: V2CandidateIdType,
+    upstreamMachineReceipt: UpstreamMachineReceiptBindingV2Type
   ) => Effect.Effect<PreparedTrialRun, TrialRunnerPreflightError, never>
 }
 
@@ -216,6 +225,36 @@ const validateRepositoryRoot = (
   }
   return Effect.succeed(resolve(value))
 }
+
+const validateUpstreamMachineReceipt = Effect.fn(
+  "TrialRunnerPreflight.validateUpstreamMachineReceipt"
+)(function* (
+  candidateId: V2CandidateIdType,
+  input: UpstreamMachineReceiptBindingV2Type
+) {
+  const binding = yield* decodeUpstreamMachineReceipt(input).pipe(Effect.mapError((cause) =>
+    new TrialRunnerPreflightError(
+      "validate upstream machine receipt authority",
+      candidateId,
+      causeMessage(cause)
+    )))
+  const scope = V2_CANDIDATE_DEFINITIONS[candidateId].scope
+  if (scope === "machine" && binding !== null) {
+    return yield* new TrialRunnerPreflightError(
+      "validate upstream machine receipt authority",
+      candidateId,
+      "machine candidates must use null because they have no upstream machine receipt"
+    )
+  }
+  if (scope === "topology" && binding === null) {
+    return yield* new TrialRunnerPreflightError(
+      "validate upstream machine receipt authority",
+      candidateId,
+      "topology candidates must bind one selected machine candidate and receipt"
+    )
+  }
+  return binding
+})
 
 const isContainedPath = (root: string, target: string): boolean => {
   const fromRoot = relative(root, target)
@@ -298,8 +337,10 @@ const validateRunnerPackageGateScripts = (
     const scriptRecord = scripts as Readonly<Record<string, unknown>>
     for (const id of ["gate:machine", "gate:topology"] as const) {
       const script = scriptRecord[id]
-      if (script !== "false") {
-        throw new Error(`package manifest ${id} must equal the frozen fail-closed script false`)
+      if (script !== TRIAL_GATE_PACKAGE_SCRIPT) {
+        throw new Error(
+          `package manifest ${id} must equal the runner-owned script ${TRIAL_GATE_PACKAGE_SCRIPT}`
+        )
       }
     }
   }
@@ -526,6 +567,7 @@ const makeContext = Effect.fn("TrialRunnerPreflight.makeRunContext")(
     definition: TrialRunnerCandidateDefinition,
     rawCandidateManifestSha256: Sha256Hex,
     candidateTreeInventory: CandidateTreeInventory,
+    upstreamMachineReceipt: UpstreamMachineReceiptBindingV2Type,
     runnerSourceSha256: Sha256Hex,
     runnerNodeModulesSha256: Sha256Hex,
     toolchain: TrialRunContextToolchain
@@ -542,6 +584,7 @@ const makeContext = Effect.fn("TrialRunnerPreflight.makeRunContext")(
       implementationRoot: definition.implementationRoot,
       candidateManifestSha256: rawCandidateManifestSha256,
       candidateTreeSha256: candidateTreeInventory.treeSha256,
+      upstreamMachineReceipt,
       runnerSourceSha256,
       runnerNodeModulesSha256,
       toolchain,
@@ -572,10 +615,15 @@ export const makeTrialRunnerPreflight = (
 ): TrialRunnerPreflightService => {
   const prepare = Effect.fn("TrialRunnerPreflight.prepare")(function* (
     repositoryRootInput: string,
-    candidateIdInput: V2CandidateIdType
+    candidateIdInput: V2CandidateIdType,
+    upstreamMachineReceiptInput: UpstreamMachineReceiptBindingV2Type
   ) {
     const candidateId = yield* decodeCandidateId(candidateIdInput).pipe(Effect.mapError((cause) =>
       new TrialRunnerPreflightError("validate candidate id", String(candidateIdInput), causeMessage(cause))))
+    const upstreamMachineReceipt = yield* validateUpstreamMachineReceipt(
+      candidateId,
+      upstreamMachineReceiptInput
+    )
     const lexicalRepositoryRoot = yield* validateRepositoryRoot(repositoryRootInput)
     const repositoryRoot = yield* dependencyEffect(
       "resolve repository root",
@@ -751,6 +799,7 @@ export const makeTrialRunnerPreflight = (
       candidate.definition,
       manifestDocument.rawCandidateManifestSha256,
       candidateTreeInventory,
+      upstreamMachineReceipt,
       runnerSourceSha256,
       runnerNodeModulesTree.inventory.treeSha256,
       toolchain

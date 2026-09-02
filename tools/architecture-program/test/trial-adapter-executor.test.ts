@@ -21,8 +21,11 @@ import {
   decodeCandidateManifest,
   encodeCandidateManifest
 } from "../src/schema/candidate-manifest.js"
-import { ArtifactId } from "../src/schema/primitives.js"
-import { makeTrialRunContext } from "../src/schema/run-context.js"
+import { ArtifactId, Sha256Hex } from "../src/schema/primitives.js"
+import {
+  SelectedMachineReceiptBindingV2,
+  makeTrialRunContext
+} from "../src/schema/run-context.js"
 import {
   CompleteProcessStreamEvidence,
   ExitedProcessAttempt
@@ -82,7 +85,7 @@ const fixturePath = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../../docs/refactor/architecture-program/inputs/trial-spec.json"
 )
-const zeroDigest = "0".repeat(64)
+const zeroDigest = Sha256Hex.make("0".repeat(64))
 const plain = <A>(value: A): A => JSON.parse(JSON.stringify(value)) as A
 const testGitNumstat: TrialGitNumstatService = {
   measure: () => Effect.succeed({ _tag: "Text", additions: 1, deletions: 0 })
@@ -189,6 +192,10 @@ const makeFixture = async (): Promise<Fixture> => {
     implementationRoot: manifest.implementationRoot,
     candidateManifestSha256: sha256Bytes(canonicalJsonBytes(encodeCandidateManifest(manifest))),
     candidateTreeSha256: originalCandidateTree.treeSha256,
+    upstreamMachineReceipt: new SelectedMachineReceiptBindingV2({
+      selectedMachineCandidateId: "M1-extracted-fold",
+      selectedMachineReceiptId: zeroDigest
+    }),
     runnerSourceSha256: zeroDigest,
     runnerNodeModulesSha256: zeroDigest,
     toolchain: {

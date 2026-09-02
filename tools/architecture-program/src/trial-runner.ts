@@ -1,9 +1,7 @@
 import { Context, Effect, Layer, Schema } from "effect"
 import { ArtifactId } from "./schema/primitives.js"
+import type { UpstreamMachineReceiptBindingV2 } from "./schema/run-context.js"
 import {
-  DEFAULT_DENY_GATE_EVALUATOR_ID,
-  DEFAULT_DENY_PROBE_EVALUATOR_ID,
-  DEFAULT_UNAVAILABLE_OBJECTIVE_DERIVATION_ID,
   type ArchitectureTrialResultV2,
   type CaseReceipt,
   type GateReceipt,
@@ -20,8 +18,6 @@ import {
 } from "./schema/trial-result.js"
 import type { V2CandidateId } from "./schema/v2-ids.js"
 import {
-  RejectedGateEvaluation,
-  RejectedProbeEvaluation,
   makeTrialAdapterExecutor,
   type GateEvaluator,
   type PreparedTrialAdapterContext,
@@ -29,14 +25,16 @@ import {
   type TrialAdapterExecutorService
 } from "./trial-adapter-executor.js"
 import {
-  RunnerUnavailableObjectiveValue,
   deriveTrialObjectives,
   type RunnerOwnedObjectiveEvaluator,
   type TrialObjectivesInvariantError
 } from "./trial-objectives.js"
 import { makeTrialGitNumstat } from "./trial-inventory.js"
 import { makeTrialGateCommandExecutor } from "./trial-gate-command.js"
+import { makeLiveGateEvaluator } from "./trial-gate-evaluator.js"
 import { makeTrialIsolatedProcess } from "./trial-isolated-process.js"
+import { makeLiveObjectiveEvaluator } from "./trial-objective-evaluator.js"
+import { makeLiveProbeEvaluator } from "./trial-probe-evaluator.js"
 import {
   TrialRunnerPreflightError,
   makeTrialRunnerPreflight,
@@ -88,7 +86,8 @@ export type TrialRunnerError =
 export interface TrialRunnerService {
   readonly run: (
     repositoryRoot: string,
-    candidateId: V2CandidateId
+    candidateId: V2CandidateId,
+    upstreamMachineReceipt: UpstreamMachineReceiptBindingV2
   ) => Effect.Effect<CompletedTrialRun, TrialRunnerError, never>
 }
 
@@ -101,31 +100,6 @@ export interface CompletedTrialRun {
   readonly result: ArchitectureTrialResultV2
   readonly validationAuthority: TrialResultValidationAuthority
 }
-
-const makeDefaultTrialRunnerEvaluators = (): TrialRunnerEvaluators => Object.freeze({
-  gate: Object.freeze({
-    evaluatorId: DEFAULT_DENY_GATE_EVALUATOR_ID,
-    evaluate: Effect.fn("TrialRunner.defaultGateEvaluator")(function* () {
-      return new RejectedGateEvaluation({
-        failureIds: [ArtifactId.make("gate.runner-evaluator-missing")]
-      })
-    })
-  }),
-  probe: Object.freeze({
-    evaluatorId: DEFAULT_DENY_PROBE_EVALUATOR_ID,
-    evaluate: Effect.fn("TrialRunner.defaultProbeEvaluator")(function* () {
-      return new RejectedProbeEvaluation({
-        failureIds: [ArtifactId.make("probe.runner-evaluator-missing")]
-      })
-    })
-  }),
-  objective: Object.freeze({
-    derivationId: DEFAULT_UNAVAILABLE_OBJECTIVE_DERIVATION_ID,
-    evaluate: Effect.fn("TrialRunner.defaultObjectiveEvaluator")(function* (request) {
-      return new RunnerUnavailableObjectiveValue({ id: request.metricId })
-    })
-  })
-})
 
 const liveAdapterFactory: TrialRunnerAdapterFactory = (prepared, evaluators) =>
   makeTrialAdapterExecutor(adapterContext(prepared), {
@@ -141,6 +115,11 @@ const liveAdapterFactory: TrialRunnerAdapterFactory = (prepared, evaluators) =>
       expectedRunnerTypeScriptConfigSha256: prepared.runnerTypeScriptConfigSha256,
       bunExecutablePath: prepared.resolvedToolchain.bunExecutablePath,
       expectedBunExecutableSha256: prepared.runContext.toolchain.bunExecutableSha256,
+      bubblewrapExecutablePath: prepared.resolvedToolchain.bubblewrapExecutablePath,
+      expectedBubblewrapExecutableSha256:
+        prepared.runContext.toolchain.bubblewrapExecutableSha256,
+      runnerNodeModulesRoot: prepared.runnerNodeModulesRoot,
+      expectedRunnerNodeModulesSha256: prepared.runContext.runnerNodeModulesSha256,
       inheritedPath: process.env.PATH ?? ""
     }),
     gitNumstat: makeTrialGitNumstat({
@@ -338,12 +317,6 @@ export const makeTrialRunner = (
   const objectiveEvaluatorOverride = evaluatorOverrides?.objective
   const preflight = preflightOverride ?? makeTrialRunnerPreflight()
   const adapterFactory = adapterFactoryOverride ?? liveAdapterFactory
-  const defaults = makeDefaultTrialRunnerEvaluators()
-  const evaluators: TrialRunnerEvaluators = {
-    gate: gateEvaluatorOverride ?? defaults.gate,
-    probe: probeEvaluatorOverride ?? defaults.probe,
-    objective: objectiveEvaluatorOverride ?? defaults.objective
-  }
   const runnerAuthorityFailures = [
     ...(adapterFactoryOverride === undefined ? [] : ["runner.nonlive-adapter-factory"]),
     ...(gateEvaluatorOverride === undefined ? [] : ["runner.nonlive-gate-evaluator"]),
@@ -354,10 +327,25 @@ export const makeTrialRunner = (
 
   const run = Effect.fn("TrialRunner.run")(function* (
     repositoryRoot: string,
-    candidateId: V2CandidateId
+    candidateId: V2CandidateId,
+    upstreamMachineReceipt: UpstreamMachineReceiptBindingV2
   ) {
     // No receipt exists until preflight has produced its hash-bound context and authority.
-    const prepared = yield* preflight.prepare(repositoryRoot, candidateId)
+    const prepared = yield* preflight.prepare(
+      repositoryRoot,
+      candidateId,
+      upstreamMachineReceipt
+    )
+    const gateEvaluator = Object.freeze(
+      gateEvaluatorOverride ?? makeLiveGateEvaluator(prepared)
+    )
+    const evaluators: TrialRunnerEvaluators = Object.freeze({
+      gate: gateEvaluator,
+      probe: Object.freeze(probeEvaluatorOverride ?? makeLiveProbeEvaluator(prepared)),
+      objective: Object.freeze(
+        objectiveEvaluatorOverride ?? makeLiveObjectiveEvaluator(prepared)
+      )
+    })
     const adapter = yield* Effect.try({
       try: () => adapterFactory(prepared, evaluators),
       catch: (cause) => new TrialRunnerAssemblyError(

@@ -1,12 +1,14 @@
 import { describe, expect, it } from "@effect/vitest"
 import { Effect, Exit } from "effect"
 import {
+  SelectedMachineReceiptBindingV2,
   TRIAL_RUN_CONTEXT_HASH_DOMAIN,
   computeTrialRunContextSha256,
   decodeTrialRunContext,
   encodeTrialRunContext,
   makeTrialRunContext
 } from "../src/schema/run-context.js"
+import { Sha256Hex } from "../src/schema/primitives.js"
 import { hashCanonicalValue } from "../src/trial-hash.js"
 import {
   V2_EXPECTED_RUN_CONTEXT_KEYS,
@@ -15,11 +17,12 @@ import {
 import {
   V2_CASE_IDS,
   V2_MACHINE_GATE_IDS,
-  V2_PROBE_IDS
+  V2_PROBE_IDS,
+  V2_TOPOLOGY_GATE_IDS
 } from "../src/schema/v2-ids.js"
 
-const digest0 = "0".repeat(64)
-const digest1 = "1".repeat(64)
+const digest0 = Sha256Hex.make("0".repeat(64))
+const digest1 = Sha256Hex.make("1".repeat(64))
 
 const validBody = {
   schemaVersion: "ts-release/architecture-trial-run-context/v2",
@@ -33,6 +36,7 @@ const validBody = {
   implementationRoot: "prototypes/research-complete-machine/M1-extracted-fold",
   candidateManifestSha256: digest0,
   candidateTreeSha256: digest0,
+  upstreamMachineReceipt: null,
   runnerSourceSha256: digest0,
   runnerNodeModulesSha256: digest0,
   toolchain: {
@@ -58,6 +62,24 @@ const validBody = {
     changeDefinitionSha256: digest0
   })),
   gateDefinitionBindings: V2_MACHINE_GATE_IDS.map((gateId) => ({
+    gateId,
+    definitionSha256: digest0
+  }))
+} as const
+
+const selectedMachineReceipt = new SelectedMachineReceiptBindingV2({
+  selectedMachineCandidateId: "M1-extracted-fold",
+  selectedMachineReceiptId: digest0
+})
+
+const validTopologyBody = {
+  ...validBody,
+  candidateId: "T2-kernel-provider-bundle",
+  candidateScope: "topology",
+  candidateModel: "kernel-provider-bundle",
+  implementationRoot: "prototypes/research-complete-topology/T2-kernel-provider-bundle",
+  upstreamMachineReceipt: selectedMachineReceipt,
+  gateDefinitionBindings: V2_TOPOLOGY_GATE_IDS.map((gateId) => ({
     gateId,
     definitionSha256: digest0
   }))
@@ -90,6 +112,26 @@ describe("trial run context v2", () => {
     }
   })
 
+  it("hash-binds the exact selected machine candidate and receipt for topology runs", () => {
+    const context = makeTrialRunContext(validTopologyBody)
+    expect(context.upstreamMachineReceipt).toEqual(selectedMachineReceipt)
+    for (const upstreamMachineReceipt of [
+      new SelectedMachineReceiptBindingV2({
+        selectedMachineCandidateId: "M2-total-transition",
+        selectedMachineReceiptId: digest0
+      }),
+      new SelectedMachineReceiptBindingV2({
+        selectedMachineCandidateId: "M1-extracted-fold",
+        selectedMachineReceiptId: digest1
+      })
+    ]) {
+      expect(computeTrialRunContextSha256({
+        ...validTopologyBody,
+        upstreamMachineReceipt
+      })).not.toBe(context.runContextSha256)
+    }
+  })
+
   it.effect("rejects a forged self-hash and excess fields", () =>
     Effect.gen(function* () {
       const context = makeTrialRunContext(validBody)
@@ -102,7 +144,7 @@ describe("trial run context v2", () => {
       }
     }))
 
-  it.effect("rejects missing mounted-executable provenance even with a refreshed context hash", () =>
+  it.effect("rejects missing required provenance even with a refreshed context hash", () =>
     Effect.gen(function* () {
       for (const field of [
         "bunExecutableSha256",
@@ -117,12 +159,14 @@ describe("trial run context v2", () => {
         const exit = yield* decodeTrialRunContext(input).pipe(Effect.exit)
         expect(Exit.isFailure(exit)).toBe(true)
       }
-      const input = structuredClone(makeTrialRunContext(validBody)) as Record<string, any>
-      delete input.runnerNodeModulesSha256
-      const { runContextSha256: _runContextSha256, ...body } = input
-      input.runContextSha256 = hashCanonicalValue(TRIAL_RUN_CONTEXT_HASH_DOMAIN, body)
-      const exit = yield* decodeTrialRunContext(input).pipe(Effect.exit)
-      expect(Exit.isFailure(exit)).toBe(true)
+      for (const field of ["runnerNodeModulesSha256", "upstreamMachineReceipt"]) {
+        const input = structuredClone(makeTrialRunContext(validBody)) as Record<string, any>
+        delete input[field]
+        const { runContextSha256: _runContextSha256, ...body } = input
+        input.runContextSha256 = hashCanonicalValue(TRIAL_RUN_CONTEXT_HASH_DOMAIN, body)
+        const exit = yield* decodeTrialRunContext(input).pipe(Effect.exit)
+        expect(Exit.isFailure(exit)).toBe(true)
+      }
     }))
 
   it("rejects candidate mapping drift and incomplete or reordered exact bindings", () => {
@@ -141,6 +185,24 @@ describe("trial run context v2", () => {
     expect(() => makeTrialRunContext({
       ...validBody,
       gateDefinitionBindings: validBody.gateDefinitionBindings.slice(0, -1)
+    })).toThrow()
+  })
+
+  it("requires no upstream receipt for machine runs and one exact machine receipt for topology", () => {
+    expect(() => makeTrialRunContext({
+      ...validBody,
+      upstreamMachineReceipt: selectedMachineReceipt
+    })).toThrow(/must not bind an upstream machine receipt/u)
+    expect(() => makeTrialRunContext({
+      ...validTopologyBody,
+      upstreamMachineReceipt: null
+    })).toThrow(/must bind an exact selected machine receipt/u)
+    expect(() => makeTrialRunContext({
+      ...validTopologyBody,
+      upstreamMachineReceipt: {
+        selectedMachineCandidateId: "T1-root",
+        selectedMachineReceiptId: digest0
+      }
     })).toThrow()
   })
 })

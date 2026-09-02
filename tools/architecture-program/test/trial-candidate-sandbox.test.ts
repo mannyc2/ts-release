@@ -180,6 +180,26 @@ describe("TrialCandidateSandbox", () => {
       expect(existsSync(isolatedRoot)).toBe(false)
     }))
 
+  it("normalizes Bun Uint8Array directory names during scoped cleanup", async () =>
+    withFixture(async ({ source, sandboxes }) => {
+      await materialize(source)
+      const manifest = await decodeManifest(manifestDocument())
+      const service = makeTrialCandidateSandbox({
+        tempParent: sandboxes,
+        fileSystem: {
+          readdir: async (path) => (await readdir(path, { encoding: "buffer" }))
+            .map((name) => new Uint8Array(name)) as unknown as ReadonlyArray<Buffer>
+        }
+      })
+
+      await Effect.runPromise(Effect.scoped(Effect.gen(function* () {
+        const isolated = yield* service.create({ candidateRoot: source, manifest })
+        expect(existsSync(isolated.root)).toBe(true)
+      })))
+
+      expect(await readdir(sandboxes)).toEqual([])
+    }))
+
   it("rejects missing, extra, credential, and node_modules source assumptions", async () =>
     withFixture(async ({ outer, sandboxes }) => {
       const manifest = await decodeManifest(manifestDocument())

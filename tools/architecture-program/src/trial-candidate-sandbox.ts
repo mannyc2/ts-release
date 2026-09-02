@@ -467,7 +467,12 @@ const cleanupSandbox = async (
     if (restored.isSymbolicLink() || !restored.isDirectory() || !sameNodeIdentity(before, restored)) {
       fail("cleanup", displayPath, "cleanup directory path changed after no-follow restoration")
     }
-    const names = [...await fileSystem.readdir(path)].sort(Buffer.compare)
+    // Bun currently types `encoding: "buffer"` as Buffer[] but may return plain
+    // Uint8Array instances. Normalize at the filesystem boundary before using
+    // Buffer-only comparison and equality methods.
+    const names = [...await fileSystem.readdir(path)]
+      .map((name) => Buffer.from(name))
+      .sort(Buffer.compare)
     const rawParent = Buffer.from(path)
     for (const name of names) {
       if (name.length === 0 || name.includes(0) || name.includes(0x2f) ||

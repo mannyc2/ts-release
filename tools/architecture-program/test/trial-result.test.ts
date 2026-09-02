@@ -26,6 +26,7 @@ import {
   probeObservationStructureCodec
 } from "../src/schema/harness-protocol.js"
 import {
+  SelectedMachineReceiptBindingV2,
   computeTrialRunContextSha256,
   makeTrialRunContext
 } from "../src/schema/run-context.js"
@@ -223,6 +224,12 @@ const loadAuthority = Effect.fn("trialResultTest.loadAuthority")(function* (scop
     implementationRoot: candidateManifest.implementationRoot,
     candidateManifestSha256: rawCandidateManifestSha256,
     candidateTreeSha256: candidateTree.sha256,
+    upstreamMachineReceipt: scope === "machine"
+      ? null
+      : new SelectedMachineReceiptBindingV2({
+        selectedMachineCandidateId: "M1-extracted-fold",
+        selectedMachineReceiptId: exactSha256("selected machine result receipt")
+      }),
     runnerSourceSha256,
     runnerNodeModulesSha256,
     toolchain: {

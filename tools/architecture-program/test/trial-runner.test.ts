@@ -11,6 +11,7 @@ import {
 } from "../src/schema/candidate-manifest.js"
 import { ArtifactId } from "../src/schema/primitives.js"
 import {
+  SelectedMachineReceiptBindingV2,
   TrialRunContextToolchain,
   makeTrialRunContext
 } from "../src/schema/run-context.js"
@@ -44,6 +45,8 @@ import {
   RuntimeDependencyTreeInventory,
   runtimeDependencyTreeSha256
 } from "../src/trial-runtime-dependency-tree.js"
+import { LIVE_GATE_EVALUATOR_ID } from "../src/trial-gate-evaluator.js"
+import { LIVE_PROBE_EVALUATOR_ID } from "../src/trial-probe-evaluator.js"
 import type { PreparedTrialRun } from "../src/trial-runner-preflight.js"
 import { TrialRunnerPreflightError } from "../src/trial-runner-preflight.js"
 import {
@@ -67,6 +70,15 @@ const trialSpec = Effect.runSync(decodeArchitectureTrialSpec(
 const testHashDomain = "ts-release/architecture-trial-runner-test/v2"
 const sha256 = (value: unknown) => hashCanonicalValue(testHashDomain, value)
 const textEncoder = new TextEncoder()
+const selectedMachineReceipt = new SelectedMachineReceiptBindingV2({
+  selectedMachineCandidateId: "M1-extracted-fold",
+  selectedMachineReceiptId: sha256("selected machine result receipt")
+})
+
+const upstreamMachineReceiptFor = (candidateId: V2CandidateId) =>
+  V2_CANDIDATE_DEFINITIONS[candidateId].scope === "machine"
+    ? null
+    : selectedMachineReceipt
 
 const manifestDocument = (candidateId: V2CandidateId) => {
   const definition = V2_CANDIDATE_DEFINITIONS[candidateId]
@@ -193,6 +205,7 @@ const makePrepared = (candidateId: V2CandidateId): PreparedTrialRun => {
     implementationRoot: identity.implementationRoot,
     candidateManifestSha256: rawCandidateManifestSha256,
     candidateTreeSha256: candidateTreeInventory.treeSha256,
+    upstreamMachineReceipt: upstreamMachineReceiptFor(candidateId),
     runnerSourceSha256,
     runnerNodeModulesSha256: runtimeInventory.treeSha256,
     toolchain,
@@ -369,7 +382,7 @@ describe("candidate-neutral trial runner", () => {
         }
       })
 
-      const error = yield* runner.run(repositoryRoot, "M1-extracted-fold").pipe(Effect.flip)
+      const error = yield* runner.run(repositoryRoot, "M1-extracted-fold", null).pipe(Effect.flip)
 
       expect(error).toBe(failure)
       expect(error).toBeInstanceOf(TrialRunnerPreflightError)
@@ -387,7 +400,12 @@ describe("candidate-neutral trial runner", () => {
       let capturedEvaluators: Pick<TrialRunnerEvaluators, "gate" | "probe"> | undefined
       const runner = makeTrialRunner({
         preflight: {
-          prepare: (_root, candidateId) => Effect.succeed(preparedById.get(candidateId)!)
+          prepare: (_root, candidateId, upstreamMachineReceipt) => {
+            expect(upstreamMachineReceipt).toEqual(
+              preparedById.get(candidateId)!.runContext.upstreamMachineReceipt
+            )
+            return Effect.succeed(preparedById.get(candidateId)!)
+          }
         },
         adapterFactory: (prepared, evaluators) => {
           expect(Object.isFrozen(evaluators.gate)).toBe(true)
@@ -407,7 +425,11 @@ describe("candidate-neutral trial runner", () => {
 
       for (const candidateId of V2_CANDIDATE_IDS) {
         const prepared = preparedById.get(candidateId)!
-        const completed = yield* runner.run(repositoryRoot, candidateId)
+        const completed = yield* runner.run(
+          repositoryRoot,
+          candidateId,
+          upstreamMachineReceiptFor(candidateId)
+        )
         const result = completed.result
         expect(result.runContext.candidateId).toBe(candidateId)
         expect(result.qualification).toBe("Rejected")
@@ -438,13 +460,16 @@ describe("candidate-neutral trial runner", () => {
         }
       }
 
-      expect(evaluatorIdentities.size).toBe(1)
-      expect(probeEvaluatorIdentities.size).toBe(1)
+      // Gate and probe authority close over preflight-bound repository/input or
+      // candidate inventory, so every prepared candidate receives a distinct
+      // immutable evaluator.
+      expect(evaluatorIdentities.size).toBe(V2_CANDIDATE_IDS.length)
+      expect(probeEvaluatorIdentities.size).toBe(V2_CANDIDATE_IDS.length)
       if (capturedEvaluators === undefined) throw new Error("adapter was never constructed")
+      expect(capturedEvaluators.gate.evaluatorId).toBe(LIVE_GATE_EVALUATOR_ID)
+      expect(capturedEvaluators.probe.evaluatorId).toBe(LIVE_PROBE_EVALUATOR_ID)
       const gateDenial = yield* capturedEvaluators.gate.evaluate({} as never)
-      const probeDenial = yield* capturedEvaluators.probe.evaluate({} as never)
       expect(gateDenial._tag).toBe("Rejected")
-      expect(probeDenial._tag).toBe("Rejected")
     }))
 
   it("qualifies exactly clean, fully passed, fully measured evidence", () => {
@@ -500,7 +525,7 @@ describe("candidate-neutral trial runner", () => {
         }
       })
 
-      const { result } = yield* runner.run(repositoryRoot, "M1-extracted-fold")
+      const { result } = yield* runner.run(repositoryRoot, "M1-extracted-fold", null)
 
       expect(result.preflightFailures).toEqual([
         "runner.nonlive-adapter-factory",
@@ -594,7 +619,8 @@ describe("candidate-neutral trial runner", () => {
 
       const { result } = yield* makeTrialRunner(options).run(
         repositoryRoot,
-        "M1-extracted-fold"
+        "M1-extracted-fold",
+        null
       )
 
       expect(reads).toEqual({
@@ -632,7 +658,11 @@ describe("candidate-neutral trial runner", () => {
         adapterFactory: (value) => makeNotRunAdapter(value, operationLog, [])
       })
 
-      const error = yield* runner.run(repositoryRoot, "M2-total-transition").pipe(Effect.flip)
+      const error = yield* runner.run(
+        repositoryRoot,
+        "M2-total-transition",
+        null
+      ).pipe(Effect.flip)
 
       expect(error).toBeInstanceOf(TrialRunnerAssemblyError)
       if (!(error instanceof TrialRunnerAssemblyError)) throw error
@@ -659,7 +689,11 @@ describe("candidate-neutral trial runner", () => {
         }
       })
 
-      const error = yield* runner.run(repositoryRoot, "M1-extracted-fold").pipe(Effect.flip)
+      const error = yield* runner.run(
+        repositoryRoot,
+        "M1-extracted-fold",
+        null
+      ).pipe(Effect.flip)
 
       expect(error).toBeInstanceOf(TrialRunnerAssemblyError)
       if (!(error instanceof TrialRunnerAssemblyError)) throw error

@@ -14,7 +14,7 @@ import {
   writeFileSync
 } from "node:fs"
 import { dirname } from "node:path"
-import { makeLocalPreparedReleaseStore } from "../../../../src/release/prepared-store.js"
+import { makeLocalPreparedReleaseStore } from "@mannyc1/ts-release/store"
 import { makeCli } from "./command.js"
 
 // The version is INJECTED by scripts/build-cli-bundle.ts rather than imported

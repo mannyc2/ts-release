@@ -9,7 +9,7 @@ import { makeNodeReleaseLayer } from "../../../src/platform/node.js"
 import {
   makeLocalPreparedReleaseStore,
   type PreparedBundle
-} from "../../../src/release/prepared-store.js"
+} from "@mannyc1/ts-release/store"
 import { encodeCompletePreparedReleaseRef } from "../../../src/release/prepared-ref.js"
 import { report, root, selfReleaseConfig } from "./self-release-facts.js"
 

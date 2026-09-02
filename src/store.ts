@@ -10,6 +10,8 @@ export {
   PreparedCommitHandoffError,
   PreparedStoreError,
   PreparedStoreProvenanceError,
+  githubActionsPreparedArtifactName,
+  loadPreparedRelease,
   verifyPreparedStoreProvenance,
   makeLocalPreparedReleaseStore
 } from "./release/prepared-store.js"

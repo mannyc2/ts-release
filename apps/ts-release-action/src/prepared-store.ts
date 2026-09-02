@@ -14,7 +14,7 @@ import {
   loadPreparedRelease, makeLocalPreparedReleaseStore, PreparedCommitHandoffError, PreparedStoreError,
   verifyPreparedStoreProvenance,
   type PreparedReleaseStoreShape
-} from "../../../src/release/prepared-store.js"
+} from "@mannyc1/ts-release/store"
 import type { ActionArtifactFindBy, ActionArtifactTransport } from "./artifact-client.js"
 export { makeActionsArtifactTransport } from "./artifact-client.js"
 export type { ActionArtifactFindBy, ActionArtifactTransport } from "./artifact-client.js"

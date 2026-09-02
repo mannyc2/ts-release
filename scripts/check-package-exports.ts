@@ -76,6 +76,8 @@ const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> 
     "PreparedStoreProvenanceError",
     "decodePreparedRelease",
     "encodePreparedRelease",
+    "githubActionsPreparedArtifactName",
+    "loadPreparedRelease",
     "makeLocalPreparedReleaseStore",
     "verifyPreparedStoreProvenance"
   ]),

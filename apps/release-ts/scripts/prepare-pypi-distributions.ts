@@ -15,7 +15,7 @@ import { makeReleaseApi } from "../../../src/api/api.js"
 import { inspectPythonDistribution } from "../../../src/model/python-distribution.js"
 import { makeNodeReleaseLayer } from "../../../src/platform/node.js"
 import { encodeCompletePreparedReleaseRef } from "../../../src/release/prepared-ref.js"
-import { makeLocalPreparedReleaseStore } from "../../../src/release/prepared-store.js"
+import { makeLocalPreparedReleaseStore } from "@mannyc1/ts-release/store"
 
 const root = realpathSync(process.cwd())
 const configPath = resolve(root, "apps/release-ts/pypi-release.config.json")

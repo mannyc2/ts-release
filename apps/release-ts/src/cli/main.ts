@@ -16,7 +16,7 @@ import {
 } from "node:fs"
 import { dirname } from "node:path"
 import packageManifest from "../../../../package.json" with { type: "json" }
-import { makeLocalPreparedReleaseStore } from "../../../../src/release/prepared-store.js"
+import { makeLocalPreparedReleaseStore } from "@mannyc1/ts-release/store"
 import { makeCli } from "./command.js"
 
 const hostRefusal = unsupportedExecutionHost(process.platform)

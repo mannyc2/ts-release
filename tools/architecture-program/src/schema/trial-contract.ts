@@ -25,7 +25,7 @@ export const REQUIRED_INPUT_BINDINGS = [
   {
     id: "B03-ownership-decisions",
     path: "docs/refactor/architecture-program/inputs/ownership-decisions.json",
-    sha256: "8b5fe3b3cf58c2743c182e68dd999780363c2145a252ed9837e842415a2d0a15"
+    sha256: "c8c9238b9d787f5a5978159bdbd10c82ce509174b643b11a8e665c4e52b5f5da"
   },
   {
     id: "B04-architecture-tool-lock",

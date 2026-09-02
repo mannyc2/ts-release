@@ -1,13 +1,12 @@
 /**
- * Machine state-space enumeration — the M1/M2 selection spike.
+ * Machine state-space enumeration — an M2 hypothesis spike.
  *
  * Charter (plan 005, machine selection): enumerate the complete operation
  * lifecycle state x event x decision space implied by the canonical research,
- * classify every cell, and let the arithmetic decide between
- * M1-extracted-fold and M2-total-transition. If the total table is small and
- * every cell is forced by a cited authority, M2 wins by inspection and this
- * file graduates into the kernel specification. If the table explodes or
- * cells require judgment, M1's compressed grammar is reconsidered.
+ * classify every cell, and test whether M2-total-transition remains viable.
+ * This file neither implements M1 nor selects between the candidates. Only
+ * hash-bound results from both candidate roots under the shared trial runner
+ * may select a machine or require a measured maintainer decision.
  *
  * Authorities (exact sources this file mechanizes):
  * - docs/refactor/research/resumability.md — event families, decision
@@ -17,10 +16,10 @@
  *   machine cases C01-C16 with required terminal outcomes, and laws L01-L14.
  * - docs/refactor/research/decision-packet.md — strict replay rule (any
  *   fingerprint mismatch stops), one-operation-composite-receipt npm.
- * - docs/refactor/architecture-program/topology-contract.md — topology is
- *   decided (OD10) and orthogonal: nothing here depends on package count.
+ * - advisor-plans/005-freeze-research-complete-system-contract.md — machine
+ *   and topology selection remain separate measured trial phases.
  *
- * Predeclared verdict criteria (all must hold for M2):
+ * Predeclared viability criteria (all must hold for the M2 hypothesis):
  *   V1  named lifecycle states <= 16
  *   V2  fold table total over states x events, every cell classified
  *       advance/absorb/impossible with a reason — zero judgment cells
@@ -35,7 +34,8 @@
  * resolved) are listed in FINDINGS at the bottom and printed on every run.
  *
  * Zero dependencies. Run: bun prototypes/research-complete-machine/state-space.ts
- * Exit code 0 = every check passed and the verdict is printed.
+ * Exit code 0 = every local hypothesis check passed. It is not a candidate
+ * receipt or selection result.
  */
 
 // ---------------------------------------------------------------------------
@@ -696,7 +696,7 @@ const FINDINGS = [
   "F3 pre-attempt observations: observations may lawfully precede the first attempt (CAS baseline, already-satisfied idempotent re-run, occupied-conflicting). Satisfied/conflict advance the state; unproven absorbs as baseline.",
   "F4 ProvenSatisfied decides Stop(satisfied) without requiring both evidence forms: documented success is success; observation facets (A/M/B/C/J) are acceptance evidence per family, enforced by case fixtures rather than lifecycle policy.",
   "F5 integrity contradictions (non-commit proof after receipt or after proven satisfaction) are impossible cells: they indicate provider or store integrity failure and must surface as append-guard violations, not as lawful transitions.",
-  "F6 the M1 fold grammar survives inside M2: `unprovenCell` is a four-line guard over an otherwise enumerated table — the fold/decision grammar is how cells are COMPUTED, the total table is what is REVIEWED and frozen. The candidates were never exclusive; M2 subsumes M1's grammar as its generator.",
+  "F6 the M1-style fold grammar can generate M2's table: `unprovenCell` is a four-line guard over an otherwise enumerated table. That overlap is a hypothesis finding, not a comparison result; separate M1 and M2 candidate roots must still prove whether they are genuinely distinct under the shared runner.",
   "F7 resolved — minimal quotient: receipt-proven and observation-proven satisfaction are one ProvenSatisfied continuation state. Their evidence kind and identity-specific duplicate guard remain journal/interpreter facts, satisfying the facts-not-decisions law while the nine-state table stays fully labeled and behaviorally minimal.",
   "F8 resolved — adversarial and conformance coverage: all 16 traces in adversarial-traces.md reconcile with the tables; T9 exercises ObservedNonCommit, and candidate-specific walk MC01 exercises ObservedConflict without changing the shared 16-case contract.",
   "F9 two policies confirmed vertical-owned with zero machine impact: composite facet verdict derivation (T2: version satisfied, tag moved) and occupied-failed-coordinate cleanup before a lawful re-attempt (T9: delete starter asset). Both are recovery/observation law under L06."
@@ -917,7 +917,7 @@ const main = (): void => {
     for (const shape of row.shapes) if (!caseIds.has(shape)) fail(`${row.family} references unknown case shape ${shape}`)
   }
 
-  // Verdict arithmetic.
+  // Hypothesis viability arithmetic.
   const v1 = STATES.length <= 16
   const v3 = decisionCells <= 128
   console.log("machine state-space enumeration")
@@ -938,13 +938,13 @@ const main = (): void => {
   for (const finding of FINDINGS) console.log(`  ${finding}`)
   console.log("")
   if (!v1 || !v3) {
-    fail("verdict criteria not met — M1 compressed grammar must be reconsidered")
+    fail("M2 hypothesis viability criteria not met")
   }
-  console.log("VERDICT: M2-total-transition. The complete machine is a reviewable")
-  console.log("constant: every fold and decision cell is forced by a cited authority,")
-  console.log("invalid states are enumerated as append guards rather than represented,")
-  console.log("and the 69 launch outcomes project onto these states with zero additions.")
-  console.log("M1's fold grammar survives as the generator of the table (finding F6).")
+  console.log("HYPOTHESIS: M2-total-transition remains viable as a reviewable table:")
+  console.log("every local fold and decision cell is classified, invalid states are")
+  console.log("enumerated as append guards, and the launch families add no local states.")
+  console.log("No candidate is selected: M1/M2 roots, shared receipts, metrics, and")
+  console.log("the frozen selection policy remain authoritative (finding F6).")
 }
 
 main()

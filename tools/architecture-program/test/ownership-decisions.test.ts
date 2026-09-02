@@ -39,7 +39,7 @@ const expectDecodeFailure = Effect.fn("ownershipDecisionsTest.expectDecodeFailur
 )
 
 describe("OwnershipDecisionsV1", () => {
-  it.effect("decodes the canonical ten-decision ownership input", () =>
+  it.effect("decodes the canonical nine-decision candidate-neutral ownership input", () =>
     Effect.gen(function* () {
       const raw = yield* loadValidDocument()
       const document = yield* decodeOwnershipDecisions(raw)
@@ -54,10 +54,9 @@ describe("OwnershipDecisionsV1", () => {
         "OD06-effect-build-certification-classification",
         "OD07-apple-history-correlation",
         "OD08-hashed-file-tree-adoption",
-        "OD09-durable-format-disposition",
-        "OD10-package-topology"
+        "OD09-durable-format-disposition"
       ])
-      expect(document.decisions.filter(({ status }) => status === "selected")).toHaveLength(4)
+      expect(document.decisions.filter(({ status }) => status === "selected")).toHaveLength(3)
       expect(document.externalEvidence).toHaveLength(2)
       expect(document.blockers).toHaveLength(6)
       expect(document.freezeBlockerIds).toHaveLength(6)
@@ -81,7 +80,7 @@ describe("OwnershipDecisionsV1", () => {
         const actualSha256 = createHash("sha256").update(contents).digest("hex")
         expect(actualSha256, coordinate.path).toBe(coordinate.sha256)
       }
-      expect(uniqueCoordinates).toHaveLength(13)
+      expect(uniqueCoordinates).toHaveLength(10)
     }))
 
   it.effect("rejects missing, duplicate, reordered, and renamed decisions", () =>
@@ -294,12 +293,30 @@ describe("OwnershipDecisionsV1", () => {
       for (const mutate of mutations) yield* expectDecodeFailure(mutate)
     }))
 
-  it.effect("rejects unknown fields at every durable boundary", () =>
+  it.effect("rejects pretrial candidate and topology selection authority", () =>
     Effect.gen(function* () {
       const mutations: ReadonlyArray<Mutation> = [
         (document) => {
+          document.selectedCandidateId = "M2-total-transition"
+        },
+        (document) => {
           document.selectedTopology = "T3-provider-verticals"
         },
+        (document) => {
+          document.decisions.push({
+            ...structuredClone(document.decisions[0]),
+            id: "OD10-package-topology",
+            title: "Premature package topology",
+            decision: "Select T3 before trials."
+          })
+        }
+      ]
+      for (const mutate of mutations) yield* expectDecodeFailure(mutate)
+    }))
+
+  it.effect("rejects unknown fields at every durable boundary", () =>
+    Effect.gen(function* () {
+      const mutations: ReadonlyArray<Mutation> = [
         (document) => {
           document.decisions[0].fallbackStore = "filesystem"
         },

@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema"
-import { capabilityModules } from "../../src/capabilities/registry.js"
+import { capabilityModules, installedCompilerCapabilities } from "../../src/capabilities/registry.js"
 import { validateFieldOwnership } from "../../src/capabilities/field-ownership.js"
 import { encodeCanonicalJson } from "../../src/model/canonical.js"
 import { sha256Digest } from "../../src/model/digest.js"
@@ -416,7 +416,7 @@ const evaluate = (input: unknown): Evaluation => {
   let resolved: unknown
   try { resolved = resolveConfig(decoded, facts) } catch { return { decoded: encodeCanonicalJson(input), failure: "resolve" } }
   let graph: ReleaseGraph
-  try { graph = compileReleaseGraph(resolved as never, context) } catch {
+  try { graph = compileReleaseGraph(resolved as never, context, installedCompilerCapabilities) } catch {
     return { decoded: encodeCanonicalJson(input), resolved: encodeCanonicalJson(resolved), failure: "graph" }
   }
   const graphBytes = encodeCanonicalJson(Schema.encodeSync(ReleaseGraph)(graph))

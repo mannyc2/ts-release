@@ -22,6 +22,7 @@ import type { ReleaseApiLayer } from "../../src/api/types.js"
 import { parseSha256Hex, sha256Digest } from "../../src/model/digest.js"
 import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { compileReleaseGraph } from "../../src/release/compiler.js"
+import { installedCompilerCapabilities } from "../../src/capabilities/registry.js"
 import {
   canonicalizeRegistryUrl, makeNpmPublicationAuthorityIntent
 } from "../../src/release/graph.js"
@@ -260,7 +261,7 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
       manifestName: "fixture",
       manifestVersion: Version.make("1.0.0")
     }))
-    const linked = compileReleaseGraph(resolved, contextFor(process.cwd()))
+    const linked = compileReleaseGraph(resolved, contextFor(process.cwd()), installedCompilerCapabilities)
     expect(linked.collections.map((collection) => collection.id.toString())).toEqual(["dynamic-assets"])
     expect(linked.preparations.some((preparation) => preparation._tag === "GraphCommandCollection")).toBe(true)
     const github = linked.publications.find((publication) => publication._tag === "GraphGitHubPublication")

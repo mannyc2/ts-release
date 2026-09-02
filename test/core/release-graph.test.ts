@@ -27,7 +27,7 @@ import {
 import { CredentialRef } from "../../src/model/authority.js"
 import { decodeReleaseIntent } from "../../src/release/config.js"
 import { inspectRelease } from "../../src/release/inspect.js"
-import { capabilityModules } from "../../src/capabilities/registry.js"
+import { capabilityModules, installedCompilerCapabilities } from "../../src/capabilities/registry.js"
 
 const context = VerifiedReleaseContext.make({
   workspace: WorkspaceRoot.make(process.cwd()),
@@ -57,7 +57,7 @@ describe("immutable release graph", () => {
     const config = CandidateConfig.make({ project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") }, builds: [CandidateBunBuild.make({
       builder: "bun", id: "cli", entry: SafeRelativePath.make("src/index.ts"), targets: ["linux-x64"]
     })] })
-    const graph = compileReleaseGraph(config, context)
+    const graph = compileReleaseGraph(config, context, installedCompilerCapabilities)
     expect(graph.artifacts.some((item) => item.id === "cli-linux-x64")).toBe(true)
     expect(graph.preparations.some((item) => item._tag === "GraphCommandArtifact")).toBe(true)
   })
@@ -72,7 +72,7 @@ describe("immutable release graph", () => {
         outputs: [{ id: OutputId.make("wheel"), path: SafeRelativePath.make("dist/fixture-{version}.whl") }]
       })]
     })
-    const graph = compileReleaseGraph(config, context)
+    const graph = compileReleaseGraph(config, context, installedCompilerCapabilities)
     expect(graph.artifacts.find((item) => item.id.toString() === "wheel")?.path.toString())
       .toBe("dist/fixture-1.2.3.whl")
   })
@@ -97,7 +97,7 @@ describe("immutable release graph", () => {
         }
       }
     })
-    const graph = compileReleaseGraph(config, context)
+    const graph = compileReleaseGraph(config, context, installedCompilerCapabilities)
     expect(graph.preparations.find((item) => item._tag === "GraphNpmPackageBuild")).toMatchObject({
       id: "build:npm-package",
       argv: ["bun", "--no-env-file", "--no-install", "run", "build"],
@@ -112,7 +112,7 @@ describe("immutable release graph", () => {
       project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") },
       npmPackage: { build: { run: ["build"], outputRoots: [SafeRelativePath.make("generated")] } },
       artifacts: [{ id: OutputId.make("collision"), path: SafeRelativePath.make("generated/file.js"), format: "file" }]
-    }), context)).toThrow(GraphLinkError)
+    }), context, installedCompilerCapabilities)).toThrow(GraphLinkError)
   })
 
   test("missing references, duplicate producers, and cycles are typed failures", () => {
@@ -137,7 +137,7 @@ describe("immutable release graph", () => {
       ],
       publish: { github: { repository: "owner/fixture", bodyArtifact: OutputId.make("notes") } }
     })
-    const graph = compileReleaseGraph(config, context)
+    const graph = compileReleaseGraph(config, context, installedCompilerCapabilities)
     expect(graph.preparations.filter((item) => item._tag === "GraphCommandArtifact")).toHaveLength(2)
     expect(graph.publications[0]?._tag).toBe("GraphGitHubPublication")
     expect(graph.preparations.map((item) => item.id.toString())).toContain("preparation:tests")
@@ -154,7 +154,7 @@ describe("immutable release graph", () => {
         npm: tokenNpm(),
         github: { repository: "owner/fixture", tokenEnv: "CUSTOM_GITHUB_TOKEN" }
       }
-    }), context)
+    }), context, installedCompilerCapabilities)
     const npm = tokenGraph.publications.find((item) => item._tag === "GraphNpmPublication")
     const github = tokenGraph.publications.find((item) => item._tag === "GraphGitHubPublication")
     expect(npm?.registryUrl.toString()).toBe("https://registry.example.test/custom/")
@@ -198,7 +198,7 @@ describe("immutable release graph", () => {
           })
         })
       }) }
-    }), context)
+    }), context, installedCompilerCapabilities)
     const trusted = trustedGraph.publications.find((item) => item._tag === "GraphNpmPublication")
     expect(trusted?.authority.publishStrategy).toMatchObject({
       kind: "trusted-publishing", identityProvider: "github-actions", runnerClass: "github-hosted",
@@ -218,7 +218,7 @@ describe("immutable release graph", () => {
     })
     expect(() => compileReleaseGraph(npmConfig(tokenNpm({
       packageArtifact: OutputId.make("missing-package")
-    })), context)).toThrow(GraphLinkError)
+    })), context, installedCompilerCapabilities)).toThrow(GraphLinkError)
     expect(() => CanonicalNpmRegistryEndpoint.make("https://user:password@registry.example.test/?tenant=other"))
       .toThrow()
     expect(() => NpmTokenAuthentication.make({
@@ -270,7 +270,7 @@ describe("immutable release graph", () => {
       project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") },
       preparations: [CandidateCheckPreparation.make({ kind: "check", id: NonEmptyName.make("tests"), run: ["bun", "test"] })]
     })
-    const graph = compileReleaseGraph(config, context)
+    const graph = compileReleaseGraph(config, context, installedCompilerCapabilities)
     const projection = inspectRelease(context, graph, capabilityModules.map((item) => item.id))
     expect(projection.source.commit.toString()).toBe("c".repeat(40))
     expect(projection.requirements).toEqual(["command:bun"])

@@ -2,7 +2,11 @@ import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as ManagedRuntime from "effect/ManagedRuntime"
 import { decodeConfig } from "../config/config.js"
-import { builtinProviderAdapters, releaseIdentityCapability } from "../capabilities/registry.js"
+import {
+  builtinProviderAdapters,
+  installedCompilerCapabilities,
+  releaseIdentityCapability
+} from "../capabilities/registry.js"
 import { secretPatterns } from "../model/secret-patterns.js"
 import { CredentialProvider } from "../publication/authority.js"
 import { AuthorizedMutationHttp, HttpAuthorizer } from "../publication/http.js"
@@ -143,7 +147,7 @@ const observeAndCompile = Effect.fn("observeAndCompileRelease")(function*(input:
     catch: inputFailure
   })
   const graph = yield* Effect.try({
-    try: () => compileReleaseGraph(resolved, context),
+    try: () => compileReleaseGraph(resolved, context, installedCompilerCapabilities),
     catch: inputFailure
   })
   return {

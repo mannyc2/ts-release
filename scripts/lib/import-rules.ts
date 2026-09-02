@@ -136,7 +136,7 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   // and the apps (enforced below).
   resolve: ["resolve", "model", "recipes"],
   api: ["api", "model", "config", "correction", "release", "publication", "resolve", "drivers", "platform", "capabilities"],
-  release: ["release", "model", "recipes", "drivers", "capabilities"],
+  release: ["release", "model", "recipes", "drivers"],
   publication: ["publication", "model", "release", "drivers", "capabilities"],
   correction: ["correction", "model", "release", "publication"]
 }

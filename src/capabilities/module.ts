@@ -3,11 +3,10 @@ import type {
   PreparedPublicationTag,
   ProviderAdapter
 } from "../publication/provider.js"
-import type { VerifiedReleaseContext } from "../release/context.js"
 import type {
-  CapabilityContribution,
-  OutputDeclaration
-} from "../release/graph.js"
+  PreparationContributor,
+  PublicationContributor
+} from "../release/compiler.js"
 import type { ObservedFacts } from "../resolve/facts.js"
 
 /** The deliberately small, installed product algebra. Inclusion means support. */
@@ -49,12 +48,7 @@ export interface CapabilityRequirements {
   readonly credentialStrategies: ReadonlyArray<string>
 }
 
-export interface CompilationSnapshot {
-  readonly config: CandidateConfig
-  readonly context: VerifiedReleaseContext
-  /** Immutable outputs from the preceding explicit compilation phase. */
-  readonly availableArtifacts: ReadonlyArray<OutputDeclaration>
-}
+export type { CompilationSnapshot } from "../release/compiler.js"
 
 interface CapabilityCommon {
   readonly id: CapabilityId
@@ -70,10 +64,8 @@ export interface ResolutionCapability extends CapabilityCommon {
 }
 
 /** Preparation has no provider, credential, or subject surface. */
-export interface PreparationCapability extends CapabilityCommon {
+export interface PreparationCapability extends CapabilityCommon, PreparationContributor {
   readonly _tag: "PreparationCapability"
-  readonly phase: "source" | "package" | "render"
-  readonly contribute: (input: CompilationSnapshot) => CapabilityContribution
 }
 
 /**
@@ -84,10 +76,9 @@ export interface PreparationCapability extends CapabilityCommon {
  */
 export interface PublicationCapability<
   Tag extends PreparedPublicationTag = PreparedPublicationTag
-> extends CapabilityCommon {
+> extends CapabilityCommon, PublicationContributor {
   readonly _tag: "PublicationCapability"
   readonly adapter: ProviderAdapter<Tag>
-  readonly contribute: (input: CompilationSnapshot) => CapabilityContribution
 }
 
 export type CapabilityModule =

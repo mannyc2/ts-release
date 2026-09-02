@@ -13,7 +13,7 @@ import {
   bunArtifactTargets,
   type BunBinaryArchitecture,
   type BunBinaryFormat
-} from "../../src/capabilities/bun-targets.js"
+} from "../../src/model/bun-targets.js"
 
 export type ExecutableFormat = BunBinaryFormat | "pe"
 export type ExecutableArchitecture = BunBinaryArchitecture

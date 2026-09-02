@@ -7,7 +7,7 @@ import * as Effect from "effect/Effect"
 import { makeReleaseApi } from "../../../src/api/api.js"
 import { makeNodeReleaseLayer } from "../../../src/platform/node.js"
 import { makeLocalPreparedReleaseStore } from "../../../src/release/prepared-store.js"
-import { bunArtifactTargets } from "../../../src/capabilities/bun-targets.js"
+import { bunArtifactTargets } from "../../../src/model/bun-targets.js"
 import { inspectBunBinaryHeader } from "../../../scripts/lib/bun-targets.js"
 import {
   encodeCompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef

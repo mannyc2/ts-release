@@ -26,7 +26,7 @@ import type {
   PublicationCapability,
   ResolutionCapability
 } from "./module.js"
-import { bunArtifactTargetIds } from "./bun-targets.js"
+import { bunArtifactTargetIds } from "../model/bun-targets.js"
 
 const graphFields = (paths: ReadonlyArray<string>): ReadonlyArray<OwnedConfigField> =>
   paths.map((path) => ({ path, effect: "graph" as const }))
@@ -356,6 +356,12 @@ export const publicationCapabilities = Object.freeze([
   githubPublicationCapability,
   catalogPublicationCapability
 ] as const)
+
+/** The installed contribution set the pure graph compiler is handed. */
+export const installedCompilerCapabilities = Object.freeze({
+  preparation: preparationCapabilities,
+  publication: publicationCapabilities
+})
 
 /** Compile-time totality: one first-party adapter per durable prepared tag. */
 const builtinAdapterByTag = {

@@ -16,7 +16,7 @@ import {
   canonicalCatalogVersion,
   type CatalogRenderer
 } from "../model/catalog.js"
-import { bunArtifactTarget } from "../capabilities/bun-targets.js"
+import { bunArtifactTarget } from "../model/bun-targets.js"
 import {
   NpmAuthentication,
   PyPiAuthentication,

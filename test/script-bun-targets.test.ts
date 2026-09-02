@@ -4,7 +4,7 @@ import { decodeConfig } from "../src/config/config.js"
 import {
   bunArtifactTargetIds,
   bunArtifactTargets
-} from "../src/capabilities/bun-targets.js"
+} from "../src/model/bun-targets.js"
 import { sourcePreparationCapability } from "../src/capabilities/registry.js"
 import { inspectBunBinaryHeader } from "../scripts/lib/bun-targets.js"
 

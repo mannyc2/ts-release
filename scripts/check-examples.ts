@@ -17,6 +17,7 @@ import { tmpdir } from "node:os"
 import { makeReleaseApi } from "../src/api/api.js"
 import { SafeRelativePath } from "../src/model/primitives.js"
 import { compileReleaseGraph } from "../src/release/compiler.js"
+import { installedCompilerCapabilities } from "../src/capabilities/registry.js"
 import { makeLocalPreparedReleaseStore } from "../src/release/prepared-store.js"
 import { AuthoredConfig } from "../src/resolve/authored.js"
 import { ObservedFacts } from "../src/resolve/facts.js"
@@ -220,7 +221,7 @@ for (const path of configs.sort((left, right) => codepoint(portable(left), porta
     })
     const resolved = resolveConfig(value, facts)
     resolvedCount += 1
-    const graph = compileReleaseGraph(resolved, context)
+    const graph = compileReleaseGraph(resolved, context, installedCompilerCapabilities)
     compiledCount += 1
     same(graph.publications.map((publication) => publication._tag), expected.graph, `${name} graph subjects`)
     for (const publication of graph.publications) graphSubjects[publication._tag] += 1

@@ -720,6 +720,8 @@ export const V2_EXPECTED_RUN_CONTEXT_TOOLCHAIN_KEYS = [
   "effect",
   "git",
   "gitExecutableSha256",
+  "node",
+  "nodeExecutableSha256",
   "typescript"
 ] as const
 

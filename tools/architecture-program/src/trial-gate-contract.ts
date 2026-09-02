@@ -27,11 +27,19 @@ import {
   type CandidateTreeInventory
 } from "./trial-inventory.js"
 import { sha256Bytes } from "./trial-hash.js"
+import {
+  TrialTopologyGateError,
+  inspectTopologyGateStatic,
+  isRunnerOwnedTopologyGate,
+  type TrialTopologyStaticInspection
+} from "./trial-topology-gate.js"
 
 export const TRIAL_GATE_CANDIDATE_MANIFEST = "trial-candidate.json"
 export const TRIAL_GATE_SANDBOX_REPOSITORY_ROOT = "/repo"
 export const TRIAL_GATE_SANDBOX_CANDIDATE_ROOT = "/candidate"
 export const TRIAL_GATE_SANDBOX_HOME = "/home/trial-gate"
+export const TRIAL_GATE_SANDBOX_NODE = "/runtime/node"
+export const TRIAL_GATE_SANDBOX_TAR = "/usr/bin/tar"
 
 type GateRequirement = ArchitectureTrialSpecV2["gateRequirements"][number]
 
@@ -84,6 +92,7 @@ export interface TrialGateInspection {
   readonly representableInvalidStateCount: number | null
   readonly sourceBudgetAuthority: MachineSourceBudgetAuthority | null
   readonly staticCheckCount: number
+  readonly topology: TrialTopologyStaticInspection | null
 }
 
 const canonicalFailureIds = (
@@ -547,6 +556,24 @@ export const inspectGateCandidate = Effect.fn("TrialGateContract.inspectGateCand
         input.sourceBudgetAuthority ?? null
       )
     ]
+    // Runner-owned topology verification recomputes every packed-surface,
+    // graph, and coordinate claim from candidate bytes; candidate-manifest
+    // declarations alone are never sufficient evidence for GT02-GT14.
+    let topology: TrialTopologyStaticInspection | null = null
+    if (input.gate.scope === "topology" && isRunnerOwnedTopologyGate(input.gate.id)) {
+      const observedTopology = yield* Effect.result(inspectTopologyGateStatic({
+        root: input.inspectionRoot,
+        manifest,
+        inventory
+      }))
+      if (observedTopology._tag === "Failure") {
+        issues.push(...(observedTopology.failure instanceof TrialTopologyGateError
+          ? observedTopology.failure.failureIds
+          : ["gate.runner-topology-inspection-failed"]))
+      } else {
+        topology = observedTopology.success
+      }
+    }
     if (issues.length > 0) {
       return yield* new TrialGateContractError(canonicalFailureIds(issues))
     }
@@ -564,7 +591,9 @@ export const inspectGateCandidate = Effect.fn("TrialGateContract.inspectGateCand
       sourceBudgetAuthority: input.gate.id === "GM05-machine-source-budget"
         ? input.sourceBudgetAuthority ?? null
         : null,
-      staticCheckCount: 5 + (input.gate.scope === "topology" ? 1 : 0)
+      staticCheckCount: 5 + (input.gate.scope === "topology" ? 1 : 0) +
+        (topology === null ? 0 : topology.staticCheckCount),
+      topology
     } satisfies TrialGateInspection
   }
 )
@@ -638,6 +667,22 @@ export const trialGateInspectionFacts = (
         value: new IntegerEvidenceValueV2({
           value: inspection.sourceBudgetAuthority.referenceProductLines
         })
+      }
+    ]),
+    ...(inspection.topology === null ? [] : [
+      {
+        name: "runner.topology-declaration-surface-sha256",
+        value: new Sha256EvidenceValueV2({ value: inspection.topology.declarationSurfaceSha256 })
+      },
+      {
+        name: "runner.topology-export-count",
+        value: new IntegerEvidenceValueV2({
+          value: inspection.topology.runtimePlusDeclarationExportCount
+        })
+      },
+      {
+        name: "runner.topology-package-count",
+        value: new IntegerEvidenceValueV2({ value: inspection.topology.packages.length })
       }
     ])
   ]

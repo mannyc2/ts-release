@@ -185,6 +185,8 @@ const makePrepared = (candidateId: V2CandidateId): PreparedTrialRun => {
   const toolchain = new TrialRunContextToolchain({
     bun: "1.3.14",
     bunExecutableSha256: sha256("bun executable"),
+    node: "22.22.0",
+    nodeExecutableSha256: sha256("node executable"),
     typescript: "6.0.3",
     effect: "4.0.0-rc.108",
     git: "2.51.0",
@@ -231,6 +233,7 @@ const makePrepared = (candidateId: V2CandidateId): PreparedTrialRun => {
   const resolvedToolchain = {
     context: toolchain,
     bunExecutablePath: "/fixture/bin/bun",
+    nodeExecutablePath: "/fixture/bin/node",
     gitExecutablePath: "/fixture/bin/git",
     bubblewrapExecutablePath: "/usr/bin/bwrap",
     packageManifests: {

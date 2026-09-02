@@ -96,6 +96,8 @@ const bubblewrapExecutableDigest = sha256Bytes(encoder.encode("bubblewrap-execut
 const toolchainContext = new TrialRunContextToolchain({
   bun: "1.3.14",
   bunExecutableSha256: bunExecutableDigest,
+  node: "22.22.0",
+  nodeExecutableSha256: sha256Bytes(encoder.encode("node-executable")),
   typescript: "6.0.3",
   effect: "4.0.0-rc.108",
   git: "2.47.3",
@@ -265,6 +267,7 @@ const makeDependencies = (options: FixtureOptions = {}) => {
         return Effect.succeed({
           context: toolchainContext,
           bunExecutablePath: "/runtime/bun",
+          nodeExecutablePath: "/exact/bin/node",
           gitExecutablePath: "/usr/bin/git",
           bubblewrapExecutablePath: "/usr/bin/bwrap",
           packageManifests: {

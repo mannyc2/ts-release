@@ -43,6 +43,7 @@ const spec = Effect.runSync(decodeArchitectureTrialSpec(parseCanonicalJsonBytes(
 )))
 const gate = spec.gateRequirements[0]!
 const bunBytes = new TextEncoder().encode("fixture Bun executable\n")
+const nodeBytes = new TextEncoder().encode("fixture Node executable\n")
 const bubblewrapBytes = new TextEncoder().encode("fixture bubblewrap executable\n")
 const empty = new Uint8Array()
 
@@ -76,6 +77,7 @@ const success = (
 interface Fixture {
   readonly root: string
   readonly bunPath: string
+  readonly nodePath: string
   readonly bubblewrapPath: string
   readonly packageManifestPath: string
   readonly packageManifestBytes: Uint8Array
@@ -114,6 +116,7 @@ const commandRequest = (
 const withFixture = async <A>(use: (fixture: Fixture) => Promise<A>): Promise<A> => {
   const root = await mkdtemp("/tmp/ts-release-gate-command-test-")
   const bunPath = join(root, "bun")
+  const nodePath = join(root, "node")
   const bubblewrapPath = join(root, "bwrap")
   const packageManifestPath = join(root, "tools/architecture-program/package.json")
   const packageManifestBytes = new TextEncoder().encode('{"name":"fixture-runner"}\n')
@@ -125,6 +128,8 @@ const withFixture = async <A>(use: (fixture: Fixture) => Promise<A>): Promise<A>
   try {
     await writeFile(bunPath, bunBytes, { mode: 0o755 })
     await chmod(bunPath, 0o755)
+    await writeFile(nodePath, nodeBytes, { mode: 0o755 })
+    await chmod(nodePath, 0o755)
     await writeFile(bubblewrapPath, bubblewrapBytes, { mode: 0o755 })
     await chmod(bubblewrapPath, 0o755)
     await mkdir(join(root, "tools/architecture-program"), { recursive: true })
@@ -147,6 +152,7 @@ const withFixture = async <A>(use: (fixture: Fixture) => Promise<A>): Promise<A>
     return await use({
       root,
       bunPath,
+      nodePath,
       bubblewrapPath,
       packageManifestPath,
       packageManifestBytes,
@@ -180,6 +186,8 @@ const execute = async (
     expectedRunnerTypeScriptConfigSha256: sha256Bytes(fixture.typescriptConfigBytes),
     bunExecutablePath: fixture.bunPath,
     expectedBunExecutableSha256: expectedSha256,
+    nodeExecutablePath: fixture.nodePath,
+    expectedNodeExecutableSha256: sha256Bytes(nodeBytes),
     bubblewrapExecutablePath: fixture.bubblewrapPath,
     expectedBubblewrapExecutableSha256: sha256Bytes(bubblewrapBytes),
     runnerNodeModulesRoot: fixture.runnerNodeModulesRoot,
@@ -214,6 +222,7 @@ describe("TrialGateCommandExecutor", () => {
         argv: buildTrialGateIsolationArgv({
           bubblewrapExecutablePath: fixture.bubblewrapPath,
           bunExecutablePath: fixture.bunPath,
+          nodeExecutablePath: fixture.nodePath,
           repositoryRoot: fixture.root,
           inspectionRoot: fixture.inspectionRoot,
           runnerNodeModulesRoot: fixture.runnerNodeModulesRoot
@@ -354,6 +363,8 @@ describe("TrialGateCommandExecutor", () => {
         expectedRunnerTypeScriptConfigSha256: sha256Bytes(fixture.typescriptConfigBytes),
         bunExecutablePath: fixture.bunPath,
         expectedBunExecutableSha256: sha256Bytes(bunBytes),
+        nodeExecutablePath: fixture.nodePath,
+        expectedNodeExecutableSha256: sha256Bytes(nodeBytes),
         bubblewrapExecutablePath: fixture.bubblewrapPath,
         expectedBubblewrapExecutableSha256: sha256Bytes(bubblewrapBytes),
         runnerNodeModulesRoot: fixture.runnerNodeModulesRoot,

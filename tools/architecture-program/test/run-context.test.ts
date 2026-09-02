@@ -42,6 +42,8 @@ const validBody = {
   toolchain: {
     bun: "1.3.14",
     bunExecutableSha256: digest0,
+    node: "22.22.0",
+    nodeExecutableSha256: digest0,
     typescript: "6.0.3",
     effect: "4.0.0-rc.108",
     git: "2.43.0",

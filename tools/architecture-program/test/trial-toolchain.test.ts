@@ -23,9 +23,11 @@ const programRoot = resolve("/fixture/architecture-program")
 const typescriptPackagePath = resolve(programRoot, "node_modules", "typescript", "package.json")
 const effectPackagePath = resolve(programRoot, "node_modules", "effect", "package.json")
 const bunExecutablePath = "/runtime/bun"
+const nodeExecutablePath = "/exact/bin/node"
 const gitExecutablePath = "/exact/bin/git"
 const bubblewrapExecutablePath = "/usr/bin/bwrap"
 const bunExecutableBytes = encoder.encode("exact bun executable")
+const nodeExecutableBytes = encoder.encode("exact node executable")
 const gitExecutableBytes = encoder.encode("exact git executable")
 const bubblewrapExecutableBytes = encoder.encode("exact bubblewrap executable")
 
@@ -40,6 +42,11 @@ const successfulGitProcessResult = {
 const successfulBubblewrapProcessResult = {
   exitCode: 0,
   stdout: encoder.encode("bubblewrap 0.9.0\n"),
+  stderr: new Uint8Array()
+}
+const successfulNodeProcessResult = {
+  exitCode: 0,
+  stdout: encoder.encode("v22.22.0\n"),
   stderr: new Uint8Array()
 }
 
@@ -66,6 +73,8 @@ const defaultRead = (path: string) => path === typescriptPackagePath
   ? Effect.succeed(packageBytes("effect", "4.0.0-rc.108"))
   : path === bunExecutablePath
   ? Effect.succeed(bunExecutableBytes)
+  : path === nodeExecutablePath
+  ? Effect.succeed(nodeExecutableBytes)
   : path === gitExecutablePath
   ? Effect.succeed(gitExecutableBytes)
   : path === bubblewrapExecutablePath
@@ -78,6 +87,8 @@ const makeProbes = (overrides: ProbeOverrides = {}): TrialToolchainProbes => ({
     realpath: (path) => Effect.succeed(path),
     lstat: (path) => path === bunExecutablePath
       ? Effect.succeed(executableStat(bunExecutableBytes))
+      : path === nodeExecutablePath
+      ? Effect.succeed(executableStat(nodeExecutableBytes))
       : path === gitExecutablePath
       ? Effect.succeed(executableStat(gitExecutableBytes))
       : path === bubblewrapExecutablePath
@@ -89,12 +100,15 @@ const makeProbes = (overrides: ProbeOverrides = {}): TrialToolchainProbes => ({
     run: (request) => Effect.succeed(
       request.argv[0] === bubblewrapExecutablePath
         ? successfulBubblewrapProcessResult
+        : request.argv[0] === nodeExecutablePath
+        ? successfulNodeProcessResult
         : successfulGitProcessResult
     )
   },
   runtime: {
     bunVersion: () => "1.3.14",
     bunExecutablePath: () => bunExecutablePath,
+    nodeExecutablePath: () => nodeExecutablePath,
     gitExecutablePath: () => gitExecutablePath,
     bubblewrapExecutablePath: () => bubblewrapExecutablePath,
     inheritedPath: () => "/exact/bin:/usr/bin",
@@ -118,6 +132,7 @@ describe("TrialToolchain", () => {
               return Effect.succeed(packageBytes("effect", "4.0.0-rc.108"))
             }
             if (path === bunExecutablePath) return Effect.succeed(bunExecutableBytes)
+            if (path === nodeExecutablePath) return Effect.succeed(nodeExecutableBytes)
             if (path === gitExecutablePath) return Effect.succeed(gitExecutableBytes)
             if (path === bubblewrapExecutablePath) {
               return Effect.succeed(bubblewrapExecutableBytes)
@@ -131,6 +146,8 @@ describe("TrialToolchain", () => {
             return Effect.succeed(
               request.argv[0] === bubblewrapExecutablePath
                 ? successfulBubblewrapProcessResult
+                : request.argv[0] === nodeExecutablePath
+                ? successfulNodeProcessResult
                 : successfulGitProcessResult
             )
           }
@@ -148,6 +165,8 @@ describe("TrialToolchain", () => {
       expect(toolchain).toEqual({
         bun: "1.3.14",
         bunExecutableSha256: sha256Bytes(bunExecutableBytes),
+        node: "22.22.0",
+        nodeExecutableSha256: sha256Bytes(nodeExecutableBytes),
         typescript: "6.0.3",
         effect: "4.0.0-rc.108",
         git: "2.47.3",
@@ -158,6 +177,7 @@ describe("TrialToolchain", () => {
       expect(toolchain).not.toEqual(spoofedCallerClaim)
       expect(readPaths).toEqual([
         bunExecutablePath,
+        nodeExecutablePath,
         gitExecutablePath,
         bubblewrapExecutablePath,
         typescriptPackagePath,
@@ -179,6 +199,7 @@ describe("TrialToolchain", () => {
       })
       expect(requests).toEqual([
         expectedRequest([gitExecutablePath, "--version"]),
+        expectedRequest([nodeExecutablePath, "--version"]),
         expectedRequest([bubblewrapExecutablePath, "--version"])
       ])
     }))

@@ -20,13 +20,27 @@ import {
 } from "./schema/trial-spec.js"
 import {
   TRIAL_GATE_SANDBOX_CANDIDATE_ROOT,
+  TRIAL_GATE_SANDBOX_NODE,
   TRIAL_GATE_SANDBOX_REPOSITORY_ROOT,
+  TRIAL_GATE_SANDBOX_TAR,
   TrialGateContractError,
   inspectGateCandidate,
   invocationMatchesGate,
   loadMachineSourceBudgetAuthority,
   trialGateInspectionFacts
 } from "./trial-gate-contract.js"
+import {
+  TrialTopologyGateError,
+  executeTopologyGate,
+  isRunnerOwnedTopologyGate,
+  type TopologyGateExecutables,
+  type TrialTopologyExecutionInspection
+} from "./trial-topology-gate.js"
+import {
+  EvidenceEntryV2,
+  EvidenceName,
+  IntegerEvidenceValueV2
+} from "./schema/trial-evidence.js"
 
 const TrialGateCommandEnvelope = Schema.Struct({
   commandInput: GateCommandInputV2,
@@ -60,6 +74,29 @@ const failed = (...failureIds: ReadonlyArray<string>): TrialGateCliResult => ({
     : failureIds)
 })
 
+const mergeExecutionFacts = (
+  staticFacts: readonly [EvidenceEntryV2, ...Array<EvidenceEntryV2>],
+  execution: TrialTopologyExecutionInspection
+): [EvidenceEntryV2, ...Array<EvidenceEntryV2>] => {
+  const combined = [
+    ...staticFacts.map(({ name, value }) => ({ name: name as string, value })),
+    {
+      name: "runner.topology-execution-check-count",
+      value: new IntegerEvidenceValueV2({ value: execution.checkCount })
+    },
+    ...(execution.packedByteCount === null ? [] : [{
+      name: "runner.topology-tarball-byte-count",
+      value: new IntegerEvidenceValueV2({ value: execution.packedByteCount })
+    }])
+  ]
+  combined.sort((left, right) => codePointCompare(left.name, right.name))
+  return combined.map((entry, index) => new EvidenceEntryV2({
+    sequence: index + 1,
+    name: EvidenceName.make(entry.name),
+    value: entry.value
+  })) as [EvidenceEntryV2, ...Array<EvidenceEntryV2>]
+}
+
 const exactInput = (
   input: typeof GateCommandInputV2.Type
 ): boolean => {
@@ -76,6 +113,8 @@ export const runTrialGateCli = Effect.fn("TrialGateCli.run")(function* (input: {
   readonly repositoryRoot?: string
   /** Test seam; the live process always uses the envelope's fixed /candidate mount. */
   readonly inspectionRoot?: string
+  /** Test seam; the live process always uses the fixed sandbox executable mounts. */
+  readonly executables?: TopologyGateExecutables
 }) {
   if (input.argv.length !== 2 || input.argv[0] !== "--gate") {
     return failed("gate.command-cli-arguments")
@@ -140,6 +179,36 @@ export const runTrialGateCli = Effect.fn("TrialGateCli.run")(function* (input: {
       ? inspection.failure.failureIds
       : [ArtifactId.make("gate.command-cli-inspection")]))
   }
+
+  // The dynamic packed-bytes verification executes candidate code, so it runs
+  // only here, inside the sealed gate sandbox, never in the host evaluator.
+  let execution: TrialTopologyExecutionInspection | null = null
+  if (gate.scope === "topology" && isRunnerOwnedTopologyGate(gate.id)) {
+    if (inspection.success.topology === null) {
+      return failed("gate.command-cli-topology-inspection-unavailable")
+    }
+    const executed = yield* Effect.result(executeTopologyGate({
+      gateId: gate.id,
+      root: input.inspectionRoot ?? envelope.success.executionLocal.inspectionRoot,
+      repositoryRoot,
+      executables: input.executables ?? {
+        bun: process.execPath,
+        node: TRIAL_GATE_SANDBOX_NODE,
+        tar: TRIAL_GATE_SANDBOX_TAR
+      },
+      inventory: inspection.success.inventory,
+      inspection: inspection.success.topology
+    }))
+    if (Result.isFailure(executed)) {
+      return failed(...(executed.failure instanceof TrialTopologyGateError
+        ? executed.failure.failureIds
+        : [ArtifactId.make("gate.command-cli-topology-execution")]))
+    }
+    execution = executed.success
+  }
+
+  const staticFacts = trialGateInspectionFacts(inspection.success)
+  const facts = execution === null ? staticFacts : mergeExecutionFacts(staticFacts, execution)
   const observation = new ArchitectureGateObservationV2({
     schemaVersion: "architecture-gate-observation-v2",
     runContextSha256: invocation.success.runContextSha256,
@@ -147,7 +216,7 @@ export const runTrialGateCli = Effect.fn("TrialGateCli.run")(function* (input: {
     candidateTreeSha256: invocation.success.candidateTreeSha256,
     definitionSha256: invocation.success.definitionSha256,
     gateId: invocation.success.gateId,
-    facts: trialGateInspectionFacts(inspection.success)
+    facts
   })
   return {
     exitCode: 0,

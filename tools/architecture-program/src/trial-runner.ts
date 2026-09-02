@@ -115,6 +115,8 @@ const liveAdapterFactory: TrialRunnerAdapterFactory = (prepared, evaluators) =>
       expectedRunnerTypeScriptConfigSha256: prepared.runnerTypeScriptConfigSha256,
       bunExecutablePath: prepared.resolvedToolchain.bunExecutablePath,
       expectedBunExecutableSha256: prepared.runContext.toolchain.bunExecutableSha256,
+      nodeExecutablePath: prepared.resolvedToolchain.nodeExecutablePath,
+      expectedNodeExecutableSha256: prepared.runContext.toolchain.nodeExecutableSha256,
       bubblewrapExecutablePath: prepared.resolvedToolchain.bubblewrapExecutablePath,
       expectedBubblewrapExecutableSha256:
         prepared.runContext.toolchain.bubblewrapExecutableSha256,

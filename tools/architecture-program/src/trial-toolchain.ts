@@ -17,7 +17,7 @@ export const TRIAL_TOOLCHAIN_GIT_TIMEOUT_MILLISECONDS = 5_000
 export const TRIAL_TOOLCHAIN_GIT_OUTPUT_LIMIT_BYTES = TRIAL_PROCESS_OUTPUT_LIMIT_BYTES
 export const TRIAL_TOOLCHAIN_BUBBLEWRAP_EXECUTABLE = "/usr/bin/bwrap"
 
-const ToolId = Schema.Literals(["bun", "typescript", "effect", "git", "bubblewrap"])
+const ToolId = Schema.Literals(["bun", "node", "typescript", "effect", "git", "bubblewrap"])
 type ToolId = typeof ToolId.Type
 
 const PackageToolId = Schema.Literals(["typescript", "effect"])
@@ -67,13 +67,13 @@ export class TrialToolchainProcessError extends Schema.TaggedError<TrialToolchai
 export class TrialToolchainExecutableError extends Schema.TaggedError<TrialToolchainExecutableError>()(
   "TrialToolchainExecutableError",
   {
-    tool: Schema.Literals(["bun", "git", "bubblewrap"]),
+    tool: Schema.Literals(["bun", "node", "git", "bubblewrap"]),
     path: Schema.String,
     reason: Schema.String,
     message: Schema.String
   }
 ) {
-  constructor(tool: "bun" | "git" | "bubblewrap", path: string, reason: string) {
+  constructor(tool: "bun" | "node" | "git" | "bubblewrap", path: string, reason: string) {
     super({
       tool,
       path,
@@ -118,6 +118,7 @@ export interface TrialToolchainFileProbe {
 export interface TrialToolchainRuntimeProbe {
   readonly bunVersion: () => unknown
   readonly bunExecutablePath: () => unknown
+  readonly nodeExecutablePath: (path: string) => unknown
   readonly gitExecutablePath: (path: string) => unknown
   readonly bubblewrapExecutablePath: () => unknown
   readonly inheritedPath: () => unknown
@@ -164,6 +165,7 @@ export interface TrialToolchainService {
 export interface ResolvedTrialToolchain {
   readonly context: TrialRunContextToolchain
   readonly bunExecutablePath: string
+  readonly nodeExecutablePath: string
   readonly gitExecutablePath: string
   readonly bubblewrapExecutablePath: string
   readonly packageManifests: {
@@ -184,6 +186,8 @@ const gitVersionPattern =
   /^git version ((?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*)){2}(?:\.[0-9A-Za-z-]+)*(?: \([0-9A-Za-z][0-9A-Za-z .+/_-]*\))?)\r?\n?$/u
 const bubblewrapVersionPattern =
   /^bubblewrap ((?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*)){2})\n$/u
+const nodeVersionPattern =
+  /^v((?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*)){2})\n$/u
 
 const describeCause = (cause: unknown): string =>
   cause instanceof Error ? cause.message : String(cause)
@@ -234,7 +238,7 @@ const sameStat = (left: Stats, right: Stats): boolean =>
 
 const bindExecutable = Effect.fn("TrialToolchain.bindExecutable")(function* (
   probes: TrialToolchainProbes,
-  tool: "bun" | "git" | "bubblewrap",
+  tool: "bun" | "node" | "git" | "bubblewrap",
   input: unknown,
   requiredLiteral?: string
 ) {
@@ -412,6 +416,9 @@ const liveProcessProbe: TrialToolchainProcessProbe = {
 const liveRuntimeProbe: TrialToolchainRuntimeProbe = {
   bunVersion: () => typeof Bun === "undefined" ? undefined : Bun.version,
   bunExecutablePath: () => typeof Bun === "undefined" ? undefined : process.execPath,
+  nodeExecutablePath: (path) => typeof Bun === "undefined"
+    ? undefined
+    : Bun.which("node", { PATH: path }),
   gitExecutablePath: (path) => typeof Bun === "undefined"
     ? undefined
     : Bun.which("git", { PATH: path }),
@@ -429,6 +436,7 @@ const invokeRuntimeProbe = <A>(
   field:
     | "bunVersion"
     | "bunExecutablePath"
+    | "nodeExecutablePath"
     | "gitExecutablePath"
     | "bubblewrapExecutablePath"
     | "inheritedPath",
@@ -576,6 +584,65 @@ const discoverBubblewrapVersion = Effect.fn("TrialToolchain.discoverBubblewrapVe
   }
 )
 
+const discoverNodeVersion = Effect.fn("TrialToolchain.discoverNodeVersion")(
+  function* (
+    probes: TrialToolchainProbes,
+    programRoot: string,
+    path: string,
+    nodeExecutablePath: string
+  ) {
+    const request: TrialToolchainProcessRequest = {
+      argv: [nodeExecutablePath, "--version"],
+      cwd: programRoot,
+      closedEnvironment: fixedEnvironment(path),
+      timeoutMilliseconds: TRIAL_TOOLCHAIN_GIT_TIMEOUT_MILLISECONDS,
+      outputLimitBytes: TRIAL_TOOLCHAIN_GIT_OUTPUT_LIMIT_BYTES,
+      shell: false
+    }
+    const runEffect = yield* Effect.try({
+      try: () => probes.process.run(request),
+      catch: (cause) => new TrialToolchainProcessError("node", describeCause(cause))
+    })
+    const result = yield* runEffect.pipe(Effect.mapError((cause) =>
+      new TrialToolchainProcessError("node", describeCause(cause))))
+    if (typeof result !== "object" || result === null ||
+      !Number.isSafeInteger(result.exitCode) ||
+      !(result.stdout instanceof Uint8Array) ||
+      !(result.stderr instanceof Uint8Array)) {
+      return yield* new TrialToolchainProcessError("node", "process probe returned a malformed result")
+    }
+    if (result.stdout.byteLength > TRIAL_TOOLCHAIN_GIT_OUTPUT_LIMIT_BYTES ||
+      result.stderr.byteLength > TRIAL_TOOLCHAIN_GIT_OUTPUT_LIMIT_BYTES) {
+      return yield* new TrialToolchainProcessError("node", "version output exceeded byte bound")
+    }
+    if (result.exitCode !== 0 || result.stderr.byteLength !== 0) {
+      return yield* new TrialToolchainProcessError(
+        "node",
+        `version probe exited ${result.exitCode} with ${result.stderr.byteLength} stderr bytes`
+      )
+    }
+    let text: string
+    try {
+      text = textDecoder.decode(result.stdout)
+    } catch (cause) {
+      return yield* new TrialToolchainVersionError(
+        "node",
+        "node --version stdout",
+        `must be UTF-8 (${describeCause(cause)})`
+      )
+    }
+    const match = nodeVersionPattern.exec(text)
+    if (match === null) {
+      return yield* new TrialToolchainVersionError(
+        "node",
+        "node --version stdout",
+        "must exactly match `v<major>.<minor>.<patch>` followed by LF"
+      )
+    }
+    return match[1]!
+  }
+)
+
 export const makeTrialToolchain = (
   probes: TrialToolchainProbes = liveProbes
 ): TrialToolchainService => {
@@ -599,7 +666,21 @@ export const makeTrialToolchain = (
       "bubblewrapExecutablePath",
       probes.runtime.bubblewrapExecutablePath
     )
+    const nodeExecutableValue = yield* invokeRuntimeProbe(
+      "nodeExecutablePath",
+      () => probes.runtime.nodeExecutablePath(path)
+    )
     const bunExecutable = yield* bindExecutable(probes, "bun", bunExecutableValue)
+    const nodeExecutable = yield* bindExecutable(probes, "node", nodeExecutableValue)
+    if (nodeExecutable.path === bunExecutable.path ||
+      nodeExecutable.sha256 === bunExecutable.sha256) {
+      return yield* new TrialToolchainExecutableError(
+        "node",
+        nodeExecutable.path,
+        "resolved node executable is the Bun binary; GT02 requires a genuine Node.js runtime " +
+          "distinct from the Bun runtime that GT03 exercises"
+      )
+    }
     const gitExecutable = yield* bindExecutable(probes, "git", gitExecutableValue)
     const bubblewrapExecutable = yield* bindExecutable(
       probes,
@@ -619,6 +700,12 @@ export const makeTrialToolchain = (
       path,
       gitExecutable.path
     )
+    const node = yield* discoverNodeVersion(
+      probes,
+      exactProgramRoot,
+      path,
+      nodeExecutable.path
+    )
     const bubblewrapVersion = yield* discoverBubblewrapVersion(
       probes,
       exactProgramRoot,
@@ -629,6 +716,8 @@ export const makeTrialToolchain = (
       context: new TrialRunContextToolchain({
         bun,
         bunExecutableSha256: bunExecutable.sha256,
+        node,
+        nodeExecutableSha256: nodeExecutable.sha256,
         typescript: typescriptPackage.version,
         effect: effectPackage.version,
         git,
@@ -637,6 +726,7 @@ export const makeTrialToolchain = (
         bubblewrapExecutableSha256: bubblewrapExecutable.sha256
       }),
       bunExecutablePath: bunExecutable.path,
+      nodeExecutablePath: nodeExecutable.path,
       gitExecutablePath: gitExecutable.path,
       bubblewrapExecutablePath: bubblewrapExecutable.path,
       packageManifests: {

@@ -11,8 +11,7 @@ import {
 } from "../src/schema/candidate-manifest.js"
 import {
   ArchitectureGateInvocationV2,
-  ArchitectureGateObservationV2,
-  decodeGateObservationForInvocation
+  ArchitectureGateObservationV2
 } from "../src/schema/harness-protocol.js"
 import { ArtifactId } from "../src/schema/primitives.js"
 import {
@@ -409,22 +408,19 @@ describe("runner-owned live gate", () => {
         commandInput: encodeGateCommandInput(commandInput),
         executionLocal: { inspectionRoot: "/candidate" }
       })
-      const passed = await Effect.runPromise(runTrialGateCli({
+      // The strengthened runner-owned verifier no longer accepts a topology
+      // candidate that carries no packed-topology fixture: manifest metric
+      // exports alone are not topology evidence.
+      const fixtureless = await Effect.runPromise(runTrialGateCli({
         argv: ["--gate", gt12.id],
         stdin,
         repositoryRoot,
         inspectionRoot: fixture.root
       }))
-      expect(passed.exitCode).toBe(0)
-      expect(passed.stderr).toHaveLength(0)
-      const output = await Effect.runPromise(decodeGateObservationForInvocation(
-        gateInvocation,
-        parseCanonicalJsonBytes(passed.stdout)
-      ))
-      expect(output.facts.find(({ name }) =>
-        name === "runner.invalid-version-state-count")?.value).toEqual({
-        _tag: "Integer",
-        value: 2
+      expect(fixtureless.exitCode).toBe(1)
+      expect(fixtureless.stdout).toHaveLength(0)
+      expect(parseCanonicalJsonBytes(fixtureless.stderr)).toMatchObject({
+        failureIds: ["gate.runner-topology-fixture-schema"]
       })
 
       await writeFile(join(fixture.root, "unmanifested"), "hostile drift\n")
@@ -441,7 +437,7 @@ describe("runner-owned live gate", () => {
       })
     }))
 
-  it("ignores candidate metric claims and emits runner-inventoried GT12/GT14 facts", async () =>
+  it("rejects candidate metric claims that carry no packed-topology fixture", async () =>
     withTopologyCandidate(async (fixture) => {
       const evaluator = makeLiveGateEvaluator({ repositoryRoot, trialSpec: spec })
       const evaluate = async (gate: typeof gt12) => {
@@ -461,21 +457,12 @@ describe("runner-owned live gate", () => {
         }))
       }
 
-      const version = await evaluate(gt12)
-      expect(version._tag).toBe("Accepted")
-      if (version._tag === "Accepted") {
-        expect(version.facts.find(({ name }) =>
-          name === "runner.invalid-version-state-count")?.value).toEqual({
-          _tag: "Integer",
-          value: 2
-        })
-      }
-
-      const packed = await evaluate(gt14)
-      expect(packed._tag).toBe("Accepted")
-      if (packed._tag === "Accepted") {
-        expect(packed.facts.find(({ name }) => name === "runner.packed-byte-count")?.value)
-          .toEqual({ _tag: "Integer", value: fixture.packedBytes })
+      for (const gate of [gt12, gt14]) {
+        const evaluated = await evaluate(gate)
+        expect(evaluated._tag).toBe("Rejected")
+        if (evaluated._tag === "Rejected") {
+          expect(evaluated.failureIds).toContain("gate.runner-topology-fixture-schema")
+        }
       }
     }))
 })

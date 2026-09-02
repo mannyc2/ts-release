@@ -201,6 +201,8 @@ const makeFixture = async (): Promise<Fixture> => {
     toolchain: {
       bun: "1.3.14",
       bunExecutableSha256: zeroDigest,
+      node: "22.22.0",
+      nodeExecutableSha256: zeroDigest,
       typescript: "6.0.3",
       effect: "4.0.0-rc.108",
       git: "2.51.0",

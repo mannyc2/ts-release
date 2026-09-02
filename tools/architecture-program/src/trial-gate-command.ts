@@ -26,6 +26,7 @@ import { sha256Bytes } from "./trial-hash.js"
 import {
   TRIAL_GATE_SANDBOX_CANDIDATE_ROOT,
   TRIAL_GATE_SANDBOX_HOME,
+  TRIAL_GATE_SANDBOX_NODE,
   TRIAL_GATE_SANDBOX_REPOSITORY_ROOT
 } from "./trial-gate-contract.js"
 import { inventoryCanonicalTree } from "./trial-inventory.js"
@@ -54,6 +55,8 @@ export interface MakeTrialGateCommandExecutorOptions {
   readonly expectedRunnerTypeScriptConfigSha256: Sha256Hex
   readonly bunExecutablePath: string
   readonly expectedBunExecutableSha256: Sha256Hex
+  readonly nodeExecutablePath: string
+  readonly expectedNodeExecutableSha256: Sha256Hex
   readonly bubblewrapExecutablePath: string
   readonly expectedBubblewrapExecutableSha256: Sha256Hex
   readonly runnerNodeModulesRoot: string
@@ -326,6 +329,7 @@ const fixedGateEnvironment = {
 export interface TrialGateIsolationPaths {
   readonly bubblewrapExecutablePath: string
   readonly bunExecutablePath: string
+  readonly nodeExecutablePath: string
   readonly repositoryRoot: string
   readonly inspectionRoot: string
   readonly runnerNodeModulesRoot: string
@@ -373,6 +377,7 @@ export const buildTrialGateIsolationArgv = (
   paths.runnerNodeModulesRoot,
   `${TRIAL_GATE_SANDBOX_REPOSITORY_ROOT}/tools/architecture-program/node_modules`,
   "--ro-bind", paths.bunExecutablePath, "/runtime/bun",
+  "--ro-bind", paths.nodeExecutablePath, TRIAL_GATE_SANDBOX_NODE,
   // Seal bubblewrap's otherwise-writable synthetic root after constructing
   // every mount. The non-recursive remount preserves only /tmp and /home as
   // writable scratch while repository, candidate, dependencies, and Bun stay
@@ -484,6 +489,20 @@ export const makeTrialGateCommandExecutor = (
         failureIds: [before.failure]
       }
     }
+    const nodeBefore = yield* Effect.result(Effect.tryPromise({
+      try: () => verifyRetainedExecutable(
+        options.nodeExecutablePath,
+        options.expectedNodeExecutableSha256,
+        "Node"
+      ),
+      catch: () => ArtifactId.make("gate.command-node-preverification")
+    }))
+    if (Result.isFailure(nodeBefore)) {
+      return {
+        processAttempt: new NotStartedProcessAttempt({ executable: options.bubblewrapExecutablePath }),
+        failureIds: [nodeBefore.failure]
+      }
+    }
     const bubblewrapBefore = yield* Effect.result(Effect.tryPromise({
       try: () => verifyRetainedExecutable(
         options.bubblewrapExecutablePath,
@@ -555,6 +574,7 @@ export const makeTrialGateCommandExecutor = (
       argv: buildTrialGateIsolationArgv({
         bubblewrapExecutablePath: options.bubblewrapExecutablePath,
         bunExecutablePath: options.bunExecutablePath,
+        nodeExecutablePath: options.nodeExecutablePath,
         repositoryRoot: options.repositoryRoot,
         inspectionRoot,
         runnerNodeModulesRoot: options.runnerNodeModulesRoot
@@ -593,6 +613,14 @@ export const makeTrialGateCommandExecutor = (
         "Bun"
       ),
       catch: () => ArtifactId.make("gate.command-bun-postverification")
+    }))
+    const afterNode = yield* Effect.result(Effect.tryPromise({
+      try: () => verifyRetainedExecutable(
+        options.nodeExecutablePath,
+        options.expectedNodeExecutableSha256,
+        "Node"
+      ),
+      catch: () => ArtifactId.make("gate.command-node-postverification")
     }))
     const afterBubblewrap = yield* Effect.result(Effect.tryPromise({
       try: () => verifyRetainedExecutable(
@@ -649,6 +677,7 @@ export const makeTrialGateCommandExecutor = (
           ? [commandOutput.failure]
           : []),
         ...(Result.isFailure(afterBun) ? [afterBun.failure] : []),
+        ...(Result.isFailure(afterNode) ? [afterNode.failure] : []),
         ...(Result.isFailure(afterBubblewrap) ? [afterBubblewrap.failure] : []),
         ...(Result.isFailure(afterInspection) ? [afterInspection.failure] : []),
         ...(Result.isFailure(inspectionTreeAfter) ||

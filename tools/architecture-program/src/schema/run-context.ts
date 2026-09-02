@@ -32,6 +32,8 @@ export class TrialRunContextToolchain extends Schema.Class<TrialRunContextToolch
 )({
   bun: ToolchainVersion,
   bunExecutableSha256: Sha256Hex,
+  node: ToolchainVersion,
+  nodeExecutableSha256: Sha256Hex,
   typescript: ToolchainVersion,
   effect: ToolchainVersion,
   git: ToolchainVersion,

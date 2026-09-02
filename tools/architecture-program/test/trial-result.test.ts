@@ -235,6 +235,8 @@ const loadAuthority = Effect.fn("trialResultTest.loadAuthority")(function* (scop
     toolchain: {
       bun: "1.3.14",
       bunExecutableSha256: exactSha256("bun executable"),
+      node: "22.22.0",
+      nodeExecutableSha256: exactSha256("node executable"),
       typescript: "6.0.3",
       effect: "4.0.0-rc.108",
       git: "2.51.0",

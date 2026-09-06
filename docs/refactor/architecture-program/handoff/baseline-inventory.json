@@ -1,0 +1,78 @@
+{
+  "format": "architecture-record/1",
+  "recordFormat": "ts-release/architecture-source-inventory/1",
+  "summary": {
+    "method": "Immutable Git blobs; physical UTF-8 newline count including comments/blanks; top-level source declarations and resolved public source exports; generated delivery excluded",
+    "normalization": {
+      "typescript": "6.0.3",
+      "method": "TypeScript printer, LF, comments retained; separate diagnostic, not a replacement for physical budgets"
+    },
+    "baselineDenominator": {
+      "productSource": 22916,
+      "generatedProductPolicy": 55,
+      "total": 22971,
+      "halfFloor": 11485
+    },
+    "snapshots": [
+      {
+        "id": "pr21",
+        "commit": "887a9fe2b35590f3088ffeee84f32722796e03ab",
+        "tree": "68b86fa8811dc58c620b2017a2c4a1c794e7acf2",
+        "files": 93,
+        "surfaces": 6,
+        "bin": {
+          "ts-release": "./dist/bin/ts-release.js"
+        },
+        "physicalProductLines": 18052,
+        "printerNormalizedProductLines": 15095,
+        "symbolEntries": 146
+      },
+      {
+        "id": "pr22",
+        "commit": "c2ac4ee4e7f02d74a7a1ff435bdfeaca6890b720",
+        "tree": "9f830f893f1dea7ae00675ef3d801848579f7d55",
+        "files": 101,
+        "surfaces": 6,
+        "bin": {
+          "ts-release": "./dist/bin/ts-release.js"
+        },
+        "physicalProductLines": 21252,
+        "printerNormalizedProductLines": 17759,
+        "symbolEntries": 146
+      },
+      {
+        "id": "overlay",
+        "commit": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+        "tree": "4e71a43c14f2dc980fadae024020d294270e6565",
+        "files": 60,
+        "surfaces": 4,
+        "bin": {
+          "ts-release": "./dist/cli/bun-main.js"
+        },
+        "physicalProductLines": 22916,
+        "printerNormalizedProductLines": 18432,
+        "symbolEntries": 108
+      },
+      {
+        "id": "current",
+        "commit": "9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d",
+        "tree": "2555bae3f1c50c31eca209ef8830682240b12bbb",
+        "files": 93,
+        "surfaces": 6,
+        "bin": {
+          "ts-release": "./dist/bin/ts-release.js"
+        },
+        "physicalProductLines": 18252,
+        "printerNormalizedProductLines": 15259,
+        "symbolEntries": 151
+      }
+    ]
+  },
+  "artifact": {
+    "path": "baseline-inventory.json.gz",
+    "compressedBytes": 418209,
+    "compressedSha256": "687bce96b3a9f205b796d12905b4f06b3c8d84dc31c7876c26767476617f4b73",
+    "expandedBytes": 1965244,
+    "expandedSha256": "e886c6188039bd0b4ede8b7ea0c6f8e0712ea7454cdf5150ac36838b1a5676ba"
+  }
+}

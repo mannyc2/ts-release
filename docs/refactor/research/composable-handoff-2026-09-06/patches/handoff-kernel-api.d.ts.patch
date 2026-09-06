@@ -1,0 +1,81 @@
+--- /mnt/models/dev/ts-release/docs/refactor/architecture-program/handoff/kernel-api.d.ts	2026-09-05 22:49:19.230826279 +0000
++++ kernel-api.d.ts	2026-09-06 18:09:07.531992409 +0000
+@@ -7,6 +7,10 @@
+  * additional compile-time brands are not claimed by this tested contract.
+  * Implementation classes must remain Schema.Class / Schema.TaggedClass / tagged
+  * errors, not interface casts. No legacy reader or migration export is proposed.
++ *
++ * 2026-09-06 composable amendment: evaluator seam (Host.machine, Machine types,
++ * historyMachine default), provider contract literal, bounded undecodable-receipt
++ * diagnostic. Witnessed in plans/research/composable-handoff/examples.
+  */
+ import * as Context from "effect/Context";
+ import * as Effect from "effect/Effect";
+@@ -203,12 +207,27 @@
+ }>, {}>;
+ export declare class CoreDispatchError extends CoreDispatchError_base {
+ }
++declare const CoreUndecodableReceipt_base: Schema.Class<CoreUndecodableReceipt, Schema.Struct<{
++    readonly code: Schema.String;
++    readonly message: Schema.String;
++    readonly receiptSha256: Schema.String;
++    readonly receiptBytes: Schema.String;
++}>, {}>;
++/** Bounded, credential-free diagnostic recorded as ObservationRecorded/DispatchError/Inconclusive
++ * (evidenceVersion "core-undecodable-receipt/1") when a committed send's receipt fails strict decoding.
++ * No raw response bytes are retained; a later native observation may still satisfy the attempt. */
++export declare class CoreUndecodableReceipt extends CoreUndecodableReceipt_base {
++}
++/** Provider contract spoken by this kernel. Verified for every definition before any store or provider effect. */
++export declare const PROVIDER_CONTRACT: "ts-release/provider/1";
+ export interface NativeFailureBoundary {
+     readonly version: string;
+     readonly codec: Schema.Codec<unknown, unknown>;
+     readonly corresponds: (operation: Operation, request: RequestFacts, evidence: unknown) => boolean;
+ }
+ export interface ProviderDefinition {
++    /** Must equal PROVIDER_CONTRACT of the kernel that runs it; installers do not guarantee this. */
++    readonly contract: typeof PROVIDER_CONTRACT;
+     readonly definitionId: string;
+     readonly intentVersion: string;
+     readonly intentCodec: Schema.Codec<unknown, unknown>;
+@@ -245,7 +264,39 @@
+     readonly now: () => number;
+     readonly uniqueId: () => string;
+     readonly journal?: JournalContext;
++    /** Decision evaluator over validated history. Default: historyMachine (M1). Any Machine satisfying the
++     * kernel conformance suite may be supplied; the kernel keeps every permit, admission and append law. */
++    readonly machine?: MachineConstructor;
++}
++/** Evaluator seam. `next` is a pure function of (validated history, plan, candidate request, now). */
++export interface CandidateRequest {
++    readonly facts: RequestFacts;
++    readonly fingerprint: string;
+ }
++export type Next = {
++    readonly _tag: "PrepareDispatch";
++} | {
++    readonly _tag: "AppendDispatch";
++    readonly basis: DispatchBasis;
++} | {
++    readonly _tag: "RequestRiskAcceptance";
++} | {
++    readonly _tag: "Finish";
++    readonly status: OperationStatus;
++};
++export interface Machine {
++    /** Rejects an illegal next event (throws ReleaseError); returns the successor evaluator. */
++    readonly append: (event: JournalEvent) => Machine;
++    readonly report: () => ReleaseReport;
++    readonly next: (operationId: string, candidate: CandidateRequest | null, now: number) => Next;
++}
++/** Must reject impossible histories on construction (fold through append). */
++export type MachineConstructor = (plan: Plan, events: ReadonlyArray<JournalEvent>) => Machine;
++/** Default evaluator: history retained, facts and decisions derived by queries. */
++export declare const historyMachine: MachineConstructor;
++/** Protocol laws shared by every evaluator; not inferred from provider labels. */
++export declare const sameProtectedRequest: (recorded: RequestFacts, candidate: RequestFacts) => boolean;
++export declare const sameStrings: (left: ReadonlyArray<string>, right: ReadonlyArray<string>) => boolean;
+ declare const Host_base: Context.ServiceClass<Host, "ts-release/Host", HostShape>;
+ export declare class Host extends Host_base {
+ }

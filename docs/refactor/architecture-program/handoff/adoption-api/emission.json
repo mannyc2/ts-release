@@ -1,0 +1,56 @@
+{
+  "format": "adoption-declaration-projection/2",
+  "emitter": "tools/architecture-lab/proposal/emit.mjs",
+  "compiler": "typescript6.0.3",
+  "effect": "4.0.0-rc.108",
+  "changes": [
+    "redirect machine imports to ../kernel-api.js",
+    "LabError becomes ReleaseError",
+    "lab/owned-bundle/1 becomes ts-release/bundle/1",
+    "lab/apple-preparation/1 becomes ts-release/apple-preparation/1",
+    "ApplePreparation producerRevision changes from historical PR24 to selected ef29 source; this is a proposed format/pin adaptation, not native acceptance"
+  ],
+  "nativeAcceptance": false,
+  "files": [
+    {
+      "name": "adoption",
+      "source": "tools/architecture-lab/apple/adoption.ts",
+      "sourceSha256": "e91edd67212d2dc9a245c8ce4bf4b7ff7af1ca8e9c36b464d557f895a36d1922",
+      "emittedSha256": "5fd8c7032be865fb6d80a86401f1de2b698a7662c9b7fdfee4206369885be097",
+      "proposalSha256": "a4e44b378a64db213d2ce7a8af59ce7012a14550e00aa1c7b1c7087cba7d1ab8"
+    },
+    {
+      "name": "bundle-codec",
+      "source": "tools/architecture-lab/apple/bundle-codec.ts",
+      "sourceSha256": "04c0cd4f27275353aea1470d74a6da838d9712a368722f5a8602d7a432663fa6",
+      "emittedSha256": "6a68bd9a33042c8c99c8ed3b49e7a9396f15abf30703ad990770616ae3d8fe78",
+      "proposalSha256": "5c335f6bc79225048f1bb237943efd9b5092590735d48813c09060982e9f1c6f"
+    },
+    {
+      "name": "content-owner",
+      "source": "tools/architecture-lab/apple/content-owner.ts",
+      "sourceSha256": "b506e5158a1e6e4882fb380e79b2e4367f12923fffa25292829890dc0440302b",
+      "emittedSha256": "e469190620ad61eb4b885b9c856c0668c365427bf2e7f485ef3da250076d4cea",
+      "proposalSha256": "eec70853dd6bb8f1d7ce891fde1e2c34064d9d420273ac90f6930d23c6d71280"
+    },
+    {
+      "name": "apple-preparation",
+      "source": "tools/architecture-lab/apple/apple-preparation.ts",
+      "sourceSha256": "7e6601c6648d3fc4191c454b60f957df7e1988711ad99c147642d1983b35d7d4",
+      "emittedSha256": "893a1a9f3cbb78289bdfde51779e2898666bbf5cb9c18679cd4cea555162f057",
+      "proposalSha256": "505cd760b6ef9b448112237800a905a4b2276f3fb518ed00c83d570dbed223c0"
+    },
+    {
+      "name": "public-api",
+      "source": "tools/architecture-lab/apple/public-api.ts",
+      "sourceSha256": "fe09bb835efc3e4015722009fb05931ead43c00bfafb22a3a225d083e6ed6c22",
+      "emittedSha256": "4141a4b4ee8f3ecc469422ef024b577fe449e6e3f2806609ac14e389bbb1564c",
+      "proposalSha256": "d10897103fbec78312d5a1e06dcbee2f00a4344b3e69cc53b08589b67aeddd84"
+    }
+  ],
+  "selectedProducer": {
+    "version": "0.6.3",
+    "revision": "ef29a087baac8bdbcd90a54bb62a2dceb739dd91",
+    "evidence": "../upstream/published-consumer.json"
+  }
+}

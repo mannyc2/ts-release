@@ -1,0 +1,38 @@
+{
+  "schema": "apple-research-upstream-build/1",
+  "revision": "dd39bd6104645d79fa52f40d0bbf291b5bf8f3dc",
+  "stage": "/tmp/ts-release-pr24-adoption-hx9Dm5",
+  "effectVersion": "4.0.0-rc.108",
+  "declarationPatch": "patches/effect@4.0.0-rc.108.patch",
+  "compiler": "Version 6.0.3",
+  "strictDeclarations": true,
+  "configOverrides": {
+    "lib": [
+      "ES2022",
+      "DOM",
+      "ESNext.Disposable"
+    ],
+    "tsBuildInfoFile": "temporary tree"
+  },
+  "packingNormalization": {
+    "effect-build-apple.dependencies.effect-build": "workspace:^ -> ^0.6.0"
+  },
+  "packages": [
+    {
+      "name": "effect-build",
+      "version": "0.6.0",
+      "path": "/tmp/ts-release-pr24-adoption-hx9Dm5/artifacts/effect-build-0.6.0.tgz",
+      "sha256": "d83300490ba73b65598b50b726470629338dd76947bea70ef01b338742834499",
+      "bytes": 47089,
+      "packed": "/tmp/ts-release-pr24-adoption-hx9Dm5/artifacts/effect-build-0.6.0.tgz"
+    },
+    {
+      "name": "effect-build-apple",
+      "version": "0.6.0",
+      "path": "/tmp/ts-release-pr24-adoption-hx9Dm5/artifacts/effect-build-apple-0.6.0.tgz",
+      "sha256": "c4f2d86e777b667db06a139bed9cbfbbbd82019126172d7f2b11bc72b1529ad0",
+      "bytes": 50772,
+      "packed": "/tmp/ts-release-pr24-adoption-hx9Dm5/artifacts/effect-build-apple-0.6.0.tgz"
+    }
+  ]
+}

@@ -1,0 +1,280 @@
+{
+  "schema": "apple-adoption-lab-run/1",
+  "consumer": "/tmp/ts-release-packed-adopter-aGHWZI",
+  "upstream": [
+    {
+      "name": "effect-build",
+      "version": "0.6.0",
+      "path": "/tmp/ts-release-pr24-adoption-hx9Dm5/artifacts/effect-build-0.6.0.tgz",
+      "sha256": "d83300490ba73b65598b50b726470629338dd76947bea70ef01b338742834499",
+      "bytes": 47089,
+      "packed": "/tmp/ts-release-pr24-adoption-hx9Dm5/artifacts/effect-build-0.6.0.tgz"
+    },
+    {
+      "name": "effect-build-apple",
+      "version": "0.6.0",
+      "path": "/tmp/ts-release-pr24-adoption-hx9Dm5/artifacts/effect-build-apple-0.6.0.tgz",
+      "sha256": "c4f2d86e777b667db06a139bed9cbfbbbd82019126172d7f2b11bc72b1529ad0",
+      "bytes": 50772,
+      "packed": "/tmp/ts-release-pr24-adoption-hx9Dm5/artifacts/effect-build-apple-0.6.0.tgz"
+    }
+  ],
+  "dependencyAssembly": "Actual upstream and dependency tarballs installed by Bun into a fresh graph, with loopback-only registry and no symlink backend. No registry availability or publication claimed.",
+  "dependencies": [
+    {
+      "name": "effect",
+      "version": "4.0.0-rc.108",
+      "sha256": "80c1f1d7442ac696a1f1e70c07d6e150b17bdb236cccefc4edbf333429ef77a2"
+    },
+    {
+      "name": "@standard-schema/spec",
+      "version": "1.1.0",
+      "sha256": "34aea9a00621871c73d9600e3eb61abadae3bf5f2c3f84b99c66e4ce20550078"
+    },
+    {
+      "name": "fast-check",
+      "version": "4.9.0",
+      "sha256": "c8b9096bb27ed99a2bd60d13004f505c8f74c02a99164bc6e0d1e1870a77bb86"
+    },
+    {
+      "name": "pure-rand",
+      "version": "8.4.0",
+      "sha256": "a44093b7664ca8e477611dbec521ea5b4a10c9e625141929e3c00103de81045b"
+    },
+    {
+      "name": "kubernetes-types",
+      "version": "1.30.0",
+      "sha256": "b3c7ff012e8a37fb6693b6060b16ecb7d144a2cac92fff8e21c63bb710d541c5"
+    },
+    {
+      "name": "msgpackr",
+      "version": "2.0.4",
+      "sha256": "2cdbde643f1df7906b2023fe5a133efbb263744883b5f20c7b93b384b74e31dc"
+    },
+    {
+      "name": "uuid",
+      "version": "14.0.2",
+      "sha256": "50b41eac1c77957729776b5db45dfc0a4fcaa84ee34f9434d7b08ae3290510d4"
+    },
+    {
+      "name": "@effect/platform-node",
+      "version": "4.0.0-rc.108",
+      "sha256": "2cade7deb5f04ffcbba764a4beacd20264a8651410ad0f106d657b7dd7ae8511"
+    },
+    {
+      "name": "mime",
+      "version": "4.1.0",
+      "sha256": "e568952c7e66ab3e12d8cf0aad2f1147d16a13f2146722380c2a52614e46afe5"
+    },
+    {
+      "name": "undici",
+      "version": "8.10.1",
+      "sha256": "db9c7d982f59f093cccad5d6a99bda01ba3917d43e1ee16114e6078bc7784e35"
+    },
+    {
+      "name": "@effect/platform-node-shared",
+      "version": "4.0.0-rc.108",
+      "sha256": "895fac490d7b369e885132b15aa374b86a2aede3560cf5782f085a156521d1f3"
+    },
+    {
+      "name": "@types/ws",
+      "version": "8.18.1",
+      "sha256": "7c773e436d2f3edac568217ef9f71b1fdb38db794cee3029ced8bf9b9c7922e2"
+    },
+    {
+      "name": "@types/node",
+      "version": "25.9.3",
+      "sha256": "bc0b308df83f76fc230af4b3e1a569bc9cea3ddce8d186622f85b52867efa356"
+    },
+    {
+      "name": "undici-types",
+      "version": "7.24.6",
+      "sha256": "630d3b6496012eb6d7716e43385551a4ea71e3a20a5fa3bf35bd4e16a0c53c70"
+    },
+    {
+      "name": "ws",
+      "version": "8.21.3",
+      "sha256": "4c2bb1beac0668425e5b25163818840313c5c052b3fcbd156055ce88b935fd40"
+    },
+    {
+      "name": "ioredis",
+      "version": "5.11.1",
+      "sha256": "c1caa40bb94108cab5864bc7e6a63f1ba37ab6f33e301624e3e2b7aae6e96bb6"
+    },
+    {
+      "name": "@ioredis/commands",
+      "version": "1.10.0",
+      "sha256": "2e49be92eedab71b0217799465a173e1e9afa9c9a631993fa7530f19219b4a7a"
+    },
+    {
+      "name": "cluster-key-slot",
+      "version": "1.1.1",
+      "sha256": "af0194d390599fd1d96197f4f8e5d1fdc0177a457ff32278abff04d278ba88d2"
+    },
+    {
+      "name": "debug",
+      "version": "4.4.3",
+      "sha256": "f68c2f3c21008d93370e6716eea958d822e2290dc27f47265458b139215c8e93"
+    },
+    {
+      "name": "ms",
+      "version": "2.1.3",
+      "sha256": "3ca422631da03629797b50a2a857863e038e5e6848d9b63545c8769ec9f73c54"
+    },
+    {
+      "name": "denque",
+      "version": "2.1.0",
+      "sha256": "02d3825eecc80f8481d75a0df9ca3f06cd8a96970d19c155f8bd9142e45e6c22"
+    },
+    {
+      "name": "redis-errors",
+      "version": "1.2.0",
+      "sha256": "47a7c96db202f0333ab9aefade2b5a8a2cf10044a751360b968f4b0b47864aaa"
+    },
+    {
+      "name": "redis-parser",
+      "version": "3.0.0",
+      "sha256": "6a7ccfbd3d89d5724de18ccd85c8661ea136cd1861e54a856761a2a83eeca7c4"
+    },
+    {
+      "name": "standard-as-callback",
+      "version": "2.1.0",
+      "sha256": "a373594de7249e8f45fc0a23c034f1fc89221ea2b498633b93ddbb2b9660ee39"
+    },
+    {
+      "name": "bun-types",
+      "version": "1.3.14",
+      "sha256": "2961e0eb8d845c9feba4b7b4464cbc6533abf82ed0c22229fc14a2f9dd6aa0ef"
+    }
+  ],
+  "strictEmittedConsumer": true,
+  "adoption": {
+    "schema": "adoption-experiment/1",
+    "checks": [
+      "real-finalizer-file-adoption",
+      "ordinary-file-delivery-mode-and-native-provenance-retained",
+      "real-tree-finalizer-and-verified-snapshot",
+      "root-directory-executable-modes",
+      "symlink-preserved-not-followed",
+      "shared-content-distinct-entries",
+      "exact-upstream-manifest-vector",
+      "finalization-severs-caller-array-alias",
+      "finalized-artifact-and-container-frozen",
+      "path-free-durable-roundtrip",
+      "strict-durable-bundle-load-and-real-tree-restore",
+      "durable-mode-tamper-rejected",
+      "durable-manifest-tamper-rejected",
+      "durable-escaping-symlink-rejected",
+      "durable-cyclic-symlink-rejected",
+      "durable-duplicate-entry-rejected",
+      "durable-duplicate-key-rejected",
+      "tree-capacity-overflow-rejected-before-filesystem-layer-or-allocation",
+      "actual-95971456-byte-selected-product-streaming-adoption-and-load",
+      "producer-file-tamper-rejected",
+      "producer-mutation-cannot-change-owned-content",
+      "reader-mutation-cannot-change-owned-content",
+      "duplicate-logical-identity-rejected",
+      "case-colliding-logical-identity-rejected",
+      "unsafe-logical-name-rejected",
+      "false-unbounded-byte-count-rejected",
+      "unbounded-decimal-codec-without-number-narrowing",
+      "tree-manifest-tamper-rejected",
+      "tree-entry-mode-forgery-rejected",
+      "tree-duplicate-entry-rejected",
+      "escaping-tree-symlink-rejected",
+      "producer-tree-tamper-rejected",
+      "tampered-growing-tree-read-stops-at-declared-budget",
+      "owned-store-tamper-rejected"
+    ],
+    "passed": 34,
+    "skippedChecks": [],
+    "selectedProduct": {
+      "available": true,
+      "path": "/mnt/models/dev/ts-release/.release/pypi-real-NrE6Nc/inputs/linux-x64",
+      "bytes": "95971456",
+      "sha256": "57a92b36ea735daf93fbbb4bdc1ab069b0c7ea402d07eb982b4fca99694d08a5",
+      "provenance": "Existing local .release artifact; this does not independently qualify its compiler or native signing lineage"
+    },
+    "nativeAppleAcceptance": false,
+    "source": "real emitted PR24 effect-build package"
+  },
+  "adoptionNode": {
+    "schema": "adoption-experiment/1",
+    "checks": [
+      "real-finalizer-file-adoption",
+      "ordinary-file-delivery-mode-and-native-provenance-retained",
+      "real-tree-finalizer-and-verified-snapshot",
+      "root-directory-executable-modes",
+      "symlink-preserved-not-followed",
+      "shared-content-distinct-entries",
+      "exact-upstream-manifest-vector",
+      "finalization-severs-caller-array-alias",
+      "finalized-artifact-and-container-frozen",
+      "path-free-durable-roundtrip",
+      "strict-durable-bundle-load-and-real-tree-restore",
+      "durable-mode-tamper-rejected",
+      "durable-manifest-tamper-rejected",
+      "durable-escaping-symlink-rejected",
+      "durable-cyclic-symlink-rejected",
+      "durable-duplicate-entry-rejected",
+      "durable-duplicate-key-rejected",
+      "tree-capacity-overflow-rejected-before-filesystem-layer-or-allocation",
+      "actual-95971456-byte-selected-product-streaming-adoption-and-load",
+      "producer-file-tamper-rejected",
+      "producer-mutation-cannot-change-owned-content",
+      "reader-mutation-cannot-change-owned-content",
+      "duplicate-logical-identity-rejected",
+      "case-colliding-logical-identity-rejected",
+      "unsafe-logical-name-rejected",
+      "false-unbounded-byte-count-rejected",
+      "unbounded-decimal-codec-without-number-narrowing",
+      "tree-manifest-tamper-rejected",
+      "tree-entry-mode-forgery-rejected",
+      "tree-duplicate-entry-rejected",
+      "escaping-tree-symlink-rejected",
+      "producer-tree-tamper-rejected",
+      "tampered-growing-tree-read-stops-at-declared-budget",
+      "owned-store-tamper-rejected"
+    ],
+    "passed": 34,
+    "skippedChecks": [],
+    "selectedProduct": {
+      "available": true,
+      "path": "/mnt/models/dev/ts-release/.release/pypi-real-NrE6Nc/inputs/linux-x64",
+      "bytes": "95971456",
+      "sha256": "57a92b36ea735daf93fbbb4bdc1ab069b0c7ea402d07eb982b4fca99694d08a5",
+      "provenance": "Existing local .release artifact; this does not independently qualify its compiler or native signing lineage"
+    },
+    "nativeAppleAcceptance": false,
+    "source": "real emitted PR24 effect-build package"
+  },
+  "apple": {
+    "schema": "apple-lifecycle-experiment/1",
+    "passed": 16,
+    "checks": [
+      "process-restart-after-append-preserves-dispatch-uncertainty",
+      "process-restart-after-send-preserves-dispatch-uncertainty",
+      "process-restart-after-receipt-preserves-dispatch-uncertainty",
+      "typed-public-pre-id-loss-never-guesses-or-resubmits",
+      "missing-explicit-journal-context-rejected-before-native-call",
+      "persisted-public-submission-polled-after-restart",
+      "staple-assess-before-final-adoption",
+      "valid-plan-for-wrong-final-bundle-rejected-before-publication",
+      "ready-to-plan-does-not-repeat-local-transforms",
+      "one-physical-journal-global-cas-through-publication",
+      "one-persisted-publication-plan-with-transient-producer-view",
+      "late-producer-observation-preserved-without-changing-final-plan",
+      "changed-preparation-rejected-before-native-call",
+      "concurrent-unvalidated-prefix-cannot-select-ready-or-final-plan",
+      "two-process-distinct-final-bytes-select-one-ready-by-global-cas",
+      "assessment-failure-prevents-ready-and-publication-plan"
+    ],
+    "nativeOperations": "Explicit protocol doubles behind actual packed public Notary, Staple and Assess service operations; actual tree finalization and ownership transfer.",
+    "nativeAppleAcceptance": false,
+    "processRestart": true,
+    "samePhysicalJournal": true,
+    "journalEventKinds": 6,
+    "persistedPublicationPlans": 1
+  },
+  "finalAppleIncrementalValidation": "Same clean packed consumer; unchanged producer/dependency graph, re-emitted final Apple source after cold-review exact-prefix correction"
+}

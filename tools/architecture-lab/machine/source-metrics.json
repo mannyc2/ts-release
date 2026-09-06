@@ -1,0 +1,162 @@
+{
+  "format": "machine-source-measurement/1",
+  "method": "Actual source newline counts and TypeScript printer-normalized lines are separate diagnostics; neither is semantic-source/v3. Hash tree is SHA-256 of JSON sorted path/file-hash records. Extension LCS costs include both candidate edits and whole migration module; topologies separately count physical package/export/consumer edits.",
+  "typescript": "6.0.3",
+  "treeSha256": "25f02ed605cb054888f5aad37f55f26732d0ad57fad595eafa1483502bebd435",
+  "files": [
+    {
+      "path": "contracts.ts",
+      "sha256": "ffd043b77f764397491834bbde371709a608c7dd6ba2bfebf39db2ea9d9c0b1c",
+      "utf8Bytes": 9068,
+      "physicalLines": 221,
+      "printerNormalizedLines": 248,
+      "astNodes": 1330,
+      "branches": 0
+    },
+    {
+      "path": "core-git.ts",
+      "sha256": "7a58500b527478c640e7a9fb5e19a1212c3c5bf155584ab2e3ea56ef4a43ac26",
+      "utf8Bytes": 4761,
+      "physicalLines": 71,
+      "printerNormalizedLines": 85,
+      "astNodes": 765,
+      "branches": 14
+    },
+    {
+      "path": "identity.ts",
+      "sha256": "1aed5715192386ae13a110f135f630d34320b74eeb1129eac3c2f3eed0fff871",
+      "utf8Bytes": 17408,
+      "physicalLines": 270,
+      "printerNormalizedLines": 295,
+      "astNodes": 2928,
+      "branches": 59
+    },
+    {
+      "path": "index.ts",
+      "sha256": "f42aa594aeb0814f44d7e885f64a6db9dee51f7dc611deac60c2feae46a4f58e",
+      "utf8Bytes": 547,
+      "physicalLines": 10,
+      "printerNormalizedLines": 6,
+      "astNodes": 65,
+      "branches": 0
+    },
+    {
+      "path": "m1-history.ts",
+      "sha256": "06b99aeafe591e44763c11bd233ee179d32b1151f6bc229890da29bedb62720c",
+      "utf8Bytes": 7926,
+      "physicalLines": 105,
+      "printerNormalizedLines": 119,
+      "astNodes": 1516,
+      "branches": 40
+    },
+    {
+      "path": "m2-transition.ts",
+      "sha256": "3ebc61b0d800986d2cfbd1d894793ef1536616009b85e792fb80ac5b828416f0",
+      "utf8Bytes": 9547,
+      "physicalLines": 154,
+      "printerNormalizedLines": 187,
+      "astNodes": 1678,
+      "branches": 38
+    },
+    {
+      "path": "model.ts",
+      "sha256": "e164be3adcc3b8f04a947b5f7f670550bb1c225e5b5b0140cb9715bb91e9c89d",
+      "utf8Bytes": 1317,
+      "physicalLines": 23,
+      "printerNormalizedLines": 27,
+      "astNodes": 214,
+      "branches": 0
+    },
+    {
+      "path": "run.ts",
+      "sha256": "7f4d6ce57fdc3df93530b96255152511cea060c1352d359f98fc98d741bbc7b2",
+      "utf8Bytes": 15848,
+      "physicalLines": 235,
+      "printerNormalizedLines": 263,
+      "astNodes": 2807,
+      "branches": 43
+    }
+  ],
+  "totals": {
+    "physicalLines": 1089,
+    "printerNormalizedLines": 1230,
+    "utf8Bytes": 66422
+  },
+  "extensions": [
+    {
+      "id": "P04",
+      "beforeTreeSha256": "cab85ab7f7aa86acab3a288ca4897e168cc55bb0cb5487be7e1870d652dc9afc",
+      "afterTreeSha256": "25f02ed605cb054888f5aad37f55f26732d0ad57fad595eafa1483502bebd435",
+      "changedFiles": [
+        {
+          "path": "contracts.ts",
+          "added": 2,
+          "removed": 0
+        },
+        {
+          "path": "identity.ts",
+          "added": 2,
+          "removed": 1
+        },
+        {
+          "path": "m1-history.ts",
+          "added": 2,
+          "removed": 1
+        },
+        {
+          "path": "m2-transition.ts",
+          "added": 4,
+          "removed": 3
+        },
+        {
+          "path": "run.ts",
+          "added": 2,
+          "removed": 1
+        }
+      ],
+      "physicalAdded": 12,
+      "physicalRemoved": 6,
+      "patchSha256": "a353691766491aa69cfc1fa795c16224830e2ef243a35de22b9898e0a5257f02"
+    },
+    {
+      "id": "P09",
+      "beforeTreeSha256": "16789ff91f32ffed1a4900643e116e815b3c671f3cf2d3817ed35c6110740b81",
+      "afterTreeSha256": "20eb4b595c9b99ece7e9100cddd830b5c48f34a50cd0e12fc5fd72884d453258",
+      "changedFiles": [
+        {
+          "path": "contracts.ts",
+          "added": 1,
+          "removed": 1
+        },
+        {
+          "path": "index.ts",
+          "added": 2,
+          "removed": 0
+        },
+        {
+          "path": "m1-history.ts",
+          "added": 0,
+          "removed": 1
+        },
+        {
+          "path": "m2-transition.ts",
+          "added": 0,
+          "removed": 1
+        },
+        {
+          "path": "run.ts",
+          "added": 2,
+          "removed": 2
+        },
+        {
+          "path": "recovery-migration.ts",
+          "added": 42,
+          "removed": 0
+        }
+      ],
+      "physicalAdded": 47,
+      "physicalRemoved": 5,
+      "patchSha256": "99b798dac0777d74b9130f38948fe08ce24cce30e55a8ad8d71d1ad6ea6495af"
+    }
+  ]
+}

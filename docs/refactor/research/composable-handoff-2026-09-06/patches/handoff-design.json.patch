@@ -1,0 +1,100 @@
+--- /mnt/models/dev/ts-release/docs/refactor/architecture-program/handoff/design.json	2026-09-05 23:08:53.250059375 +0000
++++ design.json	2026-09-06 18:10:25.944687056 +0000
+@@ -1,8 +1,8 @@
+ {
+   "format": "proposed-release-design/1",
+-  "status": "proposal-pending-maintainer-selection-production-not-implemented",
++  "status": "proposal-amended-2026-09-06-composable-handoff-pending-maintainer-selection-production-not-implemented",
+   "selection": { "machine": "M1", "topology": null, "marginalPolicy": null },
+-  "recommendation": { "topology": "T3", "reason": "Retain separate provider installation and ownership boundaries; the measured alternatives are incomparable, not a fabricated Pareto winner.", "marginalPolicy": { "sourcePlusMetadataMedianAtMost": 45, "p90AtMost": 100, "maximumAtMost": 200, "configurationOnlyObservationsAllowed": true, "status": "proposed-amendment-not-approved" } },
++  "recommendation": { "topology": "T3c", "reason": "Kernel keeps the @mannyc1/ts-release identity and bin. Group coherent capabilities under subpaths; use separate packages where independent consumption, dependencies or substantial public APIs justify the boundary. The user approved Homebrew and Scoop as catalog subpaths and OpenAI as its own package; npm, pypi, github and mcp remain separate. Shared Git delivery stays in the kernel.", "marginalPolicy": { "typescriptMedianAtMost": 40, "typescriptP90AtMost": 100, "typescriptMaximumAtMost": 200, "metadataMedianAtMost": 5, "metadataP90AtMost": 25, "configurationOnlyObservationsAllowed": true, "measured2026-09-06": { "typescriptMedianAfterKernelHttpRelocation": { "T1": 37, "T2": 37, "T3": 37 }, "metadataLaneMedian": 0, "metadataLaneP90": 19, "evidence": "plans/research/composable-handoff/experiments/helper-relocation" }, "status": "proposed-amendment-not-approved" } },
+   "version": "0.4.0",
+   "coordinatesStatus": "proposed-unpublished-recheck-before-publication",
+   "packageCoordinateAuthority": "docs/refactor/architecture-program/handoff/package-coordinates.json",
+@@ -11,13 +11,15 @@
+   "providerPackagePrefix": "@mannyc1/ts-release-",
+   "modulePathConvention": "Core-owned catalog paths are relative to alternatives[].coreDirectory; application paths are repository-relative. layout.json resolves every path without executor choices.",
+   "engines": { "node": "^22.22.2 || ^24.15.0 || >=26.0.0", "bun": ">=1.3.14" },
++  "peerPolicy": { "effect": ">=4.0.0-rc.108 <4.1.0-0", "@effect/platform-node": ">=4.0.0-rc.108 <4.1.0-0", "@effect/platform-bun": ">=4.0.0-rc.108 <4.1.0-0", "effect-build-apple": "0.6.3", "kernelEdge": "peerDependencies-range", "kernelPeerRange": ">=0.4.0 <0.5.0", "runtimeContract": "ts-release/provider/1", "basis": "scripts/lib/versions.ts:49-50; plans/research/composable-handoff/experiments/peer-skew/results.md" },
+   "pins": { "effect": "4.0.0-rc.108", "effect-build": "0.6.3", "effect-build-apple": "0.6.3", "@effect/platform-node": "4.0.0-rc.108", "@effect/platform-bun": "4.0.0-rc.108", "semver": "7.8.5", "sigstore": "5.0.0", "typescript": "6.0.3", "bun": "1.3.14", "bun-types": "1.3.14", "@types/semver": "7.7.1" },
+   "effectPatch": { "required": false, "path": "patches/effect@4.0.0-rc.108.patch", "proof": "docs/refactor/architecture-program/handoff/upstream/unpatched-effect-consumer.json", "scope": "Historical donor/research patch only. Official unpatched rc.108 passes the selected API and actual published producer consumer; omit patchedDependencies from the proposed manifest. The negative control confirms the donor-only private Param declaration is absent." },
+   "machineEvidence": { "selectedM1InclusivePhysicalLines": 935, "wholeExperimentalKernelPhysicalLines": 1089, "treeSha256": "25f02ed605cb054888f5aad37f55f26732d0ad57fad595eafa1483502bebd435", "interpretation": "Measured whole selected prototype, not the sum of a wrapper or a full-production forecast." },
+   "alternatives": [
+     { "id": "T1", "coreDirectory": ".", "providerPackaging": "root", "description": "One root public package with provider subpaths", "publicPackageCount": 1 },
+     { "id": "T2", "coreDirectory": "packages/kernel", "providerPackaging": "aggregate", "description": "Private workspace root; packages/kernel plus one aggregate provider package", "publicPackageCount": 2 },
+-    { "id": "T3", "coreDirectory": "packages/kernel", "providerPackaging": "separate", "description": "Private workspace root; packages/kernel plus seven provider packages", "publicPackageCount": 8 }
++    { "id": "T3", "coreDirectory": "packages/kernel", "providerPackaging": "separate", "description": "Private workspace root; packages/kernel plus seven provider packages", "publicPackageCount": 8 },
++    { "id": "T3c", "coreDirectory": "packages/ts-release", "providerPackaging": "grouped-by-capability", "description": "Private workspace root; packages/ts-release kernel (keeps @mannyc1/ts-release and the bin) plus npm, pypi, github, mcp and openai packages, and one catalog package with homebrew and scoop subpaths", "publicPackageCount": 7 }
+   ],
+   "authorities": {
+     "kernel": "docs/refactor/architecture-program/handoff/kernel-api.d.ts",
+@@ -36,7 +38,7 @@
+     { "id": "kernel.Provider", "owner": "core", "path": "src/Provider.ts", "zone": "neutral", "dependencies": ["kernel.Model", "kernel.Error"] },
+     { "id": "kernel.Plan", "owner": "core", "path": "src/Plan.ts", "zone": "neutral", "dependencies": ["kernel.Model", "kernel.Provider", "kernel.Identity", "kernel.Error"] },
+     { "id": "kernel.Journal", "owner": "core", "path": "src/Journal.ts", "zone": "neutral", "dependencies": ["kernel.Model", "kernel.Provider", "kernel.Identity", "kernel.Error"] },
+-    { "id": "kernel.Decision", "owner": "core", "path": "src/internal/Decision.ts", "zone": "neutral", "dependencies": ["kernel.Model"] },
++    { "id": "kernel.Decision", "owner": "core", "path": "src/internal/Decision.ts", "zone": "neutral", "dependencies": ["kernel.Model"], "purpose": "Public evaluator seam: Machine/MachineConstructor types, the default history machine and the shared protected-replay law, exported by kernel.Entry. Applications may supply another evaluator through Host.machine; there is no evaluator registry." },
+     { "id": "kernel.Host", "owner": "core", "path": "src/internal/Host.ts", "zone": "neutral", "dependencies": ["kernel.Model", "kernel.Provider", "kernel.Journal"] },
+     { "id": "kernel.Release", "owner": "core", "path": "src/Release.ts", "zone": "neutral", "dependencies": ["kernel.Model", "kernel.Provider", "kernel.Plan", "kernel.Journal", "kernel.Decision", "kernel.Host", "kernel.GitAuthority", "kernel.Error"] },
+     { "id": "kernel.ArtifactModel", "owner": "core", "path": "src/internal/ArtifactModel.ts", "zone": "neutral", "dependencies": [], "externalImports": ["effect-build/Artifact"] },
+@@ -64,40 +66,40 @@
+     { "id": "host.Application", "owner": "core", "path": "src/platform/Application.ts", "zone": "host", "dependencies": ["kernel.Host", "kernel.Release", "kernel.Error"], "externalImports": ["node:path", "node:url"], "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import." },
+     { "id": "host.Node", "owner": "core", "path": "src/Node.ts", "zone": "node-host", "dependencies": ["host.GitJournal", "host.Http", "host.Content", "host.NativeGit", "host.Application"], "externalImports": ["@effect/platform-node/NodeServices"] },
+     { "id": "host.Bun", "owner": "core", "path": "src/Bun.ts", "zone": "bun-host", "dependencies": ["host.Sqlite", "host.GitJournal", "host.Http", "host.Content", "host.NativeGit", "host.Application"], "externalImports": ["@effect/platform-bun/BunServices"] },
+-    { "id": "kernel.Entry", "owner": "core", "path": "src/index.ts", "zone": "neutral", "dependencies": ["kernel.Error", "kernel.Model", "kernel.Provider", "kernel.Plan", "kernel.Journal", "kernel.Host", "kernel.GitAuthority", "kernel.Release"] },
++    { "id": "kernel.Entry", "owner": "core", "path": "src/index.ts", "zone": "neutral", "dependencies": ["kernel.Error", "kernel.Model", "kernel.Provider", "kernel.Plan", "kernel.Journal", "kernel.Host", "kernel.GitAuthority", "kernel.Release", "kernel.Decision"] },
+     { "id": "app.cli", "owner": "core", "path": "src/internal/CommandLine.ts", "zone": "cli-host", "dependencies": ["host.Application"], "externalImports": ["node:fs/promises"], "purpose": "One argument decoder and application loader used by the root bin and private CLI delivery workspace. The selected application provides its own host layers; CLI never auto-imports Node/Bun platform facades." },
+     { "id": "app.bin", "owner": "core", "path": "src/bin/ts-release.ts", "zone": "cli-host", "dependencies": ["app.cli"] },
+     { "id": "app.action", "owner": "action", "path": "apps/action/src/launcher.ts", "zone": "application", "dependencies": ["host.Node"], "externalImports": ["node:fs/promises"] },
+     { "id": "app.application", "owner": "self-release", "path": "apps/self-release/src/application.ts", "zone": "application", "dependencies": ["kernel.Entry", "kernel.Bundle", "kernel.EffectBuild", "kernel.Apple", "kernel.Git", "host.Node", "provider.npm", "provider.warehouse", "provider.github", "provider.homebrew", "provider.scoop", "provider.mcp", "provider.openai"] }
+   ],
+   "providers": [
+-    { "id": "npm", "namespace": "Npm", "dependencies": { "semver": "7.8.5", "sigstore": "5.0.0" }, "files": [
++    { "id": "npm", "package": "npm", "namespace": "Npm", "dependencies": { "semver": "7.8.5", "sigstore": "5.0.0" }, "files": [
+       { "name": "Model", "symbols": ["TokenAuthorization", "TrustedAuthorization", "Authorization", "ProvenanceSource", "NoProvenance", "GitHubActionsProvenance", "Provenance", "PublishIntent", "DistTagIntent", "PrivatePackage", "PublicPackage", "PackageCandidate", "AttestationRequest", "Attest"], "dependencies": ["kernel.Entry", "kernel.Bundle", "kernel.Http"] },
+       { "name": "Protocol", "symbols": ["publish", "distTag", "author", "definitions"], "dependencies": ["provider.npm.Model", "kernel.Entry", "kernel.Bundle", "kernel.Http"], "externalImports": ["semver"] },
+       { "name": "Auth", "symbols": ["authorizeToken", "authorizeTrusted", "makeSigstoreAttester", "createProvenance"], "dependencies": ["provider.npm.Model", "kernel.Entry", "kernel.Bundle", "kernel.Http"], "externalImports": ["sigstore"] }
+     ] },
+-    { "id": "warehouse", "namespace": "Warehouse", "dependencies": {}, "files": [
++    { "id": "warehouse", "package": "pypi", "namespace": "Warehouse", "dependencies": {}, "files": [
+       { "name": "Model", "symbols": ["PyPi", "TestPyPi", "Compatible", "Endpoint", "TokenAuthorization", "TrustedAuthorization", "Authorization", "WheelUpload", "SdistUpload", "UploadIntent"], "dependencies": ["kernel.Entry", "kernel.Bundle", "kernel.Http"] },
+       { "name": "Protocol", "symbols": ["upload", "definitions"], "dependencies": ["provider.warehouse.Model", "kernel.Entry", "kernel.Bundle", "kernel.Http"] },
+       { "name": "Auth", "symbols": ["authorizeToken", "authorizeTrusted"], "dependencies": ["provider.warehouse.Model", "kernel.Http"] }
+     ] },
+-    { "id": "github", "namespace": "GitHub", "dependencies": {}, "files": [
++    { "id": "github", "package": "github", "namespace": "GitHub", "dependencies": {}, "files": [
+       { "name": "Model", "symbols": ["Repository", "Tagger", "LightweightTag", "AnnotatedTag", "AnnotatedRef", "ManagedTag", "ExistingTag", "TagSource", "DraftIntent", "AssetIntent", "PublishIntent", "AnnotatedTagFacts", "RefFacts", "ReleaseFacts", "AssetFacts"], "dependencies": ["kernel.Entry", "kernel.Bundle"] },
+       { "name": "Protocol", "symbols": ["lightweightTag", "annotatedTag", "annotatedRef", "draft", "uploadAsset", "publish", "definitions"], "dependencies": ["provider.github.Model", "kernel.Entry", "kernel.Bundle", "kernel.Http"] },
+       { "name": "Auth", "symbols": ["authorizeToken"], "dependencies": ["provider.github.Model", "kernel.Http"] }
+     ] },
+-    { "id": "homebrew", "namespace": "Homebrew", "dependencies": {}, "files": [
++    { "id": "homebrew", "package": "catalog", "namespace": "Homebrew", "dependencies": {}, "files": [
+       { "name": "Formula", "symbols": ["Download", "Formula", "render"], "dependencies": ["kernel.Entry", "kernel.Bundle"] }
+     ] },
+-    { "id": "scoop", "namespace": "Scoop", "dependencies": {}, "files": [
++    { "id": "scoop", "package": "catalog", "namespace": "Scoop", "dependencies": {}, "files": [
+       { "name": "Manifest", "symbols": ["Download", "Manifest", "render"], "dependencies": ["kernel.Entry", "kernel.Bundle"] }
+     ] },
+-    { "id": "mcp", "namespace": "Mcp", "dependencies": {}, "files": [
++    { "id": "mcp", "package": "mcp", "namespace": "Mcp", "dependencies": {}, "files": [
+       { "name": "Model", "symbols": ["schemaUrl", "Input", "NamedInput", "PositionalArgument", "NamedArgument", "Argument", "Stdio", "StreamableHttp", "Sse", "Transport", "RemoteHttp", "RemoteSse", "Remote", "NpmPackage", "PyPiPackage", "NugetPackage", "OciPackage", "McpbPackage", "Package", "Repository", "Icon", "Manifest", "TokenAuthorization", "OidcAuthorization", "Authorization", "PublishIntent"], "dependencies": ["kernel.Entry", "kernel.Bundle", "kernel.Http"] },
+       { "name": "Protocol", "symbols": ["validate", "render", "publish", "definitions"], "dependencies": ["provider.mcp.Model", "kernel.Entry", "kernel.Bundle", "kernel.Http"] },
+       { "name": "Auth", "symbols": ["authorizeToken", "authorizeOidc"], "dependencies": ["provider.mcp.Model", "kernel.Http"] }
+     ] },
+-    { "id": "openai", "namespace": "OpenAi", "dependencies": { "semver": "7.8.5" }, "files": [
++    { "id": "openai", "package": "openai", "namespace": "OpenAi", "dependencies": { "semver": "7.8.5" }, "files": [
+       { "name": "Package", "symbols": ["SkillFile", "Skill", "Manifest", "PluginInput", "RenderedFile", "files", "validatePackage"], "dependencies": ["kernel.Entry", "kernel.Bundle"], "externalImports": ["semver"] },
+       { "name": "Marketplace", "symbols": ["MarketplaceEntry", "Marketplace", "marketplace"], "dependencies": ["provider.openai.Package", "kernel.Entry", "kernel.Bundle"] },
+       { "name": "Submission", "symbols": ["Listing", "PositiveTest", "NegativeTest", "Attestations", "Submission", "submission"], "dependencies": ["provider.openai.Package", "kernel.Entry", "kernel.Bundle"] }
+@@ -114,7 +116,10 @@
+     "GitCatalog.nativeHost is projected as makeGitCatalogHost only on node/bun entries; git remains provider-neutral.",
+     "Node never reaches Bun or bun:sqlite. Bun shares common hosts through direct imports, never through the Node facade.",
+     "Exports are explicit types/import conditions without wildcard or private-module access.",
+-    "Provider package dependencies use the exact core cohort; Effect is one aligned required peer. Optional platform/Apple peers are reached only through explicit entry points.",
++    "Provider packages declare the kernel as a range peer (>=0.4.0 <0.5.0) and carry the kernel provider-contract literal, which the Host verifies before any store or provider effect; Effect-family peers are ranges satisfied by exact dev pins. Optional platform/Apple peers are reached only through explicit entry points.",
++    "The application supplies evaluator, stores, transports, caches and providers through one Host; the kernel ships defaults (history machine, SQLite, Git) and no registry, allowlist or configuration language.",
++    "Every cache or index is derived from the one authoritative journal; a derived value is authoritative only at a revision equal to a fresh read, and no derived state can mint a dispatch permit.",
++    "A preparation scope selects one immutable output: a second Satisfied observation with different canonical evidence is illegal at append and on read; publication operations may be re-observed freely.",
+     "Default shipped stores are SQLite and Git. S3 model remains research; no AWS SDK dependency is introduced.",
+     "Production source and full package graphs remain proposed. Measured topology receipts qualified a smaller common fixture, not these full manifests."
+   ],

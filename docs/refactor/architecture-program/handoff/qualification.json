@@ -1,0 +1,3928 @@
+{
+  "format": "architecture-handoff-qualification/1",
+  "asOf": "2026-09-05",
+  "purpose": "Supplemental factual qualification and retained acceptance obligations; not a replacement green receipt in the frozen trial schema.",
+  "scope": {
+    "selectedProductOutcomes": 69,
+    "normalizedPropositions": 226,
+    "productionRefactorPerformed": false,
+    "publicationPerformed": false,
+    "rule": "No provider, S3 readiness, Apple upstream readiness, CLI or Action outcome is removed by small prototype coverage."
+  },
+  "inputBindings": [
+    {
+      "path": "docs/refactor/architecture-program/inputs/trial-spec.json",
+      "sha256": "a34cf7bc970707d73c5b3381205bde603a193e2174ff245c1ba782714707e9a3"
+    },
+    {
+      "path": "docs/refactor/architecture-program/inputs/ownership-decisions.json",
+      "sha256": "c8c9238b9d787f5a5978159bdbd10c82ce509174b643b11a8e665c4e52b5f5da"
+    },
+    {
+      "path": "docs/refactor/architecture-program/inputs/research-traceability.json",
+      "sha256": "3b0b1bcb162b4aa76829bf4e153e2e9ddd875885ad48d08146131403e1e35bbd"
+    },
+    {
+      "path": "docs/refactor/architecture-program/inputs/baseline.json",
+      "sha256": "8bbb7fbfa5b3e4b2165a98715e22ded0683606678214c7b0405341a9d64003f5"
+    }
+  ],
+  "statusMeaning": {
+    "established": "The specified local behavior has executable concrete evidence for the stated fixture scope; not production completion.",
+    "partial": "Some required behavior is evidenced, with an explicit unreplayed trace, missing metric, proposal or deployment obligation.",
+    "notClaimed": "The original frozen gate/trace receipt was not produced and must not be marked Passed."
+  },
+  "evidence": {
+    "E01": {
+      "paths": [
+        "tools/architecture-lab/machine/test/observable.test.ts",
+        "tools/architecture-lab/machine/test/boundaries.test.ts",
+        "tools/architecture-lab/machine/test/errors.test.ts",
+        "tools/architecture-lab/machine/test/process.test.ts",
+        "tools/architecture-lab/machine/test/git.test.ts",
+        "tools/architecture-lab/machine/event-sizes.json",
+        "tools/architecture-lab/machine/test/git-catalog.test.ts",
+        "tools/architecture-lab/machine/test/git-catalog-fixture.ts",
+        "tools/architecture-lab/machine/test/git-catalog-worker.ts"
+      ],
+      "commands": [
+        "bun test ./tools/architecture-lab/machine/test",
+        "bunx --no-install tsc -p tools/architecture-lab/machine/tsconfig.json"
+      ],
+      "establishes": "61 tests /364 assertions across genuinely separate M1 and M2, real local HTTP/process replacement/SQLite, conditional Git authority table and owned native object reconstruction; shared expected observations do not call candidate transitions. Final admission law rejects two publication scopes before all store/provider effects; two preparations and one publication retain globalCAS revisions0..5.",
+      "limits": "Concrete local cases, not exhaustive state-space proof, all provider outcomes, or all sixteen frozen exact traces in every topology.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/machine/test/observable.test.ts",
+          "sha256": "a2e74fe1fd909085bf94791108713ebeefe6df0ef9d5d1acd21989022122c0e7"
+        },
+        {
+          "path": "tools/architecture-lab/machine/test/boundaries.test.ts",
+          "sha256": "1340e2a46add2100174826bb75d261ab91a0a2a9d7dd7d2e6e9e821f76b65edd"
+        },
+        {
+          "path": "tools/architecture-lab/machine/test/errors.test.ts",
+          "sha256": "c891fa0811a4e95b833e2b18eb908712c65effc5eee521d201e8dce721b8d015"
+        },
+        {
+          "path": "tools/architecture-lab/machine/test/process.test.ts",
+          "sha256": "7803d4f66cab861db7d8b0cfb9317d6ab0b3e5c225baea6651326373b1f2ea7e"
+        },
+        {
+          "path": "tools/architecture-lab/machine/test/git.test.ts",
+          "sha256": "da3e3fd806672d349f732b1740cd0f21af9a594d559c4ba8cc63ee2e9a060b3c"
+        },
+        {
+          "path": "tools/architecture-lab/machine/event-sizes.json",
+          "sha256": "6b7ebffd9175fede7828439239ef49bda5dabd5d073e39145e3125995d339596"
+        },
+        {
+          "path": "tools/architecture-lab/machine/test/git-catalog.test.ts",
+          "sha256": "a97c844fd5cd4fb771bfcac48457ba02b646ef27fda865b0abb257147a8cd106"
+        },
+        {
+          "path": "tools/architecture-lab/machine/test/git-catalog-fixture.ts",
+          "sha256": "14b1b739a59bb67dbeb1bf77c895958173c9e8d9fcfb1eda185320824d9557c2"
+        },
+        {
+          "path": "tools/architecture-lab/machine/test/git-catalog-worker.ts",
+          "sha256": "880672cd5909b212af44f1453a03e0da08e8afe9d830691380044876c07d8710"
+        }
+      ]
+    },
+    "E02": {
+      "paths": [
+        "tools/architecture-lab/storage/stores.test.ts",
+        "tools/architecture-lab/storage/protocol.ts",
+        "tools/architecture-lab/storage/sqlite.ts",
+        "tools/architecture-lab/storage/git.ts"
+      ],
+      "commands": [
+        "bun test ./tools/architecture-lab/storage/stores.test.ts"
+      ],
+      "establishes": "15 tests /67 assertions: real SQLite/Git CAS races, exact idempotency, complete events, crash rollback, Git same-target no-op/refusal, shared scope revision and exact proposed 1 MiB /plus-one-byte reads/writes after reopening.",
+      "limits": "Local database and bare Git; no hosted GitHub permissions/forks/ref retention, network filesystem qualification, S3/WORM deployment, or proof that all legitimate native payloads fit.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/storage/stores.test.ts",
+          "sha256": "3a4ccef187186a9a582e9e93019c1e5d94d458c5dd59aa6580d68ab223f92cb5"
+        },
+        {
+          "path": "tools/architecture-lab/storage/protocol.ts",
+          "sha256": "1f9a814b9bcf4dec8d8a57bc18058431ee15602960a7d34cd01f20f38d52de8f"
+        },
+        {
+          "path": "tools/architecture-lab/storage/sqlite.ts",
+          "sha256": "4bdb8f9ff520bf2beb20bda838b5e1ae96c9950890b9bb0217862fc2e2093052"
+        },
+        {
+          "path": "tools/architecture-lab/storage/git.ts",
+          "sha256": "15cf25c7987c8380a0c3573594b0f6d9118128a1509b9a062381c507776c59a3"
+        }
+      ]
+    },
+    "E03": {
+      "paths": [
+        "tools/architecture-lab/integration/dependencies.test.ts",
+        "tools/architecture-lab/integration/dependency-worker.ts"
+      ],
+      "commands": [
+        "bun test ./tools/architecture-lab/integration"
+      ],
+      "establishes": "4 tests /26 assertions: actual localhost create-release native ID41, fresh process loads same Plan/SQLite and uploads using exact declared dependency receipt; changed ID99 rejects without upload.",
+      "limits": "GitHub-shaped protocol proof; no GitHub API, credentials or all native workflow acceptance.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/integration/dependencies.test.ts",
+          "sha256": "ca7337f87a9c68cdf3f283a587601024c1b9d60b9edca51f7743b50b472e183b"
+        },
+        {
+          "path": "tools/architecture-lab/integration/dependency-worker.ts",
+          "sha256": "d3637364bacf30cb07df30eca20ac5da8e3e94bf7c50313b989664b7a3219f65"
+        }
+      ]
+    },
+    "E04": {
+      "paths": [
+        "tools/architecture-lab/topology/results.json",
+        "tools/architecture-lab/topology/run.mjs",
+        "tools/architecture-lab/topology/consumer.ts",
+        "tools/architecture-lab/topology/owned-consumer.ts"
+      ],
+      "commands": [
+        "bun tools/architecture-lab/topology/run.mjs"
+      ],
+      "establishes": "Final combined source c653f05d28e8e968b79cdd09f6ec79d36f60163b32995303ab61a2de0474244b:60 primary runtime scenarios,6 owned Bundle publication slices,6 full34-check upstream adoption fixtures,6 scoped lifecycle scenarios and6 realnative cancellation/fresh-resume scenarios. Every cancellation records1nativewrite, peerconnectionclosed,1Started/0Receipt and fresh corresponding observationSatisfied/0resends. Actual tarball installs across T1/T2/T3 under Node/Bun.",
+      "limits": "Local HTTP/npm-registry fixtures; no registry publication, hosted Action, full production CLI/binary flags or complete 69-outcome self-release.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/topology/results.json",
+          "sha256": "2ab7e1e9b1784fb1820cb1d649d422f233f53cf530a90bedd3915489244de512"
+        },
+        {
+          "path": "tools/architecture-lab/topology/run.mjs",
+          "sha256": "6e2363a5ec31134fd3ac9327440418f11c1549e87093d74f81df6324dbb78848"
+        },
+        {
+          "path": "tools/architecture-lab/topology/consumer.ts",
+          "sha256": "34b16fdf8b307dc236669a53f9f658dcab6becff84806b8d1e0bb2f170290777"
+        },
+        {
+          "path": "tools/architecture-lab/topology/owned-consumer.ts",
+          "sha256": "c70a2c44e24abb8284e8520b94092e1ce734db57e3267ce411e8c32ceb46186a"
+        }
+      ]
+    },
+    "E05": {
+      "paths": [
+        "tools/architecture-lab/topology/extension-results.json",
+        "tools/architecture-lab/topology/probes.mjs",
+        "tools/architecture-lab/topology/metric-results.json",
+        "tools/architecture-lab/topology/metrics.mjs"
+      ],
+      "commands": [
+        "bun tools/architecture-lab/topology/probes.mjs",
+        "bun tools/architecture-lab/topology/metrics.mjs"
+      ],
+      "establishes": "Nine integrated before/after changes in each installed topology, with actual consumer behavior, complete source patches and separate metadata/emitted lanes.",
+      "limits": "Counterfactual research before variants for P04/P09, not historical product releases. P01 is zero source change; exact old nonzero population is not satisfied. No complete frozen candidate-role metric receipt.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/topology/extension-results.json",
+          "sha256": "f093b15cd43110ff4902c159f3e5ea63d842c1fe4746f6e678b273cd58373ab6"
+        },
+        {
+          "path": "tools/architecture-lab/topology/probes.mjs",
+          "sha256": "5330db4bcc0ee7f7aed5d362532570440234a36f1d7a4deac001374d8549ca8d"
+        },
+        {
+          "path": "tools/architecture-lab/topology/metric-results.json",
+          "sha256": "76e00cde85d6d3e8e9ec993a7eed076956fe2a2b64f4f1fb231aba2d40dce695"
+        },
+        {
+          "path": "tools/architecture-lab/topology/metrics.mjs",
+          "sha256": "3ade4ccdf7d35e8de9c6fac38af69c9bc1150fe5294cc9f09aa1421e1c100fb4"
+        }
+      ]
+    },
+    "E06": {
+      "paths": [
+        "tools/architecture-lab/apple/results.json",
+        "tools/architecture-lab/apple/adoption-fixture.ts",
+        "tools/architecture-lab/apple/apple-experiment.ts",
+        "tools/architecture-lab/apple/apple-preparation.ts"
+      ],
+      "commands": [
+        "bun tools/architecture-lab/apple/build-upstream.ts",
+        "bun tools/architecture-lab/apple/run-experiments.ts"
+      ],
+      "establishes": "Actual emitted upstream packages in fresh strict consumer: 34 file/tree/adoption checks under each Node and Bun, including existing 95,971,456-byte artifact; 16 Apple lifecycle/process/global-CAS checks through actual packed service APIs.",
+      "limits": "Apple Notary/Staple/Assess side effects are explicit protocol doubles. No credentialed macOS/Apple acceptance or registry availability is inferred.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/apple/results.json",
+          "sha256": "9c3b88cb9aee663f8204fabd63539d6472ef63baee28469492fb395f7c03c763"
+        },
+        {
+          "path": "tools/architecture-lab/apple/adoption-fixture.ts",
+          "sha256": "743a132e54081b0bc8a3508b0683827e5b1305def1400a6b455bf5b7c1cac550"
+        },
+        {
+          "path": "tools/architecture-lab/apple/apple-experiment.ts",
+          "sha256": "f1006f0cde861d9bd013826318dfe11c07101eaa28d6bccd49ab8c88813b6667"
+        },
+        {
+          "path": "tools/architecture-lab/apple/apple-preparation.ts",
+          "sha256": "7e6601c6648d3fc4191c454b60f957df7e1988711ad99c147642d1983b35d7d4"
+        }
+      ]
+    },
+    "E07": {
+      "paths": [
+        "docs/refactor/architecture-program/handoff/baseline-inventory.json",
+        "docs/refactor/architecture-program/handoff/migration.json",
+        "tools/architecture-lab/inventory.ts",
+        "tools/architecture-lab/migration.ts",
+        "docs/refactor/architecture-program/handoff/baseline-inventory.json.gz",
+        "docs/refactor/architecture-program/handoff/migration.json.gz",
+        "tools/architecture-lab/records.ts"
+      ],
+      "commands": [
+        "bun tools/architecture-lab/inventory.ts --check",
+        "bun tools/architecture-lab/migration.ts --check",
+        "bun tools/architecture-lab/records.ts docs/refactor/architecture-program/handoff/baseline-inventory.json --check",
+        "bun tools/architecture-lab/records.ts docs/refactor/architecture-program/handoff/migration.json --check"
+      ],
+      "establishes": "Historical/current source and surface census, retained selected-outcome inventory and explicit hard-cut dispositions.",
+      "limits": "Inventory/declared successor gates are not implemented product outcome acceptance or an operator scan of every remote historical payload.",
+      "fileBindings": [
+        {
+          "path": "docs/refactor/architecture-program/handoff/baseline-inventory.json",
+          "sha256": "0f086ea9b1680977a6b3a6a7d319e01a4468578dfeaa2e52025bbc33f11c478a"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/migration.json",
+          "sha256": "9899b3d73bcadfdc1c5a24d8568c93e7f758200257b34c4263da7eeda9e74ce1"
+        },
+        {
+          "path": "tools/architecture-lab/inventory.ts",
+          "sha256": "f73d1b83800acbd83dc390b49d65b2d693b8d0c896370a32e5f8ccf3f4d898a7"
+        },
+        {
+          "path": "tools/architecture-lab/migration.ts",
+          "sha256": "81e29f23c49294d194dfdd32e106544b9883fc4252cca6a2cb7141e3b103775e"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/baseline-inventory.json.gz",
+          "sha256": "687bce96b3a9f205b796d12905b4f06b3c8d84dc31c7876c26767476617f4b73"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/migration.json.gz",
+          "sha256": "b682c9046e1be6b693521c3d9d1ee5e07e32e43de2726be24dac06d717b1fb43"
+        },
+        {
+          "path": "tools/architecture-lab/records.ts",
+          "sha256": "235bfda24316433d089e32fd0f8544c123b59338da2060ff3b424809fd490700"
+        }
+      ],
+      "representation": "Inventory and migration JSON are readable architecture-record/1 summaries. records.ts verifies compressed and expanded byte counts and SHA256 before returning original records; expanded original93 current-source migration rows were independently compared and unchanged."
+    },
+    "E08": {
+      "paths": [
+        "tools/architecture-lab/topology/graph-results.json",
+        "tools/architecture-lab/topology/graphs.mjs",
+        "tools/architecture-lab/topology/results.json"
+      ],
+      "commands": [
+        "bun tools/architecture-lab/topology/graphs.mjs"
+      ],
+      "establishes": "Final source c653f05d28e8e968b79cdd09f6ec79d36f60163b32995303ab61a2de0474244b: allthree owned emitted/declaration DAGs acyclic;12publicsurfaces/layout; strict compiler graphs183/182/183declarationfiles and1101/1100/1102edges; owned normalized declarations equal SHA256969cc583d57a46cf5a34f8746c69528b30c59b976080e8fc45ff834766b3f470; Node runtime1412uniqueedges withconditions. No npm/owned reversebarrel cycle.",
+      "limits": "Finite exact experimental package graph; no exhaustive graph of future production or arbitrary application imports.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/topology/graph-results.json",
+          "sha256": "36ae68aee96362e7ef0990e66404e0b9f29601255754fae416247a5f5e121396"
+        },
+        {
+          "path": "tools/architecture-lab/topology/graphs.mjs",
+          "sha256": "2c0caad85efec3b5f433037d80462ec754f7c8b9e472d4ecc16849bd5e9f4cdc"
+        },
+        {
+          "path": "tools/architecture-lab/topology/results.json",
+          "sha256": "2ab7e1e9b1784fb1820cb1d649d422f233f53cf530a90bedd3915489244de512"
+        }
+      ]
+    },
+    "E09": {
+      "paths": [
+        "tools/architecture-lab/topology/publication-results.json",
+        "tools/architecture-lab/topology/publication.mjs"
+      ],
+      "commands": [
+        "bun tools/architecture-lab/topology/publication.mjs"
+      ],
+      "establishes": "Local registry prefix-install and version-coordinate scenarios expose T1/T2/T3 package ordering and partial availability states.",
+      "limits": "Version2 changes coordinates/dependencies while JS and declarations are byte-identical. No ABI compatibility, registry uptime, atomic multi-package publication or complete self-release proof.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/topology/publication-results.json",
+          "sha256": "30261a6bf61f8527532bf61dbd0df69e45e624828e6678c15f6f9bd84730bc90"
+        },
+        {
+          "path": "tools/architecture-lab/topology/publication.mjs",
+          "sha256": "333efffc6d15fbfe1446aa001f641f99d13ccd91c29ffb6ef0d6311c15ff823d"
+        }
+      ]
+    },
+    "E10": {
+      "paths": [
+        "tools/architecture-lab/machine/event-sizes.json",
+        "tools/architecture-lab/storage/protocol.ts",
+        "tools/architecture-lab/machine/test/boundaries.test.ts"
+      ],
+      "commands": [
+        "bun tools/architecture-lab/machine/measure-test-events.mjs",
+        "bun test ./tools/architecture-lab/storage/stores.test.ts",
+        "bun test ./tools/architecture-lab/storage/s3-model.test.ts"
+      ],
+      "establishes": "166 instrumented append attempts: maximum accepted full canonical event968 bytes; deliberately rejected native receipt event4446 bytes at2048-byte test limit preserves durable uncertain attempt without resend. Exact1MiB backend profile separately exercised by E02.",
+      "limits": "These maxima are fixture measurements, not bounds on all selected native provider envelopes. Choosing1MiB is a product policy proposal. Native response body capacity and full encoded event capacity are distinct.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/machine/event-sizes.json",
+          "sha256": "6b7ebffd9175fede7828439239ef49bda5dabd5d073e39145e3125995d339596"
+        },
+        {
+          "path": "tools/architecture-lab/storage/protocol.ts",
+          "sha256": "1f9a814b9bcf4dec8d8a57bc18058431ee15602960a7d34cd01f20f38d52de8f"
+        },
+        {
+          "path": "tools/architecture-lab/machine/test/boundaries.test.ts",
+          "sha256": "1340e2a46add2100174826bb75d261ab91a0a2a9d7dd7d2e6e9e821f76b65edd"
+        }
+      ]
+    },
+    "E11": {
+      "paths": [
+        "tools/architecture-lab/machine/extension-results.json",
+        "tools/architecture-lab/machine/extensions/variants.mjs",
+        "tools/architecture-lab/machine/extensions/consumer.ts",
+        "tools/architecture-lab/machine/extensions/recovery-migration.ts"
+      ],
+      "commands": [
+        "bun tools/architecture-lab/machine/validate-extensions.mjs"
+      ],
+      "establishes": "Twelve strict-emitted Bun before/after outcomes: delayed native completion and late-fact recovery plus explicit hash-bound one-shot import, both candidate representations.",
+      "limits": "Single-scope experimental importer only; no shipped old-format reader or generic production migration promise.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/machine/extension-results.json",
+          "sha256": "bca4d78234c5b36b1c7789fa6986b87fb629c2bb258efc6ba7a8577618f663b7"
+        },
+        {
+          "path": "tools/architecture-lab/machine/extensions/variants.mjs",
+          "sha256": "fc9536cde02493829904d5df94067a5402aee74fec76511e292aac6f605083d1"
+        },
+        {
+          "path": "tools/architecture-lab/machine/extensions/consumer.ts",
+          "sha256": "ff0634887063894e119d045e6fccb5f5869288ab1e57e72539cb04abe3b3627c"
+        },
+        {
+          "path": "tools/architecture-lab/machine/extensions/recovery-migration.ts",
+          "sha256": "8a54c7a66b89dda464541c1e10cab2f68f7a4cf111907c50bfd82d9331753ef8"
+        }
+      ]
+    },
+    "E12": {
+      "paths": [
+        "docs/refactor/architecture-program/handoff/research-lineage.md",
+        "docs/refactor/architecture-program/handoff/audit-evidence.md",
+        "tools/architecture-program/src/trial-probe-evaluator.ts"
+      ],
+      "commands": [],
+      "establishes": "Original user decisions, acceptance history, invalid prior trial evidence, Pending-only result model and exact zero-change rejection preserved.",
+      "limits": "Historical assistant status reports are attributed reports, not newly executed provider/deployment receipts.",
+      "fileBindings": [
+        {
+          "path": "docs/refactor/architecture-program/handoff/research-lineage.md",
+          "sha256": "5eb451c7f54bc7ab05fc19abd5f9717cb1e62d2676b2812b036eeebf67bba961"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/audit-evidence.md",
+          "sha256": "6d35e5220033689fbb424a2a1cef484e5eddc351385b8d4a9112ec093b7c7236"
+        },
+        {
+          "path": "tools/architecture-program/src/trial-probe-evaluator.ts",
+          "sha256": "8a00b5e3b439f8a4371fc6c3d8d5ed2ab27439a6d3714972b27c1249bbbb050c"
+        }
+      ]
+    },
+    "E13": {
+      "paths": [
+        "docs/refactor/architecture-program/handoff/apple-adoption.md",
+        "tools/architecture-lab/apple/upstream-build.json",
+        "tools/architecture-lab/apple/results.json"
+      ],
+      "commands": [
+        "bun tools/architecture-lab/apple/build-upstream.ts",
+        "bun tools/architecture-lab/apple/run-experiments.ts"
+      ],
+      "establishes": "Actual aligned Effect rc.108 declarations/runtime and strict emitted upstream package interoperability; exact public PR24/PR25 projection reconciliation is documented.",
+      "limits": "PR24 source-emitted fixture retains its exact provenance. Current upstream PR37 npm-only scope/public library contract is reconciled by E15; earlier incomplete private Apple/cold-host readiness is not a current npm-only gate. Proposed rc.108 production coordinate requires explicit disposition amendment rather than relabeling the old private-tool comparator.",
+      "fileBindings": [
+        {
+          "path": "docs/refactor/architecture-program/handoff/apple-adoption.md",
+          "sha256": "31274e76be4190cb867df8325f80491dc3fc7fb4b497f81562db94e4d1a663ee"
+        },
+        {
+          "path": "tools/architecture-lab/apple/upstream-build.json",
+          "sha256": "d5b408b64fe43c8f96c2322cc9aa2fe5f127fdd91a223781b5e6fa9338e3f030"
+        },
+        {
+          "path": "tools/architecture-lab/apple/results.json",
+          "sha256": "9c3b88cb9aee663f8204fabd63539d6472ef63baee28469492fb395f7c03c763"
+        }
+      ]
+    },
+    "E14": {
+      "paths": [
+        "tools/architecture-lab/storage/s3-model.ts",
+        "tools/architecture-lab/storage/s3-model.test.ts"
+      ],
+      "commands": [
+        "bun test ./tools/architecture-lab/storage/s3-model.test.ts",
+        "bunx --no-install tsc -p tools/architecture-lab/tsconfig.json"
+      ],
+      "establishes": "11 tests /49 assertions: independent versioned localhost HTTP fixture, exact conditional writes, two-contender and same-event CAS races, orphan segment exclusion, version/hash-pinned history, lost acknowledgment and409/404/503 uncertainty without retry, WORM new-version/delete-marker counterexamples, exact1MiB/+1 full-event bounds, M1/M2 native response loss without resend.",
+      "limits": "Protocol simulation, not AWS conformance. Host owns bounded single-attempt SigV4 HTTP; IAM, OIDC, Object Lock/retention, real availability and policy qualification remain unimplemented. Research capacities4096 events/8KiBhead/4KiBmetadata are not product selections.",
+      "primarySources": [
+        "https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes.html",
+        "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html",
+        "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock-managing.html"
+      ],
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/storage/s3-model.ts",
+          "sha256": "cdb602307c6e2b190b42ea07bd5b8e74cc0446094214d4b0f9d89837ce3c6a8d"
+        },
+        {
+          "path": "tools/architecture-lab/storage/s3-model.test.ts",
+          "sha256": "17b0195bc143cb359432c25b53c39e6d2d5aaa78267556904a5129318dfd6321"
+        }
+      ]
+    },
+    "E15": {
+      "paths": [
+        "docs/refactor/architecture-program/handoff/upstream/observation.json",
+        "docs/refactor/architecture-program/handoff/upstream/public-api.json.gz",
+        "docs/refactor/architecture-program/handoff/upstream/effect-build-contract.json.gz",
+        "docs/refactor/architecture-program/handoff/upstream/plan045.md.gz"
+      ],
+      "commands": [],
+      "establishes": "Immutable merged PR37 ef29a087baac8bdbcd90a54bb62a2dceb739dd91 source preserves September1 npm-only scope amendment and advances current target0.6.3; public library projection SHA2566bbbdcb00e75cd1f104aa658f4ddfe781719016a7568c7a59006ff435f52fac3 unchanged. Source explicitly defers credentialed Apple/AWS evidence and excludes it from current upstream readiness. Compressed/source/Git-blob hashes retained.",
+      "limits": "This changes the old upstream prerequisite, not ts-release69 selected outcomes. No Apple/AWS credentialed acceptance is claimed; public registry consumer evidence has separate exact provenance.",
+      "primarySources": [
+        "https://github.com/mannyc2/effect-build/blob/ef29a087baac8bdbcd90a54bb62a2dceb739dd91/plans/045-establish-v060-release-point.md",
+        "https://github.com/mannyc2/effect-build/pull/37"
+      ],
+      "fileBindings": [
+        {
+          "path": "docs/refactor/architecture-program/handoff/upstream/observation.json",
+          "sha256": "fda362624faa9e3924ce44bfeca88600235d3572c65a0ef04bbfc657852b0b0c"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/upstream/public-api.json.gz",
+          "sha256": "79718b92305bc40f72016eee6ef08663aba58052413193bc7d534e34760b7f40"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/upstream/effect-build-contract.json.gz",
+          "sha256": "1a473223413c20890761560282e67f7f2afbedbb22d6739079dcb99db5cbf11f"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/upstream/plan045.md.gz",
+          "sha256": "26b5c697c89982e28c5a0acf5aa24321f1d12990095bcb14c33db360f7510b5a"
+        }
+      ]
+    },
+    "E16": {
+      "paths": [
+        "docs/refactor/architecture-program/handoff/upstream/published-consumer.json"
+      ],
+      "commands": [],
+      "establishes": "Actual registry-published effect-build@0.6.3 and effect-build-apple@0.6.3 installed with strict emitted declarations and aligned dependencies; same real34-check adoption fixture under Node/Bun and16Apple protocol/lifecycle checks pass. Exact tarball/package/source/dependency hashes retained in the receipt.",
+      "limits": "Independent local consumption of actually published packages, not upstream publication certification or credentialed native Apple acceptance. Native Apple callbacks remain explicit protocol doubles.",
+      "fileBindings": [
+        {
+          "path": "docs/refactor/architecture-program/handoff/upstream/published-consumer.json",
+          "sha256": "0c844ebd0566adfb9bff7bdc798914b966a803338c8eac3ddee476dc2732e120"
+        }
+      ]
+    },
+    "E17": {
+      "paths": [
+        "docs/refactor/architecture-program/handoff/public-history-inventory.json",
+        "docs/refactor/architecture-program/handoff/public-history.md",
+        "docs/refactor/architecture-program/handoff/public-history/ts-release-0.3.0.tgz",
+        "tools/architecture-lab/public-history-inventory.py",
+        "tools/architecture-lab/public-history-symbols.cjs"
+      ],
+      "commands": [
+        [
+          "python3",
+          "tools/architecture-lab/public-history-inventory.py",
+          "--check"
+        ],
+        [
+          "sha256sum",
+          "docs/refactor/architecture-program/handoff/public-history/ts-release-0.3.0.tgz"
+        ],
+        [
+          "tar",
+          "-xOf",
+          "docs/refactor/architecture-program/handoff/public-history/ts-release-0.3.0.tgz",
+          "package/src/operation-journal/model.ts"
+        ]
+      ],
+      "establishes": "Verified published0.3.0 archive, all522 member hashes,98 source-unit dispositions and186 named declaration exports/113 runtime names across8 supported surfaces. Real3476-line historical S3 implementation exists;1755 lines own AWS/session/policy/native-boundary responsibilities.",
+      "limits": "Read-only source/AST inspection; no historical code execution, dependency installation, live AWS/workflow qualification, ancestry inference or known consumer inference. Per-operation five-record append/rebase API cannot provide new global expectedRevision/eventId dispatch authority. Historical1MiB opaque payload and1.5MB stored object differ from proposed1MiB full JournalEvent.",
+      "fileBindings": [
+        {
+          "path": "docs/refactor/architecture-program/handoff/public-history-inventory.json",
+          "sha256": "dbfe1cb23f0dbc99c41ff8cc6cdc675546e9a57f6f4b5a27ef45e0cc3d898bb0"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/public-history.md",
+          "sha256": "9bcf696cd50bf59e6a0bb47c5c8d4b6549e94e7cb16e99ac304aaea437c570d7"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/public-history/ts-release-0.3.0.tgz",
+          "sha256": "64df9e8ed395a6e055a94a72fa7a360d9b69af985238f43ce369dbbaf72dd5e3"
+        },
+        {
+          "path": "tools/architecture-lab/public-history-inventory.py",
+          "sha256": "bf575045499747cb0b2e4c2397ba3c749bfc1175865e5a8c74e6554784f10d01"
+        },
+        {
+          "path": "tools/architecture-lab/public-history-symbols.cjs",
+          "sha256": "dc7d8de818c3260eb522147f3b0bc69606ca22705bf8dd398e07b6ae338ab988"
+        }
+      ]
+    },
+    "E18": {
+      "paths": [
+        "tools/architecture-lab/checksums/checksums.ts",
+        "tools/architecture-lab/checksums/fixture.ts",
+        "tools/architecture-lab/checksums/run.mjs",
+        "tools/architecture-lab/checksums/results.json",
+        "docs/refactor/architecture-program/handoff/checksum-api.d.ts"
+      ],
+      "commands": [
+        [
+          "bun",
+          "tools/architecture-lab/checksums/run.mjs",
+          "/tmp/ts-release-published-upstream-Pz3Mm7/consumer"
+        ]
+      ],
+      "establishes": "Selected Q01 local native design proof:19 checks under Bun and19 under Node against actual published effect-build0.6.3 and GNU sha256sum9.4. Sorted two-space LF checksum view verifies owned bytes; collisions, aliasing, traversal/newlines/non-NFC, self-reference, trees, changed mode/content and tampering reject.",
+      "limits": "Research implementation and concrete native checksum witness; no completed production Q01 wiring or full release acceptance. Exact proposed input/public-name capacities remain stated contract adaptations.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/checksums/checksums.ts",
+          "sha256": "85ac2d440851f36a231b24383963f341fb1c39d19b364222ca090c9626b5d734"
+        },
+        {
+          "path": "tools/architecture-lab/checksums/fixture.ts",
+          "sha256": "f4165bac3c48dbc88c01176081dbe32fe76dc6e1bff3825edf31e0ef3201669a"
+        },
+        {
+          "path": "tools/architecture-lab/checksums/run.mjs",
+          "sha256": "566120aa9ab6047cb338384c6f4277bf65932280b0a21f10adb4eb897358173f"
+        },
+        {
+          "path": "tools/architecture-lab/checksums/results.json",
+          "sha256": "e2bbffc6eae6d100c717b5df5216cb651251d252e4aa441ed1e15c0eb2878c7e"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/checksum-api.d.ts",
+          "sha256": "d16afc414edbb1192d7a1b8aaa8b92e4c0666c7f46ca80e33e85e167ce482254"
+        }
+      ],
+      "reproductionPrerequisite": "The runner takes a positional isolated consumer containing alignedEffectrc108 and actual published effect-build0.6.3. Receipt.consumer is the exact observed invocation; for a fresh checkout first run the published-upstream or unpatched-effect --execute installer and pass its new consumer directory. No bare-run default is claimed."
+    },
+    "E19": {
+      "paths": [
+        "tools/architecture-lab/apple-composition/composition.ts",
+        "tools/architecture-lab/apple-composition/amend.mjs",
+        "tools/architecture-lab/apple-composition/fixture.ts",
+        "tools/architecture-lab/apple-composition/run.mjs",
+        "tools/architecture-lab/apple-composition/results.json",
+        "docs/refactor/architecture-program/handoff/apple-api.d.ts"
+      ],
+      "commands": [
+        "bun tools/architecture-lab/apple-composition/run.mjs"
+      ],
+      "establishes": "Eight real fresh processes share one SQLite journal: two concrete arm64/x64 App preparations, two actual TARs from post-staple owned trees through upstream File.publish/adopt, a five-member full Bundle(two trees,two TARs,Linux file), and one final Plan at global revision8. One publication and zero resume sends; six negative checks include unchanged-member drift before journal/native calls, old-source substitution and selected-delivery omission. Final core admits at most one publication scope while preserving multiple preparations.",
+      "limits": "Native Apple callbacks are explicit protocol doubles. This proves mixed Bundle binding and local continuity for two App preparations; it does not claim native App/DMG/PKG acceptance or complete selected producer implementation. Three-kind Apple proposal declarations are source-bound, with future native witnesses retained.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/apple-composition/composition.ts",
+          "sha256": "c7a6fa442289125fe6aaa695a11dfaa8732961a77b9619344c1499595ef8e5da"
+        },
+        {
+          "path": "tools/architecture-lab/apple-composition/amend.mjs",
+          "sha256": "6276c1bf3520e14880c34a71a4e90c3e119a50af32b9a3643d7b6226e4396504"
+        },
+        {
+          "path": "tools/architecture-lab/apple-composition/fixture.ts",
+          "sha256": "7a06cb94bcaeb2c0456a063f33eccf63666a6bac20e1a3d524129a48f762012b"
+        },
+        {
+          "path": "tools/architecture-lab/apple-composition/run.mjs",
+          "sha256": "b96600cc289cbec62a6f317d0e4def62192564f3f523c225b457244b5f3ebd82"
+        },
+        {
+          "path": "tools/architecture-lab/apple-composition/results.json",
+          "sha256": "940bd7b2f94fb945a8d378febaef525c25ffdb7f28b69c184235ad22c81cff39"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/apple-api.d.ts",
+          "sha256": "d8b9ca49d503b3eb9c4f4bd112e986f50e082d43e2ae81a19d028fb86b5f1d44"
+        }
+      ]
+    },
+    "E20": {
+      "paths": [
+        "tools/architecture-lab/machine/unpatched-effect.mjs",
+        "docs/refactor/architecture-program/handoff/upstream/unpatched-effect-input.json",
+        "docs/refactor/architecture-program/handoff/upstream/unpatched-effect-consumer.json"
+      ],
+      "commands": [
+        "bun tools/architecture-lab/machine/unpatched-effect.mjs",
+        "bun tools/architecture-lab/machine/unpatched-effect.mjs --execute"
+      ],
+      "establishes": "Official unpatched Effect4.0.0-rc.108 archive validated by registry SHA512/SHA1 and SHA256. Fresh isolated copyfile install with actual effect-build/Apple0.6.3 passes strict skipLibCheck:false kernel/provider/host/adoption/Apple/checksum declaration and compile witnesses; actual adoption34 checks per Node/Bun. Installed Param declaration equals official bytes; independent TS2339 control proves getParamMetadata absent. The future selected API can omit the old private Param declaration patch.",
+      "limits": "Default command checks retained receipt/source bindings offline; --execute repeats explicit public archive GET and fresh local install/fixtures. Other transitive packages are repacked exact existing coordinates. Proposed declarations do not implement production or prove native Apple/AWS/full future CLI behavior. Current root patch/dependencies and .repos/effect were not changed.",
+      "fileBindings": [
+        {
+          "path": "tools/architecture-lab/machine/unpatched-effect.mjs",
+          "sha256": "a4c4e9b44dc367f86bbb230e10f849636e6822b47ab3439372f52a76aeb27611"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/upstream/unpatched-effect-input.json",
+          "sha256": "a10ca9142f054a30c04eba3241a430da5b9123ceabeea36b04c14e1874459853"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/upstream/unpatched-effect-consumer.json",
+          "sha256": "34c732924fb9060892e03d35455c790ab2958c68132f74a2188dd877aeefe639"
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "C01-initial-success",
+      "title": "Initial success",
+      "requiredObservationIds": [
+        "terminal-report-derived",
+        "one-logical-journal",
+        "every-dispatch-has-prior-authority",
+        "no-blind-replay"
+      ],
+      "requiredTerminalOutcome": "Succeeded",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E04"
+      ],
+      "establishedOrProposed": "Started is durable before one native send; restart report derives receipt/observation facts.",
+      "remaining": "Original C01 mandates one observation and revision3. Write-only providers can legitimately finish at revision2; exact frozen trace is not claimed.",
+      "frozenDefinitionSha256": "8d9f176ff6b379d3c8c68eee64794a26d3e7d40f7282ee09438dd9c2a264228e",
+      "frozenExpectedEvidenceSha256": "18e7b850d5d037d3086221e3ca0240778bda450c8cb2bf7195490b46113da46d",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C02-rejection-before-commit",
+      "title": "Rejection proven before commit",
+      "requiredObservationIds": [
+        "rejection-durable-before-terminal",
+        "provider-dispatch-count-zero",
+        "terminal-rejection-derived"
+      ],
+      "requiredTerminalOutcome": "Rejected",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01"
+      ],
+      "establishedOrProposed": "Preflight credential/prepare rejection appends nothing; provider-proven post-dispatch noncommit is versioned and linked to that dispatch.",
+      "remaining": "C02 was split into a/b to remove the contradictory preflight-versus-post-start fixture requirement; old trace/hash is preserved, not represented as passing.",
+      "frozenDefinitionSha256": "e84c283b839abe3b62954fc0fba5facfb631ba3887a7905dcba32c66985861a4",
+      "frozenExpectedEvidenceSha256": "b137b1b7e9ac7a32a736a58403f2efb1b3ea0471e7029904b5cbfca9d508adf6",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C03-response-loss-satisfied-observation",
+      "title": "Response loss followed by satisfied observation",
+      "requiredObservationIds": [
+        "dispatch-started-without-receipt",
+        "fresh-observation-proves-satisfied",
+        "dispatch-count-remains-one",
+        "late-fact-preserved"
+      ],
+      "requiredTerminalOutcome": "Succeeded",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E04"
+      ],
+      "establishedOrProposed": "After lost response, matching validated native evidence satisfies without another send.",
+      "remaining": "Provider-native correlation is exercised only for implemented fixtures; every production provider must retain its own acceptance oracle.",
+      "frozenDefinitionSha256": "7496f4f1d27e4d8ee8e2f12bb57b5663c3e2509997511da25f2b63fc27bf4604",
+      "frozenExpectedEvidenceSha256": "1fc3f5b5490342f36398d8348a94038f3379b43fbe0f2e910604dc91d0bc75ad",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C04-response-loss-inconclusive-stop",
+      "title": "Response loss followed by absence and inconclusive stop",
+      "requiredObservationIds": [
+        "dispatch-started-without-receipt",
+        "absence-is-not-replay-fence",
+        "terminal-inconclusive",
+        "dispatch-count-remains-one"
+      ],
+      "requiredTerminalOutcome": "Inconclusive",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E06"
+      ],
+      "establishedOrProposed": "Absence/unknown evidence after a possibly committed attempt stays Inconclusive; fresh process does not acquire a permit.",
+      "remaining": "No claim of remote authoritative absence for providers not implemented.",
+      "frozenDefinitionSha256": "c6f5e5ee4a00a5b4fc05439a66b3d0833347bcc4ad181e81dd1a8b89b3cd941e",
+      "frozenExpectedEvidenceSha256": "530994b85c712590378fc7a0b9f550b0887ae74fa24b20fc0896c82cdaa8fe6c",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C05-core-git-cas-protected-replay",
+      "title": "Core Git CAS protected replay",
+      "requiredObservationIds": [
+        "expected-old-desired-new-recorded",
+        "fresh-head-equals-expected-old",
+        "cas-constructs-dispatch-authority",
+        "at-most-one-replay",
+        "terminal-derived-from-observation"
+      ],
+      "requiredTerminalOutcome": "Succeeded",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01"
+      ],
+      "establishedOrProposed": "Actual core-owned conditional Git transport confirms same update or rejects a competitor; forged provider Git tags cannot certify replay.",
+      "remaining": "Local bare Git, not hosted ref permissions/retention deployment.",
+      "frozenDefinitionSha256": "e609845ac87abf2cc9cd4f8e7c433b2fb356d309d42763694de06b6109a6836f",
+      "frozenExpectedEvidenceSha256": "06bfdba783498525b5191afcf339ce7428887c0e3804f21047161774f11902ef",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C06-explicit-risk-acceptance",
+      "title": "Explicit risk acceptance",
+      "requiredObservationIds": [
+        "inconclusive-precedes-risk-request",
+        "risk-acceptance-durable",
+        "risk-binds-operation-and-request",
+        "dispatch-requires-risk-authority"
+      ],
+      "requiredTerminalOutcome": "Succeeded",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01"
+      ],
+      "establishedOrProposed": "Explicit authenticated risk decision binds request, full prior attempt set, principal/scope, expiry and one extra dispatch.",
+      "remaining": "Concrete approved-risk port is a fixture; production reviewer identity and approval persistence remain host acceptance.",
+      "frozenDefinitionSha256": "9a699cc509a780134171a660167731f17b70886b762ff0c8be3ac7530c7568a7",
+      "frozenExpectedEvidenceSha256": "4d911d242ff93dc57e79e5475d709a31f1fdc8ded6d9a05f37f9d3a2360f23bb",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C07-concurrent-runners-single-cas-winner",
+      "title": "Concurrent runners with one CAS winner",
+      "requiredObservationIds": [
+        "runners-read-same-revision",
+        "exactly-one-append-cas-winner",
+        "loser-refolds-before-effect",
+        "provider-dispatch-count-one"
+      ],
+      "requiredTerminalOutcome": "Succeeded",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E02",
+        "E14"
+      ],
+      "establishedOrProposed": "Contending machine executions and independent SQLite/Git processes produce one append winner; AlreadyRecorded is never a new permit.",
+      "remaining": "Cross-host deployment and network filesystem behavior remain unqualified.",
+      "frozenDefinitionSha256": "1639160c9f20840aa9d93fa643c206bc707fc93cc75b833d42dee2367f881449",
+      "frozenExpectedEvidenceSha256": "306794061f4a95691d25d35322556fe674de98fa0690de6d464cfcf84ce7edfc",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C08-request-endpoint-mismatch",
+      "title": "Request and endpoint mismatch before observation",
+      "requiredObservationIds": [
+        "request-fingerprint-mismatch-detected",
+        "endpoint-or-auth-scope-mismatch-detected",
+        "observation-count-zero",
+        "dispatch-count-zero",
+        "correspondence-mismatch-stops"
+      ],
+      "requiredTerminalOutcome": "Rejected",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E01",
+        "E03",
+        "E04"
+      ],
+      "establishedOrProposed": "Request endpoint/body/header/principal/scope drift blocks replay; native receipt/evidence correspondence and dependency-ID replacement reject mismatches.",
+      "remaining": "The exact frozen before-observation endpoint-mismatch trace has not been replayed; arbitrary provider observation I/O cannot be sandboxed by the pure core. Provider/host acceptance must bind the actual observation endpoint.",
+      "frozenDefinitionSha256": "9993a29206d4d171f92391d7967dc61164cc70206c246a5f73fa0a9928160e8c",
+      "frozenExpectedEvidenceSha256": "c15964ec1095879dbe576e05ff3980847f3992f3782123e8713e4a35c2e5e9b4",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C09-supersession-late-evidence",
+      "title": "Supersession during dispatch followed by late receipt and observation",
+      "requiredObservationIds": [
+        "superseding-event-wins-decision-order",
+        "late-receipt-appended",
+        "late-observation-appended",
+        "late-evidence-does-not-reopen-terminal",
+        "report-preserves-supersession-and-late-facts"
+      ],
+      "requiredTerminalOutcome": "SafeStop",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E06",
+        "E11"
+      ],
+      "establishedOrProposed": "Supersession forbids new dispatch while preserving late receipt and observation facts; same-journal Apple late evidence cannot replace final bytes.",
+      "remaining": "The experimental event2 migration has single-scope input, not all old production formats.",
+      "frozenDefinitionSha256": "54e4c4409ac0d85369cb3afaa25bd1cf0ead60aa3a85a22e539f27ed8823e431",
+      "frozenExpectedEvidenceSha256": "983ca444c8d1dd3d57ab39ff82f52d922974cb73c33115c02c668b547d9ec146",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C10-ambiguous-append-readback",
+      "title": "Ambiguous append reconciled by read-back",
+      "requiredObservationIds": [
+        "append-outcome-ambiguous",
+        "readback-before-reappend",
+        "matching-event-is-satisfied",
+        "nonmatching-head-stops-without-reappend",
+        "no-duplicate-event"
+      ],
+      "requiredTerminalOutcome": "SafeStop",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E02",
+        "E14"
+      ],
+      "establishedOrProposed": "Same live ambiguous append invocation can use exact read-back to finish; fresh invocation and AlreadyRecorded carry no dispatch authority.",
+      "remaining": "Hosted remote lost-response qualification is not covered by local storage doubles/receipt loss.",
+      "frozenDefinitionSha256": "e08e764bd83feb09412dcddc17f355b93feedcd4035cef5f375470034cc5ac14",
+      "frozenExpectedEvidenceSha256": "22e325733122843e091be6405c5d3e61bff32a0aefdc511f3cc21a5997055025",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C11-malformed-provider-graph",
+      "title": "Malformed complete provider graph rejected before any provider effect",
+      "requiredObservationIds": [
+        "complete-graph-decoded-before-effects",
+        "duplicate-definition-or-operation-id-rejected",
+        "dangling-definition-rejected",
+        "provider-effect-count-zero"
+      ],
+      "requiredTerminalOutcome": "Rejected",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01"
+      ],
+      "establishedOrProposed": "Duplicate IDs, unknown codecs, missing dependencies and cycles are rejected for the complete Plan before provider effects.",
+      "remaining": "Finite adversarial cases rather than formal enumeration of every malformed graph.",
+      "frozenDefinitionSha256": "76fc8dbb48c111a93b7e86946fbe668bb2ab9e95c75c69b3afbd51238804416a",
+      "frozenExpectedEvidenceSha256": "4ce983b998bc34784685d54d641278d8a548ab96df16c92c8ec16c3a62f28790",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C12-external-provider-two-instances",
+      "title": "External provider plus two instances with zero kernel edits",
+      "requiredObservationIds": [
+        "external-provider-loaded-by-import-and-layer",
+        "two-instances-bind-distinct-endpoints-and-credentials",
+        "definition-resolution-unambiguous",
+        "kernel-patch-empty",
+        "sibling-patch-empty"
+      ],
+      "requiredTerminalOutcome": "Succeeded",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E04",
+        "E05"
+      ],
+      "establishedOrProposed": "Two ordinary provider instances and independently packed external provider work with unchanged kernel and previously built CLI.",
+      "remaining": "Selected public application-module extension mechanism; no capability claim for installing arbitrary recipes from Plan data.",
+      "frozenDefinitionSha256": "b9cff17b3e80f45d6c4672baa38e61d695149c35eb1a4e45ddab8a09a1469054",
+      "frozenExpectedEvidenceSha256": "6c54be412b454ade571b3368ba5125618eae970498e64da27a96da3c203d6637",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C13-apple-commit-before-id-loss",
+      "title": "Apple commit before submission ID loss",
+      "requiredObservationIds": [
+        "commit-may-precede-submission-id",
+        "missing-id-does-not-prove-absence",
+        "no-blind-resubmission",
+        "terminal-inconclusive",
+        "ts-release-journal-preserves-apple-facts"
+      ],
+      "requiredTerminalOutcome": "Inconclusive",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E06"
+      ],
+      "establishedOrProposed": "Packed Apple operation protocol double loses outcome before submissionID; one physical journal retains uncertainty and never guesses or resubmits.",
+      "remaining": "Native Apple acceptance remains future selected-product qualification; historical OB02/OB06 do not reintroduce Apple/AWS into current upstream npm-only readiness.",
+      "frozenDefinitionSha256": "528060cb1edfa4c3b0a8b392d489238873243f7a62a85bacb1dab3eed198e2f7",
+      "frozenExpectedEvidenceSha256": "b9ba3ecda9821be0dbe78ccb1a2536573db8f4fba2cffd4dc0be779a5754cc9c",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C14-finalized-file-tree-adoption",
+      "title": "Finalized file and tree adoption",
+      "requiredObservationIds": [
+        "canonical-decimal-size-no-number-narrowing",
+        "preserve-path-mode-symlink-shared-content",
+        "duplicate-name-rejected",
+        "mutable-path-rejected",
+        "symlink-traversal-rejected",
+        "lossless-roundtrip"
+      ],
+      "requiredTerminalOutcome": "Succeeded",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04",
+        "E06",
+        "E16",
+        "E18",
+        "E19",
+        "E20"
+      ],
+      "establishedOrProposed": "Real upstream HashedFile/HashedTree finalizers cross into owned content with strict durable loading; modes, symlinks, shared content, mutation/traversal and actual95MB input exercised.",
+      "remaining": "Bounds are declared local capabilities; native signing/compiler lineage and all upstream release gates are not inferred.",
+      "frozenDefinitionSha256": "e621d5f0936c93944326207231b696d22e70f7d6e9fda2460633045df94c4160",
+      "frozenExpectedEvidenceSha256": "3cffcdd2989b3c927da82d1b4a04368fd259ab5c749a8f5535ad91f1cc31eee9",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C15-host-dependency-shadowing",
+      "title": "Consumer attempt to shadow host-owned dependencies",
+      "requiredObservationIds": [
+        "host-selects-single-journal-store",
+        "consumer-shadow-rejected",
+        "consumer-cannot-shadow-clock-transport-approval",
+        "neutral-code-has-no-host-import",
+        "provider-effect-count-zero"
+      ],
+      "requiredTerminalOutcome": "Rejected",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E04"
+      ],
+      "establishedOrProposed": "Interpreter captures host before invoking provider-local Effects; attempted Layer shadow does not redirect journal or dispatch authority.",
+      "remaining": "Authored application module is trusted host code. Arbitrary malicious application code is outside an in-process Layer isolation guarantee.",
+      "frozenDefinitionSha256": "4a4bf17f2e801e470431f37b1a05dae7ab1a12cd76b9edf5fd718461582cf39b",
+      "frozenExpectedEvidenceSha256": "f484a1ddb47aba63ad93fd756b7f849fb58225725eb62d12203b9691ec25d403",
+      "exactFrozenTraceOutcome": "not-claimed"
+    },
+    {
+      "id": "C16-journal-bound-symmetry",
+      "title": "Journal write and read bound symmetry",
+      "requiredObservationIds": [
+        "exact-limit-write-succeeds",
+        "exact-limit-read-succeeds",
+        "one-byte-over-write-rejected-before-append",
+        "one-byte-over-read-rejected",
+        "read-write-bounds-identical"
+      ],
+      "requiredTerminalOutcome": "SafeStop",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E02",
+        "E10",
+        "E14"
+      ],
+      "establishedOrProposed": "SQLite/Git and independent S3 protocol model enforce complete encoded UTF8 envelope bounds on read/write, including exact proposed1MiB and+1.",
+      "remaining": "1MiB is a proposed product profile and not proof all legitimate native envelopes fit; actual S3 deployment must qualify the same contract.",
+      "frozenDefinitionSha256": "faea5da51979af5c39c52bbbbb7270569cd361527c19bb03ecc3200c8997545f",
+      "frozenExpectedEvidenceSha256": "69f2948934f3e2647bde9bc6a6dceb8d852661bdc8c74369cc75079363eeee87",
+      "exactFrozenTraceOutcome": "not-claimed"
+    }
+  ],
+  "laws": [
+    {
+      "id": "L01-single-canonical-durable-chain",
+      "statement": "One canonical durable chain; every other representation is a projection.",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E02",
+        "E06",
+        "E14",
+        "E19"
+      ],
+      "establishedOrProposed": "One journalId with global CAS, fully admitted preparation/publication scopes and one persisted publication Plan; derived reports retain prior Apple facts. The final independent fixture supports two preparations and one publication with one global revision; changing the untouched source collection rejects before journal/native effects.",
+      "remaining": "Full production stores and provider outcomes remain implementation acceptance."
+    },
+    {
+      "id": "L02-single-pure-transition-owner",
+      "statement": "One pure transition owner returns one explicit command or terminal report.",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01"
+      ],
+      "establishedOrProposed": "Each candidate owns an independent pure command/terminal decision; M1 derives facts from history, M2 materializes state without delegating to M1.",
+      "remaining": "Recommendation of M1 is a local comparative conclusion, not a frozen Pareto tournament selection."
+    },
+    {
+      "id": "L03-single-interpreter-cas-authority",
+      "statement": "One interpreter owns credentials, observation, append, authorization, and dispatch ordering; CAS is the sole constructor of dispatch authority.",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E02",
+        "E14"
+      ],
+      "establishedOrProposed": "One interpreter orders prepare/authorize/observe/append/send; successful new CAS is the sole dispatch permit constructor.",
+      "remaining": "Production credential acquisition and hosted store deployment are not implemented by the fixtures."
+    },
+    {
+      "id": "L04-facts-decisions-effects-separated",
+      "statement": "Facts are not decisions or effects; provider commitment is never inferred from an Effect exit or host retry.",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E11"
+      ],
+      "establishedOrProposed": "Native receipt status Pending/Satisfied, observation classification and errors remain facts; delayed202 and unknown exit do not infer completion/noncommit.",
+      "remaining": "Provider-native classifier contracts require provider acceptance, not trust in a generic Satisfied tag."
+    },
+    {
+      "id": "L05-host-owned-single-journal",
+      "statement": "Exactly one host-selected JournalStore and one logical journal per release; consumer Layers cannot shadow journal, clock, transport, or approval.",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E02",
+        "E06",
+        "E14"
+      ],
+      "establishedOrProposed": "Host capture, immutable journal binding and full-scope validation reject layer shadow and foreign root/prefix; Apple Ready selection uses validated exact global prefix.",
+      "remaining": "OD03 Action default and OD04 operational S3 deployment stay separately qualified."
+    },
+    {
+      "id": "L06-provider-vertical-ownership",
+      "statement": "A provider vertical owns Intent and wire codecs, preparation, observation, dispatch, recovery law, tests, and docs; core imports no concrete provider.",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E01",
+        "E04",
+        "E06"
+      ],
+      "establishedOrProposed": "npm/Python/external/Apple fixture verticals own intent/native codecs and correspondence; kernel imports no concrete provider.",
+      "remaining": "Not all69 outcomes or complete provider tests/docs/native protocols are implemented; core owns commitment certification and host transport dispatch ordering."
+    },
+    {
+      "id": "L07-open-provider-composition",
+      "statement": "A second instance and packed external provider require zero kernel edits; provider siblings never import one another.",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04",
+        "E05"
+      ],
+      "establishedOrProposed": "Second instance and external package require zero kernel edits; external provider built after existing CLI can run.",
+      "remaining": "Final cycle-free topology receipt required; package versioning cost remains measured rather than assumed away."
+    },
+    {
+      "id": "L08-host-neutral-kernel",
+      "statement": "Host-neutral code imports no Node or Bun implementation; CLI, Action, YAML, and providers never reconstruct lifecycle policy.",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E04",
+        "E08"
+      ],
+      "establishedOrProposed": "Kernel imports no Node/Bun implementation; portable identity boundary; CLI/Action delegate to the same runRelease.",
+      "remaining": "Node and Bun host implementations and specific input flags still need production delivery acceptance."
+    },
+    {
+      "id": "L09-lossless-effect-build-handoff",
+      "statement": "Finalized effect-build file, tree, and tool values cross once, losslessly, with no shadow schema, mutable path, number-size narrowing, symlink traversal, or unjustified third artifact package.",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04",
+        "E06",
+        "E16",
+        "E18",
+        "E19",
+        "E20"
+      ],
+      "establishedOrProposed": "Actual upstream file/tree/tool boundary, path-free owned envelope and streaming byte verification avoid mutable producer path, alias and unsafe size narrowing.",
+      "remaining": "Terminal upstream deployment readiness is distinct; artifact ownership costs323 baseline lines and must remain charged."
+    },
+    {
+      "id": "L10-apple-operation-journal-boundary",
+      "statement": "effect-build-apple owns concrete Apple operations and codecs; ts-release owns the sole release journal; commit-before-submission-ID remains inconclusive.",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E06",
+        "E19"
+      ],
+      "establishedOrProposed": "Native Apple operations/codecs stay upstream; fixed ApplePreparation plus transient machine view and one final Plan share global journal; pre-ID loss stops. Mixed full-Bundle association is locally proved with two App preparations and post-staple TAR derivation.",
+      "remaining": "Credentialed Apple/private native qualification is retained for eventual selected Apple products; current upstream npm-only scope excludes it."
+    },
+    {
+      "id": "L11-hard-cut-or-one-shot-migration",
+      "statement": "Incompatible durable formats use a hard cut or explicit one-shot migration; no dual live reader or writer exists by default.",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E07",
+        "E11",
+        "E12"
+      ],
+      "establishedOrProposed": "User-authorized hard cut for no known consumers; experimental one-shot source-hash review preserves late-fact semantics without dual live reader.",
+      "remaining": "If an actual old payload is discovered, a specific one-shot conversion needs its own reviewed row before certification."
+    },
+    {
+      "id": "L12-generated-exact-public-surface",
+      "statement": "Runtime and declaration exports, emitted modules, manifests, bins, and host entrypoints are generated and checked together.",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E04",
+        "E08"
+      ],
+      "establishedOrProposed": "Exact emitted experimental runtime/declaration/package/bin surfaces are enumerated together and strict consumer loads them.",
+      "remaining": "Production declaration proposals and all selected host/outcome exports are handoff contracts, not shipped/accepted surfaces."
+    },
+    {
+      "id": "L13-exact-acyclic-import-graph",
+      "statement": "The package and import graph is acyclic, one-way, and justified by invariant, dependency, lifecycle, or consumer value rather than file count.",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04",
+        "E08",
+        "E09"
+      ],
+      "establishedOrProposed": "Actual packed source/runtime/declaration/package edges and selective imports are inspected for three layouts; public owned subpath removes discovered reverse cycle.",
+      "remaining": "Final source-bound experimental graph is acyclic; future complete production/arbitrary-consumer graph remains implementation acceptance."
+    },
+    {
+      "id": "L14-total-owned-traceability",
+      "statement": "Every claim, source, public symbol, durable codec, and selected row has one owner, disposition, successor wave, and executable gate.",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E07",
+        "E12"
+      ],
+      "establishedOrProposed": "Frozen226 propositions,69 selected outcomes, historical surface/format inventory and explicit successor acceptance map retained.",
+      "remaining": "A mapping/checker proves completeness of the handoff inventory, not implementation or live acceptance of every mapped row."
+    }
+  ],
+  "gates": [
+    {
+      "id": "GM01-shared-case-semantics",
+      "title": "Shared case semantics",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E01",
+        "E02",
+        "E03",
+        "E04",
+        "E06"
+      ],
+      "establishedOrProposed": "All16 named obligations are mapped to concrete local behavior; exact old frozen traces not all replayed, C01/C02 differ and C08 remains partial.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:machine",
+        "--",
+        "--gate",
+        "GM01-shared-case-semantics"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C01-initial-success",
+        "C02-rejection-before-commit",
+        "C03-response-loss-satisfied-observation",
+        "C04-response-loss-inconclusive-stop",
+        "C05-core-git-cas-protected-replay",
+        "C06-explicit-risk-acceptance",
+        "C07-concurrent-runners-single-cas-winner",
+        "C08-request-endpoint-mismatch",
+        "C09-supersession-late-evidence",
+        "C10-ambiguous-append-readback",
+        "C11-malformed-provider-graph",
+        "C12-external-provider-two-instances",
+        "C13-apple-commit-before-id-loss",
+        "C14-finalized-file-tree-adoption",
+        "C15-host-dependency-shadowing",
+        "C16-journal-bound-symmetry"
+      ],
+      "frozenLawIds": [
+        "L01-single-canonical-durable-chain",
+        "L02-single-pure-transition-owner",
+        "L03-single-interpreter-cas-authority",
+        "L04-facts-decisions-effects-separated",
+        "L05-host-owned-single-journal",
+        "L06-provider-vertical-ownership",
+        "L07-open-provider-composition",
+        "L08-host-neutral-kernel",
+        "L09-lossless-effect-build-handoff",
+        "L10-apple-operation-journal-boundary",
+        "L11-hard-cut-or-one-shot-migration",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph",
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GM02-law-and-owner-invariants",
+      "title": "Law and owner invariants",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E01",
+        "E02",
+        "E04",
+        "E06",
+        "E08"
+      ],
+      "establishedOrProposed": "Local laws/ownership evidence exists; full production owner/surface mapping and deployed host requirements remain distinct.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:machine",
+        "--",
+        "--gate",
+        "GM02-law-and-owner-invariants"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [],
+      "frozenLawIds": [
+        "L01-single-canonical-durable-chain",
+        "L02-single-pure-transition-owner",
+        "L03-single-interpreter-cas-authority",
+        "L04-facts-decisions-effects-separated",
+        "L05-host-owned-single-journal",
+        "L06-provider-vertical-ownership",
+        "L07-open-provider-composition",
+        "L08-host-neutral-kernel",
+        "L09-lossless-effect-build-handoff",
+        "L10-apple-operation-journal-boundary",
+        "L11-hard-cut-or-one-shot-migration",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph",
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GM03-construction-boundaries",
+      "title": "Construction boundaries",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E01",
+        "E03"
+      ],
+      "establishedOrProposed": "Strict Plan/operation/native event/graph/request/host construction rejects malformed or untrusted facts before provider effects in the implemented core.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:machine",
+        "--",
+        "--gate",
+        "GM03-construction-boundaries"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C11-malformed-provider-graph",
+        "C14-finalized-file-tree-adoption",
+        "C15-host-dependency-shadowing",
+        "C16-journal-bound-symmetry"
+      ],
+      "frozenLawIds": [
+        "L03-single-interpreter-cas-authority",
+        "L05-host-owned-single-journal",
+        "L09-lossless-effect-build-handoff",
+        "L13-exact-acyclic-import-graph"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GM04-result-provenance",
+      "title": "Result provenance",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E01",
+        "E04",
+        "E05",
+        "E08"
+      ],
+      "establishedOrProposed": "New evidence binds source, package, toolchain and consumer bytes; it is not a receipt accepted by the original v2 gate result protocol.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:machine",
+        "--",
+        "--gate",
+        "GM04-result-provenance"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [],
+      "frozenLawIds": [
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GM05-machine-source-budget",
+      "title": "Machine source budget",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E01",
+        "E07"
+      ],
+      "establishedOrProposed": "Selected experimental M1-inclusive core935 physical lines versus historical2114 slice; projection threshold floor1268. Complete production relocation-charged source and frozen metric receipt remain unmeasured.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:machine",
+        "--",
+        "--gate",
+        "GM05-machine-source-budget"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [],
+      "frozenLawIds": [
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GM06-marginal-measurement",
+      "title": "Marginal measurement",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E05",
+        "E11"
+      ],
+      "establishedOrProposed": "Actual complete before/after extension patches are measured; P01 zero-code behavior violates frozen nonzero population and full candidate-role metrics are incomplete.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:machine",
+        "--",
+        "--gate",
+        "GM06-marginal-measurement"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [],
+      "frozenLawIds": [
+        "L01-single-canonical-durable-chain",
+        "L02-single-pure-transition-owner",
+        "L03-single-interpreter-cas-authority",
+        "L04-facts-decisions-effects-separated",
+        "L05-host-owned-single-journal",
+        "L06-provider-vertical-ownership",
+        "L07-open-provider-composition",
+        "L08-host-neutral-kernel",
+        "L09-lossless-effect-build-handoff",
+        "L10-apple-operation-journal-boundary",
+        "L11-hard-cut-or-one-shot-migration",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph",
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": [
+        "P01-second-provider-instance",
+        "P02-packed-external-provider",
+        "P03-new-first-party-provider",
+        "P04-new-commitment-mechanism",
+        "P05-existing-provider-operation",
+        "P06-journal-store-backend",
+        "P07-file-tree-producer-adapter",
+        "P08-deliberate-public-export",
+        "P09-difficult-recovery-transition"
+      ]
+    },
+    {
+      "id": "GM07-candidate-equivalence",
+      "title": "Candidate equivalence",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E01",
+        "E11"
+      ],
+      "establishedOrProposed": "M1/M2 independently implement identical schemas and agree on shared observable suites and difficult extensions; not complete frozen sixteen-case/topology equivalence.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:machine",
+        "--",
+        "--gate",
+        "GM07-candidate-equivalence"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C01-initial-success",
+        "C02-rejection-before-commit",
+        "C03-response-loss-satisfied-observation",
+        "C04-response-loss-inconclusive-stop",
+        "C05-core-git-cas-protected-replay",
+        "C06-explicit-risk-acceptance",
+        "C07-concurrent-runners-single-cas-winner",
+        "C08-request-endpoint-mismatch",
+        "C09-supersession-late-evidence",
+        "C10-ambiguous-append-readback",
+        "C11-malformed-provider-graph",
+        "C12-external-provider-two-instances",
+        "C13-apple-commit-before-id-loss",
+        "C14-finalized-file-tree-adoption",
+        "C15-host-dependency-shadowing",
+        "C16-journal-bound-symmetry"
+      ],
+      "frozenLawIds": [
+        "L01-single-canonical-durable-chain",
+        "L02-single-pure-transition-owner",
+        "L03-single-interpreter-cas-authority",
+        "L04-facts-decisions-effects-separated",
+        "L05-host-owned-single-journal",
+        "L06-provider-vertical-ownership",
+        "L07-open-provider-composition",
+        "L08-host-neutral-kernel",
+        "L09-lossless-effect-build-handoff",
+        "L10-apple-operation-journal-boundary",
+        "L11-hard-cut-or-one-shot-migration",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph",
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": [
+        "P01-second-provider-instance",
+        "P02-packed-external-provider",
+        "P03-new-first-party-provider",
+        "P04-new-commitment-mechanism",
+        "P05-existing-provider-operation",
+        "P06-journal-store-backend",
+        "P07-file-tree-producer-adapter",
+        "P08-deliberate-public-export",
+        "P09-difficult-recovery-transition"
+      ]
+    },
+    {
+      "id": "GM08-metric-and-readability-completeness",
+      "title": "Metric and readability completeness",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E01",
+        "E05",
+        "E07"
+      ],
+      "establishedOrProposed": "Physical, byte, AST and printer readability cross-checks exist; no semantic-source/v3 substitution, exhaustive invalid-state count or complete owner-hop/central-branch receipt.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:machine",
+        "--",
+        "--gate",
+        "GM08-metric-and-readability-completeness"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [],
+      "frozenLawIds": [
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GM09-offline-nonmutation",
+      "title": "Offline nonmutation",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E01",
+        "E02",
+        "E04"
+      ],
+      "establishedOrProposed": "Authorized temporary local mutations/loopback network only; no production mutation or credentials. Original bubblewrap no-network hermetic gate was not executed against lab.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:machine",
+        "--",
+        "--gate",
+        "GM09-offline-nonmutation"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C01-initial-success",
+        "C02-rejection-before-commit",
+        "C03-response-loss-satisfied-observation",
+        "C04-response-loss-inconclusive-stop",
+        "C05-core-git-cas-protected-replay",
+        "C06-explicit-risk-acceptance",
+        "C07-concurrent-runners-single-cas-winner",
+        "C08-request-endpoint-mismatch",
+        "C09-supersession-late-evidence",
+        "C10-ambiguous-append-readback",
+        "C11-malformed-provider-graph",
+        "C12-external-provider-two-instances",
+        "C13-apple-commit-before-id-loss",
+        "C14-finalized-file-tree-adoption",
+        "C15-host-dependency-shadowing",
+        "C16-journal-bound-symmetry"
+      ],
+      "frozenLawIds": [
+        "L01-single-canonical-durable-chain",
+        "L02-single-pure-transition-owner",
+        "L03-single-interpreter-cas-authority",
+        "L04-facts-decisions-effects-separated",
+        "L05-host-owned-single-journal",
+        "L06-provider-vertical-ownership",
+        "L07-open-provider-composition",
+        "L08-host-neutral-kernel",
+        "L09-lossless-effect-build-handoff",
+        "L10-apple-operation-journal-boundary",
+        "L11-hard-cut-or-one-shot-migration",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph",
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT01-shared-fixture-machine-and-cases",
+      "title": "Shared fixture, machine, and cases",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E04",
+        "E06"
+      ],
+      "establishedOrProposed": "Same real core and native providers run across all layouts; all16 historical failure cases were not replayed inside every packed layout.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT01-shared-fixture-machine-and-cases"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C01-initial-success",
+        "C02-rejection-before-commit",
+        "C03-response-loss-satisfied-observation",
+        "C04-response-loss-inconclusive-stop",
+        "C05-core-git-cas-protected-replay",
+        "C06-explicit-risk-acceptance",
+        "C07-concurrent-runners-single-cas-winner",
+        "C08-request-endpoint-mismatch",
+        "C09-supersession-late-evidence",
+        "C10-ambiguous-append-readback",
+        "C11-malformed-provider-graph",
+        "C12-external-provider-two-instances",
+        "C13-apple-commit-before-id-loss",
+        "C14-finalized-file-tree-adoption",
+        "C15-host-dependency-shadowing",
+        "C16-journal-bound-symmetry"
+      ],
+      "frozenLawIds": [
+        "L01-single-canonical-durable-chain",
+        "L02-single-pure-transition-owner",
+        "L03-single-interpreter-cas-authority",
+        "L04-facts-decisions-effects-separated",
+        "L05-host-owned-single-journal",
+        "L06-provider-vertical-ownership",
+        "L07-open-provider-composition",
+        "L08-host-neutral-kernel",
+        "L09-lossless-effect-build-handoff",
+        "L10-apple-operation-journal-boundary",
+        "L11-hard-cut-or-one-shot-migration",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph",
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT02-packed-library-node",
+      "title": "Packed library under Node",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04"
+      ],
+      "establishedOrProposed": "Actual emitted tarball consumer runs library under Node with native fixture requests and fresh continuation.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT02-packed-library-node"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C01-initial-success",
+        "C14-finalized-file-tree-adoption",
+        "C16-journal-bound-symmetry"
+      ],
+      "frozenLawIds": [
+        "L08-host-neutral-kernel",
+        "L09-lossless-effect-build-handoff",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT03-packed-library-bun",
+      "title": "Packed library under Bun",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04"
+      ],
+      "establishedOrProposed": "Actual emitted tarball consumer runs library under Bun with native fixture requests and fresh continuation.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT03-packed-library-bun"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C01-initial-success",
+        "C14-finalized-file-tree-adoption",
+        "C16-journal-bound-symmetry"
+      ],
+      "frozenLawIds": [
+        "L08-host-neutral-kernel",
+        "L09-lossless-effect-build-handoff",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT04-packed-cli",
+      "title": "Packed CLI",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E04"
+      ],
+      "establishedOrProposed": "Previously built packed CLI dynamically loads application module and external provider; production command surface, every platform binary and default SQLite CLI integration remain acceptance.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT04-packed-cli"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C01-initial-success",
+        "C04-response-loss-inconclusive-stop",
+        "C16-journal-bound-symmetry"
+      ],
+      "frozenLawIds": [
+        "L08-host-neutral-kernel",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT05-packed-github-action",
+      "title": "Packed GitHub Action",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E04"
+      ],
+      "establishedOrProposed": "Thin packed Action bundle invokes same application/core locally; hosted GitHub permissions/forks/ref policy/retention and selected journal default remain OB01.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT05-packed-github-action"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C01-initial-success",
+        "C03-response-loss-satisfied-observation",
+        "C04-response-loss-inconclusive-stop",
+        "C07-concurrent-runners-single-cas-winner",
+        "C15-host-dependency-shadowing",
+        "C16-journal-bound-symmetry"
+      ],
+      "frozenLawIds": [
+        "L03-single-interpreter-cas-authority",
+        "L05-host-owned-single-journal",
+        "L08-host-neutral-kernel",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT06-packed-external-provider-two-instances",
+      "title": "Packed external provider with two instances",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04",
+        "E05"
+      ],
+      "establishedOrProposed": "External provider is built after CLI and installed independently, two instances work with no kernel edits.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT06-packed-external-provider-two-instances"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C11-malformed-provider-graph",
+        "C12-external-provider-two-instances",
+        "C15-host-dependency-shadowing",
+        "C16-journal-bound-symmetry"
+      ],
+      "frozenLawIds": [
+        "L06-provider-vertical-ownership",
+        "L07-open-provider-composition",
+        "L13-exact-acyclic-import-graph"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT07-lossless-effect-build-file-tree-adoption",
+      "title": "Lossless effect-build file and tree adoption",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04",
+        "E06",
+        "E19",
+        "E20"
+      ],
+      "establishedOrProposed": "Clean installed actual upstream package declarations and finalizers pass full34-check file/tree fixture in Node/Bun and true owned publication slices.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT07-lossless-effect-build-file-tree-adoption"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C13-apple-commit-before-id-loss",
+        "C14-finalized-file-tree-adoption"
+      ],
+      "frozenLawIds": [
+        "L09-lossless-effect-build-handoff",
+        "L10-apple-operation-journal-boundary"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT08-exact-runtime-declaration-surface",
+      "title": "Exact runtime and declaration surface",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E04",
+        "E08"
+      ],
+      "establishedOrProposed": "Final source-bound exact experimental runtime/declaration/bin/host surfaces checked, normalized owned declarations equal across layouts; full production surface remains future implementation.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT08-exact-runtime-declaration-surface"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [],
+      "frozenLawIds": [
+        "L12-generated-exact-public-surface"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT09-exact-emitted-packed-inventory",
+      "title": "Exact emitted and packed inventory",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04",
+        "E08"
+      ],
+      "establishedOrProposed": "Actual tar and emitted package files are inventoried for each layout with hashes/bytes and exported consumer entrypoints.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT09-exact-emitted-packed-inventory"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [],
+      "frozenLawIds": [
+        "L12-generated-exact-public-surface"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT10-exact-static-type-dynamic-manifest-graph",
+      "title": "Exact static, type, dynamic, and manifest graph",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04",
+        "E08"
+      ],
+      "establishedOrProposed": "Final source AST, Node runtime conditions, strict compiler declaration and Bun bundle graphs captured and source-bound for all experimental layouts; full production graph remains future acceptance.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT10-exact-static-type-dynamic-manifest-graph"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C11-malformed-provider-graph",
+        "C12-external-provider-two-instances",
+        "C15-host-dependency-shadowing"
+      ],
+      "frozenLawIds": [
+        "L06-provider-vertical-ownership",
+        "L07-open-provider-composition",
+        "L08-host-neutral-kernel",
+        "L13-exact-acyclic-import-graph"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT11-no-cycle-sibling-reversal-or-host-edge",
+      "title": "No cycle, sibling, reversal, or host edge",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04",
+        "E08"
+      ],
+      "establishedOrProposed": "Discovered npm/owned cycle corrected through dedicated publicsubpath; final emitted and declaration DAGs assert acyclic for allthree layouts.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT11-no-cycle-sibling-reversal-or-host-edge"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C11-malformed-provider-graph",
+        "C12-external-provider-two-instances",
+        "C15-host-dependency-shadowing"
+      ],
+      "frozenLawIds": [
+        "L06-provider-vertical-ownership",
+        "L07-open-provider-composition",
+        "L08-host-neutral-kernel",
+        "L13-exact-acyclic-import-graph"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT12-version-skew-partial-publication",
+      "title": "Version skew and partial publication",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E09"
+      ],
+      "establishedOrProposed": "Actual registry-prefix coordinate installs expose version/availability states, while v2 code/declarations intentionally remain identical; no semantic ABI-skew qualification.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT12-version-skew-partial-publication"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [],
+      "frozenLawIds": [
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT13-dry-run-build-publication-self-release",
+      "title": "Dry-run build, publication, and self-release",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E04",
+        "E09"
+      ],
+      "establishedOrProposed": "Real builds, local publication ordering and owned Bundle publication fixtures run; complete69-scope self-release Plan/dryrun/delivery replacement was not exercised.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT13-dry-run-build-publication-self-release"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [],
+      "frozenLawIds": [
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT14-tree-shaking-and-packed-bytes",
+      "title": "Tree shaking and packed bytes",
+      "localStatus": "established",
+      "evidenceIds": [
+        "E04"
+      ],
+      "establishedOrProposed": "Selective Bun bundle metafiles and packed byte inventories measure actual installed fixture packages; no claim that all future provider dependency graphs share these costs.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT14-tree-shaking-and-packed-bytes"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [],
+      "frozenLawIds": [
+        "L12-generated-exact-public-surface",
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": []
+    },
+    {
+      "id": "GT15-all-nine-marginal-probes",
+      "title": "All nine marginal probes",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E05"
+      ],
+      "establishedOrProposed": "All nine real changes execute in all3 layouts; P01 zero-source population fails old rule and conservative source+metadata median exceeds40 in all3.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT15-all-nine-marginal-probes"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C12-external-provider-two-instances",
+        "C14-finalized-file-tree-adoption"
+      ],
+      "frozenLawIds": [
+        "L01-single-canonical-durable-chain",
+        "L02-single-pure-transition-owner",
+        "L03-single-interpreter-cas-authority",
+        "L04-facts-decisions-effects-separated",
+        "L05-host-owned-single-journal",
+        "L06-provider-vertical-ownership",
+        "L07-open-provider-composition",
+        "L08-host-neutral-kernel",
+        "L09-lossless-effect-build-handoff",
+        "L10-apple-operation-journal-boundary",
+        "L11-hard-cut-or-one-shot-migration",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph",
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": [
+        "P01-second-provider-instance",
+        "P02-packed-external-provider",
+        "P03-new-first-party-provider",
+        "P04-new-commitment-mechanism",
+        "P05-existing-provider-operation",
+        "P06-journal-store-backend",
+        "P07-file-tree-producer-adapter",
+        "P08-deliberate-public-export",
+        "P09-difficult-recovery-transition"
+      ]
+    },
+    {
+      "id": "GT16-offline-nonmutation",
+      "title": "Offline nonmutation",
+      "localStatus": "partial",
+      "evidenceIds": [
+        "E04",
+        "E05",
+        "E09"
+      ],
+      "establishedOrProposed": "Experiments use local registry/HTTP and temporary Git/files only; frozen no-network gate/sandbox attestation is not claimed.",
+      "historicalGateOutcome": "not-claimed",
+      "frozenCommand": [
+        "bun",
+        "run",
+        "--silent",
+        "--no-env-file",
+        "--config=/dev/null",
+        "--no-install",
+        "--shell=bun",
+        "--cwd",
+        "tools/architecture-program",
+        "gate:topology",
+        "--",
+        "--gate",
+        "GT16-offline-nonmutation"
+      ],
+      "hard": true,
+      "frozenNetworkAccess": false,
+      "frozenCaseIds": [
+        "C01-initial-success",
+        "C02-rejection-before-commit",
+        "C03-response-loss-satisfied-observation",
+        "C04-response-loss-inconclusive-stop",
+        "C05-core-git-cas-protected-replay",
+        "C06-explicit-risk-acceptance",
+        "C07-concurrent-runners-single-cas-winner",
+        "C08-request-endpoint-mismatch",
+        "C09-supersession-late-evidence",
+        "C10-ambiguous-append-readback",
+        "C11-malformed-provider-graph",
+        "C12-external-provider-two-instances",
+        "C13-apple-commit-before-id-loss",
+        "C14-finalized-file-tree-adoption",
+        "C15-host-dependency-shadowing",
+        "C16-journal-bound-symmetry"
+      ],
+      "frozenLawIds": [
+        "L01-single-canonical-durable-chain",
+        "L02-single-pure-transition-owner",
+        "L03-single-interpreter-cas-authority",
+        "L04-facts-decisions-effects-separated",
+        "L05-host-owned-single-journal",
+        "L06-provider-vertical-ownership",
+        "L07-open-provider-composition",
+        "L08-host-neutral-kernel",
+        "L09-lossless-effect-build-handoff",
+        "L10-apple-operation-journal-boundary",
+        "L11-hard-cut-or-one-shot-migration",
+        "L12-generated-exact-public-surface",
+        "L13-exact-acyclic-import-graph",
+        "L14-total-owned-traceability"
+      ],
+      "frozenProbeIds": []
+    }
+  ],
+  "ownership": [
+    {
+      "id": "OD01-journal-law",
+      "title": "Single logical journal law",
+      "decision": "JournalStore.appendIfRevision is the sole storage law: at most one writer advances a revision, readers observe only complete events, committed success is durable and read-back visible, only Appended grants dispatch authority, and ambiguous storage outcomes reconcile before send. Each release has one host-selected store and one logical history; alternative backends never form peer histories.",
+      "blockerIds": [],
+      "requiredEvidence": [],
+      "frozenStatus": "selected",
+      "localStatus": "local-design-established",
+      "evidenceIds": [
+        "E01",
+        "E02"
+      ],
+      "establishedOrProposed": "Law retained and locally tested. Appended is the new CAS winner; AlreadyRecorded supplies no dispatch authority."
+    },
+    {
+      "id": "OD02-cli-journal-deployment",
+      "title": "CLI journal deployment",
+      "decision": "The first-party Bun CLI default is local SQLite at an explicit state path. One immediate transaction checks the expected revision and appends the complete event; only committed read-back success is Appended. This is not a cross-host or arbitrary network-filesystem guarantee.",
+      "blockerIds": [],
+      "requiredEvidence": [],
+      "frozenStatus": "selected",
+      "localStatus": "selected-policy-local-backend-established",
+      "evidenceIds": [
+        "E02",
+        "E04"
+      ],
+      "establishedOrProposed": "Bun CLI default SQLite at explicit state path remains selected. Backend is implemented locally; packed research CLI asks authored application for its host and does not prove production default wiring."
+    },
+    {
+      "id": "OD03-action-journal-deployment",
+      "title": "GitHub Action journal deployment",
+      "decision": "The GitHub Action default remains unselected. A dedicated or orphan Git ref is the leading repository-native candidate, but S3 is not a general default and CI artifacts are transport rather than journal CAS. No candidate may create a peer history beside the release's host-selected journal.",
+      "blockerIds": [
+        "OB01-action-default-qualification",
+        "OB05-product-journal-byte-limit"
+      ],
+      "requiredEvidence": [
+        "Hosted two-runner CAS race against the exact Action deployment.",
+        "Same-target no-op behavior distinguishes the successful CAS writer.",
+        "Contents permissions, fork behavior, ref policy, privacy, and retention are qualified.",
+        "Lost update responses are reconciled by authoritative read-back.",
+        "Read and write enforce one symmetric product-authorized byte bound."
+      ],
+      "frozenStatus": "blocked",
+      "localStatus": "deployment-unqualified",
+      "evidenceIds": [
+        "E02",
+        "E04"
+      ],
+      "establishedOrProposed": "Action default remains unselected. Local Git/Action proofs do not qualify hosted two-runner CAS, permissions/forks/ref policy/privacy/retention or authoritative remote response-loss handling."
+    },
+    {
+      "id": "OD04-release-readiness-journal-deployment",
+      "title": "Release-readiness journal deployment",
+      "decision": "The release-readiness host uses one primary OIDC-scoped S3 namespace with immutable versioned WORM event segments and a conditionally updated CAS head. It has no workspace-local, artifact-only, Git-ref, or provider-specific fallback history. Qualification remains blocked until terminal Plan 004 reconciliation and an operational least-privilege response-loss-tested deployment exist.",
+      "blockerIds": [
+        "OB02-plan004-terminal-reconciliation",
+        "OB03-operational-s3-worm-cas-deployment"
+      ],
+      "requiredEvidence": [
+        "Terminal Plan 004 coordinate is reconciled against the selected ts-release boundary.",
+        "One least-privilege OIDC S3 namespace is operationally deployed.",
+        "WORM retention and exact CAS response-loss branches pass protected tests."
+      ],
+      "frozenStatus": "architecture-selected-qualification-blocked",
+      "localStatus": "historical-host-design-local-protocol-established-current-upstream-prerequisite-superseded",
+      "evidenceIds": [
+        "E14",
+        "E15"
+      ],
+      "establishedOrProposed": "Frozen S3/WORM host choice is preserved as historical/future host design, with concrete local versioned HTTP/CAS model. Current immutable upstream Plan045 npm-only amendment explicitly excludes Apple/AWS readiness; operationalS3 is not a current upstream prerequisite or a prerequisite of this research handoff. No generic default or peer fallback is introduced."
+    },
+    {
+      "id": "OD05-head-segment-roles",
+      "title": "CAS head and immutable segment roles",
+      "decision": "Complete journal events are immutable or WORM segments. The small head is the sole mutable coordinate and advances only by expected-revision CAS. An uploaded but unreferenced segment is not history; ambiguous head updates require read-back before any dispatch decision. A segment store is never a second journal.",
+      "blockerIds": [],
+      "requiredEvidence": [],
+      "frozenStatus": "selected",
+      "localStatus": "selected-protocol-locally-established",
+      "evidenceIds": [
+        "E02",
+        "E14"
+      ],
+      "establishedOrProposed": "Immutable/version-pinned complete event segments and sole conditional head locally exercised. Orphan uploads do not become history; previous version/hash reconstruction validates chain. WORM alone does not prevent new versions/delete markers or authorize head updates; operational policy remains deployment acceptance."
+    },
+    {
+      "id": "OD06-effect-build-certification-classification",
+      "title": "Effect-build certification classification",
+      "decision": "Generated effect-build requirements, policy projections, deterministic build results, and certification summaries are derived evidence, not peer release facts. Provider-native facts created by external mutation, including Apple submission identity and status, are journaled once by ts-release. Exact terminal Plan 004 field-by-field classification remains required.",
+      "blockerIds": [
+        "OB02-plan004-terminal-reconciliation"
+      ],
+      "requiredEvidence": [
+        "Terminal Plan 004 contract fields are classified as derived evidence or provider-native external facts without a third category."
+      ],
+      "frozenStatus": "ownership-selected-field-classification-blocked",
+      "localStatus": "ownership-retained-current-upstream-scope-reconciled",
+      "evidenceIds": [
+        "E06",
+        "E13",
+        "E15"
+      ],
+      "establishedOrProposed": "Derived requirements/build/certification versus native journal facts retained. Current immutable Plan045/combined contract is npm-only; its readiness rejects Apple/AWS evidence. Future selected ts-release Apple workflow still journals native facts once; no obsolete upstream readiness gate is demanded."
+    },
+    {
+      "id": "OD07-apple-history-correlation",
+      "title": "Apple history and correlation",
+      "decision": "effect-build-apple owns concrete submit, info, staple, and validation operations plus Apple submission identity, correlation checks, and outcome derivation. Its SubmissionReference family is Schema.Class-backed, but NotarizationTicket has no durable codec and submit exposes no idempotency or correlation key. ts-release owns the sole release journal, records the exact pre-dispatch artifact and request fingerprint plus provider-native submission and status facts, and decides continuation. If Apple may have committed before the submission ID was recorded and no authoritative correlation proves the result, continuation stops Inconclusive and never blindly resubmits.",
+      "blockerIds": [
+        "OB02-plan004-terminal-reconciliation",
+        "OB06-terminal-apple-codec-correlation"
+      ],
+      "requiredEvidence": [
+        "Terminal package-private Apple codec and correlation contract is reconciled.",
+        "Commit-before-ID response loss proves authoritative correlation or the exact Inconclusive stop."
+      ],
+      "frozenStatus": "selected-with-stop-inconclusive",
+      "localStatus": "local-stop-established-live-qualification-open",
+      "evidenceIds": [
+        "E06",
+        "E13",
+        "E15",
+        "E19"
+      ],
+      "establishedOrProposed": "Packed native protocol doubles establish correlation/no-ID Inconclusive stop and one journal. Credentialed Apple/private terminal qualification belongs to eventual selected Apple product acceptance, not current upstream npm-only readiness or completion of this research handoff."
+    },
+    {
+      "id": "OD08-hashed-file-tree-adoption",
+      "title": "HashedFile and HashedTree adoption",
+      "decision": "The producer protocol is effect-build/artifact-adoption@1. HashedFile source values carry an absolute producer path, canonical decimal bytes, structured digest, provenance, and publication; HashedTree source values carry root, mode, ordered case-fold-unique entries, totalBytes, and manifestDigest. ts-release does not persist or copy producer paths: adoptFile returns path-free protocol, kind, logicalName, bytes, and digest, while adoptTree returns path-free protocol, kind, logicalName, totalBytes, and manifestDigest. Because the exported Hashed schemas are permissive Schema.declare boundaries and the adoption records have no exported strict codec, ts-release owns a strict versioned durable adoption envelope and reverifies content. It preserves entry modes, symlinks, and shared content identity and rejects duplicate logical names, unsafe traversal, narrowing, mutable-path identity, and aliased mutable bytes. The exact packed contract remains blocked on terminal Plan 004 reconciliation.",
+      "blockerIds": [
+        "OB02-plan004-terminal-reconciliation"
+      ],
+      "requiredEvidence": [
+        "Exact effect-build/artifact-adoption@1 HashedFile, HashedTree, adoptFile, and adoptTree fields and hashes are reconciled from terminal Plan 004.",
+        "A packed clean consumer proves file, tree, shared-content, mode, symlink, duplicate-name, traversal, and mutation cases."
+      ],
+      "frozenStatus": "conceptual-selected-exact-packed-contract-blocked",
+      "localStatus": "local-packed-contract-established-current-public-projection-reconciled",
+      "evidenceIds": [
+        "E04",
+        "E06",
+        "E13",
+        "E15",
+        "E16",
+        "E18",
+        "E19",
+        "E20"
+      ],
+      "establishedOrProposed": "Actual emitted PR24 upstream/clean strict consumer establishes file/tree ownership, with current PR37 unchanged public projection and exact scope reconciliation. Current public registry package consumer has separate provenance. No current upstream Apple/AWS prerequisite remains."
+    },
+    {
+      "id": "OD09-durable-format-disposition",
+      "title": "Prototype durable-format disposition",
+      "decision": "All 98 internal PR22 or overlay version-shaped literals, including the four prototype-core formats, are hard-cut prototype evidence and receive no default reader, writer, or fallback. The three external standard identifiers are standards, not prototype compatibility obligations. No local PR22 or overlay durable payload is proven. A discovered external copy requires one explicit one-shot migration row before certification; dual live readers or writers remain forbidden.",
+      "blockerIds": [
+        "OB04-external-payload-inventory"
+      ],
+      "requiredEvidence": [
+        "An operator inventory resolves whether any PR22 or overlay durable payload escaped to external storage."
+      ],
+      "frozenStatus": "policy-selected-external-inventory-blocked",
+      "localStatus": "user-hard-cut-authorized-known-scope",
+      "evidenceIds": [
+        "E07",
+        "E11",
+        "E12"
+      ],
+      "establishedOrProposed": "Latest user says no known consumers and authorizes hard cut. No default compatibility work remains for known scope. Discovered external payload still requires explicit hash-bound one-shot disposition before certification."
+    }
+  ],
+  "blockers": [
+    {
+      "id": "OB01-action-default-qualification",
+      "title": "Action journal default qualification",
+      "requiredEvidence": [
+        "Select one Action default only after hosted two-runner, same-target no-op, permission, fork, ref-policy, privacy, retention, and response-loss evidence is exact."
+      ],
+      "frozenStatus": "open",
+      "localStatus": "live-deployment-qualification",
+      "evidenceIds": [
+        "E02",
+        "E04"
+      ],
+      "establishedOrProposed": "Still open for selecting/releasing a default GitHub Action deployment.",
+      "remaining": "Hosted two-runner CAS and same-target no-op, real contents permissions/forks/protected refs/privacy/retention, lost response authoritative read-back and selected full-envelope limit."
+    },
+    {
+      "id": "OB02-plan004-terminal-reconciliation",
+      "title": "Terminal Plan 004 reconciliation",
+      "requiredEvidence": [
+        "Bind and reconcile the terminal Plan 004 coordinate, including exact-head, credentialed Apple, and cold-host receipts; merged PR24 and an in-progress advisor plan are not terminal boundary evidence."
+      ],
+      "frozenStatus": "open",
+      "localStatus": "historical-upstream-prerequisite-superseded-by-immutable-scope-amendment",
+      "evidenceIds": [
+        "E06",
+        "E13",
+        "E15",
+        "E16",
+        "E19",
+        "E20"
+      ],
+      "establishedOrProposed": "Current upstream source/public contract is reconciled to immutable PR37/Plan045 npm-only scope; original demand for credentialed Apple/AWS/cold-host readiness is not a current upstream release prerequisite. Public source-emitted local proof is preserved separately.",
+      "remaining": "Current actually published0.6.3 packages now pass strict real consumer proof in E16. Retain source/package receipt distinctions and future native acceptance for ts-release selected Apple products; no excluded Apple/AWS gate is required for current upstream npm-only readiness."
+    },
+    {
+      "id": "OB03-operational-s3-worm-cas-deployment",
+      "title": "Operational S3 WORM and CAS deployment",
+      "requiredEvidence": [
+        "Deploy the single least-privilege OIDC-scoped namespace and pass WORM retention, CAS race, response-loss read-back, and no-fallback tests."
+      ],
+      "frozenStatus": "open",
+      "localStatus": "local-protocol-established-historical-upstream-prerequisite-superseded",
+      "evidenceIds": [
+        "E14",
+        "E15"
+      ],
+      "establishedOrProposed": "Concrete single versioned-segment/CAS-head S3 algorithm exercised without AWS access. Plan045 current npm-only amendment excludes this AWS journal from upstream readiness; it is not a blocker to finishing research prerequisites.",
+      "remaining": "If this host is implemented/deployed for selected future product work, qualify OIDC least privilege, versioning/WORM, retention, conditional writes/deny-deletes, race/response-loss, encryption/access availability and no peer fallback. No operational AWS pass is claimed."
+    },
+    {
+      "id": "OB04-external-payload-inventory",
+      "title": "External prototype-payload inventory",
+      "requiredEvidence": [
+        "An operator-authoritative inventory resolves external copies and adds a hash-bound one-shot migration row for each discovered coordinate."
+      ],
+      "frozenStatus": "open",
+      "localStatus": "resolved-for-user-declared-known-scope",
+      "evidenceIds": [
+        "E07",
+        "E12"
+      ],
+      "establishedOrProposed": "User-authorized hard cut and no known consumers resolve the current planning choice; not an assertion that every remote system was scanned.",
+      "remaining": "Only reopen for a discovered actual payload; assign exact source/hash and reviewed one-shot migration or explicit disposal. Do not ask for hard-cut approval again."
+    },
+    {
+      "id": "OB05-product-journal-byte-limit",
+      "title": "Product-authorized journal byte limit",
+      "requiredEvidence": [
+        "Select one product-authorized journal byte limit and prove identical rejection behavior on every read and write path; the 64-byte C16 fixture is not product authority."
+      ],
+      "frozenStatus": "open",
+      "localStatus": "proposed-product-policy-local-tests-established",
+      "evidenceIds": [
+        "E02",
+        "E10"
+      ],
+      "establishedOrProposed": "1MiB full canonical JournalEvent UTF8 bytes is proposed and exact boundary behavior tested locally; historic product-authority row remains unchanged.",
+      "remaining": "Explicitly select or amend the product profile, then enforce same read/write bound in every production backend. Oversized evidence must retain uncertainty and never cause retry; large artifact data remains owned content outside event."
+    },
+    {
+      "id": "OB06-terminal-apple-codec-correlation",
+      "title": "Terminal Apple codec and correlation",
+      "requiredEvidence": [
+        "Reconcile the terminal package-private Apple codec and prove authoritative commit-before-ID correlation or the exact Inconclusive no-resubmit stop."
+      ],
+      "frozenStatus": "open",
+      "localStatus": "local-stop-established-native-qualification-retained-for-apple-product",
+      "evidenceIds": [
+        "E06",
+        "E13",
+        "E15",
+        "E16",
+        "E19"
+      ],
+      "establishedOrProposed": "Packed public codecs and no-ID protocol loss establish exact Inconclusive no-resubmit continuation. Current upstream library remains published separately from deferred credentialed Apple artifacts; obsolete current-release prerequisite is removed.",
+      "remaining": "Future selected Apple product acceptance must bind terminal native/private codecs and real Apple receipt/cold-host evidence. That future implementation/deployment qualification is not a missing architecture experiment or an upstream npm-only gate."
+    }
+  ],
+  "probes": [
+    {
+      "id": "P01-second-provider-instance",
+      "title": "Second provider instance",
+      "localStatus": "established-local-change",
+      "evidenceIds": [
+        "E05"
+      ],
+      "establishedOrProposed": "Real1-to-2 independent registry instance configuration, zero product edit.",
+      "remaining": "Frozen runner-zero-change and one-nonzero-observation policy conflict; do not add artificial code to satisfy metric.",
+      "observations": [
+        {
+          "layout": "T1",
+          "patchSha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+          "source": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 0,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "added": 0,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T2",
+          "patchSha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+          "source": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 0,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "added": 0,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T3",
+          "patchSha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+          "source": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 0,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "added": 0,
+            "removed": 0
+          }
+        }
+      ],
+      "historicalGateOutcome": "not-claimed"
+    },
+    {
+      "id": "P02-packed-external-provider",
+      "title": "Packed external provider",
+      "localStatus": "established-local-change",
+      "evidenceIds": [
+        "E05"
+      ],
+      "establishedOrProposed": "Independent packed external provider built after CLI and loaded through public application host; kernel unchanged.",
+      "remaining": "Native fixture protocol only; external package author owns codecs and actual endpoint behavior.",
+      "observations": [
+        {
+          "layout": "T1",
+          "patchSha256": "fcfcffdebafa50a32c88ab719c3e2719cbb82535b8bd51b6506cb05c48357aae",
+          "source": {
+            "added": 46,
+            "removed": 0,
+            "files": 2
+          },
+          "packageMetadata": {
+            "added": 19,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 65,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "external.ts",
+                "added": 32,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 32
+              },
+              {
+                "path": "http-evidence.ts",
+                "added": 13,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 13
+              }
+            ],
+            "added": 45,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T2",
+          "patchSha256": "108c2b6d67e61c1afefb712f35c1ecbccf5c226f973aa75e41b45682c1ba303b",
+          "source": {
+            "added": 46,
+            "removed": 0,
+            "files": 2
+          },
+          "packageMetadata": {
+            "added": 19,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 65,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "external.ts",
+                "added": 32,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 32
+              },
+              {
+                "path": "http-evidence.ts",
+                "added": 13,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 13
+              }
+            ],
+            "added": 45,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T3",
+          "patchSha256": "108c2b6d67e61c1afefb712f35c1ecbccf5c226f973aa75e41b45682c1ba303b",
+          "source": {
+            "added": 46,
+            "removed": 0,
+            "files": 2
+          },
+          "packageMetadata": {
+            "added": 19,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 65,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "external.ts",
+                "added": 32,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 32
+              },
+              {
+                "path": "http-evidence.ts",
+                "added": 13,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 13
+              }
+            ],
+            "added": 45,
+            "removed": 0
+          }
+        }
+      ],
+      "historicalGateOutcome": "not-claimed"
+    },
+    {
+      "id": "P03-new-first-party-provider",
+      "title": "New first-party provider vertical",
+      "localStatus": "established-local-change",
+      "evidenceIds": [
+        "E05"
+      ],
+      "establishedOrProposed": "New catalog vertical uses existing public definition boundary; T3 adds own package and native receipt helper.",
+      "remaining": "Metadata/package coordinate costs are charged separately and conservatively included in comparison.",
+      "observations": [
+        {
+          "layout": "T1",
+          "patchSha256": "00eb3cc9867e101033598b730195fbdd5c2a89c85018098aa7557c341e64a41d",
+          "source": {
+            "added": 38,
+            "removed": 0,
+            "files": 1
+          },
+          "packageMetadata": {
+            "added": 4,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 42,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "providers/catalog.ts",
+                "added": 42,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 42
+              }
+            ],
+            "added": 42,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T2",
+          "patchSha256": "3fa3dc180aef9c87e3bcd6c522f94c7e709b6c1a06bccf9937b89c1e6bc979f2",
+          "source": {
+            "added": 38,
+            "removed": 0,
+            "files": 1
+          },
+          "packageMetadata": {
+            "added": 4,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 42,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "catalog.ts",
+                "added": 42,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 42
+              }
+            ],
+            "added": 42,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T3",
+          "patchSha256": "60171e7aa494bef7202ff06bda6e0e983869c95fcfd0ef876b90877a0d2f26fa",
+          "source": {
+            "added": 51,
+            "removed": 0,
+            "files": 2
+          },
+          "packageMetadata": {
+            "added": 19,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 70,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "index.ts",
+                "added": 42,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 42
+              },
+              {
+                "path": "http-evidence.ts",
+                "added": 13,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 13
+              }
+            ],
+            "added": 55,
+            "removed": 0
+          }
+        }
+      ],
+      "historicalGateOutcome": "not-claimed"
+    },
+    {
+      "id": "P04-new-commitment-mechanism",
+      "title": "Genuinely new commitment mechanism",
+      "localStatus": "established-local-change",
+      "evidenceIds": [
+        "E05",
+        "E11"
+      ],
+      "establishedOrProposed": "Delayed native202 queue acceptance remains Pending until corresponding completion observation, both real representations.",
+      "remaining": "Research counterfactual baseline; no provider proof hook can mint core commitment certification.",
+      "observations": [
+        {
+          "layout": "T1",
+          "patchSha256": "e11838cd82041c0bc9c00b680e3a47aadfd2ec6a99fcc5740d84651848bf2465",
+          "source": {
+            "added": 12,
+            "removed": 6,
+            "files": 5
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 12,
+          "conservativeProductDeletions": 6,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "kernel/contracts.ts",
+                "added": 2,
+                "removed": 0,
+                "beforeLines": 246,
+                "afterLines": 248
+              },
+              {
+                "path": "kernel/identity.ts",
+                "added": 3,
+                "removed": 1,
+                "beforeLines": 293,
+                "afterLines": 295
+              },
+              {
+                "path": "kernel/m1-history.ts",
+                "added": 3,
+                "removed": 1,
+                "beforeLines": 117,
+                "afterLines": 119
+              },
+              {
+                "path": "kernel/m2-transition.ts",
+                "added": 5,
+                "removed": 2,
+                "beforeLines": 184,
+                "afterLines": 187
+              },
+              {
+                "path": "kernel/run.ts",
+                "added": 2,
+                "removed": 1,
+                "beforeLines": 262,
+                "afterLines": 263
+              }
+            ],
+            "added": 15,
+            "removed": 5
+          }
+        },
+        {
+          "layout": "T2",
+          "patchSha256": "ec9ae811e2c9b1711982316aafc97ebc67250a825ec2043f608ccff30bdd9af0",
+          "source": {
+            "added": 12,
+            "removed": 6,
+            "files": 5
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 12,
+          "conservativeProductDeletions": 6,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "contracts.ts",
+                "added": 2,
+                "removed": 0,
+                "beforeLines": 246,
+                "afterLines": 248
+              },
+              {
+                "path": "identity.ts",
+                "added": 3,
+                "removed": 1,
+                "beforeLines": 293,
+                "afterLines": 295
+              },
+              {
+                "path": "m1-history.ts",
+                "added": 3,
+                "removed": 1,
+                "beforeLines": 117,
+                "afterLines": 119
+              },
+              {
+                "path": "m2-transition.ts",
+                "added": 5,
+                "removed": 2,
+                "beforeLines": 184,
+                "afterLines": 187
+              },
+              {
+                "path": "run.ts",
+                "added": 2,
+                "removed": 1,
+                "beforeLines": 262,
+                "afterLines": 263
+              }
+            ],
+            "added": 15,
+            "removed": 5
+          }
+        },
+        {
+          "layout": "T3",
+          "patchSha256": "ec9ae811e2c9b1711982316aafc97ebc67250a825ec2043f608ccff30bdd9af0",
+          "source": {
+            "added": 12,
+            "removed": 6,
+            "files": 5
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 12,
+          "conservativeProductDeletions": 6,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "contracts.ts",
+                "added": 2,
+                "removed": 0,
+                "beforeLines": 246,
+                "afterLines": 248
+              },
+              {
+                "path": "identity.ts",
+                "added": 3,
+                "removed": 1,
+                "beforeLines": 293,
+                "afterLines": 295
+              },
+              {
+                "path": "m1-history.ts",
+                "added": 3,
+                "removed": 1,
+                "beforeLines": 117,
+                "afterLines": 119
+              },
+              {
+                "path": "m2-transition.ts",
+                "added": 5,
+                "removed": 2,
+                "beforeLines": 184,
+                "afterLines": 187
+              },
+              {
+                "path": "run.ts",
+                "added": 2,
+                "removed": 1,
+                "beforeLines": 262,
+                "afterLines": 263
+              }
+            ],
+            "added": 15,
+            "removed": 5
+          }
+        }
+      ],
+      "historicalGateOutcome": "not-claimed"
+    },
+    {
+      "id": "P05-existing-provider-operation",
+      "title": "Operation in an existing provider",
+      "localStatus": "established-local-change",
+      "evidenceIds": [
+        "E05"
+      ],
+      "establishedOrProposed": "Additional native npm-tag operation uses same installed provider package.",
+      "remaining": "Does not implement every selected npm operation.",
+      "observations": [
+        {
+          "layout": "T1",
+          "patchSha256": "de91b1b9aa479c7f6b25f50d734f1b3c7dc1e4ed231ffea209c99fdcdbd69623",
+          "source": {
+            "added": 43,
+            "removed": 0,
+            "files": 2
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 43,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "providers/npm.ts",
+                "added": 1,
+                "removed": 0,
+                "beforeLines": 96,
+                "afterLines": 97
+              },
+              {
+                "path": "providers/npm-tag.ts",
+                "added": 44,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 44
+              }
+            ],
+            "added": 45,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T2",
+          "patchSha256": "201f945153152ddd3f0ab7bbc3508e6b31c6e08921e80c4b5da9d638369ee84e",
+          "source": {
+            "added": 43,
+            "removed": 0,
+            "files": 2
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 43,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "npm.ts",
+                "added": 1,
+                "removed": 0,
+                "beforeLines": 96,
+                "afterLines": 97
+              },
+              {
+                "path": "npm-tag.ts",
+                "added": 44,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 44
+              }
+            ],
+            "added": 45,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T3",
+          "patchSha256": "e5701d418ae5af949507aa24d1e469ea34675a1916d2e3a0c9b9e159e86ada35",
+          "source": {
+            "added": 43,
+            "removed": 0,
+            "files": 2
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 43,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "index.ts",
+                "added": 1,
+                "removed": 0,
+                "beforeLines": 96,
+                "afterLines": 97
+              },
+              {
+                "path": "npm-tag.ts",
+                "added": 44,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 44
+              }
+            ],
+            "added": 45,
+            "removed": 0
+          }
+        }
+      ],
+      "historicalGateOutcome": "not-claimed"
+    },
+    {
+      "id": "P06-journal-store-backend",
+      "title": "JournalStore backend",
+      "localStatus": "established-local-change",
+      "evidenceIds": [
+        "E05"
+      ],
+      "establishedOrProposed": "Actual independent-process Git CAS journal replaces fixture memory/SQLite store with same machine law.",
+      "remaining": "Local bare Git only; S3/OIDC/WORM deployment requirement remains separate.",
+      "observations": [
+        {
+          "layout": "T1",
+          "patchSha256": "6c27a9d22f4d730d78cfa6b78712afe6afe6b7a8101b87e6f27951e35eec2ed4",
+          "source": {
+            "added": 73,
+            "removed": 0,
+            "files": 1
+          },
+          "packageMetadata": {
+            "added": 4,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 77,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "storage/git.ts",
+                "added": 82,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 82
+              }
+            ],
+            "added": 82,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T2",
+          "patchSha256": "b196b70809c363766bce4a6feca31c1fe585b85d1c19cdcfa7ab8ffcd2fdb373",
+          "source": {
+            "added": 73,
+            "removed": 0,
+            "files": 1
+          },
+          "packageMetadata": {
+            "added": 4,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 77,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "storage/git.ts",
+                "added": 82,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 82
+              }
+            ],
+            "added": 82,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T3",
+          "patchSha256": "b196b70809c363766bce4a6feca31c1fe585b85d1c19cdcfa7ab8ffcd2fdb373",
+          "source": {
+            "added": 73,
+            "removed": 0,
+            "files": 1
+          },
+          "packageMetadata": {
+            "added": 4,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 77,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "storage/git.ts",
+                "added": 82,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 82
+              }
+            ],
+            "added": 82,
+            "removed": 0
+          }
+        }
+      ],
+      "historicalGateOutcome": "not-claimed"
+    },
+    {
+      "id": "P07-file-tree-producer-adapter",
+      "title": "File and tree producer adapter",
+      "localStatus": "established-local-change",
+      "evidenceIds": [
+        "E05"
+      ],
+      "establishedOrProposed": "Native serializedArtifact adoptFile/adoptTree header adapter restores real owned bytes/tree; wrong generation fails after correction.",
+      "remaining": "Incremental40lines, existing323line adoption owner remains baseline and is not deleted or hidden.",
+      "observations": [
+        {
+          "layout": "T1",
+          "patchSha256": "84ea319aa36a3f36d41a6c6dff7c1b8e39552b15186d5d52052d6581e4b3ebc3",
+          "source": {
+            "added": 40,
+            "removed": 0,
+            "files": 1
+          },
+          "packageMetadata": {
+            "added": 4,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 44,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "adoption/producer-handoff.ts",
+                "added": 39,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 39
+              }
+            ],
+            "added": 39,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T2",
+          "patchSha256": "effd6dbce14be6f1bc67826450a8cd85d4a1a5592066c9efed668931523b7a6b",
+          "source": {
+            "added": 40,
+            "removed": 0,
+            "files": 1
+          },
+          "packageMetadata": {
+            "added": 4,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 44,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "adoption/producer-handoff.ts",
+                "added": 39,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 39
+              }
+            ],
+            "added": 39,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T3",
+          "patchSha256": "effd6dbce14be6f1bc67826450a8cd85d4a1a5592066c9efed668931523b7a6b",
+          "source": {
+            "added": 40,
+            "removed": 0,
+            "files": 1
+          },
+          "packageMetadata": {
+            "added": 4,
+            "removed": 0,
+            "files": 1
+          },
+          "conservativeProductAdditions": 44,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "adoption/producer-handoff.ts",
+                "added": 39,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 39
+              }
+            ],
+            "added": 39,
+            "removed": 0
+          }
+        }
+      ],
+      "historicalGateOutcome": "not-claimed"
+    },
+    {
+      "id": "P08-deliberate-public-export",
+      "title": "Deliberate public export",
+      "localStatus": "established-local-change",
+      "evidenceIds": [
+        "E05"
+      ],
+      "establishedOrProposed": "Deliberate public serializing export adds actual public declaration/runtime commitment.",
+      "remaining": "Only that exact export delta, not a proof that every future addition is safe.",
+      "observations": [
+        {
+          "layout": "T1",
+          "patchSha256": "373cc946034467e772959af0b7f2d80ea3e7a8b08466ac7a9af14c4f7fa12a96",
+          "source": {
+            "added": 7,
+            "removed": 0,
+            "files": 2
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 7,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "kernel/index.ts",
+                "added": 1,
+                "removed": 0,
+                "beforeLines": 6,
+                "afterLines": 7
+              },
+              {
+                "path": "kernel/serialize-plan.ts",
+                "added": 5,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 5
+              }
+            ],
+            "added": 6,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T2",
+          "patchSha256": "ca52e095c7b16e1f4d2ad7688d926ef06f8c2438c738d93bd967b70953c40269",
+          "source": {
+            "added": 7,
+            "removed": 0,
+            "files": 2
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 7,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "index.ts",
+                "added": 1,
+                "removed": 0,
+                "beforeLines": 6,
+                "afterLines": 7
+              },
+              {
+                "path": "serialize-plan.ts",
+                "added": 5,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 5
+              }
+            ],
+            "added": 6,
+            "removed": 0
+          }
+        },
+        {
+          "layout": "T3",
+          "patchSha256": "ca52e095c7b16e1f4d2ad7688d926ef06f8c2438c738d93bd967b70953c40269",
+          "source": {
+            "added": 7,
+            "removed": 0,
+            "files": 2
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 7,
+          "conservativeProductDeletions": 0,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "index.ts",
+                "added": 1,
+                "removed": 0,
+                "beforeLines": 6,
+                "afterLines": 7
+              },
+              {
+                "path": "serialize-plan.ts",
+                "added": 5,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 5
+              }
+            ],
+            "added": 6,
+            "removed": 0
+          }
+        }
+      ],
+      "historicalGateOutcome": "not-claimed"
+    },
+    {
+      "id": "P09-difficult-recovery-transition",
+      "title": "Difficult recovery transition",
+      "localStatus": "established-local-change",
+      "evidenceIds": [
+        "E05",
+        "E11"
+      ],
+      "establishedOrProposed": "Late receipt/observation recovery after supersession plus complete reviewed source-hash one-shot event2 import.",
+      "remaining": "Entire42line importer charged. Hard cut remains selected; this research import is not shipped dual-reader compatibility.",
+      "observations": [
+        {
+          "layout": "T1",
+          "patchSha256": "e30ebb14c3f694888f5974b864c480af414c12e9dea5d3c6f15eb85cc4e608af",
+          "source": {
+            "added": 47,
+            "removed": 5,
+            "files": 6
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 47,
+          "conservativeProductDeletions": 5,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "kernel/contracts.ts",
+                "added": 1,
+                "removed": 1,
+                "beforeLines": 248,
+                "afterLines": 248
+              },
+              {
+                "path": "kernel/index.ts",
+                "added": 1,
+                "removed": 0,
+                "beforeLines": 6,
+                "afterLines": 7
+              },
+              {
+                "path": "kernel/m1-history.ts",
+                "added": 0,
+                "removed": 2,
+                "beforeLines": 121,
+                "afterLines": 119
+              },
+              {
+                "path": "kernel/m2-transition.ts",
+                "added": 0,
+                "removed": 2,
+                "beforeLines": 189,
+                "afterLines": 187
+              },
+              {
+                "path": "kernel/run.ts",
+                "added": 2,
+                "removed": 2,
+                "beforeLines": 263,
+                "afterLines": 263
+              },
+              {
+                "path": "kernel/recovery-migration.ts",
+                "added": 45,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 45
+              }
+            ],
+            "added": 49,
+            "removed": 7
+          }
+        },
+        {
+          "layout": "T2",
+          "patchSha256": "e7ba9db4a5e4e38e615af326c5ccf70f06e6694b3b0dd4e8be1481724ff4cc28",
+          "source": {
+            "added": 47,
+            "removed": 5,
+            "files": 6
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 47,
+          "conservativeProductDeletions": 5,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "contracts.ts",
+                "added": 1,
+                "removed": 1,
+                "beforeLines": 248,
+                "afterLines": 248
+              },
+              {
+                "path": "index.ts",
+                "added": 1,
+                "removed": 0,
+                "beforeLines": 6,
+                "afterLines": 7
+              },
+              {
+                "path": "m1-history.ts",
+                "added": 0,
+                "removed": 2,
+                "beforeLines": 121,
+                "afterLines": 119
+              },
+              {
+                "path": "m2-transition.ts",
+                "added": 0,
+                "removed": 2,
+                "beforeLines": 189,
+                "afterLines": 187
+              },
+              {
+                "path": "run.ts",
+                "added": 2,
+                "removed": 2,
+                "beforeLines": 263,
+                "afterLines": 263
+              },
+              {
+                "path": "recovery-migration.ts",
+                "added": 45,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 45
+              }
+            ],
+            "added": 49,
+            "removed": 7
+          }
+        },
+        {
+          "layout": "T3",
+          "patchSha256": "e7ba9db4a5e4e38e615af326c5ccf70f06e6694b3b0dd4e8be1481724ff4cc28",
+          "source": {
+            "added": 47,
+            "removed": 5,
+            "files": 6
+          },
+          "packageMetadata": {
+            "added": 0,
+            "removed": 0,
+            "files": 0
+          },
+          "conservativeProductAdditions": 47,
+          "conservativeProductDeletions": 5,
+          "printerDiagnostic": {
+            "changed": [
+              {
+                "path": "contracts.ts",
+                "added": 1,
+                "removed": 1,
+                "beforeLines": 248,
+                "afterLines": 248
+              },
+              {
+                "path": "index.ts",
+                "added": 1,
+                "removed": 0,
+                "beforeLines": 6,
+                "afterLines": 7
+              },
+              {
+                "path": "m1-history.ts",
+                "added": 0,
+                "removed": 2,
+                "beforeLines": 121,
+                "afterLines": 119
+              },
+              {
+                "path": "m2-transition.ts",
+                "added": 0,
+                "removed": 2,
+                "beforeLines": 189,
+                "afterLines": 187
+              },
+              {
+                "path": "run.ts",
+                "added": 2,
+                "removed": 2,
+                "beforeLines": 263,
+                "afterLines": 263
+              },
+              {
+                "path": "recovery-migration.ts",
+                "added": 45,
+                "removed": 0,
+                "beforeLines": 0,
+                "afterLines": 45
+              }
+            ],
+            "added": 49,
+            "removed": 7
+          }
+        }
+      ],
+      "historicalGateOutcome": "not-claimed"
+    }
+  ],
+  "metrics": {
+    "machine": {
+      "m1CandidatePhysicalLines": 105,
+      "m2CandidatePhysicalLines": 154,
+      "bothCandidateKernelPhysicalLines": 1089,
+      "selectedM1KernelPhysicalDiagnostic": 935,
+      "preservedOverlaySlice": 2114,
+      "threeFifthsFloor": 1268,
+      "formalBudgetPassed": false,
+      "reason": "Comparison is physical diagnostic only; complete production relocation and original candidate metric protocol are not established."
+    },
+    "topologyQuantiles": [
+      {
+        "layout": "T1",
+        "sourceAdditions": {
+          "total": 306,
+          "median": 40,
+          "p90": 73,
+          "maximum": 73
+        },
+        "sourceChurn": {
+          "total": 317,
+          "median": 40,
+          "p90": 73,
+          "maximum": 73
+        },
+        "sourcePlusPackageMetadata": {
+          "total": 337,
+          "median": 43,
+          "p90": 77,
+          "maximum": 77
+        },
+        "printerAdditions": {
+          "total": 323,
+          "median": 42,
+          "p90": 82,
+          "maximum": 82
+        },
+        "nonzeroPopulation": false
+      },
+      {
+        "layout": "T2",
+        "sourceAdditions": {
+          "total": 306,
+          "median": 40,
+          "p90": 73,
+          "maximum": 73
+        },
+        "sourceChurn": {
+          "total": 317,
+          "median": 40,
+          "p90": 73,
+          "maximum": 73
+        },
+        "sourcePlusPackageMetadata": {
+          "total": 337,
+          "median": 43,
+          "p90": 77,
+          "maximum": 77
+        },
+        "printerAdditions": {
+          "total": 323,
+          "median": 42,
+          "p90": 82,
+          "maximum": 82
+        },
+        "nonzeroPopulation": false
+      },
+      {
+        "layout": "T3",
+        "sourceAdditions": {
+          "total": 319,
+          "median": 43,
+          "p90": 73,
+          "maximum": 73
+        },
+        "sourceChurn": {
+          "total": 330,
+          "median": 43,
+          "p90": 73,
+          "maximum": 73
+        },
+        "sourcePlusPackageMetadata": {
+          "total": 365,
+          "median": 44,
+          "p90": 77,
+          "maximum": 77
+        },
+        "printerAdditions": {
+          "total": 336,
+          "median": 45,
+          "p90": 82,
+          "maximum": 82
+        },
+        "nonzeroPopulation": false
+      }
+    ],
+    "wholeProduct": {
+      "currentPhysicalLines": 18252,
+      "overlayCodeLines": 22916,
+      "generatedProductPolicyLines": 55,
+      "referenceDenominator": 22971,
+      "halfTargetFloor": 11485,
+      "achieved": false
+    },
+    "forecast": {
+      "unit": "physical source lines",
+      "kind": "engineering planning range, not measured implementation",
+      "commonCore": [
+        900,
+        1200
+      ],
+      "credentialAndTransport": [
+        700,
+        1200
+      ],
+      "storesIncludingRetainedS3": [
+        400,
+        800
+      ],
+      "cliAndActionEntries": [
+        250,
+        500
+      ],
+      "sum": [
+        2250,
+        3700
+      ],
+      "excludes": [
+        "artifact ownership/adoption",
+        "all provider outcomes",
+        "build/formatting/planning application",
+        "tests and independent oracles",
+        "generators/checkers",
+        "fixtures",
+        "research tooling",
+        "documentation"
+      ],
+      "anchors": [
+        "M1 core935 lines including identity/native envelope/interpreter",
+        "current credentials1083 + authority397 + authority model116 =1596 lines of mixed responsibility",
+        "Current topology HTTP43 + application/Action host33 + CLI10 =86 physical lines; anonymous/scoped mechanism proof only, not full authentication/host implementation",
+        "Current local store protocol25 + SQLite48 + Git73 =146 physical lines; four-line test-only barrel is a separate maintained test convenience; S3 excluded",
+        "current CLI607 and Action1136 lines before selected-scope decomposition",
+        "Additional local S3 model145lines plus independent186lineHTTP fixture/tests; noAWSauth/provisioning implementation",
+        "Published0.3.0 actual S3 source3476 lines:1755 AWS host/auth/governance plus1721 old journal semantics. Separate historical donor lane, no baseline credit; optional host translation belongs in final numerator."
+      ],
+      "status": "superseded-partial-range-use-central-forecast",
+      "priorRangeLimitation": "The prior400\u2013800 store band did not include the newly discovered1755-line historical AWS host/auth/governance responsibility anchor. Do not use its sum as a current full optional-AWS estimate.",
+      "authority": "docs/refactor/architecture-program/handoff/forecast.json"
+    }
+  },
+  "decisionBoundary": {
+    "alreadyAuthorized": [
+      "Concrete local research prototypes and verification",
+      "No known consumers; hard cut of known legacy formats",
+      "Retain all69 selected outcomes and the historical ownership laws"
+    ],
+    "explicitAmendmentsNeeded": [
+      "Use aligned Effect rc.108 for full implementation based on actual packed compatibility, preserving beta83-first-slice historical disposition",
+      "Select proposed1MiB full-event product profile with safe oversize semantics and separately owned large bytes",
+      "Adopt a stated supplemental decision rule or repair/replay frozen trial protocol; no frozen UniqueSelection exists from current results"
+    ],
+    "deploymentEvidenceNotReplaceableByPreference": [
+      "Action hosted journal qualification for the eventual selected default",
+      "Operational OIDC S3/WORM acceptance if this future host is implemented; no current upstream npm-only prerequisite",
+      "Native Apple/cold-host acceptance for selected ts-release Apple products; no current upstream npm-only prerequisite"
+    ],
+    "notNewArchitectureResearch": [
+      "Implement and accept each selected provider protocol against its mapped oracle",
+      "Wire production CLI/Action public contract and run exact delivery acceptance",
+      "Execute authorized deployment gates once infrastructure/credentials and implementation exist"
+    ]
+  },
+  "upstreamAmendment": {
+    "evidenceId": "E15",
+    "immutableCommit": "ef29a087baac8bdbcd90a54bb62a2dceb739dd91",
+    "originalOwnershipRecordsPreserved": true,
+    "currentUpstreamAppleAndAwsStatus": "Deferred, not run/passed; excluded from npm-only readiness",
+    "tsReleaseSelectedOutcomesStill": 69,
+    "currentRegistryConsumer": "E16: actual published0.6.3 JS/declarations,34adoption checks ineachNode/Bun and16Appleprotocolchecks; native credentialed acceptance remains unclaimed.",
+    "unpatchedEffect": "E20: actual official unpatched rc.108 passes final selected proposed declarations and published0.6.3 adoption. The old private Param declaration patch is not required by this selected surface and can be omitted in future layout; no current production change."
+  },
+  "finalSourceBindings": {
+    "machineTreeSha256": "25f02ed605cb054888f5aad37f55f26732d0ad57fad595eafa1483502bebd435",
+    "topologyCombinedSourceSha256": "c653f05d28e8e968b79cdd09f6ec79d36f60163b32995303ab61a2de0474244b",
+    "normalizedOwnedDeclarationSha256": "969cc583d57a46cf5a34f8746c69528b30c59b976080e8fc45ff834766b3f470"
+  },
+  "publicHistoryAmendment": {
+    "evidence": "E17",
+    "change": "Correct published-source census and forecast anchors only; preserve hard cut, global JournalStore contract, all69 outcomes and upstream npm-only amendment.",
+    "sourceCeiling": 11485,
+    "baselineDenominator": 22971,
+    "noDeploymentPass": true
+  }
+}

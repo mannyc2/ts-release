@@ -1,0 +1,42 @@
+{
+  "format": "packed-declaration-graphs/1",
+  "method": "TypeScript 6 NodeNext resolves every import/re-export/import-type from all installed packed declaration files, recursively through external declarations. Node runtime graphs and Bun bundle graphs remain in the baseline receipt. Builtins are ambient boundaries; compiler ambient libraries are inventoried separately.",
+  "sourceSha256": "c653f05d28e8e968b79cdd09f6ec79d36f60163b32995303ab61a2de0474244b",
+  "evidenceArtifact": {
+    "file": "graph-results.json.gz",
+    "sha256": "0248e7ad2c19779072d74a933c546e91835095ed5aa1d3c54bd97454d2dd7868",
+    "expandedSha256": "0ee9d5f4125696d8d506a4a67e12567b089a80f1eab48431d398242f16a9b2e2",
+    "expandedBytes": 1095486,
+    "compressedBytes": 285714,
+    "encoding": "gzip+json-with-content-addressed-sharing"
+  },
+  "graphs": [
+    {
+      "layout": "T1",
+      "declarationFiles": 183,
+      "edges": 1101,
+      "ambientFiles": 216,
+      "normalizedDeclarationSha256": "969cc583d57a46cf5a34f8746c69528b30c59b976080e8fc45ff834766b3f470",
+      "ownDeclarationAcyclic": true,
+      "ownEmittedAcyclic": true
+    },
+    {
+      "layout": "T2",
+      "declarationFiles": 182,
+      "edges": 1100,
+      "ambientFiles": 216,
+      "normalizedDeclarationSha256": "969cc583d57a46cf5a34f8746c69528b30c59b976080e8fc45ff834766b3f470",
+      "ownDeclarationAcyclic": true,
+      "ownEmittedAcyclic": true
+    },
+    {
+      "layout": "T3",
+      "declarationFiles": 183,
+      "edges": 1102,
+      "ambientFiles": 216,
+      "normalizedDeclarationSha256": "969cc583d57a46cf5a34f8746c69528b30c59b976080e8fc45ff834766b3f470",
+      "ownDeclarationAcyclic": true,
+      "ownEmittedAcyclic": true
+    }
+  ]
+}

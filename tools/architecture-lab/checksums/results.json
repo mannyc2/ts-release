@@ -1,0 +1,107 @@
+{
+  "format": "checksum-native-research/1",
+  "consumer": "/tmp/ts-release-published-upstream-Pz3Mm7/consumer",
+  "work": "/tmp/ts-release-published-upstream-Pz3Mm7/consumer/checksums-research-TtRiNt",
+  "strictTypecheck": true,
+  "bun": {
+    "checks": [
+      "two-space-LF-unicode-code-point-order",
+      "caller-order-does-not-change-bytes",
+      "owned-content-verified",
+      "native-sha256sum-check",
+      "duplicate-public-name",
+      "case-colliding-public-name",
+      "artifact-alias",
+      "traversal-name",
+      "newline-name",
+      "non-NFC-name",
+      "checksum-self-reference",
+      "changed-file-mode",
+      "foreign-bundle-member",
+      "invalid-bundle-collision",
+      "Tree-is-not-a-file-digest",
+      "CRLF-is-not-native-exact-view",
+      "tampered-checksum-bytes",
+      "tampered-owned-file",
+      "native-rejects-tampered-file"
+    ],
+    "checksPassed": 19,
+    "native": "sha256sum (GNU coreutils) 9.4",
+    "upstream": "effect-build@0.6.3",
+    "livePublication": false
+  },
+  "node": {
+    "checks": [
+      "two-space-LF-unicode-code-point-order",
+      "caller-order-does-not-change-bytes",
+      "owned-content-verified",
+      "native-sha256sum-check",
+      "duplicate-public-name",
+      "case-colliding-public-name",
+      "artifact-alias",
+      "traversal-name",
+      "newline-name",
+      "non-NFC-name",
+      "checksum-self-reference",
+      "changed-file-mode",
+      "foreign-bundle-member",
+      "invalid-bundle-collision",
+      "Tree-is-not-a-file-digest",
+      "CRLF-is-not-native-exact-view",
+      "tampered-checksum-bytes",
+      "tampered-owned-file",
+      "native-rejects-tampered-file"
+    ],
+    "checksPassed": 19,
+    "native": "sha256sum (GNU coreutils) 9.4",
+    "upstream": "effect-build@0.6.3",
+    "livePublication": false
+  },
+  "files": [
+    {
+      "name": "checksums.ts",
+      "physicalLines": 68,
+      "printerNormalizedLines": 77,
+      "sha256": "85ac2d440851f36a231b24383963f341fb1c39d19b364222ca090c9626b5d734"
+    },
+    {
+      "name": "fixture.ts",
+      "physicalLines": 63,
+      "printerNormalizedLines": 78,
+      "sha256": "f4165bac3c48dbc88c01176081dbe32fe76dc6e1bff3825edf31e0ef3201669a"
+    },
+    {
+      "name": "run.mjs",
+      "physicalLines": 22,
+      "printerNormalizedLines": 26,
+      "sha256": "566120aa9ab6047cb338384c6f4277bf65932280b0a21f10adb4eb897358173f"
+    }
+  ],
+  "productionImplemented": false,
+  "newUpstreamImplementationLines": 0,
+  "fullReplacementPhysicalLines": {
+    "low": 73,
+    "expected": 80,
+    "high": 98
+  },
+  "components": [
+    {
+      "name": "Measured checksum projection and content verification",
+      "low": 68,
+      "expected": 68,
+      "high": 68
+    },
+    {
+      "name": "Target domain/export, explicit input bounds and final shared public-name admission",
+      "low": 5,
+      "expected": 12,
+      "high": 30
+    }
+  ],
+  "sourceDonor": {
+    "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+    "path": "src/release/checksums.ts",
+    "physicalLines": 122
+  },
+  "declarationSha256": "d16afc414edbb1192d7a1b8aaa8b92e4c0666c7f46ca80e33e85e167ce482254"
+}

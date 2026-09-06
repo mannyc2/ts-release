@@ -1,0 +1,1660 @@
+{
+  "format": "provider-api-research-evidence/1",
+  "observedAt": "2026-09-05",
+  "productionImplemented": false,
+  "nativeHostedAcceptance": false,
+  "proposalStatus": "Concrete typechecked schema and function signature proposal; strict refinements and provider implementations remain migration work",
+  "pins": {
+    "donorOverlay": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+    "effect": "4.0.0-rc.108",
+    "typescript": "6.0.3",
+    "bun": "1.3.14",
+    "producer": {
+      "effect-build": "0.6.3",
+      "effect-build-apple": "0.6.3",
+      "revision": "ef29a087baac8bdbcd90a54bb62a2dceb739dd91",
+      "proof": "upstream/published-consumer.json"
+    },
+    "sigstore": {
+      "version": "5.0.0",
+      "revision": "7d2900eca1c22b3f87c13987c8d4b7c9a29b733a",
+      "qualification": "public attest/verify/options source verified; no install/sign/OIDC exchange claimed"
+    },
+    "semver": {
+      "version": "7.8.5",
+      "evidence": "2ef7a9a61fe40608d053569cbcd71e40fca5c181:bun.lock:94"
+    }
+  },
+  "runtimeDependencies": {
+    "root": {
+      "effect-build": "0.6.3",
+      "effect": "peer4.0.0-rc.108",
+      "effect-build-apple": "optional peer0.6.3, required only for Apple subpath"
+    },
+    "npm": {
+      "root": "exact version chosen by package layout",
+      "effect": "peer4.0.0-rc.108",
+      "semver": "7.8.5",
+      "sigstore": "5.0.0"
+    },
+    "OpenAI": {
+      "root": "exact version chosen by package layout",
+      "effect": "peer4.0.0-rc.108",
+      "semver": "7.8.5"
+    },
+    "Warehouse/GitHub/Homebrew/Scoop/MCP": {
+      "root": "exact version chosen by package layout",
+      "effect": "peer4.0.0-rc.108"
+    },
+    "Git": "host native executable capability, no JavaScript Git SDK",
+    "Oidc": "common root acquisition/verification; provider-specific token exchange schema/URL; no sibling-provider dependency"
+  },
+  "retainedSources": [
+    {
+      "path": "provider-api-sources/schema.ts.gz",
+      "sourceUrl": null,
+      "uncompressedBytes": 30992,
+      "uncompressedSha256": "51a0fa0e4033bc5baf921c7d8815ea697ce713db8a7ee73d06a1add2f092ffea",
+      "physicalLines": 279,
+      "purpose": "schema and signature declarations only; no provider algorithm"
+    },
+    {
+      "path": "provider-api-sources/sigstore-native.ts.gz",
+      "sourceUrl": "https://raw.githubusercontent.com/sigstore/sigstore-js/7d2900eca1c22b3f87c13987c8d4b7c9a29b733a/packages/client/src/sigstore.ts",
+      "uncompressedBytes": 3389,
+      "uncompressedSha256": "99c3989b7514310a14a1b762d4f8f853b8be822556c3ad2033a7420f637f7e51",
+      "physicalLines": 113,
+      "purpose": "retrieved primary source; exact bytes retained; not product implementation"
+    },
+    {
+      "path": "provider-api-sources/sigstore-config.ts.gz",
+      "sourceUrl": "https://raw.githubusercontent.com/sigstore/sigstore-js/7d2900eca1c22b3f87c13987c8d4b7c9a29b733a/packages/client/src/config.ts",
+      "uncompressedBytes": 6099,
+      "uncompressedSha256": "85b4951d6395ec52120533a94285cac288eb3532d417dd704a7e3b68e6b86842",
+      "physicalLines": 221,
+      "purpose": "retrieved primary source; exact bytes retained; not product implementation"
+    },
+    {
+      "path": "provider-api-sources/npm-provenance.js.gz",
+      "sourceUrl": "https://raw.githubusercontent.com/npm/cli/v12.0.2/workspaces/libnpmpublish/lib/provenance.js",
+      "uncompressedBytes": 9704,
+      "uncompressedSha256": "ee9b1bc8e3f636fbaf5138a3e183ce3c6d42bb5dd57ab004578e534dd08da46b",
+      "physicalLines": 245,
+      "purpose": "retrieved primary source; exact bytes retained; not product implementation"
+    }
+  ],
+  "donors": [
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/platform/core-git-live.ts",
+      "physicalLines": 634,
+      "sha256": "1aa6b4e46b94642efab6ddbb982b8a21c2d7253db8d3b2fdaee2d3d0f3e7a1f9",
+      "gitBlobOid": "0b5183e48bc0e9f6f2419e7acc3b72bcda1f6541"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/platform/openai-plugin-store.ts",
+      "physicalLines": 127,
+      "sha256": "9b1ca4775a382c07f2d25915a304b805c1358176da4b22eac8df04bf26e11cec",
+      "gitBlobOid": "e827fabc099fdb62d295f698660d9a38cf05c1dc"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/catalogs.ts",
+      "physicalLines": 359,
+      "sha256": "e8aa2d871dca8481171673497c7cc0e0595c82a4dd4d5c52735830d58d3cc3f5",
+      "gitBlobOid": "d2310f446a6832cd44ad85ecc73a20a7b44e278f"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/github-application.ts",
+      "physicalLines": 830,
+      "sha256": "03feaacb5e0587a22a61a2c8f4e11f048fe241381de2e20ff0a77542dc749d68",
+      "gitBlobOid": "338ce58f42e027279c8109ad785408221e110731"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/github-live.ts",
+      "physicalLines": 106,
+      "sha256": "7f3b3743e8a2e989095cf8978c73d8c2bea4606b5859cae00826700a38e1fa01",
+      "gitBlobOid": "4203b0928747154e75fddf5f1c55f9eb53793d74"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/github-native.ts",
+      "physicalLines": 2201,
+      "sha256": "161a1fdc7e535cb0e735e04e7b523cd97c4a57c7394cfdaa27d6863df151c633",
+      "gitBlobOid": "23e4771ab67eb1f9654352b8b24d2d25163c2b9a"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/github.ts",
+      "physicalLines": 5,
+      "sha256": "d484f7e51fc9ec07f325bc1b0bd869b3759f6acc69212adf41072273951308a9",
+      "gitBlobOid": "179d4a94c246c65732d98632ebbda1b07f53b3a5"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/mcp-registry-application.ts",
+      "physicalLines": 142,
+      "sha256": "79d4d2f7ea000c97eb5dd4f3abb3b8927fd1e78b87787296c6650b88f3da3f8e",
+      "gitBlobOid": "ef4de49060627e9c2a04ba995b811ed1002164f9"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/mcp-registry-live.ts",
+      "physicalLines": 181,
+      "sha256": "3fcc66a5b08325496716d2f412e54c0578c144c72dc998c9d5b8ecbcfad671d4",
+      "gitBlobOid": "9b27a4995bdfeecc2aeb55a5d625d8328486a233"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/mcp-registry-provider.ts",
+      "physicalLines": 5,
+      "sha256": "977c4348054006639337a59f6ea3d74294b0644058bcd5f5f323fc3b5cb93f13",
+      "gitBlobOid": "bcd94078b51b0d6910b07444817a0466bffd64d6"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/mcp-registry.ts",
+      "physicalLines": 1059,
+      "sha256": "7968e95734f1a75f260f6ab135e96704c5df62b9bcfd30985437c02f923f4d2a",
+      "gitBlobOid": "81d83d2eb0e7b77c3d5ade4f42b8c1f140c110ee"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/npm-application.ts",
+      "physicalLines": 294,
+      "sha256": "a050b2fcd43fbc3fa69d5d00a36b0488e92b8e5b933a88979af5fde2f9f9ecc7",
+      "gitBlobOid": "cb03c45a498f210ce3bcc839e73addc898e17c4c"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/npm-live.ts",
+      "physicalLines": 190,
+      "sha256": "bdd83f31aec969534f36e30eaff896b4a70322e2086f1e4bb7ca283e73474edb",
+      "gitBlobOid": "ab3c001c8b91311280474d33f6c2db66c7bdbd34"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/npm-native.ts",
+      "physicalLines": 2348,
+      "sha256": "82bbee11e426ad87ee5b82c859af8b0436fdb76768388c83cbd96ce7fce2f3b9",
+      "gitBlobOid": "b77ea13de91441dc8e1b21c2e52a0aa2e746b1b2"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/npm.ts",
+      "physicalLines": 5,
+      "sha256": "20e0d820322756fc2d9ab15f49ec1ea53d2d09b1a2c6b08c0c55cd9f8740ccfd",
+      "gitBlobOid": "57143f8cfb7b234a9ab8342fd2e9e35889244315"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/openai-plugin.ts",
+      "physicalLines": 647,
+      "sha256": "0959e3932af5fd63bec5f499973efee73e0f8c7228827bea6fc55f06ed7fb37d",
+      "gitBlobOid": "03ee78541dacb8f41d0727ac8bc6b280da7661cb"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/warehouse-application.ts",
+      "physicalLines": 158,
+      "sha256": "3b8814aa682466bbcc7fa0b6fdd3648509bb5d1804b7ef413ed55c12191a7982",
+      "gitBlobOid": "9b8a2762b5906d9af04e4d065c4da88688a73dce"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/warehouse-live.ts",
+      "physicalLines": 206,
+      "sha256": "664c0c3d3713ce11599b79238be22dac25672e24ecd22a3b823ea3adc93f2fba",
+      "gitBlobOid": "208a5c407613faf3e992eb3b099ef1c28372c384"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/warehouse-native.ts",
+      "physicalLines": 1343,
+      "sha256": "e4da6d68b31416135872bab78cc3a5556a3cbcecd6246ed48d6b433cd4f6aee2",
+      "gitBlobOid": "0ba18a357d44c4dcdff0c2defede5ae50adb4c40"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/publication/warehouse.ts",
+      "physicalLines": 5,
+      "sha256": "637bda8457efee239a729e64015c2c1792c23155afab6be71513d02f70138e09",
+      "gitBlobOid": "0f4b39ed49683d3c2d5085ddf155530e2161e01f"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/release/artifact-bundle.ts",
+      "physicalLines": 552,
+      "sha256": "f77399f66e61188a6090b53d0e8f779042063919ada89a13899c163211550f07",
+      "gitBlobOid": "78cd5c6bf5e4516d02a03cb75da44cee574358d0"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/transport/core-git-application.ts",
+      "physicalLines": 161,
+      "sha256": "39cf9f7f1fdefb96d537e1f64aa2068e9cfc58695d41330c423496cf014d43c2",
+      "gitBlobOid": "f7b936e6e9fa351f3e33b01d8cff56797db8f209"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/transport/core-git.ts",
+      "physicalLines": 929,
+      "sha256": "ddfd859af9ebd9665233747e6e2512c9df548181ef932b72bd44cf2c15906443",
+      "gitBlobOid": "f00617887c1170668ea5e5dbc2597b89ec4ec0ea"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/transport/core-http.ts",
+      "physicalLines": 240,
+      "sha256": "e031249840bc11f38b18f4ca5617d10c1f90cf13be7deb40004fafb70ebb13b9",
+      "gitBlobOid": "24282114032ed10d2037ec60239db6f678bc89b0"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/transport/provider-http.ts",
+      "physicalLines": 550,
+      "sha256": "5266e25edc824f061c913725544d6ec74be51e4c4f67917c3bdbdbcb927fc611",
+      "gitBlobOid": "52ea0b7c56ba86a1840cd80fe2bc6b03ace892eb"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/transport/core-http-application.ts",
+      "physicalLines": 193,
+      "sha256": "ab64301ddccb5cbb478f63bb9d0741e677f66b1e980f156232707b147707a01d",
+      "gitBlobOid": "3c041819bb001202a62c254c63bb9c9bc6faeda3"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "src/platform/git-authorization.ts",
+      "physicalLines": 134,
+      "sha256": "41f2a3b62f7447204f6a8d409f14e23667b00e843fda678c8fdbca8e81b8f768",
+      "gitBlobOid": "e72d5d0205708cbfc39525ea52896b496778a1e0"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "package.json",
+      "physicalLines": 96,
+      "sha256": "68a86ea0878507ebcb5256fe82045112aab2df1bf3e5f3efb9d41095e21041e1",
+      "gitBlobOid": "11111094c5f2414e1a2dda82583d832b1c5e632c"
+    },
+    {
+      "revision": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+      "path": "bun.lock",
+      "physicalLines": 108,
+      "sha256": "dedb3c2119ee5cec20225a16bc1345bb57e7f25f6691d5c0e839aea69cf0e4af",
+      "gitBlobOid": "df1c1d1a86c913bb4b4e6023a76b7e3be60e174b"
+    }
+  ],
+  "selectedCount": 69,
+  "selectedRows": [
+    {
+      "id": "K01",
+      "outcome": "Emit one machine-readable finalized release report for downstream automation",
+      "selectedScope": "one JSON report per plan; finalized artifacts and operations only",
+      "oracle": "Schema decode; every projection resolves to canonical bundle/history facts[M,B,J]",
+      "apiOwner": "root",
+      "api": "kernel/host-api",
+      "disposition": "Root report, physical journal/restart and CLI/Action; provider native facts contribute without separate histories"
+    },
+    {
+      "id": "K02",
+      "outcome": "Continue an interrupted complete release on a fresh runner without blind mutation",
+      "selectedScope": "one persisted plan; npm+Warehouse+GitHub+Git operations; no shared memory",
+      "oracle": "two-process crash injection; per-operation provider oracles; no duplicate remote effect[A,M,B,J]",
+      "apiOwner": "root",
+      "api": "kernel/host-api",
+      "disposition": "Root report, physical journal/restart and CLI/Action; provider native facts contribute without separate histories"
+    },
+    {
+      "id": "K03",
+      "outcome": "Run a non-manual release from a packed first-party GitHub Action, including fresh-runner continuation",
+      "selectedScope": "github.com Actions; Node action invokes CLI; OIDC/token inputs; immutable bundle handoff",
+      "oracle": "packed action test; OIDC permission assertions; clean-runner continuation; ts-release self-release[A,M,B,C,J]",
+      "apiOwner": "root",
+      "api": "kernel/host-api",
+      "disposition": "Root report, physical journal/restart and CLI/Action; provider native facts contribute without separate histories"
+    },
+    {
+      "id": "D01-01",
+      "outcome": "Publish native npm tarball+initial tag to npmjs",
+      "selectedScope": "npmjs; public scoped or unscoped package; token auth",
+      "oracle": "documented success result; packument version/tag; SHA/integrity; clean install/import/bin[A,M,B,C]",
+      "apiOwner": "npm",
+      "api": "Npm",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D01-02",
+      "outcome": "Publish same npm outcome by GHA OIDC with provenance",
+      "selectedScope": "npmjs OIDC trusted publisher; pub pkg",
+      "oracle": "npm result; registry provenance meta; install[A,M,C]",
+      "apiOwner": "npm",
+      "api": "Npm",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D01-03",
+      "outcome": "Move npm dist-tag after publish",
+      "selectedScope": "npmjs; pkg/tag/target ver",
+      "oracle": "ok mutation + packument tag read[A,M]",
+      "apiOwner": "npm",
+      "api": "Npm",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D01-04",
+      "outcome": "Publish three public workspace packages as three independent coordinates",
+      "selectedScope": "exactly 3 public workspaces",
+      "oracle": "per-coordinate registry reads and clean installs[A,M,B,C]",
+      "apiOwner": "npm",
+      "api": "Npm",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D01-05",
+      "outcome": "Exclude one package declared private while publishing public siblings",
+      "selectedScope": "exactly 2 public+1 private workspace; private package has no operation",
+      "oracle": "plan/report contains no private coordinate; registry confirms two public packages[M,C]",
+      "apiOwner": "npm",
+      "api": "Npm",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D01-06",
+      "outcome": "Continue after lost npm publish response without blind repeat",
+      "selectedScope": "1 scratch coordinate; version and initial-tag facets",
+      "oracle": "packument observation; absence never fences in-flight PUT[M,J]",
+      "apiOwner": "npm",
+      "api": "Npm",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D02-01",
+      "outcome": "Upload sdist+py3-none-any wheel to Warehouse/PyPI",
+      "selectedScope": "pypi.org legacy upload; exactly 2 files",
+      "oracle": "HTTP success; Simple hashes; clean pip install/import/console-script[A,M,B,C]",
+      "apiOwner": "Warehouse",
+      "api": "Warehouse",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D02-02",
+      "outcome": "Upload Warehouse files by GHA trusted publishing",
+      "selectedScope": "pypi.org trusted publisher; same 2 files",
+      "oracle": "Warehouse result + Simple[A,M,B]",
+      "apiOwner": "Warehouse",
+      "api": "Warehouse",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D02-03",
+      "outcome": "Retain progress for sdist+3 named wheels",
+      "selectedScope": "sdist; py3-none-any; cp312-manylinux-x86_64; cp312-macosx_arm64",
+      "oracle": "per-file receipts+Simple reads[A,M,B,J]",
+      "apiOwner": "Warehouse",
+      "api": "Warehouse",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D02-04",
+      "outcome": "Publish one wheel and one sdist to pinned pypiserver",
+      "selectedScope": "one pinned pypiserver version; upload+Simple-read laws only",
+      "oracle": "HTTP result; Simple hashes; clean pip install; no inherited Warehouse duplicate law[A,M,B,C]",
+      "apiOwner": "Warehouse",
+      "api": "Warehouse",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D02-05",
+      "outcome": "Publish one wheel and one sdist to pinned devpi-server",
+      "selectedScope": "one pinned devpi-server version; upload+Simple-read laws only",
+      "oracle": "HTTP result; Simple hashes; clean pip install; no inherited Warehouse duplicate law[A,M,B,C]",
+      "apiOwner": "Warehouse",
+      "api": "Warehouse",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D02-06",
+      "outcome": "Continue each Warehouse file after a lost response on runner 2",
+      "selectedScope": "Warehouse exact-duplicate law at pinned source; TestPyPI live fixture",
+      "oracle": "authoritative per-file observation and exact-duplicate evidence; absence is not a fence[M,B,J]",
+      "apiOwner": "Warehouse",
+      "api": "Warehouse",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D02-07",
+      "outcome": "Stop honestly after ambiguous completion on a compatible server without a proven duplicate law",
+      "selectedScope": "pypiserver and devpi fixtures; no Warehouse-law inheritance",
+      "oracle": "fresh Simple observation is evidence but absence never authorizes replay[M,B,J]",
+      "apiOwner": "Warehouse",
+      "api": "Warehouse",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D03-01",
+      "outcome": "Create or validate a lightweight or annotated tag at a commit",
+      "selectedScope": "GitHub REST refs/tags; one repository/tag/commit",
+      "oracle": "201 or exact ref/tag observation[A,M,J]",
+      "apiOwner": "GitHub",
+      "api": "GitHub",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D03-02",
+      "outcome": "Create draft GitHub release for tag",
+      "selectedScope": "1 repository/tag",
+      "oracle": "201 receipt + rel read[A,M,J]",
+      "apiOwner": "GitHub",
+      "api": "GitHub",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D03-03",
+      "outcome": "Upload zero or three assets with explicit public names",
+      "selectedScope": "zero-or-infinity cardinality demonstrated by 0 and 3; one request/operation per asset",
+      "oracle": "201 receipt; paginated reads; public download digest; executable smoke[A,M,B,C,J]",
+      "apiOwner": "GitHub",
+      "api": "GitHub",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D03-04",
+      "outcome": "Publish draft after required assets",
+      "selectedScope": "draft=false update",
+      "oracle": "update receipt + rel read[A,M,J]",
+      "apiOwner": "GitHub",
+      "api": "GitHub",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D03-05",
+      "outcome": "Continue release creation after a lost response",
+      "selectedScope": "one scratch repository/tag/release operation",
+      "oracle": "release lookup by durable coordinate; absence cannot fence in-flight create[M,J]",
+      "apiOwner": "GitHub",
+      "api": "GitHub",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D03-06",
+      "outcome": "Continue one asset upload after a lost response without treating absence as a fence",
+      "selectedScope": "one scratch release and one independently named asset",
+      "oracle": "asset list/read; returned size/digest where available; documented starter cleanup; no blind repeat[M,B,J]",
+      "apiOwner": "GitHub",
+      "api": "GitHub",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D04-01",
+      "outcome": "Render Formula for macOS/Linux x64/arm64 archives",
+      "selectedScope": "one Ruby Formula; exact four platform/architecture entries",
+      "oracle": "Ruby parse; brew audit/style; every URL digest binds canonical bundle bytes[M,B]",
+      "apiOwner": "Homebrew + root Git",
+      "api": "Homebrew + GitCatalog",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D04-02",
+      "outcome": "Publish one or two Formula paths by one Git compare-and-swap",
+      "selectedScope": "tap repository/ref; expected and desired commit IDs",
+      "oracle": "Git receipt+ref/tree read+clean brew install/test[A,M,B,C,J]",
+      "apiOwner": "Homebrew + root Git",
+      "api": "Homebrew + GitCatalog",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D04-03",
+      "outcome": "Continue after lost tap push response",
+      "selectedScope": "same tap/ref",
+      "oracle": "fresh ref/tree obs[M,B,J]",
+      "apiOwner": "Homebrew + root Git",
+      "api": "Homebrew + GitCatalog",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D05-01",
+      "outcome": "Render a Scoop manifest for Windows x64/arm64",
+      "selectedScope": "one JSON manifest; exact x64 and arm64 selectors",
+      "oracle": "JSON/schema/selector validation; every URL hash binds canonical bundle bytes[M,B]",
+      "apiOwner": "Scoop + root Git",
+      "api": "Scoop + GitCatalog",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D05-02",
+      "outcome": "Publish one or two manifests by one Git compare-and-swap",
+      "selectedScope": "bucket repository/ref",
+      "oracle": "Git receipt+ref/tree read+clean x64 install/run and arm64 selector/hash validation[A,M,B,C,J]",
+      "apiOwner": "Scoop + root Git",
+      "api": "Scoop + GitCatalog",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D05-03",
+      "outcome": "Continue after lost bucket push response",
+      "selectedScope": "same bucket/ref",
+      "oracle": "fresh ref/tree read[M,B,J]",
+      "apiOwner": "Scoop + root Git",
+      "api": "Scoop + GitCatalog",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D06-01",
+      "outcome": "Load an external provider unknown when core and CLI were built",
+      "selectedScope": "one packed Node ESM provider installed in a clean consumer application",
+      "oracle": "clean packed consumer import and execution; no allowlist/global registry[M]",
+      "apiOwner": "root extension boundary",
+      "api": "kernel + HttpProviderDefinition",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D06-02",
+      "outcome": "Persist and reload heterogeneous Intent values with a versioned service-free codec",
+      "selectedScope": "one definition ID+codec version; conceptual Schema.Codec<Intent,Json,never,never>; separately versioned canonical-byte encoder",
+      "oracle": "golden byte vectors, round-trip, nested artifact references, no service requirements[M,J]",
+      "apiOwner": "root extension boundary",
+      "api": "kernel + HttpProviderDefinition",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D06-03",
+      "outcome": "Prepare without sending, then dispatch through core HTTP or conditional Git",
+      "selectedScope": "one HTTP fixture+one expected-old/desired-new Git fixture",
+      "oracle": "golden request capture; recorded/sent correspondence; Git CAS race[A,M,J]",
+      "apiOwner": "root extension boundary",
+      "api": "kernel + HttpProviderDefinition",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D06-04",
+      "outcome": "Dispatch opaque Effect with no auto-replay claim",
+      "selectedScope": "1 write-only custom destination",
+      "oracle": "prov contract test[A,J]",
+      "apiOwner": "root extension boundary",
+      "api": "kernel + HttpProviderDefinition",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D06-05",
+      "outcome": "Persist native receipts/observations/errors",
+      "selectedScope": "1 codec/ver for each value category",
+      "oracle": "round-trip vectors + report projection[A,M,J]",
+      "apiOwner": "root extension boundary",
+      "api": "kernel + HttpProviderDefinition",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D06-06",
+      "outcome": "Run two instances of one provider against distinct endpoints",
+      "selectedScope": "exact staging+production instances; destination coordinate in Intent; credentials reacquired; operation-local Layer",
+      "oracle": "captured endpoint/account bindings; no duplicate global service tag[A,M,J]",
+      "apiOwner": "root extension boundary",
+      "api": "kernel + HttpProviderDefinition",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D06-07",
+      "outcome": "Continue in process 2; stop Inconclusive when required",
+      "selectedScope": "no shared memory; req-status+write-only variants",
+      "oracle": "two-process durable-files fixture; no blind second send[M,J]",
+      "apiOwner": "root extension boundary",
+      "api": "kernel + HttpProviderDefinition",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D07-01",
+      "outcome": "Render and validate one MCP server manifest referencing finalized package coordinates",
+      "selectedScope": "official server.json schema; exact registry types npm,pypi,oci,nuget,mcpb and transports stdio,streamable-http,sse",
+      "oracle": "official schema validation; every referenced package coordinate is explicit[M]",
+      "apiOwner": "MCP",
+      "api": "Mcp",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D07-02",
+      "outcome": "Publish the validated manifest to the official MCP Registry",
+      "selectedScope": "one reverse-DNS server name; GitHub OIDC and token auth fixtures",
+      "oracle": "publisher success; registry API read; clean MCP-client discovery[A,M,C]",
+      "apiOwner": "MCP",
+      "api": "Mcp",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "D07-03",
+      "outcome": "Continue after a lost MCP Registry publish response without blind repetition",
+      "selectedScope": "one manifest version and official registry observation law",
+      "oracle": "fresh registry metadata/version observation; absence never fences in-flight publication[M,J]",
+      "apiOwner": "MCP",
+      "api": "Mcp",
+      "disposition": "Preserve the selected row native oracle; declaration and bounded slices are not full native acceptance"
+    },
+    {
+      "id": "P01-01",
+      "outcome": "Adopt a finalized prebuilt file without rebuilding",
+      "selectedScope": "one file; logical identity; no private path escape",
+      "oracle": "digest/length during copy and load-boundary decode[B,J]",
+      "apiOwner": "root",
+      "api": "adoption-api",
+      "disposition": "Lossless public artifact adoption, reload and owned content transfer"
+    },
+    {
+      "id": "P01-02",
+      "outcome": "Build Bun executables for the six cells shipped by pinned effect-build",
+      "selectedScope": "macOS x64/arm64; Linux x64 glibc/musl; Linux arm64 glibc; Windows x64",
+      "oracle": "effect-build provider result; exact matrix assertion; runnable-target --version[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P01-03",
+      "outcome": "Build Deno executables for the six cells shipped by pinned effect-build",
+      "selectedScope": "macOS x64/arm64; Linux x64/arm64 glibc; Windows x64/arm64",
+      "oracle": "effect-build provider result; exact matrix assertion; runnable-target --version[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P01-04",
+      "outcome": "Build the Node SEA target shipped by pinned effect-build",
+      "selectedScope": "Node 26.7.0; Linux x64 GNU; esbuild 0.28.2 internal bundle stage",
+      "oracle": "effect-build provider result; SEA inspection; Linux x64 execution[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P02-01",
+      "outcome": "Build deterministic ZIP",
+      "selectedScope": "ZIP only; normalized order/modes/timestamps",
+      "oracle": "independent listing+repeat digest[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P02-02",
+      "outcome": "Build deterministic tar.gz",
+      "selectedScope": "tar.gz only; normalized order/modes/owner/timestamps",
+      "oracle": "independent listing+repeat digest[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P02-03",
+      "outcome": "Reject traversal/duplicate/case-collision layouts",
+      "selectedScope": "P02-01/P02-02 only",
+      "oracle": "negative fixtures[M]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P03-01",
+      "outcome": "Build a tar.gz source archive from an exact Git tree",
+      "selectedScope": "tar.gz; one project-version root prefix; honor export-ignore; preserve Git executable/symlink modes; submodules excluded unless supplied as separate snapshots; LFS pointer bytes remain pointers; exclude .git and build outputs",
+      "oracle": "independent listing; expected tree projection; repeat digest[B]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P03-02",
+      "outcome": "Build a ZIP source archive from the same exact Git tree",
+      "selectedScope": "ZIP; same tree/projection laws as P03-01, with ZIP mode encoding asserted explicitly",
+      "oracle": "independent listing; expected tree projection; repeat digest[B]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P04-01",
+      "outcome": "Build a wheel and sdist through one pinned uv frontend",
+      "selectedScope": "uv 0.12.0; exact uv_build and poetry-core PEP 517 backend fixtures",
+      "oracle": "metadata inspection and clean install/import for both backends[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P05-01",
+      "outcome": "Build deb with nFPM",
+      "selectedScope": "nFPM v2.47.0; deb; Linux x64 fixture",
+      "oracle": "dpkg-deb inspection+Debian install/remove/run[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P05-02",
+      "outcome": "Build rpm with nFPM",
+      "selectedScope": "nFPM v2.47.0; rpm; Linux x64 fixture",
+      "oracle": "rpm inspection+Fedora install/remove/run[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P05-03",
+      "outcome": "Build apk with nFPM",
+      "selectedScope": "nFPM v2.47.0; apk; Linux x64 fixture",
+      "oracle": "apk inspection+Alpine install/remove/run[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P05-05",
+      "outcome": "Build an Arch package with nFPM",
+      "selectedScope": "nFPM v2.47.0; Arch; Linux x64 fixture",
+      "oracle": "pacman inspection and clean install/remove/run[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P05-06",
+      "outcome": "Build an unsigned Windows x64 MSIX with nFPM",
+      "selectedScope": "nFPM v2.47.0; MSIX; Windows x64",
+      "oracle": "nFPM result; MakeAppx unpack/validation; clean install/run[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P06-01",
+      "outcome": "Build arm64+x64 .app bundles",
+      "selectedScope": "exact two architecture bundles",
+      "oracle": "plutil+launch smoke[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P07-01",
+      "outcome": "Build arm64+x64 UDZO DMGs",
+      "selectedScope": "exact two DMGs",
+      "oracle": "hdiutil verify/attach/list and clean launch[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P08-01",
+      "outcome": "Build unsigned arm64+x64 macOS pkg installers",
+      "selectedScope": "pkgbuild/productbuild; exact 2 packages",
+      "oracle": "pkgutil payload inspection and clean installer fixture[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P09-01",
+      "outcome": "Developer ID-sign .app",
+      "selectedScope": "Apple app signing",
+      "oracle": "codesign --verify --deep --strict[B]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P09-02",
+      "outcome": "Developer ID-sign .pkg",
+      "selectedScope": "Apple installer signing",
+      "oracle": "pkgutil --check-signature[B]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P09-03",
+      "outcome": "Authenticode-sign an MSIX with SignTool",
+      "selectedScope": "Windows x64; local PFX/certificate-store backend; SHA-256; RFC 3161 timestamp; test certificate proves mechanics only",
+      "oracle": "SignTool /pa verification; timestamp assertion; clean install smoke[B,C]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "P10-01",
+      "outcome": "Submit exact Apple bytes and durably retain the returned submission identity",
+      "selectedScope": "notarytool; one exact input digest/submission",
+      "oracle": "Apple submission ID/status plus durable journal append[A,J]",
+      "apiOwner": "root Apple bridge + effect-build-apple",
+      "api": "apple-api.d.ts (full proposed union/collection) + existing upstream native operations",
+      "disposition": "One durable preparation and one journal, one final publication plan; native macOS qualification outstanding"
+    },
+    {
+      "id": "P10-02",
+      "outcome": "Resume Apple status polling by recorded submission ID on runner 2",
+      "selectedScope": "second macOS runner; credential reacquisition",
+      "oracle": "notarytool info/log recorded as observation[M,J]",
+      "apiOwner": "root Apple bridge + effect-build-apple",
+      "api": "apple-api.d.ts (full proposed union/collection) + existing upstream native operations",
+      "disposition": "One durable preparation and one journal, one final publication plan; native macOS qualification outstanding"
+    },
+    {
+      "id": "P10-03",
+      "outcome": "Staple accepted ticket; produce final bytes",
+      "selectedScope": "app/DMG/pkg types selected above",
+      "oracle": "stapler validate + final digest[B]",
+      "apiOwner": "root Apple bridge + effect-build-apple",
+      "api": "apple-api.d.ts (full proposed union/collection) + existing upstream native operations",
+      "disposition": "One durable preparation and one journal, one final publication plan; native macOS qualification outstanding"
+    },
+    {
+      "id": "P10-04",
+      "outcome": "Verify Gatekeeper before TR adoption",
+      "selectedScope": "cur mac spctl",
+      "oracle": "spctl + codesign/pkgutil[B,C]",
+      "apiOwner": "root Apple bridge + effect-build-apple",
+      "api": "apple-api.d.ts (full proposed union/collection) + existing upstream native operations",
+      "disposition": "One durable preparation and one journal, one final publication plan; native macOS qualification outstanding"
+    },
+    {
+      "id": "Q01",
+      "outcome": "Generate and verify SHA256SUMS as a deterministic view of the finalized bundle",
+      "selectedScope": "SHA-256 only; sorted public names; no peer digest store",
+      "oracle": "sha256sum/shasum verification against bundle bytes[B]",
+      "apiOwner": "root",
+      "api": "checksum-api.d.ts:ChecksumInput,renderSha256Sums,verifySha256Sums",
+      "disposition": "Derive checksums from immutable Bundle; no additional canonical manifest"
+    },
+    {
+      "id": "Q02-01",
+      "outcome": "Generate an SPDX JSON SBOM with pinned Syft",
+      "selectedScope": "Syft v1.50.0; SPDX JSON; exact scan-subject policy",
+      "oracle": "schema validation and component assertions[B]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "Q02-02",
+      "outcome": "Generate a CycloneDX JSON SBOM with the same pinned Syft integration",
+      "selectedScope": "Syft v1.50.0; CycloneDX JSON; same scan-subject policy",
+      "oracle": "schema validation and component assertions[B]",
+      "apiOwner": "effect-build family",
+      "api": "upstream public API",
+      "disposition": "Use exact published0.6.3 native producer; no provider-side producer rewrite"
+    },
+    {
+      "id": "AI01",
+      "outcome": "Construct and validate an installable skills-only OpenAI plugin package",
+      "selectedScope": "one .codex-plugin manifest plus one skill tree",
+      "oracle": "official manifest/path rules plus clean local install[M,C]",
+      "apiOwner": "OpenAI + root Git/producer as applicable",
+      "api": "OpenAi",
+      "disposition": "Tree/package, marketplace root Git and human submission handoff retained"
+    },
+    {
+      "id": "AI02",
+      "outcome": "Create or update one repository marketplace entry for that package",
+      "selectedScope": "one repo-scoped marketplace JSON and one relative plugin source",
+      "oracle": "official marketplace schema; ref/tree read; clean directory discovery[A,M,C,J]",
+      "apiOwner": "OpenAI + root Git/producer as applicable",
+      "api": "OpenAi",
+      "disposition": "Tree/package, marketplace root Git and human submission handoff retained"
+    },
+    {
+      "id": "AI03",
+      "outcome": "Produce and validate a complete public-submission handoff without pretending to submit it",
+      "selectedScope": "skills-only submission; listing assets; starter prompts; 5 positive and 3 negative tests; release notes; policy attestations",
+      "oracle": "official portal requirements plus local positive/negative tests[M]",
+      "apiOwner": "OpenAI + root Git/producer as applicable",
+      "api": "OpenAi",
+      "disposition": "Tree/package, marketplace root Git and human submission handoff retained"
+    }
+  ],
+  "forecast": {
+    "unit": "Estimated physical implementation lines in ordinary donor-style multiline TypeScript; not measured implementation or a normalized-source guarantee",
+    "method": "Bottom-up full replacement responsibility counts, not a compression ratio or target cap. All parts count implementation, validation, errors and local glue; tests and generated declarations excluded. Low assumes direct reuse of tested common core; high retains separate native diagnostics and more explicit parsing.",
+    "verticals": [
+      {
+        "owner": "npm",
+        "fullReplacementPhysicalLines": {
+          "low": 1090,
+          "expected": 1630,
+          "high": 2320
+        },
+        "components": [
+          {
+            "name": "Schemas and native cross-field refinements",
+            "low": 190,
+            "expected": 270,
+            "high": 360,
+            "basis": "npm-native.ts:198-292 and endpoint/authorization/tag schemas; strict decoded public API adds explicit ownership"
+          },
+          {
+            "name": "Tarball metadata, native digest and publication body",
+            "low": 250,
+            "expected": 350,
+            "high": 500,
+            "basis": "npm-native.ts:300-520,1110-1600; reuse owned bytes but retain tar/package validation and npm wire shape"
+          },
+          {
+            "name": "SLSA source and DSSE exact-payload validation",
+            "low": 150,
+            "expected": 230,
+            "high": 340,
+            "basis": "npm-native.ts:780-1110; immutable separate provenance File replaces duplicate artifact plumbing"
+          },
+          {
+            "name": "Native receipts, version/tag observation facets and tag moves",
+            "low": 230,
+            "expected": 340,
+            "high": 460,
+            "basis": "npm-native.ts:1110-2125; machine absorbs policy, native observation and correspondence remain"
+          },
+          {
+            "name": "Batch authors and new kernel bindings",
+            "low": 80,
+            "expected": 130,
+            "high": 190,
+            "basis": "npm-native.ts:2127-2348 and npm-application.ts; keep private omissions and mandatory graph edges"
+          },
+          {
+            "name": "Provider-specific token/trusted authorization",
+            "low": 100,
+            "expected": 150,
+            "high": 220,
+            "basis": "npm-live.ts:1-190; common acquisition/HTTP mechanics relocated, exact exchange native law retained"
+          },
+          {
+            "name": "Native Sigstore adapter",
+            "low": 60,
+            "expected": 110,
+            "high": 180,
+            "basis": "NEW consumer wrapper absent from overlay: verified sigstore5 attest/verify options, exact token identity/trust binding/error conversion"
+          },
+          {
+            "name": "Exports and thin wrappers",
+            "low": 30,
+            "expected": 50,
+            "high": 70,
+            "basis": "npm.ts plus explicit public dependency construction"
+          }
+        ],
+        "donors": [
+          "src/publication/npm-native.ts",
+          "src/publication/npm-application.ts",
+          "src/publication/npm-live.ts",
+          "src/publication/npm.ts"
+        ]
+      },
+      {
+        "owner": "Warehouse",
+        "fullReplacementPhysicalLines": {
+          "low": 740,
+          "expected": 1130,
+          "high": 1630
+        },
+        "components": [
+          {
+            "name": "Schemas and hosted/compatible native laws",
+            "low": 160,
+            "expected": 220,
+            "high": 310,
+            "basis": "warehouse-native.ts:139-310; endpoint, authorization, distinct wheel/sdist, compatible law pin"
+          },
+          {
+            "name": "Wheel/sdist metadata and multipart bytes",
+            "low": 190,
+            "expected": 290,
+            "high": 420,
+            "basis": "warehouse-native.ts:476-905; immutable content does not remove native metadata parsing"
+          },
+          {
+            "name": "Receipt and Simple observations",
+            "low": 210,
+            "expected": 330,
+            "high": 460,
+            "basis": "warehouse-native.ts:918-1343; JSON/HTML, filename/digest/size and deleted-filename conflicts"
+          },
+          {
+            "name": "Author and kernel bindings",
+            "low": 70,
+            "expected": 110,
+            "high": 170,
+            "basis": "warehouse-native.ts:319-434 and warehouse-application.ts"
+          },
+          {
+            "name": "Provider-specific authorization",
+            "low": 90,
+            "expected": 140,
+            "high": 210,
+            "basis": "warehouse-live.ts:1-206; explicit Basic username and trusted audience/exchange response"
+          },
+          {
+            "name": "Exports and thin wrappers",
+            "low": 20,
+            "expected": 40,
+            "high": 60,
+            "basis": "warehouse.ts and dependency construction"
+          }
+        ],
+        "donors": [
+          "src/publication/warehouse-native.ts",
+          "src/publication/warehouse-application.ts",
+          "src/publication/warehouse-live.ts",
+          "src/publication/warehouse.ts"
+        ]
+      },
+      {
+        "owner": "GitHub",
+        "fullReplacementPhysicalLines": {
+          "low": 1020,
+          "expected": 1520,
+          "high": 2180
+        },
+        "components": [
+          {
+            "name": "Schemas and six operation identities",
+            "low": 220,
+            "expected": 310,
+            "high": 420,
+            "basis": "github-native.ts:70-303; preserve native IDs and typed parent references"
+          },
+          {
+            "name": "Tag object and reference native requests",
+            "low": 100,
+            "expected": 160,
+            "high": 220,
+            "basis": "github-native.ts:459-590, tag/repository portions"
+          },
+          {
+            "name": "Release and asset native requests",
+            "low": 150,
+            "expected": 220,
+            "high": 330,
+            "basis": "github-native.ts:459-590,939-1170; bind parent upload template and exact content"
+          },
+          {
+            "name": "Native receipts, paginated observations and tag peeling",
+            "low": 330,
+            "expected": 480,
+            "high": 700,
+            "basis": "github-native.ts:590-939,1170-2201; no deletion of native equality/visibility facets"
+          },
+          {
+            "name": "Parent binding and mandatory operation graph",
+            "low": 120,
+            "expected": 200,
+            "high": 300,
+            "basis": "github-application.ts:1-830; generic graph runtime removed, provider graph construction retained"
+          },
+          {
+            "name": "Provider-specific auth",
+            "low": 70,
+            "expected": 100,
+            "high": 140,
+            "basis": "github-live.ts:1-106; common host mechanics excluded"
+          },
+          {
+            "name": "Exports and thin wrappers",
+            "low": 30,
+            "expected": 50,
+            "high": 70,
+            "basis": "github.ts and explicit definition construction"
+          }
+        ],
+        "donors": [
+          "src/publication/github-native.ts",
+          "src/publication/github-application.ts",
+          "src/publication/github-live.ts",
+          "src/publication/github.ts"
+        ]
+      },
+      {
+        "owner": "Homebrew",
+        "fullReplacementPhysicalLines": {
+          "low": 140,
+          "expected": 200,
+          "high": 280
+        },
+        "components": [
+          {
+            "name": "Four-platform schema, owned download binding and Ruby renderer",
+            "low": 120,
+            "expected": 170,
+            "high": 230,
+            "basis": "catalogs.ts:62-171; no Git interpreter here"
+          },
+          {
+            "name": "Exports, author renderer boundary and errors",
+            "low": 20,
+            "expected": 30,
+            "high": 50,
+            "basis": "catalogs.ts:198-359 only renderer-to-root composition"
+          }
+        ],
+        "donors": [
+          "src/publication/catalogs.ts:62-171"
+        ]
+      },
+      {
+        "owner": "Scoop",
+        "fullReplacementPhysicalLines": {
+          "low": 80,
+          "expected": 120,
+          "high": 180
+        },
+        "components": [
+          {
+            "name": "Two-platform schema, owned download binding and manifest renderer",
+            "low": 65,
+            "expected": 95,
+            "high": 135,
+            "basis": "catalogs.ts:62-98,172-196; no Git interpreter here"
+          },
+          {
+            "name": "Exports and renderer boundary",
+            "low": 15,
+            "expected": 25,
+            "high": 45,
+            "basis": "catalogs.ts:198-359 only renderer-to-root composition"
+          }
+        ],
+        "donors": [
+          "src/publication/catalogs.ts:62-98,172-196"
+        ]
+      },
+      {
+        "owner": "MCP",
+        "fullReplacementPhysicalLines": {
+          "low": 820,
+          "expected": 1180,
+          "high": 1580
+        },
+        "components": [
+          {
+            "name": "Full native package/transport schemas and refinements",
+            "low": 430,
+            "expected": 570,
+            "high": 740,
+            "basis": "mcp-registry.ts:1-500; five registry kinds, three transports, arguments/variables/meta"
+          },
+          {
+            "name": "Registry native requests, receipts and observations",
+            "low": 220,
+            "expected": 330,
+            "high": 450,
+            "basis": "mcp-registry.ts:673-1059; exact version/namespace and registry metadata"
+          },
+          {
+            "name": "Author and kernel bindings",
+            "low": 60,
+            "expected": 100,
+            "high": 140,
+            "basis": "mcp-registry.ts:528-655 and mcp-registry-application.ts"
+          },
+          {
+            "name": "Provider-specific authorization",
+            "low": 90,
+            "expected": 140,
+            "high": 190,
+            "basis": "mcp-registry-live.ts:1-181; root owns OIDC mechanics, provider owns registry exchange"
+          },
+          {
+            "name": "Exports and thin wrappers",
+            "low": 20,
+            "expected": 40,
+            "high": 60,
+            "basis": "mcp-registry-provider.ts and definition construction"
+          }
+        ],
+        "donors": [
+          "src/publication/mcp-registry.ts",
+          "src/publication/mcp-registry-application.ts",
+          "src/publication/mcp-registry-live.ts",
+          "src/publication/mcp-registry-provider.ts"
+        ]
+      },
+      {
+        "owner": "OpenAI",
+        "fullReplacementPhysicalLines": {
+          "low": 490,
+          "expected": 730,
+          "high": 1030
+        },
+        "components": [
+          {
+            "name": "Manifest, skill path and package validation",
+            "low": 180,
+            "expected": 260,
+            "high": 350,
+            "basis": "openai-plugin.ts:78-344; one installable owned Tree and preserved support-file modes"
+          },
+          {
+            "name": "Local marketplace entries and preservation",
+            "low": 80,
+            "expected": 110,
+            "high": 160,
+            "basis": "openai-plugin.ts:350-450; root Git owns publication"
+          },
+          {
+            "name": "Submission listing, tests and attestations",
+            "low": 150,
+            "expected": 220,
+            "high": 300,
+            "basis": "openai-plugin.ts:472-647; explicit five positive/three negative cases, no fake submission endpoint"
+          },
+          {
+            "name": "Owned Tree integration and materialization boundary",
+            "low": 60,
+            "expected": 100,
+            "high": 160,
+            "basis": "platform/openai-plugin-store.ts:1-127; producer/root owns transforms, provider validates layout"
+          },
+          {
+            "name": "Exports and thin wrappers",
+            "low": 20,
+            "expected": 40,
+            "high": 60,
+            "basis": "new namespace-to-package boundary and error adapters"
+          }
+        ],
+        "donors": [
+          "src/publication/openai-plugin.ts",
+          "src/platform/openai-plugin-store.ts"
+        ]
+      },
+      {
+        "owner": "root Git",
+        "fullReplacementPhysicalLines": {
+          "low": 710,
+          "expected": 1000,
+          "high": 1460
+        },
+        "components": [
+          {
+            "name": "Measured native Git object construction and verification mechanism",
+            "low": 122,
+            "expected": 122,
+            "high": 122,
+            "basis": "tools/architecture-lab/git-catalog/objects.ts; actual SHA-1/SHA-256 native tree/commit/fsck test,157printer lines"
+          },
+          {
+            "name": "Complete public codecs, immutable capture, aggregate bounds and native-output errors",
+            "low": 138,
+            "expected": 198,
+            "high": 418,
+            "basis": "Remaining implementation, not measured: strict coordinates/input50expected, alias/capability35, aggregate admission45, nativeoutput/error28, capture-to-ownedContent/publicauthor integration40"
+          },
+          {
+            "name": "Native process lifecycle, exact credentials, repository scope, capture/read/push",
+            "low": 330,
+            "expected": 490,
+            "high": 650,
+            "basis": "Retained core-git-live.ts:147 onward and git-authorization.ts134lines; nativeprocess and secret environment remain real work"
+          },
+          {
+            "name": "Catalog authors, native evidence binding and conditional core transport",
+            "low": 90,
+            "expected": 140,
+            "high": 200,
+            "basis": "Includes existing71-line core.git transport; add its count only once if included in kernel total"
+          },
+          {
+            "name": "Public exports and thin wrappers",
+            "low": 30,
+            "expected": 50,
+            "high": 70,
+            "basis": "Root ./git author constructors and ./node or ./bun native factory placement"
+          }
+        ],
+        "donors": [
+          "src/transport/core-git.ts",
+          "src/transport/core-git-application.ts",
+          "src/platform/core-git-live.ts",
+          "src/platform/git-authorization.ts",
+          "src/publication/catalogs.ts:198-359"
+        ],
+        "supersededEstimate": {
+          "fullReplacementPhysicalLines": {
+            "low": 1010,
+            "expected": 1570,
+            "high": 2200
+          },
+          "components": [
+            {
+              "name": "Schemas and canonical native object-set codec",
+              "low": 160,
+              "expected": 240,
+              "high": 330,
+              "basis": "core-git.ts:148-173,321-376; retained core-git-object-set/v1"
+            },
+            {
+              "name": "Native tree and commit construction",
+              "low": 250,
+              "expected": 400,
+              "high": 570,
+              "basis": "core-git.ts:405-731; exact base, preserve unmanaged entries, compute OIDs"
+            },
+            {
+              "name": "Reload and managed graph binding",
+              "low": 150,
+              "expected": 250,
+              "high": 380,
+              "basis": "core-git.ts:745-929; owned Content/native OID/mode/path correspondence"
+            },
+            {
+              "name": "Native scoped process host and credentials",
+              "low": 330,
+              "expected": 490,
+              "high": 650,
+              "basis": "core-git-live.ts:1-634 plus git-authorization.ts:1-134; native argv, env, resource bounds, fetch/fsck/push/readback"
+            },
+            {
+              "name": "Catalog authors, receipts and conditional transport bindings",
+              "low": 90,
+              "expected": 140,
+              "high": 200,
+              "basis": "core-git-application.ts:1-161, catalogs.ts:198-359; includes current71-line core transport authority table"
+            },
+            {
+              "name": "Exports and thin wrappers",
+              "low": 30,
+              "expected": 50,
+              "high": 70,
+              "basis": "new root ./git authoring/native-host public constructors"
+            }
+          ],
+          "reason": "Replaced speculative custom tree/commit parser allocation after actual native Git construction experiment"
+        }
+      }
+    ],
+    "sharedRelocation": [
+      {
+        "path": "src/transport/provider-http.ts",
+        "donorPhysicalLines": 550,
+        "owner": "root common HTTP/auth",
+        "countedInVerticals": false
+      },
+      {
+        "path": "src/transport/core-http.ts",
+        "donorPhysicalLines": 240,
+        "owner": "root common HTTP",
+        "countedInVerticals": false
+      },
+      {
+        "path": "src/transport/core-http-application.ts",
+        "donorPhysicalLines": 193,
+        "owner": "root common HTTP composition",
+        "countedInVerticals": false
+      },
+      {
+        "path": "src/platform/git-authorization.ts",
+        "donorPhysicalLines": 134,
+        "owner": "root Git",
+        "countedInVerticals": true
+      }
+    ],
+    "doubleCountWarnings": [
+      "Shared catalogs359-line donor is divided between Homebrew, Scoop and root Git; never add359 three times.",
+      "Current core Git71 lines, including13-line authority table amendment, are included in root Git forecast.",
+      "Sigstore adapter is NEW wrapper absent from retained injectable donor and explicitly counted in npm.",
+      "No upstream producer implementation relocated into provider estimates; existing effect-build remains external dependency."
+    ]
+  },
+  "typecheck": {
+    "exitCode": 0,
+    "compiler": "typescript6.0.3",
+    "effect": "4.0.0-rc.108",
+    "consumer": "/tmp/ts-release-published-upstream-Pz3Mm7/consumer",
+    "consumerDependencies": "Actual no-symlink published effect-build/effect-build-apple0.6.3 consumer installed by root; copied declarations/witness under provider-api-check",
+    "arguments": [
+      "--ignoreConfig",
+      "--target",
+      "ES2022",
+      "--module",
+      "NodeNext",
+      "--moduleResolution",
+      "NodeNext",
+      "--lib",
+      "ES2022,DOM,ESNext.Disposable",
+      "--strict",
+      "--noUncheckedIndexedAccess",
+      "--exactOptionalPropertyTypes",
+      "--skipLibCheck",
+      "false",
+      "--noEmit",
+      "provider-api-check/provider-api.typecheck.ts",
+      "provider-api-check/host-api.d.ts"
+    ],
+    "positiveCases": [
+      "ProviderDefinition structural compatibility",
+      "Schema.Codec compatibility",
+      "five native MCP registry kinds and three transports",
+      "GitHub decimal ID above2^53",
+      "OpenAI installable Tree",
+      "Apple preparation Tree and final bundle Content",
+      "captured root Git transport"
+    ],
+    "negativeCases": [
+      "File cannot substitute for plugin Tree",
+      "restricted npm access excluded by selected public scope",
+      "websocket outside native pinned MCP transport union",
+      "empty Git authority catalog rejected by type"
+    ],
+    "artifacts": [
+      {
+        "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
+        "bytes": 47943,
+        "physicalLines": 956,
+        "sha256": "0179c44f1f2e2bd8102f2b4cdcbf5788a5b3aebc4e0367e002e228bdc75452b3"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/provider-api.typecheck.ts",
+        "bytes": 2824,
+        "physicalLines": 35,
+        "sha256": "e219e69f87307b7768d895518a842820251ddb7e145492a10f5d4988bec09166"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/provider-api.md",
+        "bytes": 20663,
+        "physicalLines": 306,
+        "sha256": "6d8a7c451f8dd9fd6b681f0374b4df2d9b03b044c3b8092b0115f156d699025c"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/kernel-api.d.ts",
+        "bytes": 15708,
+        "physicalLines": 352,
+        "sha256": "a9f9242cb93b3114b9a103bf7d98c461e2c57506930c8a2c504abf8e0c9ebe8a"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
+        "bytes": 2685,
+        "physicalLines": 46,
+        "sha256": "9037335c5975787fba2a9452c7ca85a62122caf61905cabd72fafdde2e8d175c"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/apple-api.d.ts",
+        "bytes": 12632,
+        "physicalLines": 191,
+        "sha256": "d8b9ca49d503b3eb9c4f4bd112e986f50e082d43e2ae81a19d028fb86b5f1d44"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/apple-api.typecheck.ts",
+        "bytes": 3571,
+        "physicalLines": 46,
+        "sha256": "c3a996365ebfd5888955356a8fee96bcf962c311f8378b716719350917634a8e"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/checksum-api.d.ts",
+        "bytes": 942,
+        "physicalLines": 11,
+        "sha256": "d16afc414edbb1192d7a1b8aaa8b92e4c0666c7f46ca80e33e85e167ce482254"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/adoption-api/adoption.d.ts",
+        "bytes": 5424,
+        "physicalLines": 86,
+        "sha256": "a4e44b378a64db213d2ce7a8af59ce7012a14550e00aa1c7b1c7087cba7d1ab8"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/adoption-api/apple-preparation.d.ts",
+        "bytes": 10620,
+        "physicalLines": 163,
+        "sha256": "505cd760b6ef9b448112237800a905a4b2276f3fb518ed00c83d570dbed223c0"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/adoption-api/bundle-codec.d.ts",
+        "bytes": 1212,
+        "physicalLines": 11,
+        "sha256": "5c335f6bc79225048f1bb237943efd9b5092590735d48813c09060982e9f1c6f"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/adoption-api/content-owner.d.ts",
+        "bytes": 367,
+        "physicalLines": 5,
+        "sha256": "eec70853dd6bb8f1d7ce891fde1e2c34064d9d420273ac90f6930d23c6d71280"
+      },
+      {
+        "path": "docs/refactor/architecture-program/handoff/adoption-api/public-api.d.ts",
+        "bytes": 882,
+        "physicalLines": 8,
+        "sha256": "d10897103fbec78312d5a1e06dcbee2f00a4344b3e69cc53b08589b67aeddd84"
+      }
+    ],
+    "emitterCheck": "bun tools/architecture-lab/proposal/emit.mjs --check --consumer /tmp/ts-release-published-upstream-Pz3Mm7/consumer"
+  },
+  "gitExperiment": {
+    "command": "bun test ./tools/architecture-lab/machine/test/git-catalog.test.ts ./tools/architecture-lab/machine/test/git.test.ts",
+    "exitCode": 0,
+    "testsPassed": 7,
+    "testsFailed": 0,
+    "assertions": 65,
+    "coreBeforePhysicalLines": 58,
+    "coreAfterPhysicalLines": 71,
+    "coreAddedPhysicalLines": 13,
+    "facts": [
+      "Two real Git destinations and principal/scope pairs",
+      "Two managed files per commit",
+      "Deleted authoring repositories before fresh worker execution",
+      "Owned retained-format object-set reloaded and native OIDs verified",
+      "Separate worker processes use same physical SQLite",
+      "First real push response lost; second uses protected replay; third sends nothing",
+      "Tampered owned content causes zero native pushes",
+      "Private immutable authority table, duplicate rejection and non-Git fallback isolation"
+    ],
+    "limits": [
+      "No full production native-host implementation claimed",
+      "Complete graph rejection/credential/resource matrix remains implementation and qualification work"
+    ],
+    "files": [
+      {
+        "path": "tools/architecture-lab/machine/src/core-git.ts",
+        "bytes": 4761,
+        "physicalLines": 71,
+        "sha256": "7a58500b527478c640e7a9fb5e19a1212c3c5bf155584ab2e3ea56ef4a43ac26"
+      },
+      {
+        "path": "tools/architecture-lab/machine/test/git-catalog-fixture.ts",
+        "bytes": 5034,
+        "physicalLines": 61,
+        "sha256": "14b1b739a59bb67dbeb1bf77c895958173c9e8d9fcfb1eda185320824d9557c2"
+      },
+      {
+        "path": "tools/architecture-lab/machine/test/git-catalog-worker.ts",
+        "bytes": 1182,
+        "physicalLines": 17,
+        "sha256": "880672cd5909b212af44f1453a03e0da08e8afe9d830691380044876c07d8710"
+      },
+      {
+        "path": "tools/architecture-lab/machine/test/git-catalog.test.ts",
+        "bytes": 6625,
+        "physicalLines": 85,
+        "sha256": "a97c844fd5cd4fb771bfcac48457ba02b646ef27fda865b0abb257147a8cd106"
+      }
+    ]
+  },
+  "remainingImplementationLaws": [
+    "Strict excess-property decoding and cross-field refinements for all schemas",
+    "Exact Bundle member equality and verified owned content read before preparation",
+    "Provider-owned native response decoder selected uniquely by full scope/endpoint/method before credential acquisition",
+    "Provider-owned native receipt and observation correspondence, including GitHub parent receipt/native ID edges",
+    "No native mutation hidden in provider prepare; npm attestation explicitly authorized before final Bundle/Plan",
+    "No unsafe native integer rounding",
+    "Native OIDC/Sigstore/npm/Warehouse/GitHub/MCP and hosted consumer qualification not established by declarations"
+  ],
+  "declarationAuthority": {
+    "source": {
+      "path": "tools/architecture-lab/proposal/provider.ts",
+      "bytes": 30992,
+      "physicalLines": 279,
+      "sha256": "51a0fa0e4033bc5baf921c7d8815ea697ce713db8a7ee73d06a1add2f092ffea"
+    },
+    "emitter": {
+      "path": "tools/architecture-lab/proposal/emit.mjs",
+      "bytes": 6675,
+      "physicalLines": 69,
+      "sha256": "61fb88c6fb72dfaef9486098978c9387e4f9817bf356493eec7babdae84290b0"
+    },
+    "command": "bun tools/architecture-lab/proposal/emit.mjs --check --consumer <installed-consumer>",
+    "defaultConsumer": "Without --consumer, creates temporary consumer from retained published producer tarballs and root dependency closure via loopback-only installer",
+    "checkExecuted": true,
+    "checkConsumer": "/tmp/ts-release-published-upstream-Pz3Mm7/consumer",
+    "durableProposalFormats": [
+      "ts-release/bundle/1",
+      "ts-release/apple-preparation/1",
+      "ts-release/apple-preparations/1"
+    ],
+    "runtimeFormatsChanged": false,
+    "adaptationEvidence": "adoption-api/emission.json",
+    "appleSource": {
+      "path": "tools/architecture-lab/proposal/apple.ts",
+      "bytes": 9596,
+      "physicalLines": 105,
+      "sha256": "baa7bc3d483e8905469e71c750ab1c558171137d47987e6eb3fee836be8c8789"
+    },
+    "applePublicApi": "apple-api.d.ts",
+    "boundedAppHistoricalApi": "adoption-api/apple-preparation.d.ts"
+  },
+  "nativeGitConstructionExperiment": {
+    "evidence": "../../../../tools/architecture-lab/git-catalog/results.json",
+    "explanation": "../../../../tools/architecture-lab/git-catalog/README.md",
+    "testsPassed": 2,
+    "testsFailed": 0,
+    "assertions": 28,
+    "strictTypecheck": true,
+    "prototypePhysicalLines": 122,
+    "prototypePrinterLines": 157,
+    "crossProcessInThisExperiment": false,
+    "existingCrossProcessEvidence": "gitExperiment",
+    "expectedSourceDecrease": 570,
+    "wholeProgramForecastAuthority": "forecast.json"
+  },
+  "fullAppleProposal": {
+    "source": "tools/architecture-lab/proposal/apple.ts",
+    "api": "apple-api.d.ts",
+    "witness": "apple-api.typecheck.ts",
+    "description": "App/DMG/pkg native signatures and operation input shapes checked against actual published0.6.3; hash-bound immutable preparation collection and whole publication Bundle admission replace bounded app-only API",
+    "nativeAcceptance": false,
+    "mixedCompositionEvidence": "../../../../tools/architecture-lab/apple-composition/results.json",
+    "factsRetained": "Native journal facts remain in reportAppleContext",
+    "remainingNativeQualification": "Actual codesign/productsign/pkgutil/notarytool/stapler/Gatekeeper matrix; signature constructor/type compatibility is not native operation acceptance"
+  },
+  "checksumExperiment": {
+    "api": "checksum-api.d.ts",
+    "evidence": "../../../../tools/architecture-lab/checksums/results.json",
+    "source": "tools/architecture-lab/checksums/checksums.ts",
+    "sourcePhysicalLines": 68,
+    "sourcePrinterLines": 77,
+    "bunChecks": 19,
+    "nodeChecks": 19,
+    "nativeTool": "GNU coreutils sha256sum9.4",
+    "fullReplacementPhysicalLines": {
+      "low": 73,
+      "expected": 80,
+      "high": 98
+    },
+    "newUpstreamImplementationLines": 0
+  }
+}

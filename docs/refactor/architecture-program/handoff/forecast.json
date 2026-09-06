@@ -1,0 +1,827 @@
+{
+  "format": "ts-release/architecture-forecast/1",
+  "status": "engineering-estimate-not-achieved-reduction",
+  "basisCommit": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
+  "denominator": {
+    "productPhysicalLines": 22916,
+    "generatedProductInputLines": 55,
+    "total": 22971,
+    "ceiling": 11485,
+    "actualGeneratedInput": "apps/ts-release-action/action.yml",
+    "method": "Original physical product/Action source plus generated product input. Historical root package JSON was excluded; report all new package metadata separately and in a conservative combined view."
+  },
+  "method": "Bottom-up full replacement responsibilities, not copied donor plus additions, percentage compression, minified output, or budget-fitting. Low/expected/high are engineering scenarios, not statistical confidence intervals. All selected69 outcomes remain required.",
+  "rows": [
+    {
+      "owner": "kernel",
+      "modules": [
+        "kernel.Error",
+        "kernel.Identity",
+        "kernel.Model",
+        "kernel.Provider",
+        "kernel.Plan",
+        "kernel.Journal",
+        "kernel.Decision",
+        "kernel.Host",
+        "kernel.Release",
+        "kernel.GitAuthority",
+        "kernel.Entry"
+      ],
+      "components": [
+        {
+          "name": "Measured complete selected M1 source including protected Git",
+          "low": 935,
+          "expected": 935,
+          "high": 935,
+          "basis": "machine/source-metrics.json:1089 total minus154 M2-only; includes explicit at-most-one-publication-scope guard;105 M1 file is not the whole kernel"
+        },
+        {
+          "name": "Strict target-coordinate and public input admission",
+          "low": 30,
+          "expected": 60,
+          "high": 120,
+          "basis": "Proposed kernel/provider durable refinements beyond finite research fixture coordinates"
+        },
+        {
+          "name": "Complete cross-field construction and optional native-boundary laws",
+          "low": 20,
+          "expected": 45,
+          "high": 90,
+          "basis": "Provider definition and preparation/publication loading must make optional codec groups coherent"
+        },
+        {
+          "name": "Production error/export/domain integration",
+          "low": 10,
+          "expected": 35,
+          "high": 60,
+          "basis": "Remove research candidate/checkpoint machinery; proposed ts-release formats, no legacy reader"
+        }
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 995,
+        "expected": 1075,
+        "high": 1205
+      }
+    },
+    {
+      "owner": "adoption-and-apple",
+      "modules": [
+        "kernel.ArtifactModel",
+        "kernel.Content",
+        "kernel.BundleCodec",
+        "kernel.BundleFinalize",
+        "kernel.Bundle",
+        "kernel.EffectBuild",
+        "kernel.AppleModel",
+        "kernel.AppleNative",
+        "kernel.ApplePreparation",
+        "kernel.Apple",
+        "host.Content"
+      ],
+      "components": [
+        {
+          "name": "Measured adoption/content/codec/Apple plus mixed release composition",
+          "low": 622,
+          "expected": 622,
+          "high": 622,
+          "basis": "apple/source-inventory.json552 plus70line apple-composition/composition.ts; amended224line app helper replaces original224, not an added copy"
+        },
+        {
+          "name": "Content host completion",
+          "low": 60,
+          "expected": 130,
+          "high": 240,
+          "basis": "apple-adoption.md:streaming export, cleanup/filesystem admission, typed errors"
+        },
+        {
+          "name": "Full app/DMG/pkg restoration and native host",
+          "low": 90,
+          "expected": 180,
+          "high": 300,
+          "basis": "apple-adoption.md:two public upstream file branches and signature/service boundary"
+        },
+        {
+          "name": "Remaining Bundle/root/receipt admission and resource integration",
+          "low": 0,
+          "expected": 20,
+          "high": 100,
+          "basis": "Previous40/90/170 reserve explicitly reconciled:70 lines now measured, low floored0; no doublecount. Native3kind production integration remains separately above."
+        }
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 772,
+        "expected": 952,
+        "high": 1262
+      }
+    },
+    {
+      "owner": "shared-http-auth",
+      "modules": [
+        "kernel.Http",
+        "host.Credentials",
+        "host.Http"
+      ],
+      "donors": [
+        "src/transport/provider-http.ts",
+        "src/transport/core-http.ts",
+        "src/transport/core-http-application.ts",
+        "src/transport/core-http-credential.ts",
+        "src/transport/bounded-stream.ts",
+        "src/platform/core-http-live.ts"
+      ],
+      "components": [
+        {
+          "name": "Native request, cancellation, timeout and bounded response machinery",
+          "low": 150,
+          "expected": 200,
+          "high": 280,
+          "basis": "Actual43-line one-send HTTP prototype plus donor84live/57bounded mechanisms; bytes/status/cleanup preserved"
+        },
+        {
+          "name": "Origin/principal/scope admission and secret collision/redaction",
+          "low": 80,
+          "expected": 140,
+          "high": 220,
+          "basis": "Donor112credential plus provider-http authority checks; no credential bytes in durable values"
+        },
+        {
+          "name": "OIDC acquisition and exact issuer/audience/claim/JWKS validation",
+          "low": 190,
+          "expected": 280,
+          "high": 420,
+          "basis": "Donor provider-http.ts:parseJwtClaims/assertGitHubOidcClaims/oidcRequestUrl; cryptographic/native response validation is not free; provider-specific exchanges charged to providers"
+        },
+        {
+          "name": "Read and auth-only exchange ports and policy",
+          "low": 80,
+          "expected": 110,
+          "high": 170,
+          "basis": "Provider-api HttpRead/CredentialExchange; bounded native responses and explicit safe read retries"
+        },
+        {
+          "name": "Captured decoder catalog and public exports",
+          "low": 35,
+          "expected": 50,
+          "high": 80,
+          "basis": "Exactly one ownsRequest match before credentials, native decodeResponse; actual slice is not a full universal decoder"
+        }
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 535,
+        "expected": 780,
+        "high": 1170
+      }
+    },
+    {
+      "owner": "sqlite-and-git-journals",
+      "modules": [
+        "host.StoreCodec",
+        "host.GitJournal",
+        "host.Sqlite"
+      ],
+      "components": [
+        {
+          "name": "Measured common protocol/SQLite/Git research source",
+          "low": 146,
+          "expected": 146,
+          "high": 146,
+          "basis": "storage/protocol.ts25 +sqlite.ts48 +git.ts73; S3 excluded"
+        },
+        {
+          "name": "SQLite path/database admission and durability errors",
+          "low": 60,
+          "expected": 100,
+          "high": 180,
+          "basis": "Overlay bun-journal.ts315; retain real-directory/database checks and native SQLite failure classification"
+        },
+        {
+          "name": "Git journal host scope/ref/environment admission",
+          "low": 90,
+          "expected": 140,
+          "high": 230,
+          "basis": "Overlay git-ref-journal.ts988; native process primitive shared with Git host, conditional append/read logic charged here"
+        },
+        {
+          "name": "Complete bounded history loading",
+          "low": 60,
+          "expected": 80,
+          "high": 140,
+          "basis": "Prototype reads entire history; product must bound/stream without truncation or silent replacement"
+        },
+        {
+          "name": "Scopes and typed lifecycle/backend errors",
+          "low": 20,
+          "expected": 30,
+          "high": 50,
+          "basis": "Success/failure/interruption cleanup, exact global CAS failure results"
+        }
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 376,
+        "expected": 496,
+        "high": 746
+      }
+    },
+    {
+      "owner": "cli-action-self-release",
+      "modules": [
+        "host.Application",
+        "host.Node",
+        "host.Bun",
+        "app.cli",
+        "app.bin",
+        "app.action",
+        "app.application"
+      ],
+      "components": [
+        {
+          "name": "Measured application/Action bridge and CLI mechanism",
+          "low": 43,
+          "expected": 43,
+          "high": 43,
+          "basis": "topology/src/host.ts33 +cli.ts10; actual scoped dynamic loading"
+        },
+        {
+          "name": "CLI input/report/diagnostic and host layer completion",
+          "low": 90,
+          "expected": 140,
+          "high": 220,
+          "basis": "Overlay application-module.ts48 +release-cli.ts523 +bun-main.ts132; replace old flags with exact two-argument command; retain safe I/O/errors"
+        },
+        {
+          "name": "Action inputs/outputs and immutable artifact transfer",
+          "low": 120,
+          "expected": 200,
+          "high": 320,
+          "basis": "Overlay action.ts171 +index.ts185; configured shared store and runtime application input; no automatic Git default"
+        },
+        {
+          "name": "One intended-byte self-release application and composition",
+          "low": 140,
+          "expected": 220,
+          "high": 340,
+          "basis": "Selected K02/K03 plus W10; explicit package cohort and all configured operations, dispatch disabled rehearsal; no second release engine"
+        }
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 393,
+        "expected": 603,
+        "high": 923
+      }
+    },
+    {
+      "owner": "action-runtime-policy",
+      "modules": [],
+      "components": [
+        {
+          "name": "Exact proposed Action YAML template",
+          "low": 22,
+          "expected": 22,
+          "high": 22,
+          "basis": "layout.json delivery.action.manifest:22serializedlines forapplication/input, twooutputs, Node24launcher. Historical comparable lane55; no invented runtime policy registry."
+        }
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 22,
+        "expected": 22,
+        "high": 22
+      },
+      "artifacts": [
+        "apps/ts-release-action/action.yml"
+      ]
+    },
+    {
+      "owner": "provider-npm",
+      "modules": [
+        "provider.npm.Model",
+        "provider.npm.Protocol",
+        "provider.npm.Auth",
+        "provider.npm"
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 1090,
+        "expected": 1630,
+        "high": 2320
+      },
+      "components": [
+        {
+          "name": "Schemas and native cross-field refinements",
+          "low": 190,
+          "expected": 270,
+          "high": 360,
+          "basis": "npm-native.ts:198-292 and endpoint/authorization/tag schemas; strict decoded public API adds explicit ownership"
+        },
+        {
+          "name": "Tarball metadata, native digest and publication body",
+          "low": 250,
+          "expected": 350,
+          "high": 500,
+          "basis": "npm-native.ts:300-520,1110-1600; reuse owned bytes but retain tar/package validation and npm wire shape"
+        },
+        {
+          "name": "SLSA source and DSSE exact-payload validation",
+          "low": 150,
+          "expected": 230,
+          "high": 340,
+          "basis": "npm-native.ts:780-1110; immutable separate provenance File replaces duplicate artifact plumbing"
+        },
+        {
+          "name": "Native receipts, version/tag observation facets and tag moves",
+          "low": 230,
+          "expected": 340,
+          "high": 460,
+          "basis": "npm-native.ts:1110-2125; machine absorbs policy, native observation and correspondence remain"
+        },
+        {
+          "name": "Batch authors and new kernel bindings",
+          "low": 80,
+          "expected": 130,
+          "high": 190,
+          "basis": "npm-native.ts:2127-2348 and npm-application.ts; keep private omissions and mandatory graph edges"
+        },
+        {
+          "name": "Provider-specific token/trusted authorization",
+          "low": 100,
+          "expected": 150,
+          "high": 220,
+          "basis": "npm-live.ts:1-190; common acquisition/HTTP mechanics relocated, exact exchange native law retained"
+        },
+        {
+          "name": "Native Sigstore adapter",
+          "low": 60,
+          "expected": 110,
+          "high": 180,
+          "basis": "NEW consumer wrapper absent from overlay: verified sigstore5 attest/verify options, exact token identity/trust binding/error conversion"
+        },
+        {
+          "name": "Exports and thin wrappers",
+          "low": 30,
+          "expected": 50,
+          "high": 70,
+          "basis": "npm.ts plus explicit public dependency construction"
+        }
+      ],
+      "donors": [
+        "src/publication/npm-native.ts",
+        "src/publication/npm-application.ts",
+        "src/publication/npm-live.ts",
+        "src/publication/npm.ts"
+      ]
+    },
+    {
+      "owner": "provider-warehouse",
+      "modules": [
+        "provider.warehouse.Model",
+        "provider.warehouse.Protocol",
+        "provider.warehouse.Auth",
+        "provider.warehouse"
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 740,
+        "expected": 1130,
+        "high": 1630
+      },
+      "components": [
+        {
+          "name": "Schemas and hosted/compatible native laws",
+          "low": 160,
+          "expected": 220,
+          "high": 310,
+          "basis": "warehouse-native.ts:139-310; endpoint, authorization, distinct wheel/sdist, compatible law pin"
+        },
+        {
+          "name": "Wheel/sdist metadata and multipart bytes",
+          "low": 190,
+          "expected": 290,
+          "high": 420,
+          "basis": "warehouse-native.ts:476-905; immutable content does not remove native metadata parsing"
+        },
+        {
+          "name": "Receipt and Simple observations",
+          "low": 210,
+          "expected": 330,
+          "high": 460,
+          "basis": "warehouse-native.ts:918-1343; JSON/HTML, filename/digest/size and deleted-filename conflicts"
+        },
+        {
+          "name": "Author and kernel bindings",
+          "low": 70,
+          "expected": 110,
+          "high": 170,
+          "basis": "warehouse-native.ts:319-434 and warehouse-application.ts"
+        },
+        {
+          "name": "Provider-specific authorization",
+          "low": 90,
+          "expected": 140,
+          "high": 210,
+          "basis": "warehouse-live.ts:1-206; explicit Basic username and trusted audience/exchange response"
+        },
+        {
+          "name": "Exports and thin wrappers",
+          "low": 20,
+          "expected": 40,
+          "high": 60,
+          "basis": "warehouse.ts and dependency construction"
+        }
+      ],
+      "donors": [
+        "src/publication/warehouse-native.ts",
+        "src/publication/warehouse-application.ts",
+        "src/publication/warehouse-live.ts",
+        "src/publication/warehouse.ts"
+      ]
+    },
+    {
+      "owner": "provider-github",
+      "modules": [
+        "provider.github.Model",
+        "provider.github.Protocol",
+        "provider.github.Auth",
+        "provider.github"
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 1020,
+        "expected": 1520,
+        "high": 2180
+      },
+      "components": [
+        {
+          "name": "Schemas and six operation identities",
+          "low": 220,
+          "expected": 310,
+          "high": 420,
+          "basis": "github-native.ts:70-303; preserve native IDs and typed parent references"
+        },
+        {
+          "name": "Tag object and reference native requests",
+          "low": 100,
+          "expected": 160,
+          "high": 220,
+          "basis": "github-native.ts:459-590, tag/repository portions"
+        },
+        {
+          "name": "Release and asset native requests",
+          "low": 150,
+          "expected": 220,
+          "high": 330,
+          "basis": "github-native.ts:459-590,939-1170; bind parent upload template and exact content"
+        },
+        {
+          "name": "Native receipts, paginated observations and tag peeling",
+          "low": 330,
+          "expected": 480,
+          "high": 700,
+          "basis": "github-native.ts:590-939,1170-2201; no deletion of native equality/visibility facets"
+        },
+        {
+          "name": "Parent binding and mandatory operation graph",
+          "low": 120,
+          "expected": 200,
+          "high": 300,
+          "basis": "github-application.ts:1-830; generic graph runtime removed, provider graph construction retained"
+        },
+        {
+          "name": "Provider-specific auth",
+          "low": 70,
+          "expected": 100,
+          "high": 140,
+          "basis": "github-live.ts:1-106; common host mechanics excluded"
+        },
+        {
+          "name": "Exports and thin wrappers",
+          "low": 30,
+          "expected": 50,
+          "high": 70,
+          "basis": "github.ts and explicit definition construction"
+        }
+      ],
+      "donors": [
+        "src/publication/github-native.ts",
+        "src/publication/github-application.ts",
+        "src/publication/github-live.ts",
+        "src/publication/github.ts"
+      ]
+    },
+    {
+      "owner": "provider-homebrew",
+      "modules": [
+        "provider.homebrew.Formula",
+        "provider.homebrew"
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 140,
+        "expected": 200,
+        "high": 280
+      },
+      "components": [
+        {
+          "name": "Four-platform schema, owned download binding and Ruby renderer",
+          "low": 120,
+          "expected": 170,
+          "high": 230,
+          "basis": "catalogs.ts:62-171; no Git interpreter here"
+        },
+        {
+          "name": "Exports, author renderer boundary and errors",
+          "low": 20,
+          "expected": 30,
+          "high": 50,
+          "basis": "catalogs.ts:198-359 only renderer-to-root composition"
+        }
+      ],
+      "donors": [
+        "src/publication/catalogs.ts:62-171"
+      ]
+    },
+    {
+      "owner": "provider-scoop",
+      "modules": [
+        "provider.scoop.Manifest",
+        "provider.scoop"
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 80,
+        "expected": 120,
+        "high": 180
+      },
+      "components": [
+        {
+          "name": "Two-platform schema, owned download binding and manifest renderer",
+          "low": 65,
+          "expected": 95,
+          "high": 135,
+          "basis": "catalogs.ts:62-98,172-196; no Git interpreter here"
+        },
+        {
+          "name": "Exports and renderer boundary",
+          "low": 15,
+          "expected": 25,
+          "high": 45,
+          "basis": "catalogs.ts:198-359 only renderer-to-root composition"
+        }
+      ],
+      "donors": [
+        "src/publication/catalogs.ts:62-98,172-196"
+      ]
+    },
+    {
+      "owner": "provider-mcp",
+      "modules": [
+        "provider.mcp.Model",
+        "provider.mcp.Protocol",
+        "provider.mcp.Auth",
+        "provider.mcp"
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 820,
+        "expected": 1180,
+        "high": 1580
+      },
+      "components": [
+        {
+          "name": "Full native package/transport schemas and refinements",
+          "low": 430,
+          "expected": 570,
+          "high": 740,
+          "basis": "mcp-registry.ts:1-500; five registry kinds, three transports, arguments/variables/meta"
+        },
+        {
+          "name": "Registry native requests, receipts and observations",
+          "low": 220,
+          "expected": 330,
+          "high": 450,
+          "basis": "mcp-registry.ts:673-1059; exact version/namespace and registry metadata"
+        },
+        {
+          "name": "Author and kernel bindings",
+          "low": 60,
+          "expected": 100,
+          "high": 140,
+          "basis": "mcp-registry.ts:528-655 and mcp-registry-application.ts"
+        },
+        {
+          "name": "Provider-specific authorization",
+          "low": 90,
+          "expected": 140,
+          "high": 190,
+          "basis": "mcp-registry-live.ts:1-181; root owns OIDC mechanics, provider owns registry exchange"
+        },
+        {
+          "name": "Exports and thin wrappers",
+          "low": 20,
+          "expected": 40,
+          "high": 60,
+          "basis": "mcp-registry-provider.ts and definition construction"
+        }
+      ],
+      "donors": [
+        "src/publication/mcp-registry.ts",
+        "src/publication/mcp-registry-application.ts",
+        "src/publication/mcp-registry-live.ts",
+        "src/publication/mcp-registry-provider.ts"
+      ]
+    },
+    {
+      "owner": "provider-openai",
+      "modules": [
+        "provider.openai.Package",
+        "provider.openai.Marketplace",
+        "provider.openai.Submission",
+        "provider.openai"
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 490,
+        "expected": 730,
+        "high": 1030
+      },
+      "components": [
+        {
+          "name": "Manifest, skill path and package validation",
+          "low": 180,
+          "expected": 260,
+          "high": 350,
+          "basis": "openai-plugin.ts:78-344; one installable owned Tree and preserved support-file modes"
+        },
+        {
+          "name": "Local marketplace entries and preservation",
+          "low": 80,
+          "expected": 110,
+          "high": 160,
+          "basis": "openai-plugin.ts:350-450; root Git owns publication"
+        },
+        {
+          "name": "Submission listing, tests and attestations",
+          "low": 150,
+          "expected": 220,
+          "high": 300,
+          "basis": "openai-plugin.ts:472-647; explicit five positive/three negative cases, no fake submission endpoint"
+        },
+        {
+          "name": "Owned Tree integration and materialization boundary",
+          "low": 60,
+          "expected": 100,
+          "high": 160,
+          "basis": "platform/openai-plugin-store.ts:1-127; producer/root owns transforms, provider validates layout"
+        },
+        {
+          "name": "Exports and thin wrappers",
+          "low": 20,
+          "expected": 40,
+          "high": 60,
+          "basis": "new namespace-to-package boundary and error adapters"
+        }
+      ],
+      "donors": [
+        "src/publication/openai-plugin.ts",
+        "src/platform/openai-plugin-store.ts"
+      ]
+    },
+    {
+      "owner": "native-git-additional",
+      "modules": [
+        "kernel.GitCatalog",
+        "kernel.Git",
+        "host.NativeGit"
+      ],
+      "components": [
+        {
+          "name": "Whole root Git mechanism after native plumbing experiment",
+          "low": 710,
+          "expected": 1000,
+          "high": 1460,
+          "basis": "git-catalog/README.md and results.json;122measured construction source,490expected native host retained"
+        },
+        {
+          "name": "Remove protected Git already included in kernel row",
+          "low": -71,
+          "expected": -71,
+          "high": -71,
+          "basis": "machine/src/core-git.ts71; one physical owner, never double-count"
+        }
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 639,
+        "expected": 929,
+        "high": 1389
+      }
+    },
+    {
+      "owner": "checksums",
+      "modules": [
+        "kernel.Checksums"
+      ],
+      "components": [
+        {
+          "name": "Measured checksum projection and content verification",
+          "low": 68,
+          "expected": 68,
+          "high": 68,
+          "basis": "tools/architecture-lab/checksums/results.json; actual immutable File/native sha256sum fixture"
+        },
+        {
+          "name": "Target domain/export, explicit input bounds and final shared public-name admission",
+          "low": 5,
+          "expected": 12,
+          "high": 30,
+          "basis": "tools/architecture-lab/checksums/results.json; actual immutable File/native sha256sum fixture"
+        }
+      ],
+      "fullReplacementPhysicalLines": {
+        "low": 73,
+        "expected": 80,
+        "high": 98
+      }
+    }
+  ],
+  "totals": {
+    "low": 8185,
+    "expected": 11447,
+    "high": 16015
+  },
+  "expectedHeadroom": 38,
+  "reductionPercent": {
+    "low": 64.37,
+    "expected": 50.17,
+    "high": 30.28
+  },
+  "unknowns": [
+    "The seven full provider implementations are not written in this research task; their native parsing/evidence/auth code is the largest uncertainty.",
+    "Physical prototype style is denser than donor code: selected machine935physical/1043printer; adoption552/661; nativeGit122/157; Q01 68/77; mixedApple70 extra physical. Printer normalization is diagnostic, not originalsemantic-source/v3.",
+    "Projected package manifests/exports/build/dependency closure carry additional maintained metadata and publication cost. layout.json owns exact metadata; do not claim these are free.",
+    "Every actual product or newly maintained upstream implementation line must be charged at cutover. No forecast closes the11485gate."
+  ],
+  "conditionalExcluded": [
+    {
+      "owner": "optional-aws-journal",
+      "low": 1400,
+      "expected": 2000,
+      "high": 3000,
+      "basis": "Published0.3.0 has1755host/auth/governance donor lines plus1721obsolete per-operation journal lines; new S3model145lines is only protocol proof. Full SDK/credentials/IAM/WORM/restore qualification remains. Not an upstream0.6.3 import prerequisite or selected default."
+    },
+    {
+      "owner": "future-unbounded-upstream-tree-streaming",
+      "low": 200,
+      "expected": 450,
+      "high": 800,
+      "basis": "Apple-adoption.md:currently admitted streaming-file/bounded-tree capability needs zero upstream code; future unbounded tree work is outside selected current capability."
+    }
+  ],
+  "newRequiredUpstreamImplementationLines": 0,
+  "sourceCeilingPolicy": "Keep11485. Expected original-comparable result has little headroom; conditional/new metadata/normalization and native implementation can exhaust it. Re-measure each wave, continue structural work if it misses; no automatic scope cut or threshold waiver.",
+  "maintenanceLanes": [
+    "product and Action source",
+    "generated runtime product inputs including Action YAML",
+    "all package/export/dependency metadata (conservative separate and combined total)",
+    "tests and independent native oracles",
+    "fixtures and retained compressed evidence/tarballs",
+    "build/verification generators and tooling",
+    "documentation and plans",
+    "generated declarations and delivery bundles",
+    "newly maintained external/upstream implementation"
+  ],
+  "layoutMetadata": [
+    {
+      "layout": "T1",
+      "publicPackageJsonLines": 129,
+      "privatePackageJsonLines": 46,
+      "actionYamlLines": 22,
+      "tsconfigJsonLines": 76,
+      "futureScriptFiles": 3,
+      "futureScriptLines": null,
+      "authoredProductModuleFiles": 63,
+      "generatedRuntimePolicyFiles": 0,
+      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count.",
+      "expectedCodePlusAllPackageJson": 11622,
+      "expectedCodePlusPackageJsonAndTsconfigs": 11698
+    },
+    {
+      "layout": "T2",
+      "publicPackageJsonLines": 135,
+      "privatePackageJsonLines": 82,
+      "actionYamlLines": 22,
+      "tsconfigJsonLines": 90,
+      "futureScriptFiles": 3,
+      "futureScriptLines": null,
+      "authoredProductModuleFiles": 63,
+      "generatedRuntimePolicyFiles": 0,
+      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count.",
+      "expectedCodePlusAllPackageJson": 11664,
+      "expectedCodePlusPackageJsonAndTsconfigs": 11754
+    },
+    {
+      "layout": "T3",
+      "publicPackageJsonLines": 304,
+      "privatePackageJsonLines": 87,
+      "actionYamlLines": 22,
+      "tsconfigJsonLines": 174,
+      "futureScriptFiles": 3,
+      "futureScriptLines": null,
+      "authoredProductModuleFiles": 63,
+      "generatedRuntimePolicyFiles": 0,
+      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count.",
+      "expectedCodePlusAllPackageJson": 11838,
+      "expectedCodePlusPackageJsonAndTsconfigs": 12012
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "paths": {},
+    "noEmit": true,
+    "types": ["bun-types"]
+  },
+  "include": ["machine/src/**/*.ts", "machine/test/**/*.ts", "storage/**/*.ts", "integration/**/*.ts", "git-catalog/**/*.ts", "inventory.ts", "migration.ts", "reconcile.ts"],
+  "exclude": ["**/dist", "**/node_modules"]
+}

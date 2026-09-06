@@ -1,0 +1,235 @@
+{
+  "format": "real-source-topology/1",
+  "work": "/tmp/ts-release-topology-0JDsU7",
+  "method": "Strict tsc emits JS and d.ts from canonical source, Bun packs, loopback registry serves exact tarballs, Bun fresh installs with copied files, consumers execute admitted Node and Bun.",
+  "scope": "Research protocols; no real registry credentials, remote publish, production CLI option parity, platform binaries, or security audit claim.",
+  "sourceSnapshot": "current-canonical-lab-source",
+  "sourceSha256": "c653f05d28e8e968b79cdd09f6ec79d36f60163b32995303ab61a2de0474244b",
+  "runtimes": {
+    "bun": "1.3.14",
+    "node": "v22.22.2"
+  },
+  "evidenceArtifact": {
+    "file": "results.json.gz",
+    "sha256": "ae740e12b11de444f440993c8f50b3af1131ceb435d8c98bd77fbbfd6071418c",
+    "expandedSha256": "106459d0d5a626665c693beef3c320b3b89d5fb7c1e65f069f3476a757f60ca7",
+    "expandedBytes": 2058297,
+    "compressedBytes": 161056,
+    "encoding": "gzip+json-with-content-addressed-sharing"
+  },
+  "layouts": [
+    {
+      "layoutId": "T1",
+      "publishedBytes": 19851,
+      "packages": [
+        {
+          "name": "@lab/release",
+          "private": false,
+          "sourceLines": 1317,
+          "packBytes": 19851,
+          "packSha256": "ce76a05b386a56f91cdf22502a183152ba0441dd8a3ea62292f034e5aa7d021e"
+        },
+        {
+          "name": "@lab/host",
+          "private": true,
+          "sourceLines": 555,
+          "packBytes": 11816,
+          "packSha256": "c28b7574a1aadee4ee61751cefb04b4b78d8c23707fd3efb5f3aad933d4e1c94"
+        },
+        {
+          "name": "@lab/external",
+          "private": false,
+          "sourceLines": 46,
+          "packBytes": 1362,
+          "packSha256": "ea8f051dc15cb7720613d8a22377fcc91d643f24e98b5d9849c728f94f0e98a3"
+        }
+      ],
+      "scenarios": 20,
+      "restartSends": 0,
+      "ownedScenarios": [
+        {
+          "runtime": "node",
+          "bundleId": "b8d8ddb5923731025c3da36dbed974b7d01fcfc27bc87d1c6dfa7623d9796428",
+          "planId": "6d0064d65e94c31c662f9f581373b9c8849855ff73d847e154da39d26d3dc89d",
+          "content": {
+            "bytes": "221",
+            "sha256": "f98dc984d50e6a91c41660a11e817d933f229dfa3325f712bfc9058681fcb4ec"
+          },
+          "sends": 1,
+          "restartSends": 0,
+          "producerPathsDeleted": true,
+          "pathFreePlan": true,
+          "embeddedArtifactBytes": false
+        },
+        {
+          "runtime": "bun",
+          "bundleId": "b8d8ddb5923731025c3da36dbed974b7d01fcfc27bc87d1c6dfa7623d9796428",
+          "planId": "34a91135859d3dcd235e2fdb5126a3c970cae7f35f7e0a0317f03e44d9bb4657",
+          "content": {
+            "bytes": "221",
+            "sha256": "f98dc984d50e6a91c41660a11e817d933f229dfa3325f712bfc9058681fcb4ec"
+          },
+          "sends": 1,
+          "restartSends": 0,
+          "producerPathsDeleted": true,
+          "pathFreePlan": true,
+          "embeddedArtifactBytes": false
+        }
+      ],
+      "selective": {
+        "installedOwnBytes": 96441,
+        "bundleBytes": 243798,
+        "pythonProviderPresent": true
+      }
+    },
+    {
+      "layoutId": "T2",
+      "publishedBytes": 20366,
+      "packages": [
+        {
+          "name": "@lab/kernel",
+          "private": false,
+          "sourceLines": 1089,
+          "packBytes": 16727,
+          "packSha256": "70d62ca3e50a70225870688c11bf969574b8339a1b4ff53a0e6d7f0aa8ab1699"
+        },
+        {
+          "name": "@lab/providers",
+          "private": false,
+          "sourceLines": 227,
+          "packBytes": 3639,
+          "packSha256": "3ff1b8b3f8dbf4b6e43e99b34aad81daee96b7325ab196b2e7cd839dd3de46d7"
+        },
+        {
+          "name": "@lab/host",
+          "private": true,
+          "sourceLines": 555,
+          "packBytes": 11820,
+          "packSha256": "3f41400fb52aa1cbe1c0a2115cbcdc9342aab3b049db0da5ac3619ec02746cea"
+        },
+        {
+          "name": "@lab/external",
+          "private": false,
+          "sourceLines": 46,
+          "packBytes": 1363,
+          "packSha256": "9207c3435352858f0c8f09f6996cba2271e85a8b7f0c529448ce3c7e75efb265"
+        }
+      ],
+      "scenarios": 20,
+      "restartSends": 0,
+      "ownedScenarios": [
+        {
+          "runtime": "node",
+          "bundleId": "b8d8ddb5923731025c3da36dbed974b7d01fcfc27bc87d1c6dfa7623d9796428",
+          "planId": "c49ae6462646138898990b80e88495ee6fd5970d1c77cff4c0a93399e92a9fe2",
+          "content": {
+            "bytes": "221",
+            "sha256": "f98dc984d50e6a91c41660a11e817d933f229dfa3325f712bfc9058681fcb4ec"
+          },
+          "sends": 1,
+          "restartSends": 0,
+          "producerPathsDeleted": true,
+          "pathFreePlan": true,
+          "embeddedArtifactBytes": false
+        },
+        {
+          "runtime": "bun",
+          "bundleId": "b8d8ddb5923731025c3da36dbed974b7d01fcfc27bc87d1c6dfa7623d9796428",
+          "planId": "89ecf954e1de097386b828900a62e76695aa48d71d43caa5e4be5562a683923d",
+          "content": {
+            "bytes": "221",
+            "sha256": "f98dc984d50e6a91c41660a11e817d933f229dfa3325f712bfc9058681fcb4ec"
+          },
+          "sends": 1,
+          "restartSends": 0,
+          "producerPathsDeleted": true,
+          "pathFreePlan": true,
+          "embeddedArtifactBytes": false
+        }
+      ],
+      "selective": {
+        "installedOwnBytes": 96538,
+        "bundleBytes": 243798,
+        "pythonProviderPresent": true
+      }
+    },
+    {
+      "layoutId": "T3",
+      "publishedBytes": 21784,
+      "packages": [
+        {
+          "name": "@lab/kernel",
+          "private": false,
+          "sourceLines": 1089,
+          "packBytes": 16727,
+          "packSha256": "70d62ca3e50a70225870688c11bf969574b8339a1b4ff53a0e6d7f0aa8ab1699"
+        },
+        {
+          "name": "@lab/npm",
+          "private": false,
+          "sourceLines": 142,
+          "packBytes": 2762,
+          "packSha256": "26ef10744e1fd4863c74b7052c08eb2b9fa249d351da9f11e22c4775a7caf116"
+        },
+        {
+          "name": "@lab/python",
+          "private": false,
+          "sourceLines": 98,
+          "packBytes": 2295,
+          "packSha256": "d73d6ff1cff27056cccf1af9b6807153844c32cb33a852717f8f3a562a191b95"
+        },
+        {
+          "name": "@lab/host",
+          "private": true,
+          "sourceLines": 555,
+          "packBytes": 11820,
+          "packSha256": "3f41400fb52aa1cbe1c0a2115cbcdc9342aab3b049db0da5ac3619ec02746cea"
+        },
+        {
+          "name": "@lab/external",
+          "private": false,
+          "sourceLines": 46,
+          "packBytes": 1363,
+          "packSha256": "9207c3435352858f0c8f09f6996cba2271e85a8b7f0c529448ce3c7e75efb265"
+        }
+      ],
+      "scenarios": 20,
+      "restartSends": 0,
+      "ownedScenarios": [
+        {
+          "runtime": "node",
+          "bundleId": "b8d8ddb5923731025c3da36dbed974b7d01fcfc27bc87d1c6dfa7623d9796428",
+          "planId": "954b1710e733aa5c2ed639d1e26a15518b7f83fe6fbbca90c9e71a3d69d9966d",
+          "content": {
+            "bytes": "221",
+            "sha256": "f98dc984d50e6a91c41660a11e817d933f229dfa3325f712bfc9058681fcb4ec"
+          },
+          "sends": 1,
+          "restartSends": 0,
+          "producerPathsDeleted": true,
+          "pathFreePlan": true,
+          "embeddedArtifactBytes": false
+        },
+        {
+          "runtime": "bun",
+          "bundleId": "b8d8ddb5923731025c3da36dbed974b7d01fcfc27bc87d1c6dfa7623d9796428",
+          "planId": "b6c4b323e3e8628d17f2de8505deb260f6b4f07fe999a4a6c7fa5a32bcaa8914",
+          "content": {
+            "bytes": "221",
+            "sha256": "f98dc984d50e6a91c41660a11e817d933f229dfa3325f712bfc9058681fcb4ec"
+          },
+          "sends": 1,
+          "restartSends": 0,
+          "producerPathsDeleted": true,
+          "pathFreePlan": true,
+          "embeddedArtifactBytes": false
+        }
+      ],
+      "selective": {
+        "installedOwnBytes": 91187,
+        "bundleBytes": 243798,
+        "pythonProviderPresent": false
+      }
+    }
+  ]
+}

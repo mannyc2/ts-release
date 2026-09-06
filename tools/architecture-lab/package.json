@@ -1,0 +1,17 @@
+{
+  "name": "@ts-release-research/architecture-lab",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "bun test ./machine/test ./storage ./integration ./git-catalog",
+    "check": "tsc -p tsconfig.json",
+    "topology": "bun topology/run.ts",
+    "apple": "bun apple/run-experiments.ts",
+    "inventory": "bun inventory.ts --check && bun migration.ts --check && bun reconcile.ts --check",
+    "verify": "bun verify.mjs",
+    "verify:execute": "bun verify.mjs --execute",
+    "upstream": "bun published-upstream.mjs --offline",
+    "project": "bun project.ts --check"
+  }
+}

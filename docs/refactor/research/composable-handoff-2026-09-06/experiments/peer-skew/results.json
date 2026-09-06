@@ -1,0 +1,545 @@
+{
+  "format": "installer-skew-experiment/1",
+  "registry": "loopback, synthetic packages (no Effect code)",
+  "node": "v22.22.2",
+  "npm": "10.9.7",
+  "bun": "1.3.14",
+  "scenarios": [
+    {
+      "id": "S1-effect-exact-peer-consumer-rc109",
+      "installer": "npm",
+      "question": "kernel pins effect as an EXACT peer; consumer resolves effect rc.109 (what effect-build 0.6.3's range allows)",
+      "dependencies": {
+        "fake-effect": "4.0.0-rc.109",
+        "kernel-exactpeer": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 1,
+      "diagnostics": [
+        "npm error code ERESOLVE",
+        "npm error ERESOLVE unable to resolve dependency tree",
+        "npm error",
+        "npm error While resolving: consumer@undefined",
+        "npm error Found: fake-effect@4.0.0-rc.109",
+        "npm error node_modules/fake-effect",
+        "npm error fake-effect@\"4.0.0-rc.109\" from the root project",
+        "npm error"
+      ],
+      "installed": [],
+      "runtime": null
+    },
+    {
+      "id": "S1-effect-exact-peer-consumer-rc109",
+      "installer": "bun",
+      "question": "kernel pins effect as an EXACT peer; consumer resolves effect rc.109 (what effect-build 0.6.3's range allows)",
+      "dependencies": {
+        "fake-effect": "4.0.0-rc.109",
+        "kernel-exactpeer": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [
+        "+ kernel-exactpeer@1.0.0"
+      ],
+      "installed": [
+        {
+          "name": "fake-effect",
+          "version": "4.0.0-rc.109",
+          "path": "node_modules/fake-effect"
+        },
+        {
+          "name": "kernel-exactpeer",
+          "version": "1.0.0",
+          "path": "node_modules/kernel-exactpeer"
+        }
+      ],
+      "runtime": {
+        "kernelSeesEffect": "4.0.0-rc.109"
+      }
+    },
+    {
+      "id": "S2-effect-range-peer-consumer-rc109",
+      "installer": "npm",
+      "question": "kernel declares effect as a RANGE peer (tracked law scripts/lib/versions.ts:49); consumer resolves rc.109",
+      "dependencies": {
+        "fake-effect": "4.0.0-rc.109",
+        "kernel-rangepeer": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [],
+      "installed": [
+        {
+          "name": "fake-effect",
+          "version": "4.0.0-rc.109",
+          "path": "node_modules/fake-effect"
+        },
+        {
+          "name": "kernel-rangepeer",
+          "version": "1.0.0",
+          "path": "node_modules/kernel-rangepeer"
+        }
+      ],
+      "runtime": {
+        "kernelSeesEffect": "4.0.0-rc.109"
+      }
+    },
+    {
+      "id": "S2-effect-range-peer-consumer-rc109",
+      "installer": "bun",
+      "question": "kernel declares effect as a RANGE peer (tracked law scripts/lib/versions.ts:49); consumer resolves rc.109",
+      "dependencies": {
+        "fake-effect": "4.0.0-rc.109",
+        "kernel-rangepeer": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [
+        "+ kernel-rangepeer@1.0.0"
+      ],
+      "installed": [
+        {
+          "name": "fake-effect",
+          "version": "4.0.0-rc.109",
+          "path": "node_modules/fake-effect"
+        },
+        {
+          "name": "kernel-rangepeer",
+          "version": "1.0.0",
+          "path": "node_modules/kernel-rangepeer"
+        }
+      ],
+      "runtime": {
+        "kernelSeesEffect": "4.0.0-rc.109"
+      }
+    },
+    {
+      "id": "S3-provider-dependencies-exact-kernel-skew",
+      "installer": "npm",
+      "question": "provider lists kernel@1.0.0 in dependencies (as layout.json projects); consumer installs kernel@2.0.0",
+      "dependencies": {
+        "kernel": "2.0.0",
+        "provider-depexact": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "2.0.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-depexact",
+          "version": "1.0.0",
+          "path": "node_modules/provider-depexact"
+        },
+        {
+          "name": "kernel",
+          "version": "1.0.0",
+          "path": "node_modules/provider-depexact/node_modules/kernel"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "2.0.0",
+        "providerKernel": "1.0.0",
+        "sameInstance": false,
+        "kernelInstancesLoaded": 2
+      }
+    },
+    {
+      "id": "S3-provider-dependencies-exact-kernel-skew",
+      "installer": "bun",
+      "question": "provider lists kernel@1.0.0 in dependencies (as layout.json projects); consumer installs kernel@2.0.0",
+      "dependencies": {
+        "kernel": "2.0.0",
+        "provider-depexact": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "2.0.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-depexact",
+          "version": "1.0.0",
+          "path": "node_modules/provider-depexact"
+        },
+        {
+          "name": "kernel",
+          "version": "1.0.0",
+          "path": "node_modules/provider-depexact/node_modules/kernel"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "2.0.0",
+        "providerKernel": "1.0.0",
+        "sameInstance": false,
+        "kernelInstancesLoaded": 2
+      }
+    },
+    {
+      "id": "S4-provider-peer-exact-kernel-skew",
+      "installer": "npm",
+      "question": "provider lists kernel@1.0.0 as an EXACT peer (audit D4); consumer installs kernel@2.0.0",
+      "dependencies": {
+        "kernel": "2.0.0",
+        "provider-peerexact": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 1,
+      "diagnostics": [
+        "npm error code ERESOLVE",
+        "npm error ERESOLVE unable to resolve dependency tree",
+        "npm error",
+        "npm error While resolving: consumer@undefined",
+        "npm error Found: kernel@2.0.0",
+        "npm error node_modules/kernel",
+        "npm error kernel@\"2.0.0\" from the root project",
+        "npm error"
+      ],
+      "installed": [],
+      "runtime": null
+    },
+    {
+      "id": "S4-provider-peer-exact-kernel-skew",
+      "installer": "bun",
+      "question": "provider lists kernel@1.0.0 as an EXACT peer (audit D4); consumer installs kernel@2.0.0",
+      "dependencies": {
+        "kernel": "2.0.0",
+        "provider-peerexact": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [
+        "+ provider-peerexact@1.0.0"
+      ],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "2.0.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-peerexact",
+          "version": "1.0.0",
+          "path": "node_modules/provider-peerexact"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "2.0.0",
+        "providerKernel": "2.0.0",
+        "sameInstance": true,
+        "kernelInstancesLoaded": 1
+      }
+    },
+    {
+      "id": "S5-provider-peer-caret-kernel-1.5",
+      "installer": "npm",
+      "question": "provider peer ^1.0.0; consumer installs kernel@1.5.0 (in range)",
+      "dependencies": {
+        "kernel": "1.5.0",
+        "provider-peercaret": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "1.5.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-peercaret",
+          "version": "1.0.0",
+          "path": "node_modules/provider-peercaret"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "1.5.0",
+        "providerKernel": "1.5.0",
+        "sameInstance": true,
+        "kernelInstancesLoaded": 1
+      }
+    },
+    {
+      "id": "S5-provider-peer-caret-kernel-1.5",
+      "installer": "bun",
+      "question": "provider peer ^1.0.0; consumer installs kernel@1.5.0 (in range)",
+      "dependencies": {
+        "kernel": "1.5.0",
+        "provider-peercaret": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [
+        "+ provider-peercaret@1.0.0"
+      ],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "1.5.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-peercaret",
+          "version": "1.0.0",
+          "path": "node_modules/provider-peercaret"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "1.5.0",
+        "providerKernel": "1.5.0",
+        "sameInstance": true,
+        "kernelInstancesLoaded": 1
+      }
+    },
+    {
+      "id": "S6-provider-peer-caret-kernel-2.0",
+      "installer": "npm",
+      "question": "provider peer ^1.0.0; consumer installs kernel@2.0.0 (out of range)",
+      "dependencies": {
+        "kernel": "2.0.0",
+        "provider-peercaret": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 1,
+      "diagnostics": [
+        "npm error code ERESOLVE",
+        "npm error ERESOLVE unable to resolve dependency tree",
+        "npm error",
+        "npm error While resolving: consumer@undefined",
+        "npm error Found: kernel@2.0.0",
+        "npm error node_modules/kernel",
+        "npm error kernel@\"2.0.0\" from the root project",
+        "npm error"
+      ],
+      "installed": [],
+      "runtime": null
+    },
+    {
+      "id": "S6-provider-peer-caret-kernel-2.0",
+      "installer": "bun",
+      "question": "provider peer ^1.0.0; consumer installs kernel@2.0.0 (out of range)",
+      "dependencies": {
+        "kernel": "2.0.0",
+        "provider-peercaret": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [
+        "+ provider-peercaret@1.0.0"
+      ],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "2.0.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-peercaret",
+          "version": "1.0.0",
+          "path": "node_modules/provider-peercaret"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "2.0.0",
+        "providerKernel": "2.0.0",
+        "sameInstance": true,
+        "kernelInstancesLoaded": 1
+      }
+    },
+    {
+      "id": "S7-provider-peer-exact-kernel-match",
+      "installer": "npm",
+      "question": "control: exact peer satisfied",
+      "dependencies": {
+        "kernel": "1.0.0",
+        "provider-peerexact": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "1.0.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-peerexact",
+          "version": "1.0.0",
+          "path": "node_modules/provider-peerexact"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "1.0.0",
+        "providerKernel": "1.0.0",
+        "sameInstance": true,
+        "kernelInstancesLoaded": 1
+      }
+    },
+    {
+      "id": "S7-provider-peer-exact-kernel-match",
+      "installer": "bun",
+      "question": "control: exact peer satisfied",
+      "dependencies": {
+        "kernel": "1.0.0",
+        "provider-peerexact": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [
+        "+ provider-peerexact@1.0.0"
+      ],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "1.0.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-peerexact",
+          "version": "1.0.0",
+          "path": "node_modules/provider-peerexact"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "1.0.0",
+        "providerKernel": "1.0.0",
+        "sameInstance": true,
+        "kernelInstancesLoaded": 1
+      }
+    },
+    {
+      "id": "S8-provider-dependencies-exact-with-consumer-override",
+      "installer": "npm",
+      "question": "S3 plus a consumer-side override forcing one kernel (npm overrides / bun overrides)",
+      "dependencies": {
+        "kernel": "2.0.0",
+        "provider-depexact": "1.0.0"
+      },
+      "overrides": {
+        "kernel": "2.0.0"
+      },
+      "installExit": 0,
+      "diagnostics": [],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "2.0.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-depexact",
+          "version": "1.0.0",
+          "path": "node_modules/provider-depexact"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "2.0.0",
+        "providerKernel": "2.0.0",
+        "sameInstance": true,
+        "kernelInstancesLoaded": 1
+      }
+    },
+    {
+      "id": "S8-provider-dependencies-exact-with-consumer-override",
+      "installer": "bun",
+      "question": "S3 plus a consumer-side override forcing one kernel (npm overrides / bun overrides)",
+      "dependencies": {
+        "kernel": "2.0.0",
+        "provider-depexact": "1.0.0"
+      },
+      "overrides": {
+        "kernel": "2.0.0"
+      },
+      "installExit": 0,
+      "diagnostics": [],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "2.0.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-depexact",
+          "version": "1.0.0",
+          "path": "node_modules/provider-depexact"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "2.0.0",
+        "providerKernel": "2.0.0",
+        "sameInstance": true,
+        "kernelInstancesLoaded": 1
+      }
+    },
+    {
+      "id": "S9-provider-peer-exact-consumer-omits-kernel",
+      "installer": "npm",
+      "question": "consumer installs only the provider; does the installer auto-install the exact kernel peer?",
+      "dependencies": {
+        "provider-peerexact": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "1.0.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-peerexact",
+          "version": "1.0.0",
+          "path": "node_modules/provider-peerexact"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "1.0.0",
+        "providerKernel": "1.0.0",
+        "sameInstance": true,
+        "kernelInstancesLoaded": 1
+      }
+    },
+    {
+      "id": "S9-provider-peer-exact-consumer-omits-kernel",
+      "installer": "bun",
+      "question": "consumer installs only the provider; does the installer auto-install the exact kernel peer?",
+      "dependencies": {
+        "provider-peerexact": "1.0.0"
+      },
+      "overrides": null,
+      "installExit": 0,
+      "diagnostics": [
+        "+ provider-peerexact@1.0.0"
+      ],
+      "installed": [
+        {
+          "name": "kernel",
+          "version": "1.0.0",
+          "path": "node_modules/kernel"
+        },
+        {
+          "name": "provider-peerexact",
+          "version": "1.0.0",
+          "path": "node_modules/provider-peerexact"
+        }
+      ],
+      "runtime": {
+        "rootKernel": "1.0.0",
+        "providerKernel": "1.0.0",
+        "sameInstance": true,
+        "kernelInstancesLoaded": 1
+      }
+    }
+  ]
+}

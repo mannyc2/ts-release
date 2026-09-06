@@ -1,5 +1,10 @@
 # Refactor research packet
 
+The completed prerequisite research is consolidated in the
+[architecture handoff](../architecture-program/handoff/README.md). Its explicit
+reconciliation supersedes stale implementation/layout conclusions while preserving
+this packet's selected product scope and valid protocol findings.
+
 Status: product-centered research for the stacked PR #20 program. This packet
 does not authorize a production API, Promise facade, Effect dependency
 migration, Workflow/Activity implementation, or live provider mutation.

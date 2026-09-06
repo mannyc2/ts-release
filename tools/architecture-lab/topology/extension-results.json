@@ -1,0 +1,2840 @@
+{
+  "format": "integrated-extensions/1",
+  "work": "/tmp/ts-release-topology-extensions-8A25tJ",
+  "method": "Each source extension is emitted, packed, freshly installed, and called by a consumer. Baseline absence errors are checked. Configuration-only and preexisting extension seams are reported separately from code additions. Physical and TS6-printer normalized churn are distinct diagnostics.",
+  "evidenceArtifact": {
+    "file": "extension-results.json.gz",
+    "sha256": "0ceab0a9cd3f6277ce146b80629806c4318bd85d0d1966c0c37d7c97babafe45",
+    "expandedSha256": "8bed8dbfd338889d3c2220e3154877e3f7d832f04ee3898bd8e490e9ab23cc46",
+    "expandedBytes": 62446,
+    "compressedBytes": 9085,
+    "encoding": "gzip+json-with-content-addressed-sharing"
+  },
+  "probes": [
+    {
+      "layout": "T1",
+      "id": "P01",
+      "kind": "configuration-only",
+      "before": {
+        "configuredInstances": 1,
+        "registryEndpoints": [
+          "http://127.0.0.1:38435/registry-0"
+        ],
+        "measuredOperations": 1,
+        "newSends": 1,
+        "requiredInstances": 2,
+        "postcondition": false
+      },
+      "after": {
+        "configuredInstances": 2,
+        "registryEndpoints": [
+          "http://127.0.0.1:38435/registry-1",
+          "http://127.0.0.1:38435/registry-0"
+        ],
+        "measuredOperations": 2,
+        "newSends": 1,
+        "requiredInstances": 2,
+        "postcondition": true
+      },
+      "productPatch": {
+        "added": 0,
+        "removed": 0
+      },
+      "configurationFieldsChanged": [
+        "instances"
+      ]
+    },
+    {
+      "layout": "T1",
+      "id": "P02",
+      "before": {
+        "exitCode": 1,
+        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/external' imported from /tmp/ts-release-topology-extensions-8A25tJ/T1/P02-before/[eval1]",
+        "stderrSha256": "69b673e22a33d1136d3f58f78ad535f5d7eae025fd559c53891cace8f45cf831"
+      },
+      "after": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "external.ts",
+            "added": 33,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 33
+          },
+          {
+            "path": "http-evidence.ts",
+            "added": 13,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 13
+          }
+        ],
+        "added": 46,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "external.ts",
+              "added": 32,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 32
+            },
+            {
+              "path": "http-evidence.ts",
+              "added": 13,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 13
+            }
+          ],
+          "added": 45,
+          "removed": 0
+        }
+      },
+      "coreAndCliUnchanged": true
+    },
+    {
+      "layout": "T1",
+      "id": "P03",
+      "before": {
+        "exitCode": 1,
+        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './catalog' is not defined by \"exports\" in /tmp/ts-release-topology-0JDsU7/T1/consumer/node_modules/@lab/release/package.json imported from /tmp/ts-release-topology-0JDsU7/T1/consumer/[eval1]",
+        "stderrSha256": "d48ac432462fbba4a4151d24b0698ad7f1475d716a9c3b44869a951abc324101"
+      },
+      "after": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "providers/catalog.ts",
+            "added": 38,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 38
+          }
+        ],
+        "added": 38,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "providers/catalog.ts",
+              "added": 42,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 42
+            }
+          ],
+          "added": 42,
+          "removed": 0
+        }
+      },
+      "manifestChanged": true
+    },
+    {
+      "layout": "T1",
+      "id": "P05",
+      "before": {
+        "exitCode": 1,
+        "error": "SyntaxError: The requested module '@lab/release/npm' does not provide an export named 'npmTag'",
+        "stderrSha256": "718755ce0285c3f371c2825a04a8c5dcb359478994db85f875b69f97b41934aa"
+      },
+      "after": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "providers/npm.ts",
+            "added": 2,
+            "removed": 0,
+            "beforeLines": 90,
+            "afterLines": 92
+          },
+          {
+            "path": "providers/npm-tag.ts",
+            "added": 41,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 41
+          }
+        ],
+        "added": 43,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "providers/npm.ts",
+              "added": 1,
+              "removed": 0,
+              "beforeLines": 96,
+              "afterLines": 97
+            },
+            {
+              "path": "providers/npm-tag.ts",
+              "added": 44,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 44
+            }
+          ],
+          "added": 45,
+          "removed": 0
+        }
+      }
+    },
+    {
+      "layout": "T1",
+      "id": "P06",
+      "before": {
+        "exitCode": 1,
+        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './git' is not defined by \"exports\" in /tmp/ts-release-topology-extensions-8A25tJ/T1/P06-before/consumer/node_modules/@lab/host/package.json imported from /tmp/ts-release-topology-extensions-8A25tJ/T1/P06-before/consumer/[eval1]",
+        "stderrSha256": "c6dc60cb725423e40da34798bd2cef15064dcbbb0e29c536adec525c67258dab"
+      },
+      "after": [
+        {
+          "id": "t1-node-m1-library-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t1-node-m1-cli-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t1-node-m1-action-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t1-node-m1-cli-external-2",
+          "sends": 2,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t1-node-m1-cli-npm-1-lose",
+          "sends": 1,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t1-node-m2-library-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t1-node-m2-cli-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t1-node-m2-action-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t1-node-m2-cli-external-2",
+          "sends": 2,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t1-node-m2-cli-npm-1-lose",
+          "sends": 1,
+          "sendsAfterRestart": 0
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "storage/git.ts",
+            "added": 73,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 73
+          }
+        ],
+        "added": 73,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "storage/git.ts",
+              "added": 82,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 82
+            }
+          ],
+          "added": 82,
+          "removed": 0
+        }
+      },
+      "manifestChanged": true
+    },
+    {
+      "layout": "T1",
+      "id": "P07",
+      "before": [
+        {
+          "runtime": "node",
+          "exitCode": 1,
+          "stderrSha256": "e674cb256af235123b2d871b2c908e8c3c03cad386d58626d6cd6993fcb2c900"
+        },
+        {
+          "runtime": "bun",
+          "exitCode": 1,
+          "stderrSha256": "ae022dd676b13a01e1c76751e7a4c6d30fcfa27cf752eb78857dc0cfc8146355"
+        }
+      ],
+      "after": [
+        {
+          "runtime": "node",
+          "phase": "after",
+          "checks": 8,
+          "nativeProtocol": "effect-build/artifact-adoption@1",
+          "rejectsResolvedGenerationMismatch": true,
+          "producerPathsDeleted": true,
+          "restored": true
+        },
+        {
+          "runtime": "bun",
+          "phase": "after",
+          "checks": 8,
+          "nativeProtocol": "effect-build/artifact-adoption@1",
+          "rejectsResolvedGenerationMismatch": true,
+          "producerPathsDeleted": true,
+          "restored": true
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "adoption/producer-handoff.ts",
+            "added": 40,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 40
+          }
+        ],
+        "added": 40,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "adoption/producer-handoff.ts",
+              "added": 39,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 39
+            }
+          ],
+          "added": 39,
+          "removed": 0
+        }
+      },
+      "initialAdoptionCapabilityLines": 323,
+      "scope": "Additional actual PR24 path-free adoption-header adapter; existing file/tree ownership and strict loader remain in both trees. Test program is strictly emitted against added public API, then identical emitted bytes execute before/after modes."
+    },
+    {
+      "layout": "T1",
+      "id": "P04",
+      "baselineKind": "compiled counterfactual pre-extension source",
+      "before": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
+          "stderrSha256": "9b3abdf6637a802df1333d8b955adea83f1d8814b294c0e695a0eedccf0bfb98"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
+          "stderrSha256": "9b3abdf6637a802df1333d8b955adea83f1d8814b294c0e695a0eedccf0bfb98"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
+          "stderrSha256": "4289194547276a5f9dc8bb63828bce5c776b3e213e899dd451583a5b5dab6c41"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
+          "stderrSha256": "4289194547276a5f9dc8bb63828bce5c776b3e213e899dd451583a5b5dab6c41"
+        }
+      ],
+      "after": [
+        {
+          "runtime": "node",
+          "mode": "P04",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P04",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P04",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P04",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "kernel/contracts.ts",
+            "added": 2,
+            "removed": 0,
+            "beforeLines": 219,
+            "afterLines": 221
+          },
+          {
+            "path": "kernel/identity.ts",
+            "added": 2,
+            "removed": 1,
+            "beforeLines": 269,
+            "afterLines": 270
+          },
+          {
+            "path": "kernel/m1-history.ts",
+            "added": 2,
+            "removed": 1,
+            "beforeLines": 104,
+            "afterLines": 105
+          },
+          {
+            "path": "kernel/m2-transition.ts",
+            "added": 4,
+            "removed": 3,
+            "beforeLines": 153,
+            "afterLines": 154
+          },
+          {
+            "path": "kernel/run.ts",
+            "added": 2,
+            "removed": 1,
+            "beforeLines": 234,
+            "afterLines": 235
+          }
+        ],
+        "added": 12,
+        "removed": 6,
+        "normalized": {
+          "changed": [
+            {
+              "path": "kernel/contracts.ts",
+              "added": 2,
+              "removed": 0,
+              "beforeLines": 246,
+              "afterLines": 248
+            },
+            {
+              "path": "kernel/identity.ts",
+              "added": 3,
+              "removed": 1,
+              "beforeLines": 293,
+              "afterLines": 295
+            },
+            {
+              "path": "kernel/m1-history.ts",
+              "added": 3,
+              "removed": 1,
+              "beforeLines": 117,
+              "afterLines": 119
+            },
+            {
+              "path": "kernel/m2-transition.ts",
+              "added": 5,
+              "removed": 2,
+              "beforeLines": 184,
+              "afterLines": 187
+            },
+            {
+              "path": "kernel/run.ts",
+              "added": 2,
+              "removed": 1,
+              "beforeLines": 262,
+              "afterLines": 263
+            }
+          ],
+          "added": 15,
+          "removed": 5
+        }
+      },
+      "variantGeneratorSha256": "fc9536cde02493829904d5df94067a5402aee74fec76511e292aac6f605083d1",
+      "consumerSha256": "ff0634887063894e119d045e6fccb5f5869288ab1e57e72539cb04abe3b3627c"
+    },
+    {
+      "layout": "T1",
+      "id": "P09",
+      "baselineKind": "compiled counterfactual pre-extension source",
+      "before": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "LabError: Legacy supersession closes the entire history",
+          "stderrSha256": "cfed533abc88a1fc17a55dec8adad038f47014d1dfbeeabba12530bd3b3d3d2d"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
+          "stderrSha256": "ef014d92568e070a5495c2e06f41602dab190e20d8e070d709bd392ee47453a2"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "LabError: Legacy supersession closes the entire history",
+          "stderrSha256": "6af87020d395d94195e054dbf8da935cb1e6d010cae1fc21dabaf07364797fde"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
+          "stderrSha256": "ef014d92568e070a5495c2e06f41602dab190e20d8e070d709bd392ee47453a2"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "error: Legacy supersession closes the entire history",
+          "stderrSha256": "df4ec6b4f2832237dcf242bb5bdbd2d9d8c08d30ecf902415e9649a3b5038c65"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
+          "stderrSha256": "ea3384b26d3d5cf9c8fba4f58d9d8c745dd1e7c3bd2248ece5eaff2620f9f51d"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "error: Legacy supersession closes the entire history",
+          "stderrSha256": "793a5febde195e0ddcd1da0165b3fe815f8f2e6a23dfb31fbac0618936316131"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
+          "stderrSha256": "ea3384b26d3d5cf9c8fba4f58d9d8c745dd1e7c3bd2248ece5eaff2620f9f51d"
+        }
+      ],
+      "after": [
+        {
+          "runtime": "node",
+          "mode": "P09-live",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P09-migrate",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P09-live",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P09-migrate",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-live",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-migrate",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-live",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-migrate",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "kernel/contracts.ts",
+            "added": 1,
+            "removed": 1,
+            "beforeLines": 221,
+            "afterLines": 221
+          },
+          {
+            "path": "kernel/index.ts",
+            "added": 2,
+            "removed": 0,
+            "beforeLines": 10,
+            "afterLines": 12
+          },
+          {
+            "path": "kernel/m1-history.ts",
+            "added": 0,
+            "removed": 1,
+            "beforeLines": 106,
+            "afterLines": 105
+          },
+          {
+            "path": "kernel/m2-transition.ts",
+            "added": 0,
+            "removed": 1,
+            "beforeLines": 155,
+            "afterLines": 154
+          },
+          {
+            "path": "kernel/run.ts",
+            "added": 2,
+            "removed": 2,
+            "beforeLines": 235,
+            "afterLines": 235
+          },
+          {
+            "path": "kernel/recovery-migration.ts",
+            "added": 42,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 42
+          }
+        ],
+        "added": 47,
+        "removed": 5,
+        "normalized": {
+          "changed": [
+            {
+              "path": "kernel/contracts.ts",
+              "added": 1,
+              "removed": 1,
+              "beforeLines": 248,
+              "afterLines": 248
+            },
+            {
+              "path": "kernel/index.ts",
+              "added": 1,
+              "removed": 0,
+              "beforeLines": 6,
+              "afterLines": 7
+            },
+            {
+              "path": "kernel/m1-history.ts",
+              "added": 0,
+              "removed": 2,
+              "beforeLines": 121,
+              "afterLines": 119
+            },
+            {
+              "path": "kernel/m2-transition.ts",
+              "added": 0,
+              "removed": 2,
+              "beforeLines": 189,
+              "afterLines": 187
+            },
+            {
+              "path": "kernel/run.ts",
+              "added": 2,
+              "removed": 2,
+              "beforeLines": 263,
+              "afterLines": 263
+            },
+            {
+              "path": "kernel/recovery-migration.ts",
+              "added": 45,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 45
+            }
+          ],
+          "added": 49,
+          "removed": 7
+        }
+      },
+      "variantGeneratorSha256": "fc9536cde02493829904d5df94067a5402aee74fec76511e292aac6f605083d1",
+      "consumerSha256": "ff0634887063894e119d045e6fccb5f5869288ab1e57e72539cb04abe3b3627c"
+    },
+    {
+      "layout": "T1",
+      "id": "P08",
+      "before": {
+        "exitCode": 1,
+        "error": "SyntaxError: The requested module '@lab/release' does not provide an export named 'serializePlan'",
+        "stderrSha256": "edc20b91141388ba8af74aca8d388d7968e8f0e07589e45417ab45f89ca807b9"
+      },
+      "after": [
+        {
+          "encodedBytes": 233,
+          "planId": "51a84fdbfd8c11817d15e9c35b7655ea900f480b93121f8842b24c2708e6bd83"
+        },
+        {
+          "encodedBytes": 233,
+          "planId": "51a84fdbfd8c11817d15e9c35b7655ea900f480b93121f8842b24c2708e6bd83"
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "kernel/index.ts",
+            "added": 1,
+            "removed": 0,
+            "beforeLines": 10,
+            "afterLines": 11
+          },
+          {
+            "path": "kernel/serialize-plan.ts",
+            "added": 6,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 6
+          }
+        ],
+        "added": 7,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "kernel/index.ts",
+              "added": 1,
+              "removed": 0,
+              "beforeLines": 6,
+              "afterLines": 7
+            },
+            {
+              "path": "kernel/serialize-plan.ts",
+              "added": 5,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 5
+            }
+          ],
+          "added": 6,
+          "removed": 0
+        }
+      }
+    },
+    {
+      "layout": "T2",
+      "id": "P01",
+      "kind": "configuration-only",
+      "before": {
+        "configuredInstances": 1,
+        "registryEndpoints": [
+          "http://127.0.0.1:38435/registry-0"
+        ],
+        "measuredOperations": 1,
+        "newSends": 1,
+        "requiredInstances": 2,
+        "postcondition": false
+      },
+      "after": {
+        "configuredInstances": 2,
+        "registryEndpoints": [
+          "http://127.0.0.1:38435/registry-1",
+          "http://127.0.0.1:38435/registry-0"
+        ],
+        "measuredOperations": 2,
+        "newSends": 1,
+        "requiredInstances": 2,
+        "postcondition": true
+      },
+      "productPatch": {
+        "added": 0,
+        "removed": 0
+      },
+      "configurationFieldsChanged": [
+        "instances"
+      ]
+    },
+    {
+      "layout": "T2",
+      "id": "P02",
+      "before": {
+        "exitCode": 1,
+        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/external' imported from /tmp/ts-release-topology-extensions-8A25tJ/T2/P02-before/[eval1]",
+        "stderrSha256": "59ac5ec19bb6a653a5536d2ce9d400c183746e565c9e336f9e4e5edbc4911828"
+      },
+      "after": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "external.ts",
+            "added": 33,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 33
+          },
+          {
+            "path": "http-evidence.ts",
+            "added": 13,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 13
+          }
+        ],
+        "added": 46,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "external.ts",
+              "added": 32,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 32
+            },
+            {
+              "path": "http-evidence.ts",
+              "added": 13,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 13
+            }
+          ],
+          "added": 45,
+          "removed": 0
+        }
+      },
+      "coreAndCliUnchanged": true
+    },
+    {
+      "layout": "T2",
+      "id": "P03",
+      "before": {
+        "exitCode": 1,
+        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './catalog' is not defined by \"exports\" in /tmp/ts-release-topology-0JDsU7/T2/consumer/node_modules/@lab/providers/package.json imported from /tmp/ts-release-topology-0JDsU7/T2/consumer/[eval1]",
+        "stderrSha256": "c1c09d0660b8f9820c29dcce87b30e113817fb14a35c53ae9168b4875e2ef05d"
+      },
+      "after": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "catalog.ts",
+            "added": 38,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 38
+          }
+        ],
+        "added": 38,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "catalog.ts",
+              "added": 42,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 42
+            }
+          ],
+          "added": 42,
+          "removed": 0
+        }
+      },
+      "manifestChanged": true
+    },
+    {
+      "layout": "T2",
+      "id": "P05",
+      "before": {
+        "exitCode": 1,
+        "error": "SyntaxError: The requested module '@lab/providers/npm' does not provide an export named 'npmTag'",
+        "stderrSha256": "40f70aaf88c5450a4f2d478cfda5118d0a09425986fa178e2a0a7abe91b474d0"
+      },
+      "after": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "npm.ts",
+            "added": 2,
+            "removed": 0,
+            "beforeLines": 90,
+            "afterLines": 92
+          },
+          {
+            "path": "npm-tag.ts",
+            "added": 41,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 41
+          }
+        ],
+        "added": 43,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "npm.ts",
+              "added": 1,
+              "removed": 0,
+              "beforeLines": 96,
+              "afterLines": 97
+            },
+            {
+              "path": "npm-tag.ts",
+              "added": 44,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 44
+            }
+          ],
+          "added": 45,
+          "removed": 0
+        }
+      }
+    },
+    {
+      "layout": "T2",
+      "id": "P06",
+      "before": {
+        "exitCode": 1,
+        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './git' is not defined by \"exports\" in /tmp/ts-release-topology-extensions-8A25tJ/T2/P06-before/consumer/node_modules/@lab/host/package.json imported from /tmp/ts-release-topology-extensions-8A25tJ/T2/P06-before/consumer/[eval1]",
+        "stderrSha256": "a145e3803cdaac2d700d3dc4602dcd751509815dba82ad2eb9688f07056f5145"
+      },
+      "after": [
+        {
+          "id": "t2-node-m1-library-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t2-node-m1-cli-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t2-node-m1-action-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t2-node-m1-cli-external-2",
+          "sends": 2,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t2-node-m1-cli-npm-1-lose",
+          "sends": 1,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t2-node-m2-library-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t2-node-m2-cli-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t2-node-m2-action-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t2-node-m2-cli-external-2",
+          "sends": 2,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t2-node-m2-cli-npm-1-lose",
+          "sends": 1,
+          "sendsAfterRestart": 0
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "storage/git.ts",
+            "added": 73,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 73
+          }
+        ],
+        "added": 73,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "storage/git.ts",
+              "added": 82,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 82
+            }
+          ],
+          "added": 82,
+          "removed": 0
+        }
+      },
+      "manifestChanged": true
+    },
+    {
+      "layout": "T2",
+      "id": "P07",
+      "before": [
+        {
+          "runtime": "node",
+          "exitCode": 1,
+          "stderrSha256": "765fca96147f32757dc74f9af62901a217f85db20166b07c6ce3235960965a41"
+        },
+        {
+          "runtime": "bun",
+          "exitCode": 1,
+          "stderrSha256": "9f4ef9b5a59ca376ddeabd3d02d2ba74aa3fe4d798ef0c449217dc16395f9634"
+        }
+      ],
+      "after": [
+        {
+          "runtime": "node",
+          "phase": "after",
+          "checks": 8,
+          "nativeProtocol": "effect-build/artifact-adoption@1",
+          "rejectsResolvedGenerationMismatch": true,
+          "producerPathsDeleted": true,
+          "restored": true
+        },
+        {
+          "runtime": "bun",
+          "phase": "after",
+          "checks": 8,
+          "nativeProtocol": "effect-build/artifact-adoption@1",
+          "rejectsResolvedGenerationMismatch": true,
+          "producerPathsDeleted": true,
+          "restored": true
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "adoption/producer-handoff.ts",
+            "added": 40,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 40
+          }
+        ],
+        "added": 40,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "adoption/producer-handoff.ts",
+              "added": 39,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 39
+            }
+          ],
+          "added": 39,
+          "removed": 0
+        }
+      },
+      "initialAdoptionCapabilityLines": 323,
+      "scope": "Additional actual PR24 path-free adoption-header adapter; existing file/tree ownership and strict loader remain in both trees. Test program is strictly emitted against added public API, then identical emitted bytes execute before/after modes."
+    },
+    {
+      "layout": "T2",
+      "id": "P04",
+      "baselineKind": "compiled counterfactual pre-extension source",
+      "before": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
+          "stderrSha256": "85df09d8c9c1dc79a86c54569e21b79bdf32913bf2c00446c22b2486cd2eac5c"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
+          "stderrSha256": "85df09d8c9c1dc79a86c54569e21b79bdf32913bf2c00446c22b2486cd2eac5c"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
+          "stderrSha256": "00b21146a6995681f0a7b0e27ecb8ce0aedf519cf3dbacc0577cb51cf45cd50e"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
+          "stderrSha256": "00b21146a6995681f0a7b0e27ecb8ce0aedf519cf3dbacc0577cb51cf45cd50e"
+        }
+      ],
+      "after": [
+        {
+          "runtime": "node",
+          "mode": "P04",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P04",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P04",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P04",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "contracts.ts",
+            "added": 2,
+            "removed": 0,
+            "beforeLines": 219,
+            "afterLines": 221
+          },
+          {
+            "path": "identity.ts",
+            "added": 2,
+            "removed": 1,
+            "beforeLines": 269,
+            "afterLines": 270
+          },
+          {
+            "path": "m1-history.ts",
+            "added": 2,
+            "removed": 1,
+            "beforeLines": 104,
+            "afterLines": 105
+          },
+          {
+            "path": "m2-transition.ts",
+            "added": 4,
+            "removed": 3,
+            "beforeLines": 153,
+            "afterLines": 154
+          },
+          {
+            "path": "run.ts",
+            "added": 2,
+            "removed": 1,
+            "beforeLines": 234,
+            "afterLines": 235
+          }
+        ],
+        "added": 12,
+        "removed": 6,
+        "normalized": {
+          "changed": [
+            {
+              "path": "contracts.ts",
+              "added": 2,
+              "removed": 0,
+              "beforeLines": 246,
+              "afterLines": 248
+            },
+            {
+              "path": "identity.ts",
+              "added": 3,
+              "removed": 1,
+              "beforeLines": 293,
+              "afterLines": 295
+            },
+            {
+              "path": "m1-history.ts",
+              "added": 3,
+              "removed": 1,
+              "beforeLines": 117,
+              "afterLines": 119
+            },
+            {
+              "path": "m2-transition.ts",
+              "added": 5,
+              "removed": 2,
+              "beforeLines": 184,
+              "afterLines": 187
+            },
+            {
+              "path": "run.ts",
+              "added": 2,
+              "removed": 1,
+              "beforeLines": 262,
+              "afterLines": 263
+            }
+          ],
+          "added": 15,
+          "removed": 5
+        }
+      },
+      "variantGeneratorSha256": "fc9536cde02493829904d5df94067a5402aee74fec76511e292aac6f605083d1",
+      "consumerSha256": "ff0634887063894e119d045e6fccb5f5869288ab1e57e72539cb04abe3b3627c"
+    },
+    {
+      "layout": "T2",
+      "id": "P09",
+      "baselineKind": "compiled counterfactual pre-extension source",
+      "before": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "LabError: Legacy supersession closes the entire history",
+          "stderrSha256": "bc7189fca30c34007ec4a03bc7496adf377ec2481a0f4c1386e5f978832c4d03"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
+          "stderrSha256": "f91bdb68a2d4fa6f22a0bbc0cb9ab4aaa7829e048d00e66939c5e8750dcaa8bc"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "LabError: Legacy supersession closes the entire history",
+          "stderrSha256": "edcbd9216522278182196e9a1550696b42ec169ae6e0e20e7e0f8778629a10e6"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
+          "stderrSha256": "f91bdb68a2d4fa6f22a0bbc0cb9ab4aaa7829e048d00e66939c5e8750dcaa8bc"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "error: Legacy supersession closes the entire history",
+          "stderrSha256": "2e5705cbc349dfa5d7e53e487c387497e6c31d468d2b8ce782f614c545c99406"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
+          "stderrSha256": "67e8d2264326585f66581d0098956f7cd6772312451eb20ee22dc4b801c3e325"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "error: Legacy supersession closes the entire history",
+          "stderrSha256": "43738a03bdec4f6a2182368cab2f9d382a872ef6f0abac25e1c7574fae292472"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
+          "stderrSha256": "67e8d2264326585f66581d0098956f7cd6772312451eb20ee22dc4b801c3e325"
+        }
+      ],
+      "after": [
+        {
+          "runtime": "node",
+          "mode": "P09-live",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P09-migrate",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P09-live",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P09-migrate",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-live",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-migrate",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-live",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-migrate",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "contracts.ts",
+            "added": 1,
+            "removed": 1,
+            "beforeLines": 221,
+            "afterLines": 221
+          },
+          {
+            "path": "index.ts",
+            "added": 2,
+            "removed": 0,
+            "beforeLines": 10,
+            "afterLines": 12
+          },
+          {
+            "path": "m1-history.ts",
+            "added": 0,
+            "removed": 1,
+            "beforeLines": 106,
+            "afterLines": 105
+          },
+          {
+            "path": "m2-transition.ts",
+            "added": 0,
+            "removed": 1,
+            "beforeLines": 155,
+            "afterLines": 154
+          },
+          {
+            "path": "run.ts",
+            "added": 2,
+            "removed": 2,
+            "beforeLines": 235,
+            "afterLines": 235
+          },
+          {
+            "path": "recovery-migration.ts",
+            "added": 42,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 42
+          }
+        ],
+        "added": 47,
+        "removed": 5,
+        "normalized": {
+          "changed": [
+            {
+              "path": "contracts.ts",
+              "added": 1,
+              "removed": 1,
+              "beforeLines": 248,
+              "afterLines": 248
+            },
+            {
+              "path": "index.ts",
+              "added": 1,
+              "removed": 0,
+              "beforeLines": 6,
+              "afterLines": 7
+            },
+            {
+              "path": "m1-history.ts",
+              "added": 0,
+              "removed": 2,
+              "beforeLines": 121,
+              "afterLines": 119
+            },
+            {
+              "path": "m2-transition.ts",
+              "added": 0,
+              "removed": 2,
+              "beforeLines": 189,
+              "afterLines": 187
+            },
+            {
+              "path": "run.ts",
+              "added": 2,
+              "removed": 2,
+              "beforeLines": 263,
+              "afterLines": 263
+            },
+            {
+              "path": "recovery-migration.ts",
+              "added": 45,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 45
+            }
+          ],
+          "added": 49,
+          "removed": 7
+        }
+      },
+      "variantGeneratorSha256": "fc9536cde02493829904d5df94067a5402aee74fec76511e292aac6f605083d1",
+      "consumerSha256": "ff0634887063894e119d045e6fccb5f5869288ab1e57e72539cb04abe3b3627c"
+    },
+    {
+      "layout": "T2",
+      "id": "P08",
+      "before": {
+        "exitCode": 1,
+        "error": "SyntaxError: The requested module '@lab/kernel' does not provide an export named 'serializePlan'",
+        "stderrSha256": "573a5b08ee3fd6f531db6753f1ee4c333a09bf7e4249fbdbe72e001138571975"
+      },
+      "after": [
+        {
+          "encodedBytes": 233,
+          "planId": "51a84fdbfd8c11817d15e9c35b7655ea900f480b93121f8842b24c2708e6bd83"
+        },
+        {
+          "encodedBytes": 233,
+          "planId": "51a84fdbfd8c11817d15e9c35b7655ea900f480b93121f8842b24c2708e6bd83"
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "index.ts",
+            "added": 1,
+            "removed": 0,
+            "beforeLines": 10,
+            "afterLines": 11
+          },
+          {
+            "path": "serialize-plan.ts",
+            "added": 6,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 6
+          }
+        ],
+        "added": 7,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "index.ts",
+              "added": 1,
+              "removed": 0,
+              "beforeLines": 6,
+              "afterLines": 7
+            },
+            {
+              "path": "serialize-plan.ts",
+              "added": 5,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 5
+            }
+          ],
+          "added": 6,
+          "removed": 0
+        }
+      }
+    },
+    {
+      "layout": "T3",
+      "id": "P01",
+      "kind": "configuration-only",
+      "before": {
+        "configuredInstances": 1,
+        "registryEndpoints": [
+          "http://127.0.0.1:38435/registry-0"
+        ],
+        "measuredOperations": 1,
+        "newSends": 1,
+        "requiredInstances": 2,
+        "postcondition": false
+      },
+      "after": {
+        "configuredInstances": 2,
+        "registryEndpoints": [
+          "http://127.0.0.1:38435/registry-1",
+          "http://127.0.0.1:38435/registry-0"
+        ],
+        "measuredOperations": 2,
+        "newSends": 1,
+        "requiredInstances": 2,
+        "postcondition": true
+      },
+      "productPatch": {
+        "added": 0,
+        "removed": 0
+      },
+      "configurationFieldsChanged": [
+        "instances"
+      ]
+    },
+    {
+      "layout": "T3",
+      "id": "P02",
+      "before": {
+        "exitCode": 1,
+        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/external' imported from /tmp/ts-release-topology-extensions-8A25tJ/T3/P02-before/[eval1]",
+        "stderrSha256": "e40803c899e5128704ee5aa148ab23128b5fd085c838e71b48142529c0ecb92a"
+      },
+      "after": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "external.ts",
+            "added": 33,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 33
+          },
+          {
+            "path": "http-evidence.ts",
+            "added": 13,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 13
+          }
+        ],
+        "added": 46,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "external.ts",
+              "added": 32,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 32
+            },
+            {
+              "path": "http-evidence.ts",
+              "added": 13,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 13
+            }
+          ],
+          "added": 45,
+          "removed": 0
+        }
+      },
+      "coreAndCliUnchanged": true
+    },
+    {
+      "layout": "T3",
+      "id": "P03",
+      "before": {
+        "exitCode": 1,
+        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/catalog' imported from /tmp/ts-release-topology-0JDsU7/T3/consumer/[eval1]",
+        "stderrSha256": "8c72d3ed2f3ab750f203394b03f831c0d8d01ab048549eccef5f6c6ca3a97184"
+      },
+      "after": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "index.ts",
+            "added": 38,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 38
+          },
+          {
+            "path": "http-evidence.ts",
+            "added": 13,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 13
+          }
+        ],
+        "added": 51,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "index.ts",
+              "added": 42,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 42
+            },
+            {
+              "path": "http-evidence.ts",
+              "added": 13,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 13
+            }
+          ],
+          "added": 55,
+          "removed": 0
+        }
+      },
+      "manifestChanged": true
+    },
+    {
+      "layout": "T3",
+      "id": "P05",
+      "before": {
+        "exitCode": 1,
+        "error": "SyntaxError: The requested module '@lab/npm' does not provide an export named 'npmTag'",
+        "stderrSha256": "e494575ae100e453e7f47b11c2e0917773b4e90f08047eb6428441176fbc59c1"
+      },
+      "after": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "status": "Satisfied",
+          "sends": 1,
+          "restartDispatches": 1
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "index.ts",
+            "added": 2,
+            "removed": 0,
+            "beforeLines": 90,
+            "afterLines": 92
+          },
+          {
+            "path": "npm-tag.ts",
+            "added": 41,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 41
+          }
+        ],
+        "added": 43,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "index.ts",
+              "added": 1,
+              "removed": 0,
+              "beforeLines": 96,
+              "afterLines": 97
+            },
+            {
+              "path": "npm-tag.ts",
+              "added": 44,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 44
+            }
+          ],
+          "added": 45,
+          "removed": 0
+        }
+      }
+    },
+    {
+      "layout": "T3",
+      "id": "P06",
+      "before": {
+        "exitCode": 1,
+        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './git' is not defined by \"exports\" in /tmp/ts-release-topology-extensions-8A25tJ/T3/P06-before/consumer/node_modules/@lab/host/package.json imported from /tmp/ts-release-topology-extensions-8A25tJ/T3/P06-before/consumer/[eval1]",
+        "stderrSha256": "097d674aad80bb458b7d161a728cee14b97a72101e8b38aa3b629308b98234b8"
+      },
+      "after": [
+        {
+          "id": "t3-node-m1-library-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t3-node-m1-cli-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t3-node-m1-action-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t3-node-m1-cli-external-2",
+          "sends": 2,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t3-node-m1-cli-npm-1-lose",
+          "sends": 1,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t3-node-m2-library-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t3-node-m2-cli-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t3-node-m2-action-npm-python-2",
+          "sends": 4,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t3-node-m2-cli-external-2",
+          "sends": 2,
+          "sendsAfterRestart": 0
+        },
+        {
+          "id": "t3-node-m2-cli-npm-1-lose",
+          "sends": 1,
+          "sendsAfterRestart": 0
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "storage/git.ts",
+            "added": 73,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 73
+          }
+        ],
+        "added": 73,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "storage/git.ts",
+              "added": 82,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 82
+            }
+          ],
+          "added": 82,
+          "removed": 0
+        }
+      },
+      "manifestChanged": true
+    },
+    {
+      "layout": "T3",
+      "id": "P07",
+      "before": [
+        {
+          "runtime": "node",
+          "exitCode": 1,
+          "stderrSha256": "a661febd7ad43d6dc81101386d3e01784e538288cd29556be9bb8ce4c3fc8488"
+        },
+        {
+          "runtime": "bun",
+          "exitCode": 1,
+          "stderrSha256": "1ac878faec1e12ec9fcd42abd8040ea42d5e5d3527f494478bed32f0a37a06e2"
+        }
+      ],
+      "after": [
+        {
+          "runtime": "node",
+          "phase": "after",
+          "checks": 8,
+          "nativeProtocol": "effect-build/artifact-adoption@1",
+          "rejectsResolvedGenerationMismatch": true,
+          "producerPathsDeleted": true,
+          "restored": true
+        },
+        {
+          "runtime": "bun",
+          "phase": "after",
+          "checks": 8,
+          "nativeProtocol": "effect-build/artifact-adoption@1",
+          "rejectsResolvedGenerationMismatch": true,
+          "producerPathsDeleted": true,
+          "restored": true
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "adoption/producer-handoff.ts",
+            "added": 40,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 40
+          }
+        ],
+        "added": 40,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "adoption/producer-handoff.ts",
+              "added": 39,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 39
+            }
+          ],
+          "added": 39,
+          "removed": 0
+        }
+      },
+      "initialAdoptionCapabilityLines": 323,
+      "scope": "Additional actual PR24 path-free adoption-header adapter; existing file/tree ownership and strict loader remain in both trees. Test program is strictly emitted against added public API, then identical emitted bytes execute before/after modes."
+    },
+    {
+      "layout": "T3",
+      "id": "P04",
+      "baselineKind": "compiled counterfactual pre-extension source",
+      "before": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
+          "stderrSha256": "fefb5317c8b66c05544d8d739cf503c583fea23640c5de943fffc643ec214a8f"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
+          "stderrSha256": "fefb5317c8b66c05544d8d739cf503c583fea23640c5de943fffc643ec214a8f"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
+          "stderrSha256": "488a471b9e5c22893b09b45e2d0c470515a60502020c6e39f2a65f0e7c480e61"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "mode": "P04",
+          "exitCode": 1,
+          "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
+          "stderrSha256": "488a471b9e5c22893b09b45e2d0c470515a60502020c6e39f2a65f0e7c480e61"
+        }
+      ],
+      "after": [
+        {
+          "runtime": "node",
+          "mode": "P04",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P04",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P04",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P04",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "contracts.ts",
+            "added": 2,
+            "removed": 0,
+            "beforeLines": 219,
+            "afterLines": 221
+          },
+          {
+            "path": "identity.ts",
+            "added": 2,
+            "removed": 1,
+            "beforeLines": 269,
+            "afterLines": 270
+          },
+          {
+            "path": "m1-history.ts",
+            "added": 2,
+            "removed": 1,
+            "beforeLines": 104,
+            "afterLines": 105
+          },
+          {
+            "path": "m2-transition.ts",
+            "added": 4,
+            "removed": 3,
+            "beforeLines": 153,
+            "afterLines": 154
+          },
+          {
+            "path": "run.ts",
+            "added": 2,
+            "removed": 1,
+            "beforeLines": 234,
+            "afterLines": 235
+          }
+        ],
+        "added": 12,
+        "removed": 6,
+        "normalized": {
+          "changed": [
+            {
+              "path": "contracts.ts",
+              "added": 2,
+              "removed": 0,
+              "beforeLines": 246,
+              "afterLines": 248
+            },
+            {
+              "path": "identity.ts",
+              "added": 3,
+              "removed": 1,
+              "beforeLines": 293,
+              "afterLines": 295
+            },
+            {
+              "path": "m1-history.ts",
+              "added": 3,
+              "removed": 1,
+              "beforeLines": 117,
+              "afterLines": 119
+            },
+            {
+              "path": "m2-transition.ts",
+              "added": 5,
+              "removed": 2,
+              "beforeLines": 184,
+              "afterLines": 187
+            },
+            {
+              "path": "run.ts",
+              "added": 2,
+              "removed": 1,
+              "beforeLines": 262,
+              "afterLines": 263
+            }
+          ],
+          "added": 15,
+          "removed": 5
+        }
+      },
+      "variantGeneratorSha256": "fc9536cde02493829904d5df94067a5402aee74fec76511e292aac6f605083d1",
+      "consumerSha256": "ff0634887063894e119d045e6fccb5f5869288ab1e57e72539cb04abe3b3627c"
+    },
+    {
+      "layout": "T3",
+      "id": "P09",
+      "baselineKind": "compiled counterfactual pre-extension source",
+      "before": [
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "LabError: Legacy supersession closes the entire history",
+          "stderrSha256": "a0d3928abf82342e273568fd242d8d511eb90d74018bcf87d9a85a77c9624430"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M1",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
+          "stderrSha256": "e841c6525ec6c802ddc0f5b1960e77e8a1fd1ece6ae376d9157a1f96b4bd076b"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "LabError: Legacy supersession closes the entire history",
+          "stderrSha256": "69dfb64b8c72115c4c0c9e4134ebc474dde576e19780b1e0ae0ba10249847f77"
+        },
+        {
+          "runtime": "node",
+          "candidate": "M2",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
+          "stderrSha256": "e841c6525ec6c802ddc0f5b1960e77e8a1fd1ece6ae376d9157a1f96b4bd076b"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "error: Legacy supersession closes the entire history",
+          "stderrSha256": "6a4dea2d5d93791861c9766adcd7f2f45dcfd59ebba6b9fb80c45a48afa67e0e"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M1",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
+          "stderrSha256": "07b4af1bcd278c6342e2172dd9f27efab372f897e5cd032a987fad5f012f944e"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "mode": "P09-live",
+          "exitCode": 1,
+          "diagnostic": "error: Legacy supersession closes the entire history",
+          "stderrSha256": "81e93ed34deb642e239af7e319365cccd8ec44e655259a8bad43fcf395af2f18"
+        },
+        {
+          "runtime": "bun",
+          "candidate": "M2",
+          "mode": "P09-migrate",
+          "exitCode": 1,
+          "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
+          "stderrSha256": "07b4af1bcd278c6342e2172dd9f27efab372f897e5cd032a987fad5f012f944e"
+        }
+      ],
+      "after": [
+        {
+          "runtime": "node",
+          "mode": "P09-live",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P09-migrate",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P09-live",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "node",
+          "mode": "P09-migrate",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-live",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-migrate",
+          "candidate": "M1",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-live",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "PlanSuperseded",
+            "ReceiptAccepted",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        },
+        {
+          "runtime": "bun",
+          "mode": "P09-migrate",
+          "candidate": "M2",
+          "sends": 1,
+          "events": [
+            "DispatchStarted",
+            "ReceiptAccepted",
+            "PlanSuperseded",
+            "ObservationRecorded",
+            "ObservationRecorded"
+          ],
+          "maxEventBytes": 791,
+          "status": "passed"
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "contracts.ts",
+            "added": 1,
+            "removed": 1,
+            "beforeLines": 221,
+            "afterLines": 221
+          },
+          {
+            "path": "index.ts",
+            "added": 2,
+            "removed": 0,
+            "beforeLines": 10,
+            "afterLines": 12
+          },
+          {
+            "path": "m1-history.ts",
+            "added": 0,
+            "removed": 1,
+            "beforeLines": 106,
+            "afterLines": 105
+          },
+          {
+            "path": "m2-transition.ts",
+            "added": 0,
+            "removed": 1,
+            "beforeLines": 155,
+            "afterLines": 154
+          },
+          {
+            "path": "run.ts",
+            "added": 2,
+            "removed": 2,
+            "beforeLines": 235,
+            "afterLines": 235
+          },
+          {
+            "path": "recovery-migration.ts",
+            "added": 42,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 42
+          }
+        ],
+        "added": 47,
+        "removed": 5,
+        "normalized": {
+          "changed": [
+            {
+              "path": "contracts.ts",
+              "added": 1,
+              "removed": 1,
+              "beforeLines": 248,
+              "afterLines": 248
+            },
+            {
+              "path": "index.ts",
+              "added": 1,
+              "removed": 0,
+              "beforeLines": 6,
+              "afterLines": 7
+            },
+            {
+              "path": "m1-history.ts",
+              "added": 0,
+              "removed": 2,
+              "beforeLines": 121,
+              "afterLines": 119
+            },
+            {
+              "path": "m2-transition.ts",
+              "added": 0,
+              "removed": 2,
+              "beforeLines": 189,
+              "afterLines": 187
+            },
+            {
+              "path": "run.ts",
+              "added": 2,
+              "removed": 2,
+              "beforeLines": 263,
+              "afterLines": 263
+            },
+            {
+              "path": "recovery-migration.ts",
+              "added": 45,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 45
+            }
+          ],
+          "added": 49,
+          "removed": 7
+        }
+      },
+      "variantGeneratorSha256": "fc9536cde02493829904d5df94067a5402aee74fec76511e292aac6f605083d1",
+      "consumerSha256": "ff0634887063894e119d045e6fccb5f5869288ab1e57e72539cb04abe3b3627c"
+    },
+    {
+      "layout": "T3",
+      "id": "P08",
+      "before": {
+        "exitCode": 1,
+        "error": "SyntaxError: The requested module '@lab/kernel' does not provide an export named 'serializePlan'",
+        "stderrSha256": "ce2984a76150c9b081ba08cc6f610ecc1703530b43ae00fb5b8ce5ede4b21443"
+      },
+      "after": [
+        {
+          "encodedBytes": 233,
+          "planId": "51a84fdbfd8c11817d15e9c35b7655ea900f480b93121f8842b24c2708e6bd83"
+        },
+        {
+          "encodedBytes": 233,
+          "planId": "51a84fdbfd8c11817d15e9c35b7655ea900f480b93121f8842b24c2708e6bd83"
+        }
+      ],
+      "productPatch": {
+        "changed": [
+          {
+            "path": "index.ts",
+            "added": 1,
+            "removed": 0,
+            "beforeLines": 10,
+            "afterLines": 11
+          },
+          {
+            "path": "serialize-plan.ts",
+            "added": 6,
+            "removed": 0,
+            "beforeLines": 0,
+            "afterLines": 6
+          }
+        ],
+        "added": 7,
+        "removed": 0,
+        "normalized": {
+          "changed": [
+            {
+              "path": "index.ts",
+              "added": 1,
+              "removed": 0,
+              "beforeLines": 6,
+              "afterLines": 7
+            },
+            {
+              "path": "serialize-plan.ts",
+              "added": 5,
+              "removed": 0,
+              "beforeLines": 0,
+              "afterLines": 5
+            }
+          ],
+          "added": 6,
+          "removed": 0
+        }
+      }
+    }
+  ]
+}

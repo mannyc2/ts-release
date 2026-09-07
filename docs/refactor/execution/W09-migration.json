@@ -1,0 +1,116 @@
+{
+  "format": "ts-release/migration-execution/1",
+  "wave": "W09",
+  "status": "mcp-openai-local-cutover",
+  "sourceCommit": "9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d",
+  "preservationCommit": "e393dd098090761d4157d4ea5af1c5676e4dc485",
+  "physicalDeletedLines": 348,
+  "rows": [
+    {
+      "path": "apps/ts-release-agents/src/build.ts",
+      "sha256": "05b7f0d563b2ddff9c507cae0622490b8495524910ee602998ba2117771c307a",
+      "owner": "openai",
+      "wave": "W09",
+      "disposition": "retire-prototype-agent-archive-builder",
+      "successors": ["provider.openai"],
+      "lines": 105,
+      "retiredDeclarations": [
+        { "name": "ArchiveEntry", "kind": "TypeAliasDeclaration", "line": 5, "sha256": "ab1a3b608cf55cff235ab96c71e42fb61088187c11fcb0781b29aae4c47aebf4", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "encoder", "kind": "VariableDeclaration", "line": 6, "sha256": "3b01d8a4b4a04663a97ef7c65a0e34f94a9bd327a6dbb9d7d86d40271f22c369", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "text", "kind": "VariableDeclaration", "line": 7, "sha256": "382cbebef492306427fba9ab3fa5e0f09b0a5ad384414b3ee568e59e5329508f", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "concat", "kind": "VariableDeclaration", "line": 8, "sha256": "bc37f297b0aed6eb37cf0a827125963235112e546ac96ee36dac8d4acc2aedd2", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "integer", "kind": "VariableDeclaration", "line": 14, "sha256": "7b8bc10647c376614fe76b050644427e209cfc95b570c5c1e76cd03eef7e40fb", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "crcTable", "kind": "VariableDeclaration", "line": 21, "sha256": "6dc9de7a47dc8cdbe272cb6cb092e8bf497f19184884247ac55cf18c77252a45", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "crc32", "kind": "VariableDeclaration", "line": 26, "sha256": "9115020fe3f61f3b1e9e46d127b4689207b55b1002d27873c58e1027d5e114ee", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "zip", "kind": "VariableDeclaration", "line": 31, "sha256": "488112b550ffff61e018995f2548c44383bc475706ad48c7751270f2bbab7b4c", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "root", "kind": "VariableDeclaration", "line": 45, "sha256": "273cdf4316fd3662049831722b202372fdef94ff44b8f64f9ddae749a0d521ea", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "app", "kind": "VariableDeclaration", "line": 46, "sha256": "73a3e5d5c26a4d01d7416e42d2d7560f22afa9dd2c3205055b5b74ece098293e", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "output", "kind": "VariableDeclaration", "line": 47, "sha256": "b8a65ec8a8ce5df8d77d7c26011604af37032d45c2293dfe14acaa71e05077b4", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "version", "kind": "VariableDeclaration", "line": 48, "sha256": "c932dbff6f0621d58c50cfde6588d1f0b32e0c8a98b16ce26f3c90db7a110d76", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "write", "kind": "VariableDeclaration", "line": 53, "sha256": "df169f96841b03957589a16d302f921760ca7bacd7baa489d8f8d1a7337cc12b", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "copyTree", "kind": "VariableDeclaration", "line": 57, "sha256": "f0e7f40e86befcf37acb26d7986a0c1d95f08de37d5a5864481846e58af05b94", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "filesUnder", "kind": "VariableDeclaration", "line": 60, "sha256": "d2401247f296ea9fa969b223698d1b189cfd6a6c10be5033554927139697aed3", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "generatedManifest", "kind": "VariableDeclaration", "line": 64, "sha256": "59ca4b43f96aeaf1ab0f26824d5d72566cf1e19ac1bda5df79b0fba9c70ba80a", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "packageFiles", "kind": "VariableDeclaration", "line": 70, "sha256": "bd42a6f91e912f55f9cae3492e5eb03b2a22e038be386f40624d46db2971516b", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "BuildAgentsOptions", "kind": "InterfaceDeclaration", "line": 79, "sha256": "931dffa82751e8b1bafcb81a933de88a927eebd0fe562a10ff3c098e65cb87c1", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "buildAgents", "kind": "VariableDeclaration", "line": 84, "sha256": "be01beeb83a414906625d794869cfbcdee5b89921fe389e65ba5348aa33b6802", "disposition": "retire-old-declaration", "successorOwner": "openai" }
+      ],
+      "successorPaths": [
+        "packages/openai/src/Package.ts",
+        "packages/openai/src/Marketplace.ts",
+        "test/reimplementation/ai/openai.test.ts"
+      ],
+      "responsibility": "Owned plugin Tree rendering and validation replace a mutable workspace ZIP projection. Supporting file modes and content identities are now explicit; no home-directory installation is performed.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/ts-release-agents/src/check.ts",
+      "sha256": "8b4d34668ca72552d52952b43c39f860af316075ba0b9509bdee3a92bbf28f3d",
+      "owner": "openai",
+      "wave": "W09",
+      "disposition": "retire-prototype-provider-install-check",
+      "successors": ["provider.openai"],
+      "lines": 122,
+      "retiredDeclarations": [
+        { "name": "root", "kind": "VariableDeclaration", "line": 9, "sha256": "273cdf4316fd3662049831722b202372fdef94ff44b8f64f9ddae749a0d521ea", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "output", "kind": "VariableDeclaration", "line": 10, "sha256": "b8a65ec8a8ce5df8d77d7c26011604af37032d45c2293dfe14acaa71e05077b4", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "app", "kind": "VariableDeclaration", "line": 11, "sha256": "73a3e5d5c26a4d01d7416e42d2d7560f22afa9dd2c3205055b5b74ece098293e", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "fail", "kind": "VariableDeclaration", "line": 12, "sha256": "21c2f9893b94d9ba76b322f910de8539aacf8f9073b9bf80c1ea22ab721530ab", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "bytes", "kind": "VariableDeclaration", "line": 13, "sha256": "aa12c410b41edfb3f97822d2022f4839559a1972de3d87ad0040c82ce70cad79", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "same", "kind": "VariableDeclaration", "line": 14, "sha256": "d95cf0144385fc2d762da0f556dc29b3ce9bbe999e5c3882152bd3dbb1a8aaf2", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "json", "kind": "VariableDeclaration", "line": 15, "sha256": "78d1e15f78aca1d29980416e55a26ae78348880df835e45af6695d4d90b412b7", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "rootVersion", "kind": "VariableDeclaration", "line": 20, "sha256": "07c152c5594253b31a2bc25abf5159e09f52926c902daa6d5b698b87cc51cc79", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "generatedFiles", "kind": "VariableDeclaration", "line": 21, "sha256": "da01ddac58a753372c53f5375526add530813b56b714b3d49bf87f9dcb5d7ab6", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "containsFiles", "kind": "VariableDeclaration", "line": 25, "sha256": "a5c81ed2a61deac05cf5ad5e2521462893c28b669cc28b1dc3d03109fa6837fd", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "commandFailure", "kind": "VariableDeclaration", "line": 28, "sha256": "d62dbf58a0a6eb81c1876c65dce9d2b2c369026e5e639464ab3b25f41b2504a0", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "firstPaths", "kind": "VariableDeclaration", "line": 34, "sha256": "15757bc365d6bef186b24c0bde6264acaed762d28460f8675378eda6fc0e1e8b", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "first", "kind": "VariableDeclaration", "line": 35, "sha256": "8982a9157a3028fe2ea5c1714213ce08d05435c2e3cf1404ba6d91a71dc1de3f", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "secondPaths", "kind": "VariableDeclaration", "line": 36, "sha256": "c357f80c5b4861a9b1e65eb3a4445c73514966e97e8915718201e670aa3e2fce", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "second", "kind": "VariableDeclaration", "line": 37, "sha256": "66750d0ee17358cfc0628369361c298550fb996c83d24b73445d55f95366151d", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "codex", "kind": "VariableDeclaration", "line": 46, "sha256": "052061b75bc04512c9937df3164468d72e0fc7b899cba00f5acdc96dc917e6d0", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "evals", "kind": "VariableDeclaration", "line": 48, "sha256": "f1beaa9d58e313cdb46c49e94608fcd92d2dcfa01da7678d6711bb209538db68", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "tracked", "kind": "VariableDeclaration", "line": 61, "sha256": "975ee2f2a97d0b46fc2cf2271f97cb57dddc7155d855ec870f58afa1ec4f2745", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "trackedFiles", "kind": "VariableDeclaration", "line": 63, "sha256": "41bb0438aff30bf009e0e6feed189211b6f3b56090085f11760440a3de97619c", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "canonicalRootOwners", "kind": "VariableDeclaration", "line": 64, "sha256": "29fc522b1234461ca01d2a0d9a7b6c28509afdcbccb3f2eb708f5f119dc46d85", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "skillOwners", "kind": "VariableDeclaration", "line": 71, "sha256": "059177f86b5363b03c990b48a2686dbe8f9ab1091a62e8f8eb5e2ac0675ea4f7", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "disposableRoot", "kind": "VariableDeclaration", "line": 76, "sha256": "3aba3549b51193a8b108ff090c9b54d5fdcd783ad48964a1fc1752047b845c81", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "installed", "kind": "VariableDeclaration", "line": 77, "sha256": "ef92b598fe54c97188762b2fd707aa7e6cc8c243857cefe34ec91ad95127a132", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "providerLayouts", "kind": "VariableDeclaration", "line": 78, "sha256": "1278b41bb3faf55c3dfbe45acc867520ea626dcf851a67919e47867e1127152c", "disposition": "retire-old-declaration", "successorOwner": "openai" }
+      ],
+      "successorPaths": [
+        "packages/openai/src/Package.ts",
+        "packages/openai/src/Submission.ts",
+        "test/reimplementation/ai/openai.test.ts"
+      ],
+      "responsibility": "Strict owned-tree shape, content identity, skills-only boundaries, marketplace bytes and human-submission limits replace generated-directory inspection and optional external CLI behavior.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/ts-release-agents/src/install.ts",
+      "sha256": "0e4b076cd9a6f97dff1df9f579649bacfaba3510bf61d239ee7149cb35f538aa",
+      "owner": "openai",
+      "wave": "W09",
+      "disposition": "retire-prototype-home-cache-installer",
+      "successors": ["provider.openai"],
+      "lines": 121,
+      "retiredDeclarations": [
+        { "name": "AgentProvider", "kind": "TypeAliasDeclaration", "line": 15, "sha256": "04686726aae7df82b8d9823202c024c3da809b39d6172c06503cab513a274a96", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "InstalledAgentArchive", "kind": "InterfaceDeclaration", "line": 17, "sha256": "230592298bdd61e2f5c6eb47b7ac5bc65b1a10fb8a63d89bc26c64b3266f0e13", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "fail", "kind": "VariableDeclaration", "line": 28, "sha256": "21c2f9893b94d9ba76b322f910de8539aacf8f9073b9bf80c1ea22ab721530ab", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "archiveEntries", "kind": "VariableDeclaration", "line": 30, "sha256": "1f6231e04bc056c2fcb2f88d6798310a9126aad692e8d05f929036ee3d2dca00", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "verifyContainedTree", "kind": "VariableDeclaration", "line": 51, "sha256": "b8f491f24a0c3cffa858198e8b5579b4ca97f17f889883ffa215dfceb1014aa5", "disposition": "retire-old-declaration", "successorOwner": "openai" },
+        { "name": "installAgentArchive", "kind": "VariableDeclaration", "line": 72, "sha256": "6e3f63017cb9dc63dc118d3cba7d2d7cde01e56ce44101489711aa6cdd5b07e8", "disposition": "retire-old-declaration", "successorOwner": "openai" }
+      ],
+      "successorPaths": [
+        "packages/openai/src/Package.ts",
+        "packages/openai/src/Marketplace.ts",
+        "packages/openai/src/Submission.ts"
+      ],
+      "responsibility": "The public package produces exact installable Tree and handoff data. User cache mutation and portal submission remain external human operations and grant no release evidence.",
+      "nativeCarryForwardWaves": []
+    }
+  ],
+  "nativeCarryForward": [],
+  "accounting": "Three exact current-source prototype files and 348 physical lines are retired after MCP/OpenAI owners and focused tests exist. No historical deletion credit is used.",
+  "limits": "Official hosted MCP publication/discovery and human OpenAI portal review remain launch-open; local validation does not claim either external outcome."
+}

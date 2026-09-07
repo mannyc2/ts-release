@@ -1,13 +1,13 @@
 {
   "format": "ts-release/packed-external/1",
-  "work": "/tmp/ts-release-packed-external-u1LOnH",
-  "frozenAt": "2026-09-07T14:08:37.176Z",
-  "providerBuiltAt": "2026-09-07T14:08:39.961Z",
+  "work": "/tmp/ts-release-packed-external-7bFmX7",
+  "frozenAt": "2026-09-07T22:41:35.490Z",
+  "providerBuiltAt": "2026-09-07T22:41:38.601Z",
   "core": {
     "sha256": "eb038cb394139f069a0f937b72578f8f987705fae53e4210b0705ad2b7c723d9"
   },
   "provider": {
-    "sha256": "707157e066a2987bdf855c1023233f46492de61713510efd2eea5da291de2f2e"
+    "sha256": "13a82b4dc04b5b4006d2ec0ecb55bb23c4bdb4632c24555b20b84ba4844749a9"
   },
   "frozenSources": [
     {
@@ -79,6 +79,26 @@
       "sha256": "762bdaa87a3b796aa16caae25a6f317098229d311bef095e1fee5ee25c118b57"
     },
     {
+      "path": "packages/mcp/package.json",
+      "sha256": "85ac84a6428ced55536e5b4ead2cc4f5aa706f06c6412e90b023cf9e9f05d23a"
+    },
+    {
+      "path": "packages/mcp/src/Auth.ts",
+      "sha256": "4a8d7ce71b2a778f440ea6c2a9ada07cd6b7bae5cbc90cd0f9a44b4aaf4a5c08"
+    },
+    {
+      "path": "packages/mcp/src/index.ts",
+      "sha256": "8926f23abc28b28bf739550aca6e090c28914b6b8bf7ab547104d219287e1b1c"
+    },
+    {
+      "path": "packages/mcp/src/Model.ts",
+      "sha256": "c25a2255dd347cde2fbfdc106f5cf54f620ce7b60557270e0dfb76e8d6e090d9"
+    },
+    {
+      "path": "packages/mcp/src/Protocol.ts",
+      "sha256": "0dfc421909ea674cd000d1fd0a782bc80cf284352aad833f0b6b8bf324122c0d"
+    },
+    {
       "path": "packages/npm/package.json",
       "sha256": "b904cbf11544bf2f262203344cda109fbff69bedd12206d84c01fb7d85b5c296"
     },
@@ -109,6 +129,26 @@
     {
       "path": "packages/npm/src/Wire.ts",
       "sha256": "4e1e6495282acbb97a160c3be004112eb421d2cdbedf607efacbf25291d05e64"
+    },
+    {
+      "path": "packages/openai/package.json",
+      "sha256": "951c5817efac92ecdc23d6629fda98ef1df892244ed57308947f838a8c1b2988"
+    },
+    {
+      "path": "packages/openai/src/index.ts",
+      "sha256": "139efde2faa31f34d0b5ba0b8d9fd1021101a6427d61d7c92d320e840480b422"
+    },
+    {
+      "path": "packages/openai/src/Marketplace.ts",
+      "sha256": "20b187007d1c5f8254ce1c910bcf99a1b156f845466ff3b26c0a1ac4f61ea43c"
+    },
+    {
+      "path": "packages/openai/src/Package.ts",
+      "sha256": "3be9c9b4abb628afac5acec349eb6225d733672462d9daa9be927925137026a2"
+    },
+    {
+      "path": "packages/openai/src/Submission.ts",
+      "sha256": "d964caf5c38a26e47db4b89887a2eda4c587308b0f11e90f6710a2f91d32f0f2"
     },
     {
       "path": "packages/pypi/package.json",
@@ -367,7 +407,7 @@
       "result": {
         "runtime": "v22.22.2",
         "bun": null,
-        "work": "/tmp/ts-release-packed-external-u1LOnH/bun/native-D4s3LX",
+        "work": "/tmp/ts-release-packed-external-7bFmX7/bun/native-Q67rQU",
         "checks": 199,
         "processes": 35,
         "nativeHttpRequests": 12,
@@ -381,7 +421,7 @@
       "result": {
         "runtime": "v24.3.0",
         "bun": "1.3.14",
-        "work": "/tmp/ts-release-packed-external-u1LOnH/bun/native-vlpK7x",
+        "work": "/tmp/ts-release-packed-external-7bFmX7/bun/native-xd3nh7",
         "checks": 199,
         "processes": 35,
         "nativeHttpRequests": 12,
@@ -395,7 +435,7 @@
       "result": {
         "runtime": "v22.22.2",
         "bun": null,
-        "work": "/tmp/ts-release-packed-external-u1LOnH/npm/native-QmdcaB",
+        "work": "/tmp/ts-release-packed-external-7bFmX7/npm/native-wHuwfC",
         "checks": 199,
         "processes": 35,
         "nativeHttpRequests": 12,
@@ -409,7 +449,7 @@
       "result": {
         "runtime": "v24.3.0",
         "bun": "1.3.14",
-        "work": "/tmp/ts-release-packed-external-u1LOnH/npm/native-fmP7PE",
+        "work": "/tmp/ts-release-packed-external-7bFmX7/npm/native-pmM7xR",
         "checks": 199,
         "processes": 35,
         "nativeHttpRequests": 12,
@@ -420,7 +460,7 @@
   ],
   "commands": [
     {
-      "cwd": "/tmp/ts-release-implementation",
+      "cwd": "/tmp/ts-release-complete-hard-cut",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "run",
@@ -430,32 +470,32 @@
       "output": "$ bun scripts/build.ts\n"
     },
     {
-      "cwd": "/tmp/ts-release-implementation/packages/ts-release",
+      "cwd": "/tmp/ts-release-complete-hard-cut/packages/ts-release",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "pm",
         "pack",
         "--ignore-scripts",
         "--filename",
-        "/tmp/ts-release-packed-external-u1LOnH/kernel.tgz"
+        "/tmp/ts-release-packed-external-7bFmX7/kernel.tgz"
       ],
       "exitCode": 0,
-      "output": "bun pack v1.3.14 (0d9b296a)\n\npacked 1.73KB package.json\npacked 1.1KB LICENSE\npacked 1.27KB README.md\npacked 0.78KB dist/Apple.d.ts\npacked 0.58KB dist/Apple.js\npacked 0.76KB dist/Bun.d.ts\npacked 0.60KB dist/Bun.js\npacked 0.64KB dist/Bundle.d.ts\npacked 430B dist/Bundle.js\npacked 1.52KB dist/EffectBuild.d.ts\npacked 10.77KB dist/EffectBuild.js\npacked 486B dist/Git.d.ts\npacked 247B dist/Git.js\npacked 3.98KB dist/Http.d.ts\npacked 2.11KB dist/Http.js\npacked 1.96KB dist/Journal.d.ts\npacked 7.26KB dist/Journal.js\npacked 0.69KB dist/Node.d.ts\npacked 0.53KB dist/Node.js\npacked 1.18KB dist/Plan.d.ts\npacked 6.45KB dist/Plan.js\npacked 5.1KB dist/Provider.d.ts\npacked 8.47KB dist/Provider.js\npacked 2.88KB dist/Release.d.ts\npacked 15.53KB dist/Release.js\npacked 7.56KB dist/apple/Model.d.ts\npacked 6.1KB dist/apple/Model.js\npacked 5.28KB dist/apple/Native.d.ts\npacked 12.49KB dist/apple/Native.js\npacked 2.40KB dist/apple/Preparation.d.ts\npacked 9.19KB dist/apple/Preparation.js\npacked 507B dist/apple/Provider.d.ts\npacked 6.46KB dist/apple/Provider.js\npacked 31B dist/bin/ts-release.d.ts\npacked 394B dist/bin/ts-release.js\npacked 1.50KB dist/index.d.ts\npacked 0.91KB dist/index.js\npacked 3.72KB dist/internal/ArtifactModel.d.ts\npacked 2.23KB dist/internal/ArtifactModel.js\npacked 0.58KB dist/internal/ArtifactReader.d.ts\npacked 1.83KB dist/internal/ArtifactReader.js\npacked 372B dist/internal/BundleCodec.d.ts\npacked 1.25KB dist/internal/BundleCodec.js\npacked 453B dist/internal/BundleFinalize.d.ts\npacked 1.60KB dist/internal/BundleFinalize.js\npacked 0.84KB dist/internal/Checksums.d.ts\npacked 3.1KB dist/internal/Checksums.js\npacked 233B dist/internal/CommandLine.d.ts\npacked 2.85KB dist/internal/CommandLine.js\npacked 1.77KB dist/internal/Content.d.ts\npacked 1.31KB dist/internal/Content.js\npacked 2.61KB dist/internal/Decision.d.ts\npacked 10.39KB dist/internal/Decision.js\npacked 164B dist/internal/EffectTypes.d.ts\npacked 11B dist/internal/EffectTypes.js\npacked 0.58KB dist/internal/Error.d.ts\npacked 0.59KB dist/internal/Error.js\npacked 1.66KB dist/internal/FinalizedReport.d.ts\npacked 2.57KB dist/internal/FinalizedReport.js\npacked 2.28KB dist/internal/GitAuthority.d.ts\npacked 8.23KB dist/internal/GitAuthority.js\npacked 3.59KB dist/internal/GitCatalog.d.ts\npacked 8.92KB dist/internal/GitCatalog.js\npacked 2.37KB dist/internal/Host.d.ts\npacked 8.51KB dist/internal/Host.js\npacked 1.1KB dist/internal/Identity.d.ts\npacked 5.35KB dist/internal/Identity.js\npacked 225B dist/internal/NativeJson.d.ts\npacked 2.75KB dist/internal/NativeJson.js\npacked 8.25KB dist/internal/ReleaseModel.d.ts\npacked 4.87KB dist/internal/ReleaseModel.js\npacked 206B dist/internal/TreeManifest.d.ts\npacked 3.59KB dist/internal/TreeManifest.js\npacked 0.95KB dist/platform/Application.d.ts\npacked 2.29KB dist/platform/Application.js\npacked 286B dist/platform/ContentStore.d.ts\npacked 4.95KB dist/platform/ContentStore.js\npacked 407B dist/platform/Directory.d.ts\npacked 2.22KB dist/platform/Directory.js\npacked 1.13KB dist/platform/GitHost.d.ts\npacked 5.28KB dist/platform/GitHost.js\npacked 0.97KB dist/platform/GitJournal.d.ts\npacked 7.47KB dist/platform/GitJournal.js\npacked 1.32KB dist/platform/GitObjects.d.ts\npacked 11.0KB dist/platform/GitObjects.js\npacked 2.0KB dist/platform/GitProcess.d.ts\npacked 6.77KB dist/platform/GitProcess.js\npacked 0.55KB dist/platform/GitRemote.d.ts\npacked 1.52KB dist/platform/GitRemote.js\npacked 0.93KB dist/platform/GithubOidc.d.ts\npacked 9.81KB dist/platform/GithubOidc.js\npacked 0.76KB dist/platform/HttpTransport.d.ts\npacked 13.88KB dist/platform/HttpTransport.js\npacked 0.55KB dist/platform/Process.d.ts\npacked 3.1KB dist/platform/Process.js\npacked 308B dist/platform/SqliteJournal.d.ts\npacked 4.72KB dist/platform/SqliteJournal.js\npacked 333B dist/platform/StoreCodec.d.ts\npacked 0.91KB dist/platform/StoreCodec.js\n\n/tmp/ts-release-packed-external-u1LOnH/kernel.tgz\n\nTotal files: 99\nShasum: db7bb768bb8f5ee7b9580a55a0c9f4a0d4b00585\nIntegrity: sha512-jANgo2YDBrnj2[...]sucGiCL/j6BXw==\nUnpacked size: 0.32MB\nPacked size: 70.45KB\n"
+      "output": "bun pack v1.3.14 (0d9b296a)\n\npacked 1.73KB package.json\npacked 1.1KB LICENSE\npacked 1.27KB README.md\npacked 0.78KB dist/Apple.d.ts\npacked 0.58KB dist/Apple.js\npacked 0.76KB dist/Bun.d.ts\npacked 0.60KB dist/Bun.js\npacked 0.64KB dist/Bundle.d.ts\npacked 430B dist/Bundle.js\npacked 1.52KB dist/EffectBuild.d.ts\npacked 10.77KB dist/EffectBuild.js\npacked 486B dist/Git.d.ts\npacked 247B dist/Git.js\npacked 3.98KB dist/Http.d.ts\npacked 2.11KB dist/Http.js\npacked 1.96KB dist/Journal.d.ts\npacked 7.26KB dist/Journal.js\npacked 0.69KB dist/Node.d.ts\npacked 0.53KB dist/Node.js\npacked 1.18KB dist/Plan.d.ts\npacked 6.45KB dist/Plan.js\npacked 5.1KB dist/Provider.d.ts\npacked 8.47KB dist/Provider.js\npacked 2.88KB dist/Release.d.ts\npacked 15.53KB dist/Release.js\npacked 7.56KB dist/apple/Model.d.ts\npacked 6.1KB dist/apple/Model.js\npacked 5.28KB dist/apple/Native.d.ts\npacked 12.49KB dist/apple/Native.js\npacked 2.40KB dist/apple/Preparation.d.ts\npacked 9.19KB dist/apple/Preparation.js\npacked 507B dist/apple/Provider.d.ts\npacked 6.46KB dist/apple/Provider.js\npacked 31B dist/bin/ts-release.d.ts\npacked 394B dist/bin/ts-release.js\npacked 1.50KB dist/index.d.ts\npacked 0.91KB dist/index.js\npacked 3.72KB dist/internal/ArtifactModel.d.ts\npacked 2.23KB dist/internal/ArtifactModel.js\npacked 0.58KB dist/internal/ArtifactReader.d.ts\npacked 1.83KB dist/internal/ArtifactReader.js\npacked 372B dist/internal/BundleCodec.d.ts\npacked 1.25KB dist/internal/BundleCodec.js\npacked 453B dist/internal/BundleFinalize.d.ts\npacked 1.60KB dist/internal/BundleFinalize.js\npacked 0.84KB dist/internal/Checksums.d.ts\npacked 3.1KB dist/internal/Checksums.js\npacked 233B dist/internal/CommandLine.d.ts\npacked 2.85KB dist/internal/CommandLine.js\npacked 1.77KB dist/internal/Content.d.ts\npacked 1.31KB dist/internal/Content.js\npacked 2.61KB dist/internal/Decision.d.ts\npacked 10.39KB dist/internal/Decision.js\npacked 164B dist/internal/EffectTypes.d.ts\npacked 11B dist/internal/EffectTypes.js\npacked 0.58KB dist/internal/Error.d.ts\npacked 0.59KB dist/internal/Error.js\npacked 1.66KB dist/internal/FinalizedReport.d.ts\npacked 2.57KB dist/internal/FinalizedReport.js\npacked 2.28KB dist/internal/GitAuthority.d.ts\npacked 8.23KB dist/internal/GitAuthority.js\npacked 3.59KB dist/internal/GitCatalog.d.ts\npacked 8.92KB dist/internal/GitCatalog.js\npacked 2.37KB dist/internal/Host.d.ts\npacked 8.51KB dist/internal/Host.js\npacked 1.1KB dist/internal/Identity.d.ts\npacked 5.35KB dist/internal/Identity.js\npacked 225B dist/internal/NativeJson.d.ts\npacked 2.75KB dist/internal/NativeJson.js\npacked 8.25KB dist/internal/ReleaseModel.d.ts\npacked 4.87KB dist/internal/ReleaseModel.js\npacked 206B dist/internal/TreeManifest.d.ts\npacked 3.59KB dist/internal/TreeManifest.js\npacked 0.95KB dist/platform/Application.d.ts\npacked 2.29KB dist/platform/Application.js\npacked 286B dist/platform/ContentStore.d.ts\npacked 4.95KB dist/platform/ContentStore.js\npacked 407B dist/platform/Directory.d.ts\npacked 2.22KB dist/platform/Directory.js\npacked 1.13KB dist/platform/GitHost.d.ts\npacked 5.28KB dist/platform/GitHost.js\npacked 0.97KB dist/platform/GitJournal.d.ts\npacked 7.47KB dist/platform/GitJournal.js\npacked 1.32KB dist/platform/GitObjects.d.ts\npacked 11.0KB dist/platform/GitObjects.js\npacked 2.0KB dist/platform/GitProcess.d.ts\npacked 6.77KB dist/platform/GitProcess.js\npacked 0.55KB dist/platform/GitRemote.d.ts\npacked 1.52KB dist/platform/GitRemote.js\npacked 0.93KB dist/platform/GithubOidc.d.ts\npacked 9.81KB dist/platform/GithubOidc.js\npacked 0.76KB dist/platform/HttpTransport.d.ts\npacked 13.88KB dist/platform/HttpTransport.js\npacked 0.55KB dist/platform/Process.d.ts\npacked 3.1KB dist/platform/Process.js\npacked 308B dist/platform/SqliteJournal.d.ts\npacked 4.72KB dist/platform/SqliteJournal.js\npacked 333B dist/platform/StoreCodec.d.ts\npacked 0.91KB dist/platform/StoreCodec.js\n\n/tmp/ts-release-packed-external-7bFmX7/kernel.tgz\n\nTotal files: 99\nShasum: db7bb768bb8f5ee7b9580a55a0c9f4a0d4b00585\nIntegrity: sha512-jANgo2YDBrnj2[...]sucGiCL/j6BXw==\nUnpacked size: 0.32MB\nPacked size: 70.45KB\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/provider",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/provider",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "install",
         "--ignore-scripts",
         "--cache-dir",
-        "/tmp/ts-release-packed-external-u1LOnH/producer-cache"
+        "/tmp/ts-release-packed-external-7bFmX7/producer-cache"
       ],
       "exitCode": 0,
-      "output": "bun install v1.3.14 (0d9b296a)\n\n+ @mannyc1/ts-release@/tmp/ts-release-packed-external-u1LOnH/kernel.tgz\n+ effect@4.0.0-beta.107\n+ typescript@6.0.3 (v7.0.2 available)\n\n15 packages installed [848.00ms]\nResolving dependencies\nResolved, downloaded and extracted [67]\nSaved lockfile\n"
+      "output": "bun install v1.3.14 (0d9b296a)\n\n+ @mannyc1/ts-release@/tmp/ts-release-packed-external-7bFmX7/kernel.tgz\n+ effect@4.0.0-beta.107\n+ typescript@6.0.3 (v7.0.2 available)\n\n15 packages installed [1131.00ms]\nResolving dependencies\nResolved, downloaded and extracted [67]\nSaved lockfile\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/provider",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/provider",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "node_modules/typescript/bin/tsc",
@@ -466,20 +506,20 @@
       "output": ""
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/provider",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/provider",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "pm",
         "pack",
         "--ignore-scripts",
         "--filename",
-        "/tmp/ts-release-packed-external-u1LOnH/provider.tgz"
+        "/tmp/ts-release-packed-external-7bFmX7/provider.tgz"
       ],
       "exitCode": 0,
-      "output": "bun pack v1.3.14 (0d9b296a)\n\npacked 505B package.json\npacked 0.71KB dist/cache.d.ts\npacked 2.38KB dist/cache.js\npacked 4.87KB dist/index.d.ts\npacked 9.69KB dist/index.js\npacked 123B dist/machine.d.ts\npacked 11.76KB dist/machine.js\n\n/tmp/ts-release-packed-external-u1LOnH/provider.tgz\n\nTotal files: 7\nShasum: daf531f7faf815ccbe8f537f9603abd53ec7d8ef\nIntegrity: sha512-Y4cMua1yWB1vF[...]4HF0rlpL6JTkA==\nUnpacked size: 30.0KB\nPacked size: 7.0KB\n"
+      "output": "bun pack v1.3.14 (0d9b296a)\n\npacked 505B package.json\npacked 0.71KB dist/cache.d.ts\npacked 2.38KB dist/cache.js\npacked 4.87KB dist/index.d.ts\npacked 9.69KB dist/index.js\npacked 123B dist/machine.d.ts\npacked 11.76KB dist/machine.js\n\n/tmp/ts-release-packed-external-7bFmX7/provider.tgz\n\nTotal files: 7\nShasum: ddfbc3e299ea8813d0c9439bd827de44a700604a\nIntegrity: sha512-g5s3gi71DWli1[...]Vw2vh5kxzK22A==\nUnpacked size: 30.0KB\nPacked size: 7.0KB\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7",
       "argv": [
         "openssl",
         "req",
@@ -488,9 +528,9 @@
         "rsa:2048",
         "-nodes",
         "-keyout",
-        "/tmp/ts-release-packed-external-u1LOnH/key.pem",
+        "/tmp/ts-release-packed-external-7bFmX7/key.pem",
         "-out",
-        "/tmp/ts-release-packed-external-u1LOnH/certificate.pem",
+        "/tmp/ts-release-packed-external-7bFmX7/certificate.pem",
         "-days",
         "1",
         "-subj",
@@ -499,22 +539,22 @@
         "subjectAltName=IP:127.0.0.1"
       ],
       "exitCode": 0,
-      "output": "...+....+.....+.+..+.......+...+..+......+.......+........+....+...+........+....+......+.....+......+....+..+.........+..........+........+.+..+...+....+..+.........+......+.+...+..+....+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*....+...........+.+......+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*....+.....+.+..+.........+....+.....+.+......+..+...............+.+.....+...............+.......+..+...+.........+.+...+..+............+..........+..+....+..+....+...+...+........+.+........+.+......+....................+.+.....+...+......+......+.........+...+............+.........+.......+..+...+..........+...+......+.....+...............+..........+.....+.........+..........+..+.......+...........+....+...........+.+.....+.+..+............+.........+......+.+.....+....+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n..+..+.+..............+....+..+.......+..+.+..+......+....+..+.+............+...+...+..+....+.....................+..+.+.....+.........+.......+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*...+...+........+.........+..........+..+....+..............+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*.+.+.....+.........+..........+..+.......+........+....+...+.....+.+...........+.+...............+............+..+...+...+..........+...+.....+....+........+.........+...+..........+...+..............+....+.....+.+.....+.+..+.............+............+......+.....+......+.+.....+.......+..+.....................+...+.......+.................+......+......+.+.........+...+......+...............+......+........+.......+........+...+....+......+........+.......+............+..+......+......................+..+.+..+..........+.....+...+......................+............+.....+...+.......+...+.......................+.......+...+.....+.......+........+..........+...+...........+....+.....+......+..........+...........+...+.+......+............+..+...+.+..+.........+...+......+.+........+............+...+.......+......+...............+..+.......+...+...+...+..+..........+..+..........+.....+.+.....+..........+.....+.+.....+...+.+...........+...+.+.....+....+..+...+...+.........+......+.........+.+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n-----\n"
+      "output": "............+.+..+....+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*.+......+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*.+.....+...............+......+.........+..........+...+............+......+..+.......+.........+......+.....+......+..................+.+...+...+...+..+...+.........+.......+........+......+.........+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n.+............+......+.....+......+....+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*..+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*..+.........+...............+.....+.+..+.+.....+.......+.....+....+.....+.+...+..+..........+..+.......+...+......+............+..+...+.............+...............+.....+....+.....+...+....+...+..+.+.....+.......+...+............+...........+....+...........+.+.........+.....+.........+.+.....+.+...........+...+............+.......+...+.........+...+..+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n-----\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/bun",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "install",
         "--ignore-scripts",
         "--cache-dir",
-        "/tmp/ts-release-packed-external-u1LOnH/consumer-cache"
+        "/tmp/ts-release-packed-external-7bFmX7/consumer-cache"
       ],
       "exitCode": 0,
-      "output": "bun install v1.3.14 (0d9b296a)\n\n+ @fixture/external-provider@/tmp/ts-release-packed-external-u1LOnH/provider.tgz\n+ @mannyc1/ts-release@/tmp/ts-release-packed-external-u1LOnH/kernel.tgz\n+ effect@4.0.0-beta.107\n+ typescript@6.0.3 (v7.0.2 available)\n\n16 packages installed [563.00ms]\nResolving dependencies\nResolved, downloaded and extracted [68]\nSaved lockfile\n"
+      "output": "bun install v1.3.14 (0d9b296a)\n\n+ @fixture/external-provider@/tmp/ts-release-packed-external-7bFmX7/provider.tgz\n+ @mannyc1/ts-release@/tmp/ts-release-packed-external-7bFmX7/kernel.tgz\n+ effect@4.0.0-beta.107\n+ typescript@6.0.3 (v7.0.2 available)\n\n16 packages installed [951.00ms]\nResolving dependencies\nResolved, downloaded and extracted [68]\nSaved lockfile\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/bun",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "node_modules/typescript/bin/tsc",
@@ -525,38 +565,38 @@
       "output": ""
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/bun",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/bun",
       "argv": [
-        "/tmp/ts-release-packed-external-u1LOnH/bun/node_modules/.bin/ts-release",
+        "/tmp/ts-release-packed-external-7bFmX7/bun/node_modules/.bin/ts-release",
         "--help"
       ],
       "exitCode": 0,
       "output": "Usage: ts-release <application.mjs> <input.json>\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/bun",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/bun",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "consumer.mjs",
-        "/tmp/ts-release-packed-external-u1LOnH/certificate.pem",
-        "/tmp/ts-release-packed-external-u1LOnH/key.pem"
+        "/tmp/ts-release-packed-external-7bFmX7/certificate.pem",
+        "/tmp/ts-release-packed-external-7bFmX7/key.pem"
       ],
       "exitCode": 0,
-      "output": "{\"runtime\":\"v22.22.2\",\"bun\":null,\"work\":\"/tmp/ts-release-packed-external-u1LOnH/bun/native-D4s3LX\",\"checks\":199,\"processes\":35,\"nativeHttpRequests\":12,\"nativeHttpCommits\":11,\"gitPushes\":2}\n"
+      "output": "{\"runtime\":\"v22.22.2\",\"bun\":null,\"work\":\"/tmp/ts-release-packed-external-7bFmX7/bun/native-Q67rQU\",\"checks\":199,\"processes\":35,\"nativeHttpRequests\":12,\"nativeHttpCommits\":11,\"gitPushes\":2}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/bun",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "consumer.mjs",
-        "/tmp/ts-release-packed-external-u1LOnH/certificate.pem",
-        "/tmp/ts-release-packed-external-u1LOnH/key.pem"
+        "/tmp/ts-release-packed-external-7bFmX7/certificate.pem",
+        "/tmp/ts-release-packed-external-7bFmX7/key.pem"
       ],
       "exitCode": 0,
-      "output": "{\"runtime\":\"v24.3.0\",\"bun\":\"1.3.14\",\"work\":\"/tmp/ts-release-packed-external-u1LOnH/bun/native-vlpK7x\",\"checks\":199,\"processes\":35,\"nativeHttpRequests\":12,\"nativeHttpCommits\":11,\"gitPushes\":2}\n"
+      "output": "{\"runtime\":\"v24.3.0\",\"bun\":\"1.3.14\",\"work\":\"/tmp/ts-release-packed-external-7bFmX7/bun/native-xd3nh7\",\"checks\":199,\"processes\":35,\"nativeHttpRequests\":12,\"nativeHttpCommits\":11,\"gitPushes\":2}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/npm",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/npm",
       "argv": [
         "npm",
         "install",
@@ -567,7 +607,7 @@
       "output": "\nadded 12 packages, and audited 13 packages in 2s\n\n3 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/npm",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/npm",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "node_modules/typescript/bin/tsc",
@@ -578,35 +618,35 @@
       "output": ""
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/npm",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/npm",
       "argv": [
-        "/tmp/ts-release-packed-external-u1LOnH/npm/node_modules/.bin/ts-release",
+        "/tmp/ts-release-packed-external-7bFmX7/npm/node_modules/.bin/ts-release",
         "--help"
       ],
       "exitCode": 0,
       "output": "Usage: ts-release <application.mjs> <input.json>\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/npm",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/npm",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "consumer.mjs",
-        "/tmp/ts-release-packed-external-u1LOnH/certificate.pem",
-        "/tmp/ts-release-packed-external-u1LOnH/key.pem"
+        "/tmp/ts-release-packed-external-7bFmX7/certificate.pem",
+        "/tmp/ts-release-packed-external-7bFmX7/key.pem"
       ],
       "exitCode": 0,
-      "output": "{\"runtime\":\"v22.22.2\",\"bun\":null,\"work\":\"/tmp/ts-release-packed-external-u1LOnH/npm/native-QmdcaB\",\"checks\":199,\"processes\":35,\"nativeHttpRequests\":12,\"nativeHttpCommits\":11,\"gitPushes\":2}\n"
+      "output": "{\"runtime\":\"v22.22.2\",\"bun\":null,\"work\":\"/tmp/ts-release-packed-external-7bFmX7/npm/native-wHuwfC\",\"checks\":199,\"processes\":35,\"nativeHttpRequests\":12,\"nativeHttpCommits\":11,\"gitPushes\":2}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-external-u1LOnH/npm",
+      "cwd": "/tmp/ts-release-packed-external-7bFmX7/npm",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "consumer.mjs",
-        "/tmp/ts-release-packed-external-u1LOnH/certificate.pem",
-        "/tmp/ts-release-packed-external-u1LOnH/key.pem"
+        "/tmp/ts-release-packed-external-7bFmX7/certificate.pem",
+        "/tmp/ts-release-packed-external-7bFmX7/key.pem"
       ],
       "exitCode": 0,
-      "output": "{\"runtime\":\"v24.3.0\",\"bun\":\"1.3.14\",\"work\":\"/tmp/ts-release-packed-external-u1LOnH/npm/native-fmP7PE\",\"checks\":199,\"processes\":35,\"nativeHttpRequests\":12,\"nativeHttpCommits\":11,\"gitPushes\":2}\n"
+      "output": "{\"runtime\":\"v24.3.0\",\"bun\":\"1.3.14\",\"work\":\"/tmp/ts-release-packed-external-7bFmX7/npm/native-pmM7xR\",\"checks\":199,\"processes\":35,\"nativeHttpRequests\":12,\"nativeHttpCommits\":11,\"gitPushes\":2}\n"
     }
   ]
 }

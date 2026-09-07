@@ -118,7 +118,9 @@
     "homebrew": "docs/refactor/architecture-program/handoff/production-api/catalog/homebrew/index.d.ts",
     "scoop": "docs/refactor/architecture-program/handoff/production-api/catalog/scoop/index.d.ts",
     "bundle": "docs/refactor/architecture-program/handoff/production-api/Bundle.d.ts",
-    "effectBuild": "docs/refactor/architecture-program/handoff/production-api/EffectBuild.d.ts"
+    "effectBuild": "docs/refactor/architecture-program/handoff/production-api/EffectBuild.d.ts",
+    "mcp": "docs/refactor/architecture-program/handoff/production-api/mcp/index.d.ts",
+    "openai": "docs/refactor/architecture-program/handoff/production-api/openai/index.d.ts"
   },
   "modules": [
     {
@@ -1428,6 +1430,9 @@
             "kernel.Entry",
             "kernel.Bundle",
             "kernel.Http"
+          ],
+          "externalImports": [
+            "node:crypto"
           ]
         },
         {

@@ -1,270 +1,102 @@
 {
-  "wave": "W08",
+  "wave": "W09",
   "counts": {
-    "product": 13570,
-    "unchangedLegacy": 2439,
-    "replacement": 11131,
-    "metadata": 640,
+    "product": 14874,
+    "unchangedLegacy": 2091,
+    "replacement": 12783,
+    "metadata": 732,
     "productData": 789,
     "productDataBytes": 15973,
-    "tests": 47438,
+    "tests": 48098,
     "fixtureText": 6138,
     "fixtureBinaryBytes": 727372,
     "generatedDelivery": 678,
-    "tooling": 45541
+    "tooling": 45542
   },
   "files": [
     {
-      "path": "packages/ts-release/src/Apple.ts",
-      "lines": 37,
-      "lane": "product",
-      "sha256": "7e195b881bb2bb8a9694d07223cf3d3e59a5826611dc5248ebf74b420e43235f"
+      "path": "packages/mcp/package.json",
+      "lines": 31,
+      "lane": "metadata",
+      "sha256": "85ac84a6428ced55536e5b4ead2cc4f5aa706f06c6412e90b023cf9e9f05d23a"
     },
     {
-      "path": "packages/ts-release/src/EffectBuild.ts",
-      "lines": 275,
-      "lane": "product",
-      "sha256": "f029dae2ec1d4eac75058f17685a68b0a0cb7509ce4d279fae12b5da8ff91909"
-    },
-    {
-      "path": "packages/ts-release/src/apple/Model.ts",
-      "lines": 167,
-      "lane": "product",
-      "sha256": "6e3f46751e765f743b136bca5a6e090a142ee55304fd7e0414ebbddf226eb395"
-    },
-    {
-      "path": "packages/ts-release/src/apple/Native.ts",
-      "lines": 329,
-      "lane": "product",
-      "sha256": "f8fd6d903ecc476aad47489a6654de8462fc7b4ceee11a289bee52c71902092c"
-    },
-    {
-      "path": "packages/ts-release/src/apple/Preparation.ts",
-      "lines": 245,
-      "lane": "product",
-      "sha256": "51bdfcddb1392f7530f9612f75d8f06e75e00d676b59a502f4f4b8c43bf6b968"
-    },
-    {
-      "path": "packages/ts-release/src/apple/Provider.ts",
-      "lines": 163,
-      "lane": "product",
-      "sha256": "413ad4c5c901886f939cb4c33e25e1a912d560c7dbbe9bc83a9b0e977a3f10b8"
-    },
-    {
-      "path": "packages/ts-release/src/internal/Checksums.ts",
-      "lines": 74,
-      "lane": "product",
-      "sha256": "003ee845742079309869ad53530c561405598d0b95366f00efe1c1363994e8f6"
-    },
-    {
-      "path": "packages/ts-release/src/platform/Directory.ts",
-      "lines": 65,
-      "lane": "product",
-      "sha256": "a675093116d4823a59972f265a6384a77ec15189bb3487ed3ada7444288eb08a"
-    },
-    {
-      "path": "packages/ts-release/src/platform/Process.ts",
+      "path": "packages/mcp/src/Auth.ts",
       "lines": 108,
       "lane": "product",
-      "sha256": "0409be3b62c92db3f394eca326e3d874e822a7902535d01c9d0342fa9239b632"
+      "sha256": "4a8d7ce71b2a778f440ea6c2a9ada07cd6b7bae5cbc90cd0f9a44b4aaf4a5c08"
     },
     {
-      "path": "scripts/check-effect-build-integration.ts",
-      "lines": 28,
-      "lane": "tooling",
-      "sha256": "1b81f2fc339399376206298bd46c5cc8f37793ffcb4013aa34cd5610f2c05be6"
+      "path": "packages/mcp/src/Model.ts",
+      "lines": 532,
+      "lane": "product",
+      "sha256": "c25a2255dd347cde2fbfdc106f5cf54f620ce7b60557270e0dfb76e8d6e090d9"
     },
     {
-      "path": "scripts/check-packed-apple.ts",
-      "lines": 228,
-      "lane": "tooling",
-      "sha256": "2c72344600655ac113003bad4457ef1c721ed194f46861e0e90381d4bc7b2b0a"
+      "path": "packages/mcp/src/Protocol.ts",
+      "lines": 297,
+      "lane": "product",
+      "sha256": "0dfc421909ea674cd000d1fd0a782bc80cf284352aad833f0b6b8bf324122c0d"
     },
     {
-      "path": "scripts/check-packed-artifacts.ts",
-      "lines": 193,
-      "lane": "tooling",
-      "sha256": "13b5981e807214104d2143df6dce2bdee0f87f62d40d5b3d48a78822309d0b89"
+      "path": "packages/mcp/src/index.ts",
+      "lines": 33,
+      "lane": "product",
+      "sha256": "8926f23abc28b28bf739550aca6e090c28914b6b8bf7ab547104d219287e1b1c"
     },
     {
-      "path": "scripts/setup-native-producers.ts",
-      "lines": 67,
-      "lane": "tooling",
-      "sha256": "33741a6a1746c2990fddc0f9a0bc3de378fb447c9552987f4e0877755ec4b133"
+      "path": "packages/mcp/tsconfig.build.json",
+      "lines": 14,
+      "lane": "metadata",
+      "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8"
     },
     {
-      "path": "test/reimplementation/artifacts/adoption-races.mjs",
-      "lines": 99,
+      "path": "packages/openai/package.json",
+      "lines": 33,
+      "lane": "metadata",
+      "sha256": "951c5817efac92ecdc23d6629fda98ef1df892244ed57308947f838a8c1b2988"
+    },
+    {
+      "path": "packages/openai/src/Marketplace.ts",
+      "lines": 95,
+      "lane": "product",
+      "sha256": "20b187007d1c5f8254ce1c910bcf99a1b156f845466ff3b26c0a1ac4f61ea43c"
+    },
+    {
+      "path": "packages/openai/src/Package.ts",
+      "lines": 379,
+      "lane": "product",
+      "sha256": "3be9c9b4abb628afac5acec349eb6225d733672462d9daa9be927925137026a2"
+    },
+    {
+      "path": "packages/openai/src/Submission.ts",
+      "lines": 189,
+      "lane": "product",
+      "sha256": "d964caf5c38a26e47db4b89887a2eda4c587308b0f11e90f6710a2f91d32f0f2"
+    },
+    {
+      "path": "packages/openai/src/index.ts",
+      "lines": 19,
+      "lane": "product",
+      "sha256": "139efde2faa31f34d0b5ba0b8d9fd1021101a6427d61d7c92d320e840480b422"
+    },
+    {
+      "path": "packages/openai/tsconfig.build.json",
+      "lines": 14,
+      "lane": "metadata",
+      "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8"
+    },
+    {
+      "path": "test/reimplementation/ai/mcp.test.ts",
+      "lines": 301,
       "lane": "tests",
-      "sha256": "2c6ba85c1a6680609d01c1e841f1c5494e381b6976f6c44927ebfaf92249c3a8"
+      "sha256": "e094402c763212e89c76c8b702768de6ab51e13b386abc19ac842b2dfc3164ba"
     },
     {
-      "path": "test/reimplementation/artifacts/adoption-races.test.ts",
-      "lines": 36,
+      "path": "test/reimplementation/ai/openai.test.ts",
+      "lines": 415,
       "lane": "tests",
-      "sha256": "00e50adf8b8ffe11a1b8147e88b28c6e626d7f57c5f7ad6ced5c014c957491d4"
-    },
-    {
-      "path": "test/reimplementation/artifacts/adoption.test.ts",
-      "lines": 424,
-      "lane": "tests",
-      "sha256": "d8e0f9f62c397dc77f221d62878057ca7463f1f2feb9fa6b6c05b3ee2ad25f4c"
-    },
-    {
-      "path": "test/reimplementation/artifacts/apple-fixtures.ts",
-      "lines": 320,
-      "lane": "tests",
-      "sha256": "5f128d330de6819c14c8c90573a786b7d0bdbb24d44da5941e2eeb58ddeebac6"
-    },
-    {
-      "path": "test/reimplementation/artifacts/apple-installed.mjs",
-      "lines": 71,
-      "lane": "tests",
-      "sha256": "0ddf82cf66167ead0953e644432704f0cc4ba39d39b13392862be4aad040852d"
-    },
-    {
-      "path": "test/reimplementation/artifacts/apple-process.mjs",
-      "lines": 220,
-      "lane": "tests",
-      "sha256": "c7623e4242b1414ef6de88d52fc751dda30a313882722342231aa76697c7a06d"
-    },
-    {
-      "path": "test/reimplementation/artifacts/apple-recovery.test.ts",
-      "lines": 294,
-      "lane": "tests",
-      "sha256": "d1cd25708403d9412f90b6fc8a604ada11efdd9a8a87bd15ce308cefa60d0471"
-    },
-    {
-      "path": "test/reimplementation/artifacts/apple.test.ts",
-      "lines": 260,
-      "lane": "tests",
-      "sha256": "61a9fa2392b095a6317327607dab78651ff76286fd86fc50b5e10dc90d649802"
-    },
-    {
-      "path": "test/reimplementation/artifacts/archives.mjs",
-      "lines": 325,
-      "lane": "tests",
-      "sha256": "5e424761f7d93446158fe2989b01377c94d1cbac20ba7c8581a40fda2d26663e"
-    },
-    {
-      "path": "test/reimplementation/artifacts/checksums.test.ts",
-      "lines": 142,
-      "lane": "tests",
-      "sha256": "5160469820387148ddd20a5089dddfcbb23ff48ac5f7fd83b8e68a6870f6ba6d"
-    },
-    {
-      "path": "test/reimplementation/artifacts/directory.mjs",
-      "lines": 99,
-      "lane": "tests",
-      "sha256": "aa9248eaad1ca86d264dc8fee97a6e455fe9918b2d29ffa181d42fcf219ed243"
-    },
-    {
-      "path": "test/reimplementation/artifacts/directory.test.ts",
-      "lines": 24,
-      "lane": "tests",
-      "sha256": "b88a9104e8841623b277d92dcc1110a441f85d77b54c8976eccac1a7c49437c7"
-    },
-    {
-      "path": "test/reimplementation/artifacts/executables.mjs",
-      "lines": 213,
-      "lane": "tests",
-      "sha256": "76566e3c009bd802fb366d4c10b23d1e3fc7d5ad398c877329a4a54a07fe74f7"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/assert-linux-package.sh",
-      "lines": 57,
-      "lane": "fixtureText",
-      "sha256": "4472055ea688045447fda91370886d8f5ab0f95ca6f15f1fc08847681d762cdf"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/python/assert-python-artifacts.py",
-      "lines": 201,
-      "lane": "fixtureText",
-      "sha256": "171dfe188510fbf4ca8abc1a247123e51e1c987344ba0f0456442fee1e36a36e"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/python/poetry-core/pyproject.toml",
-      "lines": 12,
-      "lane": "fixtureText",
-      "sha256": "0a869646608c97d19159b05cf872f0ed7d1b647fe53105d3f47e74ba2c57e702"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/python/poetry-core/src/effect_build_poetry_fixture/__init__.py",
-      "lines": 1,
-      "lane": "fixtureText",
-      "sha256": "64cc926addda8da53627573e0d7b0f52e7c7dce4578bc29589299d86316d784f"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/python/poetry-core/uv.lock",
-      "lines": 8,
-      "lane": "fixtureText",
-      "sha256": "4520dfba051f666e0b623df8f4b587002cff9f05efb30fbca32d4a4e385dc741"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/python/provenance.json",
-      "lines": 42,
-      "lane": "fixtureText",
-      "sha256": "916cd4e5de762ad9251dbada729c1b9315dad9194adae53d5419a8e80741234a"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/python/uv-build/pyproject.toml",
-      "lines": 9,
-      "lane": "fixtureText",
-      "sha256": "3813b6f05540c9c38227e7546d6048e65c40b45b718b1efd243aefbd493de81e"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/python/uv-build/src/effect_build_uv_fixture/__init__.py",
-      "lines": 1,
-      "lane": "fixtureText",
-      "sha256": "0b644fc8f2a00cf7ad0ff943921d4207d3174a08785d5cab1f16628b9d238af6"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/python/uv-build/uv.lock",
-      "lines": 8,
-      "lane": "fixtureText",
-      "sha256": "94479dc96613ed7daf36e40e88f82d2399654fbaa7f54f83d013f744d5ed3cd7"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/sbom-subject/package-lock.json",
-      "lines": 20,
-      "lane": "fixtureText",
-      "sha256": "873f15f643534b506da8cb940cbccc14ef2c66796f63bcab0a3419d807af4026"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/sbom-subject/package.json",
-      "lines": 8,
-      "lane": "fixtureText",
-      "sha256": "077ecd941c8b2c5fce25e5087c1012d5ca5b8de3c61f0ba0ad7381756ed21b32"
-    },
-    {
-      "path": "test/reimplementation/artifacts/fixtures/sbom-subject/provenance.json",
-      "lines": 15,
-      "lane": "fixtureText",
-      "sha256": "8d73f27a1627707de66b4efae08d482beb4ab6a292ae6a045ab6fe6a7ed2555c"
-    },
-    {
-      "path": "test/reimplementation/artifacts/packages.mjs",
-      "lines": 318,
-      "lane": "tests",
-      "sha256": "98b14cb23d88bf2437e9dc0639c32b5c4447a4b1c6dc9bf5984a827116fcdf51"
-    },
-    {
-      "path": "test/reimplementation/artifacts/public-contract.ts",
-      "lines": 99,
-      "lane": "tests",
-      "sha256": "17464ab9160af2e06bca7431f8e16b3b8dd1d322b0d136043e5f0fb088c4367c"
-    },
-    {
-      "path": "test/reimplementation/artifacts/python.mjs",
-      "lines": 160,
-      "lane": "tests",
-      "sha256": "83cfe0d06b3c0cd22c30c1515bb2cc67a5306feb75bd5feede47467fa6a6988b"
-    },
-    {
-      "path": "test/reimplementation/artifacts/sbom.mjs",
-      "lines": 218,
-      "lane": "tests",
-      "sha256": "8102c97f182de42e6e697d5fe2845d9c0fc2f468b7b12736eb9c6007442192e1"
+      "sha256": "77b22de7b36037f594355c6edae87e98c829694cf315d47d5377436d0b2c228c"
     },
     {
       "path": "apps/release-ts/package.json",
@@ -391,30 +223,6 @@
       "lines": 11,
       "lane": "metadata",
       "sha256": "29a7c54612f712b51f5173f708ec833627223140ea31dee3eeea25399f4655d7"
-    },
-    {
-      "path": "apps/ts-release-agents/src/build.ts",
-      "lines": 105,
-      "lane": "product",
-      "sha256": "05b7f0d563b2ddff9c507cae0622490b8495524910ee602998ba2117771c307a"
-    },
-    {
-      "path": "apps/ts-release-agents/src/check.ts",
-      "lines": 122,
-      "lane": "product",
-      "sha256": "8b4d34668ca72552d52952b43c39f860af316075ba0b9509bdee3a92bbf28f3d"
-    },
-    {
-      "path": "apps/ts-release-agents/src/install.ts",
-      "lines": 121,
-      "lane": "product",
-      "sha256": "0e4b076cd9a6f97dff1df9f579649bacfaba3510bf61d239ee7149cb35f538aa"
-    },
-    {
-      "path": "apps/ts-release-agents/test/contract.test.ts",
-      "lines": 56,
-      "lane": "tests",
-      "sha256": "0b1ac7f25027be030e952c7c66070f3e3e17a28d8b86957ac0c80f674275ec55"
     },
     {
       "path": "apps/ts-release-agents/tsconfig.json",
@@ -765,6 +573,12 @@
       "sha256": "70e2c4fb1b16239edf9e63178606bad442227348e25941c470fffaec809155a4"
     },
     {
+      "path": "packages/ts-release/src/Apple.ts",
+      "lines": 37,
+      "lane": "product",
+      "sha256": "7e195b881bb2bb8a9694d07223cf3d3e59a5826611dc5248ebf74b420e43235f"
+    },
+    {
       "path": "packages/ts-release/src/Bun.ts",
       "lines": 22,
       "lane": "product",
@@ -775,6 +589,12 @@
       "lines": 15,
       "lane": "product",
       "sha256": "21511731379d4c3f0da8045a67a2be8dd3e73f649af0ed6835f570d366b0b074"
+    },
+    {
+      "path": "packages/ts-release/src/EffectBuild.ts",
+      "lines": 275,
+      "lane": "product",
+      "sha256": "f029dae2ec1d4eac75058f17685a68b0a0cb7509ce4d279fae12b5da8ff91909"
     },
     {
       "path": "packages/ts-release/src/Git.ts",
@@ -819,6 +639,30 @@
       "sha256": "bec44c7dde4da63cabbb15651995291ed9aa0fb1ea656098e35bd20b0e352e7f"
     },
     {
+      "path": "packages/ts-release/src/apple/Model.ts",
+      "lines": 167,
+      "lane": "product",
+      "sha256": "6e3f46751e765f743b136bca5a6e090a142ee55304fd7e0414ebbddf226eb395"
+    },
+    {
+      "path": "packages/ts-release/src/apple/Native.ts",
+      "lines": 329,
+      "lane": "product",
+      "sha256": "f8fd6d903ecc476aad47489a6654de8462fc7b4ceee11a289bee52c71902092c"
+    },
+    {
+      "path": "packages/ts-release/src/apple/Preparation.ts",
+      "lines": 245,
+      "lane": "product",
+      "sha256": "51bdfcddb1392f7530f9612f75d8f06e75e00d676b59a502f4f4b8c43bf6b968"
+    },
+    {
+      "path": "packages/ts-release/src/apple/Provider.ts",
+      "lines": 163,
+      "lane": "product",
+      "sha256": "413ad4c5c901886f939cb4c33e25e1a912d560c7dbbe9bc83a9b0e977a3f10b8"
+    },
+    {
       "path": "packages/ts-release/src/bin/ts-release.ts",
       "lines": 7,
       "lane": "product",
@@ -853,6 +697,12 @@
       "lines": 38,
       "lane": "product",
       "sha256": "5380f88fdaf236090232118840dac8d5c4a8c6bce06f2c925ca7d7b2165ee3f3"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Checksums.ts",
+      "lines": 74,
+      "lane": "product",
+      "sha256": "003ee845742079309869ad53530c561405598d0b95366f00efe1c1363994e8f6"
     },
     {
       "path": "packages/ts-release/src/internal/CommandLine.ts",
@@ -945,6 +795,12 @@
       "sha256": "ad99025fd40481918b18435999a7da4a5381409dfde002a8fda1b3547d5e21e9"
     },
     {
+      "path": "packages/ts-release/src/platform/Directory.ts",
+      "lines": 65,
+      "lane": "product",
+      "sha256": "a675093116d4823a59972f265a6384a77ec15189bb3487ed3ada7444288eb08a"
+    },
+    {
       "path": "packages/ts-release/src/platform/GitHost.ts",
       "lines": 165,
       "lane": "product",
@@ -985,6 +841,12 @@
       "lines": 371,
       "lane": "product",
       "sha256": "518fadf4e96862ff49a39733dd56a3efc65688240c659beae3a731573381d2ea"
+    },
+    {
+      "path": "packages/ts-release/src/platform/Process.ts",
+      "lines": 108,
+      "lane": "product",
+      "sha256": "0409be3b62c92db3f394eca326e3d874e822a7902535d01c9d0342fa9239b632"
     },
     {
       "path": "packages/ts-release/src/platform/SqliteJournal.ts",
@@ -1617,6 +1479,12 @@
       "sha256": "87336d4751950dfa3ce5ac828a3cadb419c66b6f0dc2335aaa49d3ad417c92f3"
     },
     {
+      "path": "scripts/check-effect-build-integration.ts",
+      "lines": 28,
+      "lane": "tooling",
+      "sha256": "1b81f2fc339399376206298bd46c5cc8f37793ffcb4013aa34cd5610f2c05be6"
+    },
+    {
       "path": "scripts/check-examples.ts",
       "lines": 347,
       "lane": "tooling",
@@ -1657,6 +1525,18 @@
       "lines": 135,
       "lane": "tooling",
       "sha256": "da1fae050add15e9f6ae903fbe2066c3159114396145182cc60007fa1096a324"
+    },
+    {
+      "path": "scripts/check-packed-apple.ts",
+      "lines": 228,
+      "lane": "tooling",
+      "sha256": "2c72344600655ac113003bad4457ef1c721ed194f46861e0e90381d4bc7b2b0a"
+    },
+    {
+      "path": "scripts/check-packed-artifacts.ts",
+      "lines": 193,
+      "lane": "tooling",
+      "sha256": "13b5981e807214104d2143df6dce2bdee0f87f62d40d5b3d48a78822309d0b89"
     },
     {
       "path": "scripts/check-packed-consumers.ts",
@@ -1836,7 +1716,7 @@
       "path": "scripts/project-production-api.ts",
       "lines": 60,
       "lane": "tooling",
-      "sha256": "7a2e7f10559d8440fe950cb0615fc541808e07b3037cf9b0ac9f4413b74ca763"
+      "sha256": "fa1c22f95a86d209a355302b64596a34916e5e0e440690c4bd44a64a45418bc6"
     },
     {
       "path": "scripts/replay-provider-reads.ts",
@@ -1855,6 +1735,12 @@
       "lines": 89,
       "lane": "tooling",
       "sha256": "f5ae6b14c0ee19b81f52ff927491a7576e440d23bc5121a88dc73bcefd9e4c29"
+    },
+    {
+      "path": "scripts/setup-native-producers.ts",
+      "lines": 67,
+      "lane": "tooling",
+      "sha256": "33741a6a1746c2990fddc0f9a0bc3de378fb447c9552987f4e0877755ec4b133"
     },
     {
       "path": "scripts/setup-native-python.ts",
@@ -2485,6 +2371,180 @@
       "lines": 632,
       "lane": "tests",
       "sha256": "5d89853c89edcf139413d328d5ec2b1f49abc3664fb0463945bef0947a1045a3"
+    },
+    {
+      "path": "test/reimplementation/artifacts/adoption-races.mjs",
+      "lines": 99,
+      "lane": "tests",
+      "sha256": "2c6ba85c1a6680609d01c1e841f1c5494e381b6976f6c44927ebfaf92249c3a8"
+    },
+    {
+      "path": "test/reimplementation/artifacts/adoption-races.test.ts",
+      "lines": 36,
+      "lane": "tests",
+      "sha256": "00e50adf8b8ffe11a1b8147e88b28c6e626d7f57c5f7ad6ced5c014c957491d4"
+    },
+    {
+      "path": "test/reimplementation/artifacts/adoption.test.ts",
+      "lines": 424,
+      "lane": "tests",
+      "sha256": "d8e0f9f62c397dc77f221d62878057ca7463f1f2feb9fa6b6c05b3ee2ad25f4c"
+    },
+    {
+      "path": "test/reimplementation/artifacts/apple-fixtures.ts",
+      "lines": 320,
+      "lane": "tests",
+      "sha256": "5f128d330de6819c14c8c90573a786b7d0bdbb24d44da5941e2eeb58ddeebac6"
+    },
+    {
+      "path": "test/reimplementation/artifacts/apple-installed.mjs",
+      "lines": 71,
+      "lane": "tests",
+      "sha256": "0ddf82cf66167ead0953e644432704f0cc4ba39d39b13392862be4aad040852d"
+    },
+    {
+      "path": "test/reimplementation/artifacts/apple-process.mjs",
+      "lines": 220,
+      "lane": "tests",
+      "sha256": "c7623e4242b1414ef6de88d52fc751dda30a313882722342231aa76697c7a06d"
+    },
+    {
+      "path": "test/reimplementation/artifacts/apple-recovery.test.ts",
+      "lines": 294,
+      "lane": "tests",
+      "sha256": "d1cd25708403d9412f90b6fc8a604ada11efdd9a8a87bd15ce308cefa60d0471"
+    },
+    {
+      "path": "test/reimplementation/artifacts/apple.test.ts",
+      "lines": 260,
+      "lane": "tests",
+      "sha256": "61a9fa2392b095a6317327607dab78651ff76286fd86fc50b5e10dc90d649802"
+    },
+    {
+      "path": "test/reimplementation/artifacts/archives.mjs",
+      "lines": 325,
+      "lane": "tests",
+      "sha256": "5e424761f7d93446158fe2989b01377c94d1cbac20ba7c8581a40fda2d26663e"
+    },
+    {
+      "path": "test/reimplementation/artifacts/checksums.test.ts",
+      "lines": 142,
+      "lane": "tests",
+      "sha256": "5160469820387148ddd20a5089dddfcbb23ff48ac5f7fd83b8e68a6870f6ba6d"
+    },
+    {
+      "path": "test/reimplementation/artifacts/directory.mjs",
+      "lines": 99,
+      "lane": "tests",
+      "sha256": "aa9248eaad1ca86d264dc8fee97a6e455fe9918b2d29ffa181d42fcf219ed243"
+    },
+    {
+      "path": "test/reimplementation/artifacts/directory.test.ts",
+      "lines": 24,
+      "lane": "tests",
+      "sha256": "b88a9104e8841623b277d92dcc1110a441f85d77b54c8976eccac1a7c49437c7"
+    },
+    {
+      "path": "test/reimplementation/artifacts/executables.mjs",
+      "lines": 213,
+      "lane": "tests",
+      "sha256": "76566e3c009bd802fb366d4c10b23d1e3fc7d5ad398c877329a4a54a07fe74f7"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/assert-linux-package.sh",
+      "lines": 57,
+      "lane": "fixtureText",
+      "sha256": "4472055ea688045447fda91370886d8f5ab0f95ca6f15f1fc08847681d762cdf"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/python/assert-python-artifacts.py",
+      "lines": 201,
+      "lane": "fixtureText",
+      "sha256": "171dfe188510fbf4ca8abc1a247123e51e1c987344ba0f0456442fee1e36a36e"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/python/poetry-core/pyproject.toml",
+      "lines": 12,
+      "lane": "fixtureText",
+      "sha256": "0a869646608c97d19159b05cf872f0ed7d1b647fe53105d3f47e74ba2c57e702"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/python/poetry-core/src/effect_build_poetry_fixture/__init__.py",
+      "lines": 1,
+      "lane": "fixtureText",
+      "sha256": "64cc926addda8da53627573e0d7b0f52e7c7dce4578bc29589299d86316d784f"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/python/poetry-core/uv.lock",
+      "lines": 8,
+      "lane": "fixtureText",
+      "sha256": "4520dfba051f666e0b623df8f4b587002cff9f05efb30fbca32d4a4e385dc741"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/python/provenance.json",
+      "lines": 42,
+      "lane": "fixtureText",
+      "sha256": "916cd4e5de762ad9251dbada729c1b9315dad9194adae53d5419a8e80741234a"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/python/uv-build/pyproject.toml",
+      "lines": 9,
+      "lane": "fixtureText",
+      "sha256": "3813b6f05540c9c38227e7546d6048e65c40b45b718b1efd243aefbd493de81e"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/python/uv-build/src/effect_build_uv_fixture/__init__.py",
+      "lines": 1,
+      "lane": "fixtureText",
+      "sha256": "0b644fc8f2a00cf7ad0ff943921d4207d3174a08785d5cab1f16628b9d238af6"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/python/uv-build/uv.lock",
+      "lines": 8,
+      "lane": "fixtureText",
+      "sha256": "94479dc96613ed7daf36e40e88f82d2399654fbaa7f54f83d013f744d5ed3cd7"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/sbom-subject/package-lock.json",
+      "lines": 20,
+      "lane": "fixtureText",
+      "sha256": "873f15f643534b506da8cb940cbccc14ef2c66796f63bcab0a3419d807af4026"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/sbom-subject/package.json",
+      "lines": 8,
+      "lane": "fixtureText",
+      "sha256": "077ecd941c8b2c5fce25e5087c1012d5ca5b8de3c61f0ba0ad7381756ed21b32"
+    },
+    {
+      "path": "test/reimplementation/artifacts/fixtures/sbom-subject/provenance.json",
+      "lines": 15,
+      "lane": "fixtureText",
+      "sha256": "8d73f27a1627707de66b4efae08d482beb4ab6a292ae6a045ab6fe6a7ed2555c"
+    },
+    {
+      "path": "test/reimplementation/artifacts/packages.mjs",
+      "lines": 318,
+      "lane": "tests",
+      "sha256": "98b14cb23d88bf2437e9dc0639c32b5c4447a4b1c6dc9bf5984a827116fcdf51"
+    },
+    {
+      "path": "test/reimplementation/artifacts/public-contract.ts",
+      "lines": 99,
+      "lane": "tests",
+      "sha256": "17464ab9160af2e06bca7431f8e16b3b8dd1d322b0d136043e5f0fb088c4367c"
+    },
+    {
+      "path": "test/reimplementation/artifacts/python.mjs",
+      "lines": 160,
+      "lane": "tests",
+      "sha256": "83cfe0d06b3c0cd22c30c1515bb2cc67a5306feb75bd5feede47467fa6a6988b"
+    },
+    {
+      "path": "test/reimplementation/artifacts/sbom.mjs",
+      "lines": 218,
+      "lane": "tests",
+      "sha256": "8102c97f182de42e6e697d5fe2845d9c0fc2f468b7b12736eb9c6007442192e1"
     },
     {
       "path": "test/reimplementation/catalog/fixtures.ts",
@@ -3610,9 +3670,9 @@
     },
     {
       "path": "tools/architecture-lab/project.ts",
-      "lines": 387,
+      "lines": 388,
       "lane": "tooling",
-      "sha256": "0e300809197a374f7b6af2c46377194be5a775cbf5e1ea4369a6738e5c6f96b6"
+      "sha256": "0cddfd8fb04ae54e78b0779bad8dfa482c6d9d98f99aaf533886420f7e792b56"
     },
     {
       "path": "tools/architecture-lab/proposal/apple.ts",

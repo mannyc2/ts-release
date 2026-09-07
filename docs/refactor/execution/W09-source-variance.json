@@ -1,0 +1,22 @@
+{
+  "format": "ts-release/source-planning-variance/1",
+  "wave": "W09",
+  "originalTripwire": 11000,
+  "replacementLines": 12783,
+  "replacementSha256": "36d3c66dc3ce8ed17aa469055a51f92055ce4c7f902d6db36842aa091ff40094",
+  "completeProductCeiling": 11485,
+  "completeProductWaiver": false,
+  "decision": "Continue implementation with this exact planning variance; no final source or release waiver.",
+  "reason": "W09 adds1652 replacement lines against1800 allocated, reducing the inherited planning excess1931to1783 while fully charging the separate MCP/OpenAI verticals. All348 assigned legacy product lines are physically retired; current physical product grows1304 because W09 adds two complete providers.",
+  "review": "docs/refactor/execution/W09-review.md",
+  "forecastExpected": 13225,
+  "forecastDeficit": 1740,
+  "accounting": "14874physical product=12783replacement+2091legacy.89actual source/declaration files and92logical module owners. Metadata732 and ownedSPDX789lines15973bytes remain separately charged.3retiredfiles/348lines/49declarations; net current physical change fromW08=1304. Selected scope remains incomplete: no achieved reduction.",
+  "simplificationPerformed": "MCP uses the existing HTTP request/credential/provider machine with one exact write and conservative read-back; OpenAI uses the existing owned Bundle/Tree and conditional Git owner. No provider registry, plugin installer, archive format, portal client, replay machine or second content store is added. The old mutable ZIP/cache installation implementation is deleted.",
+  "nextSimplification": "Complete W10, retire the remaining2091 legacy lines and simplify the actual full selected product to the unchanged11485 ceiling. The mixed actual/future expected forecast13225 still fails by1740; do not change the denominator, density, fixture sizes or selected scope to pass.",
+  "notEvidenceOf": [
+    "complete-product source reduction",
+    "hosted MCP Registry or OpenAI portal acceptance",
+    "publication"
+  ]
+}

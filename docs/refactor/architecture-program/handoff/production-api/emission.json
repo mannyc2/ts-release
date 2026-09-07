@@ -5,7 +5,9 @@
     "packages/npm",
     "packages/pypi",
     "packages/github",
-    "packages/catalog"
+    "packages/catalog",
+    "packages/mcp",
+    "packages/openai"
   ],
   "compiler": "typescript@6.0.3",
   "effect": "4.0.0-beta.107",
@@ -289,6 +291,30 @@
       "sourceSha256": "f19f7cb5a7125002bae4818bb5c846efd566123f881098b6b0dfba1d6b489c76"
     },
     {
+      "declaration": "mcp/Auth.d.ts",
+      "declarationSha256": "7a6bd23250ae4c367c283c2916a217bb2d5247a5a6212ff54029152b7200c8ea",
+      "source": "packages/mcp/src/Auth.ts",
+      "sourceSha256": "4a8d7ce71b2a778f440ea6c2a9ada07cd6b7bae5cbc90cd0f9a44b4aaf4a5c08"
+    },
+    {
+      "declaration": "mcp/index.d.ts",
+      "declarationSha256": "6cd1b33947dfb64e4e8e2d29bd40e04eb14dae558556676849eb628d5e5a7ffc",
+      "source": "packages/mcp/src/index.ts",
+      "sourceSha256": "8926f23abc28b28bf739550aca6e090c28914b6b8bf7ab547104d219287e1b1c"
+    },
+    {
+      "declaration": "mcp/Model.d.ts",
+      "declarationSha256": "b44cf835842fffab6689b649605b45ea4aababcc7ee97b49063ea9680b58a63a",
+      "source": "packages/mcp/src/Model.ts",
+      "sourceSha256": "c25a2255dd347cde2fbfdc106f5cf54f620ce7b60557270e0dfb76e8d6e090d9"
+    },
+    {
+      "declaration": "mcp/Protocol.d.ts",
+      "declarationSha256": "95fe0a838e8524db3f417c2b198dd483dc2ae3fd8b2950c3e4cab084d649ce5e",
+      "source": "packages/mcp/src/Protocol.ts",
+      "sourceSha256": "0dfc421909ea674cd000d1fd0a782bc80cf284352aad833f0b6b8bf324122c0d"
+    },
+    {
       "declaration": "Node.d.ts",
       "declarationSha256": "fec87d48973920d69edae352729a02e889289049290caff643d8773deb2bac69",
       "source": "packages/ts-release/src/Node.ts",
@@ -335,6 +361,30 @@
       "declarationSha256": "8407a28807582859ce1d068a86b75afb93bdbf411f0f8cfa1c0ac30fe1618d9c",
       "source": "packages/npm/src/Wire.ts",
       "sourceSha256": "4e1e6495282acbb97a160c3be004112eb421d2cdbedf607efacbf25291d05e64"
+    },
+    {
+      "declaration": "openai/index.d.ts",
+      "declarationSha256": "a9b5a6f42fdd1f0997f752303b39b1ebde5afc08c9b9b7a7876062f32a43ea85",
+      "source": "packages/openai/src/index.ts",
+      "sourceSha256": "139efde2faa31f34d0b5ba0b8d9fd1021101a6427d61d7c92d320e840480b422"
+    },
+    {
+      "declaration": "openai/Marketplace.d.ts",
+      "declarationSha256": "9fe1de9f3d1f787bd0da51939c2e957641deeb82b3a22074110144f7238ed2a3",
+      "source": "packages/openai/src/Marketplace.ts",
+      "sourceSha256": "20b187007d1c5f8254ce1c910bcf99a1b156f845466ff3b26c0a1ac4f61ea43c"
+    },
+    {
+      "declaration": "openai/Package.d.ts",
+      "declarationSha256": "39e82a1082281d99561018db39067f7b1b328041db453c47f9da7548a262f5b1",
+      "source": "packages/openai/src/Package.ts",
+      "sourceSha256": "3be9c9b4abb628afac5acec349eb6225d733672462d9daa9be927925137026a2"
+    },
+    {
+      "declaration": "openai/Submission.d.ts",
+      "declarationSha256": "086d3badfa29a478cc669dd1711470c488edcda7343d309ee19f61b90be166d4",
+      "source": "packages/openai/src/Submission.ts",
+      "sourceSha256": "d964caf5c38a26e47db4b89887a2eda4c587308b0f11e90f6710a2f91d32f0f2"
     },
     {
       "declaration": "Plan.d.ts",

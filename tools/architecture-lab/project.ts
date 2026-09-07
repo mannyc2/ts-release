@@ -109,7 +109,7 @@ const authorityTexts: Record<string, string> = Object.fromEntries(await Promise.
 const declarations = new Map<string, Declaration>();
 // Implemented kernel exports are resolved by the compiler through their real
 // declaration owners. Unimplemented provider/host proposals retain their parser.
-const implementedAuthorities = ["kernel", "application", "npm", "pypi", "github", "homebrew", "scoop", "artifactReader", "http", "git", "nodeHost", "bunHost", "bundle", "effectBuild", "apple", "checksum"];
+const implementedAuthorities = ["kernel", "application", "npm", "pypi", "github", "homebrew", "scoop", "mcp", "openai", "artifactReader", "http", "git", "nodeHost", "bunHost", "bundle", "effectBuild", "apple", "checksum"];
 const apiProgram = ts.createProgram(implementedAuthorities.map(key => resolve(root, design.authorities[key]!)), {
     target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext,
     moduleResolution: ts.ModuleResolutionKind.NodeNext, types: [],
@@ -126,8 +126,9 @@ for (const [authority, text] of Object.entries(authorityTexts)) {
                 ...(symbol.flags & ts.SymbolFlags.Type ? ["type"] : []),
                 ...(symbol.flags & ts.SymbolFlags.Value ? ["value"] : []),
             ];
-            const owner = ["npm", "pypi", "github", "homebrew", "scoop"].includes(authority) ? "provider" : authority;
-            const namespace = authority === "npm" ? "Npm" : authority === "pypi" ? "Warehouse" : authority === "github" ? "GitHub" : authority === "homebrew" ? "Homebrew" : authority === "scoop" ? "Scoop" : null;
+            const providerNamespaces: Record<string, string> = { npm: "Npm", pypi: "Warehouse", github: "GitHub", homebrew: "Homebrew", scoop: "Scoop", mcp: "Mcp", openai: "OpenAi" };
+            const owner = authority in providerNamespaces ? "provider" : authority;
+            const namespace = providerNamespaces[authority] ?? null;
             const id = `${owner}:${namespace ? `${namespace}.` : ""}${exported.name}`;
             declarations.set(id, { id, authority: owner, namespace, sourceName: exported.name, spaces,
                 declarations: (symbol.declarations ?? []).map(node => ({

@@ -1,22 +1,22 @@
 {
   "format": "ts-release/refactor-progress/1",
   "goal": "active",
-  "executionStatus": "paused-by-user",
-  "resumeRequires": "explicit user instruction",
-  "completedWave": "W08",
+  "executionStatus": "in-progress",
+  "resumeRequires": "none-user-resumed-W09-W10",
+  "completedWave": "W09",
   "prerequisites": {
     "P0": "seven-package projection implemented; beta.107 exact type repair passes actual producer fixture and independent review; real packed production graph follows in waves",
     "P1": "fresh original-slice/helper proof:60packed,27extensions,TS37/37/37; archive retained",
     "P2": "entrypoints and final direct verification pass;69open closure red",
     "P3": "168tests/993assertions; independent prerequisite review passed; fresh Apple/source/declaration receipts"
   },
-  "productionWaves": "W01-W08 locally verified, committed and pushed through e393dd098090761d4157d4ea5af1c5676e4dc485 on origin/codex/complete-hard-cut. Execution stopped after W08. W09-W10 not started. Native/final certification remains open.",
-  "acceptance": "W08 full273tests2941assertions47files; final producer4cells780checks/36commands, Apple4cells48commands120driverchecks32installedchecks8SIGKILL. Independent material/accounting/exactpack/eightGitjournal evidence review closed. Fresh external4cells796checks140CLIprocesses87bindings0sourceedits, same eb038cb corearchive. All69outcomesopen; no publication.",
+  "productionWaves": "W01-W08 locally verified, committed and pushed through e393dd098090761d4157d4ea5af1c5676e4dc485 on origin/codex/complete-hard-cut. W09 is locally verified and awaits its checkpoint commit; W10 is next. Native/final certification remains open.",
+  "acceptance": "W09 focused9tests41assertions; full282tests2982assertions49files. Fresh external4cells796checks140CLIprocesses97bindings0sourceedits, same eb038cb corearchive. MCP/OpenAI exact protocol/package/handoff and3file348line49declaration retirement pass. This is implementer-reviewed local evidence; all69outcomesopen and no publication.",
   "publication": "No release published; registry0.3.0 observation is historical, recheck before choosing final cohort",
-  "nextAction": "Wait for explicit user resumption. W08 closure and push are complete. Do not begin W09/W10 or publish. On future explicit resume, start W09 from advisor-plans/008b-integrate-late-providers-and-hosts.md and handoff/waves.json, preserving all W08 native/host/candidate carry-forward and final source ceiling.",
-  "updatedAt": "2026-09-07T14:40:58.063Z",
+  "nextAction": "Commit and push W09, then complete W10 application convergence and local-candidate qualification. Do not publish or infer hosted acceptance.",
+  "updatedAt": "2026-09-07T22:40:00.000Z",
   "goalTool": "active",
-  "activeWave": null,
-  "source": "W08 13570product=11131replacement+2439legacy;9200tripwireexcess1931 with exactplanningvariance/no finalwaiver.14retiredfiles1581lines118declarations. Forecast13483deficit1998; low12723fails11485. Metadata640; ownedSPDX789lines15973bytes separate.",
-  "checkpoint": "W08 committed as e393dd098090761d4157d4ea5af1c5676e4dc485 and verified on origin/codex/complete-hard-cut. The runner exited after the requested W08 stop. Final exact-archive, retained-evidence and production results are recorded in acceptance above and W08-verification.json. Source 13570, final ceiling unmet. Migration14files1581lines118declarations. No publication; all69outcomes open."
+  "activeWave": "W09",
+  "source": "W09 14874product=12783replacement+2091legacy;11000tripwireexcess1783 with exactplanningvariance/no finalwaiver.3retiredfiles348lines49declarations. Forecast13225deficit1740; low13065fails11485. Metadata732; ownedSPDX789lines15973bytes separate.",
+  "checkpoint": "W09 is locally verified on top of pushed W08 e393dd098090761d4157d4ea5af1c5676e4dc485. Exact protocol, package, packed-consumer, migration and source receipts are recorded in W09-verification.json. No independent final review, hosted acceptance or publication is claimed; all69outcomes remain open."
 }

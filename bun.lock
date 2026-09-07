@@ -47,12 +47,31 @@
         "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
       },
     },
+    "packages/mcp": {
+      "name": "@mannyc1/ts-release-mcp",
+      "version": "0.4.0",
+      "peerDependencies": {
+        "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+        "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
+      },
+    },
     "packages/npm": {
       "name": "@mannyc1/ts-release-npm",
       "version": "0.4.0",
       "dependencies": {
         "semver": "7.8.5",
         "sigstore": "5.0.0",
+      },
+      "peerDependencies": {
+        "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+        "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
+      },
+    },
+    "packages/openai": {
+      "name": "@mannyc1/ts-release-openai",
+      "version": "0.4.0",
+      "dependencies": {
+        "semver": "7.8.5",
       },
       "peerDependencies": {
         "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
@@ -75,6 +94,9 @@
     "packages/ts-release": {
       "name": "@mannyc1/ts-release",
       "version": "0.4.0",
+      "bin": {
+        "ts-release": "./dist/bin/ts-release.js",
+      },
       "dependencies": {
         "effect-build": "0.6.3",
         "undici": "8.10.1",
@@ -166,7 +188,11 @@
 
     "@mannyc1/ts-release-github": ["@mannyc1/ts-release-github@workspace:packages/github"],
 
+    "@mannyc1/ts-release-mcp": ["@mannyc1/ts-release-mcp@workspace:packages/mcp"],
+
     "@mannyc1/ts-release-npm": ["@mannyc1/ts-release-npm@workspace:packages/npm"],
+
+    "@mannyc1/ts-release-openai": ["@mannyc1/ts-release-openai@workspace:packages/openai"],
 
     "@mannyc1/ts-release-pypi": ["@mannyc1/ts-release-pypi@workspace:packages/pypi"],
 

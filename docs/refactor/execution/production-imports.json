@@ -1,7 +1,117 @@
 {
   "format": "ts-release/production-imports/1",
-  "files": 81,
+  "files": 89,
   "edges": [
+    {
+      "file": "packages/mcp/src/Protocol.ts",
+      "specifier": "node:crypto",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Protocol.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Protocol.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Protocol.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Auth.ts",
+      "specifier": "effect/Clock",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Auth.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Auth.ts",
+      "specifier": "effect/Redacted",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Auth.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Auth.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Auth.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Auth.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Auth.ts",
+      "specifier": "./Protocol.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Model.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Model.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Model.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/Model.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/index.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/mcp/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/index.ts",
+      "specifier": "./Protocol.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/index.ts",
+      "specifier": "./Auth.js",
+      "typeOnly": false
+    },
     {
       "file": "packages/catalog/src/Shared.ts",
       "specifier": "effect/Effect",
@@ -70,6 +180,111 @@
     {
       "file": "packages/catalog/src/homebrew/index.ts",
       "specifier": "./Formula.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Submission.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Submission.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Submission.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Submission.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Submission.ts",
+      "specifier": "./Package.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Submission.ts",
+      "specifier": "./Marketplace.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Marketplace.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Marketplace.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Marketplace.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Marketplace.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/openai/src/Marketplace.ts",
+      "specifier": "./Package.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Package.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Package.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Package.ts",
+      "specifier": "semver",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Package.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Package.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Package.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/index.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/openai/src/index.ts",
+      "specifier": "./Package.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/index.ts",
+      "specifier": "./Marketplace.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/index.ts",
+      "specifier": "./Submission.js",
       "typeOnly": false
     },
     {

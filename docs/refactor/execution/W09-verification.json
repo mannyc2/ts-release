@@ -1,0 +1,66 @@
+{
+  "format": "ts-release/wave-verification/1",
+  "wave": "W09",
+  "status": "locally-verified-not-hosted-or-final-certification",
+  "observedAt": "2026-09-07T22:42:24.822Z",
+  "commands": {
+    "direct": 11,
+    "tests": 282,
+    "assertions": 2982,
+    "testFiles": 49,
+    "focusedTests": 9,
+    "focusedAssertions": 41,
+    "externalCells": 4,
+    "externalChecks": 796,
+    "externalCliProcesses": 140,
+    "externalFrozenBindings": 97,
+    "externalSourceEdits": 0
+  },
+  "kernelArchiveSha256": "eb038cb394139f069a0f937b72578f8f987705fae53e4210b0705ad2b7c723d9",
+  "architectureFiles": 300,
+  "productionDeclarationOwners": 89,
+  "publicSymbols": 311,
+  "implementedPackages": 7,
+  "implementedEntries": 15,
+  "selectedOutcomes": 69,
+  "openOutcomes": 69,
+  "propositions": 226,
+  "replacementLines": 12783,
+  "remainingLegacyLines": 2091,
+  "physicalProductLines": 14874,
+  "metadataLines": 732,
+  "productDataLines": 789,
+  "productDataBytes": 15973,
+  "ceiling": 11485,
+  "achievedReduction": false,
+  "forecastExpected": 13225,
+  "review": "docs/refactor/execution/W09-review.md",
+  "bindings": [
+    {
+      "path": "docs/refactor/execution/W09-migration.json",
+      "bytes": 13940,
+      "sha256": "14370f7b384067f805f994b5812e8764e7141f2beca0af1c4f2485005e693273"
+    },
+    {
+      "path": "docs/refactor/execution/W09-source-variance.json",
+      "bytes": 2006,
+      "sha256": "b233d00bb09edfe2b48b3e1265834fabd96be83cf6fe535cb3ce0005a4f319d7"
+    },
+    {
+      "path": "docs/refactor/execution/current-packed-external.json",
+      "bytes": 28831,
+      "sha256": "384ad463126093f1afff133330d42157c5cf09a8e5cd3065ef3fdb93148f2ac3"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-verification.json",
+      "bytes": 39618,
+      "sha256": "41ea97a88f0f710394c90070cf8dc886d37dc97124021c06fda83d518f118979"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/contract.json",
+      "bytes": 60126,
+      "sha256": "60bb7de94d8129b2a3779d42fc2209ddec83d62c9857aeabf326af137cd54e93"
+    }
+  ],
+  "limits": "Implementer-reviewed local W09 closure with exact source-bound planning variance. Hosted MCP Registry, marketplace Git and OpenAI portal acceptance, credentialed trust, native Apple/Windows, direct Bun Sigstore, W10 Action/self-release, final source reduction and independent complete-candidate qualification remain open. No remote mutation or release occurred."
+}

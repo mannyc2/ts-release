@@ -1,6 +1,6 @@
 {
   "format": "ts-release/architecture-forecast/1",
-  "status": "mixed-actual-W08-and-unimplemented-engineering-estimates-not-achieved-reduction",
+  "status": "mixed-actual-W09-and-unimplemented-W10-engineering-estimates-not-achieved-reduction",
   "basisCommit": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
   "denominator": {
     "productPhysicalLines": 22916,
@@ -783,45 +783,17 @@
         "provider.mcp"
       ],
       "fullReplacementPhysicalLines": {
-        "low": 820,
-        "expected": 1180,
-        "high": 1580
+        "low": 970,
+        "expected": 970,
+        "high": 970
       },
       "components": [
         {
-          "name": "Full native package/transport schemas and refinements",
-          "low": 430,
-          "expected": 570,
-          "high": 740,
-          "basis": "mcp-registry.ts:1-500; five registry kinds, three transports, arguments/variables/meta"
-        },
-        {
-          "name": "Registry native requests, receipts and observations",
-          "low": 220,
-          "expected": 330,
-          "high": 450,
-          "basis": "mcp-registry.ts:673-1059; exact version/namespace and registry metadata"
-        },
-        {
-          "name": "Author and kernel bindings",
-          "low": 60,
-          "expected": 100,
-          "high": 140,
-          "basis": "mcp-registry.ts:528-655 and mcp-registry-application.ts"
-        },
-        {
-          "name": "Provider-specific authorization",
-          "low": 90,
-          "expected": 140,
-          "high": 190,
-          "basis": "mcp-registry-live.ts:1-181; root owns OIDC mechanics, provider owns registry exchange"
-        },
-        {
-          "name": "Exports and thin wrappers",
-          "low": 20,
-          "expected": 40,
-          "high": 60,
-          "basis": "mcp-registry-provider.ts and definition construction"
+          "name": "Actual W09 production owners",
+          "low": 970,
+          "expected": 970,
+          "high": 970,
+          "basis": "Exact source bindings in actualImplementation. Official manifest, five package kinds, three transports, exact request/receipt/observation and token/OIDC authorization are fully charged; hosted Registry acceptance remains external."
         }
       ],
       "donors": [
@@ -829,7 +801,34 @@
         "src/publication/mcp-registry-application.ts",
         "src/publication/mcp-registry-live.ts",
         "src/publication/mcp-registry-provider.ts"
-      ]
+      ],
+      "actualImplementation": {
+        "wave": "W09",
+        "lines": 970,
+        "files": [
+          {
+            "path": "packages/mcp/src/Auth.ts",
+            "lines": 108,
+            "sha256": "4a8d7ce71b2a778f440ea6c2a9ada07cd6b7bae5cbc90cd0f9a44b4aaf4a5c08"
+          },
+          {
+            "path": "packages/mcp/src/Model.ts",
+            "lines": 532,
+            "sha256": "c25a2255dd347cde2fbfdc106f5cf54f620ce7b60557270e0dfb76e8d6e090d9"
+          },
+          {
+            "path": "packages/mcp/src/Protocol.ts",
+            "lines": 297,
+            "sha256": "0dfc421909ea674cd000d1fd0a782bc80cf284352aad833f0b6b8bf324122c0d"
+          },
+          {
+            "path": "packages/mcp/src/index.ts",
+            "lines": 33,
+            "sha256": "8926f23abc28b28bf739550aca6e090c28914b6b8bf7ab547104d219287e1b1c"
+          }
+        ],
+        "qualification": "Exact current normally formatted source; hosted MCP Registry publication/discovery and credentials remain Plan 009 acceptance."
+      }
     },
     {
       "owner": "provider-openai",
@@ -840,51 +839,50 @@
         "provider.openai"
       ],
       "fullReplacementPhysicalLines": {
-        "low": 490,
-        "expected": 730,
-        "high": 1030
+        "low": 682,
+        "expected": 682,
+        "high": 682
       },
       "components": [
         {
-          "name": "Manifest, skill path and package validation",
-          "low": 180,
-          "expected": 260,
-          "high": 350,
-          "basis": "openai-plugin.ts:78-344; one installable owned Tree and preserved support-file modes"
-        },
-        {
-          "name": "Local marketplace entries and preservation",
-          "low": 80,
-          "expected": 110,
-          "high": 160,
-          "basis": "openai-plugin.ts:350-450; root Git owns publication"
-        },
-        {
-          "name": "Submission listing, tests and attestations",
-          "low": 150,
-          "expected": 220,
-          "high": 300,
-          "basis": "openai-plugin.ts:472-647; explicit five positive/three negative cases, no fake submission endpoint"
-        },
-        {
-          "name": "Owned Tree integration and materialization boundary",
-          "low": 60,
-          "expected": 100,
-          "high": 160,
-          "basis": "platform/openai-plugin-store.ts:1-127; producer/root owns transforms, provider validates layout"
-        },
-        {
-          "name": "Exports and thin wrappers",
-          "low": 20,
-          "expected": 40,
-          "high": 60,
-          "basis": "new namespace-to-package boundary and error adapters"
+          "name": "Actual W09 production owners",
+          "low": 682,
+          "expected": 682,
+          "high": 682,
+          "basis": "Exact source bindings in actualImplementation. Owned skills-only Tree rendering/admission, conditional marketplace bytes and strict five-positive/three-negative human handoff are fully charged; no portal operation exists."
         }
       ],
       "donors": [
         "src/publication/openai-plugin.ts",
         "src/platform/openai-plugin-store.ts"
-      ]
+      ],
+      "actualImplementation": {
+        "wave": "W09",
+        "lines": 682,
+        "files": [
+          {
+            "path": "packages/openai/src/Marketplace.ts",
+            "lines": 95,
+            "sha256": "20b187007d1c5f8254ce1c910bcf99a1b156f845466ff3b26c0a1ac4f61ea43c"
+          },
+          {
+            "path": "packages/openai/src/Package.ts",
+            "lines": 379,
+            "sha256": "3be9c9b4abb628afac5acec349eb6225d733672462d9daa9be927925137026a2"
+          },
+          {
+            "path": "packages/openai/src/Submission.ts",
+            "lines": 189,
+            "sha256": "d964caf5c38a26e47db4b89887a2eda4c587308b0f11e90f6710a2f91d32f0f2"
+          },
+          {
+            "path": "packages/openai/src/index.ts",
+            "lines": 19,
+            "sha256": "139efde2faa31f34d0b5ba0b8d9fd1021101a6427d61d7c92d320e840480b422"
+          }
+        ],
+        "qualification": "Exact current normally formatted source; human portal submission/review/publication remains external and is not inferred from a validated handoff."
+      }
     },
     {
       "owner": "native-git-additional",
@@ -1021,18 +1019,18 @@
     }
   ],
   "totals": {
-    "low": 12723,
-    "expected": 13483,
-    "high": 14423
+    "low": 13065,
+    "expected": 13225,
+    "high": 13465
   },
-  "expectedHeadroom": -1998,
+  "expectedHeadroom": -1740,
   "reductionPercent": {
-    "low": 44.61,
-    "expected": 41.3,
-    "high": 37.21
+    "low": 43.12,
+    "expected": 42.43,
+    "high": 41.38
   },
   "unknowns": [
-    "MCP/OpenAI packages and final Action/self-release/agent composition remain unimplemented. Retained future estimates must be replaced by actual complete source, not treated as limits or qualifications.",
+    "MCP/OpenAI package source is actual and fully charged. Final Action/self-release/agent composition remains unimplemented; retained W10 estimates must be replaced by actual complete source, not treated as limits or qualifications.",
     "Actual W08 artifact/Apple/native directory/child process/checksum source is fully charged. Core unused Host import removal changes source by one line without a behavior or selection-law change.",
     "W10 must close all carried native/source/embedded-Python-wheel duties. Hosted OIDC, direct Bun Sigstore, native macOS/Windows and selected producer acquisition qualification remain open and may require source changes.",
     "Source ceiling remains11485 with original22971denominator. All metadata, generated data and moved/newly maintained external implementation stay separately visible."
@@ -1054,7 +1052,7 @@
     }
   ],
   "newRequiredUpstreamImplementationLines": 0,
-  "sourceCeilingPolicy": "Expected13483 exceeds unchanged11485 ceiling by1998. No achieved reduction or complete-product waiver. Complete selected product must pass before release.",
+  "sourceCeilingPolicy": "Expected13225 exceeds unchanged11485 ceiling by1740. No achieved reduction or complete-product waiver. Complete selected product must pass before release.",
   "maintenanceLanes": [
     "product and Action source",
     "generated runtime product inputs including Action YAML",
@@ -1112,7 +1110,7 @@
     "lines": 789,
     "bytes": 15973,
     "role": "Pinned native SPDX membership data; generated from packaging26.3 with source hash; validation logic remains counted TypeScript",
-    "forecastProductAndDataLines": 14272
+    "forecastProductAndDataLines": 14014
   },
   "historicalLayoutMetadata": {
     "commit": "3b712db",

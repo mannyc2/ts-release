@@ -1,0 +1,666 @@
+{
+  "format": "ts-release/packed-npm/1",
+  "checkedAt": "2026-09-07T04:57:05.878Z",
+  "work": "/tmp/ts-release-packed-npm-Ms92Qj",
+  "archives": [
+    {
+      "owner": "ts-release",
+      "archive": "/tmp/ts-release-packed-npm-Ms92Qj/ts-release.tgz",
+      "sha256": "61e08867cd0cc3aca5c81ea7771ddb590218c7d845c3742946f2d227cec2673d"
+    },
+    {
+      "owner": "npm",
+      "archive": "/tmp/ts-release-packed-npm-Ms92Qj/npm.tgz",
+      "sha256": "3a31a441ccee29c209f7eec29db32e838232d03cc73082192348884660cb975f"
+    }
+  ],
+  "outcomes": [
+    {
+      "manager": "bun",
+      "strictDeclarations": true,
+      "exactArchiveFiles": true,
+      "optionalPeersAbsent": true,
+      "runtimes": [
+        {
+          "runtime": "v22.22.2",
+          "bun": null,
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@fixture/packed-npm",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        },
+        {
+          "runtime": "v22.22.2",
+          "bun": null,
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@mannyc1/ts-release",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        },
+        {
+          "runtime": "v22.22.2",
+          "bun": null,
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@mannyc1/ts-release-npm",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        },
+        {
+          "runtime": "v24.3.0",
+          "bun": "1.3.14",
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@fixture/packed-npm",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        },
+        {
+          "runtime": "v24.3.0",
+          "bun": "1.3.14",
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@mannyc1/ts-release",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        },
+        {
+          "runtime": "v24.3.0",
+          "bun": "1.3.14",
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@mannyc1/ts-release-npm",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        }
+      ]
+    },
+    {
+      "manager": "npm",
+      "strictDeclarations": true,
+      "exactArchiveFiles": true,
+      "optionalPeersAbsent": true,
+      "runtimes": [
+        {
+          "runtime": "v22.22.2",
+          "bun": null,
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@fixture/packed-npm",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        },
+        {
+          "runtime": "v22.22.2",
+          "bun": null,
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@mannyc1/ts-release",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        },
+        {
+          "runtime": "v22.22.2",
+          "bun": null,
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@mannyc1/ts-release-npm",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        },
+        {
+          "runtime": "v24.3.0",
+          "bun": "1.3.14",
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@fixture/packed-npm",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        },
+        {
+          "runtime": "v24.3.0",
+          "bun": "1.3.14",
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@mannyc1/ts-release",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        },
+        {
+          "runtime": "v24.3.0",
+          "bun": "1.3.14",
+          "sends": 1,
+          "events": 4,
+          "outcome": "Satisfied",
+          "package": "@mannyc1/ts-release-npm",
+          "exports": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PackageMetadata",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "inspectTarball",
+            "makeSigstoreAttester",
+            "makeSigstoreVerifier",
+            "publish"
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "cwd": "/tmp/ts-release-implementation",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "run",
+        "build"
+      ],
+      "exitCode": 0,
+      "output": "$ bun scripts/build.ts\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-implementation/packages/ts-release",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "pm",
+        "pack",
+        "--ignore-scripts",
+        "--filename",
+        "/tmp/ts-release-packed-npm-Ms92Qj/ts-release.tgz"
+      ],
+      "exitCode": 0,
+      "output": "bun pack v1.3.14 (0d9b296a)\n\npacked 1.35KB package.json\npacked 1.1KB LICENSE\npacked 486B README.md\npacked 297B dist/Bun.d.ts\npacked 206B dist/Bun.js\npacked 435B dist/Bundle.d.ts\npacked 286B dist/Bundle.js\npacked 3.13KB dist/Http.d.ts\npacked 0.72KB dist/Http.js\npacked 1.96KB dist/Journal.d.ts\npacked 6.58KB dist/Journal.js\npacked 232B dist/Node.d.ts\npacked 141B dist/Node.js\npacked 1.18KB dist/Plan.d.ts\npacked 5.65KB dist/Plan.js\npacked 4.42KB dist/Provider.d.ts\npacked 6.96KB dist/Provider.js\npacked 2.88KB dist/Release.d.ts\npacked 15.0KB dist/Release.js\npacked 1.52KB dist/index.d.ts\npacked 0.94KB dist/index.js\npacked 3.72KB dist/internal/ArtifactModel.d.ts\npacked 2.23KB dist/internal/ArtifactModel.js\npacked 372B dist/internal/BundleCodec.d.ts\npacked 1.25KB dist/internal/BundleCodec.js\npacked 453B dist/internal/BundleFinalize.d.ts\npacked 1.60KB dist/internal/BundleFinalize.js\npacked 1.1KB dist/internal/Content.d.ts\npacked 11B dist/internal/Content.js\npacked 2.61KB dist/internal/Decision.d.ts\npacked 10.46KB dist/internal/Decision.js\npacked 164B dist/internal/EffectTypes.d.ts\npacked 11B dist/internal/EffectTypes.js\npacked 0.58KB dist/internal/Error.d.ts\npacked 0.59KB dist/internal/Error.js\npacked 1.66KB dist/internal/FinalizedReport.d.ts\npacked 2.57KB dist/internal/FinalizedReport.js\npacked 1.75KB dist/internal/GitAuthority.d.ts\npacked 5.74KB dist/internal/GitAuthority.js\npacked 2.55KB dist/internal/Host.d.ts\npacked 9.40KB dist/internal/Host.js\npacked 1.1KB dist/internal/Identity.d.ts\npacked 5.35KB dist/internal/Identity.js\npacked 8.25KB dist/internal/ReleaseModel.d.ts\npacked 4.87KB dist/internal/ReleaseModel.js\npacked 206B dist/internal/TreeManifest.d.ts\npacked 3.59KB dist/internal/TreeManifest.js\npacked 0.93KB dist/platform/Application.d.ts\npacked 2.27KB dist/platform/Application.js\npacked 225B dist/platform/ContentStore.d.ts\npacked 4.81KB dist/platform/ContentStore.js\npacked 308B dist/platform/SqliteJournal.d.ts\npacked 4.72KB dist/platform/SqliteJournal.js\npacked 333B dist/platform/StoreCodec.d.ts\npacked 0.91KB dist/platform/StoreCodec.js\n\n/tmp/ts-release-packed-npm-Ms92Qj/ts-release.tgz\n\nTotal files: 55\nShasum: f83a5d0dd82c30458f4ca5a492adc4b8cc789756\nIntegrity: sha512-8IW1dsUXQIi5R[...]rp1cE6cSaea6Q==\nUnpacked size: 142.1KB\nPacked size: 32.1KB\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-implementation/packages/npm",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "pm",
+        "pack",
+        "--ignore-scripts",
+        "--filename",
+        "/tmp/ts-release-packed-npm-Ms92Qj/npm.tgz"
+      ],
+      "exitCode": 0,
+      "output": "bun pack v1.3.14 (0d9b296a)\n\npacked 0.68KB package.json\npacked 1.1KB LICENSE\npacked 3.15KB README.md\npacked 2.44KB dist/Auth.d.ts\npacked 15.97KB dist/Auth.js\npacked 2.94KB dist/Evidence.d.ts\npacked 9.0KB dist/Evidence.js\npacked 13.87KB dist/Model.d.ts\npacked 5.32KB dist/Model.js\npacked 10.65KB dist/Native.d.ts\npacked 11.17KB dist/Native.js\npacked 10.49KB dist/Protocol.d.ts\npacked 9.13KB dist/Protocol.js\npacked 0.68KB dist/Wire.d.ts\npacked 4.76KB dist/Wire.js\npacked 0.60KB dist/index.d.ts\npacked 464B dist/index.js\n\n/tmp/ts-release-packed-npm-Ms92Qj/npm.tgz\n\nTotal files: 17\nShasum: 484b30ca71dd6408a68ff5da4d5aa12c70fdb73e\nIntegrity: sha512-OnAL5A9Tmkmhp[...]+ckMuS6pA/e+g==\nUnpacked size: 102.39KB\nPacked size: 19.71KB\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/producer",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "pm",
+        "pack",
+        "--ignore-scripts",
+        "--filename",
+        "/tmp/ts-release-packed-npm-Ms92Qj/native-fixture.tgz"
+      ],
+      "exitCode": 0,
+      "output": "bun pack v1.3.14 (0d9b296a)\n\npacked 94B package.json\npacked 28B index.js\n\n/tmp/ts-release-packed-npm-Ms92Qj/native-fixture.tgz\n\nTotal files: 2\nShasum: 44cffcd0b381272400a947e1609ee932bdfbd3da\nIntegrity: sha512-Klh4hEYYMyC7a[...]7pjk+78vZCE4Q==\nUnpacked size: 122B\nPacked size: 227B\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/bun",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "install",
+        "--ignore-scripts",
+        "--cache-dir",
+        "/tmp/ts-release-packed-npm-Ms92Qj/bun-cache"
+      ],
+      "exitCode": 0,
+      "output": "bun install v1.3.14 (0d9b296a)\n\n+ @mannyc1/ts-release@/tmp/ts-release-packed-npm-Ms92Qj/ts-release.tgz\n+ @mannyc1/ts-release-npm@/tmp/ts-release-packed-npm-Ms92Qj/npm.tgz\n+ effect@4.0.0-beta.107\n+ typescript@6.0.3 (v7.0.2 available)\n\n66 packages installed [591.00ms]\nResolving dependencies\nResolved, downloaded and extracted [266]\nSaved lockfile\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/bun",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "node_modules/typescript/bin/tsc",
+        "-p",
+        "tsconfig.json"
+      ],
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/bun",
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/native-fixture.tgz",
+        "@fixture/packed-npm"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v22.22.2\",\"bun\":null,\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@fixture/packed-npm\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/bun",
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/ts-release.tgz",
+        "@mannyc1/ts-release"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v22.22.2\",\"bun\":null,\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@mannyc1/ts-release\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/bun",
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/npm.tgz",
+        "@mannyc1/ts-release-npm"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v22.22.2\",\"bun\":null,\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@mannyc1/ts-release-npm\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/bun",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/native-fixture.tgz",
+        "@fixture/packed-npm"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v24.3.0\",\"bun\":\"1.3.14\",\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@fixture/packed-npm\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/bun",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/ts-release.tgz",
+        "@mannyc1/ts-release"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v24.3.0\",\"bun\":\"1.3.14\",\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@mannyc1/ts-release\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/bun",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/npm.tgz",
+        "@mannyc1/ts-release-npm"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v24.3.0\",\"bun\":\"1.3.14\",\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@mannyc1/ts-release-npm\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/npm",
+      "argv": [
+        "npm",
+        "install",
+        "--ignore-scripts",
+        "--omit=optional"
+      ],
+      "exitCode": 0,
+      "output": "\nadded 61 packages, and audited 62 packages in 2s\n\n9 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/npm",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "node_modules/typescript/bin/tsc",
+        "-p",
+        "tsconfig.json"
+      ],
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/npm",
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/native-fixture.tgz",
+        "@fixture/packed-npm"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v22.22.2\",\"bun\":null,\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@fixture/packed-npm\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/npm",
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/ts-release.tgz",
+        "@mannyc1/ts-release"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v22.22.2\",\"bun\":null,\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@mannyc1/ts-release\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/npm",
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/npm.tgz",
+        "@mannyc1/ts-release-npm"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v22.22.2\",\"bun\":null,\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@mannyc1/ts-release-npm\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/npm",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/native-fixture.tgz",
+        "@fixture/packed-npm"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v24.3.0\",\"bun\":\"1.3.14\",\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@fixture/packed-npm\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/npm",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/ts-release.tgz",
+        "@mannyc1/ts-release"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v24.3.0\",\"bun\":\"1.3.14\",\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@mannyc1/ts-release\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    },
+    {
+      "cwd": "/tmp/ts-release-packed-npm-Ms92Qj/npm",
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "consumer.mjs",
+        "/tmp/ts-release-packed-npm-Ms92Qj/npm.tgz",
+        "@mannyc1/ts-release-npm"
+      ],
+      "exitCode": 0,
+      "output": "{\"runtime\":\"v24.3.0\",\"bun\":\"1.3.14\",\"sends\":1,\"events\":4,\"outcome\":\"Satisfied\",\"package\":\"@mannyc1/ts-release-npm\",\"exports\":[\"Authorization\",\"DistTagIntent\",\"GitHubActionsProvenance\",\"NoProvenance\",\"PackageCandidate\",\"PackageMetadata\",\"PrivatePackage\",\"Provenance\",\"ProvenanceSource\",\"PublicPackage\",\"PublishIntent\",\"TokenAuthorization\",\"TrustedAuthorization\",\"author\",\"authorizeToken\",\"authorizeTrusted\",\"createProvenance\",\"definitions\",\"distTag\",\"inspectTarball\",\"makeSigstoreAttester\",\"makeSigstoreVerifier\",\"publish\"]}\n"
+    }
+  ],
+  "limits": [
+    "2 of7 packages; local unpublished candidate archives",
+    "native HTTP transport/CLI/Action and full cohort remain open",
+    "Sigstore trust has a separate Node-native public-attestation witness; Bun native Sigstore remains unqualified",
+    "no registry publication",
+    "A preceding Bun1.3.14 run stalled in the shared cache and was terminated; the same consumer installed successfully with an isolated cache. This fresh run uses its own cache; shared-cache cause is not diagnosed."
+  ]
+}

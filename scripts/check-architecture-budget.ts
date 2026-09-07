@@ -26,6 +26,8 @@ const counts = {
   replacement: 0,
   metadata: 0,
   tests: 0,
+  fixtureText: 0,
+  fixtureBinaryBytes: 0,
   generatedDelivery: 0,
   tooling: 0,
 }
@@ -40,23 +42,27 @@ for (const path of paths) {
     /^apps\/[^/]+\/action\.yml$/.test(path)
   const lane = product
     ? "product"
-    : /(?:^|\/)test(?:s)?\//.test(path)
-      ? "tests"
-      : /(?:^|\/)dist\//.test(path)
-        ? "generatedDelivery"
-        : source && /^(?:tools|scripts|prototypes)\//.test(path)
-          ? "tooling"
-          : /(?:package|tsconfig[^/]*)\.json$/.test(path)
-            ? "metadata"
-            : undefined
+    : /(?:^|\/)(?:fixtures|golden)\//.test(path) || /\.(?:tgz|tar\.gz|zip|png|jpg|wasm)$/.test(path)
+      ? /\.(?:tgz|tar\.gz|zip|png|jpg|wasm)$/.test(path)
+        ? "fixtureBinaryBytes"
+        : "fixtureText"
+      : /(?:^|\/)test(?:s)?\//.test(path)
+        ? "tests"
+        : /(?:^|\/)dist\//.test(path)
+          ? "generatedDelivery"
+          : source && /^(?:tools|scripts|prototypes)\//.test(path)
+            ? "tooling"
+            : /(?:package|tsconfig[^/]*)\.json$/.test(path)
+              ? "metadata"
+              : undefined
   if (!lane) continue
   const bytes = readFileSync(resolve(root, path))
   const lines =
-    bytes.length === 0
+    lane === "fixtureBinaryBytes" || bytes.length === 0
       ? 0
       : bytes.filter((byte) => byte === 10).length + (bytes.at(-1) === 10 ? 0 : 1)
   const sha256 = createHash("sha256").update(bytes).digest("hex")
-  counts[lane] += lines
+  counts[lane] += lane === "fixtureBinaryBytes" ? bytes.length : lines
   if (product) counts[legacy.get(path) === sha256 ? "unchangedLegacy" : "replacement"] += lines
   files.push({ path, lines, lane, sha256 })
 }

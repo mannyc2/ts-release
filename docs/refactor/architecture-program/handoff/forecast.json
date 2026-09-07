@@ -1,6 +1,6 @@
 {
   "format": "ts-release/architecture-forecast/1",
-  "status": "mixed-actual-W01-kernel-and-unimplemented-engineering-estimates-not-achieved-reduction",
+  "status": "mixed-actual-W02-kernel-npm-and-unimplemented-engineering-estimates-not-achieved-reduction",
   "basisCommit": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
   "denominator": {
     "productPhysicalLines": 22916,
@@ -31,17 +31,17 @@
       ],
       "components": [
         {
-          "name": "Actual implemented W01 kernel, including strict admission, public entry, exact beta declaration repair and complete derived report",
-          "low": 2160,
-          "expected": 2160,
-          "high": 2160,
-          "basis": "Actual normally formatted W01 production after complete report/application integration and reviewed host capability capture. Exact per-file count is in execution/source-measurement.json; no native or full-product acceptance follows."
+          "name": "Actual W02 kernel including strict owned request/transport preparation and full journal/report admission",
+          "low": 2203,
+          "expected": 2203,
+          "high": 2203,
+          "basis": "Normally formatted actual source, execution/source-measurement.json; W02 changes preserve fresh CAS and invocation-local preflight. Full host/native acceptance remains open."
         }
       ],
       "fullReplacementPhysicalLines": {
-        "low": 2160,
-        "expected": 2160,
-        "high": 2160
+        "low": 2203,
+        "expected": 2203,
+        "high": 2203
       }
     },
     {
@@ -278,69 +278,65 @@
         "provider.npm.Model",
         "provider.npm.Protocol",
         "provider.npm.Auth",
+        "provider.npm.Native",
+        "provider.npm.Wire",
+        "provider.npm.Evidence",
         "provider.npm"
       ],
       "fullReplacementPhysicalLines": {
-        "low": 1090,
-        "expected": 1630,
-        "high": 2320
+        "low": 1513,
+        "expected": 1513,
+        "high": 1513
       },
       "components": [
         {
-          "name": "Schemas and native cross-field refinements",
-          "low": 190,
-          "expected": 270,
-          "high": 360,
-          "basis": "npm-native.ts:198-292 and endpoint/authorization/tag schemas; strict decoded public API adds explicit ownership"
+          "name": "packages/npm/src/Auth.ts",
+          "low": 432,
+          "expected": 432,
+          "high": 432,
+          "basis": "Actual normally formatted W02 production SHA256e8c2552d35d77d6886aee588432f182558eb7540a3ecc62769321eed5f27950d; native host/whole-product acceptance remains open."
         },
         {
-          "name": "Tarball metadata, native digest and publication body",
-          "low": 250,
-          "expected": 350,
-          "high": 500,
-          "basis": "npm-native.ts:300-520,1110-1600; reuse owned bytes but retain tar/package validation and npm wire shape"
+          "name": "packages/npm/src/Evidence.ts",
+          "low": 236,
+          "expected": 236,
+          "high": 236,
+          "basis": "Actual normally formatted W02 production SHA2561ffb3a01d26b9d9e6caf2d44695bdd00e37787b6aead3507c3a5fa1c41fb272d; native host/whole-product acceptance remains open."
         },
         {
-          "name": "SLSA source and DSSE exact-payload validation",
-          "low": 150,
-          "expected": 230,
-          "high": 340,
-          "basis": "npm-native.ts:780-1110; immutable separate provenance File replaces duplicate artifact plumbing"
+          "name": "packages/npm/src/Model.ts",
+          "low": 168,
+          "expected": 168,
+          "high": 168,
+          "basis": "Actual normally formatted W02 production SHA256f1c342927915077b7dcb6bff5ffef0e342c200698ebc1c1e2d0e2896abcfaf7b; native host/whole-product acceptance remains open."
         },
         {
-          "name": "Native receipts, version/tag observation facets and tag moves",
-          "low": 230,
-          "expected": 340,
-          "high": 460,
-          "basis": "npm-native.ts:1110-2125; machine absorbs policy, native observation and correspondence remain"
+          "name": "packages/npm/src/Native.ts",
+          "low": 281,
+          "expected": 281,
+          "high": 281,
+          "basis": "Actual normally formatted W02 production SHA256f07126b0510dbc491ffb5eeaf6461cdfd5af1caba6d5a90627193cd12f26d60c; native host/whole-product acceptance remains open."
         },
         {
-          "name": "Batch authors and new kernel bindings",
-          "low": 80,
-          "expected": 130,
-          "high": 190,
-          "basis": "npm-native.ts:2127-2348 and npm-application.ts; keep private omissions and mandatory graph edges"
+          "name": "packages/npm/src/Protocol.ts",
+          "low": 256,
+          "expected": 256,
+          "high": 256,
+          "basis": "Actual normally formatted W02 production SHA256abdc77a7ee507ecadd08cb5cf74afac2f7776cc804550238fef4d544ebc2fced; native host/whole-product acceptance remains open."
         },
         {
-          "name": "Provider-specific token/trusted authorization",
-          "low": 100,
-          "expected": 150,
-          "high": 220,
-          "basis": "npm-live.ts:1-190; common acquisition/HTTP mechanics relocated, exact exchange native law retained"
+          "name": "packages/npm/src/Wire.ts",
+          "low": 112,
+          "expected": 112,
+          "high": 112,
+          "basis": "Actual normally formatted W02 production SHA2564e1e6495282acbb97a160c3be004112eb421d2cdbedf607efacbf25291d05e64; native host/whole-product acceptance remains open."
         },
         {
-          "name": "Native Sigstore adapter",
-          "low": 60,
-          "expected": 110,
-          "high": 180,
-          "basis": "NEW consumer wrapper absent from overlay: verified sigstore5 attest/verify options, exact token identity/trust binding/error conversion"
-        },
-        {
-          "name": "Exports and thin wrappers",
-          "low": 30,
-          "expected": 50,
-          "high": 70,
-          "basis": "npm.ts plus explicit public dependency construction"
+          "name": "packages/npm/src/index.ts",
+          "low": 28,
+          "expected": 28,
+          "high": 28,
+          "basis": "Actual normally formatted W02 production SHA25624f761eeafea23755b822b81dcd2f4d408a21d87569915e30ba8c6e578f127dd; native host/whole-product acceptance remains open."
         }
       ],
       "donors": [
@@ -717,19 +713,19 @@
     }
   ],
   "totals": {
-    "low": 9343,
-    "expected": 12525,
-    "high": 16963
+    "low": 9809,
+    "expected": 12451,
+    "high": 16199
   },
-  "expectedHeadroom": -1040,
+  "expectedHeadroom": -966,
   "reductionPercent": {
-    "low": 59.33,
-    "expected": 45.47,
-    "high": 26.15
+    "low": 57.3,
+    "expected": 45.8,
+    "high": 29.48
   },
   "unknowns": [
-    "The six remaining public provider packages are not implemented yet; their actual native parsing/evidence/authentication cost must be measured.",
-    "The W01 kernel row is measured from ordinary production formatting. Other rows retain their component estimates and must be replaced by actual per-wave counts; the historical compact lab1024physical/1145printer count is not a production forecast.",
+    "Five remaining public provider packages are not implemented; their actual parsing/evidence/authentication cost must be measured. Shared HTTP declarations implemented during W02 remain within the full HTTP row, not an extra cost.",
+    "Kernel and npm rows use measured ordinary production formatting. Other rows retain component estimates until their own waves; historical lab density is not a production forecast.",
     "Projected package manifests/exports/build/dependency closure carry additional maintained metadata and publication cost. layout.json owns exact metadata; do not claim these are free.",
     "Every actual product or newly maintained upstream implementation line must be charged at cutover. No forecast closes the11485gate."
   ],
@@ -750,7 +746,7 @@
     }
   ],
   "newRequiredUpstreamImplementationLines": 0,
-  "sourceCeilingPolicy": "Keep11485. The mixed actual/forecast expected total12525 exceeds the ceiling by1040; continue real simplification and full measured implementation without scope cuts or counting changes.",
+  "sourceCeilingPolicy": "Keep11485. Mixed actual/forecast expected total12451 exceeds ceiling by966; continue real simplification without scope cuts or counting changes.",
   "maintenanceLanes": [
     "product and Action source",
     "generated runtime product inputs including Action YAML",

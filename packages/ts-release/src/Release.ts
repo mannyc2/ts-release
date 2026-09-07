@@ -183,6 +183,16 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
         ),
       )
       yield* attempt(() => assertTransportBinding(host.transport, request.facts))
+      const send = host.transport.prepare
+        ? yield* host.transport.prepare(yield* verifyRequest(request))
+        : host.transport.send
+      yield* attempt(() => {
+        if (typeof send !== "function")
+          throw new ReleaseError({
+            code: "transport-preparation",
+            message: "Transport preparation did not return a callable send",
+          })
+      })
       const fingerprint = yield* requestFingerprint(request.facts)
       current = yield* read(host, plan)
       const startedAt = host.now()
@@ -238,9 +248,9 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
       if (!owned) continue
       // This branch contains one send; its authority exists only on this call stack.
       const verified = yield* verifyRequest(request)
-      const result = yield* host.transport
-        .send(verified)
-        .pipe(Effect.catch((error) => Effect.succeed({ _tag: "CoreError" as const, error })))
+      const result = yield* send(verified).pipe(
+        Effect.catch((error) => Effect.succeed({ _tag: "CoreError" as const, error })),
+      )
       dispatches++
       if (result._tag === "Accepted") {
         const decoded = yield* attempt(() => ({

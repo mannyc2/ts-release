@@ -364,3 +364,24 @@ test("invalid clock, dispatch limit and truthy authorization reject without effe
   ).rejects.toThrow("booleans")
   expect(f.calls.sends).toBe(0)
 })
+
+test("request capture owns Node Buffer bytes and nested facts before asynchronous hashing", async () => {
+  const bytes = Buffer.from("abc"),
+    headers: [string, string][] = [["content-type", "text/plain"]]
+  const input = {
+    transport: "core.http/1" as const,
+    endpoint: "https://fixture.invalid/",
+    method: "PUT",
+    headers,
+    principal: "publisher",
+    scope: "fixture",
+    replay: new Release.NoReplay({}),
+    body: bytes,
+  }
+  const pending = Effect.runPromise(Release.makeRequest(input))
+  bytes[0] = 122
+  headers[0]![1] = "changed"
+  const prepared = await pending
+  expect(new TextDecoder().decode(prepared.body)).toBe("abc")
+  expect(prepared.facts.headers).toEqual([["content-type", "text/plain"]])
+})

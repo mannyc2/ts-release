@@ -14,15 +14,17 @@
     "apps/ts-release-agents"
   ],
   "devDependencies": {
-    "effect": "4.0.0-beta.107",
-    "@effect/platform-node": "4.0.0-beta.107",
     "@effect/platform-bun": "4.0.0-beta.107",
-    "effect-build-apple": "0.6.3",
-    "typescript": "6.0.3",
-    "bun-types": "1.3.14",
+    "@effect/platform-node": "4.0.0-beta.107",
+    "@sigstore/rekor-types": "5.0.0",
+    "@types/make-fetch-happen": "10.0.4",
     "@types/semver": "7.7.1",
+    "bun-types": "1.3.14",
+    "effect": "4.0.0-beta.107",
+    "effect-build-apple": "0.6.3",
+    "prettier": "3.9.6",
     "semver": "7.8.5",
-    "prettier": "3.9.6"
+    "typescript": "6.0.3"
   },
   "overrides": {
     "@effect/platform-node-shared": "4.0.0-beta.107"
@@ -43,8 +45,10 @@
     "check:import-rules": "bun scripts/check-import-rules.ts",
     "check:package-exports": "bun scripts/check-package-exports.ts",
     "check:packed-kernel": "bun scripts/check-packed-kernel.ts",
-    "check:portable": "bun run check && bun run check:production-api && bun run check:migration && bun test ./test/reimplementation/kernel && bun run check:import-rules && bun run check:package-exports && bun run check:packed-kernel",
+    "check:portable": "bun run check && bun run check:production-api && bun run test && bun run check:migration && bun run check:import-rules && bun run check:package-exports && bun run check:packed-npm",
     "check:production-api": "bun scripts/project-production-api.ts --check",
-    "check:migration": "bun scripts/check-migration-execution.ts"
+    "check:migration": "bun scripts/check-migration-execution.ts",
+    "check:packed-npm": "bun scripts/check-packed-npm.ts",
+    "check:native-npm-sigstore": "bun scripts/check-native-npm-sigstore.ts"
   }
 }

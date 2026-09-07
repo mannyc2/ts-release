@@ -7848,7 +7848,12 @@
         "src/resolve/resolve.ts"
       ],
       "responsibility": "Native npm tarball/SRI/tag/registry/scope/trusted-publisher binding and correction refusal/conditional guarantees move to npm and explicit credentials. Retire certified child-publisher dispatch; preserve its no hidden retry and exact input/authority obligations. Also retain resolve.ts prerelease/non-latest tag rules, restricted-scope/publication/provenance/authentication and attested-repository admission.",
-      "status": "open"
+      "status": "verified",
+      "verification": {
+        "record": "W02-verification.json",
+        "scope": "Local assigned native npm migration duties, independent encoding/process/auth/trust witnesses and review; hosted acceptance remains Plans009/010",
+        "sourceBoundary": "Actual source/producer/application disagreement guards remain with existing W08/W10 entries"
+      }
     },
     {
       "wave": "W03",

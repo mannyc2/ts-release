@@ -6,7 +6,11 @@
   "packages": [
     {
       "path": "packages/ts-release/package.json",
-      "sha256": "a67609d81fa1051b5403336aec006f02345785f0397b230703c1e5f57b507d38"
+      "sha256": "00809310590bb651c9b1193835ae4d634fa9b4ff3f1af91774dfed46c1287119"
+    },
+    {
+      "path": "packages/npm/package.json",
+      "sha256": "b904cbf11544bf2f262203344cda109fbff69bedd12206d84c01fb7d85b5c296"
     }
   ],
   "entries": [
@@ -151,17 +155,31 @@
     {
       "specifier": "@mannyc1/ts-release/http",
       "source": "packages/ts-release/src/Http.ts",
-      "sourceSha256": "dbea3dd230a050c122c2a046751df3cc826b4916445f530e3b444d1844c72fa7",
+      "sourceSha256": "35ff6d695f02d8807ee77157fba59fe0aa73fda1736a2bafda7d598534b60a4f",
       "runtimePath": "packages/ts-release/dist/Http.js",
       "runtimeSha256": "1459ae8da07a9957d0d8c37ebf3abd2d9225ba63a49127af5dc638e31b494254",
       "declarationsPath": "packages/ts-release/dist/Http.d.ts",
-      "declarationsSha256": "d0803a5382711ddd18887553a552d705cd3ae1490d90b03e250eea876d069c7d",
+      "declarationsSha256": "21939ea2a65f7aeeeba264304eb5fdf103ffe5465f342c945740da7d5a56fd5b",
       "runtimeNames": [
         "HttpReceipt",
         "corresponds"
       ],
       "typeNames": [
-        "HttpReceipt"
+        "CredentialBinding",
+        "CredentialExchange",
+        "CredentialHeaders",
+        "CredentialRequest",
+        "Headers",
+        "HttpProviderDefinition",
+        "HttpRead",
+        "HttpReadRequest",
+        "HttpReceipt",
+        "HttpResponse",
+        "HttpTransportOptions",
+        "OidcTokenRequest",
+        "OidcTokenSource",
+        "ResolveCredentials",
+        "TrustedPublisherHost"
       ]
     },
     {
@@ -202,6 +220,59 @@
         "CreateApplication",
         "FinalizedReport"
       ]
+    },
+    {
+      "specifier": "@mannyc1/ts-release-npm",
+      "source": "packages/npm/src/index.ts",
+      "sourceSha256": "24f761eeafea23755b822b81dcd2f4d408a21d87569915e30ba8c6e578f127dd",
+      "runtimePath": "packages/npm/dist/index.js",
+      "runtimeSha256": "b4a96b03e8600eb0ec8830fa605009e3c6d1e9967e048b267dd7ec6d30d2b1a0",
+      "declarationsPath": "packages/npm/dist/index.d.ts",
+      "declarationsSha256": "fa0447e6bc92155425681adf3f5929065271d1523716bad2cdb9001c29dc7423",
+      "runtimeNames": [
+        "Authorization",
+        "DistTagIntent",
+        "GitHubActionsProvenance",
+        "NoProvenance",
+        "PackageCandidate",
+        "PackageMetadata",
+        "PrivatePackage",
+        "Provenance",
+        "ProvenanceSource",
+        "PublicPackage",
+        "PublishIntent",
+        "TokenAuthorization",
+        "TrustedAuthorization",
+        "author",
+        "authorizeToken",
+        "authorizeTrusted",
+        "createProvenance",
+        "definitions",
+        "distTag",
+        "inspectTarball",
+        "makeSigstoreAttester",
+        "makeSigstoreVerifier",
+        "publish"
+      ],
+      "typeNames": [
+        "Attest",
+        "AttestationRequest",
+        "Authorization",
+        "DistTagIntent",
+        "GitHubActionsProvenance",
+        "NoProvenance",
+        "PackageCandidate",
+        "PackageMetadata",
+        "PrivatePackage",
+        "Provenance",
+        "ProvenanceSource",
+        "PublicPackage",
+        "PublishIntent",
+        "SigstoreTrustOptions",
+        "TokenAuthorization",
+        "TrustedAuthorization",
+        "VerifyProvenance"
+      ]
     }
   ],
   "missing": [
@@ -211,20 +282,6 @@
     "@mannyc1/ts-release/bundle:type:ChecksumInput",
     "@mannyc1/ts-release/bundle:value:renderSha256Sums",
     "@mannyc1/ts-release/bundle:value:verifySha256Sums",
-    "@mannyc1/ts-release/http:type:CredentialBinding",
-    "@mannyc1/ts-release/http:type:CredentialExchange",
-    "@mannyc1/ts-release/http:type:CredentialHeaders",
-    "@mannyc1/ts-release/http:type:CredentialRequest",
-    "@mannyc1/ts-release/http:type:Headers",
-    "@mannyc1/ts-release/http:type:HttpProviderDefinition",
-    "@mannyc1/ts-release/http:type:HttpRead",
-    "@mannyc1/ts-release/http:type:HttpReadRequest",
-    "@mannyc1/ts-release/http:type:HttpResponse",
-    "@mannyc1/ts-release/http:type:HttpTransportOptions",
-    "@mannyc1/ts-release/http:type:OidcTokenRequest",
-    "@mannyc1/ts-release/http:type:OidcTokenSource",
-    "@mannyc1/ts-release/http:type:ResolveCredentials",
-    "@mannyc1/ts-release/http:type:TrustedPublisherHost",
     "@mannyc1/ts-release/bun:value:makeGitCatalogHost",
     "@mannyc1/ts-release/bun:value:makeHttpTransport",
     "@mannyc1/ts-release/bun:value:openGitJournal",
@@ -232,7 +289,6 @@
     "@mannyc1/ts-release/node:value:makeHttpTransport",
     "@mannyc1/ts-release/node:value:openGitJournal",
     "@mannyc1/ts-release:bin",
-    "@mannyc1/ts-release-npm",
     "@mannyc1/ts-release-pypi",
     "@mannyc1/ts-release-github",
     "@mannyc1/ts-release-catalog",

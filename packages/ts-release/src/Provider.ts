@@ -34,6 +34,9 @@ export type SendResult =
     }
 export interface Transport {
   readonly send: (request: PreparedRequest) => Effect.Effect<SendResult, ReleaseError>
+  /** Resolve ephemeral credentials before the journal uncertainty boundary.
+   * The returned send has no dispatch permission; only fresh core CAS grants it. */
+  readonly prepare?: (request: PreparedRequest) => Effect.Effect<Transport["send"], ReleaseError>
 }
 export interface Observation {
   readonly status: ObservationStatus
@@ -105,8 +108,18 @@ export const makeRequest = Effect.fn("ts-release.makeRequest")(function* (
     readonly body: Uint8Array
   },
 ) {
-  const body = input.body.slice()
-  const { body: _, ...fields } = input
+  const { body, fields } = yield* attempt(() => {
+    const body = new Uint8Array(input.body)
+    const { body: _, ...fields } = input
+    return {
+      body,
+      fields: decodeOwned(RequestFacts, {
+        ...fields,
+        bodyDigest: "",
+        byteLength: String(body.byteLength),
+      }),
+    }
+  })
   const bodyDigest = yield* sha256(body)
   const facts = yield* attempt(() =>
     decodeOwned(RequestFacts, {
@@ -120,8 +133,10 @@ export const makeRequest = Effect.fn("ts-release.makeRequest")(function* (
 export const verifyRequest = Effect.fn("ts-release.verifyRequest")(function* (
   request: PreparedRequest,
 ) {
-  const facts = yield* attempt(() => decodeOwned(RequestFacts, request.facts))
-  const body = request.body.slice()
+  const { facts, body } = yield* attempt(() => ({
+    facts: decodeOwned(RequestFacts, request.facts),
+    body: new Uint8Array(request.body),
+  }))
   if (facts.byteLength !== String(body.byteLength) || facts.bodyDigest !== (yield* sha256(body)))
     return yield* new ReleaseError({
       code: "request-bytes",

@@ -8,24 +8,27 @@ const destination = join(root, "docs/refactor/architecture-program/handoff/produ
 const check = process.argv.includes("--check")
 const hash = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex")
 const records = []
-for await (const path of new Bun.Glob("**/*.d.ts").scan({
-  cwd: join(root, "packages/ts-release/dist"),
-})) {
-  const declaration = await readFile(join(root, "packages/ts-release/dist", path))
-  const source = `packages/ts-release/src/${path.replace(/\.d\.ts$/, ".ts")}`
-  const output = join(destination, path)
-  if (check)
-    assert.deepEqual(await readFile(output), declaration, `Stale emitted declaration: ${path}`)
-  else {
-    await mkdir(dirname(output), { recursive: true })
-    await writeFile(output, declaration)
+for (const owner of ["ts-release", "npm"]) {
+  for await (const path of new Bun.Glob("**/*.d.ts").scan({
+    cwd: join(root, "packages", owner, "dist"),
+  })) {
+    const declaration = await readFile(join(root, "packages", owner, "dist", path))
+    const source = `packages/${owner}/src/${path.replace(/\.d\.ts$/, ".ts")}`
+    const projected = owner === "ts-release" ? path : `${owner}/${path}`
+    const output = join(destination, projected)
+    if (check)
+      assert.deepEqual(await readFile(output), declaration, `Stale emitted declaration: ${path}`)
+    else {
+      await mkdir(dirname(output), { recursive: true })
+      await writeFile(output, declaration)
+    }
+    records.push({
+      declaration: projected,
+      declarationSha256: hash(declaration),
+      source,
+      sourceSha256: hash(await readFile(join(root, source))),
+    })
   }
-  records.push({
-    declaration: path,
-    declarationSha256: hash(declaration),
-    source,
-    sourceSha256: hash(await readFile(join(root, source))),
-  })
 }
 assert.ok(records.length > 0, "Build actual production before projecting its declarations")
 records.sort((a, b) => a.declaration.localeCompare(b.declaration))
@@ -40,7 +43,7 @@ const manifest =
   JSON.stringify(
     {
       format: "ts-release/production-api/1",
-      owner: "packages/ts-release",
+      owners: ["packages/ts-release", "packages/npm"],
       compiler: "typescript@6.0.3",
       effect: "4.0.0-beta.107",
       scope:

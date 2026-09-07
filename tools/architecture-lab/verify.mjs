@@ -91,7 +91,7 @@ if (process.argv.includes("--execute")) {
     ["bun","scripts/check-import-rules.ts"],
     ["bun","scripts/check-package-exports.ts"],
     ["bun","scripts/check-migration-execution.ts"],
-    ["bun","test","./test/reimplementation/kernel"]
+    ["bun","test","./test/reimplementation"]
   ]
   const receipts = []
   for (const argv of commands) {
@@ -101,7 +101,7 @@ if (process.argv.includes("--execute")) {
     console.log(JSON.stringify({argv,exitCode:result.exitCode}))
     if (result.exitCode !== 0) fail(output)
   }
-  writeFileSync(join(root,`${handoff}/production-verification.json`),JSON.stringify({format:"architecture-production-verification/1", scope:"W01 partial production; historical P3 receipt remains verification.json",observedAt:new Date().toISOString(),commands:receipts,limits:"Direct local checks. Full packed tournament receipts are separately retained; this command does not rerun them or qualify hosted/native product outcomes."},null,2)+"\n")
+  writeFileSync(join(root,`${handoff}/production-verification.json`),JSON.stringify({format:"architecture-production-verification/1", scope:"Implemented production suites; active wave is in execution/progress.json; historical P3 receipt remains verification.json",observedAt:new Date().toISOString(),commands:receipts,limits:"Direct local checks. Full packed tournament receipts are separately retained; this command does not rerun them or qualify hosted/native product outcomes."},null,2)+"\n")
 }
 if (process.argv.includes("--seal")) {
   const contract = {

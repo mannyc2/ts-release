@@ -1,56 +1,172 @@
 {
-  "wave": "W01",
+  "wave": "W02",
   "counts": {
-    "product": 10737,
-    "unchangedLegacy": 7958,
-    "replacement": 2779,
-    "metadata": 433,
-    "tests": 35104,
+    "product": 11832,
+    "unchangedLegacy": 7433,
+    "replacement": 4399,
+    "metadata": 485,
+    "tests": 35479,
+    "fixtureText": 1243,
+    "fixtureBinaryBytes": 720427,
     "generatedDelivery": 678,
-    "tooling": 44183
+    "tooling": 44454
   },
   "files": [
     {
-      "path": "packages/ts-release/src/platform/Application.ts",
-      "lines": 62,
+      "path": "packages/npm/package.json",
+      "lines": 34,
+      "lane": "metadata",
+      "sha256": "b904cbf11544bf2f262203344cda109fbff69bedd12206d84c01fb7d85b5c296"
+    },
+    {
+      "path": "packages/npm/src/Auth.ts",
+      "lines": 432,
       "lane": "product",
-      "sha256": "1589157f2e19456d56b5721c05fca9d2459c5079b359c5fd70e0378cbab4baa8"
+      "sha256": "e8c2552d35d77d6886aee588432f182558eb7540a3ecc62769321eed5f27950d"
     },
     {
-      "path": "scripts/check-migration-execution.ts",
-      "lines": 51,
+      "path": "packages/npm/src/Evidence.ts",
+      "lines": 236,
+      "lane": "product",
+      "sha256": "1ffb3a01d26b9d9e6caf2d44695bdd00e37787b6aead3507c3a5fa1c41fb272d"
+    },
+    {
+      "path": "packages/npm/src/Model.ts",
+      "lines": 168,
+      "lane": "product",
+      "sha256": "f1c342927915077b7dcb6bff5ffef0e342c200698ebc1c1e2d0e2896abcfaf7b"
+    },
+    {
+      "path": "packages/npm/src/Native.ts",
+      "lines": 281,
+      "lane": "product",
+      "sha256": "f07126b0510dbc491ffb5eeaf6461cdfd5af1caba6d5a90627193cd12f26d60c"
+    },
+    {
+      "path": "packages/npm/src/Protocol.ts",
+      "lines": 256,
+      "lane": "product",
+      "sha256": "abdc77a7ee507ecadd08cb5cf74afac2f7776cc804550238fef4d544ebc2fced"
+    },
+    {
+      "path": "packages/npm/src/Wire.ts",
+      "lines": 112,
+      "lane": "product",
+      "sha256": "4e1e6495282acbb97a160c3be004112eb421d2cdbedf607efacbf25291d05e64"
+    },
+    {
+      "path": "packages/npm/src/index.ts",
+      "lines": 28,
+      "lane": "product",
+      "sha256": "24f761eeafea23755b822b81dcd2f4d408a21d87569915e30ba8c6e578f127dd"
+    },
+    {
+      "path": "packages/npm/tsconfig.build.json",
+      "lines": 14,
+      "lane": "metadata",
+      "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8"
+    },
+    {
+      "path": "scripts/check-native-npm-sigstore.ts",
+      "lines": 87,
       "lane": "tooling",
-      "sha256": "c02c6ebc131848d27de92de93e8f7784405c82908a629424cfbb4c7a8d4801d6"
+      "sha256": "2382c13d545fb1b4f0d5d8f2d776ad4fff83287fce634ba340b4a6a99ae0ca92"
     },
     {
-      "path": "scripts/project-production-api.ts",
-      "lines": 56,
+      "path": "scripts/check-packed-npm.ts",
+      "lines": 157,
       "lane": "tooling",
-      "sha256": "7cf133ce92c2b680c89ebf8762f9f386525758fe30281b57b60c2c8de571f6bd"
+      "sha256": "7828c7560e2ef9d9ff24ae5d23a095a63c88754eafd04856765482dc2c16a0af"
     },
     {
-      "path": "test/reimplementation/kernel/application-fixture.ts",
-      "lines": 23,
+      "path": "test/reimplementation/kernel/transport-preparation.test.ts",
+      "lines": 183,
       "lane": "tests",
-      "sha256": "b0cbc7d611a2dea9fcb67087557b28cbfc69f307da1a6115b6634a9807600d8e"
+      "sha256": "37ed37e63bf4a56e62a2c7bda333cc3f7fe84fa79998da7968467bdbed277714"
     },
     {
-      "path": "test/reimplementation/kernel/application.test.ts",
-      "lines": 141,
+      "path": "test/reimplementation/npm/auth.test.ts",
+      "lines": 382,
       "lane": "tests",
-      "sha256": "82c94ccea3835698a3572bfd7e04b4d26ea987f8bb7d75ac5b924a03471e64d0"
+      "sha256": "b16b8aad73750624a1dc003928aa2b682409894d1e7afd713711a06a80fbc2e6"
     },
     {
-      "path": "test/reimplementation/kernel/c08.test.ts",
-      "lines": 106,
+      "path": "test/reimplementation/npm/authoring.test.ts",
+      "lines": 115,
       "lane": "tests",
-      "sha256": "46a0b82383ed2f2408904cf8f37680510d442857ff88341b6a9940d6c7e3a2a1"
+      "sha256": "7e0eb43747b86a64cce1fd18cc589ee559e25ed31eadda8e574418a3cde0e56e"
     },
     {
-      "path": "test/reimplementation/packed-kernel/application.mjs",
-      "lines": 13,
+      "path": "test/reimplementation/npm/capture-native-oracle.mjs",
+      "lines": 64,
       "lane": "tests",
-      "sha256": "c86408f33ac2c22558f0c8b62d37159ee9a52406d5df46f7452704874c1b96ff"
+      "sha256": "85df5213a211f0619f9f02a8bca1f7a8f3c4a0d7fba826494d07ba7bd140a965"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures.ts",
+      "lines": 80,
+      "lane": "tests",
+      "sha256": "71668179a08fc08f14ed5c1576bbdd87b9615d6204db45694ee3ee24e97f905f"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/native-manifest.json",
+      "lines": 1,
+      "lane": "fixtureText",
+      "sha256": "2b76500a58cef8352395fef73f4417590c7c8ff7698e79940bbab21e97fba19b"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/native-oracle.json",
+      "lines": 35,
+      "lane": "fixtureText",
+      "sha256": "14767125d5f1012769bc4d70a86e926d7e02063a0888161eb6976f152abaf35b"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/native-package.tgz",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "fe871fc21fc056d9f745cb0a8318abf9c90ecc985cd77a6acce267de198a8365"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/sigstore-5.0.0-attestations.json",
+      "lines": 1,
+      "lane": "fixtureText",
+      "sha256": "ab9228005186f50e545239d7c34d08459a82fe166af867f9bbeeb9cc1a8a426e"
+    },
+    {
+      "path": "test/reimplementation/npm/native-oracle.test.ts",
+      "lines": 63,
+      "lane": "tests",
+      "sha256": "88274c9f241c57e0c25635a85f0ebbbb74afcc576a8d863d55acb79a279b920f"
+    },
+    {
+      "path": "test/reimplementation/npm/native-sigstore-consumer.mjs",
+      "lines": 57,
+      "lane": "tests",
+      "sha256": "8f2142699221d0e61fdc2fb47892df740ba748a0859f0be2b5a08aeed6ee227d"
+    },
+    {
+      "path": "test/reimplementation/npm/packed-consumer.mjs",
+      "lines": 101,
+      "lane": "tests",
+      "sha256": "d6c83c39124eb3aa053d99dab07c57e31fdbac860634e01ce1253da6626559e1"
+    },
+    {
+      "path": "test/reimplementation/npm/process-worker.ts",
+      "lines": 88,
+      "lane": "tests",
+      "sha256": "23bc3afcaf29e045fa1db11af3a60c753f63607bd5531f2e73347c11c0433491"
+    },
+    {
+      "path": "test/reimplementation/npm/process.test.ts",
+      "lines": 70,
+      "lane": "tests",
+      "sha256": "ce6bb0a259cd126eb83aa7a91a9472d41c6a02b2fdbb3ff736882eca2b86cb8d"
+    },
+    {
+      "path": "test/reimplementation/npm/protocol.test.ts",
+      "lines": 357,
+      "lane": "tests",
+      "sha256": "58bf7746f6da36b9935402e1ff338603ea0a6802aeb23d171effb33fc5bfc6b7"
     },
     {
       "path": "apps/release-ts/package.json",
@@ -209,6 +325,24 @@
       "sha256": "db68b8b434617dfe0f60e076c26e62e2993309cb2453f9f17278273266ababe1"
     },
     {
+      "path": "examples/github-release/artifacts/release-example-github-0.1.0.tgz",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "b81a90c0fb402c67539680b5cb55b8ae961cb39e30cf5cf6798d07639f12878e"
+    },
+    {
+      "path": "examples/homebrew-tap/artifacts/release-example-homebrew-0.1.0.tgz",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "6a6d5a6e19c74024a6cbe11ed33dc1dec5ff47acc863599137a97cd3fee1871e"
+    },
+    {
+      "path": "examples/multi-target/artifacts/release-example-multi-target-0.1.0.tgz",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "60bf2ce69a7cd8d437fa36701f8913bfe92a9f37aedea8e191f34fc6d11f9c4b"
+    },
+    {
       "path": "examples/multi-target/package.json",
       "lines": 7,
       "lane": "metadata",
@@ -227,16 +361,22 @@
       "sha256": "16df4f846bae3979e11896a9cc42f09a8d2b70b2407a1ff6f475f72348bae0e9"
     },
     {
+      "path": "examples/scoop-bucket/artifacts/release-example-scoop-0.1.0.zip",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "821233f5d40c1df83d54dcbd403e4cec109d4a5c7f055160b0c88833f272ba22"
+    },
+    {
       "path": "package.json",
-      "lines": 50,
+      "lines": 54,
       "lane": "metadata",
-      "sha256": "ff15010051ca8460fbe0ab290f97c418d5c574ac1e1388372e8676bcb86a5b2d"
+      "sha256": "899ef2b357cac100c8cc746fe179968adac05968b3e23d537b9341ffde7f5f2d"
     },
     {
       "path": "packages/ts-release/package.json",
       "lines": 62,
       "lane": "metadata",
-      "sha256": "a67609d81fa1051b5403336aec006f02345785f0397b230703c1e5f57b507d38"
+      "sha256": "00809310590bb651c9b1193835ae4d634fa9b4ff3f1af91774dfed46c1287119"
     },
     {
       "path": "packages/ts-release/src/Bun.ts",
@@ -252,9 +392,9 @@
     },
     {
       "path": "packages/ts-release/src/Http.ts",
-      "lines": 22,
+      "lines": 86,
       "lane": "product",
-      "sha256": "dbea3dd230a050c122c2a046751df3cc826b4916445f530e3b444d1844c72fa7"
+      "sha256": "35ff6d695f02d8807ee77157fba59fe0aa73fda1736a2bafda7d598534b60a4f"
     },
     {
       "path": "packages/ts-release/src/Journal.ts",
@@ -276,15 +416,15 @@
     },
     {
       "path": "packages/ts-release/src/Provider.ts",
-      "lines": 260,
+      "lines": 275,
       "lane": "product",
-      "sha256": "b0a4296b76a081bee04b12e937daaf1f944ca049147cb5be3435709339959437"
+      "sha256": "3bb6343e1a856e36e617bfd0554dd4855a60252db3c7018199f143c94c6e3d36"
     },
     {
       "path": "packages/ts-release/src/Release.ts",
-      "lines": 398,
+      "lines": 408,
       "lane": "product",
-      "sha256": "54782c332e89ae37db40edba45304ff01c0d1ed6e9b67c85a1c1ecd9652e8aa9"
+      "sha256": "7b5533f12dfaf716a2b9a9319780f0639f8325cd95dadb1ccd64a74f597adec9"
     },
     {
       "path": "packages/ts-release/src/index.ts",
@@ -342,9 +482,9 @@
     },
     {
       "path": "packages/ts-release/src/internal/GitAuthority.ts",
-      "lines": 130,
+      "lines": 148,
       "lane": "product",
-      "sha256": "fd1e8c2195e82a1d06d246597fbd067d873b6f5aa413f8192962a8486a302d42"
+      "sha256": "b0b9d0d44c9ba28d17c4071e26b486dce3b93e8802d10b8337842175b8eb8d03"
     },
     {
       "path": "packages/ts-release/src/internal/Host.ts",
@@ -369,6 +509,12 @@
       "lines": 88,
       "lane": "product",
       "sha256": "c3dff093aded6406e0739ba1af21afdbd569c2ca42006589009a305bb0df2373"
+    },
+    {
+      "path": "packages/ts-release/src/platform/Application.ts",
+      "lines": 62,
+      "lane": "product",
+      "sha256": "1589157f2e19456d56b5721c05fca9d2459c5079b359c5fd70e0378cbab4baa8"
     },
     {
       "path": "packages/ts-release/src/platform/ContentStore.ts",
@@ -984,9 +1130,9 @@
     },
     {
       "path": "scripts/check-architecture-budget.ts",
-      "lines": 121,
+      "lines": 127,
       "lane": "tooling",
-      "sha256": "5cbcc66322f16a3232efed7b6162a2153ba63de1cad96c246677ec9ae58babd2"
+      "sha256": "4d1c50389d0aea63fe291d2c6e427358cc3844c74cd81008c64bafc606c85af8"
     },
     {
       "path": "scripts/check-capabilities.ts",
@@ -1029,6 +1175,12 @@
       "lines": 31,
       "lane": "tooling",
       "sha256": "d8a972b2c02f7b80f338df3af70580d79145af5ea4fb83b56e4d74871fb6efd0"
+    },
+    {
+      "path": "scripts/check-migration-execution.ts",
+      "lines": 66,
+      "lane": "tooling",
+      "sha256": "4cc748dde6fdb61e1e56a64887b17a689d2b4c68b726586f37ecb13557b5405d"
     },
     {
       "path": "scripts/check-package-exports.ts",
@@ -1199,6 +1351,12 @@
       "sha256": "b57476e5ebe597547f92e534cbc71a308cb13b7da2cd744e4e734853ec6b8a19"
     },
     {
+      "path": "scripts/project-production-api.ts",
+      "lines": 59,
+      "lane": "tooling",
+      "sha256": "ab81ce89d435cd6cc50570aa3a4d86c9ce52b672a05200597abf7399adb0354e"
+    },
+    {
       "path": "scripts/replay-provider-reads.ts",
       "lines": 90,
       "lane": "tooling",
@@ -1359,12 +1517,6 @@
       "lines": 954,
       "lane": "product",
       "sha256": "c7ea69ce971258343c7882f7415e3ece31231feefb0bec02fb598d7133bef4ce"
-    },
-    {
-      "path": "src/publication/npm.ts",
-      "lines": 525,
-      "lane": "product",
-      "sha256": "053ebce74bc320c523f6138764b3d019aa244d207bf3a6a47116b310f56fed62"
     },
     {
       "path": "src/publication/pypi.ts",
@@ -1669,115 +1821,115 @@
     {
       "path": "test/fixtures/cli-process-plan224.ts",
       "lines": 315,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "191ef6eb3270c3e587bf45b2a27ee0052711535a96abe17bb8302b61aad551b8"
     },
     {
       "path": "test/fixtures/config-boundary/generic-catalog.json",
       "lines": 19,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "d49ac6a4ffa0668662445262fa63d4cc3a11d1aaadb0cd571886fcd47d88fa19"
     },
     {
       "path": "test/fixtures/config-boundary/homebrew.json",
       "lines": 33,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "28e2863f600038187fae570f5b5719c2a1a35e366110a186eb113ac38c1656f3"
     },
     {
       "path": "test/fixtures/config-boundary/portable-multi-target.json",
       "lines": 63,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "bb43941211d3f08a2b2d4e0a221b73c0a73c8b91063c38c5574aa6630956c207"
     },
     {
       "path": "test/fixtures/config-boundary/scoop.json",
       "lines": 34,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "a4ee563a7d3717e0c5c5662e105e8d3bdc1546387b1f047a8b9b2e1f90409634"
     },
     {
       "path": "test/fixtures/external-library-consumer.ts",
       "lines": 217,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "25beeb36a62b313596abc85a1bbbfd699d61620a3502bf6f33491ad75311d461"
     },
     {
       "path": "test/fixtures/mutation-services.ts",
       "lines": 33,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "0dec8e0479d446c292322d8b2e8b84bf1a18e68a6955cbea05639f19d34610f9"
     },
     {
       "path": "test/fixtures/npm-oidc-loopback-publisher.ts",
       "lines": 144,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "7c1c5c38faa9c086e9d9d8921249d9f090a0373127647f1777713e6176a57e75"
     },
     {
       "path": "test/fixtures/npm-provenance-contract.cjs",
       "lines": 38,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "e48f16a45da29941c083cf40139ff99a0d962d813d882cc98a84087540cb864c"
     },
     {
       "path": "test/fixtures/oracle/command-builder.json",
       "lines": 19,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "9a13e62bdaac1ee7b95f62775b3fcd4b96639a0a21d92544a2ed01d946ab62da"
     },
     {
       "path": "test/fixtures/oracle/prebuilt-builder.json",
       "lines": 18,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "c28554a5ba3a5effeadbbbd1b4bb873c360666a2dce66386d15b7905b2d99009"
     },
     {
       "path": "test/fixtures/prepared-provenance.ts",
       "lines": 41,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "c3ce6f327d0901ac1605c87bffce322fe9e8f9c22dcc00d5c81cc1f81a9e0404"
     },
     {
       "path": "test/fixtures/prepared-store-process.ts",
       "lines": 67,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "85603b911675b257f037a7469f95ffec36e020718208afa6a29b40dc3b49b5cf"
     },
     {
       "path": "test/fixtures/public/homebrew-tap/formula.rb",
       "lines": 17,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "f1d7ee470e57a99c64dc7b876afcb0b8c48171dfbd4d14fcb321f34e9751002d"
     },
     {
       "path": "test/fixtures/public/portable-cli/formula.rb",
       "lines": 28,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "a29f3f1a82249822ad9163227c3629c1c55ade33d6ec6739f63ebbeb0cd0dbaa"
     },
     {
       "path": "test/fixtures/public/portable-cli/manifest.json",
       "lines": 14,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "4fd98d5957798dacb92d3ebdccccd6a677b10213b44abe8310197bac3be51271"
     },
     {
       "path": "test/fixtures/public/scoop-bucket/manifest.json",
       "lines": 9,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "8a4f2a350b1c59ff9c91991461778cbcbcc0274e993102c6e15654bd6e0a2de1"
     },
     {
       "path": "test/fixtures/python-distributions.ts",
       "lines": 44,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "83d41365cc9824c330a9e183b43a79131ddb7e24ad5a2a32723b1ac9f8966f6b"
     },
     {
       "path": "test/fixtures/self-release-readiness-fetch.ts",
       "lines": 19,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "09d8980318db450fd5c492e8bd3788be005d7bb5fb358135b277d0b83815d542"
     },
     {
@@ -1831,19 +1983,19 @@
     {
       "path": "test/protocol/github/golden/create-and-upload.jsonl",
       "lines": 12,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "e09a76b57be92992cb0267ebcfcb210fabe6af958766e9cfbc0b38094e3dcbdc"
     },
     {
       "path": "test/protocol/github/golden/partial-rerun.jsonl",
       "lines": 9,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "840f72354af727360b6f7b3a2f00eaea1eabd43e5f4b9dbff54632d5a22721fa"
     },
     {
       "path": "test/protocol/github/golden/wrong-annotated-tag.jsonl",
       "lines": 4,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "f4ca4c5cbfff91e9a0f36de762e94140be13756aba24d5515932c5d538e4ce00"
     },
     {
@@ -1855,19 +2007,19 @@
     {
       "path": "test/protocol/npm/golden/already-equivalent.jsonl",
       "lines": 1,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "2e694e998de00bfb21e56ceeee8bbb7bdf966cd77aec60cc69e155ce54d8b428"
     },
     {
       "path": "test/protocol/npm/golden/fresh-publish.jsonl",
       "lines": 4,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "87d88d76c3366976c17fc52b2bc64d9461c6bc1edba98eeed79d4ea730f3f310"
     },
     {
       "path": "test/protocol/npm/golden/response-loss.jsonl",
       "lines": 4,
-      "lane": "tests",
+      "lane": "fixtureText",
       "sha256": "552128685644264047a52f26cf61dbaaae11603f99047a233036f5de5e504e40"
     },
     {
@@ -1956,9 +2108,21 @@
     },
     {
       "path": "test/reimplementation/kernel/admission.test.ts",
-      "lines": 366,
+      "lines": 387,
       "lane": "tests",
-      "sha256": "3152e30b1c726a6be80d8465aa2d8b9fb71e5d41176dee8ba4beb94b68e814df"
+      "sha256": "6c808b5299c3cd76f57f2b7502c0eab1fd9095229c8dfd8bceacb0db6825efdc"
+    },
+    {
+      "path": "test/reimplementation/kernel/application-fixture.ts",
+      "lines": 23,
+      "lane": "tests",
+      "sha256": "b0cbc7d611a2dea9fcb67087557b28cbfc69f307da1a6115b6634a9807600d8e"
+    },
+    {
+      "path": "test/reimplementation/kernel/application.test.ts",
+      "lines": 141,
+      "lane": "tests",
+      "sha256": "82c94ccea3835698a3572bfd7e04b4d26ea987f8bb7d75ac5b924a03471e64d0"
     },
     {
       "path": "test/reimplementation/kernel/boundaries.test.ts",
@@ -1971,6 +2135,12 @@
       "lines": 308,
       "lane": "tests",
       "sha256": "65eeda33021db5d8047d3f4ebecb189ac26566320bc458a6fbe9cc5d85c807c3"
+    },
+    {
+      "path": "test/reimplementation/kernel/c08.test.ts",
+      "lines": 106,
+      "lane": "tests",
+      "sha256": "46a0b82383ed2f2408904cf8f37680510d442857ff88341b6a9940d6c7e3a2a1"
     },
     {
       "path": "test/reimplementation/kernel/content-runner.ts",
@@ -2055,6 +2225,12 @@
       "lines": 15,
       "lane": "tests",
       "sha256": "4a90261e484ff9e886f0532c8d49dacc1ba05f73f679f5154b67f4d59e954b4a"
+    },
+    {
+      "path": "test/reimplementation/packed-kernel/application.mjs",
+      "lines": 13,
+      "lane": "tests",
+      "sha256": "c86408f33ac2c22558f0c8b62d37159ee9a52406d5df46f7452704874c1b96ff"
     },
     {
       "path": "test/reimplementation/packed-kernel/bun.mjs",
@@ -2502,9 +2678,9 @@
     },
     {
       "path": "tools/architecture-lab/project.ts",
-      "lines": 369,
+      "lines": 372,
       "lane": "tooling",
-      "sha256": "50050a6472ac0bd9acc0f0b109d3aed2f3299fe87387841e3749e1e95d5c5756"
+      "sha256": "9f21f901654ac8bb9f44950db249527dd5d34f0823cb088981b6a6855e49ff1b"
     },
     {
       "path": "tools/architecture-lab/proposal/apple.ts",
@@ -2516,7 +2692,7 @@
       "path": "tools/architecture-lab/proposal/emit.mjs",
       "lines": 69,
       "lane": "tooling",
-      "sha256": "61fb88c6fb72dfaef9486098978c9387e4f9817bf356493eec7babdae84290b0"
+      "sha256": "1d23ac1b2e9347111ad07cbee48e90cf4ee5166fe177273bbc3ff000cb742f31"
     },
     {
       "path": "tools/architecture-lab/proposal/provider.ts",
@@ -2705,6 +2881,12 @@
       "sha256": "c70a2c44e24abb8284e8520b94092e1ce734db57e3267ce411e8c32ceb46186a"
     },
     {
+      "path": "tools/architecture-lab/topology/p1-source.tar.gz",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "ca7dfa5d970291d81ad52c2a4734503bfe35716ede3ed4ef29b4b57dd9110d0f"
+    },
+    {
       "path": "tools/architecture-lab/topology/pack.mjs",
       "lines": 120,
       "lane": "tooling",
@@ -2798,7 +2980,7 @@
       "path": "tools/architecture-lab/verify.mjs",
       "lines": 121,
       "lane": "tooling",
-      "sha256": "01fba8a32203e2050969c1d8e96956392686eafaea77f4e271365d01af4bdb71"
+      "sha256": "faa147a48f408f49dad3a36593b6f26fa3382636d4d256565a293cd3c2e4afba"
     },
     {
       "path": "tools/architecture-program/package.json",

@@ -126,8 +126,9 @@
     "contentOwner": "docs/refactor/architecture-program/handoff/adoption-api/content-owner.d.ts",
     "apple": "docs/refactor/architecture-program/handoff/apple-api.d.ts",
     "checksum": "docs/refactor/architecture-program/handoff/checksum-api.d.ts",
-    "http": "docs/refactor/architecture-program/handoff/http-api.d.ts",
-    "application": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts"
+    "http": "docs/refactor/architecture-program/handoff/production-api/Http.d.ts",
+    "application": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
+    "npm": "docs/refactor/architecture-program/handoff/production-api/npm/index.d.ts"
   },
   "modules": [
     {
@@ -723,24 +724,11 @@
             "PublicPackage",
             "PackageCandidate",
             "AttestationRequest",
-            "Attest"
+            "Attest",
+            "VerifyProvenance",
+            "PackageMetadata"
           ],
           "dependencies": [
-            "kernel.Entry",
-            "kernel.Bundle",
-            "kernel.Http"
-          ]
-        },
-        {
-          "name": "Protocol",
-          "symbols": [
-            "publish",
-            "distTag",
-            "author",
-            "definitions"
-          ],
-          "dependencies": [
-            "provider.npm.Model",
             "kernel.Entry",
             "kernel.Bundle",
             "kernel.Http"
@@ -750,21 +738,73 @@
           ]
         },
         {
-          "name": "Auth",
+          "name": "Protocol",
           "symbols": [
-            "authorizeToken",
-            "authorizeTrusted",
-            "makeSigstoreAttester",
-            "createProvenance"
+            "publish",
+            "distTag",
+            "author",
+            "definitions",
+            "inspectTarball"
           ],
           "dependencies": [
             "provider.npm.Model",
             "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Http",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "provider.npm.Evidence",
+            "provider.npm.Auth"
+          ]
+        },
+        {
+          "name": "Auth",
+          "symbols": [
+            "authorizeToken",
+            "authorizeTrusted",
+            "makeSigstoreAttester",
+            "createProvenance",
+            "SigstoreTrustOptions",
+            "makeSigstoreVerifier"
+          ],
+          "dependencies": [
+            "provider.npm.Model",
+            "kernel.Entry",
+            "kernel.Bundle",
+            "kernel.Http",
+            "provider.npm.Native"
           ],
           "externalImports": [
             "sigstore"
+          ]
+        },
+        {
+          "name": "Native",
+          "symbols": [],
+          "dependencies": [
+            "provider.npm.Model",
+            "kernel.Entry",
+            "kernel.Bundle"
+          ]
+        },
+        {
+          "name": "Wire",
+          "symbols": [],
+          "dependencies": [
+            "provider.npm.Model",
+            "provider.npm.Native",
+            "provider.npm.Auth"
+          ]
+        },
+        {
+          "name": "Evidence",
+          "symbols": [],
+          "dependencies": [
+            "provider.npm.Model",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "kernel.Entry",
+            "kernel.Http"
           ]
         }
       ]

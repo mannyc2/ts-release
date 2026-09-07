@@ -22,6 +22,9 @@ export type SendResult = {
 };
 export interface Transport {
     readonly send: (request: PreparedRequest) => Effect.Effect<SendResult, ReleaseError>;
+    /** Resolve ephemeral credentials before the journal uncertainty boundary.
+     * The returned send has no dispatch permission; only fresh core CAS grants it. */
+    readonly prepare?: (request: PreparedRequest) => Effect.Effect<Transport["send"], ReleaseError>;
 }
 export interface Observation {
     readonly status: ObservationStatus;

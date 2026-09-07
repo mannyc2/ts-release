@@ -1,7 +1,237 @@
 {
   "format": "ts-release/production-imports/1",
-  "files": 26,
+  "files": 33,
   "edges": [
+    {
+      "file": "packages/npm/src/Evidence.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Evidence.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Evidence.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Evidence.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Evidence.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Evidence.ts",
+      "specifier": "./Wire.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Protocol.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Protocol.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/npm/src/Protocol.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Protocol.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Protocol.ts",
+      "specifier": "./Wire.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Protocol.ts",
+      "specifier": "./Auth.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Protocol.ts",
+      "specifier": "./Evidence.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Wire.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Wire.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Wire.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Wire.ts",
+      "specifier": "./Auth.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Auth.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Auth.ts",
+      "specifier": "effect/Clock",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Auth.ts",
+      "specifier": "effect/Redacted",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Auth.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Auth.ts",
+      "specifier": "sigstore",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Auth.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Auth.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Auth.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/npm/src/Auth.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Auth.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Model.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Model.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/npm/src/Model.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Model.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/npm/src/Model.ts",
+      "specifier": "semver",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/index.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/npm/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/index.ts",
+      "specifier": "./Protocol.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/index.ts",
+      "specifier": "./Auth.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Native.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Native.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Native.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Native.ts",
+      "specifier": "node:crypto",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Native.ts",
+      "specifier": "node:zlib",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Native.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Native.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
     {
       "file": "packages/ts-release/src/Node.ts",
       "specifier": "./internal/EffectTypes.js",
@@ -26,6 +256,26 @@
       "file": "packages/ts-release/src/Http.ts",
       "specifier": "effect/Schema",
       "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Http.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Http.ts",
+      "specifier": "effect/Redacted",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Http.ts",
+      "specifier": "./internal/Error.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Http.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/Http.ts",

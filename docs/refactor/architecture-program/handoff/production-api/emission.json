@@ -1,6 +1,9 @@
 {
   "format": "ts-release/production-api/1",
-  "owner": "packages/ts-release",
+  "owners": [
+    "packages/ts-release",
+    "packages/npm"
+  ],
   "compiler": "typescript@6.0.3",
   "effect": "4.0.0-beta.107",
   "scope": "Implemented production declarations; remaining planned APIs retain their proposal owners until implemented",
@@ -20,9 +23,9 @@
     },
     {
       "declaration": "Http.d.ts",
-      "declarationSha256": "d0803a5382711ddd18887553a552d705cd3ae1490d90b03e250eea876d069c7d",
+      "declarationSha256": "21939ea2a65f7aeeeba264304eb5fdf103ffe5465f342c945740da7d5a56fd5b",
       "source": "packages/ts-release/src/Http.ts",
-      "sourceSha256": "dbea3dd230a050c122c2a046751df3cc826b4916445f530e3b444d1844c72fa7"
+      "sourceSha256": "35ff6d695f02d8807ee77157fba59fe0aa73fda1736a2bafda7d598534b60a4f"
     },
     {
       "declaration": "index.d.ts",
@@ -82,7 +85,7 @@
       "declaration": "internal/GitAuthority.d.ts",
       "declarationSha256": "28c3b696fd952cffb8bd99dac3c7e99a452fb3b258fbffd5984dff9b9dbdd38a",
       "source": "packages/ts-release/src/internal/GitAuthority.ts",
-      "sourceSha256": "fd1e8c2195e82a1d06d246597fbd067d873b6f5aa413f8192962a8486a302d42"
+      "sourceSha256": "b0b9d0d44c9ba28d17c4071e26b486dce3b93e8802d10b8337842175b8eb8d03"
     },
     {
       "declaration": "internal/Host.d.ts",
@@ -121,6 +124,48 @@
       "sourceSha256": "4d0bf89dbb80e356c289ee164e3630a919e4ca8543c439f2879e0b1926209a23"
     },
     {
+      "declaration": "npm/Auth.d.ts",
+      "declarationSha256": "cc8e167a3abf0f9abc2498662b98f0d70df549b3afe51251235e39efee7e13ec",
+      "source": "packages/npm/src/Auth.ts",
+      "sourceSha256": "e8c2552d35d77d6886aee588432f182558eb7540a3ecc62769321eed5f27950d"
+    },
+    {
+      "declaration": "npm/Evidence.d.ts",
+      "declarationSha256": "b0ad53326321cae092d7635c96cf8e72d5dcc3bcb9f309cdf30183939a431050",
+      "source": "packages/npm/src/Evidence.ts",
+      "sourceSha256": "1ffb3a01d26b9d9e6caf2d44695bdd00e37787b6aead3507c3a5fa1c41fb272d"
+    },
+    {
+      "declaration": "npm/index.d.ts",
+      "declarationSha256": "fa0447e6bc92155425681adf3f5929065271d1523716bad2cdb9001c29dc7423",
+      "source": "packages/npm/src/index.ts",
+      "sourceSha256": "24f761eeafea23755b822b81dcd2f4d408a21d87569915e30ba8c6e578f127dd"
+    },
+    {
+      "declaration": "npm/Model.d.ts",
+      "declarationSha256": "ab004d17f924ee929b9a867637a7a7fb763e108f7e207ee5fd00d4b048600f1a",
+      "source": "packages/npm/src/Model.ts",
+      "sourceSha256": "f1c342927915077b7dcb6bff5ffef0e342c200698ebc1c1e2d0e2896abcfaf7b"
+    },
+    {
+      "declaration": "npm/Native.d.ts",
+      "declarationSha256": "8241211ea957f3d52bf2c9086a936515058b4b82bb2829b4b37730f4e1e79a3c",
+      "source": "packages/npm/src/Native.ts",
+      "sourceSha256": "f07126b0510dbc491ffb5eeaf6461cdfd5af1caba6d5a90627193cd12f26d60c"
+    },
+    {
+      "declaration": "npm/Protocol.d.ts",
+      "declarationSha256": "d71bcf8a435149945888701d9efa5bd2d06371dc81641596fc57ad840810fdf9",
+      "source": "packages/npm/src/Protocol.ts",
+      "sourceSha256": "abdc77a7ee507ecadd08cb5cf74afac2f7776cc804550238fef4d544ebc2fced"
+    },
+    {
+      "declaration": "npm/Wire.d.ts",
+      "declarationSha256": "8407a28807582859ce1d068a86b75afb93bdbf411f0f8cfa1c0ac30fe1618d9c",
+      "source": "packages/npm/src/Wire.ts",
+      "sourceSha256": "4e1e6495282acbb97a160c3be004112eb421d2cdbedf607efacbf25291d05e64"
+    },
+    {
       "declaration": "Plan.d.ts",
       "declarationSha256": "b7ea1255df0382a90a927d5519b72da17d257943fe5af9fda43d2842973fb8a2",
       "source": "packages/ts-release/src/Plan.ts",
@@ -152,15 +197,15 @@
     },
     {
       "declaration": "Provider.d.ts",
-      "declarationSha256": "8c6b235636c8fc390c3ef8e1ab18d388ff42a963840bfd13c081727bdf603fe6",
+      "declarationSha256": "23039e0e166534afb2dda75d64c223832b86e51315b3e68c3831b452f1b455b2",
       "source": "packages/ts-release/src/Provider.ts",
-      "sourceSha256": "b0a4296b76a081bee04b12e937daaf1f944ca049147cb5be3435709339959437"
+      "sourceSha256": "3bb6343e1a856e36e617bfd0554dd4855a60252db3c7018199f143c94c6e3d36"
     },
     {
       "declaration": "Release.d.ts",
       "declarationSha256": "ec479421ebe9aa89b2019fabdf61f6a0a6db56e0b7ea84d161c17da6f1bbf1ee",
       "source": "packages/ts-release/src/Release.ts",
-      "sourceSha256": "54782c332e89ae37db40edba45304ff01c0d1ed6e9b67c85a1c1ecd9652e8aa9"
+      "sourceSha256": "7b5533f12dfaf716a2b9a9319780f0639f8325cd95dadb1ccd64a74f597adec9"
     }
   ]
 }

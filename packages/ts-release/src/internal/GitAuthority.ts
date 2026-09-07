@@ -27,8 +27,17 @@ const authorityKey = (principal: string, scope: string): string =>
 export const mechanisms = new WeakMap<Transport, ReadonlyMap<string, CoreGitOptions>>()
 /** Keep the exact core mechanism identity; ordinary ports retain their state
  * behind a captured function, never behind a mutable method lookup. */
-export const captureTransport = (transport: Transport): Transport =>
-  mechanisms.has(transport) ? transport : Object.freeze({ send: transport.send.bind(transport) })
+export const captureTransport = (transport: Transport): Transport => {
+  if (mechanisms.has(transport)) return transport
+  const send = transport.send,
+    prepare = transport.prepare
+  if (typeof send !== "function" || (prepare !== undefined && typeof prepare !== "function"))
+    fail("transport-capability", "Transport send and any declared preparation must be callable")
+  return Object.freeze({
+    send: send.bind(transport),
+    ...(prepare === undefined ? {} : { prepare: prepare.bind(transport) }),
+  })
+}
 export const assertTransportBinding = (transport: Transport, facts: RequestFacts): void => {
   if (facts.replay._tag !== "GitCas") return
   const bindings = mechanisms.get(transport)
@@ -92,6 +101,15 @@ export function makeCoreGitTransport(
     )
   }
   const transport: Transport = {
+    prepare: Effect.fn("ts-release.prepareCoreTransport")(function* (request) {
+      if (request.facts.replay._tag === "GitCas") return transport.send
+      if (!fallback)
+        return yield* new ReleaseError({
+          code: "unsupported-transport",
+          message: "No ordinary transport was installed",
+        })
+      return fallback.prepare ? yield* fallback.prepare(request) : fallback.send
+    }),
     send: Effect.fn("ts-release.coreConditionalGit")(function* (request) {
       if (request.facts.replay._tag !== "GitCas") {
         if (fallback) return yield* fallback.send(request)

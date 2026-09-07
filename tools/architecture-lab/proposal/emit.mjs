@@ -53,14 +53,14 @@ for(const name of ["kernel-api.d.ts","host-api.d.ts","provider-api.typecheck.ts"
 cpSync(join(root,"tools/architecture-lab/proposal/provider.ts"),join(projection,"provider-api.ts"))
 cpSync(join(root,"tools/architecture-lab/proposal/apple.ts"),join(projection,"apple-api.ts"))
 const provider=compile([join(projection,"provider-api.ts"),join(projection,"apple-api.ts")],{...options,rootDir:projection,outDir:join(work,"provider-emitted")})
-writeFileSync(join(projection,"provider-api.d.ts"),provider.get(join(work,"provider-emitted/provider-api.d.ts")))
+writeFileSync(join(projection,"research-api/provider-api.d.ts"),provider.get(join(work,"provider-emitted/provider-api.d.ts")))
 writeFileSync(join(projection,"apple-api.d.ts"),provider.get(join(work,"provider-emitted/apple-api.d.ts")))
 rmSync(join(projection,"provider-api.ts"))
 rmSync(join(projection,"apple-api.ts"))
 compile([join(projection,"provider-api.typecheck.ts"),join(projection,"apple-api.typecheck.ts"),join(projection,"checksum-api.d.ts"),join(projection,"host-api.d.ts")],{...options,noEmit:true})
 const receipt={format:"adoption-declaration-projection/2",emitter:"tools/architecture-lab/proposal/emit.mjs",compiler:"typescript6.0.3",effect:"4.0.0-rc.108",changes,nativeAcceptance:false,files,selectedProducer:{version:"0.6.3",revision:"ef29a087baac8bdbcd90a54bb62a2dceb739dd91",evidence:"../upstream/published-consumer.json"}}
 writeFileSync(join(projection,"adoption-api/emission.json"),JSON.stringify(receipt,null,2)+"\n")
-const selected=["provider-api.d.ts","apple-api.d.ts",...names.map(name=>`adoption-api/${name}.d.ts`),"adoption-api/emission.json"]
+const selected=["research-api/provider-api.d.ts","apple-api.d.ts",...names.map(name=>`adoption-api/${name}.d.ts`),"adoption-api/emission.json"]
 for(const name of selected){
  const next=readFileSync(join(projection,name)),target=join(handoff,name)
  if(check){if(!existsSync(target)||!next.equals(readFileSync(target)))throw Error(`Generated proposal differs: ${name}`)}

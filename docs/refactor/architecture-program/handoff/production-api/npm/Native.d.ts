@@ -1,0 +1,213 @@
+import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
+import * as Model from "./Model.js";
+import { ReleaseError } from "@mannyc1/ts-release";
+import { File, type ArtifactAccess } from "@mannyc1/ts-release/bundle";
+export declare const invalid: (code: string) => never;
+export declare const attempt: <A>(body: () => A) => Effect.Effect<A, ReleaseError, never>;
+export declare const digest: (algorithm: string, bytes: Uint8Array) => string;
+export declare const encode: (input: unknown) => Uint8Array<ArrayBuffer>;
+export declare const object: (input: unknown) => Record<string, unknown>;
+/** Match the retained native policy: no duplicate keys, unsafe integers, or
+ * ambiguous strings. JSON.parse builds the value only after lexical admission. */
+export declare const parseJson: (bytes: Uint8Array) => unknown;
+/** Native package metadata is extracted from the exact bounded owned tarball. */
+export declare const readManifest: (bytes: Uint8Array) => Record<string, unknown>;
+export declare const own: <A, I>(codec: Schema.Codec<A, I>, input: unknown) => A;
+export declare const captureArtifacts: (access: ArtifactAccess) => {
+    read: (input: File) => Effect.Effect<Uint8Array<ArrayBuffer>, ReleaseError, never>;
+    has: (file: File) => boolean;
+};
+export declare const metadataUrl: (packageName: string) => string;
+declare const NativeScope_base: Schema.Class<NativeScope, Schema.Struct<{
+    readonly definitionId: Schema.Literals<readonly ["npm.publish", "npm.dist-tag"]>;
+    readonly intent: Schema.Union<readonly [Schema.decodeTo<Schema.declareConstructor<Model.PublishIntent, {
+        readonly registry: "https://registry.npmjs.org/";
+        readonly name: string;
+        readonly version: string;
+        readonly tarball: {
+            readonly _tag: "OwnedFile";
+            readonly logicalName: string;
+            readonly content: {
+                readonly bytes: string;
+                readonly sha256: string;
+            };
+            readonly deliveryMode: import("effect-build/Artifact").FileMode;
+            readonly executable: {
+                readonly nativeFormat: "elf" | "mach-o" | "pe";
+                readonly runtime: {
+                    readonly name: string;
+                    readonly version: string;
+                };
+                readonly target: "macos-x64" | "macos-aarch64" | "linux-x64-gnu" | "linux-x64-musl" | "linux-aarch64-gnu" | "linux-aarch64-musl" | "windows-x64" | "windows-aarch64";
+            } | null;
+            readonly provenance: import("effect-build/Artifact").Provenance;
+        };
+        readonly integrity: string;
+        readonly shasum: string;
+        readonly initialTag: string;
+        readonly access: "public";
+        readonly authorization: {
+            readonly _tag: "TokenAuthorization";
+            readonly principal: string;
+        } | {
+            readonly _tag: "TrustedAuthorization";
+            readonly principal: string;
+            readonly repository: string;
+            readonly workflow: string;
+            readonly workflowRef: string;
+            readonly issuer: "https://token.actions.githubusercontent.com";
+            readonly audience: "npm:registry.npmjs.org";
+        };
+        readonly provenance: {
+            readonly _tag: "NoProvenance";
+        } | {
+            readonly _tag: "GitHubActionsProvenance";
+            readonly source: {
+                readonly format: "npm-github-actions-provenance-source/v1";
+                readonly serverUrl: "https://github.com";
+                readonly repository: string;
+                readonly workflow: string;
+                readonly workflowRef: string;
+                readonly sourceRef: string;
+                readonly sourceCommit: string;
+                readonly eventName: string;
+                readonly repositoryId: string;
+                readonly repositoryOwnerId: string;
+                readonly runnerEnvironment: string;
+                readonly runId: string;
+                readonly runAttempt: string;
+                readonly repositoryVisibility: "public";
+            };
+            readonly bundle: {
+                readonly _tag: "OwnedFile";
+                readonly logicalName: string;
+                readonly content: {
+                    readonly bytes: string;
+                    readonly sha256: string;
+                };
+                readonly deliveryMode: import("effect-build/Artifact").FileMode;
+                readonly executable: {
+                    readonly nativeFormat: "elf" | "mach-o" | "pe";
+                    readonly runtime: {
+                        readonly name: string;
+                        readonly version: string;
+                    };
+                    readonly target: "macos-x64" | "macos-aarch64" | "linux-x64-gnu" | "linux-x64-musl" | "linux-aarch64-gnu" | "linux-aarch64-musl" | "windows-x64" | "windows-aarch64";
+                } | null;
+                readonly provenance: import("effect-build/Artifact").Provenance;
+            };
+            readonly mediaType: "application/vnd.dev.sigstore.bundle.v0.3+json";
+        };
+    }, readonly [Schema.Struct<{
+        readonly registry: Schema.Literal<"https://registry.npmjs.org/">;
+        readonly name: Schema.NonEmptyString;
+        readonly version: Schema.NonEmptyString;
+        readonly tarball: typeof File;
+        readonly integrity: Schema.String;
+        readonly shasum: Schema.String;
+        readonly initialTag: Schema.NonEmptyString;
+        readonly access: Schema.Literal<"public">;
+        readonly authorization: Schema.Union<readonly [typeof Model.TokenAuthorization, typeof Model.TrustedAuthorization]>;
+        readonly provenance: Schema.Union<readonly [typeof Model.NoProvenance, typeof Model.GitHubActionsProvenance]>;
+    }>], {
+        readonly registry: "https://registry.npmjs.org/";
+        readonly name: string;
+        readonly version: string;
+        readonly tarball: {
+            readonly _tag: "OwnedFile";
+            readonly logicalName: string & import("effect/Brand").Brand<"effect-build/Artifact/PortableRelativePath">;
+            readonly content: {
+                readonly bytes: string;
+                readonly sha256: string;
+            };
+            readonly deliveryMode: import("effect-build/Artifact").FileMode;
+            readonly executable: {
+                readonly nativeFormat: "elf" | "mach-o" | "pe";
+                readonly runtime: {
+                    readonly name: string;
+                    readonly version: string;
+                };
+                readonly target: "macos-x64" | "macos-aarch64" | "linux-x64-gnu" | "linux-x64-musl" | "linux-aarch64-gnu" | "linux-aarch64-musl" | "windows-x64" | "windows-aarch64";
+            } | null;
+            readonly provenance: import("effect-build/Artifact").Provenance;
+        };
+        readonly integrity: string;
+        readonly shasum: string;
+        readonly initialTag: string;
+        readonly access: "public";
+        readonly authorization: {
+            readonly _tag: "TokenAuthorization";
+            readonly principal: string;
+        } | {
+            readonly _tag: "TrustedAuthorization";
+            readonly principal: string;
+            readonly repository: string;
+            readonly workflow: string;
+            readonly workflowRef: string;
+            readonly issuer: "https://token.actions.githubusercontent.com";
+            readonly audience: "npm:registry.npmjs.org";
+        };
+        readonly provenance: {
+            readonly _tag: "NoProvenance";
+        } | {
+            readonly _tag: "GitHubActionsProvenance";
+            readonly source: {
+                readonly format: "npm-github-actions-provenance-source/v1";
+                readonly serverUrl: "https://github.com";
+                readonly repository: string;
+                readonly workflow: string;
+                readonly workflowRef: string;
+                readonly sourceRef: string;
+                readonly sourceCommit: string;
+                readonly eventName: string;
+                readonly repositoryId: string;
+                readonly repositoryOwnerId: string;
+                readonly runnerEnvironment: string;
+                readonly runId: string;
+                readonly runAttempt: string;
+                readonly repositoryVisibility: "public";
+            };
+            readonly bundle: {
+                readonly _tag: "OwnedFile";
+                readonly logicalName: string & import("effect/Brand").Brand<"effect-build/Artifact/PortableRelativePath">;
+                readonly content: {
+                    readonly bytes: string;
+                    readonly sha256: string;
+                };
+                readonly deliveryMode: import("effect-build/Artifact").FileMode;
+                readonly executable: {
+                    readonly nativeFormat: "elf" | "mach-o" | "pe";
+                    readonly runtime: {
+                        readonly name: string;
+                        readonly version: string;
+                    };
+                    readonly target: "macos-x64" | "macos-aarch64" | "linux-x64-gnu" | "linux-x64-musl" | "linux-aarch64-gnu" | "linux-aarch64-musl" | "windows-x64" | "windows-aarch64";
+                } | null;
+                readonly provenance: import("effect-build/Artifact").Provenance;
+            };
+            readonly mediaType: "application/vnd.dev.sigstore.bundle.v0.3+json";
+        };
+    }>, Schema.Struct<{
+        readonly registry: Schema.Literal<"https://registry.npmjs.org/">;
+        readonly name: Schema.NonEmptyString;
+        readonly version: Schema.NonEmptyString;
+        readonly tarball: typeof File;
+        readonly integrity: Schema.String;
+        readonly shasum: Schema.String;
+        readonly initialTag: Schema.NonEmptyString;
+        readonly access: Schema.Literal<"public">;
+        readonly authorization: Schema.Union<readonly [typeof Model.TokenAuthorization, typeof Model.TrustedAuthorization]>;
+        readonly provenance: Schema.Union<readonly [typeof Model.NoProvenance, typeof Model.GitHubActionsProvenance]>;
+    }>, never, never>, typeof Model.DistTagIntent]>;
+}>, {}>;
+export declare class NativeScope extends NativeScope_base {
+    get name(): string;
+    get version(): string;
+    get tag(): string;
+    get authorization(): Model.TokenAuthorization | Model.TrustedAuthorization;
+}
+export declare const scopeFor: (input: Model.PublishIntent | Model.DistTagIntent) => string;
+export declare const readScope: (scope: string) => NativeScope;
+export declare const endpointFor: (scope: NativeScope, read?: boolean) => string;
+export {};

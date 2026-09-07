@@ -99,13 +99,14 @@ const authorityTexts: Record<string, string> = Object.fromEntries(await Promise.
 const declarations = new Map<string, Declaration>();
 // Implemented kernel exports are resolved by the compiler through their real
 // declaration owners. Unimplemented provider/host proposals retain their parser.
-const apiProgram = ts.createProgram([resolve(root, design.authorities.kernel!), resolve(root, design.authorities.application!)], {
+const implementedAuthorities = ["kernel", "application", "npm", "http"];
+const apiProgram = ts.createProgram(implementedAuthorities.map(key => resolve(root, design.authorities[key]!)), {
     target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext,
     moduleResolution: ts.ModuleResolutionKind.NodeNext, types: [],
 });
 const apiChecker = apiProgram.getTypeChecker();
 for (const [authority, text] of Object.entries(authorityTexts)) {
-    if (authority === "kernel" || authority === "application") {
+    if (implementedAuthorities.includes(authority)) {
         const source = apiProgram.getSourceFile(resolve(root, design.authorities[authority]!))!;
         const module = apiChecker.getSymbolAtLocation(source);
         assert(module, "Production kernel declaration entry is not a module");
@@ -115,8 +116,10 @@ for (const [authority, text] of Object.entries(authorityTexts)) {
                 ...(symbol.flags & ts.SymbolFlags.Type ? ["type"] : []),
                 ...(symbol.flags & ts.SymbolFlags.Value ? ["value"] : []),
             ];
-            const id = `${authority}:${exported.name}`;
-            declarations.set(id, { id, authority, namespace: null, sourceName: exported.name, spaces,
+            const owner = authority === "npm" ? "provider" : authority;
+            const namespace = authority === "npm" ? "Npm" : null;
+            const id = `${owner}:${namespace ? `${namespace}.` : ""}${exported.name}`;
+            declarations.set(id, { id, authority: owner, namespace, sourceName: exported.name, spaces,
                 declarations: (symbol.declarations ?? []).map(node => ({
                     line: node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line + 1,
                     sha256: hash(node.getText()),
@@ -179,7 +182,7 @@ const surfaces: Surface[] = [
         ] },
     { id: "core.effect-build", entry: "kernel.EffectBuild", symbols: [...picks("adoption", ["adoptFile", "adoptTree"], "kernel.EffectBuild"), pick("codec", "restoreTree", "kernel.EffectBuild")] },
     { id: "core.apple", entry: "kernel.Apple", symbols: named("apple").map((name) => pick("apple", name, appleNative.includes(name) ? "kernel.AppleNative" : applePreparation.includes(name) ? "kernel.ApplePreparation" : "kernel.AppleModel")) },
-    { id: "core.http", entry: "kernel.Http", symbols: [...picks("http", named("http"), "kernel.Http"), ...picks("provider", ["Headers", "HttpReadRequest", "HttpResponse", "HttpRead", "HttpProviderDefinition", "CredentialBinding", "CredentialHeaders", "OidcTokenRequest", "OidcTokenSource", "CredentialExchange", "TrustedPublisherHost"], "kernel.Http"), ...picks("host", ["CredentialRequest", "ResolveCredentials", "HttpTransportOptions"], "kernel.Http")] },
+    { id: "core.http", entry: "kernel.Http", symbols: picks("http", named("http"), "kernel.Http") },
     { id: "core.git", entry: "kernel.Git", symbols: [...picks("provider", named("provider", "GitCatalog").filter((name) => name !== "nativeHost"), "kernel.GitCatalog", "GitCatalog"), ...kernel.filter((item) => ["GitCas", "GitReceipt", "GitExecution", "CoreGitOptions", "makeCoreGitTransport"].includes(item.name))] },
     { id: "core.node", entry: "host.Node", symbols: host },
     { id: "core.bun", entry: "host.Bun", symbols: [...host, pick("host", "openSqliteJournal", "host.Sqlite")] }
@@ -210,7 +213,7 @@ const actionYaml = [
     "  plan-id:", "    description: Identity of the application's exact publication plan.", "  journal-revision:", "    description: Durable journal revision reported by the application.",
     "runs:", "  using: node24", "  main: dist/launcher.cjs", "branding:", "  icon: package", "  color: blue", ""
 ].join("\n");
-const commonManifest = { version: design.version, type: "module", license: "MIT", sideEffects: false, files: ["dist", "README.md", "LICENSE"], engines: design.engines, publishConfig: { access: "public", registry: "https://registry.npmjs.org" } };
+const commonManifest = { version: design.version, type: "module", license: "MIT", sideEffects: false, files: ["dist", "README.md", "LICENSE"], engines: design.engines, publishConfig: { access: "public", registry: "https://registry.npmjs.org/" } };
 type Manifest = Record<string, unknown> & {
     name: string;
     dependencies: Record<string, string>;

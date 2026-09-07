@@ -18,7 +18,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "0f45db1525f16bf69d27169206a842a042f833d605d7aaab98d3e909cfbba0d4"
+    "sha256": "cc2f83c0dfacf05ac56ecd881c866d340acf250f2c30218bb5b20e112fdbaf7d"
   },
   "authorityBindings": {
     "kernel": {
@@ -27,7 +27,7 @@
     },
     "provider": {
       "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
-      "sha256": "0179c44f1f2e2bd8102f2b4cdcbf5788a5b3aebc4e0367e002e228bdc75452b3"
+      "sha256": "3267f8349411bd1b428b155fd19d781074284e94ea857c878b8906307e27cf09"
     },
     "host": {
       "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
@@ -54,12 +54,16 @@
       "sha256": "d16afc414edbb1192d7a1b8aaa8b92e4c0666c7f46ca80e33e85e167ce482254"
     },
     "http": {
-      "path": "docs/refactor/architecture-program/handoff/http-api.d.ts",
-      "sha256": "fa50a9a495f28fefa21946669aa92828119e5959823b1b237347d2a2a6af8a4d"
+      "path": "docs/refactor/architecture-program/handoff/production-api/Http.d.ts",
+      "sha256": "21939ea2a65f7aeeeba264304eb5fdf103ffe5465f342c945740da7d5a56fd5b"
     },
     "application": {
       "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
       "sha256": "ed80182ff1829ce3d16711f794346a816af816766537209a17a56afa4fa78ba3"
+    },
+    "npm": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/npm/index.d.ts",
+      "sha256": "fa0447e6bc92155425681adf3f5929065271d1523716bad2cdb9001c29dc7423"
     }
   },
   "symbols": [
@@ -119,7 +123,7 @@
       "declarations": [
         {
           "line": 23,
-          "sha256": "c5418a4d7b0ab4ced481e32ffbca1c1a135d42048d04f571c7d3b2e99ed1ba21"
+          "sha256": "26fad1c8837c9f7708999a251d2417367dd1649f6716a671ba92fdc06e49313d"
         }
       ]
     },
@@ -133,7 +137,7 @@
       ],
       "declarations": [
         {
-          "line": 26,
+          "line": 29,
           "sha256": "82ec23e46814d043ee8eb4c89c0e0884f26e79834b2f565783bbedc49c585a23"
         }
       ]
@@ -148,7 +152,7 @@
       ],
       "declarations": [
         {
-          "line": 30,
+          "line": 33,
           "sha256": "8b1cacb89b0a8e42f7906fd936d88dab8505c8250a015ea5a5e7e7e34ab11b0d"
         }
       ]
@@ -163,7 +167,7 @@
       ],
       "declarations": [
         {
-          "line": 35,
+          "line": 38,
           "sha256": "84bb019678de6e5ca54a1f6264a2abda6a013dff70a631d9adeee759c3fdea3b"
         }
       ]
@@ -178,7 +182,7 @@
       ],
       "declarations": [
         {
-          "line": 39,
+          "line": 42,
           "sha256": "3e46c07aff428ad2e759669b554aaf9bc393908c75ccbe8335fa871d81b16afa"
         }
       ]
@@ -193,7 +197,7 @@
       ],
       "declarations": [
         {
-          "line": 44,
+          "line": 47,
           "sha256": "72fccbd1e379ba608db980f8f2d1d9ebba6088426bafb41772203bb4c75034a1"
         }
       ]
@@ -208,7 +212,7 @@
       ],
       "declarations": [
         {
-          "line": 61,
+          "line": 64,
           "sha256": "43e099108382e0b487bf14653093df668b6f23f9e5a968dd83b832165b09b3ee"
         }
       ]
@@ -223,7 +227,7 @@
       ],
       "declarations": [
         {
-          "line": 62,
+          "line": 65,
           "sha256": "a0260d82c11dd5feab3269e83ea6ae8096359401597ac8a923ac81ba4e01420c"
         }
       ]
@@ -238,7 +242,7 @@
       ],
       "declarations": [
         {
-          "line": 63,
+          "line": 66,
           "sha256": "e6a8a862ab6c565ac412b4bb9a96361e385cb80d273efeb9cb0cb867400985bc"
         }
       ]
@@ -253,7 +257,7 @@
       ],
       "declarations": [
         {
-          "line": 64,
+          "line": 67,
           "sha256": "00d604f20de41237a7aed9df219c23b19b89e321e01ae1529c3a45b0cf2555ef"
         }
       ]
@@ -268,7 +272,7 @@
       ],
       "declarations": [
         {
-          "line": 66,
+          "line": 69,
           "sha256": "a202619833f04c641bc5716596060969705647b0e08e05e87fb861fe637f82f5"
         }
       ]
@@ -1129,66 +1133,6 @@
       ]
     },
     {
-      "id": "provider:Headers",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "Headers",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 12,
-          "sha256": "108732e0e5fc731d4d4e19a7855a434142c227f043312f310b7a7462822512da"
-        }
-      ]
-    },
-    {
-      "id": "provider:HttpReadRequest",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "HttpReadRequest",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 13,
-          "sha256": "b65c284a053a4a5e2a004986c268742ab31b0dcf60e6cd3f0ff6f9796a0ea3d3"
-        }
-      ]
-    },
-    {
-      "id": "provider:HttpResponse",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "HttpResponse",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 20,
-          "sha256": "31cbea1033b1b17ff82c75e6ed02a2b06cc2d844a107fe7f4d8b173356c30c8e"
-        }
-      ]
-    },
-    {
-      "id": "provider:HttpRead",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "HttpRead",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 25,
-          "sha256": "6e66ceceb2e328a144a3b8a985b1669f5b6d7855eee6cec290a939b319c1819b"
-        }
-      ]
-    },
-    {
       "id": "provider:ReadContent",
       "authority": "provider",
       "namespace": null,
@@ -1234,465 +1178,6 @@
       ]
     },
     {
-      "id": "provider:HttpProviderDefinition",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "HttpProviderDefinition",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 32,
-          "sha256": "af5d82e8a087673f2bfce512e2f701bff02d22aef1ec7ca96cbc25c66ea657f0"
-        }
-      ]
-    },
-    {
-      "id": "provider:CredentialBinding",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "CredentialBinding",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 39,
-          "sha256": "298fee129f834b02c65cdb6359d162e49a2faf34e6c21f17e2912fa3dd0825df"
-        }
-      ]
-    },
-    {
-      "id": "provider:CredentialHeaders",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "CredentialHeaders",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 45,
-          "sha256": "eedc82cfb72501c54a175fe31ffadfa7f3c898734292d7532279b34134b02d38"
-        }
-      ]
-    },
-    {
-      "id": "provider:OidcTokenRequest",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "OidcTokenRequest",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 46,
-          "sha256": "d4e264145b542f5c9f71e5ba8c174241b0fcf58f2705a6c46e0c50ca64187dcb"
-        }
-      ]
-    },
-    {
-      "id": "provider:OidcTokenSource",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "OidcTokenSource",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 54,
-          "sha256": "db9094f6caca560364fef3930bb3b3a9f9f2ebc121293e423d01331d91a8c387"
-        }
-      ]
-    },
-    {
-      "id": "provider:CredentialExchange",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "CredentialExchange",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 57,
-          "sha256": "a0667e09ec6f2966b686a8545e592a18144fa78a81f4b5291ffc40e21b78b4fc"
-        }
-      ]
-    },
-    {
-      "id": "provider:TrustedPublisherHost",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "TrustedPublisherHost",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 62,
-          "sha256": "a0330bdc6e47d822b494eae3e4d8596ced4f07655b64e2f5f95aed5e43b2a396"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.TokenAuthorization",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "TokenAuthorization",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 70,
-          "sha256": "3c610057e0c95647ef6f235065f8a9541ead83a2cb6f71b6977f3f23222cb506"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.TrustedAuthorization",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "TrustedAuthorization",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 80,
-          "sha256": "c8d2e2a06961db5bdd210fe7df3f970bfb01c1514ad9be69d3f52fa389268537"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.Authorization",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "Authorization",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 82,
-          "sha256": "41029bc4d78c8b77fe024f9f94a7e1e30d9106981f907edf16c55760cb0199d6"
-        },
-        {
-          "line": 83,
-          "sha256": "ea16ac045cc03fbd0f066fd787c32c4bf398341a0adf1407d8cb456bea2526cf"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.ProvenanceSource",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "ProvenanceSource",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 100,
-          "sha256": "9ff20b49e335229501212d7693f151cd33afffa3a394dc3c760a150395b4d1a9"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.NoProvenance",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "NoProvenance",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 103,
-          "sha256": "947e02f2298d616a510246458bb6231eb677812d3e75352ee1bd7328c17f2670"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.GitHubActionsProvenance",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "GitHubActionsProvenance",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 110,
-          "sha256": "a71ac4059728464895f4f8b8ee0cb7ec22b74fe372d3b8e83114dbae422550c1"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.Provenance",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "Provenance",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 112,
-          "sha256": "d12889bbc6a4f91b43265a85d217b4e3523e73baa15f87396c452a94f0032c7c"
-        },
-        {
-          "line": 113,
-          "sha256": "f07b0b87b3a8c941bac1aae7007e5e558043454f4aebd4215b4919f1563e3710"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.PublishIntent",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "PublishIntent",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 124,
-          "sha256": "359bb6c4c4e98da1a3995012fb1b6d2e29bf259a9f34ba83f4564aeda1d29bb9"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.DistTagIntent",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "DistTagIntent",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 133,
-          "sha256": "3d5882e6735e4efb41f3f7123fe71521aac596171bd6df9569a295801707b15f"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.PrivatePackage",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "PrivatePackage",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 140,
-          "sha256": "e51d865ab0e53cafe130971ef40ec35340ba2e3ee80414df81df63d638dbeb4e"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.PublicPackage",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "PublicPackage",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 145,
-          "sha256": "91166ce29423e84079bcd217e397ee2042b615ad4a83ca1a286233e909769ddb"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.PackageCandidate",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "PackageCandidate",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 147,
-          "sha256": "f50dbe430f30f6b3f17a16c8526cfb6baaf3967cecd6fec1c3f0288b66310fae"
-        },
-        {
-          "line": 148,
-          "sha256": "f61869f626bbec0d40e3c5615360dbd0faf90cd08f016647e431c99224fc81c8"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.publish",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "publish",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 149,
-          "sha256": "f429402a7d0e5aef56e009a9047de5206715d4048c468f9aa0df75f4b3bd9060"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.distTag",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "distTag",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 150,
-          "sha256": "f987f83e397443dce8ffd0aa85b3cb754db7328ce530ad9d7717cc018dddccba"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.author",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "author",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 153,
-          "sha256": "b4271b65b3b2c9c09d3172c96d9af22cdde2580efa0b5883b48cd5f19603a2a4"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.definitions",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "definitions",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 160,
-          "sha256": "6c66dd1311bde3a2deedb9768e7b8355452257c152d4f3365742b0d62180b639"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.authorizeToken",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "authorizeToken",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 163,
-          "sha256": "392122bbf0b07c8a82448ac9fec27c3e9b197347ada41fe8188f0e83daf123cf"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.authorizeTrusted",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "authorizeTrusted",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 168,
-          "sha256": "4bbd4dbb645bfb948cf450062b59746deb7d832aa9cdc9d0837a9b1f9012a9fa"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.AttestationRequest",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "AttestationRequest",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 173,
-          "sha256": "a98a5f232e58cc473482735b778c9867901ec05504356465fd9bad952c945934"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.Attest",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "Attest",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 177,
-          "sha256": "3966c742862d82df7e04ffc8a878865fa5f345a9979bb02c2b3ab4c546db45b7"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.makeSigstoreAttester",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "makeSigstoreAttester",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 183,
-          "sha256": "60d4c5436cc9aa0c2d475d2f6419ee479eb79a8371e58edcee7f2b58f456e1b3"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.createProvenance",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "createProvenance",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 196,
-          "sha256": "34cab4aad74d7814e480388494664bcc4534d8b062c9c9b03ed32f498eb861cb"
-        }
-      ]
-    },
-    {
       "id": "provider:Warehouse.PyPi",
       "authority": "provider",
       "namespace": "Warehouse",
@@ -1703,7 +1188,7 @@
       ],
       "declarations": [
         {
-          "line": 215,
+          "line": 73,
           "sha256": "dbeca59cbe94ebfe4dc564cd0556ac8bf6c805dbfe97b70a8e6f150bd4a5c417"
         }
       ]
@@ -1719,7 +1204,7 @@
       ],
       "declarations": [
         {
-          "line": 221,
+          "line": 79,
           "sha256": "1e6771e7f2d48dc847cfc98969da90a98b4904abe08445e008ae8a85c97a0cfb"
         }
       ]
@@ -1735,7 +1220,7 @@
       ],
       "declarations": [
         {
-          "line": 230,
+          "line": 88,
           "sha256": "80852885166cfb6d78a4ab74580f6f00c7b7559f35b6cf631f2ccee1db725d24"
         }
       ]
@@ -1751,11 +1236,11 @@
       ],
       "declarations": [
         {
-          "line": 232,
+          "line": 90,
           "sha256": "0a1c065d613fda727fd1e7325ab5317855aac902c3968ffdb6bbae58e71e69ec"
         },
         {
-          "line": 233,
+          "line": 91,
           "sha256": "56f04c541391d99d35c9f4a18222b014ce18bbc33d54cf89f4d9af0b1dc3b0b0"
         }
       ]
@@ -1771,7 +1256,7 @@
       ],
       "declarations": [
         {
-          "line": 238,
+          "line": 96,
           "sha256": "f4601cf265239cd52e434f91fa569b12440fc3fd46de29f42cc49e6295025e44"
         }
       ]
@@ -1787,7 +1272,7 @@
       ],
       "declarations": [
         {
-          "line": 248,
+          "line": 106,
           "sha256": "7fb8adc6a6655ba661936eac22b5ca81ff8c0d4fd16073ba3432d38528415da1"
         }
       ]
@@ -1803,11 +1288,11 @@
       ],
       "declarations": [
         {
-          "line": 250,
+          "line": 108,
           "sha256": "41029bc4d78c8b77fe024f9f94a7e1e30d9106981f907edf16c55760cb0199d6"
         },
         {
-          "line": 251,
+          "line": 109,
           "sha256": "ea16ac045cc03fbd0f066fd787c32c4bf398341a0adf1407d8cb456bea2526cf"
         }
       ]
@@ -1823,7 +1308,7 @@
       ],
       "declarations": [
         {
-          "line": 262,
+          "line": 120,
           "sha256": "4ce80e683c55432f110be8ef99ea88ead2c1ee5049f7afb98f6b192f256899ea"
         }
       ]
@@ -1839,7 +1324,7 @@
       ],
       "declarations": [
         {
-          "line": 274,
+          "line": 132,
           "sha256": "ef1d1b89ab47cb23ca25367d5aedffce08eebf11fdd74adcaf270a3be62ab7a1"
         }
       ]
@@ -1855,11 +1340,11 @@
       ],
       "declarations": [
         {
-          "line": 276,
+          "line": 134,
           "sha256": "313f43e7c0ffaf9af27f513ab77ed21bd7047df6ab7b5666bee880c92924e716"
         },
         {
-          "line": 277,
+          "line": 135,
           "sha256": "fbb47d07c4a25cec0aade5832ea14b7a3812f95d3965f889853172722a9e70d5"
         }
       ]
@@ -1874,7 +1359,7 @@
       ],
       "declarations": [
         {
-          "line": 280,
+          "line": 138,
           "sha256": "62f4f53d217ecc065cddddaafe4bd8c00381541c22f5b456f972ff0e7c7f9717"
         }
       ]
@@ -1889,7 +1374,7 @@
       ],
       "declarations": [
         {
-          "line": 281,
+          "line": 139,
           "sha256": "6c66dd1311bde3a2deedb9768e7b8355452257c152d4f3365742b0d62180b639"
         }
       ]
@@ -1904,7 +1389,7 @@
       ],
       "declarations": [
         {
-          "line": 284,
+          "line": 142,
           "sha256": "99d993acb44516be2bea0ea67393ad4ca9ebca0afee6a9d94b43d1e0b1c6363c"
         }
       ]
@@ -1919,7 +1404,7 @@
       ],
       "declarations": [
         {
-          "line": 290,
+          "line": 148,
           "sha256": "705d6e072f272215c9f24da4ec9c914671c58090edef5b1ae774168e79d61c66"
         }
       ]
@@ -1935,7 +1420,7 @@
       ],
       "declarations": [
         {
-          "line": 303,
+          "line": 161,
           "sha256": "f9b342cd11c0a4c284b3569f9418f5fd1e16863b22dcc73f3b5d185f1b590659"
         }
       ]
@@ -1951,7 +1436,7 @@
       ],
       "declarations": [
         {
-          "line": 310,
+          "line": 168,
           "sha256": "f338db16f6c5ced215fd29e43a8e7176b1286f01df56229aa8285a6e603389bc"
         }
       ]
@@ -1967,7 +1452,7 @@
       ],
       "declarations": [
         {
-          "line": 318,
+          "line": 176,
           "sha256": "154fdbc7194c3f2543a946fe0a1f8356aaa8dca763cad937c3c00549d2f5a7a3"
         }
       ]
@@ -1983,7 +1468,7 @@
       ],
       "declarations": [
         {
-          "line": 328,
+          "line": 186,
           "sha256": "60dcde972f67b460891ae11346f2d8c3dadfd88c646cebff605fa735eeb74830"
         }
       ]
@@ -1999,7 +1484,7 @@
       ],
       "declarations": [
         {
-          "line": 336,
+          "line": 194,
           "sha256": "e2330f93b2c4743f25736779a7ee93719ac521c54ecafbd40739b5024ad80f10"
         }
       ]
@@ -2015,7 +1500,7 @@
       ],
       "declarations": [
         {
-          "line": 341,
+          "line": 199,
           "sha256": "ce6570e4109b7907d6a9e1438ceb290f8799078b78a52c5fc0a56fb11117ecc3"
         }
       ]
@@ -2031,7 +1516,7 @@
       ],
       "declarations": [
         {
-          "line": 346,
+          "line": 204,
           "sha256": "4c75dc2166f350c8c1c3ed3b99abcef4411f4aa5b15f4e174e5b8f17de9e5b57"
         }
       ]
@@ -2047,11 +1532,11 @@
       ],
       "declarations": [
         {
-          "line": 348,
+          "line": 206,
           "sha256": "391e265edadcc994341ebcabbe77c8d22e605a5ad2c2108c85794b0be5c976dd"
         },
         {
-          "line": 349,
+          "line": 207,
           "sha256": "3de4ae3c95f2ecdf3268955253b66e7d5c9c69ff06d9273c6d8695e108f98967"
         }
       ]
@@ -2067,7 +1552,7 @@
       ],
       "declarations": [
         {
-          "line": 359,
+          "line": 217,
           "sha256": "ef2b7ef0f2cb3bc6737a923af86e4295917367763fd75950dc4e111623feeb6a"
         }
       ]
@@ -2083,7 +1568,7 @@
       ],
       "declarations": [
         {
-          "line": 369,
+          "line": 227,
           "sha256": "34ae4478b768025bd262db487bbf48f04906939b8536340f755d6de060bfed6b"
         }
       ]
@@ -2099,7 +1584,7 @@
       ],
       "declarations": [
         {
-          "line": 377,
+          "line": 235,
           "sha256": "08682622e3d3dc43fe52d5bc4883004b3340ee2a584bb190d21c883c07905883"
         }
       ]
@@ -2115,7 +1600,7 @@
       ],
       "declarations": [
         {
-          "line": 387,
+          "line": 245,
           "sha256": "afe9075f128b69459988ded1fda9a68acb09a359dc6801a6e76f61ce035d7003"
         }
       ]
@@ -2131,7 +1616,7 @@
       ],
       "declarations": [
         {
-          "line": 394,
+          "line": 252,
           "sha256": "1612b5dbab7410368dd2e3530fe36c0e881a7f0bbd3f9b4d131b7ab6e62e57f2"
         }
       ]
@@ -2147,7 +1632,7 @@
       ],
       "declarations": [
         {
-          "line": 402,
+          "line": 260,
           "sha256": "e817bf43d065c3d5d0b8bead053035d28d50bded2c00d7a61171f3c5d725b532"
         }
       ]
@@ -2163,7 +1648,7 @@
       ],
       "declarations": [
         {
-          "line": 414,
+          "line": 272,
           "sha256": "bbc3320e25b1792e418e2cbf4fdeed4c6e4d7b6fb022c4ca0ac3a2ac7febc40e"
         }
       ]
@@ -2178,7 +1663,7 @@
       ],
       "declarations": [
         {
-          "line": 416,
+          "line": 274,
           "sha256": "d154e5fffaec87aaea03973d97cf28e1581880fbf220b24fa7a84f2c775ef680"
         }
       ]
@@ -2193,7 +1678,7 @@
       ],
       "declarations": [
         {
-          "line": 417,
+          "line": 275,
           "sha256": "800f9312f7ca3520bd2ea0a9b449e795f1450d22bbb91bd99a96b0ed0267c31e"
         }
       ]
@@ -2208,7 +1693,7 @@
       ],
       "declarations": [
         {
-          "line": 419,
+          "line": 277,
           "sha256": "1e3a1668e23171ef4a59102c0f516f31c8fff602f7c99e156b4786d09d862a57"
         }
       ]
@@ -2223,7 +1708,7 @@
       ],
       "declarations": [
         {
-          "line": 420,
+          "line": 278,
           "sha256": "d164c307c5f46012e15e77f437c4e23d4649a69564d8f9518bd88bd7b80d538b"
         }
       ]
@@ -2238,7 +1723,7 @@
       ],
       "declarations": [
         {
-          "line": 421,
+          "line": 279,
           "sha256": "096cc8d6a63e6fa3a5b72a93d589c536f260fb744b27c991289d8e0ae2617191"
         }
       ]
@@ -2253,7 +1738,7 @@
       ],
       "declarations": [
         {
-          "line": 422,
+          "line": 280,
           "sha256": "f429402a7d0e5aef56e009a9047de5206715d4048c468f9aa0df75f4b3bd9060"
         }
       ]
@@ -2268,7 +1753,7 @@
       ],
       "declarations": [
         {
-          "line": 423,
+          "line": 281,
           "sha256": "6c66dd1311bde3a2deedb9768e7b8355452257c152d4f3365742b0d62180b639"
         }
       ]
@@ -2283,7 +1768,7 @@
       ],
       "declarations": [
         {
-          "line": 426,
+          "line": 284,
           "sha256": "559bcaa90286d87a38d9d9f79996b6b3ef982087bbd89172d2374b56b881572b"
         }
       ]
@@ -2299,7 +1784,7 @@
       ],
       "declarations": [
         {
-          "line": 438,
+          "line": 296,
           "sha256": "80dad15a8403aafa2b6995f60542e01cf4ba1e7b6770e35d577deb26261a281a"
         }
       ]
@@ -2315,7 +1800,7 @@
       ],
       "declarations": [
         {
-          "line": 454,
+          "line": 312,
           "sha256": "5abf247e754b12c5652dec132a7d3a16ef367317f92257863394fd4d0dd3543f"
         }
       ]
@@ -2330,7 +1815,7 @@
       ],
       "declarations": [
         {
-          "line": 456,
+          "line": 314,
           "sha256": "05c04283da3e626fd8ac4f532d56094a11205b9948b448318172897e0d1d1524"
         }
       ]
@@ -2346,7 +1831,7 @@
       ],
       "declarations": [
         {
-          "line": 464,
+          "line": 322,
           "sha256": "936ad0117f72349cb23fa63a6dc08773ef8bcf54bc844149f060c43f14462fff"
         }
       ]
@@ -2362,7 +1847,7 @@
       ],
       "declarations": [
         {
-          "line": 474,
+          "line": 332,
           "sha256": "9b44cd8d1968a2269bb0eb9878a8cbef05687d6d47ba8745bfc19c4998c94e61"
         }
       ]
@@ -2377,7 +1862,7 @@
       ],
       "declarations": [
         {
-          "line": 476,
+          "line": 334,
           "sha256": "4d03d6901ce0b859e0300f297feec7a50447396bbd598da58c72ccf045945a51"
         }
       ]
@@ -2393,7 +1878,7 @@
       ],
       "declarations": [
         {
-          "line": 486,
+          "line": 344,
           "sha256": "3fc07f7360e75a2cfff09b0eaee0d0947d7946ff35bd03657efc445becc8af2d"
         }
       ]
@@ -2409,7 +1894,7 @@
       ],
       "declarations": [
         {
-          "line": 494,
+          "line": 352,
           "sha256": "78bdb13226bc24ef01c1ee72afd5c6b88eae10f12fad039b2812fa8b5ebb618c"
         }
       ]
@@ -2425,7 +1910,7 @@
       ],
       "declarations": [
         {
-          "line": 508,
+          "line": 366,
           "sha256": "b6b7796bda44e9055ee3a54ce71f5ceaea0a023bdc508d9bd3a16301dfad5128"
         }
       ]
@@ -2441,7 +1926,7 @@
       ],
       "declarations": [
         {
-          "line": 521,
+          "line": 379,
           "sha256": "7c199594f3960c84aab3b6dd2034530dea3eef92a8e28491a951616b3a9e7393"
         }
       ]
@@ -2456,7 +1941,7 @@
       ],
       "declarations": [
         {
-          "line": 523,
+          "line": 381,
           "sha256": "d2c4fc5d62a3874f97bd079d7d4c61f5ceb48c5a789fad48b8a92c02fda43bed"
         }
       ]
@@ -2471,7 +1956,7 @@
       ],
       "declarations": [
         {
-          "line": 533,
+          "line": 391,
           "sha256": "fc17ec64cb13e9582f1ddef3f8420d15108498011af65b412d2d9a37a4862391"
         }
       ]
@@ -2486,7 +1971,7 @@
       ],
       "declarations": [
         {
-          "line": 534,
+          "line": 392,
           "sha256": "5e6c6ba9b54218025cb1beffc052fcc02493e2e5570d6f139120ec0476a47dc7"
         }
       ]
@@ -2501,7 +1986,7 @@
       ],
       "declarations": [
         {
-          "line": 537,
+          "line": 395,
           "sha256": "ba448689ef3b772666e0735f5990a600c14a047f0b567e2274cf2aa989cd129d"
         }
       ]
@@ -2516,7 +2001,7 @@
       ],
       "declarations": [
         {
-          "line": 542,
+          "line": 400,
           "sha256": "c211b909727603e7b12b7ddc825b906eaafdf4c11080f9b567c95fb0c9502d4e"
         }
       ]
@@ -2531,7 +2016,7 @@
       ],
       "declarations": [
         {
-          "line": 543,
+          "line": 401,
           "sha256": "e2141d3321a8b40efa3883b35ce7d15933485619a811c54fc01adab1b8593922"
         }
       ]
@@ -2546,7 +2031,7 @@
       ],
       "declarations": [
         {
-          "line": 547,
+          "line": 405,
           "sha256": "6613351677350c3c7c3684104e4ecd96ce164b1a8550f0516301560eb6a9aff8"
         }
       ]
@@ -2561,7 +2046,7 @@
       ],
       "declarations": [
         {
-          "line": 557,
+          "line": 415,
           "sha256": "3405ca6dd986907b54f9eed83cea25a5ab96256ecc7eefaaeaa9326c6881528c"
         }
       ]
@@ -2576,7 +2061,7 @@
       ],
       "declarations": [
         {
-          "line": 569,
+          "line": 427,
           "sha256": "6e04249ea199001f47552a1503d5e67069a7e72a392ecd537b48de5e4c62a335"
         }
       ]
@@ -2591,7 +2076,7 @@
       ],
       "declarations": [
         {
-          "line": 580,
+          "line": 438,
           "sha256": "2f1767fbe0d9cf55669cf2e895f1d125b64a21bd2b1bcd87f7abd0dd39f94e17"
         }
       ]
@@ -2607,7 +2092,7 @@
       ],
       "declarations": [
         {
-          "line": 591,
+          "line": 449,
           "sha256": "a1eab97c68bdeea81415056734fe4adaa6076181a5b79f3aba9415fd4b822e5c"
         }
       ]
@@ -2623,7 +2108,7 @@
       ],
       "declarations": [
         {
-          "line": 605,
+          "line": 463,
           "sha256": "c50bad004e59a990ee74c3c646034eba739f890cd78ac370c16ebe4019b01b84"
         }
       ]
@@ -2639,7 +2124,7 @@
       ],
       "declarations": [
         {
-          "line": 621,
+          "line": 479,
           "sha256": "648702fd93a0d62a4652cbe2dcaaac68461c38edca873d25ac0cafb82090a983"
         }
       ]
@@ -2655,7 +2140,7 @@
       ],
       "declarations": [
         {
-          "line": 637,
+          "line": 495,
           "sha256": "de035f12e0dc538b8243b12440f57c05e73fba32ddb7c48408653b91aadf9dde"
         }
       ]
@@ -2671,11 +2156,11 @@
       ],
       "declarations": [
         {
-          "line": 639,
+          "line": 497,
           "sha256": "458f8e284fe6d96ab05a86e99f54d9aa74130eb6ab01aceae354aed712d6d0d1"
         },
         {
-          "line": 640,
+          "line": 498,
           "sha256": "5a5bbb56b292cb02ef277bdd6a997ce31376bce9877d828dd979972385327d86"
         }
       ]
@@ -2691,7 +2176,7 @@
       ],
       "declarations": [
         {
-          "line": 644,
+          "line": 502,
           "sha256": "7eea3b56267d83ba9b2c5affbe7f56944223e8de14879e86d494aab2a44fb379"
         }
       ]
@@ -2707,7 +2192,7 @@
       ],
       "declarations": [
         {
-          "line": 651,
+          "line": 509,
           "sha256": "488c65b8c0ce0d027e16dd8bff17bc49c180b50558eecb80a49670e95ec34858"
         }
       ]
@@ -2723,7 +2208,7 @@
       ],
       "declarations": [
         {
-          "line": 658,
+          "line": 516,
           "sha256": "5bf96d63d70009159bf7ad8d01c119c77f7d4139dbe957d385dbf40e3622f301"
         }
       ]
@@ -2739,11 +2224,11 @@
       ],
       "declarations": [
         {
-          "line": 660,
+          "line": 518,
           "sha256": "3ae2e93b492b9fee426ce81996e1bfeb087ba58154ea51bb74be8531029c30bb"
         },
         {
-          "line": 661,
+          "line": 519,
           "sha256": "db4d4329cf879d460a7f4b5715a6f2a3f3e9edd7c85af43cca0d20657f0d2633"
         }
       ]
@@ -2759,7 +2244,7 @@
       ],
       "declarations": [
         {
-          "line": 668,
+          "line": 526,
           "sha256": "96bbc20cbe1b7b565c03aeb0044951fbbc0ed3664373b9026d2c843236db5ca0"
         }
       ]
@@ -2775,7 +2260,7 @@
       ],
       "declarations": [
         {
-          "line": 676,
+          "line": 534,
           "sha256": "cbe50de52de1415aaf2bc6f4f2e316031546b541d8bb261a08222f77d727c364"
         }
       ]
@@ -2791,11 +2276,11 @@
       ],
       "declarations": [
         {
-          "line": 678,
+          "line": 536,
           "sha256": "aef1fedb1d46e2420e2ce5fb0a198fc07c4957041e23763826ca2c6d37a3c5c2"
         },
         {
-          "line": 679,
+          "line": 537,
           "sha256": "534fc69d94465903ae42c24ef000f8d17a6295f9dda44411f290f8b1ca1eb582"
         }
       ]
@@ -2811,7 +2296,7 @@
       ],
       "declarations": [
         {
-          "line": 691,
+          "line": 549,
           "sha256": "da9f30962018039c325b9026506d4da7675d012e08e32065898add5b8e3c6b0f"
         }
       ]
@@ -2827,7 +2312,7 @@
       ],
       "declarations": [
         {
-          "line": 704,
+          "line": 562,
           "sha256": "ab9bd542256c9ef234849f1afc80529ed340572d71b940b59e34c382e294c9cf"
         }
       ]
@@ -2843,7 +2328,7 @@
       ],
       "declarations": [
         {
-          "line": 717,
+          "line": 575,
           "sha256": "0c2314928ad65cf56b5f2adb311cb8c36e20327f84eed34e3f72b4a9c17e680a"
         }
       ]
@@ -2859,7 +2344,7 @@
       ],
       "declarations": [
         {
-          "line": 728,
+          "line": 586,
           "sha256": "8035d897b9cf6640eefa3a29dd8a6c30838ac6dfbae1c9b2c603a4e2af9fe049"
         }
       ]
@@ -2875,7 +2360,7 @@
       ],
       "declarations": [
         {
-          "line": 741,
+          "line": 599,
           "sha256": "ca80c6c2b1e8d95dbab5704dcc1943d2ba3ae630ffdd877ef7cc38875fe48e79"
         }
       ]
@@ -2891,11 +2376,11 @@
       ],
       "declarations": [
         {
-          "line": 743,
+          "line": 601,
           "sha256": "c6f58591bf8c23a53ba08aa130ef19d1ab67f008d1093f714e9d62877846b6a8"
         },
         {
-          "line": 744,
+          "line": 602,
           "sha256": "86b5e9eb00db0f9ae3b6d5d47ede94668d9b7c6b03d49b52a605f83f24832de7"
         }
       ]
@@ -2911,7 +2396,7 @@
       ],
       "declarations": [
         {
-          "line": 751,
+          "line": 609,
           "sha256": "05c92daa078ea0d504da98afcfecb821dff3d7c7a26f596c18fce0da66c696a6"
         }
       ]
@@ -2927,7 +2412,7 @@
       ],
       "declarations": [
         {
-          "line": 759,
+          "line": 617,
           "sha256": "6d27ec5f3310e27c94162bc5e20de39497174963d15fa09434de9003dda1a398"
         }
       ]
@@ -2943,7 +2428,7 @@
       ],
       "declarations": [
         {
-          "line": 776,
+          "line": 634,
           "sha256": "e00a1b750dbeca5cd9df370ca7ce7fa5d080496940aaa3ca8fd24530e97d180c"
         }
       ]
@@ -2959,7 +2444,7 @@
       ],
       "declarations": [
         {
-          "line": 782,
+          "line": 640,
           "sha256": "f9e47a38abb3d36078aedef0f7ce6129c42b25c8c06e230a920974e3dc247bfa"
         }
       ]
@@ -2975,7 +2460,7 @@
       ],
       "declarations": [
         {
-          "line": 792,
+          "line": 650,
           "sha256": "dadc2a02a3d22851002d6b378ef25cff1968716950ca5b8d5d06b2b7dfa5bce1"
         }
       ]
@@ -2991,11 +2476,11 @@
       ],
       "declarations": [
         {
-          "line": 794,
+          "line": 652,
           "sha256": "0957da7846db0ead63052c2faf8baaa36f98963ca6c613062a39cf1d02245c90"
         },
         {
-          "line": 795,
+          "line": 653,
           "sha256": "ea16ac045cc03fbd0f066fd787c32c4bf398341a0adf1407d8cb456bea2526cf"
         }
       ]
@@ -3011,7 +2496,7 @@
       ],
       "declarations": [
         {
-          "line": 801,
+          "line": 659,
           "sha256": "1b59a8b78afe2e89b73332ac2e46a30268c5b2922722bdb5a62552b87f531e49"
         }
       ]
@@ -3026,7 +2511,7 @@
       ],
       "declarations": [
         {
-          "line": 805,
+          "line": 663,
           "sha256": "ddcd36e699b8ffe7751bdec893bc82e606690af43cd7e1b17dca6aa21b486ea1"
         }
       ]
@@ -3041,7 +2526,7 @@
       ],
       "declarations": [
         {
-          "line": 806,
+          "line": 664,
           "sha256": "12446156b00d4e3f773d394cecb4dc06b57ea77605f993d1cdf09ba6a7f1ea5b"
         }
       ]
@@ -3056,7 +2541,7 @@
       ],
       "declarations": [
         {
-          "line": 807,
+          "line": 665,
           "sha256": "f429402a7d0e5aef56e009a9047de5206715d4048c468f9aa0df75f4b3bd9060"
         }
       ]
@@ -3071,7 +2556,7 @@
       ],
       "declarations": [
         {
-          "line": 808,
+          "line": 666,
           "sha256": "1b533db0b802389bbd76c470b84ee92a121c6222ccd72802173a56540b690cc5"
         }
       ]
@@ -3086,7 +2571,7 @@
       ],
       "declarations": [
         {
-          "line": 811,
+          "line": 669,
           "sha256": "392122bbf0b07c8a82448ac9fec27c3e9b197347ada41fe8188f0e83daf123cf"
         }
       ]
@@ -3101,7 +2586,7 @@
       ],
       "declarations": [
         {
-          "line": 816,
+          "line": 674,
           "sha256": "679630786cca741730612dcfbf8b2bc8b0699cab349769534c4b69ba3664629e"
         }
       ]
@@ -3117,7 +2602,7 @@
       ],
       "declarations": [
         {
-          "line": 828,
+          "line": 686,
           "sha256": "fe7f6414a681816e720810c8439c652ab860654b1a4f7f82ea66906e6418d3bb"
         }
       ]
@@ -3133,7 +2618,7 @@
       ],
       "declarations": [
         {
-          "line": 836,
+          "line": 694,
           "sha256": "f30514085b8ccd723d48a1c57b8a45d1fc0b8ee4e8e82a69cac87f495dd7ced8"
         }
       ]
@@ -3149,7 +2634,7 @@
       ],
       "declarations": [
         {
-          "line": 844,
+          "line": 702,
           "sha256": "b76bd951e510651fc04a9567cdddf2c1ea5586e308b916681674e642ba4847f4"
         }
       ]
@@ -3165,7 +2650,7 @@
       ],
       "declarations": [
         {
-          "line": 850,
+          "line": 708,
           "sha256": "3f85098907bf7146ebd19e7b60a3880dcefd301dded1254cda04f0f2560e0fd0"
         }
       ]
@@ -3180,7 +2665,7 @@
       ],
       "declarations": [
         {
-          "line": 854,
+          "line": 712,
           "sha256": "d9ef0310d57f74073b3c9e032a4874bcec915da6f93e8a3d94106fa75c4313b0"
         }
       ]
@@ -3195,7 +2680,7 @@
       ],
       "declarations": [
         {
-          "line": 859,
+          "line": 717,
           "sha256": "90adb9e93075a38f47cbd71ccaa8485ec07361c8181ba6b834aa09ce5a6e013b"
         }
       ]
@@ -3210,7 +2695,7 @@
       ],
       "declarations": [
         {
-          "line": 862,
+          "line": 720,
           "sha256": "7e02d47d27ac29846d5fa6303eefab347a1b034ff2a2e5e28e2cc858bf24bed6"
         }
       ]
@@ -3226,7 +2711,7 @@
       ],
       "declarations": [
         {
-          "line": 875,
+          "line": 733,
           "sha256": "330bfd5ccf9aea58545f63e55ae551d3bca656b5f2104eb55e12b46867d0a60e"
         }
       ]
@@ -3242,7 +2727,7 @@
       ],
       "declarations": [
         {
-          "line": 884,
+          "line": 742,
           "sha256": "f1acbff2d3a11fefcc36a74f0494989d1e9fd4191a4810868ff6c341f4b5d3d4"
         }
       ]
@@ -3257,7 +2742,7 @@
       ],
       "declarations": [
         {
-          "line": 886,
+          "line": 744,
           "sha256": "e074c781a7f59dd01b00d2abedad461cdf58791cf80b8c3b278bb94c14977364"
         }
       ]
@@ -3273,7 +2758,7 @@
       ],
       "declarations": [
         {
-          "line": 910,
+          "line": 768,
           "sha256": "b5d0af275f8ed38162469d9de09ca35744eee18495bdee2644e413e79dabe2e6"
         }
       ]
@@ -3289,7 +2774,7 @@
       ],
       "declarations": [
         {
-          "line": 919,
+          "line": 777,
           "sha256": "8edb9f07beef2ccf14f714c288c4eaef25111c3b048b190a5a2d762325406e42"
         }
       ]
@@ -3305,7 +2790,7 @@
       ],
       "declarations": [
         {
-          "line": 927,
+          "line": 785,
           "sha256": "37337d867cad509167dd95945dbfbe31e348d9f0484858fbaba27f9d4cb484db"
         }
       ]
@@ -3321,7 +2806,7 @@
       ],
       "declarations": [
         {
-          "line": 937,
+          "line": 795,
           "sha256": "15805a7b43fe451bd15b99150cd5522a61a976b990941e236c2f397d028a1a10"
         }
       ]
@@ -3337,7 +2822,7 @@
       ],
       "declarations": [
         {
-          "line": 949,
+          "line": 807,
           "sha256": "1f6d6b8174c79d729bf4521526db9c010b22423f6f8a8aa297485992b000dfc1"
         }
       ]
@@ -3352,53 +2837,8 @@
       ],
       "declarations": [
         {
-          "line": 951,
+          "line": 809,
           "sha256": "65a2226ae03b1ef4c20dd3317ee0afe197f7016dac6bf8fdb30334f3e1c56e3e"
-        }
-      ]
-    },
-    {
-      "id": "host:CredentialRequest",
-      "authority": "host",
-      "namespace": null,
-      "sourceName": "CredentialRequest",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 15,
-          "sha256": "258798d5c3ecf43519c5c269fcba0499f8a1c6a1a841a9cf672d9988e3e03761"
-        }
-      ]
-    },
-    {
-      "id": "host:ResolveCredentials",
-      "authority": "host",
-      "namespace": null,
-      "sourceName": "ResolveCredentials",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 18,
-          "sha256": "40187d2c9de241e84d2acf3bc3a57fcdedb89631b1f6792092c5466a0243209e"
-        }
-      ]
-    },
-    {
-      "id": "host:HttpTransportOptions",
-      "authority": "host",
-      "namespace": null,
-      "sourceName": "HttpTransportOptions",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 19,
-          "sha256": "5b996127d5bd19be45da6bf283f75b203cad8fdfa8e45e03c0564de12890115b"
         }
       ]
     },
@@ -4199,7 +3639,7 @@
       ],
       "declarations": [
         {
-          "line": 21,
+          "line": 16,
           "sha256": "2905453a520d26b6c31c426fb9947da2b0172a47526f568d1bf35ce9c8b253f5"
         }
       ]
@@ -4214,8 +3654,218 @@
       ],
       "declarations": [
         {
-          "line": 23,
-          "sha256": "619f57b8191fb8041d171cf18ee33a9aa66bfb0b1283e591d7868206ea526455"
+          "line": 18,
+          "sha256": "7141f8e0de1aab9708ead192528648150850a11d4d21153d99802b2327253a19"
+        }
+      ]
+    },
+    {
+      "id": "http:Headers",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "Headers",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 19,
+          "sha256": "108732e0e5fc731d4d4e19a7855a434142c227f043312f310b7a7462822512da"
+        }
+      ]
+    },
+    {
+      "id": "http:HttpReadRequest",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "HttpReadRequest",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 20,
+          "sha256": "b65c284a053a4a5e2a004986c268742ab31b0dcf60e6cd3f0ff6f9796a0ea3d3"
+        }
+      ]
+    },
+    {
+      "id": "http:HttpResponse",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "HttpResponse",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 27,
+          "sha256": "31cbea1033b1b17ff82c75e6ed02a2b06cc2d844a107fe7f4d8b173356c30c8e"
+        }
+      ]
+    },
+    {
+      "id": "http:HttpRead",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "HttpRead",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 32,
+          "sha256": "6e66ceceb2e328a144a3b8a985b1669f5b6d7855eee6cec290a939b319c1819b"
+        }
+      ]
+    },
+    {
+      "id": "http:HttpProviderDefinition",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "HttpProviderDefinition",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 33,
+          "sha256": "9b14d37bb69dc0b113a2a065ce0589495107cde2c4eed3bf4712633811ee620e"
+        }
+      ]
+    },
+    {
+      "id": "http:CredentialBinding",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "CredentialBinding",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 38,
+          "sha256": "298fee129f834b02c65cdb6359d162e49a2faf34e6c21f17e2912fa3dd0825df"
+        }
+      ]
+    },
+    {
+      "id": "http:CredentialHeaders",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "CredentialHeaders",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 44,
+          "sha256": "eedc82cfb72501c54a175fe31ffadfa7f3c898734292d7532279b34134b02d38"
+        }
+      ]
+    },
+    {
+      "id": "http:OidcTokenRequest",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "OidcTokenRequest",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 45,
+          "sha256": "d4e264145b542f5c9f71e5ba8c174241b0fcf58f2705a6c46e0c50ca64187dcb"
+        }
+      ]
+    },
+    {
+      "id": "http:OidcTokenSource",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "OidcTokenSource",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 53,
+          "sha256": "db9094f6caca560364fef3930bb3b3a9f9f2ebc121293e423d01331d91a8c387"
+        }
+      ]
+    },
+    {
+      "id": "http:CredentialExchange",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "CredentialExchange",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 54,
+          "sha256": "a0667e09ec6f2966b686a8545e592a18144fa78a81f4b5291ffc40e21b78b4fc"
+        }
+      ]
+    },
+    {
+      "id": "http:TrustedPublisherHost",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "TrustedPublisherHost",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 59,
+          "sha256": "a0330bdc6e47d822b494eae3e4d8596ced4f07655b64e2f5f95aed5e43b2a396"
+        }
+      ]
+    },
+    {
+      "id": "http:CredentialRequest",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "CredentialRequest",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 63,
+          "sha256": "f47fa4e7abd085330ca21849cc097c4778269e8dfdc4ec45e5c579d8e522ebbb"
+        }
+      ]
+    },
+    {
+      "id": "http:ResolveCredentials",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "ResolveCredentials",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 64,
+          "sha256": "f6d74dc0693db447685fda8e1c58a63b1f1488533cc26f77ce6f75010e75cb48"
+        }
+      ]
+    },
+    {
+      "id": "http:HttpTransportOptions",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "HttpTransportOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 65,
+          "sha256": "75048269289f83bbbc535da73758405bf17f762d78783084476356780c15bc45"
         }
       ]
     },
@@ -4277,6 +3927,436 @@
         {
           "line": 17,
           "sha256": "c9cb124df3aed853bfb95b477dbcc421d68ca9f1d4a14ed2b3450343394fa1fd"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.TokenAuthorization",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "TokenAuthorization",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 17,
+          "sha256": "2101e1debce68b71b51c54ea0c5c98dca7ab6bd33f991862da95ceae1122c1ef"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.TrustedAuthorization",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "TrustedAuthorization",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 27,
+          "sha256": "882c0d462659120585e2e47b4e9942da5a9d44f3a0728337fcd5e7d2acda5249"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.Authorization",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "Authorization",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 29,
+          "sha256": "8cbbcbb8b2870ee2055cf4691038fb76e506c8912653365124082d8c40612dcb"
+        },
+        {
+          "line": 30,
+          "sha256": "ea16ac045cc03fbd0f066fd787c32c4bf398341a0adf1407d8cb456bea2526cf"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.ProvenanceSource",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "ProvenanceSource",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 47,
+          "sha256": "2111848539e64bbee7fd87189029a73ae2ef2ea7f6e7b1e6bf7e34269029d10f"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.NoProvenance",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "NoProvenance",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 50,
+          "sha256": "91c7eb38c5e318cd9b976c4d62e9ca758285b6cffff75a21fcb2933e9bf2756e"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.GitHubActionsProvenance",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "GitHubActionsProvenance",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 57,
+          "sha256": "36290d15cf2b1755f362c45e93871b95977cbfadb56a372d7a64bc2590572654"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.Provenance",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "Provenance",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 59,
+          "sha256": "f367dccc114a4d73134360fc4734820166b45bc606e76304fec80d3ec369fdd7"
+        },
+        {
+          "line": 60,
+          "sha256": "f07b0b87b3a8c941bac1aae7007e5e558043454f4aebd4215b4919f1563e3710"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.PublishIntent",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "PublishIntent",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 74,
+          "sha256": "1ebf111b8ab832ee3115ae245ea6101bd3a8be506ae14b22a47b992ac3a1eb94"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.DistTagIntent",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "DistTagIntent",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 83,
+          "sha256": "c419e2ea4003bd4ba07a598a0d86f8254c3d0fb1597454c45f2323ebf7389d3c"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.PrivatePackage",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "PrivatePackage",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 90,
+          "sha256": "cb2498d567e5863b2780069df035cab7fbac40b613152d8833e2edf77d7a4342"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.PublicPackage",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "PublicPackage",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 95,
+          "sha256": "928fb9c526db3775e7e30971d1e4d3fa962c0a66a89559007e576d01c922920f"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.PackageCandidate",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "PackageCandidate",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 97,
+          "sha256": "7e5d82bbe3b54cd41892923d00cd64f95a39b87d7674c0669a7c7f5faef161e0"
+        },
+        {
+          "line": 98,
+          "sha256": "f61869f626bbec0d40e3c5615360dbd0faf90cd08f016647e431c99224fc81c8"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.AttestationRequest",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "AttestationRequest",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 99,
+          "sha256": "f383f9989909433cdd805b9439fbfddb8d85798c05e32189db02f2381c74d9ff"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.Attest",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "Attest",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 103,
+          "sha256": "ac93b74a0473195d432ec29fc1bf730badc15bb752af396de0459b4e0186dae5"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.VerifyProvenance",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "VerifyProvenance",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 106,
+          "sha256": "2aca48821c19d261725e0833b98fc6496d1ad87bb311a99b0d0816d257c57e27"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.PackageMetadata",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "PackageMetadata",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 117,
+          "sha256": "95c9c57091696ee8faddecd20abc65eba706c2280eba1572345d57c021aafeaf"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.publish",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "publish",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 195,
+          "sha256": "1b2a5005b2d1d1d0482034a2fce904cf982ebcb3b9fa27ae73e774c94dd37a8f"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.distTag",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "distTag",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 196,
+          "sha256": "dbe4be3a71f5f23fc83e8b79fa16c5e15d091f09334e076476e7e83954911a10"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.author",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "author",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 197,
+          "sha256": "729088030b2537623748989d89ef600dfc8d43a4fa17262f5f6eeb7719e9317f"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.definitions",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "definitions",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 206,
+          "sha256": "ab4f78373ad27f297cbfc9fe76aebcb4624c0d7ec77c08da607fa942de47e156"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.inspectTarball",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "inspectTarball",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 211,
+          "sha256": "1ce3e74fb3f2932b145a76e2587a2a2ce1e56ded3c162fa1bb4d356870bc5f1a"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.authorizeToken",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "authorizeToken",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 7,
+          "sha256": "875a1472778773c18cc8df8be4d453dd13d7ae6546d0b8177fc0f980761dc704"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.authorizeTrusted",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "authorizeTrusted",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 12,
+          "sha256": "30807a226402a4a9c1a16602eab56602ddf1621a2ed6957f3909f3c5fc97f6df"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.makeSigstoreAttester",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "makeSigstoreAttester",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 43,
+          "sha256": "f19768121ff7492b1269b9f5a081116b35bb51ab57ded9a3c10783c0720e8584"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.makeSigstoreVerifier",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "makeSigstoreVerifier",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 42,
+          "sha256": "90014e153f3c33b6924293d6a1d5c238642aef915ae9e9938ec738a53d5ddbd0"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.SigstoreTrustOptions",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "SigstoreTrustOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 36,
+          "sha256": "af1ef9fed105a3b375503eaeeffa42f05f0b9365d36fccdb682e35773c6036c9"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.createProvenance",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "createProvenance",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 24,
+          "sha256": "70bb95459b7ab9d113b110bec56d0c746dfc72d7a26b8d5754425c21e3a240ac"
         }
       ]
     }
@@ -4906,72 +4986,72 @@
           "module": "kernel.Http"
         },
         {
-          "declaration": "provider:Headers",
+          "declaration": "http:Headers",
           "name": "Headers",
           "module": "kernel.Http"
         },
         {
-          "declaration": "provider:HttpReadRequest",
+          "declaration": "http:HttpReadRequest",
           "name": "HttpReadRequest",
           "module": "kernel.Http"
         },
         {
-          "declaration": "provider:HttpResponse",
+          "declaration": "http:HttpResponse",
           "name": "HttpResponse",
           "module": "kernel.Http"
         },
         {
-          "declaration": "provider:HttpRead",
+          "declaration": "http:HttpRead",
           "name": "HttpRead",
           "module": "kernel.Http"
         },
         {
-          "declaration": "provider:HttpProviderDefinition",
+          "declaration": "http:HttpProviderDefinition",
           "name": "HttpProviderDefinition",
           "module": "kernel.Http"
         },
         {
-          "declaration": "provider:CredentialBinding",
+          "declaration": "http:CredentialBinding",
           "name": "CredentialBinding",
           "module": "kernel.Http"
         },
         {
-          "declaration": "provider:CredentialHeaders",
+          "declaration": "http:CredentialHeaders",
           "name": "CredentialHeaders",
           "module": "kernel.Http"
         },
         {
-          "declaration": "provider:OidcTokenRequest",
+          "declaration": "http:OidcTokenRequest",
           "name": "OidcTokenRequest",
           "module": "kernel.Http"
         },
         {
-          "declaration": "provider:OidcTokenSource",
+          "declaration": "http:OidcTokenSource",
           "name": "OidcTokenSource",
           "module": "kernel.Http"
         },
         {
-          "declaration": "provider:CredentialExchange",
+          "declaration": "http:CredentialExchange",
           "name": "CredentialExchange",
           "module": "kernel.Http"
         },
         {
-          "declaration": "provider:TrustedPublisherHost",
+          "declaration": "http:TrustedPublisherHost",
           "name": "TrustedPublisherHost",
           "module": "kernel.Http"
         },
         {
-          "declaration": "host:CredentialRequest",
+          "declaration": "http:CredentialRequest",
           "name": "CredentialRequest",
           "module": "kernel.Http"
         },
         {
-          "declaration": "host:ResolveCredentials",
+          "declaration": "http:ResolveCredentials",
           "name": "ResolveCredentials",
           "module": "kernel.Http"
         },
         {
-          "declaration": "host:HttpTransportOptions",
+          "declaration": "http:HttpTransportOptions",
           "name": "HttpTransportOptions",
           "module": "kernel.Http"
         }
@@ -5240,6 +5320,16 @@
           "module": "provider.npm.Model"
         },
         {
+          "declaration": "provider:Npm.VerifyProvenance",
+          "name": "VerifyProvenance",
+          "module": "provider.npm.Model"
+        },
+        {
+          "declaration": "provider:Npm.PackageMetadata",
+          "name": "PackageMetadata",
+          "module": "provider.npm.Model"
+        },
+        {
           "declaration": "provider:Npm.publish",
           "name": "publish",
           "module": "provider.npm.Protocol"
@@ -5260,6 +5350,11 @@
           "module": "provider.npm.Protocol"
         },
         {
+          "declaration": "provider:Npm.inspectTarball",
+          "name": "inspectTarball",
+          "module": "provider.npm.Protocol"
+        },
+        {
           "declaration": "provider:Npm.authorizeToken",
           "name": "authorizeToken",
           "module": "provider.npm.Auth"
@@ -5277,6 +5372,16 @@
         {
           "declaration": "provider:Npm.createProvenance",
           "name": "createProvenance",
+          "module": "provider.npm.Auth"
+        },
+        {
+          "declaration": "provider:Npm.SigstoreTrustOptions",
+          "name": "SigstoreTrustOptions",
+          "module": "provider.npm.Auth"
+        },
+        {
+          "declaration": "provider:Npm.makeSigstoreVerifier",
+          "name": "makeSigstoreVerifier",
           "module": "provider.npm.Auth"
         }
       ]
@@ -6142,6 +6247,7 @@
             "GitHubActionsProvenance",
             "NoProvenance",
             "PackageCandidate",
+            "PackageMetadata",
             "PrivatePackage",
             "Provenance",
             "ProvenanceSource",
@@ -6155,7 +6261,9 @@
             "createProvenance",
             "definitions",
             "distTag",
+            "inspectTarball",
             "makeSigstoreAttester",
+            "makeSigstoreVerifier",
             "publish"
           ],
           "typeNames": [
@@ -6166,13 +6274,16 @@
             "GitHubActionsProvenance",
             "NoProvenance",
             "PackageCandidate",
+            "PackageMetadata",
             "PrivatePackage",
             "Provenance",
             "ProvenanceSource",
             "PublicPackage",
             "PublishIntent",
+            "SigstoreTrustOptions",
             "TokenAuthorization",
-            "TrustedAuthorization"
+            "TrustedAuthorization",
+            "VerifyProvenance"
           ]
         },
         {
@@ -6428,7 +6539,7 @@
           ]
         }
       ],
-      "exportsSha256": "4c6e41fc6e9530eeb6b31b23ec5a78e0f336b1f94c1a0772f8b29163e3ad410d"
+      "exportsSha256": "73a48b760cbae1607a63ef2089535e5f6bcfa324d95ee07da4972b384f4787b2"
     },
     {
       "id": "T2",
@@ -6798,6 +6909,7 @@
             "GitHubActionsProvenance",
             "NoProvenance",
             "PackageCandidate",
+            "PackageMetadata",
             "PrivatePackage",
             "Provenance",
             "ProvenanceSource",
@@ -6811,7 +6923,9 @@
             "createProvenance",
             "definitions",
             "distTag",
+            "inspectTarball",
             "makeSigstoreAttester",
+            "makeSigstoreVerifier",
             "publish"
           ],
           "typeNames": [
@@ -6822,13 +6936,16 @@
             "GitHubActionsProvenance",
             "NoProvenance",
             "PackageCandidate",
+            "PackageMetadata",
             "PrivatePackage",
             "Provenance",
             "ProvenanceSource",
             "PublicPackage",
             "PublishIntent",
+            "SigstoreTrustOptions",
             "TokenAuthorization",
-            "TrustedAuthorization"
+            "TrustedAuthorization",
+            "VerifyProvenance"
           ]
         },
         {
@@ -7084,7 +7201,7 @@
           ]
         }
       ],
-      "exportsSha256": "438d74742525822555d5e13a20bb32c0a41f1cd1fa2600d1f8ed3cd77b2078b8"
+      "exportsSha256": "049eb7fa51b71a5eaf6f736aa559652b2cfd4586494244899a30642a36e1dc39"
     },
     {
       "id": "T3",
@@ -7454,6 +7571,7 @@
             "GitHubActionsProvenance",
             "NoProvenance",
             "PackageCandidate",
+            "PackageMetadata",
             "PrivatePackage",
             "Provenance",
             "ProvenanceSource",
@@ -7467,7 +7585,9 @@
             "createProvenance",
             "definitions",
             "distTag",
+            "inspectTarball",
             "makeSigstoreAttester",
+            "makeSigstoreVerifier",
             "publish"
           ],
           "typeNames": [
@@ -7478,13 +7598,16 @@
             "GitHubActionsProvenance",
             "NoProvenance",
             "PackageCandidate",
+            "PackageMetadata",
             "PrivatePackage",
             "Provenance",
             "ProvenanceSource",
             "PublicPackage",
             "PublishIntent",
+            "SigstoreTrustOptions",
             "TokenAuthorization",
-            "TrustedAuthorization"
+            "TrustedAuthorization",
+            "VerifyProvenance"
           ]
         },
         {
@@ -7740,7 +7863,7 @@
           ]
         }
       ],
-      "exportsSha256": "8c60e62e7570759a2d72c0265bad2569b7db101244d1b670318385206631d2f0"
+      "exportsSha256": "0df21d207d39020d5b756399cc8d95e9b949b18ee90a3b3b4da049cb5d1f41c9"
     },
     {
       "id": "T3c",
@@ -8110,6 +8233,7 @@
             "GitHubActionsProvenance",
             "NoProvenance",
             "PackageCandidate",
+            "PackageMetadata",
             "PrivatePackage",
             "Provenance",
             "ProvenanceSource",
@@ -8123,7 +8247,9 @@
             "createProvenance",
             "definitions",
             "distTag",
+            "inspectTarball",
             "makeSigstoreAttester",
+            "makeSigstoreVerifier",
             "publish"
           ],
           "typeNames": [
@@ -8134,13 +8260,16 @@
             "GitHubActionsProvenance",
             "NoProvenance",
             "PackageCandidate",
+            "PackageMetadata",
             "PrivatePackage",
             "Provenance",
             "ProvenanceSource",
             "PublicPackage",
             "PublishIntent",
+            "SigstoreTrustOptions",
             "TokenAuthorization",
-            "TrustedAuthorization"
+            "TrustedAuthorization",
+            "VerifyProvenance"
           ]
         },
         {
@@ -8396,7 +8525,7 @@
           ]
         }
       ],
-      "exportsSha256": "96514ce27ec06925c6aff181f9b119d4387faf1b094c51f74cfbce16f3e2db45"
+      "exportsSha256": "8f719f68cc32b49fd1381c2c1eae85115403b1c5b4d7289b8ccdc31aeb87a56c"
     }
   ],
   "intentionallyPrivateAuthorityExports": [
@@ -8409,12 +8538,68 @@
       "reason": "Implementation detail, not included in the explicit proposed public API."
     },
     {
+      "id": "provider:Headers",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:HttpReadRequest",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:HttpResponse",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:HttpRead",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:HttpProviderDefinition",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
       "id": "provider:Author",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:CredentialBinding",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:CredentialHeaders",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:OidcTokenRequest",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:OidcTokenSource",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:CredentialExchange",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:TrustedPublisherHost",
       "reason": "Implementation detail, not included in the explicit proposed public API."
     },
     {
       "id": "host:runAction",
       "reason": "Private Action adapter, apps/action/src/launcher.ts; only host loading primitives are public."
+    },
+    {
+      "id": "host:CredentialRequest",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "host:ResolveCredentials",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "host:HttpTransportOptions",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
     },
     {
       "id": "adoption:MAX_BUFFERED_TREE_BYTES",

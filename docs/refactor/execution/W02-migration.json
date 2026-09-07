@@ -1,0 +1,257 @@
+{
+  "format": "ts-release/migration-execution/1",
+  "wave": "W02",
+  "status": "native-npm-local-cutover",
+  "sourceCommit": "9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d",
+  "preservationCommit": "d214df5",
+  "physicalDeletedLines": 525,
+  "rows": [
+    {
+      "path": "src/publication/npm.ts",
+      "sha256": "053ebce74bc320c523f6138764b3d019aa244d207bf3a6a47116b310f56fed62",
+      "lines": 525,
+      "disposition": "delete-legacy-child-publisher-and-provider-lifecycle",
+      "retiredDeclarations": [
+        {
+          "name": "npmRecoveryCapabilityProfile",
+          "kind": "VariableDeclaration",
+          "line": 63,
+          "sha256": "690657ac6b755c5060e429beffc24d710d65a0fcf84c37a57339d359b9b832be",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "npmProviderProtocolDocumentation",
+          "kind": "VariableDeclaration",
+          "line": 90,
+          "sha256": "0027d9af601444bfa6aa7f75a86cbb3b74111677cdb92fae323ebc56c78734e2",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "NpmPublicationContract",
+          "kind": "TypeAliasDeclaration",
+          "line": 98,
+          "sha256": "3ca26a91459a10f850e85456684f5a73bef18fe3e4715d93933fac96c4fdd27e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "contractOf",
+          "kind": "VariableDeclaration",
+          "line": 117,
+          "sha256": "a3f6165408da965b7f042611fb4790f1cdda7b34d53b302aaee42c6789d918aa",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "fingerprint",
+          "kind": "VariableDeclaration",
+          "line": 120,
+          "sha256": "424e27a63eb2cbf4c3bc3e1f81e95953b86ceaf28d1aae535aa71b73165ca70f",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "registryEndpoint",
+          "kind": "VariableDeclaration",
+          "line": 124,
+          "sha256": "f0025c7648fb8d33836fef56988edf6a4f6d18f0fd5dec2c2703b651da3de142",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "registryPackageUrl",
+          "kind": "VariableDeclaration",
+          "line": 129,
+          "sha256": "cc2a4e8dfd9cc25a5301eaac4d2b67870b97a4f91a542039e4571e6962335070",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "asObject",
+          "kind": "VariableDeclaration",
+          "line": 132,
+          "sha256": "f3058a8b355a3d04ae2f4269a6625b542cdb021d505c83e0aaf93957145f656b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "parseJson",
+          "kind": "VariableDeclaration",
+          "line": 137,
+          "sha256": "786184df21f0e206ec71d007ba3862eab84816cffc0a79a978279bde23af4d59",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "RegistryPackageFacts",
+          "kind": "TypeAliasDeclaration",
+          "line": 148,
+          "sha256": "92569633ddfb21335367dd2507d78c76f21389fc01da579f7a556909f1783975",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "registryPackageFacts",
+          "kind": "VariableDeclaration",
+          "line": 154,
+          "sha256": "a9528c15c539b5c0d0482ea7517a016ec7c8b3386df8781cb92cf842587d43de",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "RegistryVersionFacts",
+          "kind": "TypeAliasDeclaration",
+          "line": 164,
+          "sha256": "5293cd961a8f359782e92facc34e666ca107c6d91222fdc655635ef7ebf8fb04",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "registryVersionFacts",
+          "kind": "VariableDeclaration",
+          "line": 171,
+          "sha256": "0f08afeeea0f1eaa687e485b8e07905e03823674a9244d657726916987fd80bf",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "observationRequests",
+          "kind": "VariableDeclaration",
+          "line": 188,
+          "sha256": "cb7400708a683db2622616b47e5ed9cc23599aad368c9f2ccf79f5bac2573eb2",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "mutationRequest",
+          "kind": "VariableDeclaration",
+          "line": 202,
+          "sha256": "44f81c0df1d04a294689010578631faea9c4904acab2a477883b8306e5b0233b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "inconclusive",
+          "kind": "VariableDeclaration",
+          "line": 211,
+          "sha256": "144e9ab4a05658432a5ced3c6296d7e86399a691df09b15672216d262927e229",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "difference",
+          "kind": "VariableDeclaration",
+          "line": 219,
+          "sha256": "d94e9a8445fafe6b4c761e64245143beee7c4951124364b12688e442688b394d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "visibleVersionAbsent",
+          "kind": "VariableDeclaration",
+          "line": 230,
+          "sha256": "20438da6644a4e7f21b331209b9b83808e515c64936eaef6d379ab99edba8b36",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "trustedDirectCreate",
+          "kind": "VariableDeclaration",
+          "line": 239,
+          "sha256": "7f25446c052783f09bf825702e4e57044662e6d1e35d3e5e548862b831ba84d6",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "authorizedCreateAbsence",
+          "kind": "VariableDeclaration",
+          "line": 252,
+          "sha256": "c434325b7283a2c8d8f6bd00660bcba0942b1d004b872ec9ca50528d622703aa",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "visibilityPending",
+          "kind": "VariableDeclaration",
+          "line": 261,
+          "sha256": "362b73cc0abdc17c75ac641029d887aaa82917cbee65df036a3ddc0950bfe8bf",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "decide",
+          "kind": "VariableDeclaration",
+          "line": 271,
+          "sha256": "871ecfdf628ae3c5e154287d402067b7cae8c0edad8a4eae56cd7934cdf79270",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "publishOperation",
+          "kind": "VariableDeclaration",
+          "line": 304,
+          "sha256": "ebfe92bb04a3087275b94ddf38ff2db62642e7583930575b2a4b64630b085365",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "sinkFailure",
+          "kind": "VariableDeclaration",
+          "line": 316,
+          "sha256": "b47e983b343538dedc201fdc7d793a92596d310a896435accdb462b75acf3c34",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "publisherAttempt",
+          "kind": "VariableDeclaration",
+          "line": 326,
+          "sha256": "e074d8bbdfd1f0f759b12db11a5c0782f1a53e69a6e26d8d2a91dd1eae0f8d8e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "validMutationDecision",
+          "kind": "VariableDeclaration",
+          "line": 341,
+          "sha256": "59c3eebfa11ffb9838b861279d7452c97118024084cf0e8e5d0d65d35dafff64",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        },
+        {
+          "name": "makeNpmSubject",
+          "kind": "VariableDeclaration",
+          "line": 349,
+          "sha256": "2ea0aeaaaf0255a7ff5edd8de4d0b3dd7204fbe680d43d3f4afcfa51a83a443f",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "npm"
+        }
+      ],
+      "successorPaths": [
+        "packages/npm/src/Model.ts",
+        "packages/npm/src/Native.ts",
+        "packages/npm/src/Wire.ts",
+        "packages/npm/src/Evidence.ts",
+        "packages/npm/src/Protocol.ts",
+        "packages/npm/src/Auth.ts",
+        "packages/ts-release/src/Release.ts"
+      ],
+      "nativeCarryForwardWaves": []
+    }
+  ],
+  "nativeCarryForward": [],
+  "evidence": [
+    "test/reimplementation/npm",
+    "test/reimplementation/kernel/transport-preparation.test.ts",
+    "docs/refactor/execution/W02-packed-npm.json",
+    "docs/refactor/execution/W02-native-sigstore.json",
+    "docs/refactor/execution/W02-review.md"
+  ],
+  "limits": [
+    "local native protocol and process acceptance; live npm/OIDC and full hosts remain Plans009/010",
+    "direct Bun1.3.14 Sigstore/TUF unqualified",
+    "source reduction and final release certification remain open"
+  ]
+}

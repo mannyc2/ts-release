@@ -41,7 +41,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "0f45db1525f16bf69d27169206a842a042f833d605d7aaab98d3e909cfbba0d4"
+    "sha256": "cc2f83c0dfacf05ac56ecd881c866d340acf250f2c30218bb5b20e112fdbaf7d"
   },
   "migration": {
     "path": "docs/refactor/architecture-program/handoff/migration.json",
@@ -56,7 +56,7 @@
     },
     "provider": {
       "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
-      "sha256": "0179c44f1f2e2bd8102f2b4cdcbf5788a5b3aebc4e0367e002e228bdc75452b3"
+      "sha256": "3267f8349411bd1b428b155fd19d781074284e94ea857c878b8906307e27cf09"
     },
     "host": {
       "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
@@ -83,15 +83,19 @@
       "sha256": "d16afc414edbb1192d7a1b8aaa8b92e4c0666c7f46ca80e33e85e167ce482254"
     },
     "http": {
-      "path": "docs/refactor/architecture-program/handoff/http-api.d.ts",
-      "sha256": "fa50a9a495f28fefa21946669aa92828119e5959823b1b237347d2a2a6af8a4d"
+      "path": "docs/refactor/architecture-program/handoff/production-api/Http.d.ts",
+      "sha256": "21939ea2a65f7aeeeba264304eb5fdf103ffe5465f342c945740da7d5a56fd5b"
     },
     "application": {
       "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
       "sha256": "ed80182ff1829ce3d16711f794346a816af816766537209a17a56afa4fa78ba3"
+    },
+    "npm": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/npm/index.d.ts",
+      "sha256": "fa0447e6bc92155425681adf3f5929065271d1523716bad2cdb9001c29dc7423"
     }
   },
-  "publicSurfaceSha256": "0e24d4cab4b51df52d1700722de548b184ab1f48c4f9ab1874723aa13c2ff66a",
+  "publicSurfaceSha256": "b8eb4498cc523b719856e53420a3b8b85c6cede293a8888a3106f0ae10ba4613",
   "effectPatch": {
     "required": false,
     "donorPath": "patches/effect@4.0.0-rc.108.patch",
@@ -134,7 +138,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release",
             "bin": {
@@ -247,7 +251,7 @@
               "build:delivery": "bun scripts/build-delivery.ts"
             }
           },
-          "manifestSha256": "359800b91b13ac68b6bbc3926e0c7a212976fb41d4e8eb566c397305eb256bea",
+          "manifestSha256": "a2fc9632004a9b8531711e9e0ce6ba4bde5c842a203f86a1d3d0f5d8d9e3f166",
           "manifestLines": 129
         }
       ],
@@ -1004,6 +1008,9 @@
             "kernel.Entry",
             "kernel.Bundle",
             "kernel.Http"
+          ],
+          "externalImports": [
+            "semver"
           ]
         },
         {
@@ -1015,10 +1022,11 @@
             "provider.npm.Model",
             "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
-          ],
-          "externalImports": [
-            "semver"
+            "kernel.Http",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "provider.npm.Evidence",
+            "provider.npm.Auth"
           ]
         },
         {
@@ -1030,10 +1038,46 @@
             "provider.npm.Model",
             "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Http",
+            "provider.npm.Native"
           ],
           "externalImports": [
             "sigstore"
+          ]
+        },
+        {
+          "id": "provider.npm.Native",
+          "owner": "core",
+          "path": "src/providers/npm/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "kernel.Entry",
+            "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.npm.Wire",
+          "owner": "core",
+          "path": "src/providers/npm/Wire.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "provider.npm.Native",
+            "provider.npm.Auth"
+          ]
+        },
+        {
+          "id": "provider.npm.Evidence",
+          "owner": "core",
+          "path": "src/providers/npm/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "kernel.Entry",
+            "kernel.Http"
           ]
         },
         {
@@ -1044,7 +1088,10 @@
           "dependencies": [
             "provider.npm.Model",
             "provider.npm.Protocol",
-            "provider.npm.Auth"
+            "provider.npm.Auth",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "provider.npm.Evidence"
           ]
         },
         {
@@ -1265,7 +1312,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "6460d478bcf9aec5754a1b0c1682b8292fc3e403abaecacd9beb7795630642f9",
+        "sourceEdgesSha256": "78b21e1033cec6e3e6e5d25137769051f7593b5cbcfc1c3ab8ef5774cccea853",
         "packageEdgesSha256": "4956bd597d16f55c79c94559faf658c1594b16c74bb5e6ba4e672b7c0fd2cf4f",
         "sourceEdges": [
           {
@@ -2283,6 +2330,30 @@
             "specifier": "../../Http.js"
           },
           {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
             "from": "provider.npm.Auth",
             "to": "provider.npm.Model",
             "loading": "static",
@@ -2307,6 +2378,78 @@
             "specifier": "../../Http.js"
           },
           {
+            "from": "provider.npm.Auth",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "../../Bundle.js"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "../../Http.js"
+          },
+          {
             "from": "provider.npm",
             "to": "provider.npm.Model",
             "loading": "static",
@@ -2323,6 +2466,24 @@
             "to": "provider.npm.Auth",
             "loading": "static",
             "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
           },
           {
             "from": "provider.warehouse.Model",
@@ -2933,7 +3094,7 @@
             "specifier": "effect/SchemaAST"
           },
           {
-            "from": "provider.npm.Protocol",
+            "from": "provider.npm.Model",
             "specifier": "semver"
           },
           {
@@ -3111,7 +3272,7 @@
         "tsconfigJsonLines": 76,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 66,
+        "authoredProductModuleFiles": 69,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -3147,7 +3308,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release",
             "bin": {
@@ -3208,7 +3369,7 @@
               }
             }
           },
-          "manifestSha256": "b984c0a66558256e30ca3601fafe7cdf905524ed68b7498c13e376fdc26d46b8",
+          "manifestSha256": "65b75c42b2f61ac8cc4b8e0b75c83c8d4a962e16677088e11a7bf386ace01bec",
           "manifestLines": 77
         },
         {
@@ -3231,7 +3392,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-providers",
             "exports": {
@@ -3273,7 +3434,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "37e5c4dddc4b791725674fb59b6f7c175c4cf4e53e21dddcd6fd241559c8abfc",
+          "manifestSha256": "2265c1905e5bb439fa89f90af9f5155415c16d836dfaf3988b1870488f532590",
           "manifestLines": 58
         }
       ],
@@ -4092,6 +4253,9 @@
             "kernel.Entry",
             "kernel.Bundle",
             "kernel.Http"
+          ],
+          "externalImports": [
+            "semver"
           ]
         },
         {
@@ -4103,10 +4267,11 @@
             "provider.npm.Model",
             "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
-          ],
-          "externalImports": [
-            "semver"
+            "kernel.Http",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "provider.npm.Evidence",
+            "provider.npm.Auth"
           ]
         },
         {
@@ -4118,10 +4283,46 @@
             "provider.npm.Model",
             "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Http",
+            "provider.npm.Native"
           ],
           "externalImports": [
             "sigstore"
+          ]
+        },
+        {
+          "id": "provider.npm.Native",
+          "owner": "providers",
+          "path": "packages/providers/src/npm/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "kernel.Entry",
+            "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.npm.Wire",
+          "owner": "providers",
+          "path": "packages/providers/src/npm/Wire.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "provider.npm.Native",
+            "provider.npm.Auth"
+          ]
+        },
+        {
+          "id": "provider.npm.Evidence",
+          "owner": "providers",
+          "path": "packages/providers/src/npm/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "kernel.Entry",
+            "kernel.Http"
           ]
         },
         {
@@ -4132,7 +4333,10 @@
           "dependencies": [
             "provider.npm.Model",
             "provider.npm.Protocol",
-            "provider.npm.Auth"
+            "provider.npm.Auth",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "provider.npm.Evidence"
           ]
         },
         {
@@ -4353,7 +4557,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "e5bab41786bc45e6050b3d40b21b861899069120707497523411b5bbd352663b",
+        "sourceEdgesSha256": "318b0940b97bb5525e1a8c7adae3333d19808d48d5b97202664e086d0b01efb1",
         "packageEdgesSha256": "58b5476249a3db40865745e36e66fc3ec2643bc40ec971c8bd381a885864f0ae",
         "sourceEdges": [
           {
@@ -5371,6 +5575,30 @@
             "specifier": "@mannyc1/ts-release/http"
           },
           {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
             "from": "provider.npm.Auth",
             "to": "provider.npm.Model",
             "loading": "static",
@@ -5395,6 +5623,78 @@
             "specifier": "@mannyc1/ts-release/http"
           },
           {
+            "from": "provider.npm.Auth",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
             "from": "provider.npm",
             "to": "provider.npm.Model",
             "loading": "static",
@@ -5411,6 +5711,24 @@
             "to": "provider.npm.Auth",
             "loading": "static",
             "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
           },
           {
             "from": "provider.warehouse.Model",
@@ -6042,7 +6360,7 @@
             "specifier": "effect/SchemaAST"
           },
           {
-            "from": "provider.npm.Protocol",
+            "from": "provider.npm.Model",
             "specifier": "semver"
           },
           {
@@ -6220,7 +6538,7 @@
         "tsconfigJsonLines": 90,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 66,
+        "authoredProductModuleFiles": 69,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -6256,7 +6574,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release",
             "bin": {
@@ -6317,7 +6635,7 @@
               }
             }
           },
-          "manifestSha256": "b984c0a66558256e30ca3601fafe7cdf905524ed68b7498c13e376fdc26d46b8",
+          "manifestSha256": "65b75c42b2f61ac8cc4b8e0b75c83c8d4a962e16677088e11a7bf386ace01bec",
           "manifestLines": 77
         },
         {
@@ -6340,7 +6658,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-npm",
             "exports": {
@@ -6358,7 +6676,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "50540e6c0b57c21743dec3beef400b2a1cd4e25984a4e886c60f347971a3e000",
+          "manifestSha256": "b904cbf11544bf2f262203344cda109fbff69bedd12206d84c01fb7d85b5c296",
           "manifestLines": 34
         },
         {
@@ -6381,7 +6699,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-warehouse",
             "exports": {
@@ -6396,7 +6714,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "a23e391e675c262fa89fce838eaffcd34a1d29c85bc4471bed66dfa856e59a92",
+          "manifestSha256": "40dee38bff12510eb12b26bdba72831bb797218fc8b6a389c8149533dac0badb",
           "manifestLines": 31
         },
         {
@@ -6419,7 +6737,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-github",
             "exports": {
@@ -6434,7 +6752,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "b9089b3a537ed96f5067ffafeb9b6a813458da0053a949d1408820cead6c1779",
+          "manifestSha256": "506ede69beeadff24aaa3471e0b7d6b02335865c686825b5e241338fe743ed78",
           "manifestLines": 31
         },
         {
@@ -6457,7 +6775,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-homebrew",
             "exports": {
@@ -6472,7 +6790,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "314d52fb3f0e72bd93023c1b7c0de608d224aa9a3e586fc7157d5377db37fbc6",
+          "manifestSha256": "1a22853181873af748ddcb7ab28ac9d1e8ecdf9da8bdf2216a642732cb07b27e",
           "manifestLines": 31
         },
         {
@@ -6495,7 +6813,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-scoop",
             "exports": {
@@ -6510,7 +6828,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "e1913593241d926aecfbe4c931c6cf7c20c5aaf49bfdebee574c31892cf51a54",
+          "manifestSha256": "11dd06d010780a663811275874e7e416097d070c4a9825523c2174bf0e3b0fb7",
           "manifestLines": 31
         },
         {
@@ -6533,7 +6851,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-mcp",
             "exports": {
@@ -6548,7 +6866,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "803e7c33b376634d9946c52bbf299438db1dde57191b8c867437f134b4bed655",
+          "manifestSha256": "85ac84a6428ced55536e5b4ead2cc4f5aa706f06c6412e90b023cf9e9f05d23a",
           "manifestLines": 31
         },
         {
@@ -6571,7 +6889,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-openai",
             "exports": {
@@ -6588,7 +6906,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "80c9a0d03c31e83930c183ee4615abef1a5e0ccde3e8fc2450d27abff6a45784",
+          "manifestSha256": "951c5817efac92ecdc23d6629fda98ef1df892244ed57308947f838a8c1b2988",
           "manifestLines": 33
         }
       ],
@@ -7526,6 +7844,9 @@
             "kernel.Entry",
             "kernel.Bundle",
             "kernel.Http"
+          ],
+          "externalImports": [
+            "semver"
           ]
         },
         {
@@ -7537,10 +7858,11 @@
             "provider.npm.Model",
             "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
-          ],
-          "externalImports": [
-            "semver"
+            "kernel.Http",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "provider.npm.Evidence",
+            "provider.npm.Auth"
           ]
         },
         {
@@ -7552,10 +7874,46 @@
             "provider.npm.Model",
             "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Http",
+            "provider.npm.Native"
           ],
           "externalImports": [
             "sigstore"
+          ]
+        },
+        {
+          "id": "provider.npm.Native",
+          "owner": "provider.npm",
+          "path": "packages/npm/src/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "kernel.Entry",
+            "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.npm.Wire",
+          "owner": "provider.npm",
+          "path": "packages/npm/src/Wire.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "provider.npm.Native",
+            "provider.npm.Auth"
+          ]
+        },
+        {
+          "id": "provider.npm.Evidence",
+          "owner": "provider.npm",
+          "path": "packages/npm/src/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "kernel.Entry",
+            "kernel.Http"
           ]
         },
         {
@@ -7566,7 +7924,10 @@
           "dependencies": [
             "provider.npm.Model",
             "provider.npm.Protocol",
-            "provider.npm.Auth"
+            "provider.npm.Auth",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "provider.npm.Evidence"
           ]
         },
         {
@@ -7787,7 +8148,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "e444a1ca9689ebe0d0a745efafb4c2498042030565a3af51773333c40e98147d",
+        "sourceEdgesSha256": "977bd967f012fae955c84d0e49e03452e3f53c0f9b24456c40feb9350271a16b",
         "packageEdgesSha256": "b298428b1bc4fb4d172fb7fe9721f0cdb99994682693474b37014e467fcee1d0",
         "sourceEdges": [
           {
@@ -8805,6 +9166,30 @@
             "specifier": "@mannyc1/ts-release/http"
           },
           {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
             "from": "provider.npm.Auth",
             "to": "provider.npm.Model",
             "loading": "static",
@@ -8829,6 +9214,78 @@
             "specifier": "@mannyc1/ts-release/http"
           },
           {
+            "from": "provider.npm.Auth",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
             "from": "provider.npm",
             "to": "provider.npm.Model",
             "loading": "static",
@@ -8845,6 +9302,24 @@
             "to": "provider.npm.Auth",
             "loading": "static",
             "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
           },
           {
             "from": "provider.warehouse.Model",
@@ -9609,7 +10084,7 @@
             "specifier": "effect/SchemaAST"
           },
           {
-            "from": "provider.npm.Protocol",
+            "from": "provider.npm.Model",
             "specifier": "semver"
           },
           {
@@ -9787,7 +10262,7 @@
         "tsconfigJsonLines": 174,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 66,
+        "authoredProductModuleFiles": 69,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -9823,7 +10298,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release",
             "bin": {
@@ -9884,7 +10359,7 @@
               }
             }
           },
-          "manifestSha256": "b984c0a66558256e30ca3601fafe7cdf905524ed68b7498c13e376fdc26d46b8",
+          "manifestSha256": "65b75c42b2f61ac8cc4b8e0b75c83c8d4a962e16677088e11a7bf386ace01bec",
           "manifestLines": 77
         },
         {
@@ -9907,7 +10382,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-npm",
             "exports": {
@@ -9925,7 +10400,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "50540e6c0b57c21743dec3beef400b2a1cd4e25984a4e886c60f347971a3e000",
+          "manifestSha256": "b904cbf11544bf2f262203344cda109fbff69bedd12206d84c01fb7d85b5c296",
           "manifestLines": 34
         },
         {
@@ -9948,7 +10423,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-pypi",
             "exports": {
@@ -9963,7 +10438,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "48c58e16e47f37ea279ae9b61d67ff681b342c4ccd30ae3a570ba0fb30c273eb",
+          "manifestSha256": "10565ab6fce7a3f01a7ee1056bdede815ab4602e5c198cfeb4df46ab6f2dcf27",
           "manifestLines": 31
         },
         {
@@ -9986,7 +10461,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-github",
             "exports": {
@@ -10001,7 +10476,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "b9089b3a537ed96f5067ffafeb9b6a813458da0053a949d1408820cead6c1779",
+          "manifestSha256": "506ede69beeadff24aaa3471e0b7d6b02335865c686825b5e241338fe743ed78",
           "manifestLines": 31
         },
         {
@@ -10024,7 +10499,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-catalog",
             "exports": {
@@ -10043,7 +10518,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "e21c0222636ff0fc07f79df80523297fb28b6527b8c02d549f4b1416990d32d2",
+          "manifestSha256": "d76c469aab16ed24f857fcaa3dfac3319c9b2c6f389b71ac65ea71fb6ce13d6a",
           "manifestLines": 35
         },
         {
@@ -10066,7 +10541,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-mcp",
             "exports": {
@@ -10081,7 +10556,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "803e7c33b376634d9946c52bbf299438db1dde57191b8c867437f134b4bed655",
+          "manifestSha256": "85ac84a6428ced55536e5b4ead2cc4f5aa706f06c6412e90b023cf9e9f05d23a",
           "manifestLines": 31
         },
         {
@@ -10104,7 +10579,7 @@
             },
             "publishConfig": {
               "access": "public",
-              "registry": "https://registry.npmjs.org"
+              "registry": "https://registry.npmjs.org/"
             },
             "name": "@mannyc1/ts-release-openai",
             "exports": {
@@ -10121,7 +10596,7 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "80c9a0d03c31e83930c183ee4615abef1a5e0ccde3e8fc2450d27abff6a45784",
+          "manifestSha256": "951c5817efac92ecdc23d6629fda98ef1df892244ed57308947f838a8c1b2988",
           "manifestLines": 33
         }
       ],
@@ -11033,6 +11508,9 @@
             "kernel.Entry",
             "kernel.Bundle",
             "kernel.Http"
+          ],
+          "externalImports": [
+            "semver"
           ]
         },
         {
@@ -11044,10 +11522,11 @@
             "provider.npm.Model",
             "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
-          ],
-          "externalImports": [
-            "semver"
+            "kernel.Http",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "provider.npm.Evidence",
+            "provider.npm.Auth"
           ]
         },
         {
@@ -11059,10 +11538,46 @@
             "provider.npm.Model",
             "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Http",
+            "provider.npm.Native"
           ],
           "externalImports": [
             "sigstore"
+          ]
+        },
+        {
+          "id": "provider.npm.Native",
+          "owner": "provider.npm",
+          "path": "packages/npm/src/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "kernel.Entry",
+            "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.npm.Wire",
+          "owner": "provider.npm",
+          "path": "packages/npm/src/Wire.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "provider.npm.Native",
+            "provider.npm.Auth"
+          ]
+        },
+        {
+          "id": "provider.npm.Evidence",
+          "owner": "provider.npm",
+          "path": "packages/npm/src/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "kernel.Entry",
+            "kernel.Http"
           ]
         },
         {
@@ -11073,7 +11588,10 @@
           "dependencies": [
             "provider.npm.Model",
             "provider.npm.Protocol",
-            "provider.npm.Auth"
+            "provider.npm.Auth",
+            "provider.npm.Native",
+            "provider.npm.Wire",
+            "provider.npm.Evidence"
           ]
         },
         {
@@ -11294,7 +11812,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "f24ccd15a92c16b073f536e945d41328ebf6ffb5eda6268f4d711900ac8e17b1",
+        "sourceEdgesSha256": "62c75d063093b3982b275794c94af98193072061775ef55de3999a7e18a6f571",
         "packageEdgesSha256": "bb5683f96928748e1531eac43b252d9edc34daadd5d7c8b0fb3561d5e46bcf3e",
         "sourceEdges": [
           {
@@ -12312,6 +12830,30 @@
             "specifier": "@mannyc1/ts-release/http"
           },
           {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
             "from": "provider.npm.Auth",
             "to": "provider.npm.Model",
             "loading": "static",
@@ -12336,6 +12878,78 @@
             "specifier": "@mannyc1/ts-release/http"
           },
           {
+            "from": "provider.npm.Auth",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Wire",
+            "to": "provider.npm.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.npm.Evidence",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
             "from": "provider.npm",
             "to": "provider.npm.Model",
             "loading": "static",
@@ -12352,6 +12966,24 @@
             "to": "provider.npm.Auth",
             "loading": "static",
             "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
           },
           {
             "from": "provider.warehouse.Model",
@@ -13081,7 +13713,7 @@
             "specifier": "effect/SchemaAST"
           },
           {
-            "from": "provider.npm.Protocol",
+            "from": "provider.npm.Model",
             "specifier": "semver"
           },
           {
@@ -13259,7 +13891,7 @@
         "tsconfigJsonLines": 160,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 66,
+        "authoredProductModuleFiles": 69,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }

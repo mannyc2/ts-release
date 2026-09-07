@@ -1,0 +1,539 @@
+{
+  "format": "ts-release/wave-local-verification/1",
+  "wave": "W02",
+  "status": "implemented-local-cutover-with-recorded-planning-variance",
+  "observedAt": "2026-09-07T04:58:34.898Z",
+  "sources": [
+    {
+      "path": ".prettierrc.json",
+      "sha256": "d01756a85bea846374c5f36f2551be858ff9908b60c03eb01362674f2a56990a"
+    },
+    {
+      "path": "bun.lock",
+      "sha256": "cd0b4cea911738ecc2bbae874fbb77612fc86a8acded1e3ecbd3dd85ceb2134c"
+    },
+    {
+      "path": "docs/refactor/execution/W02-migration.json",
+      "sha256": "d68f48bb925040992216ecaaaeda458d4fc810a6060d43b671ba03221613307c"
+    },
+    {
+      "path": "docs/refactor/execution/W02-native-sigstore.json",
+      "sha256": "8f8bf92a9bc05a9138dd72ee6ebe40a4258221d1af9454aa36f8fb01c3f7a9e0"
+    },
+    {
+      "path": "docs/refactor/execution/W02-packed-npm.json",
+      "sha256": "c87c2fea72a32f1e23dca224086da1b6a94d234cf54e274b8e11f0d78e1d5e7c"
+    },
+    {
+      "path": "docs/refactor/execution/W02-review.md",
+      "sha256": "3272ae479bbaeda5e4d2e75b0626775d4aa815838a04c725a0843001932f6ece"
+    },
+    {
+      "path": "docs/refactor/execution/W02-source-variance.json",
+      "sha256": "9f31cc5251c9920484e17eb7a3cdd18c7c33621a48e1e2b95cb927401cde7fef"
+    },
+    {
+      "path": "package.json",
+      "sha256": "899ef2b357cac100c8cc746fe179968adac05968b3e23d537b9341ffde7f5f2d"
+    },
+    {
+      "path": "packages/npm/LICENSE",
+      "sha256": "e04e2f9016ad9fd424fa212d44435f2c607b8dac2e61301af843b2c2fca3d56f"
+    },
+    {
+      "path": "packages/npm/README.md",
+      "sha256": "4eea1ba93f3b3c6a6c915839cd8a97fffbd35bcf3e1f13ff4e8d6955842f74b4"
+    },
+    {
+      "path": "packages/npm/package.json",
+      "sha256": "b904cbf11544bf2f262203344cda109fbff69bedd12206d84c01fb7d85b5c296"
+    },
+    {
+      "path": "packages/npm/src/Auth.ts",
+      "sha256": "e8c2552d35d77d6886aee588432f182558eb7540a3ecc62769321eed5f27950d"
+    },
+    {
+      "path": "packages/npm/src/Evidence.ts",
+      "sha256": "1ffb3a01d26b9d9e6caf2d44695bdd00e37787b6aead3507c3a5fa1c41fb272d"
+    },
+    {
+      "path": "packages/npm/src/Model.ts",
+      "sha256": "f1c342927915077b7dcb6bff5ffef0e342c200698ebc1c1e2d0e2896abcfaf7b"
+    },
+    {
+      "path": "packages/npm/src/Native.ts",
+      "sha256": "f07126b0510dbc491ffb5eeaf6461cdfd5af1caba6d5a90627193cd12f26d60c"
+    },
+    {
+      "path": "packages/npm/src/Protocol.ts",
+      "sha256": "abdc77a7ee507ecadd08cb5cf74afac2f7776cc804550238fef4d544ebc2fced"
+    },
+    {
+      "path": "packages/npm/src/Wire.ts",
+      "sha256": "4e1e6495282acbb97a160c3be004112eb421d2cdbedf607efacbf25291d05e64"
+    },
+    {
+      "path": "packages/npm/src/index.ts",
+      "sha256": "24f761eeafea23755b822b81dcd2f4d408a21d87569915e30ba8c6e578f127dd"
+    },
+    {
+      "path": "packages/npm/tsconfig.build.json",
+      "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8"
+    },
+    {
+      "path": "packages/ts-release/LICENSE",
+      "sha256": "e04e2f9016ad9fd424fa212d44435f2c607b8dac2e61301af843b2c2fca3d56f"
+    },
+    {
+      "path": "packages/ts-release/README.md",
+      "sha256": "f02e3e8cfd95239bc4221524a16a58584dab03da8a7b43224a6b74faf15c7666"
+    },
+    {
+      "path": "packages/ts-release/package.json",
+      "sha256": "00809310590bb651c9b1193835ae4d634fa9b4ff3f1af91774dfed46c1287119"
+    },
+    {
+      "path": "packages/ts-release/src/Bun.ts",
+      "sha256": "9d711fd918def408ca13aa584d3a0768160c31b0157da2fb13fdca9049d73af5"
+    },
+    {
+      "path": "packages/ts-release/src/Bundle.ts",
+      "sha256": "81020fd7a563b2e046ddc45bc896641c537d0c226ea988e634e64d9032884bc5"
+    },
+    {
+      "path": "packages/ts-release/src/Http.ts",
+      "sha256": "35ff6d695f02d8807ee77157fba59fe0aa73fda1736a2bafda7d598534b60a4f"
+    },
+    {
+      "path": "packages/ts-release/src/Journal.ts",
+      "sha256": "be0fd6e56767380becd7f90188ab35a5f1d58ed0e12e38ea1f84c5e7babd97d4"
+    },
+    {
+      "path": "packages/ts-release/src/Node.ts",
+      "sha256": "4d0bf89dbb80e356c289ee164e3630a919e4ca8543c439f2879e0b1926209a23"
+    },
+    {
+      "path": "packages/ts-release/src/Plan.ts",
+      "sha256": "ca99ed5271366fd9da4789b45bbe2c3a00063fe478b33bf55059805ed9cac6f7"
+    },
+    {
+      "path": "packages/ts-release/src/Provider.ts",
+      "sha256": "3bb6343e1a856e36e617bfd0554dd4855a60252db3c7018199f143c94c6e3d36"
+    },
+    {
+      "path": "packages/ts-release/src/Release.ts",
+      "sha256": "7b5533f12dfaf716a2b9a9319780f0639f8325cd95dadb1ccd64a74f597adec9"
+    },
+    {
+      "path": "packages/ts-release/src/index.ts",
+      "sha256": "daa1fb4f6c77726a93e03d6925db808886915d6553e452197842f3609db2547a"
+    },
+    {
+      "path": "packages/ts-release/src/internal/ArtifactModel.ts",
+      "sha256": "27b57b6943a876b1eebb4915cfdc27e6e36120b7739db94ae8c07474092ee48c"
+    },
+    {
+      "path": "packages/ts-release/src/internal/BundleCodec.ts",
+      "sha256": "c021d823a4cb708162eb6fe73d1cc9814b8a9b066dd5e65a9a133147bad2ba7a"
+    },
+    {
+      "path": "packages/ts-release/src/internal/BundleFinalize.ts",
+      "sha256": "5380f88fdaf236090232118840dac8d5c4a8c6bce06f2c925ca7d7b2165ee3f3"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Content.ts",
+      "sha256": "9a06b956527f8d994d1612a8919297167bb64e757d24fde0823ffe39de4f1edc"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Decision.ts",
+      "sha256": "9431d65013e22246a31585c2cc60858795399e6c74614f47fba817070e9ab4cf"
+    },
+    {
+      "path": "packages/ts-release/src/internal/EffectTypes.ts",
+      "sha256": "fbf72e6ca89f37f162f3a6e455b9da742f7b6c542ae116c254f2e88266a842de"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Error.ts",
+      "sha256": "72e2cbc4d1dced743dcf68777d5754995e2c4e63ddb43fc67d2229ae87f06ed2"
+    },
+    {
+      "path": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "sha256": "edb4920d6b9867c971568786cbef394de49873bfcb742a57577a80d41bbcbe48"
+    },
+    {
+      "path": "packages/ts-release/src/internal/GitAuthority.ts",
+      "sha256": "b0b9d0d44c9ba28d17c4071e26b486dce3b93e8802d10b8337842175b8eb8d03"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Host.ts",
+      "sha256": "c0e94663e49b1910800a8d7d58cb6ab3c74a0bf8e75f85f26d3fb58748fa14ad"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Identity.ts",
+      "sha256": "ab9cf2c26135a2a4e7a51e9beee887f789bbb9bfb1b8a84d163fc608b489c7cc"
+    },
+    {
+      "path": "packages/ts-release/src/internal/ReleaseModel.ts",
+      "sha256": "971fafc2674743e3a79639c67c024b5126d2946a1956d692187198a44960d437"
+    },
+    {
+      "path": "packages/ts-release/src/internal/TreeManifest.ts",
+      "sha256": "c3dff093aded6406e0739ba1af21afdbd569c2ca42006589009a305bb0df2373"
+    },
+    {
+      "path": "packages/ts-release/src/platform/Application.ts",
+      "sha256": "1589157f2e19456d56b5721c05fca9d2459c5079b359c5fd70e0378cbab4baa8"
+    },
+    {
+      "path": "packages/ts-release/src/platform/ContentStore.ts",
+      "sha256": "0b70de2d4e95ab73c7678ed1a004fa101601e689e32ec82b53b8db2d83a32182"
+    },
+    {
+      "path": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "sha256": "8537597f4e9c692878011ac8cf45b137c9d419e998471532a97a32059d257bfb"
+    },
+    {
+      "path": "packages/ts-release/src/platform/StoreCodec.ts",
+      "sha256": "06a572008f64d8999566bc1ba33d9139a247ff4c146b723753ac1fb6041900b0"
+    },
+    {
+      "path": "packages/ts-release/tsconfig.build.json",
+      "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8"
+    },
+    {
+      "path": "scripts/build-action-bundle.ts",
+      "sha256": "55159b2829aa00b860f09fa3c45e64c3ef145896c875c40db842e996efe74c03"
+    },
+    {
+      "path": "scripts/build-cli-bundle.ts",
+      "sha256": "c843824f5ca0a540764321ded31b16cffb98729853c7929bf248a87b3ae5ec80"
+    },
+    {
+      "path": "scripts/build-pypi-wheels.ts",
+      "sha256": "0a4c3c7669e9952fbc13ca8e4e68c6cbeaddc7de34d148b52155ee989a0b70c9"
+    },
+    {
+      "path": "scripts/build.ts",
+      "sha256": "e1ac8ad797243d183a65fc29d39a419f7081ed850bc7e49e4bc6b94e88035616"
+    },
+    {
+      "path": "scripts/check-action-bundle.ts",
+      "sha256": "d4eacc003853f89fc8c65a10176e500eb657571d7d6c232413bc8158946c8897"
+    },
+    {
+      "path": "scripts/check-architecture-ancestry.ts",
+      "sha256": "4d1fe5481b4b6f538ee5ee3dff111512ad97d66e3041d622e77ea19e19192367"
+    },
+    {
+      "path": "scripts/check-architecture-budget.ts",
+      "sha256": "4d1c50389d0aea63fe291d2c6e427358cc3844c74cd81008c64bafc606c85af8"
+    },
+    {
+      "path": "scripts/check-capabilities.ts",
+      "sha256": "5f8430e099b3063a559de7b4ca071cfeb59d258ca1d550b72553b07d77193de2"
+    },
+    {
+      "path": "scripts/check-cli-bundle.ts",
+      "sha256": "1f023be094d06d8ec603488c82537b7d4d94f3fbb04678946e1b4da8528c6f68"
+    },
+    {
+      "path": "scripts/check-config-schema.ts",
+      "sha256": "87336d4751950dfa3ce5ac828a3cadb419c66b6f0dc2335aaa49d3ad417c92f3"
+    },
+    {
+      "path": "scripts/check-examples.ts",
+      "sha256": "31d679f5766790ae3fcbb89058d9b006bdbd9f7fbf060cea983833143d60801a"
+    },
+    {
+      "path": "scripts/check-feature-translation.ts",
+      "sha256": "eb9d7563611361422d60c36dad4fd5d4d1a4a788e3d51f73d66c76b6665daaaf"
+    },
+    {
+      "path": "scripts/check-import-rules.ts",
+      "sha256": "70ebd36eb7d7b37bea2fe5d147896d02fc6fc9afdfffe355910e62c09e09f334"
+    },
+    {
+      "path": "scripts/check-launch-evidence.ts",
+      "sha256": "d8a972b2c02f7b80f338df3af70580d79145af5ea4fb83b56e4d74871fb6efd0"
+    },
+    {
+      "path": "scripts/check-migration-execution.ts",
+      "sha256": "4cc748dde6fdb61e1e56a64887b17a689d2b4c68b726586f37ecb13557b5405d"
+    },
+    {
+      "path": "scripts/check-native-npm-sigstore.ts",
+      "sha256": "2382c13d545fb1b4f0d5d8f2d776ad4fff83287fce634ba340b4a6a99ae0ca92"
+    },
+    {
+      "path": "scripts/check-package-exports.ts",
+      "sha256": "da1fae050add15e9f6ae903fbe2066c3159114396145182cc60007fa1096a324"
+    },
+    {
+      "path": "scripts/check-packed-consumers.ts",
+      "sha256": "11afab97c85d11b62eac6b541a96248cae5bcd4c8645dc2071837618f67618b3"
+    },
+    {
+      "path": "scripts/check-packed-kernel.ts",
+      "sha256": "880bd414de786346b712081bc27373d45388736f864cab8fb4cc716889638c2c"
+    },
+    {
+      "path": "scripts/check-packed-npm.ts",
+      "sha256": "7828c7560e2ef9d9ff24ae5d23a095a63c88754eafd04856765482dc2c16a0af"
+    },
+    {
+      "path": "scripts/check-readme.ts",
+      "sha256": "28edd37b301293d4d9a69830a68443c0c3f7a8fe6fe4bd5c8a81cc20689bb598"
+    },
+    {
+      "path": "scripts/check-recovery-docs.ts",
+      "sha256": "8cad929d1ca666b0d0bcab0832b61b1fee885d7e9748a825edded9a54c6d7a7d"
+    },
+    {
+      "path": "scripts/check-tree-shaking.ts",
+      "sha256": "c3e0bad627da0f6888d4a5d538667e2cc9230b13b9f6d0c4ccb8180cd76a875a"
+    },
+    {
+      "path": "scripts/check-versions.ts",
+      "sha256": "a41d09e278f8e971822a4c599152743d3b0c982dd70e1159efab000726cc925e"
+    },
+    {
+      "path": "scripts/check-wave-prerequisite.ts",
+      "sha256": "4085c6c96b14679a4d5cef799f741a0719b78c3317f3c6148947c6dc6990f537"
+    },
+    {
+      "path": "scripts/check.ts",
+      "sha256": "4733c631c2cadf49dc908e4039eefbdfe3328b604611d3cae743e3ff492e2acd"
+    },
+    {
+      "path": "scripts/project-production-api.ts",
+      "sha256": "ab81ce89d435cd6cc50570aa3a4d86c9ce52b672a05200597abf7399adb0354e"
+    },
+    {
+      "path": "test/reimplementation/kernel/admission.test.ts",
+      "sha256": "6c808b5299c3cd76f57f2b7502c0eab1fd9095229c8dfd8bceacb0db6825efdc"
+    },
+    {
+      "path": "test/reimplementation/kernel/application-fixture.ts",
+      "sha256": "b0cbc7d611a2dea9fcb67087557b28cbfc69f307da1a6115b6634a9807600d8e"
+    },
+    {
+      "path": "test/reimplementation/kernel/application.test.ts",
+      "sha256": "82c94ccea3835698a3572bfd7e04b4d26ea987f8bb7d75ac5b924a03471e64d0"
+    },
+    {
+      "path": "test/reimplementation/kernel/boundaries.test.ts",
+      "sha256": "c54fc622ddf61df32c71bf34e2aea52beb621d8d50b147e18515b81a643c5bd9"
+    },
+    {
+      "path": "test/reimplementation/kernel/bundle.test.ts",
+      "sha256": "65eeda33021db5d8047d3f4ebecb189ac26566320bc458a6fbe9cc5d85c807c3"
+    },
+    {
+      "path": "test/reimplementation/kernel/c08.test.ts",
+      "sha256": "46a0b82383ed2f2408904cf8f37680510d442857ff88341b6a9940d6c7e3a2a1"
+    },
+    {
+      "path": "test/reimplementation/kernel/content-runner.ts",
+      "sha256": "0e720afd7690a193da2041e6f15546e9d500b7269e452ad20c9100d89f0feb55"
+    },
+    {
+      "path": "test/reimplementation/kernel/errors.test.ts",
+      "sha256": "430ef3c87635cc3caea08b5c747d81c20cf25f0a5bf903c886b5656f7b0f3540"
+    },
+    {
+      "path": "test/reimplementation/kernel/fixtures.ts",
+      "sha256": "50e3e065f6753c634aac40e56a144ab36cc8727e3afd9fb634308f06cf01e8ad"
+    },
+    {
+      "path": "test/reimplementation/kernel/git.test.ts",
+      "sha256": "84cf6bac292b9e14a387b838e5885cf2a67cb55794320a286c1799427ee152fb"
+    },
+    {
+      "path": "test/reimplementation/kernel/kernel.ts",
+      "sha256": "9b036eb14c61524ce82ae94d1189e1e434827bf939df1c8b2f0e6f2ea54ba6d6"
+    },
+    {
+      "path": "test/reimplementation/kernel/observable.test.ts",
+      "sha256": "ee04155c62047c7d70ab060fbd00f264fb307855ace3c69436705fe8ac084ba6"
+    },
+    {
+      "path": "test/reimplementation/kernel/process-runner.ts",
+      "sha256": "edd9f9982c4ba12fbe2e9cbbf7c263c1119ebfbcc141a8c31f4f8851f7af425c"
+    },
+    {
+      "path": "test/reimplementation/kernel/process.test.ts",
+      "sha256": "67b669b4d783d590eb4cae8770a93dffd15dc69d810eca8d403874470627d6db"
+    },
+    {
+      "path": "test/reimplementation/kernel/report.test.ts",
+      "sha256": "6f0ae80b1bdc3c3162671c145c2944bda1ea5824e3f2642bb38ac1e8fe8d817a"
+    },
+    {
+      "path": "test/reimplementation/kernel/sqlite-fixture.ts",
+      "sha256": "5f351a3e7621d8ceb5c51267e236bb43c80f57f5c9763a59ca1637a58f636c9d"
+    },
+    {
+      "path": "test/reimplementation/kernel/sqlite.test.ts",
+      "sha256": "a328f004bdd47492c5cf0c0457954deb246d36dd355f86a78f1093722a90dc5f"
+    },
+    {
+      "path": "test/reimplementation/kernel/transport-preparation.test.ts",
+      "sha256": "37ed37e63bf4a56e62a2c7bda333cc3f7fe84fa79998da7968467bdbed277714"
+    },
+    {
+      "path": "test/reimplementation/kernel/witnesses/caching-store.ts",
+      "sha256": "5e334a89c3230000151799c94230d28732eabd4b05517239617aa98cca101291"
+    },
+    {
+      "path": "test/reimplementation/kernel/witnesses/m2-transition.ts",
+      "sha256": "d3df92f1a21957dbe7a549075f51589fe5a8d84ab4f6e05a61334b805646e542"
+    },
+    {
+      "path": "test/reimplementation/kernel/witnesses/memoized-machine.ts",
+      "sha256": "4a90261e484ff9e886f0532c8d49dacc1ba05f73f679f5154b67f4d59e954b4a"
+    },
+    {
+      "path": "test/reimplementation/npm/auth.test.ts",
+      "sha256": "b16b8aad73750624a1dc003928aa2b682409894d1e7afd713711a06a80fbc2e6"
+    },
+    {
+      "path": "test/reimplementation/npm/authoring.test.ts",
+      "sha256": "7e0eb43747b86a64cce1fd18cc589ee559e25ed31eadda8e574418a3cde0e56e"
+    },
+    {
+      "path": "test/reimplementation/npm/capture-native-oracle.mjs",
+      "sha256": "85df5213a211f0619f9f02a8bca1f7a8f3c4a0d7fba826494d07ba7bd140a965"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures.ts",
+      "sha256": "71668179a08fc08f14ed5c1576bbdd87b9615d6204db45694ee3ee24e97f905f"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/native-manifest.json",
+      "sha256": "2b76500a58cef8352395fef73f4417590c7c8ff7698e79940bbab21e97fba19b"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/native-oracle.json",
+      "sha256": "14767125d5f1012769bc4d70a86e926d7e02063a0888161eb6976f152abaf35b"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/native-package.tgz",
+      "sha256": "fe871fc21fc056d9f745cb0a8318abf9c90ecc985cd77a6acce267de198a8365"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/sigstore-5.0.0-attestations.json",
+      "sha256": "ab9228005186f50e545239d7c34d08459a82fe166af867f9bbeeb9cc1a8a426e"
+    },
+    {
+      "path": "test/reimplementation/npm/native-oracle.test.ts",
+      "sha256": "88274c9f241c57e0c25635a85f0ebbbb74afcc576a8d863d55acb79a279b920f"
+    },
+    {
+      "path": "test/reimplementation/npm/native-sigstore-consumer.mjs",
+      "sha256": "8f2142699221d0e61fdc2fb47892df740ba748a0859f0be2b5a08aeed6ee227d"
+    },
+    {
+      "path": "test/reimplementation/npm/packed-consumer.mjs",
+      "sha256": "d6c83c39124eb3aa053d99dab07c57e31fdbac860634e01ce1253da6626559e1"
+    },
+    {
+      "path": "test/reimplementation/npm/process-worker.ts",
+      "sha256": "23bc3afcaf29e045fa1db11af3a60c753f63607bd5531f2e73347c11c0433491"
+    },
+    {
+      "path": "test/reimplementation/npm/process.test.ts",
+      "sha256": "ce6bb0a259cd126eb83aa7a91a9472d41c6a02b2fdbb3ff736882eca2b86cb8d"
+    },
+    {
+      "path": "test/reimplementation/npm/protocol.test.ts",
+      "sha256": "58bf7746f6da36b9935402e1ff338603ea0a6802aeb23d171effb33fc5bfc6b7"
+    },
+    {
+      "path": "test/reimplementation/packed-kernel/application.mjs",
+      "sha256": "c86408f33ac2c22558f0c8b62d37159ee9a52406d5df46f7452704874c1b96ff"
+    },
+    {
+      "path": "test/reimplementation/packed-kernel/bun.mjs",
+      "sha256": "38fd5648afe4af3718305197c43085f66fec73600f0456f632cd12e5bb10cd71"
+    },
+    {
+      "path": "test/reimplementation/packed-kernel/portable.mjs",
+      "sha256": "73efdffa7322464b0ec45c16e35f06170fdd3d06eadd2974fbb24a8eeb8a6f41"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "0f165251fe6ac7b06fcc0229098f3efdd54a88c4c1deca47f58933406b9223a9"
+    }
+  ],
+  "results": {
+    "strictCheck": "pass",
+    "production": {
+      "passed": 148,
+      "assertions": 1024,
+      "files": 17
+    },
+    "packed": {
+      "record": "W02-packed-npm.json",
+      "packages": 2,
+      "managers": [
+        "bun",
+        "npm"
+      ],
+      "runtimes": [
+        "Node22.22.2",
+        "Bun1.3.14"
+      ],
+      "inputs": [
+        "fixture",
+        "actual kernel archive",
+        "actual npm archive"
+      ],
+      "published": false
+    },
+    "native": {
+      "encoding": "Official libnpmpublish10.0.2 and npm dist-tag source-bound full-request oracle",
+      "trust": "W02-native-sigstore.json",
+      "process": "Local native HTTP protocol double + SIGKILL/SQLite:1send/1dispatch/0receipts; fresh absence/success/tag-drift observation"
+    },
+    "migration": {
+      "retiredFiles": 1,
+      "retiredDeclarations": 27,
+      "deletedPhysicalLines": 525,
+      "W01NpmCarry": "verified locally; actual source/producer boundaries remain W08/W10"
+    },
+    "source": {
+      "replacement": 4399,
+      "legacy": 7433,
+      "physicalProduct": 11832,
+      "originalTripwire": 3350,
+      "planningTripwirePassed": false,
+      "planningVariance": "Exact digest in W02-source-variance.json; no complete-product waiver",
+      "completeProductCeiling": 11485,
+      "achievedReduction": false
+    },
+    "architecture": "Actual owners, projection, reviewed integrity, ancestry and migration pass",
+    "launch": {
+      "open": 69,
+      "closed": 0
+    }
+  },
+  "boundedIndependentReview": {
+    "agent": "/root/review_beta_declaration",
+    "record": "W02-review.md",
+    "remainingActionableFindings": 0
+  },
+  "limits": [
+    "Hosted npm/OIDC/signing and Plans009/010 remain open",
+    "Direct Bun1.3.14 Sigstore unqualified",
+    "Shared-cache Bun install stalled; clean isolated-cache consumer passed; cause not diagnosed",
+    "Whole seven-package/CLI/Action/self-release/agents/native release not certified",
+    "No version published"
+  ],
+  "logs": {
+    "directVerification": "{\"argv\":[\"bun\",\"tools/architecture-lab/inventory.ts\",\"--check\"],\"exitCode\":0}\n{\"argv\":[\"bun\",\"tools/architecture-lab/migration.ts\",\"--check\"],\"exitCode\":0}\n{\"argv\":[\"bun\",\"tools/architecture-lab/reconcile.ts\",\"--check\"],\"exitCode\":0}\n{\"argv\":[\"bun\",\"tools/architecture-lab/project.ts\",\"--check\"],\"exitCode\":0}\n{\"argv\":[\"python3\",\"tools/architecture-lab/public-history-inventory.py\",\"--check\"],\"exitCode\":0}\n{\"argv\":[\"bun\",\"run\",\"check\"],\"exitCode\":0}\n{\"argv\":[\"bun\",\"scripts/project-production-api.ts\",\"--check\"],\"exitCode\":0}\n{\"argv\":[\"bun\",\"scripts/check-import-rules.ts\"],\"exitCode\":0}\n{\"argv\":[\"bun\",\"scripts/check-package-exports.ts\"],\"exitCode\":0}\n{\"argv\":[\"bun\",\"scripts/check-migration-execution.ts\"],\"exitCode\":0}\n{\"argv\":[\"bun\",\"test\",\"./test/reimplementation\"],\"exitCode\":0}\n{\"integrity\":\"verified\",\"selected\":69,\"propositions\":226,\"obligations\":\"16/14/25/9/6/9\",\"mode\":\"explicit-reseal\",\"files\":244,\"productionAcceptance\":false}\n",
+    "productionTests": "bun test v1.3.14 (0d9b296a)\n\ntest/reimplementation/kernel/boundaries.test.ts:\n(pass) Canonical bytes have explicit lexical UTF-16 key order, framed SHA-256, no normalization or exotic objects [5.57ms]\n(pass) M1: provider-forged core Git labels cannot grant a transport replay mechanism [12.59ms]\n(pass) M1: authentication header material never enters durable facts; credential identity drift invalidates risk [30.20ms]\n(pass) M1: native codec/version and correspondence reject bad receipts and false classified observations [10.82ms]\n(pass) M1: publication root is immutable and preparation/publication preserve a single global CAS revision [19.12ms]\n(pass) M1: receipt exceeding storage bounds leaves a durable uncertain attempt and never silently retries [158.40ms]\n(pass) M1: two publication plans in one journal reject before any provider or store effect [3.18ms]\n(pass) M1: two concrete preparations and one publication share every global CAS revision [36.36ms]\n(pass) M2: provider-forged core Git labels cannot grant a transport replay mechanism [2.21ms]\n(pass) M2: authentication header material never enters durable facts; credential identity drift invalidates risk [18.67ms]\n(pass) M2: native codec/version and correspondence reject bad receipts and false classified observations [6.92ms]\n(pass) M2: publication root is immutable and preparation/publication preserve a single global CAS revision [15.75ms]\n(pass) M2: receipt exceeding storage bounds leaves a durable uncertain attempt and never silently retries [159.55ms]\n(pass) M2: two publication plans in one journal reject before any provider or store effect [2.20ms]\n(pass) M2: two concrete preparations and one publication share every global CAS revision [31.45ms]\n(pass) M3: provider-forged core Git labels cannot grant a transport replay mechanism [1.57ms]\n(pass) M3: authentication header material never enters durable facts; credential identity drift invalidates risk [15.89ms]\n(pass) M3: native codec/version and correspondence reject bad receipts and false classified observations [5.89ms]\n(pass) M3: publication root is immutable and preparation/publication preserve a single global CAS revision [14.05ms]\n(pass) M3: receipt exceeding storage bounds leaves a durable uncertain attempt and never silently retries [162.30ms]\n(pass) M3: two publication plans in one journal reject before any provider or store effect [2.15ms]\n(pass) M3: two concrete preparations and one publication share every global CAS revision [33.85ms]\n\ntest/reimplementation/kernel/report.test.ts:\n(pass) acceptance.K01 local projection resolves multi-provider facts to one Bundle/Plan/Journal [17.62ms]\n\ntest/reimplementation/kernel/application.test.ts:\n(pass) application emits the complete derived report and closes its scope [11.76ms]\n(pass) application rejects a foreign Bundle before any send and closes its scope [1.08ms]\n(pass) application closes its scope on failure [0.48ms]\n(pass) application closes its scope on interruption [0.40ms]\n(pass) application loading rejects missing exports and redacts native import diagnostics [0.24ms]\n(pass) application captures authority and host capabilities before asynchronous admission [7.19ms]\n(pass) application cannot gain authorization from a retained caller alias [3.23ms]\n\ntest/reimplementation/kernel/errors.test.ts:\n(pass) M1: exact versioned native error survives SQLite close/reopen and remains inconclusive [19.56ms]\n(pass) M1: caught core errors preserve uncertainty with fixed diagnostics; undeclared noncommit and native error cannot grant another send [19.02ms]\n(pass) M1: fake dispatch identity, satisfied error classification and foreign error request reject before effects [14.58ms]\n(pass) M2: exact versioned native error survives SQLite close/reopen and remains inconclusive [15.49ms]\n(pass) M2: caught core errors preserve uncertainty with fixed diagnostics; undeclared noncommit and native error cannot grant another send [17.75ms]\n(pass) M2: fake dispatch identity, satisfied error classification and foreign error request reject before effects [13.66ms]\n(pass) M3: exact versioned native error survives SQLite close/reopen and remains inconclusive [15.44ms]\n(pass) M3: caught core errors preserve uncertainty with fixed diagnostics; undeclared noncommit and native error cannot grant another send [17.21ms]\n(pass) M3: fake dispatch identity, satisfied error classification and foreign error request reject before effects [13.84ms]\n\ntest/reimplementation/kernel/git.test.ts:\n(pass) M1: real native conditional Git replay confirms an already committed update [58.44ms]\n(pass) M1: real native conditional Git replay rejects a competing update [64.06ms]\n(pass) M2: real native conditional Git replay confirms an already committed update [58.88ms]\n(pass) M2: real native conditional Git replay rejects a competing update [64.97ms]\n(pass) M3: real native conditional Git replay confirms an already committed update [58.46ms]\n(pass) M3: real native conditional Git replay rejects a competing update [65.35ms]\n(pass) captured Git execution retains class state and resists method replacement [0.45ms]\n\ntest/reimplementation/kernel/bundle.test.ts:\n(pass) owned Bundle survives producer deletion and binds an immutable Plan [15.71ms]\n(pass) buffer ownership, content collisions, symlinks and byte limits fail without replacement [5.72ms]\n(pass) bundle wire data rejects legacy, extra, noncanonical and duplicate identities before content IO [2.52ms]\n(pass) tree metadata preserves ordered upstream identity and rejects unsafe graphs before IO [5.94ms]\n(pass) tree links expand before parent traversal and native UTF-8 order is preserved [11.52ms]\n(pass) special-file inputs reject without waiting for another FIFO endpoint [83.06ms]\n\ntest/reimplementation/kernel/sqlite.test.ts:\n(pass) C16: default SQLite exact 1MiB envelope writes/reads; +1 rejects symmetrically [191.22ms]\n(pass) legacy SQLite data rejects without initialization or migration [6.33ms]\n\ntest/reimplementation/kernel/c08.test.ts:\n(pass) C08: configured request mismatch is rejected before observation on an empty journal [7.51ms]\n\ntest/reimplementation/kernel/observable.test.ts:\n(pass) M1 > C01: real send follows durable started fact, report is recreated from history [5.09ms]\n(pass) M1 > C02a: credential/prepare rejection creates no attempt and remains retryable [4.26ms]\n(pass) M1 > C02b: proven terminal noncommit is linked to dispatch and permits another attempt [9.63ms]\n(pass) M1 > C03/C04: response loss followed by absence never resends; matching observation satisfies [13.45ms]\n(pass) M1 > C05: only identical structural Git CAS can replay a possibly committed attempt [9.56ms]\n(pass) M1 > C06: authenticated risk binds request, all prior attempts, expiry and one additional attempt [18.58ms]\n(pass) M1 > C07: real contending executions produce one CAS winner and one send [6.25ms]\n(pass) M1 > C08: request endpoint, bytes, headers, principal and scope drift block protected replay [11.46ms]\n(pass) M1 > C09: supersession accepts late factual receipt while forbidding new dispatch [9.27ms]\n(pass) M1 > C10: live unknown append readback can continue, AlreadyRecorded never grants permit [12.83ms]\n(pass) M1 > C11: cycles, missing dependencies, duplicate IDs and unknown codecs fail before provider effects [0.79ms]\n(pass) M1 > C12: one definition serves two distinct instance intents without ID collision [9.60ms]\n(pass) M1 > C13: opaque write-only acceptance before correlation ID loss honestly stops [7.68ms]\n(pass) M1 > C15: captured host cannot be shadowed by a provider-local Layer [3.14ms]\n(pass) M2 > C01: real send follows durable started fact, report is recreated from history [5.22ms]\n(pass) M2 > C02a: credential/prepare rejection creates no attempt and remains retryable [6.05ms]\n(pass) M2 > C02b: proven terminal noncommit is linked to dispatch and permits another attempt [9.02ms]\n(pass) M2 > C03/C04: response loss followed by absence never resends; matching observation satisfies [15.92ms]\n(pass) M2 > C05: only identical structural Git CAS can replay a possibly committed attempt [10.73ms]\n(pass) M2 > C06: authenticated risk binds request, all prior attempts, expiry and one additional attempt [21.35ms]\n(pass) M2 > C07: real contending executions produce one CAS winner and one send [6.45ms]\n(pass) M2 > C08: request endpoint, bytes, headers, principal and scope drift block protected replay [11.49ms]\n(pass) M2 > C09: supersession accepts late factual receipt while forbidding new dispatch [8.30ms]\n(pass) M2 > C10: live unknown append readback can continue, AlreadyRecorded never grants permit [14.14ms]\n(pass) M2 > C11: cycles, missing dependencies, duplicate IDs and unknown codecs fail before provider effects [0.74ms]\n(pass) M2 > C12: one definition serves two distinct instance intents without ID collision [7.63ms]\n(pass) M2 > C13: opaque write-only acceptance before correlation ID loss honestly stops [7.64ms]\n(pass) M2 > C15: captured host cannot be shadowed by a provider-local Layer [3.26ms]\n(pass) M3 > C01: real send follows durable started fact, report is recreated from history [4.05ms]\n(pass) M3 > C02a: credential/prepare rejection creates no attempt and remains retryable [3.91ms]\n(pass) M3 > C02b: proven terminal noncommit is linked to dispatch and permits another attempt [8.39ms]\n(pass) M3 > C03/C04: response loss followed by absence never resends; matching observation satisfies [15.26ms]\n(pass) M3 > C05: only identical structural Git CAS can replay a possibly committed attempt [8.22ms]\n(pass) M3 > C06: authenticated risk binds request, all prior attempts, expiry and one additional attempt [19.97ms]\n(pass) M3 > C07: real contending executions produce one CAS winner and one send [4.58ms]\n(pass) M3 > C08: request endpoint, bytes, headers, principal and scope drift block protected replay [13.18ms]\n(pass) M3 > C09: supersession accepts late factual receipt while forbidding new dispatch [6.95ms]\n(pass) M3 > C10: live unknown append readback can continue, AlreadyRecorded never grants permit [12.37ms]\n(pass) M3 > C11: cycles, missing dependencies, duplicate IDs and unknown codecs fail before provider effects [0.59ms]\n(pass) M3 > C12: one definition serves two distinct instance intents without ID collision [7.35ms]\n(pass) M3 > C13: opaque write-only acceptance before correlation ID loss honestly stops [7.21ms]\n(pass) M3 > C15: captured host cannot be shadowed by a provider-local Layer [2.96ms]\n(pass) M1/M2 reject impossible histories, preserve late evidence, and expose equal reports [1.24ms]\n\ntest/reimplementation/kernel/transport-preparation.test.ts:\n(pass) missing credentials or malformed prepared send fail before DispatchStarted [9.95ms]\n(pass) preparation owns a separate request and captures the original service receiver [5.22ms]\n(pass) prepared sends are discarded on CAS loss and AlreadyRecorded; same-live ambiguous readback still sends once [24.67ms]\n(pass) concurrent runners can prepare twice but fresh CAS permits one captured send [5.31ms]\n(pass) core Git composition forwards ordinary HTTP preparation without bypassing it [4.15ms]\n(pass) present noncallable preparation cannot silently select the unprepared send path [1.81ms]\n\ntest/reimplementation/kernel/admission.test.ts:\n(pass) factory and loaded plans own deeply immutable data [1.82ms]\n(pass) identity rejects hidden properties and accessors before evaluating getters [0.27ms]\n(pass) unknown scopes cannot bypass the single-publication rule [0.79ms]\n(pass) malformed provider capabilities reject before storage or transport [1.33ms]\n(pass) native codec versions are nonempty canonical strings before any effects [4.64ms]\n(pass) a store cannot change the recorded endpoint before dispatch [3.45ms]\n(pass) receipt facts own their bytes and keep one immutable identity across append retries [3.65ms]\n(pass) a mutable store snapshot cannot change during asynchronous history admission [5.94ms]\n(pass) external evaluators and providers receive admitted immutable Schema classes [3.19ms]\n(pass) extra observation fields cannot override core-owned routing or event kind [2.39ms]\n(pass) generic transport diagnostics are fixed and never persist a secret [12.73ms]\n(pass) invalid clock, dispatch limit and truthy authorization reject without effects [2.55ms]\n(pass) request capture owns Node Buffer bytes and nested facts before asynchronous hashing [0.21ms]\n\ntest/reimplementation/kernel/process.test.ts:\n(pass) M1: fresh OS process resumes after-append from SQLite after deleting original workspace [339.75ms]\n(pass) M1: fresh OS process resumes after-send from SQLite after deleting original workspace [334.56ms]\n(pass) M1+cache: fresh OS process resumes after-append from SQLite after deleting original workspace [322.52ms]\n(pass) M1+cache: fresh OS process resumes after-send from SQLite after deleting original workspace [331.26ms]\n(pass) M2: fresh OS process resumes after-append from SQLite after deleting original workspace [332.71ms]\n(pass) M2: fresh OS process resumes after-send from SQLite after deleting original workspace [320.17ms]\n(pass) M2+cache: fresh OS process resumes after-append from SQLite after deleting original workspace [320.28ms]\n(pass) M2+cache: fresh OS process resumes after-send from SQLite after deleting original workspace [324.36ms]\n(pass) M3: fresh OS process resumes after-append from SQLite after deleting original workspace [331.48ms]\n(pass) M3: fresh OS process resumes after-send from SQLite after deleting original workspace [332.95ms]\n(pass) M3+cache: fresh OS process resumes after-append from SQLite after deleting original workspace [328.88ms]\n(pass) M3+cache: fresh OS process resumes after-send from SQLite after deleting original workspace [321.34ms]\n\ntest/reimplementation/npm/authoring.test.ts:\n(pass) npm reads the actual Bun tarball package manifest and rejects changed native bytes [8.44ms]\n(pass) npm native JSON rejects duplicate keys, ambiguous numbers and trailing input [0.25ms]\n(pass) npm three public workspaces remain three coordinates and private omission is structural [26.77ms]\n(pass) npm tag movement derives its publication dependency; unsafe authoring rejects before execution [22.67ms]\n\ntest/reimplementation/npm/protocol.test.ts:\n(pass) native npm PUT preserves exact metadata, scoped URL, attachments and body identity [25.19ms]\n(pass) native npm rejects manifest/intent disagreement before registry I/O [82.70ms]\n(pass) version and tag facets classify independently with strict bounded native evidence [32.56ms]\n(pass) native dist-tag sends only the JSON version and accepts a 2xx acknowledgement [16.40ms]\n(pass) lost native response and moved tag never resend a package PUT after a fresh runner [70.19ms]\n(pass) native admission rejects a self-consistent digest for a substituted package body [18.39ms]\n(pass) native digest intent mismatch rejects before reads; observations cannot invent expected hashes [12.01ms]\n(pass) a new dist-tag operation can move an existing tag; later drift cannot resend it [53.22ms]\n\ntest/reimplementation/npm/native-oracle.test.ts:\n(pass) source-bound official npm transcript matches the full native PUT and exact tag bytes [5.47ms]\n\ntest/reimplementation/npm/auth.test.ts:\n(pass) token authorization binds exact origin, scope and authorization mode before unwrapping [7.49ms]\n(pass) trusted npm exchange captures package and methods before OIDC and validates lifetime [9.28ms]\n(pass) provenance creation owns exact statement bytes and rejects callback payload substitution [8.64ms]\n(pass) loaded structural provenance needs an explicit native trust verifier before any registry read [13.68ms]\n(pass) Sigstore rejects unrelated source and empty identity without reaching ambient signing [7.67ms]\n\ntest/reimplementation/npm/process.test.ts:\n(pass) real HTTP protocol double and SQLite survive SIGKILL after npm commit without resending [902.01ms]\n\n 148 pass\n 0 fail\n 1024 expect() calls\nRan 148 tests across 17 files. [7.59s]\n",
+    "architecture": "$ bun tools/architecture-lab/verify.mjs && bun tools/architecture-lab/project.ts --check && bun scripts/check-architecture-ancestry.ts && bun scripts/check-migration-execution.ts && bun scripts/check-architecture-budget.ts --accept-recorded-planning-variance\n{\"integrity\":\"verified\",\"selected\":69,\"propositions\":226,\"obligations\":\"16/14/25/9/6/9\",\"mode\":\"check\",\"files\":244,\"productionAcceptance\":false}\n{\n  \"status\": \"checked-proposal\",\n  \"selectedTopology\": \"T3c\",\n  \"alternatives\": [\n    \"T1\",\n    \"T2\",\n    \"T3\",\n    \"T3c\"\n  ],\n  \"logicalSurfaces\": 15,\n  \"publicSymbols\": 272,\n  \"resolvedSuccessors\": 29,\n  \"modulesPerAlternative\": 69\n}\n\nAncestry verified: PR21 included; PR22 and overlay remain evidence donors\n{\"wave\":\"W01\",\"retiredFiles\":51,\"deletedLines\":10318,\"nativeCarryForwardOpen\":[\"W03\",\"W04\",\"W05\",\"W06\",\"W08\",\"W09\",\"W10\"]}\n{\"wave\":\"W02\",\"retiredFiles\":1,\"deletedLines\":525,\"nativeCarryForwardOpen\":[]}\n{\n  \"baseline\": 22971,\n  \"ceiling\": 11485,\n  \"wave\": \"W02\",\n  \"replacementTripwire\": 3350,\n  \"counts\": {\n    \"product\": 11832,\n    \"unchangedLegacy\": 7433,\n    \"replacement\": 4399,\n    \"metadata\": 485,\n    \"tests\": 35479,\n    \"fixtureText\": 1243,\n    \"fixtureBinaryBytes\": 720427,\n    \"generatedDelivery\": 678,\n    \"tooling\": 44453\n  },\n  \"planningTripwirePassed\": false,\n  \"planningVarianceAccepted\": true,\n  \"replacementSha256\": \"41c9488e1146dc94458f82ef4fa8ffc7abb41b2ecc92c857757612fcca215046\",\n  \"achievedReduction\": false\n}\n",
+    "launch": "$ bun scripts/check-launch-evidence.ts\n{\"selected\":69,\"open\":69,\"closed\":0,\"productionAcceptance\":false}\n",
+    "varianceAccounting": "{\n  \"baseline\": 22971,\n  \"ceiling\": 11485,\n  \"wave\": \"W02\",\n  \"replacementTripwire\": 3350,\n  \"counts\": {\n    \"product\": 11832,\n    \"unchangedLegacy\": 7433,\n    \"replacement\": 4399,\n    \"metadata\": 485,\n    \"tests\": 35479,\n    \"fixtureText\": 1243,\n    \"fixtureBinaryBytes\": 720427,\n    \"generatedDelivery\": 678,\n    \"tooling\": 44454\n  },\n  \"planningTripwirePassed\": false,\n  \"planningVarianceAccepted\": true,\n  \"replacementSha256\": \"41c9488e1146dc94458f82ef4fa8ffc7abb41b2ecc92c857757612fcca215046\",\n  \"achievedReduction\": false\n}\n"
+  }
+}

@@ -1,8 +1,8 @@
 # Full-scope source and maintenance forecast
 
-The expected replacement is approximately **12,525 physical product lines**,
-with an engineering range of **9,343–16,963**. That is roughly half the preserved
-22,971-line baseline, and exceeds the **11,485** ceiling by **1,040**.
+The expected replacement is approximately **12,451 physical product lines**,
+with an engineering range of **9,809–16,199**. That is roughly half the preserved
+22,971-line baseline, and exceeds the **11,485** ceiling by **966**.
 All package metadata makes the conservative combined estimate exceed that
 ceiling. This is a credible cost forecast, **not an achieved reduction or a
 source-budget pass**. Keep the original ceiling; measure each implementation
@@ -12,19 +12,19 @@ wave and continue structural work if its actual result misses it.
 donor/prototype basis, module owner and uncertainty. It assigns all proposed
 product modules once, including native wrappers, shared hosts, CLI/Action,
 self-release, Q01 checksums, complete Apple composition and retained native
-protocol validation. The seven complete provider implementations are the largest
-unmeasured cost. The low/expected/high scenarios are engineering estimates,
+protocol validation. Five provider packages and shared native hosts remain
+unimplemented. The low/expected/high scenarios are engineering estimates,
 not statistical confidence intervals or permission to choose the lowest number.
 
 | Responsibility | Expected physical lines | Basis |
 | --- | ---: | --- |
-| Complete kernel, strict admission and derived report | 2,160 | Measured normally formatted W01 production owners; other rows remain estimates |
+| Complete kernel, strict admission and derived report | 2,203 | Measured normally formatted W02 production owners, including preflight without dispatch authority |
 | Owned artifacts and full Apple preparation/composition | 945 | 615 measured source including mixed release mechanism; 330 remaining native/host/integration estimate |
 | Shared HTTP, credentials and OIDC | 780 | Actual single-send/cancellation prototype and complete donor boundary inventory |
 | SQLite and Git journals | 496 | 146 measured mechanics plus native path/scope/bounded-history completion |
 | CLI, Action and self-release application | 603 | 43 measured loading/bridge lines plus explicit native I/O and complete release wiring |
 | Action YAML | 22 | Exact proposed template; replaces the original 55-line generated-input lane |
-| npm / Warehouse / GitHub | 1,630 / 1,130 / 1,520 | Independent full-native responsibility forecasts, including Sigstore and native evidence |
+| npm / Warehouse / GitHub | 1,513 / 1,130 / 1,520 | npm is measured W02 source; Warehouse and GitHub remain independent estimates |
 | Homebrew / Scoop / MCP / OpenAI | 200 / 120 / 1,180 / 730 | Native renderers, full official schemas, human-submission handoff |
 | Additional native Git/catalog implementation | 929 | Full 1,000 estimate minus 71 protected-transport lines already charged to kernel |
 | Q01 checksum projection and verification | 80 | 68 measured lines with native checksum consumers; 12 remaining integration estimate |

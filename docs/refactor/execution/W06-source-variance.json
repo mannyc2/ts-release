@@ -1,0 +1,22 @@
+{
+  "format": "ts-release/source-planning-variance/1",
+  "wave": "W06",
+  "originalTripwire": 8100,
+  "replacementLines": 9647,
+  "replacementSha256": "dcdb96da092b8363bdadd9f49f99f3fd615439011207447a90f4598d7027fadb",
+  "completeProductCeiling": 11485,
+  "completeProductWaiver": false,
+  "decision": "Continue implementation with this exact planning variance; no final source or release waiver.",
+  "reason": "W06 adds194 lines against350 allocated, reducing the inherited tripwire excess1703 to1547. Homebrew69+Scoop48+shared77 lines replace882 retired legacy lines. No new Git engine or dispatch authority.",
+  "review": "docs/refactor/execution/W06-review.md",
+  "forecastExpected": 12778,
+  "forecastDeficit": 1293,
+  "accounting": "13667physical product=9647replacement+4020legacy.70actual source files (also70emitted declaration files) and89module owners projected. Owned generated SPDX catalog789lines15973bytes separate.22971denominator/11485ceiling/40line marginal target unchanged.",
+  "simplificationPerformed": "Catalog renderers share one package-private validation boundary and reuse the existing native Git object/CAS/journal owner. Retired2files882lines62declarations. Rejected topology metadata is preserved at3b712db; its removal is not product reduction credit.",
+  "nextSimplification": "Complete producer/application implementation then simplify full product against remaining forecast deficit1293; no scope cuts or formatting changes to obtain a pass.",
+  "notEvidenceOf": [
+    "complete-product source reduction",
+    "full native acceptance",
+    "publication"
+  ]
+}

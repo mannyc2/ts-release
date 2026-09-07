@@ -1,0 +1,334 @@
+bun test v1.3.14 (0d9b296a)
+
+test/reimplementation/github/authority.test.ts:
+(pass) GitHub requests prepare through the actual shared HTTP boundary with transport-owned framing [16.06ms]
+(pass) draft creation cannot accept an already-public native acknowledgement [5.84ms]
+(pass) GitHub credentials admit exact repository and principal routes before opening a token; download redirects receive none [5.94ms]
+(pass) native acknowledgement must bind exact tag facts, status and full request, without archiving raw errors [9.33ms]
+
+test/reimplementation/github/graph.test.ts:
+(pass) lightweight graph derives every required edge for 0 assets [4.95ms]
+(pass) annotated graph derives every required edge for 0 assets [3.39ms]
+(pass) lightweight graph derives every required edge for 3 assets [6.24ms]
+(pass) annotated graph derives every required edge for 3 assets [8.92ms]
+(pass) complete GitHub graph rejects omitted assets, wrong parents/repositories, duplicate names and stripped dependency edges [4.18ms]
+
+test/reimplementation/github/wire.test.ts:
+(pass) GitHub wire uses exact JSON or owned binary bodies and the returned parent upload template [3.12ms]
+(pass) exact wire admission rejects changed method, endpoint, bytes, headers and foreign parent evidence [4.23ms]
+(pass) published-parent observation cannot authorize an asset write through a stale draft receipt [1.82ms]
+
+test/reimplementation/github/protocol.test.ts:
+(pass) GitHub native DAG has 0 independent assets and lightweight tag steps [174.53ms]
+(pass) GitHub native DAG has 3 independent assets and lightweight tag steps [659.08ms]
+(pass) GitHub native DAG has 0 independent assets and annotated tag steps [230.76ms]
+(pass) GitHub native DAG has 3 independent assets and annotated tag steps [846.88ms]
+(pass) response-lost hidden draft is observed by authenticated enumeration and its returned ID survives restart [475.91ms]
+(pass) missing native digest downloads exact bytes and publish rejects missing or extra selected assets [860.25ms]
+(pass) ambiguous paginated draft records and foreign pagination routes remain inconclusive [27.46ms]
+(pass) asset response loss and native starter state never permit a second upload [147.26ms]
+(pass) asset prepare rechecks a published or vanished parent even when observation is disabled [158.47ms]
+(pass) missing-digest download follows one explicit public redirect and keeps signed URLs out of journal evidence [242.77ms]
+(pass) unquoted next links are followed and malformed or foreign pagination cannot authorize publication [214.08ms]
+(pass) draft preparation independently requires complete absence when observations are disabled [70.40ms]
+(pass) last-page evidence persists across short intermediate pages and bounds complete enumeration [27.43ms]
+
+test/reimplementation/github/native.test.ts:
+(pass) real public v0.3.0 REST responses retain exact native tag, release and all eleven asset identities [0.25ms]
+(pass) native URL binding accepts GitHub's case-insensitive repository coordinates and rejects foreign parent/origin paths [0.23ms]
+(pass) native missing digests and starter states remain distinct from malformed and conflicting data [8.43ms]
+
+test/reimplementation/github/process.test.ts:
+(pass) GitHub protocol HTTP and native Git journal preserve returned IDs across SIGKILL and Node/Bun restarts [17466.35ms]
+
+test/reimplementation/transports/native-provider.test.ts:
+(pass) pypiserver: actual Node/Bun HTTP providers and Git journal survive process loss across runtimes [7301.27ms]
+(pass) devpi-server: actual Node/Bun HTTP providers and Git journal survive process loss across runtimes [8576.00ms]
+
+test/reimplementation/transports/git-process.test.ts:
+(pass) native Git owns SHA1/SHA256 object hashing in private repositories and removes them on scope exit [15.07ms]
+(pass) native credential configuration retains hooks/TLS/redirect protection without inheriting ambient Git config [7.04ms]
+(pass) native output bounds fail with a fixed diagnostic; Git credentials reject wrong transport and malformed values [2.98ms]
+
+test/reimplementation/transports/git-runtime.test.ts:
+(pass) Git catalog and journal sanitize failing, thrown and defective credential acquisition and preserve interruption [5.61ms]
+(pass) public Node and Bun Git host/journal entries execute native SHA1/SHA256 release and reopened-history consumers [1968.65ms]
+(pass) native Git subprocess deadline and interruption close the whole process group on Node and Bun [1450.63ms]
+
+test/reimplementation/transports/git-objects.test.ts:
+(pass) native sha1 deterministic catalog commit survives producer deletion with exact graph, modes and unmanaged content [252.39ms]
+(pass) native sha256 deterministic catalog commit survives producer deletion with exact graph, modes and unmanaged content [250.15ms]
+(pass) native Git construction rejects invalid managed paths, identity, foreign base graph and case collisions [48.78ms]
+
+test/reimplementation/transports/git-host.test.ts:
+(pass) native sha1 host captures, rebuilds and conditionally publishes multiple scopes from owned objects [502.97ms]
+(pass) native sha256 host captures, rebuilds and conditionally publishes multiple scopes from owned objects [492.71ms]
+(pass) native Git preflight admits exact objects and authority before a journal start; captured send rejects changed requests and competing refs [112.25ms]
+
+test/reimplementation/transports/git-journal.test.ts:
+(pass) native sha1 journal owns one global order across independent caches and scopes [150.74ms]
+(pass) native sha256 journal owns one global order across independent caches and scopes [146.75ms]
+(pass) native journal admits an exact 1MiB event, rejects +1 and detects foreign trees, duplicate IDs and merge history [422.41ms]
+(pass) equal native pushes produce one Appended and one AlreadyRecorded, never two fresh CAS winners [334.88ms]
+(pass) lost native journal push responses allow same-live exact readback once and no write retry on restart [1461.61ms]
+
+test/reimplementation/transports/http.test.ts:
+(pass) HTTP acknowledgement comes from exactly one native write after the fresh journal append [28.14ms]
+(pass) lost, redirected, oversized, truncated and timed-out responses stay uncertain without retry on restart [172.14ms]
+(pass) interruption after remote commit destroys the socket and leaves restart without dispatch permission [45.84ms]
+(pass) unknown or ambiguous ownership fails before credentials and journal dispatch [6.05ms]
+(pass) native wire admission rejects ambiguous endpoints, headers, replay and bodies before credentials [2.21ms]
+(pass) live headers cannot collide, change framing, use cleartext, or leak through failures [14.63ms]
+(pass) prepared closure owns bytes, methods and exact facts across resolver alias mutation [4.72ms]
+(pass) native observation stays bounded and does not follow redirects; exchange refuses insecure secrets [4.72ms]
+(pass) Node and Bun retain complete raw headers and reject duplicate singleton evidence [333.02ms]
+(pass) native TLS sends exact ephemeral credentials and rejects a certificate hostname mismatch on both hosts [614.46ms]
+(pass) interruption closes a pending native TLS socket before secureConnect on Node and Bun [312.78ms]
+
+test/reimplementation/transports/credentials.test.ts:
+(pass) native RSA JWT verifies exact issuer, audience, workflow, source and clock without reconstructing subject [7.85ms]
+(pass) native RSA signature, JOSE algorithm/key admission and duplicate-key controls fail closed [3.17ms]
+(pass) exact credential routes acquire only after full binding, capture receivers and reject duplicate authority [0.69ms]
+(pass) GitHub host mismatches reject before reading either OIDC credential value [2.27ms]
+(pass) substituted OIDC request origins reject before the runner bearer is read [1.52ms]
+
+test/reimplementation/warehouse/warehouse-source-law.test.ts:
+(pass) pinned Warehouse source acknowledges exact duplicates but rejects conflicting/deleted filenames [20.37ms]
+
+test/reimplementation/warehouse/protocol.test.ts:
+(pass) native upload receipt owns the complete multipart request and excludes raw responses [23.73ms]
+(pass) Simple native evidence separates exact files, conflicts, absent visibility and malformed pages [57.13ms]
+(pass) complete two/four-file authoring rejects duplicate coordinates and altered artifact metadata before native I/O [12.14ms]
+(pass) token and trusted credentials bind exact endpoint, principal, project set and native mint exchange [6.57ms]
+
+test/reimplementation/warehouse/native-oracle.test.ts:
+(pass) all four Python-built distributions reproduce native Twine multipart fields and exact file bytes [6.14ms]
+(pass) metadata semantic admission matches native Twine positive and negative controls [12.57ms]
+
+test/reimplementation/warehouse/native-server.test.ts:
+{"implementation":"pypiserver","count":2,"receipt":"/tmp/ts-release-pypiserver-2-5bG5Rw/acceptance.json"}
+(pass) pypiserver native 2-file uploads, lost response, fresh SQLite runner and pip consumer [3061.61ms]
+{"implementation":"pypiserver","count":4,"receipt":"/tmp/ts-release-pypiserver-4-qfLuO5/acceptance.json"}
+(pass) pypiserver native 4-file uploads, lost response, fresh SQLite runner and pip consumer [3258.47ms]
+{"implementation":"devpi-server","count":2,"receipt":"/tmp/ts-release-devpi-server-2-6Qakvo/acceptance.json"}
+(pass) devpi-server native 2-file uploads, lost response, fresh SQLite runner and pip consumer [4133.77ms]
+{"implementation":"devpi-server","count":4,"receipt":"/tmp/ts-release-devpi-server-4-u0IiA2/acceptance.json"}
+(pass) devpi-server native 4-file uploads, lost response, fresh SQLite runner and pip consumer [4675.83ms]
+
+test/reimplementation/kernel/boundaries.test.ts:
+(pass) Canonical bytes have explicit lexical UTF-16 key order, framed SHA-256, no normalization or exotic objects [0.60ms]
+(pass) M1: provider-forged core Git labels cannot grant a transport replay mechanism [2.97ms]
+(pass) M1: authentication header material never enters durable facts; credential identity drift invalidates risk [20.81ms]
+(pass) M1: native codec/version and correspondence reject bad receipts and false classified observations [6.82ms]
+(pass) M1: publication root is immutable and preparation/publication preserve a single global CAS revision [16.18ms]
+(pass) M1: receipt exceeding storage bounds leaves a durable uncertain attempt and never silently retries [162.02ms]
+(pass) M1: two publication plans in one journal reject before any provider or store effect [2.28ms]
+(pass) M1: two concrete preparations and one publication share every global CAS revision [32.21ms]
+(pass) M2: provider-forged core Git labels cannot grant a transport replay mechanism [1.85ms]
+(pass) M2: authentication header material never enters durable facts; credential identity drift invalidates risk [17.97ms]
+(pass) M2: native codec/version and correspondence reject bad receipts and false classified observations [8.22ms]
+(pass) M2: publication root is immutable and preparation/publication preserve a single global CAS revision [15.19ms]
+(pass) M2: receipt exceeding storage bounds leaves a durable uncertain attempt and never silently retries [158.50ms]
+(pass) M2: two publication plans in one journal reject before any provider or store effect [2.19ms]
+(pass) M2: two concrete preparations and one publication share every global CAS revision [31.56ms]
+(pass) M3: provider-forged core Git labels cannot grant a transport replay mechanism [1.56ms]
+(pass) M3: authentication header material never enters durable facts; credential identity drift invalidates risk [16.34ms]
+(pass) M3: native codec/version and correspondence reject bad receipts and false classified observations [7.66ms]
+(pass) M3: publication root is immutable and preparation/publication preserve a single global CAS revision [13.18ms]
+(pass) M3: receipt exceeding storage bounds leaves a durable uncertain attempt and never silently retries [154.36ms]
+(pass) M3: two publication plans in one journal reject before any provider or store effect [2.10ms]
+(pass) M3: two concrete preparations and one publication share every global CAS revision [30.60ms]
+
+test/reimplementation/kernel/dependencies.test.ts:
+(pass) an external provider admits the complete graph before storage, observation or credential effects [3.38ms]
+(pass) native returned parent IDs survive a fresh runner and are the only declared dependency facts [18.90ms]
+(pass) a changed or future parent receipt cannot validate an earlier child request [11.86ms]
+(pass) changed returned-parent requests reject before acquiring credentials or appending a start [9.68ms]
+(pass) observation classification receives only the preceding validated dependency history [8.30ms]
+(pass) complete-graph validation cannot silently return an unexecuted Effect [1.01ms]
+(pass) a valid parent change during credential preparation prevents a stale child CAS and send [8.25ms]
+(pass) public loadPlan captures descriptor methods and receivers before asynchronous hashing [1.06ms]
+
+test/reimplementation/kernel/report.test.ts:
+(pass) acceptance.K01 local projection resolves multi-provider facts to one Bundle/Plan/Journal [17.68ms]
+
+test/reimplementation/kernel/application.test.ts:
+(pass) application emits the complete derived report and closes its scope [12.59ms]
+(pass) application rejects a foreign Bundle before any send and closes its scope [1.10ms]
+(pass) application closes its scope on failure [0.45ms]
+(pass) application closes its scope on interruption [0.37ms]
+(pass) application loading rejects missing exports and redacts native import diagnostics [0.24ms]
+(pass) application captures authority and host capabilities before asynchronous admission [8.52ms]
+(pass) application cannot gain authorization from a retained caller alias [3.36ms]
+
+test/reimplementation/kernel/errors.test.ts:
+(pass) M1: exact versioned native error survives SQLite close/reopen and remains inconclusive [19.14ms]
+(pass) M1: caught core errors preserve uncertainty with fixed diagnostics; undeclared noncommit and native error cannot grant another send [18.54ms]
+(pass) M1: fake dispatch identity, satisfied error classification and foreign error request reject before effects [14.08ms]
+(pass) M2: exact versioned native error survives SQLite close/reopen and remains inconclusive [17.50ms]
+(pass) M2: caught core errors preserve uncertainty with fixed diagnostics; undeclared noncommit and native error cannot grant another send [23.08ms]
+(pass) M2: fake dispatch identity, satisfied error classification and foreign error request reject before effects [14.59ms]
+(pass) M3: exact versioned native error survives SQLite close/reopen and remains inconclusive [16.78ms]
+(pass) M3: caught core errors preserve uncertainty with fixed diagnostics; undeclared noncommit and native error cannot grant another send [18.89ms]
+(pass) M3: fake dispatch identity, satisfied error classification and foreign error request reject before effects [14.27ms]
+
+test/reimplementation/kernel/git.test.ts:
+(pass) M1: real native conditional Git replay confirms an already committed update [62.30ms]
+(pass) M1: real native conditional Git replay rejects a competing update [68.84ms]
+(pass) M2: real native conditional Git replay confirms an already committed update [56.31ms]
+(pass) M2: real native conditional Git replay rejects a competing update [68.64ms]
+(pass) M3: real native conditional Git replay confirms an already committed update [58.53ms]
+(pass) M3: real native conditional Git replay rejects a competing update [68.29ms]
+(pass) captured Git execution retains class state and resists method replacement [0.87ms]
+
+test/reimplementation/kernel/bundle.test.ts:
+(pass) owned Bundle survives producer deletion and binds an immutable Plan [14.18ms]
+(pass) buffer ownership, content collisions, symlinks and byte limits fail without replacement [4.49ms]
+(pass) bundle wire data rejects legacy, extra, noncanonical and duplicate identities before content IO [2.21ms]
+(pass) tree metadata preserves ordered upstream identity and rejects unsafe graphs before IO [4.76ms]
+(pass) tree links expand before parent traversal and native UTF-8 order is preserved [21.23ms]
+(pass) special-file inputs reject without waiting for another FIFO endpoint [107.20ms]
+
+test/reimplementation/kernel/sqlite.test.ts:
+(pass) C16: default SQLite exact 1MiB envelope writes/reads; +1 rejects symmetrically [190.63ms]
+(pass) legacy SQLite data rejects without initialization or migration [6.70ms]
+
+test/reimplementation/kernel/c08.test.ts:
+(pass) C08: configured request mismatch is rejected before observation on an empty journal [7.27ms]
+
+test/reimplementation/kernel/observable.test.ts:
+(pass) M1 > C01: real send follows durable started fact, report is recreated from history [5.27ms]
+(pass) M1 > C02a: credential/prepare rejection creates no attempt and remains retryable [4.08ms]
+(pass) M1 > C02b: proven terminal noncommit is linked to dispatch and permits another attempt [9.88ms]
+(pass) M1 > C03/C04: response loss followed by absence never resends; matching observation satisfies [16.43ms]
+(pass) M1 > C05: only identical structural Git CAS can replay a possibly committed attempt [8.75ms]
+(pass) M1 > C06: authenticated risk binds request, all prior attempts, expiry and one additional attempt [18.61ms]
+(pass) M1 > C07: real contending executions produce one CAS winner and one send [7.54ms]
+(pass) M1 > C08: request endpoint, bytes, headers, principal and scope drift block protected replay [13.29ms]
+(pass) M1 > C09: supersession accepts late factual receipt while forbidding new dispatch [8.92ms]
+(pass) M1 > C10: live unknown append readback can continue, AlreadyRecorded never grants permit [12.03ms]
+(pass) M1 > C11: cycles, missing dependencies, duplicate IDs and unknown codecs fail before provider effects [0.76ms]
+(pass) M1 > C12: one definition serves two distinct instance intents without ID collision [7.35ms]
+(pass) M1 > C13: opaque write-only acceptance before correlation ID loss honestly stops [7.41ms]
+(pass) M1 > C15: captured host cannot be shadowed by a provider-local Layer [3.06ms]
+(pass) M2 > C01: real send follows durable started fact, report is recreated from history [3.77ms]
+(pass) M2 > C02a: credential/prepare rejection creates no attempt and remains retryable [3.73ms]
+(pass) M2 > C02b: proven terminal noncommit is linked to dispatch and permits another attempt [9.27ms]
+(pass) M2 > C03/C04: response loss followed by absence never resends; matching observation satisfies [15.64ms]
+(pass) M2 > C05: only identical structural Git CAS can replay a possibly committed attempt [8.26ms]
+(pass) M2 > C06: authenticated risk binds request, all prior attempts, expiry and one additional attempt [20.64ms]
+(pass) M2 > C07: real contending executions produce one CAS winner and one send [4.72ms]
+(pass) M2 > C08: request endpoint, bytes, headers, principal and scope drift block protected replay [13.31ms]
+(pass) M2 > C09: supersession accepts late factual receipt while forbidding new dispatch [6.88ms]
+(pass) M2 > C10: live unknown append readback can continue, AlreadyRecorded never grants permit [12.01ms]
+(pass) M2 > C11: cycles, missing dependencies, duplicate IDs and unknown codecs fail before provider effects [0.58ms]
+(pass) M2 > C12: one definition serves two distinct instance intents without ID collision [7.12ms]
+(pass) M2 > C13: opaque write-only acceptance before correlation ID loss honestly stops [7.45ms]
+(pass) M2 > C15: captured host cannot be shadowed by a provider-local Layer [2.90ms]
+(pass) M3 > C01: real send follows durable started fact, report is recreated from history [3.71ms]
+(pass) M3 > C02a: credential/prepare rejection creates no attempt and remains retryable [5.69ms]
+(pass) M3 > C02b: proven terminal noncommit is linked to dispatch and permits another attempt [7.10ms]
+(pass) M3 > C03/C04: response loss followed by absence never resends; matching observation satisfies [14.65ms]
+(pass) M3 > C05: only identical structural Git CAS can replay a possibly committed attempt [9.88ms]
+(pass) M3 > C06: authenticated risk binds request, all prior attempts, expiry and one additional attempt [18.56ms]
+(pass) M3 > C07: real contending executions produce one CAS winner and one send [4.67ms]
+(pass) M3 > C08: request endpoint, bytes, headers, principal and scope drift block protected replay [12.73ms]
+(pass) M3 > C09: supersession accepts late factual receipt while forbidding new dispatch [6.44ms]
+(pass) M3 > C10: live unknown append readback can continue, AlreadyRecorded never grants permit [11.70ms]
+(pass) M3 > C11: cycles, missing dependencies, duplicate IDs and unknown codecs fail before provider effects [0.55ms]
+(pass) M3 > C12: one definition serves two distinct instance intents without ID collision [6.92ms]
+(pass) M3 > C13: opaque write-only acceptance before correlation ID loss honestly stops [7.57ms]
+(pass) M3 > C15: captured host cannot be shadowed by a provider-local Layer [2.78ms]
+(pass) M1/M2 reject impossible histories, preserve late evidence, and expose equal reports [1.19ms]
+
+test/reimplementation/kernel/transport-preparation.test.ts:
+(pass) missing credentials or malformed prepared send fail before DispatchStarted [5.04ms]
+(pass) preparation owns a separate request and captures the original service receiver [3.80ms]
+(pass) prepared sends are discarded on CAS loss and AlreadyRecorded; same-live ambiguous readback still sends once [16.35ms]
+(pass) concurrent runners can prepare twice but fresh CAS permits one captured send [5.12ms]
+(pass) core Git composition forwards ordinary HTTP preparation without bypassing it [3.76ms]
+(pass) present noncallable preparation cannot silently select the unprepared send path [3.26ms]
+
+test/reimplementation/kernel/admission.test.ts:
+(pass) factory and loaded plans own deeply immutable data [0.75ms]
+(pass) identity rejects hidden properties and accessors before evaluating getters [0.28ms]
+(pass) unknown scopes cannot bypass the single-publication rule [0.81ms]
+(pass) malformed provider capabilities reject before storage or transport [1.21ms]
+(pass) native codec versions are nonempty canonical strings before any effects [4.35ms]
+(pass) a store cannot change the recorded endpoint before dispatch [14.04ms]
+(pass) receipt facts own their bytes and keep one immutable identity across append retries [3.72ms]
+(pass) a mutable store snapshot cannot change during asynchronous history admission [3.64ms]
+(pass) external evaluators and providers receive admitted immutable Schema classes [2.80ms]
+(pass) extra observation fields cannot override core-owned routing or event kind [2.00ms]
+(pass) generic transport diagnostics are fixed and never persist a secret [12.62ms]
+(pass) invalid clock, dispatch limit and truthy authorization reject without effects [2.52ms]
+(pass) request capture owns Node Buffer bytes and nested facts before asynchronous hashing [0.23ms]
+
+test/reimplementation/kernel/process.test.ts:
+(pass) M1: fresh OS process resumes after-append from SQLite after deleting original workspace [385.37ms]
+(pass) M1: fresh OS process resumes after-send from SQLite after deleting original workspace [389.00ms]
+(pass) M1+cache: fresh OS process resumes after-append from SQLite after deleting original workspace [381.95ms]
+(pass) M1+cache: fresh OS process resumes after-send from SQLite after deleting original workspace [382.02ms]
+(pass) M2: fresh OS process resumes after-append from SQLite after deleting original workspace [382.95ms]
+(pass) M2: fresh OS process resumes after-send from SQLite after deleting original workspace [384.32ms]
+(pass) M2+cache: fresh OS process resumes after-append from SQLite after deleting original workspace [394.48ms]
+(pass) M2+cache: fresh OS process resumes after-send from SQLite after deleting original workspace [395.19ms]
+(pass) M3: fresh OS process resumes after-append from SQLite after deleting original workspace [391.52ms]
+(pass) M3: fresh OS process resumes after-send from SQLite after deleting original workspace [388.82ms]
+(pass) M3+cache: fresh OS process resumes after-append from SQLite after deleting original workspace [394.48ms]
+(pass) M3+cache: fresh OS process resumes after-send from SQLite after deleting original workspace [390.40ms]
+
+test/reimplementation/npm/authoring.test.ts:
+(pass) npm reads the actual Bun tarball package manifest and rejects changed native bytes [7.29ms]
+(pass) npm native JSON rejects duplicate keys, ambiguous numbers and trailing input [0.16ms]
+(pass) npm three public workspaces remain three coordinates and private omission is structural [24.19ms]
+(pass) npm tag movement derives its publication dependency; unsafe authoring rejects before execution [27.11ms]
+
+test/reimplementation/npm/protocol.test.ts:
+(pass) native npm PUT preserves exact metadata, scoped URL, attachments and body identity [22.40ms]
+(pass) native npm rejects manifest/intent disagreement before registry I/O [78.13ms]
+(pass) version and tag facets classify independently with strict bounded native evidence [34.60ms]
+(pass) native dist-tag sends only the JSON version and accepts a 2xx acknowledgement [13.32ms]
+(pass) lost native response and moved tag never resend a package PUT after a fresh runner [69.17ms]
+(pass) native admission rejects a self-consistent digest for a substituted package body [16.34ms]
+(pass) native digest intent mismatch rejects before reads; observations cannot invent expected hashes [12.06ms]
+(pass) a new dist-tag operation can move an existing tag; later drift cannot resend it [50.85ms]
+
+test/reimplementation/npm/native-oracle.test.ts:
+(pass) source-bound official npm transcript matches the full native PUT and exact tag bytes [4.26ms]
+
+test/reimplementation/npm/auth.test.ts:
+(pass) token authorization binds exact origin, scope and authorization mode before unwrapping [7.56ms]
+(pass) trusted npm exchange captures package and methods before OIDC and validates lifetime [9.58ms]
+(pass) provenance creation owns exact statement bytes and rejects callback payload substitution [9.97ms]
+(pass) loaded structural provenance needs an explicit native trust verifier before any registry read [12.65ms]
+(pass) Sigstore rejects unrelated source and empty identity without reaching ambient signing [7.24ms]
+
+test/reimplementation/npm/process.test.ts:
+(pass) real HTTP protocol double and SQLite survive SIGKILL after npm commit without resending [933.90ms]
+
+test/reimplementation/catalog/render.test.ts:
+(pass) Homebrew has all four exact owned cells; Scoop has native x64/arm64 selectors and required metadata [2.51ms]
+(pass) renderers refuse absent, substituted or ambiguously named owned files and contradictory URL identities [1.58ms]
+(pass) native input boundaries reject invalid selectors, URLs, identifiers, paths and Scoop versions without leaking input [1.41ms]
+
+test/reimplementation/catalog/git.test.ts:
+(pass) homebrew native sha1 atomically publishes 1 paths and reopens its journal after lost push acknowledgement [1006.90ms]
+(pass) homebrew native sha256 atomically publishes 1 paths and reopens its journal after lost push acknowledgement [995.14ms]
+(pass) homebrew native sha1 atomically publishes 2 paths and reopens its journal after lost push acknowledgement [1466.74ms]
+(pass) homebrew native sha256 atomically publishes 2 paths and reopens its journal after lost push acknowledgement [1468.33ms]
+(pass) scoop native sha1 atomically publishes 1 paths and reopens its journal after lost push acknowledgement [577.67ms]
+(pass) scoop native sha256 atomically publishes 1 paths and reopens its journal after lost push acknowledgement [570.01ms]
+(pass) scoop native sha1 atomically publishes 2 paths and reopens its journal after lost push acknowledgement [576.59ms]
+(pass) scoop native sha256 atomically publishes 2 paths and reopens its journal after lost push acknowledgement [564.40ms]
+
+test/reimplementation/catalog/native.test.ts:
+(pass) actual Homebrew Formula loader selects all four cells and preserves inert Ruby interpolation text [857.15ms]
+(pass) Homebrew's native version parser preserves matching inference and overrides conflicting date, release and versionless filenames [1723.51ms]
+(pass) actual PowerShell validates the official Scoop schema and executes its native architecture selector [1693.01ms]
+(pass) native Scoop installer and shim controls demonstrate why nightly, interpolation and wildcard inputs reject [1678.01ms]
+
+ 246 pass
+ 0 fail
+ 2720 expect() calls
+Ran 246 tests across 39 files. [83.66s]

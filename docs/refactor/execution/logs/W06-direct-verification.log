@@ -1,0 +1,12 @@
+{"argv":["bun","tools/architecture-lab/inventory.ts","--check"],"exitCode":0}
+{"argv":["bun","tools/architecture-lab/migration.ts","--check"],"exitCode":0}
+{"argv":["bun","tools/architecture-lab/reconcile.ts","--check"],"exitCode":0}
+{"argv":["bun","tools/architecture-lab/project.ts","--check"],"exitCode":0}
+{"argv":["python3","tools/architecture-lab/public-history-inventory.py","--check"],"exitCode":0}
+{"argv":["bun","run","check"],"exitCode":0}
+{"argv":["bun","scripts/project-production-api.ts","--check"],"exitCode":0}
+{"argv":["bun","scripts/check-import-rules.ts"],"exitCode":0}
+{"argv":["bun","scripts/check-package-exports.ts"],"exitCode":0}
+{"argv":["bun","scripts/check-migration-execution.ts"],"exitCode":0}
+{"argv":["bun","test","./test/reimplementation"],"exitCode":0}
+{"integrity":"verified","selected":69,"propositions":226,"obligations":"16/14/25/9/6/9","mode":"explicit-reseal","files":281,"productionAcceptance":false}

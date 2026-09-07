@@ -1,7 +1,77 @@
 {
   "format": "ts-release/production-imports/1",
-  "files": 65,
+  "files": 70,
   "edges": [
+    {
+      "file": "packages/catalog/src/Shared.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/Shared.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/Shared.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/Shared.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/scoop/Manifest.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/scoop/Manifest.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/scoop/Manifest.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/scoop/Manifest.ts",
+      "specifier": "../Shared.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/scoop/index.ts",
+      "specifier": "./Manifest.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/homebrew/Formula.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/homebrew/Formula.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/homebrew/Formula.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/homebrew/Formula.ts",
+      "specifier": "../Shared.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/catalog/src/homebrew/index.ts",
+      "specifier": "./Formula.js",
+      "typeOnly": false
+    },
     {
       "file": "packages/npm/src/Evidence.ts",
       "specifier": "effect/Schema",

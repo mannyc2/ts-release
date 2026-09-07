@@ -5,7 +5,8 @@ import { tmpdir } from "node:os"
 import { createHash } from "node:crypto"
 const root = resolve(import.meta.dir, ".."),
   work = await mkdtemp(join(tmpdir(), "ts-release-packed-npm-"))
-const includeGithub = process.argv.includes("--github")
+const includeCatalog = process.argv.includes("--catalog")
+const includeGithub = process.argv.includes("--github") || includeCatalog
 const includePyPi = process.argv.includes("--pypi") || includeGithub
 const includeTransports = process.argv.includes("--transports")
 const owners = [
@@ -13,6 +14,7 @@ const owners = [
   "npm",
   ...(includePyPi ? ["pypi"] : []),
   ...(includeGithub ? ["github"] : []),
+  ...(includeCatalog ? ["catalog"] : []),
 ]
 const node = process.env.TS_RELEASE_ACCEPTANCE_NODE ?? "node"
 const commands: unknown[] = []
@@ -100,6 +102,9 @@ for (const manager of ["bun", "npm"]) {
         "@mannyc1/ts-release-npm": `file:${archives[1]!.archive}`,
         ...(includePyPi ? { "@mannyc1/ts-release-pypi": `file:${archives[2]!.archive}` } : {}),
         ...(includeGithub ? { "@mannyc1/ts-release-github": `file:${archives[3]!.archive}` } : {}),
+        ...(includeCatalog
+          ? { "@mannyc1/ts-release-catalog": `file:${archives[4]!.archive}` }
+          : {}),
         effect: "4.0.0-beta.107",
         typescript: "6.0.3",
       },
@@ -183,6 +188,23 @@ void [githubProviders, asset, tagSource, GitHub.Repository, GitHub.Tagger, GitHu
 `,
     )
   }
+  if (includeCatalog) {
+    await writeFile(
+      join(cwd, "catalog-consumer.mjs"),
+      await readFile(join(root, "test/reimplementation/catalog/packed-consumer.mjs")),
+    )
+    await writeFile(
+      join(cwd, "consumer.ts"),
+      (await readFile(join(cwd, "consumer.ts"), "utf8")) +
+        `
+import * as Homebrew from "@mannyc1/ts-release-catalog/homebrew";
+import * as Scoop from "@mannyc1/ts-release-catalog/scoop";
+const formula: Homebrew.Formula = null as never;
+const manifest: Scoop.Manifest = null as never;
+void [formula, manifest, Homebrew.Download, Homebrew.Formula, Homebrew.render, Scoop.Download, Scoop.Manifest, Scoop.render];
+`,
+    )
+  }
   if (includeTransports) {
     for (const name of [
       "git-native-consumer.mjs",
@@ -234,6 +256,9 @@ void [gitHost, gitOptions, journalOptions, readHttp, exchange, Git.prepare, Git.
   if (includeGithub)
     for (const runtime of [node, process.execPath])
       runtimes.push(JSON.parse(await run(cwd, [runtime, "github-consumer.mjs"])))
+  if (includeCatalog)
+    for (const runtime of [node, process.execPath])
+      runtimes.push(JSON.parse(await run(cwd, [runtime, "catalog-consumer.mjs"])))
   if (includeTransports)
     for (const runtime of [node, process.execPath]) {
       runtimes.push(
@@ -278,7 +303,7 @@ const receipt = {
 await writeFile(
   join(
     root,
-    `docs/refactor/execution/${includeGithub ? "current-packed-github" : includeTransports ? "current-packed-transports" : includePyPi ? "current-packed-providers" : "current-packed-npm"}.json`,
+    `docs/refactor/execution/${includeCatalog ? "current-packed-catalog" : includeGithub ? "current-packed-github" : includeTransports ? "current-packed-transports" : includePyPi ? "current-packed-providers" : "current-packed-npm"}.json`,
   ),
   JSON.stringify(receipt, null, 2) + "\n",
 )

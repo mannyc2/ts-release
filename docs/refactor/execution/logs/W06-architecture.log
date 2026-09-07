@@ -1,0 +1,45 @@
+$ bun tools/architecture-lab/verify.mjs && bun tools/architecture-lab/project.ts --check && bun scripts/check-architecture-ancestry.ts && bun scripts/check-migration-execution.ts && bun scripts/check-architecture-budget.ts --accept-recorded-planning-variance
+{"integrity":"verified","selected":69,"propositions":226,"obligations":"16/14/25/9/6/9","mode":"check","files":281,"productionAcceptance":false}
+{
+  "status": "checked-proposal",
+  "selectedTopology": "T3c",
+  "alternatives": [
+    "T3c"
+  ],
+  "logicalSurfaces": 15,
+  "publicSymbols": 309,
+  "resolvedSuccessors": 29,
+  "modulesPerAlternative": 89
+}
+
+Ancestry verified: PR21 included; PR22 and overlay remain evidence donors
+{"wave":"W01","retiredFiles":51,"deletedLines":10318,"nativeCarryForwardOpen":["W08","W09","W10"]}
+{"wave":"W02","retiredFiles":1,"deletedLines":525,"nativeCarryForwardOpen":[]}
+{"wave":"W03","retiredFiles":2,"deletedLines":494,"nativeCarryForwardOpen":[]}
+{"wave":"W04","retiredFiles":1,"deletedLines":1083,"nativeCarryForwardOpen":["W10"]}
+{"wave":"W05","retiredFiles":1,"deletedLines":954,"nativeCarryForwardOpen":["W10"]}
+{"wave":"W06","retiredFiles":2,"deletedLines":882,"nativeCarryForwardOpen":["W10"]}
+{
+  "baseline": 22971,
+  "ceiling": 11485,
+  "wave": "W06",
+  "replacementTripwire": 8100,
+  "counts": {
+    "product": 13667,
+    "unchangedLegacy": 4020,
+    "replacement": 9647,
+    "metadata": 616,
+    "productData": 789,
+    "productDataBytes": 15973,
+    "tests": 42312,
+    "fixtureText": 5756,
+    "fixtureBinaryBytes": 727372,
+    "generatedDelivery": 678,
+    "tooling": 44741
+  },
+  "planningTripwirePassed": false,
+  "planningVarianceAccepted": true,
+  "replacementSha256": "dcdb96da092b8363bdadd9f49f99f3fd615439011207447a90f4598d7027fadb",
+  "achievedReduction": false,
+  "productAndDataLines": 14456
+}

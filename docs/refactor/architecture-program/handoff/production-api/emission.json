@@ -4,7 +4,8 @@
     "packages/ts-release",
     "packages/npm",
     "packages/pypi",
-    "packages/github"
+    "packages/github",
+    "packages/catalog"
   ],
   "compiler": "typescript@6.0.3",
   "effect": "4.0.0-beta.107",
@@ -22,6 +23,36 @@
       "declarationSha256": "e220f89a09629240873f99ac158474b18918975f558aa5dc6546bdbf04dbd666",
       "source": "packages/ts-release/src/Bundle.ts",
       "sourceSha256": "5f4e37afc336a2dc7d8f4118d3a37ba0e56ff2d4d10d26069694739cebd06314"
+    },
+    {
+      "declaration": "catalog/homebrew/Formula.d.ts",
+      "declarationSha256": "bf0b65b0c88aa73b71284f22a25a69cb913d61d26ee4a3ab0a9b1cb8c66ff8d9",
+      "source": "packages/catalog/src/homebrew/Formula.ts",
+      "sourceSha256": "d65e9422f73f082aee4717c157dbff53354336d596ff24975f506eeb91556cda"
+    },
+    {
+      "declaration": "catalog/homebrew/index.d.ts",
+      "declarationSha256": "af96602a9360a5218f50a49ab4ccac486d365a90fc2a09e11eaa41662af6260c",
+      "source": "packages/catalog/src/homebrew/index.ts",
+      "sourceSha256": "3f399b30c4d53be10441c0cc5a84fe8ed76b1c1d5dd4bc72dfa6014f323eccd0"
+    },
+    {
+      "declaration": "catalog/scoop/index.d.ts",
+      "declarationSha256": "a9da885f1abf6367dc56b8a4c1dac15c12620abe5adadae7fc6914dd83d034db",
+      "source": "packages/catalog/src/scoop/index.ts",
+      "sourceSha256": "3e18c5813453766bc0d1ab2446258a7192fe8ed15d9a7bed9c75a2221963e737"
+    },
+    {
+      "declaration": "catalog/scoop/Manifest.d.ts",
+      "declarationSha256": "d19a3a69108fa96254d36e7d77eab4d55bc1118fde7e2664f9cdf1ab23be2f9f",
+      "source": "packages/catalog/src/scoop/Manifest.ts",
+      "sourceSha256": "a62a869775f94d8700005097549bd175d9b6a6f504059c4816dddc2fdcd0c558"
+    },
+    {
+      "declaration": "catalog/Shared.d.ts",
+      "declarationSha256": "a5255ae08352f7b8ab4ae2cf8278b927fa065a6dfdef20da1cedbabea065fbce",
+      "source": "packages/catalog/src/Shared.ts",
+      "sourceSha256": "eaee3b955220e7fa77cbc7cda3a8587c7d2c6082319ce2d018c275e7f13b09de"
     },
     {
       "declaration": "Git.d.ts",

@@ -23,7 +23,7 @@ repeatedly blocked under the goal-tool rules.
 - Original HEAD `9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d`; exact staged tree
   `72323d6191b11d69a77022f278bd3de671f43cbe` preserved (190 staged paths).
 - Checkpoints `7da2877` (preservation), `65f65b1` (prerequisites), `8fe9891`
-  (tested W01 progress). The branch through `25de8c0` (W04) is pushed; no integration yet.
+  (tested W01 progress). The branch through `3b712db` (W05) is pushed; no integration yet.
 - Ignored refinement/audit promoted verbatim under `../research/` at preservation.
   Active design authority is `../architecture-program/handoff/design.json`.
 - Required PR21 ancestry remains; no PR22/overlay merge. Mainline PR30/31 native
@@ -46,11 +46,11 @@ mixed native obligations explicitly carried to later waves in W01-migration.json
 Remaining legacy files are unshipped donors. See W01.md and progress.json for the
 latest test counts, exact pending check and limitations.
 
-W05 current physical product14,355=9,453replacement+4,902legacy. The selected
-scope is incomplete: no achieved reduction. CumulativeW05tripwire7,750 is exceeded
-1,703; exact planning variance permits continued implementation without a final
-waiver. Mixed actual/future forecast12,904 exceeds the unchanged11,485ceiling by
-1,419. Owned generated catalog data adds789lines/15,973bytes separately.
+W06 current physical product13,667=9,647replacement+4,020legacy. The selected
+scope is incomplete: no achieved reduction. CumulativeW06tripwire8,100 is exceeded
+1,547; exact planning variance permits continued implementation without a final
+waiver. Mixed actual/future forecast12,778 exceeds the unchanged11,485ceiling by
+1,293. Owned generated catalog data adds789lines/15,973bytes separately.
 Original denominator22,971 and marginal40line target are unchanged.
 
 All69 launch outcomes remain open. W01/W02/W03 local implementation has recorded
@@ -79,8 +79,7 @@ with optional peers absent.55actual declarations are projected. The assigned
 Both independent Git findings (credential errors and empty-tree loss) are fixed
 and independently closed. W04 has an exact planning variance without a final
 source-ceiling waiver. Direct verification passes266sealedfiles/226propositions.
-W05 is locally implemented, reviewed and tested; final evidence/seal passes276files,
-226propositions. Commit/push is pending. Complete GitHub graph, returned-parent native evidence, exact upload
+W05 is committed and pushed as3b712db; evidence/seal passes276files/226propositions. Complete GitHub graph, returned-parent native evidence, exact upload
 and publication preconditions use shared Plan/HTTP. Independent kernel/provider
 and accounting reviews are closed. Full231tests/2323assertions and fresh four-package
 Bun/npm consumers40Node/Bun checks pass. A real Git journal survives SIGKILL after
@@ -88,7 +87,12 @@ the second local HTTP-protocol asset commit and cross-runtime restart without
 resending; actual hosted existing-release reads/checksum downloads also pass.
 The assigned954line/56declaration GitHub donor is retired with native app/hosted
 mutation duties carried explicitly toW10/Plans009/010.65declarations and88module
-owners are projected. W06catalog follows the final W05 checkpoint.
+owners are projected. W06catalog implementation/review/native suite/fresh five-package consumers pass.
+Full246tests/2720assertions,48Node/Bunconsumer checks,70actualsource/declaration
+files and89moduleowners are independently reconciled. Bothassignedlegacyfiles
+are retired:882lines/62declarations with explicitW10app/nativecarry. Finalreview
+corrections are closed; direct verification/seal passes281files. RetainW06
+receipt,commit/push,andimplementW07CLI prerequisite/externalprovidercomposition.
 Direct Bun Sigstore/TUF, hosted mutations/trust, native platforms and full release
 remain open. Preserve CLI/Action/self-release/agents scope, seven-package consumers
 and final independent candidate review. Continue through verified publication.

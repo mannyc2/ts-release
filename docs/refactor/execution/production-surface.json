@@ -19,6 +19,10 @@
     {
       "path": "packages/github/package.json",
       "sha256": "506ede69beeadff24aaa3471e0b7d6b02335865c686825b5e241338fe743ed78"
+    },
+    {
+      "path": "packages/catalog/package.json",
+      "sha256": "d76c469aab16ed24f857fcaa3dfac3319c9b2c6f389b71ac65ea71fb6ce13d6a"
     }
   ],
   "entries": [
@@ -436,6 +440,42 @@
         "TagSource",
         "Tagger"
       ]
+    },
+    {
+      "specifier": "@mannyc1/ts-release-catalog/homebrew",
+      "source": "packages/catalog/src/homebrew/index.ts",
+      "sourceSha256": "3f399b30c4d53be10441c0cc5a84fe8ed76b1c1d5dd4bc72dfa6014f323eccd0",
+      "runtimePath": "packages/catalog/dist/homebrew/index.js",
+      "runtimeSha256": "af96602a9360a5218f50a49ab4ccac486d365a90fc2a09e11eaa41662af6260c",
+      "declarationsPath": "packages/catalog/dist/homebrew/index.d.ts",
+      "declarationsSha256": "af96602a9360a5218f50a49ab4ccac486d365a90fc2a09e11eaa41662af6260c",
+      "runtimeNames": [
+        "Download",
+        "Formula",
+        "render"
+      ],
+      "typeNames": [
+        "Download",
+        "Formula"
+      ]
+    },
+    {
+      "specifier": "@mannyc1/ts-release-catalog/scoop",
+      "source": "packages/catalog/src/scoop/index.ts",
+      "sourceSha256": "3e18c5813453766bc0d1ab2446258a7192fe8ed15d9a7bed9c75a2221963e737",
+      "runtimePath": "packages/catalog/dist/scoop/index.js",
+      "runtimeSha256": "a9da885f1abf6367dc56b8a4c1dac15c12620abe5adadae7fc6914dd83d034db",
+      "declarationsPath": "packages/catalog/dist/scoop/index.d.ts",
+      "declarationsSha256": "a9da885f1abf6367dc56b8a4c1dac15c12620abe5adadae7fc6914dd83d034db",
+      "runtimeNames": [
+        "Download",
+        "Manifest",
+        "render"
+      ],
+      "typeNames": [
+        "Download",
+        "Manifest"
+      ]
     }
   ],
   "missing": [
@@ -445,7 +485,6 @@
     "@mannyc1/ts-release/bundle:value:renderSha256Sums",
     "@mannyc1/ts-release/bundle:value:verifySha256Sums",
     "@mannyc1/ts-release:bin",
-    "@mannyc1/ts-release-catalog",
     "@mannyc1/ts-release-mcp",
     "@mannyc1/ts-release-openai"
   ]

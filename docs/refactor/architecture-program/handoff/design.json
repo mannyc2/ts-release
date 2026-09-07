@@ -90,27 +90,6 @@
   },
   "alternatives": [
     {
-      "id": "T1",
-      "coreDirectory": ".",
-      "providerPackaging": "root",
-      "description": "One root public package with provider subpaths",
-      "publicPackageCount": 1
-    },
-    {
-      "id": "T2",
-      "coreDirectory": "packages/kernel",
-      "providerPackaging": "aggregate",
-      "description": "Private workspace root; packages/kernel plus one aggregate provider package",
-      "publicPackageCount": 2
-    },
-    {
-      "id": "T3",
-      "coreDirectory": "packages/kernel",
-      "providerPackaging": "separate",
-      "description": "Private workspace root; packages/kernel plus seven provider packages",
-      "publicPackageCount": 8
-    },
-    {
       "id": "T3c",
       "coreDirectory": "packages/ts-release",
       "providerPackaging": "grouped-by-capability",
@@ -135,7 +114,9 @@
     "git": "docs/refactor/architecture-program/handoff/production-api/Git.d.ts",
     "nodeHost": "docs/refactor/architecture-program/handoff/production-api/Node.d.ts",
     "bunHost": "docs/refactor/architecture-program/handoff/production-api/Bun.d.ts",
-    "github": "docs/refactor/architecture-program/handoff/production-api/github/index.d.ts"
+    "github": "docs/refactor/architecture-program/handoff/production-api/github/index.d.ts",
+    "homebrew": "docs/refactor/architecture-program/handoff/production-api/catalog/homebrew/index.d.ts",
+    "scoop": "docs/refactor/architecture-program/handoff/production-api/catalog/scoop/index.d.ts"
   },
   "modules": [
     {
@@ -788,6 +769,16 @@
         "host.GitProcess"
       ],
       "externalImports": []
+    },
+    {
+      "id": "provider.catalog.Shared",
+      "owner": "provider.catalog",
+      "path": "packages/catalog/src/Shared.ts",
+      "zone": "provider",
+      "dependencies": [
+        "kernel.Entry",
+        "kernel.Bundle"
+      ]
     }
   ],
   "providers": [
@@ -1206,8 +1197,8 @@
             "render"
           ],
           "dependencies": [
-            "kernel.Entry",
-            "kernel.Bundle"
+            "kernel.Bundle",
+            "provider.catalog.Shared"
           ]
         }
       ]
@@ -1226,8 +1217,8 @@
             "render"
           ],
           "dependencies": [
-            "kernel.Entry",
-            "kernel.Bundle"
+            "kernel.Bundle",
+            "provider.catalog.Shared"
           ]
         }
       ]
@@ -1416,6 +1407,37 @@
     "kernelAuthority": "production-api/index.d.ts",
     "emission": "production-api/emission.json",
     "generator": "scripts/project-production-api.ts",
-    "scope": "Actual emitted kernel/npm/PyPI/GitHub and native host declarations replace their research shapes. Remaining unimplemented authorities retain proposals; no full-product package qualification is claimed."
+    "scope": "Actual emitted kernel/npm/PyPI/GitHub and native host declarations replace their research shapes. Remaining unimplemented authorities retain proposals; no full-product package qualification is claimed. Catalog Homebrew/Scoop declarations now resolve actual production owners, including native-required Scoop homepage/license."
+  },
+  "historicalTopologyEvidence": {
+    "commit": "3b712db",
+    "paths": [
+      "docs/refactor/architecture-program/handoff/layout.json",
+      "docs/refactor/architecture-program/handoff/public-surface.json"
+    ],
+    "alternatives": [
+      {
+        "id": "T1",
+        "coreDirectory": ".",
+        "providerPackaging": "root",
+        "description": "One root public package with provider subpaths",
+        "publicPackageCount": 1
+      },
+      {
+        "id": "T2",
+        "coreDirectory": "packages/kernel",
+        "providerPackaging": "aggregate",
+        "description": "Private workspace root; packages/kernel plus one aggregate provider package",
+        "publicPackageCount": 2
+      },
+      {
+        "id": "T3",
+        "coreDirectory": "packages/kernel",
+        "providerPackaging": "separate",
+        "description": "Private workspace root; packages/kernel plus seven provider packages",
+        "publicPackageCount": 8
+      }
+    ],
+    "status": "Preserved rejected topology evidence; only approved T3c is a live production projection. Historical P1 marginal measurements are unchanged."
   }
 }

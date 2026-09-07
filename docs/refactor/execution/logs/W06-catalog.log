@@ -1,0 +1,27 @@
+bun test v1.3.14 (0d9b296a)
+
+test/reimplementation/catalog/render.test.ts:
+(pass) Homebrew has all four exact owned cells; Scoop has native x64/arm64 selectors and required metadata [9.58ms]
+(pass) renderers refuse absent, substituted or ambiguously named owned files and contradictory URL identities [3.88ms]
+(pass) native input boundaries reject invalid selectors, URLs, identifiers, paths and Scoop versions without leaking input [4.16ms]
+
+test/reimplementation/catalog/git.test.ts:
+(pass) homebrew native sha1 atomically publishes 1 paths and reopens its journal after lost push acknowledgement [984.98ms]
+(pass) homebrew native sha256 atomically publishes 1 paths and reopens its journal after lost push acknowledgement [973.88ms]
+(pass) homebrew native sha1 atomically publishes 2 paths and reopens its journal after lost push acknowledgement [1386.92ms]
+(pass) homebrew native sha256 atomically publishes 2 paths and reopens its journal after lost push acknowledgement [1391.43ms]
+(pass) scoop native sha1 atomically publishes 1 paths and reopens its journal after lost push acknowledgement [547.45ms]
+(pass) scoop native sha256 atomically publishes 1 paths and reopens its journal after lost push acknowledgement [549.76ms]
+(pass) scoop native sha1 atomically publishes 2 paths and reopens its journal after lost push acknowledgement [555.04ms]
+(pass) scoop native sha256 atomically publishes 2 paths and reopens its journal after lost push acknowledgement [552.64ms]
+
+test/reimplementation/catalog/native.test.ts:
+(pass) actual Homebrew Formula loader selects all four cells and preserves inert Ruby interpolation text [784.01ms]
+(pass) Homebrew's native version parser preserves matching inference and overrides conflicting date, release and versionless filenames [1586.56ms]
+(pass) actual PowerShell validates the official Scoop schema and executes its native architecture selector [1698.49ms]
+(pass) native Scoop installer and shim controls demonstrate why nightly, interpolation and wildcard inputs reject [1643.98ms]
+
+ 15 pass
+ 0 fail
+ 397 expect() calls
+Ran 15 tests across 3 files. [12.77s]

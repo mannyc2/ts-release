@@ -7922,7 +7922,13 @@
         "src/release/graph.ts"
       ],
       "responsibility": "Catalog exact renderer/download/source/tag/architecture set/managed-pair and forward-version/native CAS constraints remain with catalog and shared Git.",
-      "status": "open"
+      "status": "verified",
+      "qualification": "W06 native rendering, exact Bundle cells, atomic one/two-path native Git and lost-ACK/reopened-journal controls pass. App-owned forward-version/source/tag/managed-pair composition and hosted install/run duties are explicitly retained in W06-migration.json W10 carry-forward.",
+      "evidence": [
+        "docs/refactor/execution/W06.md",
+        "docs/refactor/execution/W06-migration.json",
+        "test/reimplementation/catalog"
+      ]
     },
     {
       "wave": "W08",

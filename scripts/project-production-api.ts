@@ -8,7 +8,7 @@ const destination = join(root, "docs/refactor/architecture-program/handoff/produ
 const check = process.argv.includes("--check")
 const hash = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex")
 const records = []
-const owners = ["ts-release", "npm", "pypi", "github"]
+const owners = ["ts-release", "npm", "pypi", "github", "catalog"]
 for (const owner of owners) {
   for await (const path of new Bun.Glob("**/*.d.ts").scan({
     cwd: join(root, "packages", owner, "dist"),

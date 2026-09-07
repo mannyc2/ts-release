@@ -1,6 +1,6 @@
 {
   "format": "ts-release/architecture-forecast/1",
-  "status": "mixed-actual-W05-and-unimplemented-engineering-estimates-not-achieved-reduction",
+  "status": "mixed-actual-W06-and-unimplemented-engineering-estimates-not-achieved-reduction",
   "basisCommit": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
   "denominator": {
     "productPhysicalLines": 22916,
@@ -687,29 +687,39 @@
         "provider.homebrew"
       ],
       "fullReplacementPhysicalLines": {
-        "low": 140,
-        "expected": 200,
-        "high": 280
+        "low": 69,
+        "expected": 69,
+        "high": 69
       },
       "components": [
         {
-          "name": "Four-platform schema, owned download binding and Ruby renderer",
-          "low": 120,
-          "expected": 170,
-          "high": 230,
-          "basis": "catalogs.ts:62-171; no Git interpreter here"
-        },
-        {
-          "name": "Exports, author renderer boundary and errors",
-          "low": 20,
-          "expected": 30,
-          "high": 50,
-          "basis": "catalogs.ts:198-359 only renderer-to-root composition"
+          "name": "Actual W06 catalog source",
+          "low": 69,
+          "expected": 69,
+          "high": 69,
+          "basis": "Exact source bindings; the package-private shared owner is charged once, and native Git stays in its existing kernel owner."
         }
       ],
       "donors": [
         "src/publication/catalogs.ts:62-171"
-      ]
+      ],
+      "actualImplementation": {
+        "wave": "W06",
+        "lines": 69,
+        "files": [
+          {
+            "path": "packages/catalog/src/homebrew/Formula.ts",
+            "lines": 68,
+            "sha256": "d65e9422f73f082aee4717c157dbff53354336d596ff24975f506eeb91556cda"
+          },
+          {
+            "path": "packages/catalog/src/homebrew/index.ts",
+            "lines": 1,
+            "sha256": "3f399b30c4d53be10441c0cc5a84fe8ed76b1c1d5dd4bc72dfa6014f323eccd0"
+          }
+        ],
+        "qualification": "Independent local native format/policy/Git review; hosted native installation remains Plans009/010."
+      }
     },
     {
       "owner": "provider-scoop",
@@ -718,29 +728,39 @@
         "provider.scoop"
       ],
       "fullReplacementPhysicalLines": {
-        "low": 80,
-        "expected": 120,
-        "high": 180
+        "low": 48,
+        "expected": 48,
+        "high": 48
       },
       "components": [
         {
-          "name": "Two-platform schema, owned download binding and manifest renderer",
-          "low": 65,
-          "expected": 95,
-          "high": 135,
-          "basis": "catalogs.ts:62-98,172-196; no Git interpreter here"
-        },
-        {
-          "name": "Exports and renderer boundary",
-          "low": 15,
-          "expected": 25,
-          "high": 45,
-          "basis": "catalogs.ts:198-359 only renderer-to-root composition"
+          "name": "Actual W06 catalog source",
+          "low": 48,
+          "expected": 48,
+          "high": 48,
+          "basis": "Exact source bindings; the package-private shared owner is charged once, and native Git stays in its existing kernel owner."
         }
       ],
       "donors": [
         "src/publication/catalogs.ts:62-98,172-196"
-      ]
+      ],
+      "actualImplementation": {
+        "wave": "W06",
+        "lines": 48,
+        "files": [
+          {
+            "path": "packages/catalog/src/scoop/Manifest.ts",
+            "lines": 47,
+            "sha256": "a62a869775f94d8700005097549bd175d9b6a6f504059c4816dddc2fdcd0c558"
+          },
+          {
+            "path": "packages/catalog/src/scoop/index.ts",
+            "lines": 1,
+            "sha256": "3e18c5813453766bc0d1ab2446258a7192fe8ed15d9a7bed9c75a2221963e737"
+          }
+        ],
+        "qualification": "Independent local native format/policy/Git review; hosted native installation remains Plans009/010."
+      }
     },
     {
       "owner": "provider-mcp",
@@ -942,21 +962,54 @@
         "expected": 80,
         "high": 98
       }
+    },
+    {
+      "owner": "provider-catalog-shared",
+      "modules": [
+        "provider.catalog.Shared"
+      ],
+      "donors": [],
+      "fullReplacementPhysicalLines": {
+        "low": 77,
+        "expected": 77,
+        "high": 77
+      },
+      "components": [
+        {
+          "name": "Actual W06 catalog source",
+          "low": 77,
+          "expected": 77,
+          "high": 77,
+          "basis": "Exact source bindings; the package-private shared owner is charged once, and native Git stays in its existing kernel owner."
+        }
+      ],
+      "actualImplementation": {
+        "wave": "W06",
+        "lines": 77,
+        "files": [
+          {
+            "path": "packages/catalog/src/Shared.ts",
+            "lines": 77,
+            "sha256": "eaee3b955220e7fa77cbc7cda3a8587c7d2c6082319ce2d018c275e7f13b09de"
+          }
+        ],
+        "qualification": "Independent local native format/policy/Git review; hosted native installation remains Plans009/010."
+      }
     }
   ],
   "totals": {
-    "low": 11807,
-    "expected": 12904,
-    "high": 14392
+    "low": 11781,
+    "expected": 12778,
+    "high": 14126
   },
-  "expectedHeadroom": -1419,
+  "expectedHeadroom": -1293,
   "reductionPercent": {
-    "low": 48.6,
-    "expected": 43.82,
-    "high": 37.35
+    "low": 48.71,
+    "expected": 44.37,
+    "high": 38.51
   },
   "unknowns": [
-    "Three remaining public provider packages (catalog, MCP and OpenAI) are not implemented. Their complete native parsing, evidence, authentication and selected agent-product composition must be measured.",
+    "Two remaining public provider packages (MCP and OpenAI) are not implemented. Their complete native parsing, evidence, authentication and selected agent-product composition must be measured.",
     "Kernel and GitHub use actual W05 source; npm, PyPI, HTTP/OIDC, journals and native Git retain exact W04 source bindings. CLI/Action/self-release retains 560 expected future lines above 103 actual host-entry lines. Adoption/Apple retains its prior full responsibility estimate plus the 22-line W04 shared-reader delta, with 408 actual partial lines exposed; W08 must replace this hybrid estimate.",
     "Native hosted OIDC, Bun Sigstore, all selected platform acceptance and remaining host integration can change source costs. Implemented file counts are not acceptance.",
     "Exact layout metadata remains separate and in the combined view. All newly maintained owned or upstream logic counts; no forecast closes the 11485 gate."
@@ -978,7 +1031,7 @@
     }
   ],
   "newRequiredUpstreamImplementationLines": 0,
-  "sourceCeilingPolicy": "Expected12904 exceeds unchanged11485 ceiling by1419. No achieved reduction or complete-product waiver; actual full selected product must pass before release.",
+  "sourceCeilingPolicy": "Expected12778 exceeds unchanged11485 ceiling by1293. No achieved reduction or complete-product waiver; actual full selected product must pass before release.",
   "maintenanceLanes": [
     "product and Action source",
     "generated runtime product inputs including Action YAML",
@@ -992,42 +1045,6 @@
   ],
   "layoutMetadata": [
     {
-      "layout": "T1",
-      "publicPackageJsonLines": 133,
-      "privatePackageJsonLines": 46,
-      "actionYamlLines": 22,
-      "tsconfigJsonLines": 76,
-      "futureScriptFiles": 3,
-      "futureScriptLines": null,
-      "authoredProductModuleFiles": 88,
-      "generatedRuntimePolicyFiles": 0,
-      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
-    },
-    {
-      "layout": "T2",
-      "publicPackageJsonLines": 139,
-      "privatePackageJsonLines": 82,
-      "actionYamlLines": 22,
-      "tsconfigJsonLines": 90,
-      "futureScriptFiles": 3,
-      "futureScriptLines": null,
-      "authoredProductModuleFiles": 88,
-      "generatedRuntimePolicyFiles": 0,
-      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
-    },
-    {
-      "layout": "T3",
-      "publicPackageJsonLines": 304,
-      "privatePackageJsonLines": 87,
-      "actionYamlLines": 22,
-      "tsconfigJsonLines": 174,
-      "futureScriptFiles": 3,
-      "futureScriptLines": null,
-      "authoredProductModuleFiles": 88,
-      "generatedRuntimePolicyFiles": 0,
-      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
-    },
-    {
       "layout": "T3c",
       "publicPackageJsonLines": 277,
       "privatePackageJsonLines": 83,
@@ -1035,7 +1052,7 @@
       "tsconfigJsonLines": 160,
       "futureScriptFiles": 3,
       "futureScriptLines": null,
-      "authoredProductModuleFiles": 88,
+      "authoredProductModuleFiles": 89,
       "generatedRuntimePolicyFiles": 0,
       "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
     }
@@ -1072,6 +1089,57 @@
     "lines": 789,
     "bytes": 15973,
     "role": "Pinned native SPDX membership data; generated from packaging26.3 with source hash; validation logic remains counted TypeScript",
-    "forecastProductAndDataLines": 13693
+    "forecastProductAndDataLines": 13567
+  },
+  "historicalLayoutMetadata": {
+    "commit": "3b712db",
+    "rows": [
+      {
+        "layout": "T1",
+        "publicPackageJsonLines": 133,
+        "privatePackageJsonLines": 46,
+        "actionYamlLines": 22,
+        "tsconfigJsonLines": 76,
+        "futureScriptFiles": 3,
+        "futureScriptLines": null,
+        "authoredProductModuleFiles": 88,
+        "generatedRuntimePolicyFiles": 0,
+        "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
+      },
+      {
+        "layout": "T2",
+        "publicPackageJsonLines": 139,
+        "privatePackageJsonLines": 82,
+        "actionYamlLines": 22,
+        "tsconfigJsonLines": 90,
+        "futureScriptFiles": 3,
+        "futureScriptLines": null,
+        "authoredProductModuleFiles": 88,
+        "generatedRuntimePolicyFiles": 0,
+        "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
+      },
+      {
+        "layout": "T3",
+        "publicPackageJsonLines": 304,
+        "privatePackageJsonLines": 87,
+        "actionYamlLines": 22,
+        "tsconfigJsonLines": 174,
+        "futureScriptFiles": 3,
+        "futureScriptLines": null,
+        "authoredProductModuleFiles": 88,
+        "generatedRuntimePolicyFiles": 0,
+        "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
+      }
+    ],
+    "status": "Historical rejected topology costs; not live production projection or current source savings."
+  },
+  "conservativeCombinedViews": {
+    "layout": "T3c",
+    "projectedMetadataExcludingAlreadyCountedActionYaml": 520,
+    "forecastProductAndProjectedMetadata": 13298,
+    "forecastProductProjectedMetadataAndOwnedData": 14087,
+    "actualProductAndObservedMetadata": 14283,
+    "actualProductObservedMetadataAndOwnedData": 15072,
+    "basis": "Selected template metadata277public+83private+160tsconfig=520; Action22alreadyinproduct. Actual metadata616 is separately measured current manifests/configs, not a complete future metadata guarantee. Rejected historical alternatives excluded."
   }
 }

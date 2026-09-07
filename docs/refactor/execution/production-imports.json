@@ -1,6 +1,6 @@
 {
   "format": "ts-release/production-imports/1",
-  "files": 46,
+  "files": 55,
   "edges": [
     {
       "file": "packages/npm/src/Evidence.ts",
@@ -249,6 +249,26 @@
     },
     {
       "file": "packages/ts-release/src/Node.ts",
+      "specifier": "./platform/GitJournal.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Node.ts",
+      "specifier": "./platform/GitHost.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Node.ts",
+      "specifier": "./platform/GithubOidc.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Node.ts",
+      "specifier": "./platform/HttpTransport.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Node.ts",
       "specifier": "./platform/ContentStore.js",
       "typeOnly": false
     },
@@ -275,7 +295,7 @@
     {
       "file": "packages/ts-release/src/Http.ts",
       "specifier": "effect/Effect",
-      "typeOnly": true
+      "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/Http.ts",
@@ -285,7 +305,12 @@
     {
       "file": "packages/ts-release/src/Http.ts",
       "specifier": "./internal/Error.js",
-      "typeOnly": true
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Http.ts",
+      "specifier": "./internal/Identity.js",
+      "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/Http.ts",
@@ -320,6 +345,31 @@
     {
       "file": "packages/ts-release/src/Provider.ts",
       "specifier": "./internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Git.ts",
+      "specifier": "./internal/EffectTypes.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Git.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Git.ts",
+      "specifier": "./internal/GitAuthority.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Git.ts",
+      "specifier": "./platform/GitHost.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Git.ts",
+      "specifier": "./internal/GitCatalog.js",
       "typeOnly": false
     },
     {
@@ -409,6 +459,26 @@
     },
     {
       "file": "packages/ts-release/src/Bun.ts",
+      "specifier": "./platform/GitJournal.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bun.ts",
+      "specifier": "./platform/GitHost.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bun.ts",
+      "specifier": "./platform/GithubOidc.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bun.ts",
+      "specifier": "./platform/HttpTransport.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bun.ts",
       "specifier": "./platform/SqliteJournal.js",
       "typeOnly": false
     },
@@ -439,11 +509,6 @@
     },
     {
       "file": "packages/ts-release/src/Journal.ts",
-      "specifier": "./internal/Host.js",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/Journal.ts",
       "specifier": "./internal/Error.js",
       "typeOnly": false
     },
@@ -455,11 +520,6 @@
     {
       "file": "packages/ts-release/src/Journal.ts",
       "specifier": "./Provider.js",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/Journal.ts",
-      "specifier": "./Http.js",
       "typeOnly": false
     },
     {
@@ -575,7 +635,7 @@
     {
       "file": "packages/ts-release/src/internal/Content.ts",
       "specifier": "effect/Effect",
-      "typeOnly": true
+      "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/internal/Content.ts",
@@ -585,12 +645,72 @@
     {
       "file": "packages/ts-release/src/internal/Content.ts",
       "specifier": "./ArtifactModel.js",
-      "typeOnly": true
+      "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/internal/Content.ts",
       "specifier": "./Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Content.ts",
+      "specifier": "./Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "effect/Redacted",
       "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "./ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "./Content.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "./Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "./Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "./ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "./GitAuthority.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "../Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "../Plan.js",
+      "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/internal/ReleaseModel.ts",
@@ -630,6 +750,11 @@
     {
       "file": "packages/ts-release/src/internal/GitAuthority.ts",
       "specifier": "./ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitAuthority.ts",
+      "specifier": "./Identity.js",
       "typeOnly": false
     },
     {
@@ -775,7 +900,7 @@
     {
       "file": "packages/ts-release/src/internal/ArtifactReader.ts",
       "specifier": "./Content.js",
-      "typeOnly": true
+      "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/internal/ArtifactReader.ts",
@@ -873,6 +998,306 @@
       "typeOnly": false
     },
     {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "./GitProcess.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "effect/Scope",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "node:crypto",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "node:fs",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "../Journal.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "../internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "../internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "../internal/GitAuthority.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "../internal/GitCatalog.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "./GitProcess.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "./GitRemote.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "./StoreCodec.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "effect/Scope",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "../Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "../internal/Content.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "../internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "../internal/GitAuthority.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "../internal/GitCatalog.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "./GitProcess.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "./GitObjects.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "./GitRemote.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitProcess.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitProcess.ts",
+      "specifier": "effect/Cause",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitProcess.ts",
+      "specifier": "effect/Scope",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitProcess.ts",
+      "specifier": "node:child_process",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitProcess.ts",
+      "specifier": "node:fs",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitProcess.ts",
+      "specifier": "node:path",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitProcess.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitProcess.ts",
+      "specifier": "../internal/GitCatalog.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitProcess.ts",
+      "specifier": "effect/Redacted",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "effect/Config",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "effect/Clock",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "effect/Redacted",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "node:crypto",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "../Http.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "./HttpTransport.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "../internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "../internal/NativeJson.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitRemote.ts",
+      "specifier": "./GitProcess.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitRemote.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitRemote.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitRemote.ts",
+      "specifier": "../internal/GitCatalog.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitRemote.ts",
+      "specifier": "./GitProcess.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "node:http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "undici",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "node:net",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "undici/lib/dispatcher/client.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "undici/lib/core/connect.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "../internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "../Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "../Http.js",
+      "typeOnly": true
+    },
+    {
       "file": "packages/ts-release/src/platform/ContentStore.ts",
       "specifier": "effect/Effect",
       "typeOnly": false
@@ -960,6 +1385,51 @@
     {
       "file": "packages/ts-release/src/platform/SqliteJournal.ts",
       "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitObjects.ts",
+      "specifier": "./GitProcess.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitObjects.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitObjects.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitObjects.ts",
+      "specifier": "node:crypto",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitObjects.ts",
+      "specifier": "../internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitObjects.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitObjects.ts",
+      "specifier": "../internal/Content.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitObjects.ts",
+      "specifier": "../internal/GitCatalog.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitObjects.ts",
+      "specifier": "./GitProcess.js",
       "typeOnly": false
     },
     {
@@ -1299,32 +1769,54 @@
       "effect/Effect",
       "effect/Schema"
     ],
+    "./git": [
+      "effect-build/Artifact",
+      "effect-build/SystemTarget",
+      "effect/Effect",
+      "effect/Schema"
+    ],
     "./bun": [
       "bun:sqlite",
       "effect-build/Artifact",
       "effect-build/SystemTarget",
+      "effect/Cause",
+      "effect/Clock",
+      "effect/Config",
       "effect/Context",
       "effect/Effect",
       "effect/Layer",
+      "effect/Redacted",
       "effect/Schema",
+      "node:child_process",
       "node:crypto",
       "node:fs",
       "node:fs/promises",
+      "node:http",
       "node:path",
-      "node:url"
+      "node:url",
+      "undici/lib/core/connect.js",
+      "undici/lib/dispatcher/client.js"
     ],
     "./node": [
       "effect-build/Artifact",
       "effect-build/SystemTarget",
+      "effect/Cause",
+      "effect/Clock",
+      "effect/Config",
       "effect/Context",
       "effect/Effect",
       "effect/Layer",
+      "effect/Redacted",
       "effect/Schema",
+      "node:child_process",
       "node:crypto",
       "node:fs",
       "node:fs/promises",
+      "node:http",
       "node:path",
-      "node:url"
+      "node:url",
+      "undici/lib/core/connect.js",
+      "undici/lib/dispatcher/client.js"
     ]
   }
 }

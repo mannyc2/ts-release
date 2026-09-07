@@ -18,7 +18,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "13ce7d09133479b2531f82a4365a55d20c2435d2fe8a9954999a0d89f3851026"
+    "sha256": "a4bed27d51dec682f937edac089c8bdb8028ef9c1efba7e85735ecfddc7d8e8f"
   },
   "authorityBindings": {
     "kernel": {
@@ -27,11 +27,11 @@
     },
     "provider": {
       "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
-      "sha256": "6e767bf8480911d8e74c95b974b402b3409a54ed93dff9f66935fbb5eb5a4b52"
+      "sha256": "e7bf0acce2c28d8d42e7ecebea2146f2cd9eb2fefc1d812f1a988bf27e6c3eef"
     },
     "host": {
       "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
-      "sha256": "94539eedb7b652e2c148190aafe49ae22d3ee064fa69daa2af3a75914e560278"
+      "sha256": "a2794b3ce3d6967a8879ab7089baa9b18349c62d2c81473ea7d25ea586c4b79f"
     },
     "adoption": {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/adoption.d.ts",
@@ -55,7 +55,7 @@
     },
     "http": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Http.d.ts",
-      "sha256": "cb9d38234c3fe17cb6b3d42c6834adc13538debd57541cda31aca53ac41450bc"
+      "sha256": "0e318562851edda401c8ee201b79a91ce7d9a6fb74eab3fedf96bc0b6235a44e"
     },
     "application": {
       "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
@@ -71,7 +71,19 @@
     },
     "artifactReader": {
       "path": "docs/refactor/architecture-program/handoff/production-api/internal/ArtifactReader.d.ts",
-      "sha256": "4137309152a59254edc0e8c5bb267eec32a1de34f8d72bf09896ff17d0f28837"
+      "sha256": "fc61eec68de6dbb61ea353893873bd178b9871845fcc2b29eeafbb0ca001728e"
+    },
+    "git": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Git.d.ts",
+      "sha256": "3c04cd3e8a4ccf18759ecd95cacac9a5d52d86cc3cf7678dbb5b7d17af856334"
+    },
+    "nodeHost": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Node.d.ts",
+      "sha256": "8e381909ad1f3d68fe5f1014bce6078be8e17b9cad8af211151573c647e51b8a"
+    },
+    "bunHost": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Bun.d.ts",
+      "sha256": "c751957811c02883541f365ad272b2b0d2dc90c6822c5d1057ef7035f7fee5f1"
     }
   },
   "symbols": [
@@ -1042,7 +1054,7 @@
       "declarations": [
         {
           "line": 18,
-          "sha256": "16de6a795a856b9d8913da3363932127ccadf746c6caf63d1942071fb985eb96"
+          "sha256": "a06e398daf38e992f05d80360f101d0115e2ad5bab426b1a9b9708ad9251b6f2"
         }
       ]
     },
@@ -1056,11 +1068,11 @@
       ],
       "declarations": [
         {
-          "line": 32,
+          "line": 37,
           "sha256": "e4603f58a8171401609c32b3139005062f3e74b550d9bc8154f5ac96ccd236a8"
         },
         {
-          "line": 33,
+          "line": 38,
           "sha256": "146dd9d29e85891c372655f3b73010319a58543ba5327a753f695c4a4a1592f7"
         }
       ]
@@ -1150,7 +1162,7 @@
       ],
       "declarations": [
         {
-          "line": 26,
+          "line": 28,
           "sha256": "2d82bb46001e5641c4bc9b7cf644e414d6f37952aabbdae363a6689771521bf5"
         }
       ]
@@ -1165,7 +1177,7 @@
       ],
       "declarations": [
         {
-          "line": 27,
+          "line": 29,
           "sha256": "8baa9f8ab052ff98cf0919889edafc352723823254f219328e194bd4558207ec"
         }
       ]
@@ -1180,7 +1192,7 @@
       ],
       "declarations": [
         {
-          "line": 28,
+          "line": 30,
           "sha256": "e9a47c652cdfa6b785f4fe1e1890cf383d095f007ae4c4a57eb807d6fb9c2799"
         }
       ]
@@ -1196,7 +1208,7 @@
       ],
       "declarations": [
         {
-          "line": 76,
+          "line": 78,
           "sha256": "f9b342cd11c0a4c284b3569f9418f5fd1e16863b22dcc73f3b5d185f1b590659"
         }
       ]
@@ -1212,7 +1224,7 @@
       ],
       "declarations": [
         {
-          "line": 83,
+          "line": 85,
           "sha256": "f338db16f6c5ced215fd29e43a8e7176b1286f01df56229aa8285a6e603389bc"
         }
       ]
@@ -1228,7 +1240,7 @@
       ],
       "declarations": [
         {
-          "line": 91,
+          "line": 93,
           "sha256": "154fdbc7194c3f2543a946fe0a1f8356aaa8dca763cad937c3c00549d2f5a7a3"
         }
       ]
@@ -1244,7 +1256,7 @@
       ],
       "declarations": [
         {
-          "line": 101,
+          "line": 103,
           "sha256": "60dcde972f67b460891ae11346f2d8c3dadfd88c646cebff605fa735eeb74830"
         }
       ]
@@ -1260,7 +1272,7 @@
       ],
       "declarations": [
         {
-          "line": 109,
+          "line": 111,
           "sha256": "e2330f93b2c4743f25736779a7ee93719ac521c54ecafbd40739b5024ad80f10"
         }
       ]
@@ -1276,7 +1288,7 @@
       ],
       "declarations": [
         {
-          "line": 114,
+          "line": 116,
           "sha256": "ce6570e4109b7907d6a9e1438ceb290f8799078b78a52c5fc0a56fb11117ecc3"
         }
       ]
@@ -1292,7 +1304,7 @@
       ],
       "declarations": [
         {
-          "line": 119,
+          "line": 121,
           "sha256": "4c75dc2166f350c8c1c3ed3b99abcef4411f4aa5b15f4e174e5b8f17de9e5b57"
         }
       ]
@@ -1308,11 +1320,11 @@
       ],
       "declarations": [
         {
-          "line": 121,
+          "line": 123,
           "sha256": "391e265edadcc994341ebcabbe77c8d22e605a5ad2c2108c85794b0be5c976dd"
         },
         {
-          "line": 122,
+          "line": 124,
           "sha256": "3de4ae3c95f2ecdf3268955253b66e7d5c9c69ff06d9273c6d8695e108f98967"
         }
       ]
@@ -1328,7 +1340,7 @@
       ],
       "declarations": [
         {
-          "line": 132,
+          "line": 134,
           "sha256": "ef2b7ef0f2cb3bc6737a923af86e4295917367763fd75950dc4e111623feeb6a"
         }
       ]
@@ -1344,7 +1356,7 @@
       ],
       "declarations": [
         {
-          "line": 142,
+          "line": 144,
           "sha256": "34ae4478b768025bd262db487bbf48f04906939b8536340f755d6de060bfed6b"
         }
       ]
@@ -1360,7 +1372,7 @@
       ],
       "declarations": [
         {
-          "line": 150,
+          "line": 152,
           "sha256": "08682622e3d3dc43fe52d5bc4883004b3340ee2a584bb190d21c883c07905883"
         }
       ]
@@ -1376,7 +1388,7 @@
       ],
       "declarations": [
         {
-          "line": 160,
+          "line": 162,
           "sha256": "afe9075f128b69459988ded1fda9a68acb09a359dc6801a6e76f61ce035d7003"
         }
       ]
@@ -1392,7 +1404,7 @@
       ],
       "declarations": [
         {
-          "line": 167,
+          "line": 169,
           "sha256": "1612b5dbab7410368dd2e3530fe36c0e881a7f0bbd3f9b4d131b7ab6e62e57f2"
         }
       ]
@@ -1408,7 +1420,7 @@
       ],
       "declarations": [
         {
-          "line": 175,
+          "line": 177,
           "sha256": "e817bf43d065c3d5d0b8bead053035d28d50bded2c00d7a61171f3c5d725b532"
         }
       ]
@@ -1424,7 +1436,7 @@
       ],
       "declarations": [
         {
-          "line": 187,
+          "line": 189,
           "sha256": "bbc3320e25b1792e418e2cbf4fdeed4c6e4d7b6fb022c4ca0ac3a2ac7febc40e"
         }
       ]
@@ -1439,7 +1451,7 @@
       ],
       "declarations": [
         {
-          "line": 189,
+          "line": 191,
           "sha256": "d154e5fffaec87aaea03973d97cf28e1581880fbf220b24fa7a84f2c775ef680"
         }
       ]
@@ -1454,7 +1466,7 @@
       ],
       "declarations": [
         {
-          "line": 190,
+          "line": 192,
           "sha256": "800f9312f7ca3520bd2ea0a9b449e795f1450d22bbb91bd99a96b0ed0267c31e"
         }
       ]
@@ -1469,7 +1481,7 @@
       ],
       "declarations": [
         {
-          "line": 192,
+          "line": 194,
           "sha256": "1e3a1668e23171ef4a59102c0f516f31c8fff602f7c99e156b4786d09d862a57"
         }
       ]
@@ -1484,7 +1496,7 @@
       ],
       "declarations": [
         {
-          "line": 193,
+          "line": 195,
           "sha256": "d164c307c5f46012e15e77f437c4e23d4649a69564d8f9518bd88bd7b80d538b"
         }
       ]
@@ -1499,7 +1511,7 @@
       ],
       "declarations": [
         {
-          "line": 194,
+          "line": 196,
           "sha256": "096cc8d6a63e6fa3a5b72a93d589c536f260fb744b27c991289d8e0ae2617191"
         }
       ]
@@ -1514,7 +1526,7 @@
       ],
       "declarations": [
         {
-          "line": 195,
+          "line": 197,
           "sha256": "f429402a7d0e5aef56e009a9047de5206715d4048c468f9aa0df75f4b3bd9060"
         }
       ]
@@ -1529,7 +1541,7 @@
       ],
       "declarations": [
         {
-          "line": 196,
+          "line": 198,
           "sha256": "6c66dd1311bde3a2deedb9768e7b8355452257c152d4f3365742b0d62180b639"
         }
       ]
@@ -1544,7 +1556,7 @@
       ],
       "declarations": [
         {
-          "line": 199,
+          "line": 201,
           "sha256": "559bcaa90286d87a38d9d9f79996b6b3ef982087bbd89172d2374b56b881572b"
         }
       ]
@@ -1560,7 +1572,7 @@
       ],
       "declarations": [
         {
-          "line": 211,
+          "line": 213,
           "sha256": "80dad15a8403aafa2b6995f60542e01cf4ba1e7b6770e35d577deb26261a281a"
         }
       ]
@@ -1576,7 +1588,7 @@
       ],
       "declarations": [
         {
-          "line": 227,
+          "line": 229,
           "sha256": "5abf247e754b12c5652dec132a7d3a16ef367317f92257863394fd4d0dd3543f"
         }
       ]
@@ -1591,7 +1603,7 @@
       ],
       "declarations": [
         {
-          "line": 229,
+          "line": 231,
           "sha256": "05c04283da3e626fd8ac4f532d56094a11205b9948b448318172897e0d1d1524"
         }
       ]
@@ -1607,7 +1619,7 @@
       ],
       "declarations": [
         {
-          "line": 237,
+          "line": 239,
           "sha256": "936ad0117f72349cb23fa63a6dc08773ef8bcf54bc844149f060c43f14462fff"
         }
       ]
@@ -1623,7 +1635,7 @@
       ],
       "declarations": [
         {
-          "line": 247,
+          "line": 249,
           "sha256": "9b44cd8d1968a2269bb0eb9878a8cbef05687d6d47ba8745bfc19c4998c94e61"
         }
       ]
@@ -1638,207 +1650,8 @@
       ],
       "declarations": [
         {
-          "line": 249,
+          "line": 251,
           "sha256": "4d03d6901ce0b859e0300f297feec7a50447396bbd598da58c72ccf045945a51"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.FileEdit",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "FileEdit",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 259,
-          "sha256": "3fc07f7360e75a2cfff09b0eaee0d0947d7946ff35bd03657efc445becc8af2d"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.Identity",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "Identity",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 267,
-          "sha256": "78bdb13226bc24ef01c1ee72afd5c6b88eae10f12fad039b2812fa8b5ebb618c"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.CommitInput",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "CommitInput",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 281,
-          "sha256": "b6b7796bda44e9055ee3a54ce71f5ceaea0a023bdc508d9bd3a16301dfad5128"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.Intent",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "Intent",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 294,
-          "sha256": "7c199594f3960c84aab3b6dd2034530dea3eef92a8e28491a951616b3a9e7393"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.ObjectBuilder",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "ObjectBuilder",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 296,
-          "sha256": "d2c4fc5d62a3874f97bd079d7d4c61f5ceb48c5a789fad48b8a92c02fda43bed"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.RefCoordinate",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "RefCoordinate",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 306,
-          "sha256": "fc17ec64cb13e9582f1ddef3f8420d15108498011af65b412d2d9a37a4862391"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.ObserveRef",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "ObserveRef",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 307,
-          "sha256": "5e6c6ba9b54218025cb1beffc052fcc02493e2e5570d6f139120ec0476a47dc7"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.prepare",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "prepare",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 310,
-          "sha256": "ba448689ef3b772666e0735f5990a600c14a047f0b567e2274cf2aa989cd129d"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.update",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "update",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 315,
-          "sha256": "c211b909727603e7b12b7ddc825b906eaafdf4c11080f9b567c95fb0c9502d4e"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.definition",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "definition",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 316,
-          "sha256": "e2141d3321a8b40efa3883b35ce7d15933485619a811c54fc01adab1b8593922"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.Credentials",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "Credentials",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 320,
-          "sha256": "6613351677350c3c7c3684104e4ecd96ce164b1a8550f0516301560eb6a9aff8"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.NativeHost",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "NativeHost",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 330,
-          "sha256": "3405ca6dd986907b54f9eed83cea25a5ab96256ecc7eefaaeaa9326c6881528c"
-        }
-      ]
-    },
-    {
-      "id": "provider:GitCatalog.nativeHost",
-      "authority": "provider",
-      "namespace": "GitCatalog",
-      "sourceName": "nativeHost",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 342,
-          "sha256": "6e04249ea199001f47552a1503d5e67069a7e72a392ecd537b48de5e4c62a335"
         }
       ]
     },
@@ -1852,7 +1665,7 @@
       ],
       "declarations": [
         {
-          "line": 353,
+          "line": 257,
           "sha256": "2f1767fbe0d9cf55669cf2e895f1d125b64a21bd2b1bcd87f7abd0dd39f94e17"
         }
       ]
@@ -1868,7 +1681,7 @@
       ],
       "declarations": [
         {
-          "line": 364,
+          "line": 268,
           "sha256": "a1eab97c68bdeea81415056734fe4adaa6076181a5b79f3aba9415fd4b822e5c"
         }
       ]
@@ -1884,7 +1697,7 @@
       ],
       "declarations": [
         {
-          "line": 378,
+          "line": 282,
           "sha256": "c50bad004e59a990ee74c3c646034eba739f890cd78ac370c16ebe4019b01b84"
         }
       ]
@@ -1900,7 +1713,7 @@
       ],
       "declarations": [
         {
-          "line": 394,
+          "line": 298,
           "sha256": "648702fd93a0d62a4652cbe2dcaaac68461c38edca873d25ac0cafb82090a983"
         }
       ]
@@ -1916,7 +1729,7 @@
       ],
       "declarations": [
         {
-          "line": 410,
+          "line": 314,
           "sha256": "de035f12e0dc538b8243b12440f57c05e73fba32ddb7c48408653b91aadf9dde"
         }
       ]
@@ -1932,11 +1745,11 @@
       ],
       "declarations": [
         {
-          "line": 412,
+          "line": 316,
           "sha256": "458f8e284fe6d96ab05a86e99f54d9aa74130eb6ab01aceae354aed712d6d0d1"
         },
         {
-          "line": 413,
+          "line": 317,
           "sha256": "5a5bbb56b292cb02ef277bdd6a997ce31376bce9877d828dd979972385327d86"
         }
       ]
@@ -1952,7 +1765,7 @@
       ],
       "declarations": [
         {
-          "line": 417,
+          "line": 321,
           "sha256": "7eea3b56267d83ba9b2c5affbe7f56944223e8de14879e86d494aab2a44fb379"
         }
       ]
@@ -1968,7 +1781,7 @@
       ],
       "declarations": [
         {
-          "line": 424,
+          "line": 328,
           "sha256": "488c65b8c0ce0d027e16dd8bff17bc49c180b50558eecb80a49670e95ec34858"
         }
       ]
@@ -1984,7 +1797,7 @@
       ],
       "declarations": [
         {
-          "line": 431,
+          "line": 335,
           "sha256": "5bf96d63d70009159bf7ad8d01c119c77f7d4139dbe957d385dbf40e3622f301"
         }
       ]
@@ -2000,11 +1813,11 @@
       ],
       "declarations": [
         {
-          "line": 433,
+          "line": 337,
           "sha256": "3ae2e93b492b9fee426ce81996e1bfeb087ba58154ea51bb74be8531029c30bb"
         },
         {
-          "line": 434,
+          "line": 338,
           "sha256": "db4d4329cf879d460a7f4b5715a6f2a3f3e9edd7c85af43cca0d20657f0d2633"
         }
       ]
@@ -2020,7 +1833,7 @@
       ],
       "declarations": [
         {
-          "line": 441,
+          "line": 345,
           "sha256": "96bbc20cbe1b7b565c03aeb0044951fbbc0ed3664373b9026d2c843236db5ca0"
         }
       ]
@@ -2036,7 +1849,7 @@
       ],
       "declarations": [
         {
-          "line": 449,
+          "line": 353,
           "sha256": "cbe50de52de1415aaf2bc6f4f2e316031546b541d8bb261a08222f77d727c364"
         }
       ]
@@ -2052,11 +1865,11 @@
       ],
       "declarations": [
         {
-          "line": 451,
+          "line": 355,
           "sha256": "aef1fedb1d46e2420e2ce5fb0a198fc07c4957041e23763826ca2c6d37a3c5c2"
         },
         {
-          "line": 452,
+          "line": 356,
           "sha256": "534fc69d94465903ae42c24ef000f8d17a6295f9dda44411f290f8b1ca1eb582"
         }
       ]
@@ -2072,7 +1885,7 @@
       ],
       "declarations": [
         {
-          "line": 464,
+          "line": 368,
           "sha256": "da9f30962018039c325b9026506d4da7675d012e08e32065898add5b8e3c6b0f"
         }
       ]
@@ -2088,7 +1901,7 @@
       ],
       "declarations": [
         {
-          "line": 477,
+          "line": 381,
           "sha256": "ab9bd542256c9ef234849f1afc80529ed340572d71b940b59e34c382e294c9cf"
         }
       ]
@@ -2104,7 +1917,7 @@
       ],
       "declarations": [
         {
-          "line": 490,
+          "line": 394,
           "sha256": "0c2314928ad65cf56b5f2adb311cb8c36e20327f84eed34e3f72b4a9c17e680a"
         }
       ]
@@ -2120,7 +1933,7 @@
       ],
       "declarations": [
         {
-          "line": 501,
+          "line": 405,
           "sha256": "8035d897b9cf6640eefa3a29dd8a6c30838ac6dfbae1c9b2c603a4e2af9fe049"
         }
       ]
@@ -2136,7 +1949,7 @@
       ],
       "declarations": [
         {
-          "line": 514,
+          "line": 418,
           "sha256": "ca80c6c2b1e8d95dbab5704dcc1943d2ba3ae630ffdd877ef7cc38875fe48e79"
         }
       ]
@@ -2152,11 +1965,11 @@
       ],
       "declarations": [
         {
-          "line": 516,
+          "line": 420,
           "sha256": "c6f58591bf8c23a53ba08aa130ef19d1ab67f008d1093f714e9d62877846b6a8"
         },
         {
-          "line": 517,
+          "line": 421,
           "sha256": "86b5e9eb00db0f9ae3b6d5d47ede94668d9b7c6b03d49b52a605f83f24832de7"
         }
       ]
@@ -2172,7 +1985,7 @@
       ],
       "declarations": [
         {
-          "line": 524,
+          "line": 428,
           "sha256": "05c92daa078ea0d504da98afcfecb821dff3d7c7a26f596c18fce0da66c696a6"
         }
       ]
@@ -2188,7 +2001,7 @@
       ],
       "declarations": [
         {
-          "line": 532,
+          "line": 436,
           "sha256": "6d27ec5f3310e27c94162bc5e20de39497174963d15fa09434de9003dda1a398"
         }
       ]
@@ -2204,7 +2017,7 @@
       ],
       "declarations": [
         {
-          "line": 549,
+          "line": 453,
           "sha256": "e00a1b750dbeca5cd9df370ca7ce7fa5d080496940aaa3ca8fd24530e97d180c"
         }
       ]
@@ -2220,7 +2033,7 @@
       ],
       "declarations": [
         {
-          "line": 555,
+          "line": 459,
           "sha256": "f9e47a38abb3d36078aedef0f7ce6129c42b25c8c06e230a920974e3dc247bfa"
         }
       ]
@@ -2236,7 +2049,7 @@
       ],
       "declarations": [
         {
-          "line": 565,
+          "line": 469,
           "sha256": "dadc2a02a3d22851002d6b378ef25cff1968716950ca5b8d5d06b2b7dfa5bce1"
         }
       ]
@@ -2252,11 +2065,11 @@
       ],
       "declarations": [
         {
-          "line": 567,
+          "line": 471,
           "sha256": "0957da7846db0ead63052c2faf8baaa36f98963ca6c613062a39cf1d02245c90"
         },
         {
-          "line": 568,
+          "line": 472,
           "sha256": "ea16ac045cc03fbd0f066fd787c32c4bf398341a0adf1407d8cb456bea2526cf"
         }
       ]
@@ -2272,7 +2085,7 @@
       ],
       "declarations": [
         {
-          "line": 574,
+          "line": 478,
           "sha256": "1b59a8b78afe2e89b73332ac2e46a30268c5b2922722bdb5a62552b87f531e49"
         }
       ]
@@ -2287,7 +2100,7 @@
       ],
       "declarations": [
         {
-          "line": 578,
+          "line": 482,
           "sha256": "ddcd36e699b8ffe7751bdec893bc82e606690af43cd7e1b17dca6aa21b486ea1"
         }
       ]
@@ -2302,7 +2115,7 @@
       ],
       "declarations": [
         {
-          "line": 579,
+          "line": 483,
           "sha256": "12446156b00d4e3f773d394cecb4dc06b57ea77605f993d1cdf09ba6a7f1ea5b"
         }
       ]
@@ -2317,7 +2130,7 @@
       ],
       "declarations": [
         {
-          "line": 580,
+          "line": 484,
           "sha256": "f429402a7d0e5aef56e009a9047de5206715d4048c468f9aa0df75f4b3bd9060"
         }
       ]
@@ -2332,7 +2145,7 @@
       ],
       "declarations": [
         {
-          "line": 581,
+          "line": 485,
           "sha256": "1b533db0b802389bbd76c470b84ee92a121c6222ccd72802173a56540b690cc5"
         }
       ]
@@ -2347,7 +2160,7 @@
       ],
       "declarations": [
         {
-          "line": 584,
+          "line": 488,
           "sha256": "392122bbf0b07c8a82448ac9fec27c3e9b197347ada41fe8188f0e83daf123cf"
         }
       ]
@@ -2362,7 +2175,7 @@
       ],
       "declarations": [
         {
-          "line": 589,
+          "line": 493,
           "sha256": "679630786cca741730612dcfbf8b2bc8b0699cab349769534c4b69ba3664629e"
         }
       ]
@@ -2378,7 +2191,7 @@
       ],
       "declarations": [
         {
-          "line": 601,
+          "line": 505,
           "sha256": "fe7f6414a681816e720810c8439c652ab860654b1a4f7f82ea66906e6418d3bb"
         }
       ]
@@ -2394,7 +2207,7 @@
       ],
       "declarations": [
         {
-          "line": 609,
+          "line": 513,
           "sha256": "f30514085b8ccd723d48a1c57b8a45d1fc0b8ee4e8e82a69cac87f495dd7ced8"
         }
       ]
@@ -2410,7 +2223,7 @@
       ],
       "declarations": [
         {
-          "line": 617,
+          "line": 521,
           "sha256": "b76bd951e510651fc04a9567cdddf2c1ea5586e308b916681674e642ba4847f4"
         }
       ]
@@ -2426,7 +2239,7 @@
       ],
       "declarations": [
         {
-          "line": 623,
+          "line": 527,
           "sha256": "3f85098907bf7146ebd19e7b60a3880dcefd301dded1254cda04f0f2560e0fd0"
         }
       ]
@@ -2441,7 +2254,7 @@
       ],
       "declarations": [
         {
-          "line": 627,
+          "line": 531,
           "sha256": "d9ef0310d57f74073b3c9e032a4874bcec915da6f93e8a3d94106fa75c4313b0"
         }
       ]
@@ -2456,7 +2269,7 @@
       ],
       "declarations": [
         {
-          "line": 632,
+          "line": 536,
           "sha256": "90adb9e93075a38f47cbd71ccaa8485ec07361c8181ba6b834aa09ce5a6e013b"
         }
       ]
@@ -2471,7 +2284,7 @@
       ],
       "declarations": [
         {
-          "line": 635,
+          "line": 539,
           "sha256": "7e02d47d27ac29846d5fa6303eefab347a1b034ff2a2e5e28e2cc858bf24bed6"
         }
       ]
@@ -2487,7 +2300,7 @@
       ],
       "declarations": [
         {
-          "line": 648,
+          "line": 552,
           "sha256": "330bfd5ccf9aea58545f63e55ae551d3bca656b5f2104eb55e12b46867d0a60e"
         }
       ]
@@ -2503,7 +2316,7 @@
       ],
       "declarations": [
         {
-          "line": 657,
+          "line": 561,
           "sha256": "f1acbff2d3a11fefcc36a74f0494989d1e9fd4191a4810868ff6c341f4b5d3d4"
         }
       ]
@@ -2518,7 +2331,7 @@
       ],
       "declarations": [
         {
-          "line": 659,
+          "line": 563,
           "sha256": "e074c781a7f59dd01b00d2abedad461cdf58791cf80b8c3b278bb94c14977364"
         }
       ]
@@ -2534,7 +2347,7 @@
       ],
       "declarations": [
         {
-          "line": 683,
+          "line": 587,
           "sha256": "b5d0af275f8ed38162469d9de09ca35744eee18495bdee2644e413e79dabe2e6"
         }
       ]
@@ -2550,7 +2363,7 @@
       ],
       "declarations": [
         {
-          "line": 692,
+          "line": 596,
           "sha256": "8edb9f07beef2ccf14f714c288c4eaef25111c3b048b190a5a2d762325406e42"
         }
       ]
@@ -2566,7 +2379,7 @@
       ],
       "declarations": [
         {
-          "line": 700,
+          "line": 604,
           "sha256": "37337d867cad509167dd95945dbfbe31e348d9f0484858fbaba27f9d4cb484db"
         }
       ]
@@ -2582,7 +2395,7 @@
       ],
       "declarations": [
         {
-          "line": 710,
+          "line": 614,
           "sha256": "15805a7b43fe451bd15b99150cd5522a61a976b990941e236c2f397d028a1a10"
         }
       ]
@@ -2598,7 +2411,7 @@
       ],
       "declarations": [
         {
-          "line": 722,
+          "line": 626,
           "sha256": "1f6d6b8174c79d729bf4521526db9c010b22423f6f8a8aa297485992b000dfc1"
         }
       ]
@@ -2613,53 +2426,8 @@
       ],
       "declarations": [
         {
-          "line": 724,
+          "line": 628,
           "sha256": "65a2226ae03b1ef4c20dd3317ee0afe197f7016dac6bf8fdb30334f3e1c56e3e"
-        }
-      ]
-    },
-    {
-      "id": "host:makeHttpTransport",
-      "authority": "host",
-      "namespace": null,
-      "sourceName": "makeHttpTransport",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 28,
-          "sha256": "6a9e7e5857bf8a8e2f3bfff2171c70f23193b6bfb948494a1c300a2310d482e1"
-        }
-      ]
-    },
-    {
-      "id": "host:openSqliteJournal",
-      "authority": "host",
-      "namespace": null,
-      "sourceName": "openSqliteJournal",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 30,
-          "sha256": "660e7f0aea4b6ce283029e5089d822e9fc4b67c02d88aea54d9fac4d008984df"
-        }
-      ]
-    },
-    {
-      "id": "host:openGitJournal",
-      "authority": "host",
-      "namespace": null,
-      "sourceName": "openGitJournal",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 32,
-          "sha256": "6b891dd48fd2a0b3e7f67e6becc7221aa9dc96d833fae09f8bd5fce8c90136ae"
         }
       ]
     },
@@ -2865,21 +2633,6 @@
         {
           "line": 11,
           "sha256": "cecc7c63c5715c2cf167d8969c2e17d4f11dfe349d7f7b323ccc2786a30b10b5"
-        }
-      ]
-    },
-    {
-      "id": "contentOwner:fileContentOwner",
-      "authority": "contentOwner",
-      "namespace": null,
-      "sourceName": "fileContentOwner",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 5,
-          "sha256": "cf869652a21f01d7d6f19919b29a811e11130ee20adbb0985be0b3324852fdd1"
         }
       ]
     },
@@ -3646,6 +3399,36 @@
       ]
     },
     {
+      "id": "http:BoundCredentials",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "BoundCredentials",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 66,
+          "sha256": "b545e12e41c0de3f2fbc3e4ca3d72a5631660837688bf68c9741f1f20be00b24"
+        }
+      ]
+    },
+    {
+      "id": "http:makeCredentialResolver",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "makeCredentialResolver",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 72,
+          "sha256": "dde057e1e1fc4dbfd06796b60024ea4bccda798524f563ecbe66020a1df541cf"
+        }
+      ]
+    },
+    {
       "id": "http:HttpTransportOptions",
       "authority": "http",
       "namespace": null,
@@ -3655,69 +3438,38 @@
       ],
       "declarations": [
         {
-          "line": 66,
-          "sha256": "75048269289f83bbbc535da73758405bf17f762d78783084476356780c15bc45"
+          "line": 73,
+          "sha256": "13eabda143bf95de10254437579730ef647fb00d0437e4792614a6378a0b890a"
         }
       ]
     },
     {
-      "id": "application:FinalizedReport",
-      "authority": "application",
+      "id": "http:HttpReadOptions",
+      "authority": "http",
       "namespace": null,
-      "sourceName": "FinalizedReport",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 27,
-          "sha256": "83a2c256fb19740659e12c89e3f82bad8b7e81db8fa3fab7a397bd7a6946271f"
-        }
-      ]
-    },
-    {
-      "id": "application:Application",
-      "authority": "application",
-      "namespace": null,
-      "sourceName": "Application",
+      "sourceName": "HttpReadOptions",
       "spaces": [
         "type"
       ],
       "declarations": [
         {
-          "line": 9,
-          "sha256": "f67cc9909e2b86e14a0b83f90c0fe779939361ba868fefe2889876320c950605"
+          "line": 82,
+          "sha256": "f5d05cfdff0f13ce94ec1b1e96350597ec11e6ca5105fe318961a29695e8ea53"
         }
       ]
     },
     {
-      "id": "application:CreateApplication",
-      "authority": "application",
+      "id": "http:HttpExchangeOptions",
+      "authority": "http",
       "namespace": null,
-      "sourceName": "CreateApplication",
+      "sourceName": "HttpExchangeOptions",
       "spaces": [
         "type"
       ],
       "declarations": [
         {
-          "line": 14,
-          "sha256": "026f7705f8a75d54f8edde6d744a4064586290eda10252797aa039220397bc6f"
-        }
-      ]
-    },
-    {
-      "id": "application:runApplication",
-      "authority": "application",
-      "namespace": null,
-      "sourceName": "runApplication",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 17,
-          "sha256": "c9cb124df3aed853bfb95b477dbcc421d68ca9f1d4a14ed2b3450343394fa1fd"
+          "line": 83,
+          "sha256": "6ef9ed3bc3e8cb68302a419ea5d51cb70a0045fc74e08b6a5db0f6c510d64e75"
         }
       ]
     },
@@ -4458,6 +4210,738 @@
           "sha256": "011a3924801fef2c6606fa34d5c0f20dc88cab76a26d8d9a90a138988efaf1f9"
         }
       ]
+    },
+    {
+      "id": "git:GitCas",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "GitCas",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 28,
+          "sha256": "71eead8c8a09f1fd8f4fa058ec55a17093ad55cbfff23ce25390a44647b77c81"
+        }
+      ]
+    },
+    {
+      "id": "git:GitReceipt",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "GitReceipt",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 12,
+          "sha256": "1e35f9deb5737224f12f8e0232ce7641c93e6a2aada4f231fd25fdb2863ca605"
+        }
+      ]
+    },
+    {
+      "id": "git:makeCoreGitTransport",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "makeCoreGitTransport",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 37,
+          "sha256": "e4603f58a8171401609c32b3139005062f3e74b550d9bc8154f5ac96ccd236a8"
+        },
+        {
+          "line": 38,
+          "sha256": "146dd9d29e85891c372655f3b73010319a58543ba5327a753f695c4a4a1592f7"
+        }
+      ]
+    },
+    {
+      "id": "git:GitExecution",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "GitExecution",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 14,
+          "sha256": "75d136979830759e798d3940040401a4d7def432046f14fe6adf1b4000c858d5"
+        }
+      ]
+    },
+    {
+      "id": "git:CoreGitOptions",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "CoreGitOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 18,
+          "sha256": "a06e398daf38e992f05d80360f101d0115e2ad5bab426b1a9b9708ad9251b6f2"
+        }
+      ]
+    },
+    {
+      "id": "git:NativeHost",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "NativeHost",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 8,
+          "sha256": "70f45af508723d623ad5e2d0eac8f835c6936af287467b677c00af4494e44141"
+        }
+      ]
+    },
+    {
+      "id": "git:FileEdit",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "FileEdit",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 14,
+          "sha256": "8a2852726425126e39beb5c4977b804e18014cbe1c3f0f26e487133732301f6c"
+        }
+      ]
+    },
+    {
+      "id": "git:Identity",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "Identity",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 22,
+          "sha256": "c767b9e518608daeb9f02363faef1eca185decf52029a92ee52bf3a72cb51a8b"
+        }
+      ]
+    },
+    {
+      "id": "git:CommitInput",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "CommitInput",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 36,
+          "sha256": "ecaad602ef819d218dfd81d2dd6b33465ebb49db2ad5a433023d85a0a611c6ac"
+        }
+      ]
+    },
+    {
+      "id": "git:Intent",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "Intent",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 49,
+          "sha256": "568a32b2339adf536435243e7606a0a2f061966fc237d8533d8d4211fcbd3287"
+        }
+      ]
+    },
+    {
+      "id": "git:RefCoordinate",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "RefCoordinate",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 51,
+          "sha256": "fc17ec64cb13e9582f1ddef3f8420d15108498011af65b412d2d9a37a4862391"
+        }
+      ]
+    },
+    {
+      "id": "git:Credentials",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "Credentials",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 52,
+          "sha256": "b9890b8759c0d1a269f30a5562fea917558d2cf247eb567dd2cc317a3a8253ca"
+        }
+      ]
+    },
+    {
+      "id": "git:ObserveRef",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "ObserveRef",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 62,
+          "sha256": "be417c19437538d0645a9ff35acce41cc27f76aa45f428b6e21e9c9b824d9ffe"
+        }
+      ]
+    },
+    {
+      "id": "git:ObjectBuilder",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "ObjectBuilder",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 65,
+          "sha256": "c5fa84e5d60a82a8c1cdc4647c1a773d3f21ed012de3fd0fba819f1d72712396"
+        }
+      ]
+    },
+    {
+      "id": "git:prepare",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "prepare",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 78,
+          "sha256": "3d4661a524d4afbf7c4211449353d7e3534c157e64282f31ae7c9a3b3614a64b"
+        }
+      ]
+    },
+    {
+      "id": "git:update",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "update",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 77,
+          "sha256": "9b32be60951ee82bfd7aea9990811dbec55ff3b177a06b56cef4fc6a196f1b44"
+        }
+      ]
+    },
+    {
+      "id": "git:definition",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "definition",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 83,
+          "sha256": "6ff2d2a38ad78b56638dc80340a8c345dcb50eacc4000418bbdd813559467ff8"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:openGitJournal",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "openGitJournal",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 19,
+          "sha256": "397c36a6207875dc1312876f6a374d248c624bd4e15026446097ae46baae5e97"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:GitJournalOptions",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "GitJournalOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 6,
+          "sha256": "20bebf5bc12d0b6b7525f75bac3c46d713a39044527bd5812db1801c3dabb536"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:makeGitCatalogHost",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "makeGitCatalogHost",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 20,
+          "sha256": "4c80ee993a7bc2de2a2243aadf5bf16e48784fd997f1c2f5594f40ce92f635b1"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:GitCatalogHost",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "GitCatalogHost",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 8,
+          "sha256": "70f45af508723d623ad5e2d0eac8f835c6936af287467b677c00af4494e44141"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:GitCatalogHostOptions",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "GitCatalogHostOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 16,
+          "sha256": "72b353ac736fcad1c50c2dd65924ca026067a18dba9f301036fe5b4186d7d534"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:makeGithubOidcTokenSource",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "makeGithubOidcTokenSource",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 9,
+          "sha256": "95193700dfc62cba4104e7e053f2f958f32aebb7dd6d0768bf7855dfa91115b8"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:makeGithubTrustedPublisherHost",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "makeGithubTrustedPublisherHost",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 10,
+          "sha256": "8a7e3779b408cb59b4f0770fc75c7d2ac14df33ca83734eeaa16dfeaa82cc380"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:makeHttpTransport",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "makeHttpTransport",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 5,
+          "sha256": "9f2918a3bbc1557f1635b993235a3c65a975e05a3f61ed5fc08538123a144fb7"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:makeHttpRead",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "makeHttpRead",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 7,
+          "sha256": "e1b096ed222e9e125eff85abc9ea133808b2dacfc71c576a15720f1896d95901"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:makeCredentialExchange",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "makeCredentialExchange",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 9,
+          "sha256": "7cd4f42756d605f76441040d084cd7bf0a0a7f539ba7b38f3ca57b2c00f81fda"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:fileContentOwner",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "fileContentOwner",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 3,
+          "sha256": "7871d4ec1f03e5dead8d50a3f474bcebba145f2f5f9c4ee5d0fee97f965de9dd"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:Application",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "Application",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 9,
+          "sha256": "f67cc9909e2b86e14a0b83f90c0fe779939361ba868fefe2889876320c950605"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:CreateApplication",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "CreateApplication",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 14,
+          "sha256": "026f7705f8a75d54f8edde6d744a4064586290eda10252797aa039220397bc6f"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:FinalizedReport",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "FinalizedReport",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 27,
+          "sha256": "83a2c256fb19740659e12c89e3f82bad8b7e81db8fa3fab7a397bd7a6946271f"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:runApplication",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "runApplication",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 17,
+          "sha256": "c9cb124df3aed853bfb95b477dbcc421d68ca9f1d4a14ed2b3450343394fa1fd"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:openGitJournal",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "openGitJournal",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 19,
+          "sha256": "397c36a6207875dc1312876f6a374d248c624bd4e15026446097ae46baae5e97"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:GitJournalOptions",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "GitJournalOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 6,
+          "sha256": "20bebf5bc12d0b6b7525f75bac3c46d713a39044527bd5812db1801c3dabb536"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeGitCatalogHost",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeGitCatalogHost",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 20,
+          "sha256": "4c80ee993a7bc2de2a2243aadf5bf16e48784fd997f1c2f5594f40ce92f635b1"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:GitCatalogHost",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "GitCatalogHost",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 8,
+          "sha256": "70f45af508723d623ad5e2d0eac8f835c6936af287467b677c00af4494e44141"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:GitCatalogHostOptions",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "GitCatalogHostOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 16,
+          "sha256": "72b353ac736fcad1c50c2dd65924ca026067a18dba9f301036fe5b4186d7d534"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeGithubOidcTokenSource",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeGithubOidcTokenSource",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 9,
+          "sha256": "95193700dfc62cba4104e7e053f2f958f32aebb7dd6d0768bf7855dfa91115b8"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeGithubTrustedPublisherHost",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeGithubTrustedPublisherHost",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 10,
+          "sha256": "8a7e3779b408cb59b4f0770fc75c7d2ac14df33ca83734eeaa16dfeaa82cc380"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeHttpTransport",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeHttpTransport",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 5,
+          "sha256": "9f2918a3bbc1557f1635b993235a3c65a975e05a3f61ed5fc08538123a144fb7"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeHttpRead",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeHttpRead",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 7,
+          "sha256": "e1b096ed222e9e125eff85abc9ea133808b2dacfc71c576a15720f1896d95901"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeCredentialExchange",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeCredentialExchange",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 9,
+          "sha256": "7cd4f42756d605f76441040d084cd7bf0a0a7f539ba7b38f3ca57b2c00f81fda"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:openSqliteJournal",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "openSqliteJournal",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 5,
+          "sha256": "5f8eb7dc6eac466aae07760aa7ed0dd3d480415c8e205a262abc791e04c9e491"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:fileContentOwner",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "fileContentOwner",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 3,
+          "sha256": "7871d4ec1f03e5dead8d50a3f474bcebba145f2f5f9c4ee5d0fee97f965de9dd"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:Application",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "Application",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 9,
+          "sha256": "f67cc9909e2b86e14a0b83f90c0fe779939361ba868fefe2889876320c950605"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:CreateApplication",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "CreateApplication",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 14,
+          "sha256": "026f7705f8a75d54f8edde6d744a4064586290eda10252797aa039220397bc6f"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:FinalizedReport",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "FinalizedReport",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 27,
+          "sha256": "83a2c256fb19740659e12c89e3f82bad8b7e81db8fa3fab7a397bd7a6946271f"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:runApplication",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "runApplication",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 17,
+          "sha256": "c9cb124df3aed853bfb95b477dbcc421d68ca9f1d4a14ed2b3450343394fa1fd"
+        }
+      ]
     }
   ],
   "logicalSurfaces": [
@@ -5160,8 +5644,28 @@
           "module": "kernel.Http"
         },
         {
+          "declaration": "http:BoundCredentials",
+          "name": "BoundCredentials",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:makeCredentialResolver",
+          "name": "makeCredentialResolver",
+          "module": "kernel.Http"
+        },
+        {
           "declaration": "http:HttpTransportOptions",
           "name": "HttpTransportOptions",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:HttpReadOptions",
+          "name": "HttpReadOptions",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:HttpExchangeOptions",
+          "name": "HttpExchangeOptions",
           "module": "kernel.Http"
         }
       ]
@@ -5171,89 +5675,89 @@
       "entry": "kernel.Git",
       "symbols": [
         {
-          "declaration": "provider:GitCatalog.FileEdit",
-          "name": "FileEdit",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "provider:GitCatalog.Identity",
-          "name": "Identity",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "provider:GitCatalog.CommitInput",
-          "name": "CommitInput",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "provider:GitCatalog.Intent",
-          "name": "Intent",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "provider:GitCatalog.ObjectBuilder",
-          "name": "ObjectBuilder",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "provider:GitCatalog.RefCoordinate",
-          "name": "RefCoordinate",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "provider:GitCatalog.ObserveRef",
-          "name": "ObserveRef",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "provider:GitCatalog.prepare",
-          "name": "prepare",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "provider:GitCatalog.update",
-          "name": "update",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "provider:GitCatalog.definition",
-          "name": "definition",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "provider:GitCatalog.Credentials",
-          "name": "Credentials",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "provider:GitCatalog.NativeHost",
-          "name": "NativeHost",
-          "module": "kernel.GitCatalog"
-        },
-        {
-          "declaration": "kernel:GitCas",
+          "declaration": "git:GitCas",
           "name": "GitCas",
-          "module": "kernel.Model"
+          "module": "kernel.Git"
         },
         {
-          "declaration": "kernel:GitReceipt",
+          "declaration": "git:GitReceipt",
           "name": "GitReceipt",
-          "module": "kernel.GitAuthority"
+          "module": "kernel.Git"
         },
         {
-          "declaration": "kernel:GitExecution",
-          "name": "GitExecution",
-          "module": "kernel.GitAuthority"
-        },
-        {
-          "declaration": "kernel:CoreGitOptions",
-          "name": "CoreGitOptions",
-          "module": "kernel.GitAuthority"
-        },
-        {
-          "declaration": "kernel:makeCoreGitTransport",
+          "declaration": "git:makeCoreGitTransport",
           "name": "makeCoreGitTransport",
-          "module": "kernel.GitAuthority"
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:GitExecution",
+          "name": "GitExecution",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:CoreGitOptions",
+          "name": "CoreGitOptions",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:NativeHost",
+          "name": "NativeHost",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:FileEdit",
+          "name": "FileEdit",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:Identity",
+          "name": "Identity",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:CommitInput",
+          "name": "CommitInput",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:Intent",
+          "name": "Intent",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:RefCoordinate",
+          "name": "RefCoordinate",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:Credentials",
+          "name": "Credentials",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:ObserveRef",
+          "name": "ObserveRef",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:ObjectBuilder",
+          "name": "ObjectBuilder",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:prepare",
+          "name": "prepare",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:update",
+          "name": "update",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:definition",
+          "name": "definition",
+          "module": "kernel.Git"
         }
       ]
     },
@@ -5262,44 +5766,79 @@
       "entry": "host.Node",
       "symbols": [
         {
-          "declaration": "application:Application",
-          "name": "Application",
-          "module": "host.Application"
-        },
-        {
-          "declaration": "application:CreateApplication",
-          "name": "CreateApplication",
-          "module": "host.Application"
-        },
-        {
-          "declaration": "application:runApplication",
-          "name": "runApplication",
-          "module": "host.Application"
-        },
-        {
-          "declaration": "application:FinalizedReport",
-          "name": "FinalizedReport",
-          "module": "kernel.Report"
-        },
-        {
-          "declaration": "host:makeHttpTransport",
-          "name": "makeHttpTransport",
-          "module": "host.Http"
-        },
-        {
-          "declaration": "host:openGitJournal",
+          "declaration": "nodeHost:openGitJournal",
           "name": "openGitJournal",
-          "module": "host.GitJournal"
+          "module": "host.Node"
         },
         {
-          "declaration": "contentOwner:fileContentOwner",
-          "name": "fileContentOwner",
-          "module": "host.Content"
+          "declaration": "nodeHost:GitJournalOptions",
+          "name": "GitJournalOptions",
+          "module": "host.Node"
         },
         {
-          "declaration": "provider:GitCatalog.nativeHost",
+          "declaration": "nodeHost:makeGitCatalogHost",
           "name": "makeGitCatalogHost",
-          "module": "host.NativeGit"
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:GitCatalogHost",
+          "name": "GitCatalogHost",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:GitCatalogHostOptions",
+          "name": "GitCatalogHostOptions",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:makeGithubOidcTokenSource",
+          "name": "makeGithubOidcTokenSource",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:makeGithubTrustedPublisherHost",
+          "name": "makeGithubTrustedPublisherHost",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:makeHttpTransport",
+          "name": "makeHttpTransport",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:makeHttpRead",
+          "name": "makeHttpRead",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:makeCredentialExchange",
+          "name": "makeCredentialExchange",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:fileContentOwner",
+          "name": "fileContentOwner",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:Application",
+          "name": "Application",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:CreateApplication",
+          "name": "CreateApplication",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:FinalizedReport",
+          "name": "FinalizedReport",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:runApplication",
+          "name": "runApplication",
+          "module": "host.Node"
         }
       ]
     },
@@ -5308,49 +5847,84 @@
       "entry": "host.Bun",
       "symbols": [
         {
-          "declaration": "application:Application",
-          "name": "Application",
-          "module": "host.Application"
-        },
-        {
-          "declaration": "application:CreateApplication",
-          "name": "CreateApplication",
-          "module": "host.Application"
-        },
-        {
-          "declaration": "application:runApplication",
-          "name": "runApplication",
-          "module": "host.Application"
-        },
-        {
-          "declaration": "application:FinalizedReport",
-          "name": "FinalizedReport",
-          "module": "kernel.Report"
-        },
-        {
-          "declaration": "host:makeHttpTransport",
-          "name": "makeHttpTransport",
-          "module": "host.Http"
-        },
-        {
-          "declaration": "host:openGitJournal",
+          "declaration": "bunHost:openGitJournal",
           "name": "openGitJournal",
-          "module": "host.GitJournal"
+          "module": "host.Bun"
         },
         {
-          "declaration": "contentOwner:fileContentOwner",
-          "name": "fileContentOwner",
-          "module": "host.Content"
+          "declaration": "bunHost:GitJournalOptions",
+          "name": "GitJournalOptions",
+          "module": "host.Bun"
         },
         {
-          "declaration": "provider:GitCatalog.nativeHost",
+          "declaration": "bunHost:makeGitCatalogHost",
           "name": "makeGitCatalogHost",
-          "module": "host.NativeGit"
+          "module": "host.Bun"
         },
         {
-          "declaration": "host:openSqliteJournal",
+          "declaration": "bunHost:GitCatalogHost",
+          "name": "GitCatalogHost",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:GitCatalogHostOptions",
+          "name": "GitCatalogHostOptions",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:makeGithubOidcTokenSource",
+          "name": "makeGithubOidcTokenSource",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:makeGithubTrustedPublisherHost",
+          "name": "makeGithubTrustedPublisherHost",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:makeHttpTransport",
+          "name": "makeHttpTransport",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:makeHttpRead",
+          "name": "makeHttpRead",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:makeCredentialExchange",
+          "name": "makeCredentialExchange",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:openSqliteJournal",
           "name": "openSqliteJournal",
-          "module": "host.Sqlite"
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:fileContentOwner",
+          "name": "fileContentOwner",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:Application",
+          "name": "Application",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:CreateApplication",
+          "name": "CreateApplication",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:FinalizedReport",
+          "name": "FinalizedReport",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:runApplication",
+          "name": "runApplication",
+          "module": "host.Bun"
         }
       ]
     },
@@ -6251,16 +6825,20 @@
           "runtimeNames": [
             "HttpReceipt",
             "corresponds",
-            "decodeJson"
+            "decodeJson",
+            "makeCredentialResolver"
           ],
           "typeNames": [
+            "BoundCredentials",
             "CredentialBinding",
             "CredentialExchange",
             "CredentialHeaders",
             "CredentialRequest",
             "Headers",
+            "HttpExchangeOptions",
             "HttpProviderDefinition",
             "HttpRead",
+            "HttpReadOptions",
             "HttpReadRequest",
             "HttpReceipt",
             "HttpResponse",
@@ -6324,7 +6902,11 @@
           "runtimeNames": [
             "FinalizedReport",
             "fileContentOwner",
+            "makeCredentialExchange",
             "makeGitCatalogHost",
+            "makeGithubOidcTokenSource",
+            "makeGithubTrustedPublisherHost",
+            "makeHttpRead",
             "makeHttpTransport",
             "openGitJournal",
             "runApplication"
@@ -6332,7 +6914,10 @@
           "typeNames": [
             "Application",
             "CreateApplication",
-            "FinalizedReport"
+            "FinalizedReport",
+            "GitCatalogHost",
+            "GitCatalogHostOptions",
+            "GitJournalOptions"
           ]
         },
         {
@@ -6349,7 +6934,11 @@
           "runtimeNames": [
             "FinalizedReport",
             "fileContentOwner",
+            "makeCredentialExchange",
             "makeGitCatalogHost",
+            "makeGithubOidcTokenSource",
+            "makeGithubTrustedPublisherHost",
+            "makeHttpRead",
             "makeHttpTransport",
             "openGitJournal",
             "openSqliteJournal",
@@ -6358,7 +6947,10 @@
           "typeNames": [
             "Application",
             "CreateApplication",
-            "FinalizedReport"
+            "FinalizedReport",
+            "GitCatalogHost",
+            "GitCatalogHostOptions",
+            "GitJournalOptions"
           ]
         },
         {
@@ -6675,7 +7267,7 @@
           ]
         }
       ],
-      "exportsSha256": "be085af648f816c6fa3bc92bc77bd92ac6e661983c2ca1a90a3bf5b29bb1a5c5"
+      "exportsSha256": "b2646ff1757e4bb331ac71963e9ef0486ef070e0aea1c18083e10d3c4f4bd21f"
     },
     {
       "id": "T2",
@@ -6920,16 +7512,20 @@
           "runtimeNames": [
             "HttpReceipt",
             "corresponds",
-            "decodeJson"
+            "decodeJson",
+            "makeCredentialResolver"
           ],
           "typeNames": [
+            "BoundCredentials",
             "CredentialBinding",
             "CredentialExchange",
             "CredentialHeaders",
             "CredentialRequest",
             "Headers",
+            "HttpExchangeOptions",
             "HttpProviderDefinition",
             "HttpRead",
+            "HttpReadOptions",
             "HttpReadRequest",
             "HttpReceipt",
             "HttpResponse",
@@ -6993,7 +7589,11 @@
           "runtimeNames": [
             "FinalizedReport",
             "fileContentOwner",
+            "makeCredentialExchange",
             "makeGitCatalogHost",
+            "makeGithubOidcTokenSource",
+            "makeGithubTrustedPublisherHost",
+            "makeHttpRead",
             "makeHttpTransport",
             "openGitJournal",
             "runApplication"
@@ -7001,7 +7601,10 @@
           "typeNames": [
             "Application",
             "CreateApplication",
-            "FinalizedReport"
+            "FinalizedReport",
+            "GitCatalogHost",
+            "GitCatalogHostOptions",
+            "GitJournalOptions"
           ]
         },
         {
@@ -7018,7 +7621,11 @@
           "runtimeNames": [
             "FinalizedReport",
             "fileContentOwner",
+            "makeCredentialExchange",
             "makeGitCatalogHost",
+            "makeGithubOidcTokenSource",
+            "makeGithubTrustedPublisherHost",
+            "makeHttpRead",
             "makeHttpTransport",
             "openGitJournal",
             "openSqliteJournal",
@@ -7027,7 +7634,10 @@
           "typeNames": [
             "Application",
             "CreateApplication",
-            "FinalizedReport"
+            "FinalizedReport",
+            "GitCatalogHost",
+            "GitCatalogHostOptions",
+            "GitJournalOptions"
           ]
         },
         {
@@ -7344,7 +7954,7 @@
           ]
         }
       ],
-      "exportsSha256": "6411d16bc9ad57617adaa81438c5b1081682c8d2e7ff58a6557582fccf762d34"
+      "exportsSha256": "45873a9df3d87f916a1d16e2762250b8dfd992e6a2273c619cb5437e0531b84c"
     },
     {
       "id": "T3",
@@ -7589,16 +8199,20 @@
           "runtimeNames": [
             "HttpReceipt",
             "corresponds",
-            "decodeJson"
+            "decodeJson",
+            "makeCredentialResolver"
           ],
           "typeNames": [
+            "BoundCredentials",
             "CredentialBinding",
             "CredentialExchange",
             "CredentialHeaders",
             "CredentialRequest",
             "Headers",
+            "HttpExchangeOptions",
             "HttpProviderDefinition",
             "HttpRead",
+            "HttpReadOptions",
             "HttpReadRequest",
             "HttpReceipt",
             "HttpResponse",
@@ -7662,7 +8276,11 @@
           "runtimeNames": [
             "FinalizedReport",
             "fileContentOwner",
+            "makeCredentialExchange",
             "makeGitCatalogHost",
+            "makeGithubOidcTokenSource",
+            "makeGithubTrustedPublisherHost",
+            "makeHttpRead",
             "makeHttpTransport",
             "openGitJournal",
             "runApplication"
@@ -7670,7 +8288,10 @@
           "typeNames": [
             "Application",
             "CreateApplication",
-            "FinalizedReport"
+            "FinalizedReport",
+            "GitCatalogHost",
+            "GitCatalogHostOptions",
+            "GitJournalOptions"
           ]
         },
         {
@@ -7687,7 +8308,11 @@
           "runtimeNames": [
             "FinalizedReport",
             "fileContentOwner",
+            "makeCredentialExchange",
             "makeGitCatalogHost",
+            "makeGithubOidcTokenSource",
+            "makeGithubTrustedPublisherHost",
+            "makeHttpRead",
             "makeHttpTransport",
             "openGitJournal",
             "openSqliteJournal",
@@ -7696,7 +8321,10 @@
           "typeNames": [
             "Application",
             "CreateApplication",
-            "FinalizedReport"
+            "FinalizedReport",
+            "GitCatalogHost",
+            "GitCatalogHostOptions",
+            "GitJournalOptions"
           ]
         },
         {
@@ -8013,7 +8641,7 @@
           ]
         }
       ],
-      "exportsSha256": "13c6686bbd8257742f4924156c630102fecd7bb9e70357311933d5607b7512d2"
+      "exportsSha256": "b9f7fdab33779c268d087ef99ec90ef72cb00c8c184a21a68df4a7c1a8466794"
     },
     {
       "id": "T3c",
@@ -8258,16 +8886,20 @@
           "runtimeNames": [
             "HttpReceipt",
             "corresponds",
-            "decodeJson"
+            "decodeJson",
+            "makeCredentialResolver"
           ],
           "typeNames": [
+            "BoundCredentials",
             "CredentialBinding",
             "CredentialExchange",
             "CredentialHeaders",
             "CredentialRequest",
             "Headers",
+            "HttpExchangeOptions",
             "HttpProviderDefinition",
             "HttpRead",
+            "HttpReadOptions",
             "HttpReadRequest",
             "HttpReceipt",
             "HttpResponse",
@@ -8331,7 +8963,11 @@
           "runtimeNames": [
             "FinalizedReport",
             "fileContentOwner",
+            "makeCredentialExchange",
             "makeGitCatalogHost",
+            "makeGithubOidcTokenSource",
+            "makeGithubTrustedPublisherHost",
+            "makeHttpRead",
             "makeHttpTransport",
             "openGitJournal",
             "runApplication"
@@ -8339,7 +8975,10 @@
           "typeNames": [
             "Application",
             "CreateApplication",
-            "FinalizedReport"
+            "FinalizedReport",
+            "GitCatalogHost",
+            "GitCatalogHostOptions",
+            "GitJournalOptions"
           ]
         },
         {
@@ -8356,7 +8995,11 @@
           "runtimeNames": [
             "FinalizedReport",
             "fileContentOwner",
+            "makeCredentialExchange",
             "makeGitCatalogHost",
+            "makeGithubOidcTokenSource",
+            "makeGithubTrustedPublisherHost",
+            "makeHttpRead",
             "makeHttpTransport",
             "openGitJournal",
             "openSqliteJournal",
@@ -8365,7 +9008,10 @@
           "typeNames": [
             "Application",
             "CreateApplication",
-            "FinalizedReport"
+            "FinalizedReport",
+            "GitCatalogHost",
+            "GitCatalogHostOptions",
+            "GitJournalOptions"
           ]
         },
         {
@@ -8682,7 +9328,7 @@
           ]
         }
       ],
-      "exportsSha256": "2771e05b669debf9347d2ab6e4e7b358956737fd1f861510a9b01423e1926555"
+      "exportsSha256": "abef75f10c099967dad6330a163a9ee024ed3c99f64efa29128b9b8fe637e23c"
     }
   ],
   "intentionallyPrivateAuthorityExports": [
@@ -8747,18 +9393,6 @@
       "reason": "Private Action adapter, apps/action/src/launcher.ts; only host loading primitives are public."
     },
     {
-      "id": "host:CredentialRequest",
-      "reason": "Implementation detail, not included in the explicit proposed public API."
-    },
-    {
-      "id": "host:ResolveCredentials",
-      "reason": "Implementation detail, not included in the explicit proposed public API."
-    },
-    {
-      "id": "host:HttpTransportOptions",
-      "reason": "Implementation detail, not included in the explicit proposed public API."
-    },
-    {
       "id": "adoption:MAX_BUFFERED_TREE_BYTES",
       "reason": "Implementation detail, not included in the explicit proposed public API."
     },
@@ -8777,10 +9411,30 @@
     {
       "id": "adoption:TreeLink",
       "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "contentOwner:fileContentOwner",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "application:FinalizedReport",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "application:Application",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "application:CreateApplication",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "application:runApplication",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
     }
   ],
   "aliasRules": {
-    "GitCatalog_nativeHost": "provider:GitCatalog.nativeHost -> makeGitCatalogHost only on core.node and core.bun",
+    "GitCatalog_nativeHost": "Actual Node/Bun host owners export makeGitCatalogHost; the neutral Git entry exports only its NativeHost type",
     "providerNamespaces": "The seven source namespaces are unwrapped into direct named package-root exports (or provider subpaths in T1/T2). Namespace wrappers are provenance only.",
     "adoption": "OwnedFile/OwnedTree/OwnedArtifact/OwnedBundle become File/Tree/Artifact/Bundle on core.bundle."
   },

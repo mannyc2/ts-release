@@ -1,18 +1,23 @@
 import assert from "node:assert/strict"
-import { mkdtemp, mkdir, readFile, writeFile, lstat } from "node:fs/promises"
+import { mkdtemp, mkdir, readFile, writeFile, lstat, realpath } from "node:fs/promises"
 import { join, dirname, delimiter, resolve } from "node:path"
 import { tmpdir } from "node:os"
 import { createHash } from "node:crypto"
 const root = resolve(import.meta.dir, ".."),
   work = await mkdtemp(join(tmpdir(), "ts-release-packed-npm-"))
 const includePyPi = process.argv.includes("--pypi")
+const includeTransports = process.argv.includes("--transports")
 const owners = includePyPi ? ["ts-release", "npm", "pypi"] : ["ts-release", "npm"]
 const node = process.env.TS_RELEASE_ACCEPTANCE_NODE ?? "node"
 const commands: unknown[] = []
-async function run(cwd: string, argv: string[]) {
+async function run(cwd: string, argv: string[], environment: Record<string, string> = {}) {
   const child = Bun.spawn(argv, {
     cwd,
-    env: { ...process.env, PATH: `${dirname(node)}${delimiter}${process.env.PATH}` },
+    env: {
+      ...process.env,
+      PATH: `${dirname(node)}${delimiter}${process.env.PATH}`,
+      ...environment,
+    },
     stdout: "pipe",
     stderr: "pipe",
   })
@@ -55,6 +60,27 @@ await writeFile(join(producer, "index.js"), "export const fixture = true\n")
 const tarball = join(work, "native-fixture.tgz")
 await run(producer, [process.execPath, "pm", "pack", "--ignore-scripts", "--filename", tarball])
 const outcomes = []
+const certificate = join(work, "fixture-cert.pem"),
+  key = join(work, "fixture-key.pem")
+if (includeTransports)
+  await run(work, [
+    "openssl",
+    "req",
+    "-x509",
+    "-newkey",
+    "rsa:2048",
+    "-nodes",
+    "-keyout",
+    key,
+    "-out",
+    certificate,
+    "-days",
+    "1",
+    "-subj",
+    "/CN=127.0.0.1",
+    "-addext",
+    "subjectAltName=IP:127.0.0.1",
+  ])
 for (const manager of ["bun", "npm"]) {
   const cwd = join(work, manager)
   await mkdir(cwd)
@@ -133,6 +159,32 @@ for (const manager of ["bun", "npm"]) {
         `import * as PyPi from "@mannyc1/ts-release-pypi";\nconst pythonProviders: readonly HttpProviderDefinition[] = PyPi.definitions(null as never);\nconst pythonIntent: PyPi.UploadIntent = null as never;\nvoid [pythonProviders, pythonIntent, PyPi.inspectDistribution, PyPi.author, PyPi.upload, PyPi.authorizeToken, PyPi.authorizeTrusted];\n`,
     )
   }
+  if (includeTransports) {
+    for (const name of [
+      "git-native-consumer.mjs",
+      "http-wire-consumer.mjs",
+      "http-tls-consumer.mjs",
+    ])
+      await writeFile(
+        join(cwd, name),
+        await readFile(join(root, "test/reimplementation/transports", name)),
+      )
+    await writeFile(
+      join(cwd, "consumer.ts"),
+      (await readFile(join(cwd, "consumer.ts"), "utf8")) +
+        `
+import * as Git from "@mannyc1/ts-release/git";
+import * as Node from "@mannyc1/ts-release/node";
+import type { HttpRead, ResolveCredentials, CredentialExchange } from "@mannyc1/ts-release/http";
+const gitHost: Git.NativeHost = null as never;
+const gitOptions: Node.GitCatalogHostOptions = null as never;
+const journalOptions: Node.GitJournalOptions = null as never;
+const readHttp: HttpRead = Node.makeHttpRead(null as never);
+const exchange: CredentialExchange = Node.makeCredentialExchange(null as never);
+void [gitHost, gitOptions, journalOptions, readHttp, exchange, Git.prepare, Git.update, Git.makeCoreGitTransport, Node.makeGitCatalogHost, Node.openGitJournal, Node.makeGithubOidcTokenSource, Node.makeGithubTrustedPublisherHost];
+`,
+    )
+  }
   await run(cwd, [process.execPath, "node_modules/typescript/bin/tsc", "-p", "tsconfig.json"])
   const runtimes = []
   for (const runtime of [node, process.execPath])
@@ -155,6 +207,22 @@ for (const manager of ["bun", "npm"]) {
           ]),
         ),
       )
+  if (includeTransports)
+    for (const runtime of [node, process.execPath]) {
+      runtimes.push(
+        JSON.parse(
+          await run(cwd, [runtime, "git-native-consumer.mjs", await realpath(Bun.which("git")!)]),
+        ),
+      )
+      runtimes.push(JSON.parse(await run(cwd, [runtime, "http-wire-consumer.mjs"])))
+      runtimes.push(
+        JSON.parse(
+          await run(cwd, [runtime, "http-tls-consumer.mjs", key, certificate], {
+            NODE_EXTRA_CA_CERTS: certificate,
+          }),
+        ),
+      )
+    }
   outcomes.push({
     manager,
     strictDeclarations: true,
@@ -172,7 +240,9 @@ const receipt = {
   commands,
   limits: [
     `${owners.length} of7 packages; local unpublished candidate archives`,
-    "native HTTP transport/CLI/Action and full cohort remain open",
+    includeTransports
+      ? "Local native HTTP/TLS and Git host/journal consumers pass; hosted policies, native macOS/Windows, CLI/Action and full cohort remain open"
+      : "native HTTP transport/CLI/Action and full cohort remain open",
     "Sigstore trust has a separate Node-native public-attestation witness; Bun native Sigstore remains unqualified",
     "no registry publication",
     "A preceding Bun1.3.14 run stalled in the shared cache and was terminated; the same consumer installed successfully with an isolated cache. This fresh run uses its own cache; shared-cache cause is not diagnosed.",
@@ -181,7 +251,7 @@ const receipt = {
 await writeFile(
   join(
     root,
-    `docs/refactor/execution/${includePyPi ? "W03-packed-providers" : "current-packed-npm"}.json`,
+    `docs/refactor/execution/${includeTransports ? "current-packed-transports" : includePyPi ? "current-packed-providers" : "current-packed-npm"}.json`,
   ),
   JSON.stringify(receipt, null, 2) + "\n",
 )

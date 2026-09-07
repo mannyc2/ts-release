@@ -20,15 +20,20 @@ export interface CoreGitOptions {
     readonly scope: string;
     /** Captured at the host boundary; implement with execFile/spawn, never a shell. */
     readonly execute: (arguments_: ReadonlyArray<string>) => Effect.Effect<GitExecution, ReleaseError>;
+    /** Resolve credentials and verify native objects before DispatchStarted. */
+    readonly prepare?: (arguments_: ReadonlyArray<string>) => Effect.Effect<CoreGitOptions["execute"], ReleaseError>;
     readonly otherwise?: Transport;
 }
+export declare const conditionalArguments: (remote: string, ref: string, expectedOld: string, desiredNew: string) => readonly string[];
 export declare const authorityKey: (principal: string, scope: string) => string;
 export declare const mechanisms: WeakMap<Transport, ReadonlyMap<string, CoreGitOptions>>;
 /** Keep the exact core mechanism identity; ordinary ports retain their state
  * behind a captured function, never behind a mutable method lookup. */
 export declare const captureTransport: (transport: Transport) => Transport;
 export declare const assertTransportBinding: (transport: Transport, facts: RequestFacts) => void;
-/** The only protected mechanism in this experiment is one exact conditional push. */
+/** Retain only the exact native status line; remote messages are not receipts. */
+export declare const pushWitness: (result: GitExecution, ref: string, expectedOld: string, desiredNew: string) => string | undefined;
+/** The protected mechanism is one exact conditional push. */
 export declare function makeCoreGitTransport(options: CoreGitOptions): Transport;
 export declare function makeCoreGitTransport(options: readonly [CoreGitOptions, ...CoreGitOptions[]], otherwise?: Transport): Transport;
 export {};

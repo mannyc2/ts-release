@@ -1,9 +1,9 @@
 export type {} from "./internal/EffectTypes.js";
 export { decodeJson } from "./internal/NativeJson.js";
 import * as Schema from "effect/Schema";
-import type * as Effect from "effect/Effect";
+import * as Effect from "effect/Effect";
 import type * as Redacted from "effect/Redacted";
-import type { ReleaseError } from "./internal/Error.js";
+import { type ReleaseError } from "./internal/Error.js";
 import type { ProviderDefinition, PreparedRequest, SendResult } from "./Provider.js";
 import { RequestFacts } from "./internal/ReleaseModel.js";
 declare const HttpReceipt_base: Schema.Class<HttpReceipt, Schema.Struct<{
@@ -63,9 +63,21 @@ export interface TrustedPublisherHost {
 }
 export type CredentialRequest = CredentialBinding;
 export type ResolveCredentials = (request: CredentialRequest) => Effect.Effect<CredentialHeaders, ReleaseError>;
+export interface BoundCredentials {
+    readonly binding: CredentialBinding;
+    /** Called only after one exact endpoint/principal/scope match. */
+    readonly acquire: () => Effect.Effect<CredentialHeaders, ReleaseError>;
+}
+/** Explicit application composition; no discovery or provider allowlist. */
+export declare const makeCredentialResolver: (bindings: readonly BoundCredentials[]) => ResolveCredentials;
 export interface HttpTransportOptions {
     readonly credentials: ResolveCredentials;
     readonly providers: readonly HttpProviderDefinition[];
     readonly timeoutMilliseconds: number;
     readonly maximumResponseBytes: number;
+    /** Total decrypted HTTP input, including framing, headers and trailers.
+     * Defaults to twice the body limit plus64KiB. */
+    readonly maximumWireResponseBytes?: number;
 }
+export type HttpReadOptions = Omit<HttpTransportOptions, "providers">;
+export type HttpExchangeOptions = Pick<HttpTransportOptions, "timeoutMilliseconds" | "maximumResponseBytes" | "maximumWireResponseBytes">;

@@ -12,9 +12,9 @@
   "records": [
     {
       "declaration": "Bun.d.ts",
-      "declarationSha256": "31b0b5afec079fdd8706274c4afce6130be58123c055eedab806b7a1f1c1a5a2",
+      "declarationSha256": "c751957811c02883541f365ad272b2b0d2dc90c6822c5d1057ef7035f7fee5f1",
       "source": "packages/ts-release/src/Bun.ts",
-      "sourceSha256": "9d711fd918def408ca13aa584d3a0768160c31b0157da2fb13fdca9049d73af5"
+      "sourceSha256": "d8316f1de07b5d5940f76685956b3bae381fd39e59ddfbcdbfde098837266206"
     },
     {
       "declaration": "Bundle.d.ts",
@@ -23,10 +23,16 @@
       "sourceSha256": "5f4e37afc336a2dc7d8f4118d3a37ba0e56ff2d4d10d26069694739cebd06314"
     },
     {
+      "declaration": "Git.d.ts",
+      "declarationSha256": "3c04cd3e8a4ccf18759ecd95cacac9a5d52d86cc3cf7678dbb5b7d17af856334",
+      "source": "packages/ts-release/src/Git.ts",
+      "sourceSha256": "0d334c07faf1b065b474e6e3cdbc6284a9c76c3cd5b80ded25019e0d10025974"
+    },
+    {
       "declaration": "Http.d.ts",
-      "declarationSha256": "cb9d38234c3fe17cb6b3d42c6834adc13538debd57541cda31aca53ac41450bc",
+      "declarationSha256": "0e318562851edda401c8ee201b79a91ce7d9a6fb74eab3fedf96bc0b6235a44e",
       "source": "packages/ts-release/src/Http.ts",
-      "sourceSha256": "9dc9ebdb18ad0331371d110ad70f45348834a8a810a683a9678cb87089d12f03"
+      "sourceSha256": "ebc35bf75d15d5ae9cd467f0607a0e034e04f1cd8705b1d7a85a36ccfb4293d4"
     },
     {
       "declaration": "index.d.ts",
@@ -42,9 +48,9 @@
     },
     {
       "declaration": "internal/ArtifactReader.d.ts",
-      "declarationSha256": "4137309152a59254edc0e8c5bb267eec32a1de34f8d72bf09896ff17d0f28837",
+      "declarationSha256": "fc61eec68de6dbb61ea353893873bd178b9871845fcc2b29eeafbb0ca001728e",
       "source": "packages/ts-release/src/internal/ArtifactReader.ts",
-      "sourceSha256": "02661ed861ccf168e6e11c20034b04bc64978581ed977ea0aabb431a33098ec1"
+      "sourceSha256": "e8287e852901563417d9c9a5153fd893e878ca94cbf278a94e1793e0de81adb4"
     },
     {
       "declaration": "internal/BundleCodec.d.ts",
@@ -60,9 +66,9 @@
     },
     {
       "declaration": "internal/Content.d.ts",
-      "declarationSha256": "6cd39249378d129be28898ef1a8b6390f022ccf1ea4519923b096d5727d208d5",
+      "declarationSha256": "8af946fc763339f0f7dfbfade463a79c5cba24188a4ef00377f7acb8eb7d0fee",
       "source": "packages/ts-release/src/internal/Content.ts",
-      "sourceSha256": "9a06b956527f8d994d1612a8919297167bb64e757d24fde0823ffe39de4f1edc"
+      "sourceSha256": "ea26089099eb3f811299509e57cb964bf9287eabca807b98ec072e063cec21b4"
     },
     {
       "declaration": "internal/Decision.d.ts",
@@ -90,9 +96,15 @@
     },
     {
       "declaration": "internal/GitAuthority.d.ts",
-      "declarationSha256": "28c3b696fd952cffb8bd99dac3c7e99a452fb3b258fbffd5984dff9b9dbdd38a",
+      "declarationSha256": "5cc9d8f06eb3d074163dfc59ba3a5a775da39a1bd5a6b4825942e245640d10bb",
       "source": "packages/ts-release/src/internal/GitAuthority.ts",
-      "sourceSha256": "b0b9d0d44c9ba28d17c4071e26b486dce3b93e8802d10b8337842175b8eb8d03"
+      "sourceSha256": "e70278b88272da65dd9626593b218485727e674e61653a9b9362829d8956365d"
+    },
+    {
+      "declaration": "internal/GitCatalog.d.ts",
+      "declarationSha256": "8421a8c24cecead4568d60ba6c1cb84020b96cefb1e28e13ea6ba658db19a612",
+      "source": "packages/ts-release/src/internal/GitCatalog.ts",
+      "sourceSha256": "c088751f4ec59801ce09363d7c4bd2ab265b7038598fedcb87abf3b014c2c24d"
     },
     {
       "declaration": "internal/Host.d.ts",
@@ -128,13 +140,13 @@
       "declaration": "Journal.d.ts",
       "declarationSha256": "97653bfdcb014dd772a59b1907adc88e7f7896b7b57380f1cbcad1c81a28b165",
       "source": "packages/ts-release/src/Journal.ts",
-      "sourceSha256": "be0fd6e56767380becd7f90188ab35a5f1d58ed0e12e38ea1f84c5e7babd97d4"
+      "sourceSha256": "dbb68ac207d43eb4bbd598a16bb165b77397a57c3c4f0a1dd2faafc45bfc3be4"
     },
     {
       "declaration": "Node.d.ts",
-      "declarationSha256": "80b0d2a03cb569d9c9df07014fa47202f4390363bf9b513a5fa221618c9cd765",
+      "declarationSha256": "8e381909ad1f3d68fe5f1014bce6078be8e17b9cad8af211151573c647e51b8a",
       "source": "packages/ts-release/src/Node.ts",
-      "sourceSha256": "4d0bf89dbb80e356c289ee164e3630a919e4ca8543c439f2879e0b1926209a23"
+      "sourceSha256": "ea52c565bc7e6f9f0840160c13041b07445ce7aebfb9e7c5b03afd8a8bc9bf32"
     },
     {
       "declaration": "npm/Auth.d.ts",
@@ -195,6 +207,48 @@
       "declarationSha256": "2922d2c1f75cf526c3b9b1a19efeada0b481e8ed397136726f02b81c464ba1e2",
       "source": "packages/ts-release/src/platform/ContentStore.ts",
       "sourceSha256": "0b70de2d4e95ab73c7678ed1a004fa101601e689e32ec82b53b8db2d83a32182"
+    },
+    {
+      "declaration": "platform/GitHost.d.ts",
+      "declarationSha256": "9d4088459734f03f63b6da3882851f51f8d3d3c61010668715a01445d749c955",
+      "source": "packages/ts-release/src/platform/GitHost.ts",
+      "sourceSha256": "3b05c1971e51a0d203cf8ce5065b0318c78ab3e4db3eb90cee63f898e1790902"
+    },
+    {
+      "declaration": "platform/GithubOidc.d.ts",
+      "declarationSha256": "9264bd4bed1a49264893c6328673a89de40ef02a3bf472100de62fdeeb226d85",
+      "source": "packages/ts-release/src/platform/GithubOidc.ts",
+      "sourceSha256": "5efd81101154791f99413941e7934a4d3d4b778be29550d17141152f5f2c5aa9"
+    },
+    {
+      "declaration": "platform/GitJournal.d.ts",
+      "declarationSha256": "f405bfa13155188d33bc034c007931765f5403bbe8dc0156072abf9e8ec7456f",
+      "source": "packages/ts-release/src/platform/GitJournal.ts",
+      "sourceSha256": "11de366ed29b8bf554efd64f3fe9f3a4a1cb2b5c050d053f4c2c1f087964cbe1"
+    },
+    {
+      "declaration": "platform/GitObjects.d.ts",
+      "declarationSha256": "b42afd547eb41731ade8a1a249bbf537772a35239d19ac7e0be2814add35e896",
+      "source": "packages/ts-release/src/platform/GitObjects.ts",
+      "sourceSha256": "f60414c0d71b3ca875e7170cd6aac417c3a77837635d80092b3211f9e370db93"
+    },
+    {
+      "declaration": "platform/GitProcess.d.ts",
+      "declarationSha256": "75de4e0112293d1be704795f91302f705d06eb4b84f00d874ecb06b5f622c9b1",
+      "source": "packages/ts-release/src/platform/GitProcess.ts",
+      "sourceSha256": "eb0480d97a7286f7f76de24782d378c0da11d16b1f203b755e8e096907863bdb"
+    },
+    {
+      "declaration": "platform/GitRemote.d.ts",
+      "declarationSha256": "28b01f51cef93d72970c30c5bdbccbcc43d12d16a0c40ee3e80af07f1542581c",
+      "source": "packages/ts-release/src/platform/GitRemote.ts",
+      "sourceSha256": "d3be45369e30eeca0ccae040bbb21497dc7a7f781655a38d89a10ac87d1d58cd"
+    },
+    {
+      "declaration": "platform/HttpTransport.d.ts",
+      "declarationSha256": "325a27e1495121af72607c2f16cefaec714a6560ba36905849e55e92bfb02d11",
+      "source": "packages/ts-release/src/platform/HttpTransport.ts",
+      "sourceSha256": "518fadf4e96862ff49a39733dd56a3efc65688240c659beae3a731573381d2ea"
     },
     {
       "declaration": "platform/SqliteJournal.d.ts",

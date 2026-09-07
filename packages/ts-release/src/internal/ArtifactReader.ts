@@ -1,7 +1,7 @@
 import * as Effect from "effect/Effect"
 import { OwnedBundle, OwnedFile } from "./ArtifactModel.js"
-import type { ArtifactAccess } from "./Content.js"
-import { canonical, decodeOwned, sha256 } from "./Identity.js"
+import { type ArtifactAccess, readVerifiedContent } from "./Content.js"
+import { canonical, decodeOwned } from "./Identity.js"
 import { attempt, fail, ReleaseError } from "./Error.js"
 
 /** Capture a Bundle and reader once. Derived reads verify exact membership,
@@ -35,21 +35,7 @@ export const verifiedArtifacts = (access: ArtifactAccess, maximumBytes: number) 
           code: "artifact-member",
           message: "File is not the exact owned Bundle member",
         })
-      if (BigInt(file.content.bytes) > BigInt(maximumBytes))
-        return yield* new ReleaseError({
-          code: "artifact-bound",
-          message: "Artifact exceeds the configured byte bound",
-        })
-      const bytes = new Uint8Array(yield* read(file.content))
-      if (
-        String(bytes.length) !== file.content.bytes ||
-        (yield* sha256(bytes)) !== file.content.sha256
-      )
-        return yield* new ReleaseError({
-          code: "artifact-content",
-          message: "Owned artifact size or digest differs",
-        })
-      return bytes
+      return yield* readVerifiedContent(read, file.content, maximumBytes)
     }),
   })
 }

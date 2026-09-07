@@ -1,9 +1,10 @@
 export type {} from "./internal/EffectTypes.js"
 export { decodeJson } from "./internal/NativeJson.js"
 import * as Schema from "effect/Schema"
-import type * as Effect from "effect/Effect"
+import * as Effect from "effect/Effect"
 import type * as Redacted from "effect/Redacted"
-import type { ReleaseError } from "./internal/Error.js"
+import { type ReleaseError, attempt, fail } from "./internal/Error.js"
+import { canonical } from "./internal/Identity.js"
 import type { ProviderDefinition, PreparedRequest, SendResult } from "./Provider.js"
 import { RequestFacts } from "./internal/ReleaseModel.js"
 
@@ -79,9 +80,53 @@ export type CredentialRequest = CredentialBinding
 export type ResolveCredentials = (
   request: CredentialRequest,
 ) => Effect.Effect<CredentialHeaders, ReleaseError>
+export interface BoundCredentials {
+  readonly binding: CredentialBinding
+  /** Called only after one exact endpoint/principal/scope match. */
+  readonly acquire: () => Effect.Effect<CredentialHeaders, ReleaseError>
+}
+/** Explicit application composition; no discovery or provider allowlist. */
+export const makeCredentialResolver = (
+  bindings: readonly BoundCredentials[],
+): ResolveCredentials => {
+  const key = (binding: CredentialBinding) => {
+    const { endpoint, principal, scope } = binding,
+      url = new URL(endpoint)
+    if (
+      !["https:", "http:"].includes(url.protocol) ||
+      url.username ||
+      url.password ||
+      url.hash ||
+      url.href !== endpoint ||
+      !principal ||
+      !scope
+    )
+      fail("credential-binding", "Credential binding must identify an exact public HTTP authority")
+    return canonical({ endpoint, principal, scope })
+  }
+  const entries = new Map(bindings.map((entry) => [key(entry.binding), entry.acquire.bind(entry)]))
+  if (entries.size !== bindings.length)
+    fail("credential-binding", "Credential authority is registered twice")
+  return Effect.fn("http.resolveCredentials")(function* (request) {
+    const acquire = yield* attempt(() => entries.get(key(request)))
+    if (!acquire)
+      return yield* attempt(() =>
+        fail("credential-binding", "No exact credential authority is registered"),
+      )
+    return yield* acquire()
+  })
+}
 export interface HttpTransportOptions {
   readonly credentials: ResolveCredentials
   readonly providers: readonly HttpProviderDefinition[]
   readonly timeoutMilliseconds: number
   readonly maximumResponseBytes: number
+  /** Total decrypted HTTP input, including framing, headers and trailers.
+   * Defaults to twice the body limit plus64KiB. */
+  readonly maximumWireResponseBytes?: number
 }
+export type HttpReadOptions = Omit<HttpTransportOptions, "providers">
+export type HttpExchangeOptions = Pick<
+  HttpTransportOptions,
+  "timeoutMilliseconds" | "maximumResponseBytes" | "maximumWireResponseBytes"
+>

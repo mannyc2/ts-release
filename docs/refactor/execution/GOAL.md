@@ -23,7 +23,7 @@ repeatedly blocked under the goal-tool rules.
 - Original HEAD `9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d`; exact staged tree
   `72323d6191b11d69a77022f278bd3de671f43cbe` preserved (190 staged paths).
 - Checkpoints `7da2877` (preservation), `65f65b1` (prerequisites), `8fe9891`
-  (tested W01 progress). The branch through `fd4b8af` (W02) is pushed; no integration yet.
+  (tested W01 progress). The branch through `0ab3f9b` (W03) is pushed; no integration yet.
 - Ignored refinement/audit promoted verbatim under `../research/` at preservation.
   Active design authority is `../architecture-program/handoff/design.json`.
 - Required PR21 ancestry remains; no PR22/overlay merge. Mainline PR30/31 native
@@ -46,9 +46,9 @@ mixed native obligations explicitly carried to later waves in W01-migration.json
 Remaining legacy files are unshipped donors. See W01.md and progress.json for the
 latest test counts, exact pending check and limitations.
 
-Current physical product12,740 =5,801 replacement +6,939 legacy. Incomplete scope:
-no achieved reduction. Cumulative W03 tripwire4,500 is exceeded1,301; mixed actual/
-future forecast12,723 exceeds the unchanged full-product11,485 ceiling by1,238.
+W04 checkpoint physical product13,747 =7,891 replacement +5,856 legacy. Incomplete scope:
+no achieved reduction. Cumulative W04 tripwire6,200 is exceeded1,691; mixed actual/
+future forecast12,862 exceeds the unchanged full-product11,485 ceiling by1,377.
 Owned generated catalog data adds789lines/15,973bytes separately.
 Original denominator22971 and marginal40-line target are unchanged. A concrete
 planning variance may permit continued implementation; it cannot qualify the
@@ -69,6 +69,18 @@ SIGKILL/restart and clean pip consumers,82native Twine controls, independent rev
 and fresh three-package Bun/npm installs with20Node/Bun smokes. Both assigned
 legacy PyPI files are retired (494lines/32declarations). Direct verification passes
 257sealedfiles/226propositions, with69outcomes still open. See W03.md and progress.json.
-Next: commit/push W03, then implement W04 native HTTP and conditional Git transports.
+W03 cutover commit: `0ab3f9b735dee46376ba4694b4973e8e92bb978b`, pushed successfully.
+W04 is active with full local implementation and independent HTTP/Git review:
+194tests/1761assertions across29files pass. Node22.22.2/Bun1.3.14 native socket/TLS,
+Git graph/CAS/journal and process-lifetime controls pass. Real pypiserver/devpi
+uploads use actual HTTP/Git hosts with SIGKILL and cross-runtime safe restart.
+Fresh three-package Bun/npm consumers pass32runtime checks and strict declarations
+with optional peers absent.55actual declarations are projected. The assigned
+1083line/81declaration credential donor is retired with exactW05/W10carry-forward.
+Both independent Git findings (credential errors and empty-tree loss) are fixed
+and independently closed. W04 has an exact planning variance without a final
+source-ceiling waiver. Next: finish direct verification/accounting review, bind
+receipts and commit/push W04, then implement W05 GitHub through shared Plan/HTTP.
+Direct Bun Sigstore/TUF, hosted trust, native platforms and full release remain open.
 Preserve full CLI/Action/self-release/agents scope, seven-package consumers and
 independent final candidate review. Continue through verified published release.

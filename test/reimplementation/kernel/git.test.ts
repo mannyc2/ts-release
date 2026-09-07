@@ -125,7 +125,7 @@ test("captured Git execution retains class state and resists method replacement"
     }
     execute(args: ReadonlyArray<string>) {
       this.#calls++
-      return Effect.succeed({ exitCode: 0, stdout: ` \t${args.at(-1)}\t[up to date]\n` })
+      return Effect.succeed({ exitCode: 0, stdout: `=\t${args.at(-1)}\t[up to date]\n` })
     }
   }
   const adapter = new Adapter()

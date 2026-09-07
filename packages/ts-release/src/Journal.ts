@@ -1,7 +1,6 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { JournalEvent, Plan } from "./internal/ReleaseModel.js"
-import { read } from "./internal/Host.js"
 import { ReleaseError, attempt, fail } from "./internal/Error.js"
 import { canonical, decodeOwned, freeze } from "./internal/Identity.js"
 import {
@@ -11,7 +10,6 @@ import {
   nativeEvidence,
   requestFingerprint,
 } from "./Provider.js"
-import { corresponds } from "./Http.js"
 
 export interface Snapshot {
   readonly revision: number

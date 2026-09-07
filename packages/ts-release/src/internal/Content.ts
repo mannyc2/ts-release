@@ -1,7 +1,8 @@
-import type * as Effect from "effect/Effect"
+import * as Effect from "effect/Effect"
 import type * as Artifact from "effect-build/Artifact"
-import type { AdoptionError, Content, OwnedBundle } from "./ArtifactModel.js"
-import type { ReleaseError } from "./Error.js"
+import { Content, type AdoptionError, type OwnedBundle } from "./ArtifactModel.js"
+import { type ReleaseError, attempt, fail } from "./Error.js"
+import { decodeOwned, sha256 } from "./Identity.js"
 
 export interface ContentOwner {
   /** Copy before retention; return the identity of the stored copy. */
@@ -19,3 +20,24 @@ export interface ArtifactAccess {
   readonly bundle: OwnedBundle
   readonly readContent: ReadContent
 }
+/** Verify owned content before an adapter uses its bytes; never grants dispatch. */
+export const readVerifiedContent = Effect.fn("ts-release.readVerifiedContent")(function* (
+  read: ReadContent,
+  input: Content,
+  maximumBytes: number,
+) {
+  const content = yield* attempt(() => {
+    const value = decodeOwned(Content, input)
+    if (
+      !Number.isSafeInteger(maximumBytes) ||
+      maximumBytes <= 0 ||
+      BigInt(value.bytes) > BigInt(maximumBytes)
+    )
+      fail("content-bound", "Owned content exceeds the configured byte bound")
+    return value
+  })
+  const bytes = new Uint8Array(yield* read(content))
+  if (String(bytes.length) !== content.bytes || (yield* sha256(bytes)) !== content.sha256)
+    return yield* attempt(() => fail("content-identity", "Owned content size or digest differs"))
+  return bytes
+})

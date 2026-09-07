@@ -72,7 +72,8 @@
     "typescript": "6.0.3",
     "bun": "1.3.14",
     "bun-types": "1.3.14",
-    "@types/semver": "7.7.1"
+    "@types/semver": "7.7.1",
+    "undici": "8.10.1"
   },
   "effectPatch": {
     "required": false,
@@ -130,7 +131,10 @@
     "application": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
     "npm": "docs/refactor/architecture-program/handoff/production-api/npm/index.d.ts",
     "pypi": "docs/refactor/architecture-program/handoff/production-api/pypi/index.d.ts",
-    "artifactReader": "docs/refactor/architecture-program/handoff/production-api/internal/ArtifactReader.d.ts"
+    "artifactReader": "docs/refactor/architecture-program/handoff/production-api/internal/ArtifactReader.d.ts",
+    "git": "docs/refactor/architecture-program/handoff/production-api/Git.d.ts",
+    "nodeHost": "docs/refactor/architecture-program/handoff/production-api/Node.d.ts",
+    "bunHost": "docs/refactor/architecture-program/handoff/production-api/Bun.d.ts"
   },
   "modules": [
     {
@@ -247,7 +251,8 @@
       "zone": "neutral",
       "dependencies": [
         "kernel.ArtifactModel",
-        "kernel.Error"
+        "kernel.Error",
+        "kernel.Identity"
       ]
     },
     {
@@ -412,7 +417,8 @@
       "dependencies": [
         "kernel.Model",
         "kernel.Identity",
-        "kernel.Error"
+        "kernel.Error",
+        "kernel.Provider"
       ]
     },
     {
@@ -426,7 +432,9 @@
         "kernel.Plan",
         "kernel.ArtifactModel",
         "kernel.Content",
-        "kernel.Error"
+        "kernel.Error",
+        "kernel.Identity",
+        "kernel.GitAuthority"
       ]
     },
     {
@@ -443,12 +451,21 @@
     {
       "id": "host.Credentials",
       "owner": "core",
-      "path": "src/platform/Credentials.ts",
+      "path": "src/platform/GithubOidc.ts",
       "zone": "host",
       "dependencies": [
         "kernel.Http",
-        "kernel.Error"
-      ]
+        "kernel.Error",
+        "kernel.Identity",
+        "kernel.NativeJson",
+        "host.Http"
+      ],
+      "externalImports": [
+        "effect/Config",
+        "effect/ConfigProvider",
+        "node:crypto"
+      ],
+      "purpose": "Actual GitHub OIDC host, signed token and public claim admission; live credentials remain in the host boundary."
     },
     {
       "id": "host.Http",
@@ -458,12 +475,13 @@
       "dependencies": [
         "kernel.Model",
         "kernel.Http",
+        "kernel.Provider",
         "kernel.Error",
-        "host.Credentials"
+        "kernel.Identity"
       ],
       "externalImports": [
-        "node:http",
-        "node:https"
+        "undici/lib/dispatcher/client.js",
+        "undici/lib/core/connect.js"
       ]
     },
     {
@@ -485,11 +503,18 @@
       "zone": "host",
       "dependencies": [
         "host.StoreCodec",
-        "host.NativeGit",
-        "kernel.Journal",
+        "host.GitProcess",
+        "host.GitRemote",
+        "kernel.GitCatalog",
+        "kernel.GitAuthority",
+        "kernel.Identity",
         "kernel.Error"
       ],
-      "purpose": "Reuses the bounded native Git command/private-environment helper with explicit remote, principal, scope and reacquired credentials; no ambient Git credential authority."
+      "purpose": "One canonical event per native one-parent commit; fresh remote reads and exact expected-old push. Native = never grants new append authority. Bounded output/history and timeout do not claim a fetched-pack disk byte cap.",
+      "externalImports": [
+        "node:crypto",
+        "node:fs"
+      ]
     },
     {
       "id": "host.Sqlite",
@@ -522,19 +547,19 @@
     {
       "id": "host.NativeGit",
       "owner": "core",
-      "path": "src/platform/NativeGit.ts",
+      "path": "src/platform/GitHost.ts",
       "zone": "host",
       "dependencies": [
         "kernel.GitCatalog",
         "kernel.GitAuthority",
-        "kernel.ArtifactModel",
         "kernel.Content",
-        "kernel.Error"
+        "kernel.Error",
+        "kernel.Identity",
+        "host.GitProcess",
+        "host.GitObjects",
+        "host.GitRemote"
       ],
-      "externalImports": [
-        "node:child_process",
-        "node:fs/promises"
-      ]
+      "externalImports": []
     },
     {
       "id": "host.Application",
@@ -566,10 +591,8 @@
         "host.Http",
         "host.Content",
         "host.NativeGit",
-        "host.Application"
-      ],
-      "externalImports": [
-        "@effect/platform-node/NodeServices"
+        "host.Application",
+        "host.Credentials"
       ]
     },
     {
@@ -583,10 +606,8 @@
         "host.Http",
         "host.Content",
         "host.NativeGit",
-        "host.Application"
-      ],
-      "externalImports": [
-        "@effect/platform-bun/BunServices"
+        "host.Application",
+        "host.Credentials"
       ]
     },
     {
@@ -723,6 +744,49 @@
         "kernel.Error"
       ],
       "purpose": "Shared native provider admission, implemented by npm and PyPI"
+    },
+    {
+      "id": "host.GitProcess",
+      "owner": "core",
+      "path": "src/platform/GitProcess.ts",
+      "zone": "host",
+      "dependencies": [
+        "kernel.GitCatalog",
+        "kernel.Error"
+      ],
+      "externalImports": [
+        "node:child_process",
+        "node:fs",
+        "node:path"
+      ]
+    },
+    {
+      "id": "host.GitObjects",
+      "owner": "core",
+      "path": "src/platform/GitObjects.ts",
+      "zone": "host",
+      "dependencies": [
+        "kernel.GitCatalog",
+        "kernel.Content",
+        "kernel.Identity",
+        "kernel.Error",
+        "host.GitProcess"
+      ],
+      "externalImports": [
+        "node:crypto"
+      ]
+    },
+    {
+      "id": "host.GitRemote",
+      "owner": "core",
+      "path": "src/platform/GitRemote.ts",
+      "zone": "host",
+      "dependencies": [
+        "kernel.GitCatalog",
+        "kernel.Error",
+        "host.GitProcess"
+      ],
+      "externalImports": []
     }
   ],
   "providers": [

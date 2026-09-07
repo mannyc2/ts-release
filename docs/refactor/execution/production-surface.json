@@ -6,7 +6,7 @@
   "packages": [
     {
       "path": "packages/ts-release/package.json",
-      "sha256": "00809310590bb651c9b1193835ae4d634fa9b4ff3f1af91774dfed46c1287119"
+      "sha256": "d050bbc974dd1123d24f74863ce5f035d061ce08ceb4088693f0253a556b46b8"
     },
     {
       "path": "packages/npm/package.json",
@@ -160,24 +160,28 @@
     {
       "specifier": "@mannyc1/ts-release/http",
       "source": "packages/ts-release/src/Http.ts",
-      "sourceSha256": "9dc9ebdb18ad0331371d110ad70f45348834a8a810a683a9678cb87089d12f03",
+      "sourceSha256": "ebc35bf75d15d5ae9cd467f0607a0e034e04f1cd8705b1d7a85a36ccfb4293d4",
       "runtimePath": "packages/ts-release/dist/Http.js",
-      "runtimeSha256": "bddee474c950f0058587d83698975cbfde34ded7f8dbc0739eb2a6d8622dc6e3",
+      "runtimeSha256": "b17c2824ac347d6d1e0ba0d0868609b120278f77e932ba1095158413d653ae04",
       "declarationsPath": "packages/ts-release/dist/Http.d.ts",
-      "declarationsSha256": "cb9d38234c3fe17cb6b3d42c6834adc13538debd57541cda31aca53ac41450bc",
+      "declarationsSha256": "0e318562851edda401c8ee201b79a91ce7d9a6fb74eab3fedf96bc0b6235a44e",
       "runtimeNames": [
         "HttpReceipt",
         "corresponds",
-        "decodeJson"
+        "decodeJson",
+        "makeCredentialResolver"
       ],
       "typeNames": [
+        "BoundCredentials",
         "CredentialBinding",
         "CredentialExchange",
         "CredentialHeaders",
         "CredentialRequest",
         "Headers",
+        "HttpExchangeOptions",
         "HttpProviderDefinition",
         "HttpRead",
+        "HttpReadOptions",
         "HttpReadRequest",
         "HttpReceipt",
         "HttpResponse",
@@ -189,42 +193,98 @@
       ]
     },
     {
+      "specifier": "@mannyc1/ts-release/git",
+      "source": "packages/ts-release/src/Git.ts",
+      "sourceSha256": "0d334c07faf1b065b474e6e3cdbc6284a9c76c3cd5b80ded25019e0d10025974",
+      "runtimePath": "packages/ts-release/dist/Git.js",
+      "runtimeSha256": "f13eabaf19e5d39208e7d2a1fe78ab9639f4236a813096ea077d5fdf15066372",
+      "declarationsPath": "packages/ts-release/dist/Git.d.ts",
+      "declarationsSha256": "3c04cd3e8a4ccf18759ecd95cacac9a5d52d86cc3cf7678dbb5b7d17af856334",
+      "runtimeNames": [
+        "CommitInput",
+        "FileEdit",
+        "GitCas",
+        "GitReceipt",
+        "Identity",
+        "Intent",
+        "definition",
+        "makeCoreGitTransport",
+        "prepare",
+        "update"
+      ],
+      "typeNames": [
+        "CommitInput",
+        "CoreGitOptions",
+        "Credentials",
+        "FileEdit",
+        "GitCas",
+        "GitExecution",
+        "GitReceipt",
+        "Identity",
+        "Intent",
+        "NativeHost",
+        "ObjectBuilder",
+        "ObserveRef",
+        "RefCoordinate"
+      ]
+    },
+    {
       "specifier": "@mannyc1/ts-release/bun",
       "source": "packages/ts-release/src/Bun.ts",
-      "sourceSha256": "9d711fd918def408ca13aa584d3a0768160c31b0157da2fb13fdca9049d73af5",
+      "sourceSha256": "d8316f1de07b5d5940f76685956b3bae381fd39e59ddfbcdbfde098837266206",
       "runtimePath": "packages/ts-release/dist/Bun.js",
-      "runtimeSha256": "6f0c9ff53307285ce46eaa3e28b90e1bf4ea009cb163159f61ddbdcc443460ac",
+      "runtimeSha256": "281f6b97ee1108b88aef06d0eee7e022878ae506a5869a428f009c5fc1efc4a4",
       "declarationsPath": "packages/ts-release/dist/Bun.d.ts",
-      "declarationsSha256": "31b0b5afec079fdd8706274c4afce6130be58123c055eedab806b7a1f1c1a5a2",
+      "declarationsSha256": "c751957811c02883541f365ad272b2b0d2dc90c6822c5d1057ef7035f7fee5f1",
       "runtimeNames": [
         "FinalizedReport",
         "fileContentOwner",
+        "makeCredentialExchange",
+        "makeGitCatalogHost",
+        "makeGithubOidcTokenSource",
+        "makeGithubTrustedPublisherHost",
+        "makeHttpRead",
+        "makeHttpTransport",
+        "openGitJournal",
         "openSqliteJournal",
         "runApplication"
       ],
       "typeNames": [
         "Application",
         "CreateApplication",
-        "FinalizedReport"
+        "FinalizedReport",
+        "GitCatalogHost",
+        "GitCatalogHostOptions",
+        "GitJournalOptions"
       ]
     },
     {
       "specifier": "@mannyc1/ts-release/node",
       "source": "packages/ts-release/src/Node.ts",
-      "sourceSha256": "4d0bf89dbb80e356c289ee164e3630a919e4ca8543c439f2879e0b1926209a23",
+      "sourceSha256": "ea52c565bc7e6f9f0840160c13041b07445ce7aebfb9e7c5b03afd8a8bc9bf32",
       "runtimePath": "packages/ts-release/dist/Node.js",
-      "runtimeSha256": "18d0a1a56250812edcb6b901a0a109fa3ccc55e25d2248395ec38d633ec7c323",
+      "runtimeSha256": "ceefbb2c1a81cb47724a69d8a35ec2df29cd7a85e386f47e93fa6c20cd43ef1d",
       "declarationsPath": "packages/ts-release/dist/Node.d.ts",
-      "declarationsSha256": "80b0d2a03cb569d9c9df07014fa47202f4390363bf9b513a5fa221618c9cd765",
+      "declarationsSha256": "8e381909ad1f3d68fe5f1014bce6078be8e17b9cad8af211151573c647e51b8a",
       "runtimeNames": [
         "FinalizedReport",
         "fileContentOwner",
+        "makeCredentialExchange",
+        "makeGitCatalogHost",
+        "makeGithubOidcTokenSource",
+        "makeGithubTrustedPublisherHost",
+        "makeHttpRead",
+        "makeHttpTransport",
+        "openGitJournal",
         "runApplication"
       ],
       "typeNames": [
         "Application",
         "CreateApplication",
-        "FinalizedReport"
+        "FinalizedReport",
+        "GitCatalogHost",
+        "GitCatalogHostOptions",
+        "GitJournalOptions"
       ]
     },
     {
@@ -326,16 +386,9 @@
   "missing": [
     "@mannyc1/ts-release/effect-build",
     "@mannyc1/ts-release/apple",
-    "@mannyc1/ts-release/git",
     "@mannyc1/ts-release/bundle:type:ChecksumInput",
     "@mannyc1/ts-release/bundle:value:renderSha256Sums",
     "@mannyc1/ts-release/bundle:value:verifySha256Sums",
-    "@mannyc1/ts-release/bun:value:makeGitCatalogHost",
-    "@mannyc1/ts-release/bun:value:makeHttpTransport",
-    "@mannyc1/ts-release/bun:value:openGitJournal",
-    "@mannyc1/ts-release/node:value:makeGitCatalogHost",
-    "@mannyc1/ts-release/node:value:makeHttpTransport",
-    "@mannyc1/ts-release/node:value:openGitJournal",
     "@mannyc1/ts-release:bin",
     "@mannyc1/ts-release-github",
     "@mannyc1/ts-release-catalog",

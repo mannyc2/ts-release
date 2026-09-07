@@ -4,13 +4,13 @@ The active objective is the complete refactor and verified published release in
 [GOAL.md](../../execution/GOAL.md). The user authorized implementation and release
 on 2026-09-06. Historical research-only restrictions describe earlier tasks.
 **All 69 selected outcomes and 226 propositions remain required.** W01 kernel/application,
-W02 npm and W03 PyPI cutovers have local evidence: 159 tests/1,379 assertions,
-fresh three-package Bun/npm installs and Node/Bun consumers, native compatible
-servers and independent source/metadata/recovery review. All 54 assigned
-legacy files are retired. The cumulative 4,500 planning tripwire fails with 5,801
+W02 npm, W03 PyPI and W04 native transport cutovers have local evidence:
+194 tests/1,761 assertions, fresh three-package Bun/npm installs and 32 Node/Bun
+consumer checks, native compatible servers and independent recovery review.
+All 55 assigned legacy files are retired. The cumulative 6,200 planning tripwire fails with 7,891
 replacement lines; an exact-source variance permits continued implementation.
 Native hosted duties, Bun Sigstore and full release certification remain open.
-See [W03](../../execution/W03.md) for current evidence and limits. Nothing is published.
+See [W04](../../execution/W04.md) for current evidence and limits. Nothing is published.
 
 [design.json](design.json) is the editable architecture authority. The approved
 layout is **T3c: seven public packages**: ts-release, npm, pypi, github, catalog,
@@ -40,7 +40,7 @@ Use the exact [kernel](kernel-api.d.ts), [HTTP](http-api.d.ts),
 [owned-artifact](adoption-api/adoption.d.ts) contracts. The kernel entry resolves the actual production compiler output in
 [production-api](production-api/emission.json); its former research declaration
 is retained in `research-api/kernel-api.d.ts`. npm, PyPI, shared verified artifact reads and neutral HTTP contracts now
-also resolve actual production declarations. Remaining provider, native host and
+also resolve actual production declarations, as do Git and Node/Bun hosts. Remaining provider and
 adoption declarations retain their reviewed proposal owners until implemented.
 
 The [waves](waves.json) prescribe W01–W10 and preserve every original native
@@ -74,14 +74,14 @@ Fresh prerequisite evidence:
 
 The amended prerequisite kernel is **1,024 physical / 1,145 printer lines**;
 external M2/cache witnesses are separate test/tooling costs. The conservative
-mixed actual/future full-product forecast is **12,723**, already 1,238 above the unchanged **11,485**
+mixed actual/future full-product forecast is **12,862**, already 1,377 above the unchanged **11,485**
 ceiling against **22,971**. [forecast.json](forecast.json) records full component
 costs and per-wave tripwires. Normal formatting and actual production counts
 must establish the reduction; no scope cut, density trick or waiver is permitted.
 
 Run `bun run check:architecture-program` for retained evidence integrity,
-projection, ancestry and source accounting. W03 currently exceeds its 4,500-line
-planning tripwire with 5,801 replacement lines; the complete-product ceiling is
+projection, ancestry and source accounting. W04 exceeds its 6,200-line
+planning tripwire with 7,891 replacement lines; the complete-product ceiling is
 unchanged. `bun tools/architecture-lab/verify.mjs
 --execute --seal` executes direct checks and refreshes reviewed bindings; it is
 not a readiness certificate. Native/socket fixtures require local socket access.

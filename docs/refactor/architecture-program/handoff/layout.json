@@ -41,7 +41,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "13ce7d09133479b2531f82a4365a55d20c2435d2fe8a9954999a0d89f3851026"
+    "sha256": "a4bed27d51dec682f937edac089c8bdb8028ef9c1efba7e85735ecfddc7d8e8f"
   },
   "migration": {
     "path": "docs/refactor/architecture-program/handoff/migration.json",
@@ -56,11 +56,11 @@
     },
     "provider": {
       "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
-      "sha256": "6e767bf8480911d8e74c95b974b402b3409a54ed93dff9f66935fbb5eb5a4b52"
+      "sha256": "e7bf0acce2c28d8d42e7ecebea2146f2cd9eb2fefc1d812f1a988bf27e6c3eef"
     },
     "host": {
       "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
-      "sha256": "94539eedb7b652e2c148190aafe49ae22d3ee064fa69daa2af3a75914e560278"
+      "sha256": "a2794b3ce3d6967a8879ab7089baa9b18349c62d2c81473ea7d25ea586c4b79f"
     },
     "adoption": {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/adoption.d.ts",
@@ -84,7 +84,7 @@
     },
     "http": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Http.d.ts",
-      "sha256": "cb9d38234c3fe17cb6b3d42c6834adc13538debd57541cda31aca53ac41450bc"
+      "sha256": "0e318562851edda401c8ee201b79a91ce7d9a6fb74eab3fedf96bc0b6235a44e"
     },
     "application": {
       "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
@@ -100,10 +100,22 @@
     },
     "artifactReader": {
       "path": "docs/refactor/architecture-program/handoff/production-api/internal/ArtifactReader.d.ts",
-      "sha256": "4137309152a59254edc0e8c5bb267eec32a1de34f8d72bf09896ff17d0f28837"
+      "sha256": "fc61eec68de6dbb61ea353893873bd178b9871845fcc2b29eeafbb0ca001728e"
+    },
+    "git": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Git.d.ts",
+      "sha256": "3c04cd3e8a4ccf18759ecd95cacac9a5d52d86cc3cf7678dbb5b7d17af856334"
+    },
+    "nodeHost": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Node.d.ts",
+      "sha256": "8e381909ad1f3d68fe5f1014bce6078be8e17b9cad8af211151573c647e51b8a"
+    },
+    "bunHost": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Bun.d.ts",
+      "sha256": "c751957811c02883541f365ad272b2b0d2dc90c6822c5d1057ef7035f7fee5f1"
     }
   },
-  "publicSurfaceSha256": "1400beb23a7543f931dcd28372c2b1b2bc8d51eb0a7d35f5bb4598f0a889655f",
+  "publicSurfaceSha256": "6d4825b83691d33b7e1a2aa777d04b08aca5606b75ebd0011aab1bf33c7c42d6",
   "effectPatch": {
     "required": false,
     "donorPath": "patches/effect@4.0.0-rc.108.patch",
@@ -216,6 +228,7 @@
             },
             "dependencies": {
               "effect-build": "0.6.3",
+              "undici": "8.10.1",
               "semver": "7.8.5",
               "sigstore": "5.0.0",
               "@renovatebot/pep440": "5.0.1",
@@ -262,8 +275,8 @@
               "build:delivery": "bun scripts/build-delivery.ts"
             }
           },
-          "manifestSha256": "fe1c9a2ef4d1529bd48181b420c3743091a43ab15c391cd85b6e9d15bb02a39d",
-          "manifestLines": 132
+          "manifestSha256": "90b5d78ee3ab9c854eb4e998045f494b1ca903998b918ec9cba11e5b6d0ab336",
+          "manifestLines": 133
         }
       ],
       "privateWorkspaces": [
@@ -558,7 +571,8 @@
           "zone": "neutral",
           "dependencies": [
             "kernel.ArtifactModel",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity"
           ]
         },
         {
@@ -723,7 +737,8 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Identity",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Provider"
           ]
         },
         {
@@ -737,7 +752,9 @@
             "kernel.Plan",
             "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.GitAuthority"
           ]
         },
         {
@@ -754,12 +771,21 @@
         {
           "id": "host.Credentials",
           "owner": "core",
-          "path": "src/platform/Credentials.ts",
+          "path": "src/platform/GithubOidc.ts",
           "zone": "host",
           "dependencies": [
             "kernel.Http",
-            "kernel.Error"
-          ]
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.NativeJson",
+            "host.Http"
+          ],
+          "externalImports": [
+            "effect/Config",
+            "effect/ConfigProvider",
+            "node:crypto"
+          ],
+          "purpose": "Actual GitHub OIDC host, signed token and public claim admission; live credentials remain in the host boundary."
         },
         {
           "id": "host.Http",
@@ -769,12 +795,13 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Http",
+            "kernel.Provider",
             "kernel.Error",
-            "host.Credentials"
+            "kernel.Identity"
           ],
           "externalImports": [
-            "node:http",
-            "node:https"
+            "undici/lib/dispatcher/client.js",
+            "undici/lib/core/connect.js"
           ]
         },
         {
@@ -796,11 +823,18 @@
           "zone": "host",
           "dependencies": [
             "host.StoreCodec",
-            "host.NativeGit",
-            "kernel.Journal",
+            "host.GitProcess",
+            "host.GitRemote",
+            "kernel.GitCatalog",
+            "kernel.GitAuthority",
+            "kernel.Identity",
             "kernel.Error"
           ],
-          "purpose": "Reuses the bounded native Git command/private-environment helper with explicit remote, principal, scope and reacquired credentials; no ambient Git credential authority."
+          "purpose": "One canonical event per native one-parent commit; fresh remote reads and exact expected-old push. Native = never grants new append authority. Bounded output/history and timeout do not claim a fetched-pack disk byte cap.",
+          "externalImports": [
+            "node:crypto",
+            "node:fs"
+          ]
         },
         {
           "id": "host.Sqlite",
@@ -833,19 +867,19 @@
         {
           "id": "host.NativeGit",
           "owner": "core",
-          "path": "src/platform/NativeGit.ts",
+          "path": "src/platform/GitHost.ts",
           "zone": "host",
           "dependencies": [
             "kernel.GitCatalog",
             "kernel.GitAuthority",
-            "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity",
+            "host.GitProcess",
+            "host.GitObjects",
+            "host.GitRemote"
           ],
-          "externalImports": [
-            "node:child_process",
-            "node:fs/promises"
-          ]
+          "externalImports": []
         },
         {
           "id": "host.Application",
@@ -877,10 +911,8 @@
             "host.Http",
             "host.Content",
             "host.NativeGit",
-            "host.Application"
-          ],
-          "externalImports": [
-            "@effect/platform-node/NodeServices"
+            "host.Application",
+            "host.Credentials"
           ]
         },
         {
@@ -894,10 +926,8 @@
             "host.Http",
             "host.Content",
             "host.NativeGit",
-            "host.Application"
-          ],
-          "externalImports": [
-            "@effect/platform-bun/BunServices"
+            "host.Application",
+            "host.Credentials"
           ]
         },
         {
@@ -1034,6 +1064,49 @@
             "kernel.Error"
           ],
           "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
+          "id": "host.GitProcess",
+          "owner": "core",
+          "path": "src/platform/GitProcess.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Error"
+          ],
+          "externalImports": [
+            "node:child_process",
+            "node:fs",
+            "node:path"
+          ]
+        },
+        {
+          "id": "host.GitObjects",
+          "owner": "core",
+          "path": "src/platform/GitObjects.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Content",
+            "kernel.Identity",
+            "kernel.Error",
+            "host.GitProcess"
+          ],
+          "externalImports": [
+            "node:crypto"
+          ]
+        },
+        {
+          "id": "host.GitRemote",
+          "owner": "core",
+          "path": "src/platform/GitRemote.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Error",
+            "host.GitProcess"
+          ],
+          "externalImports": []
         },
         {
           "id": "provider.npm.Model",
@@ -1459,8 +1532,8 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "0e392436aee8062d56652a6eff5ae0fab97828e82830dcbed9f62462fef93fc1",
-        "packageEdgesSha256": "45f9169109a71514e2119d81b29695a11c94bdf5febe27e934f1afc432cdfd8c",
+        "sourceEdgesSha256": "b2f4cdbec54479745ead482e89465e26c606a7981fd086c6a001d636d60583b0",
+        "packageEdgesSha256": "3e31051ad7c19b6115f61fd818bc1e8d65608f7ad2e36b08ba4f795f5fda82b8",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -1623,6 +1696,12 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Content",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
           },
           {
             "from": "kernel.BundleCodec",
@@ -1931,6 +2010,12 @@
             "specifier": "./Error.js"
           },
           {
+            "from": "kernel.GitAuthority",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "../Provider.js"
+          },
+          {
             "from": "kernel.GitCatalog",
             "to": "kernel.Model",
             "loading": "static",
@@ -1967,6 +2052,18 @@
             "specifier": "./Error.js"
           },
           {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "./GitAuthority.js"
+          },
+          {
             "from": "kernel.Git",
             "to": "kernel.Model",
             "loading": "static",
@@ -1997,6 +2094,24 @@
             "specifier": "../internal/Error.js"
           },
           {
+            "from": "host.Credentials",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.Credentials",
+            "to": "kernel.NativeJson",
+            "loading": "static",
+            "specifier": "../internal/NativeJson.js"
+          },
+          {
+            "from": "host.Credentials",
+            "to": "host.Http",
+            "loading": "static",
+            "specifier": "./HttpTransport.js"
+          },
+          {
             "from": "host.Http",
             "to": "kernel.Model",
             "loading": "static",
@@ -2010,15 +2125,21 @@
           },
           {
             "from": "host.Http",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "../Provider.js"
+          },
+          {
+            "from": "host.Http",
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "../internal/Error.js"
           },
           {
             "from": "host.Http",
-            "to": "host.Credentials",
+            "to": "kernel.Identity",
             "loading": "static",
-            "specifier": "./Credentials.js"
+            "specifier": "../internal/Identity.js"
           },
           {
             "from": "host.StoreCodec",
@@ -2052,15 +2173,33 @@
           },
           {
             "from": "host.GitJournal",
-            "to": "host.NativeGit",
+            "to": "host.GitProcess",
             "loading": "static",
-            "specifier": "./NativeGit.js"
+            "specifier": "./GitProcess.js"
           },
           {
             "from": "host.GitJournal",
-            "to": "kernel.Journal",
+            "to": "host.GitRemote",
             "loading": "static",
-            "specifier": "../Journal.js"
+            "specifier": "./GitRemote.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "../internal/GitAuthority.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
           },
           {
             "from": "host.GitJournal",
@@ -2112,12 +2251,6 @@
           },
           {
             "from": "host.NativeGit",
-            "to": "kernel.ArtifactModel",
-            "loading": "static",
-            "specifier": "../internal/ArtifactModel.js"
-          },
-          {
-            "from": "host.NativeGit",
             "to": "kernel.Content",
             "loading": "static",
             "specifier": "../internal/Content.js"
@@ -2127,6 +2260,30 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitObjects",
+            "loading": "static",
+            "specifier": "./GitObjects.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitRemote",
+            "loading": "static",
+            "specifier": "./GitRemote.js"
           },
           {
             "from": "host.Application",
@@ -2186,13 +2343,19 @@
             "from": "host.Node",
             "to": "host.NativeGit",
             "loading": "static",
-            "specifier": "./platform/NativeGit.js"
+            "specifier": "./platform/GitHost.js"
           },
           {
             "from": "host.Node",
             "to": "host.Application",
             "loading": "static",
             "specifier": "./platform/Application.js"
+          },
+          {
+            "from": "host.Node",
+            "to": "host.Credentials",
+            "loading": "static",
+            "specifier": "./platform/GithubOidc.js"
           },
           {
             "from": "host.Bun",
@@ -2222,13 +2385,19 @@
             "from": "host.Bun",
             "to": "host.NativeGit",
             "loading": "static",
-            "specifier": "./platform/NativeGit.js"
+            "specifier": "./platform/GitHost.js"
           },
           {
             "from": "host.Bun",
             "to": "host.Application",
             "loading": "static",
             "specifier": "./platform/Application.js"
+          },
+          {
+            "from": "host.Bun",
+            "to": "host.Credentials",
+            "loading": "static",
+            "specifier": "./platform/GithubOidc.js"
           },
           {
             "from": "kernel.Entry",
@@ -2475,6 +2644,66 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./Error.js"
+          },
+          {
+            "from": "host.GitProcess",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitProcess",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "../internal/Content.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
           },
           {
             "from": "provider.npm.Model",
@@ -3195,6 +3424,13 @@
           },
           {
             "from": "core",
+            "to": "undici",
+            "version": "8.10.1",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "core",
             "to": "semver",
             "version": "7.8.5",
             "kind": "dependencies",
@@ -3446,12 +3682,32 @@
             "specifier": "effect-build-apple/Notary"
           },
           {
-            "from": "host.Http",
-            "specifier": "node:http"
+            "from": "host.Credentials",
+            "specifier": "effect/Config"
+          },
+          {
+            "from": "host.Credentials",
+            "specifier": "effect/ConfigProvider"
+          },
+          {
+            "from": "host.Credentials",
+            "specifier": "node:crypto"
           },
           {
             "from": "host.Http",
-            "specifier": "node:https"
+            "specifier": "undici/lib/dispatcher/client.js"
+          },
+          {
+            "from": "host.Http",
+            "specifier": "undici/lib/core/connect.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "host.GitJournal",
+            "specifier": "node:fs"
           },
           {
             "from": "host.Sqlite",
@@ -3466,28 +3722,12 @@
             "specifier": "node:crypto"
           },
           {
-            "from": "host.NativeGit",
-            "specifier": "node:child_process"
-          },
-          {
-            "from": "host.NativeGit",
-            "specifier": "node:fs/promises"
-          },
-          {
             "from": "host.Application",
             "specifier": "node:path"
           },
           {
             "from": "host.Application",
             "specifier": "node:url"
-          },
-          {
-            "from": "host.Node",
-            "specifier": "@effect/platform-node/NodeServices"
-          },
-          {
-            "from": "host.Bun",
-            "specifier": "@effect/platform-bun/BunServices"
           },
           {
             "from": "app.cli",
@@ -3500,6 +3740,22 @@
           {
             "from": "kernel.EffectTypes",
             "specifier": "effect/SchemaAST"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:child_process"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:fs"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:path"
+          },
+          {
+            "from": "host.GitObjects",
+            "specifier": "node:crypto"
           },
           {
             "from": "provider.npm.Model",
@@ -3585,7 +3841,7 @@
         {
           "id": "host.Credentials",
           "owner": "core",
-          "path": "src/platform/Credentials.ts"
+          "path": "src/platform/GithubOidc.ts"
         },
         {
           "id": "host.GitJournal",
@@ -3694,13 +3950,13 @@
         }
       ],
       "metadata": {
-        "publicPackageJsonLines": 132,
+        "publicPackageJsonLines": 133,
         "privatePackageJsonLines": 46,
         "actionYamlLines": 22,
         "tsconfigJsonLines": 76,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 79,
+        "authoredProductModuleFiles": 82,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -3777,7 +4033,8 @@
               }
             },
             "dependencies": {
-              "effect-build": "0.6.3"
+              "effect-build": "0.6.3",
+              "undici": "8.10.1"
             },
             "peerDependencies": {
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
@@ -3797,8 +4054,8 @@
               }
             }
           },
-          "manifestSha256": "65b75c42b2f61ac8cc4b8e0b75c83c8d4a962e16677088e11a7bf386ace01bec",
-          "manifestLines": 77
+          "manifestSha256": "736235c877113479ea260004bb39e0a7fbd803871ba2f6d09ffcc8dd75d30795",
+          "manifestLines": 78
         },
         {
           "id": "providers",
@@ -4223,7 +4480,8 @@
           "zone": "neutral",
           "dependencies": [
             "kernel.ArtifactModel",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity"
           ]
         },
         {
@@ -4388,7 +4646,8 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Identity",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Provider"
           ]
         },
         {
@@ -4402,7 +4661,9 @@
             "kernel.Plan",
             "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.GitAuthority"
           ]
         },
         {
@@ -4419,12 +4680,21 @@
         {
           "id": "host.Credentials",
           "owner": "core",
-          "path": "packages/kernel/src/platform/Credentials.ts",
+          "path": "packages/kernel/src/platform/GithubOidc.ts",
           "zone": "host",
           "dependencies": [
             "kernel.Http",
-            "kernel.Error"
-          ]
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.NativeJson",
+            "host.Http"
+          ],
+          "externalImports": [
+            "effect/Config",
+            "effect/ConfigProvider",
+            "node:crypto"
+          ],
+          "purpose": "Actual GitHub OIDC host, signed token and public claim admission; live credentials remain in the host boundary."
         },
         {
           "id": "host.Http",
@@ -4434,12 +4704,13 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Http",
+            "kernel.Provider",
             "kernel.Error",
-            "host.Credentials"
+            "kernel.Identity"
           ],
           "externalImports": [
-            "node:http",
-            "node:https"
+            "undici/lib/dispatcher/client.js",
+            "undici/lib/core/connect.js"
           ]
         },
         {
@@ -4461,11 +4732,18 @@
           "zone": "host",
           "dependencies": [
             "host.StoreCodec",
-            "host.NativeGit",
-            "kernel.Journal",
+            "host.GitProcess",
+            "host.GitRemote",
+            "kernel.GitCatalog",
+            "kernel.GitAuthority",
+            "kernel.Identity",
             "kernel.Error"
           ],
-          "purpose": "Reuses the bounded native Git command/private-environment helper with explicit remote, principal, scope and reacquired credentials; no ambient Git credential authority."
+          "purpose": "One canonical event per native one-parent commit; fresh remote reads and exact expected-old push. Native = never grants new append authority. Bounded output/history and timeout do not claim a fetched-pack disk byte cap.",
+          "externalImports": [
+            "node:crypto",
+            "node:fs"
+          ]
         },
         {
           "id": "host.Sqlite",
@@ -4498,19 +4776,19 @@
         {
           "id": "host.NativeGit",
           "owner": "core",
-          "path": "packages/kernel/src/platform/NativeGit.ts",
+          "path": "packages/kernel/src/platform/GitHost.ts",
           "zone": "host",
           "dependencies": [
             "kernel.GitCatalog",
             "kernel.GitAuthority",
-            "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity",
+            "host.GitProcess",
+            "host.GitObjects",
+            "host.GitRemote"
           ],
-          "externalImports": [
-            "node:child_process",
-            "node:fs/promises"
-          ]
+          "externalImports": []
         },
         {
           "id": "host.Application",
@@ -4542,10 +4820,8 @@
             "host.Http",
             "host.Content",
             "host.NativeGit",
-            "host.Application"
-          ],
-          "externalImports": [
-            "@effect/platform-node/NodeServices"
+            "host.Application",
+            "host.Credentials"
           ]
         },
         {
@@ -4559,10 +4835,8 @@
             "host.Http",
             "host.Content",
             "host.NativeGit",
-            "host.Application"
-          ],
-          "externalImports": [
-            "@effect/platform-bun/BunServices"
+            "host.Application",
+            "host.Credentials"
           ]
         },
         {
@@ -4699,6 +4973,49 @@
             "kernel.Error"
           ],
           "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
+          "id": "host.GitProcess",
+          "owner": "core",
+          "path": "packages/kernel/src/platform/GitProcess.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Error"
+          ],
+          "externalImports": [
+            "node:child_process",
+            "node:fs",
+            "node:path"
+          ]
+        },
+        {
+          "id": "host.GitObjects",
+          "owner": "core",
+          "path": "packages/kernel/src/platform/GitObjects.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Content",
+            "kernel.Identity",
+            "kernel.Error",
+            "host.GitProcess"
+          ],
+          "externalImports": [
+            "node:crypto"
+          ]
+        },
+        {
+          "id": "host.GitRemote",
+          "owner": "core",
+          "path": "packages/kernel/src/platform/GitRemote.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Error",
+            "host.GitProcess"
+          ],
+          "externalImports": []
         },
         {
           "id": "provider.npm.Model",
@@ -5124,8 +5441,8 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "ca94f2fa57c746206605e7c82d4d8f488a0900e5894e032e5a951801888ef989",
-        "packageEdgesSha256": "d25a0dc69e494a9164bce567f0fd187a70e1cec95532172ec2729b1c7293abd8",
+        "sourceEdgesSha256": "22c9fcab000aeff24dc677123bc5ce953c6ba60c29da523a9559da8b6ee6dd77",
+        "packageEdgesSha256": "3c44e3216c38ab22c9297546ab222193538978fc7c97036d99fb3198cc5959b1",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -5288,6 +5605,12 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Content",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
           },
           {
             "from": "kernel.BundleCodec",
@@ -5596,6 +5919,12 @@
             "specifier": "./Error.js"
           },
           {
+            "from": "kernel.GitAuthority",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "../Provider.js"
+          },
+          {
             "from": "kernel.GitCatalog",
             "to": "kernel.Model",
             "loading": "static",
@@ -5632,6 +5961,18 @@
             "specifier": "./Error.js"
           },
           {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "./GitAuthority.js"
+          },
+          {
             "from": "kernel.Git",
             "to": "kernel.Model",
             "loading": "static",
@@ -5662,6 +6003,24 @@
             "specifier": "../internal/Error.js"
           },
           {
+            "from": "host.Credentials",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.Credentials",
+            "to": "kernel.NativeJson",
+            "loading": "static",
+            "specifier": "../internal/NativeJson.js"
+          },
+          {
+            "from": "host.Credentials",
+            "to": "host.Http",
+            "loading": "static",
+            "specifier": "./HttpTransport.js"
+          },
+          {
             "from": "host.Http",
             "to": "kernel.Model",
             "loading": "static",
@@ -5675,15 +6034,21 @@
           },
           {
             "from": "host.Http",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "../Provider.js"
+          },
+          {
+            "from": "host.Http",
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "../internal/Error.js"
           },
           {
             "from": "host.Http",
-            "to": "host.Credentials",
+            "to": "kernel.Identity",
             "loading": "static",
-            "specifier": "./Credentials.js"
+            "specifier": "../internal/Identity.js"
           },
           {
             "from": "host.StoreCodec",
@@ -5717,15 +6082,33 @@
           },
           {
             "from": "host.GitJournal",
-            "to": "host.NativeGit",
+            "to": "host.GitProcess",
             "loading": "static",
-            "specifier": "./NativeGit.js"
+            "specifier": "./GitProcess.js"
           },
           {
             "from": "host.GitJournal",
-            "to": "kernel.Journal",
+            "to": "host.GitRemote",
             "loading": "static",
-            "specifier": "../Journal.js"
+            "specifier": "./GitRemote.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "../internal/GitAuthority.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
           },
           {
             "from": "host.GitJournal",
@@ -5777,12 +6160,6 @@
           },
           {
             "from": "host.NativeGit",
-            "to": "kernel.ArtifactModel",
-            "loading": "static",
-            "specifier": "../internal/ArtifactModel.js"
-          },
-          {
-            "from": "host.NativeGit",
             "to": "kernel.Content",
             "loading": "static",
             "specifier": "../internal/Content.js"
@@ -5792,6 +6169,30 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitObjects",
+            "loading": "static",
+            "specifier": "./GitObjects.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitRemote",
+            "loading": "static",
+            "specifier": "./GitRemote.js"
           },
           {
             "from": "host.Application",
@@ -5851,13 +6252,19 @@
             "from": "host.Node",
             "to": "host.NativeGit",
             "loading": "static",
-            "specifier": "./platform/NativeGit.js"
+            "specifier": "./platform/GitHost.js"
           },
           {
             "from": "host.Node",
             "to": "host.Application",
             "loading": "static",
             "specifier": "./platform/Application.js"
+          },
+          {
+            "from": "host.Node",
+            "to": "host.Credentials",
+            "loading": "static",
+            "specifier": "./platform/GithubOidc.js"
           },
           {
             "from": "host.Bun",
@@ -5887,13 +6294,19 @@
             "from": "host.Bun",
             "to": "host.NativeGit",
             "loading": "static",
-            "specifier": "./platform/NativeGit.js"
+            "specifier": "./platform/GitHost.js"
           },
           {
             "from": "host.Bun",
             "to": "host.Application",
             "loading": "static",
             "specifier": "./platform/Application.js"
+          },
+          {
+            "from": "host.Bun",
+            "to": "host.Credentials",
+            "loading": "static",
+            "specifier": "./platform/GithubOidc.js"
           },
           {
             "from": "kernel.Entry",
@@ -6140,6 +6553,66 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./Error.js"
+          },
+          {
+            "from": "host.GitProcess",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitProcess",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "../internal/Content.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
           },
           {
             "from": "provider.npm.Model",
@@ -6860,6 +7333,13 @@
           },
           {
             "from": "core",
+            "to": "undici",
+            "version": "8.10.1",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "core",
             "to": "effect",
             "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
@@ -7132,12 +7612,32 @@
             "specifier": "effect-build-apple/Notary"
           },
           {
-            "from": "host.Http",
-            "specifier": "node:http"
+            "from": "host.Credentials",
+            "specifier": "effect/Config"
+          },
+          {
+            "from": "host.Credentials",
+            "specifier": "effect/ConfigProvider"
+          },
+          {
+            "from": "host.Credentials",
+            "specifier": "node:crypto"
           },
           {
             "from": "host.Http",
-            "specifier": "node:https"
+            "specifier": "undici/lib/dispatcher/client.js"
+          },
+          {
+            "from": "host.Http",
+            "specifier": "undici/lib/core/connect.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "host.GitJournal",
+            "specifier": "node:fs"
           },
           {
             "from": "host.Sqlite",
@@ -7152,28 +7652,12 @@
             "specifier": "node:crypto"
           },
           {
-            "from": "host.NativeGit",
-            "specifier": "node:child_process"
-          },
-          {
-            "from": "host.NativeGit",
-            "specifier": "node:fs/promises"
-          },
-          {
             "from": "host.Application",
             "specifier": "node:path"
           },
           {
             "from": "host.Application",
             "specifier": "node:url"
-          },
-          {
-            "from": "host.Node",
-            "specifier": "@effect/platform-node/NodeServices"
-          },
-          {
-            "from": "host.Bun",
-            "specifier": "@effect/platform-bun/BunServices"
           },
           {
             "from": "app.cli",
@@ -7186,6 +7670,22 @@
           {
             "from": "kernel.EffectTypes",
             "specifier": "effect/SchemaAST"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:child_process"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:fs"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:path"
+          },
+          {
+            "from": "host.GitObjects",
+            "specifier": "node:crypto"
           },
           {
             "from": "provider.npm.Model",
@@ -7271,7 +7771,7 @@
         {
           "id": "host.Credentials",
           "owner": "core",
-          "path": "packages/kernel/src/platform/Credentials.ts"
+          "path": "packages/kernel/src/platform/GithubOidc.ts"
         },
         {
           "id": "host.GitJournal",
@@ -7380,13 +7880,13 @@
         }
       ],
       "metadata": {
-        "publicPackageJsonLines": 138,
+        "publicPackageJsonLines": 139,
         "privatePackageJsonLines": 82,
         "actionYamlLines": 22,
         "tsconfigJsonLines": 90,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 79,
+        "authoredProductModuleFiles": 82,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -7463,7 +7963,8 @@
               }
             },
             "dependencies": {
-              "effect-build": "0.6.3"
+              "effect-build": "0.6.3",
+              "undici": "8.10.1"
             },
             "peerDependencies": {
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
@@ -7483,8 +7984,8 @@
               }
             }
           },
-          "manifestSha256": "65b75c42b2f61ac8cc4b8e0b75c83c8d4a962e16677088e11a7bf386ace01bec",
-          "manifestLines": 77
+          "manifestSha256": "736235c877113479ea260004bb39e0a7fbd803871ba2f6d09ffcc8dd75d30795",
+          "manifestLines": 78
         },
         {
           "id": "provider.npm",
@@ -8235,7 +8736,8 @@
           "zone": "neutral",
           "dependencies": [
             "kernel.ArtifactModel",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity"
           ]
         },
         {
@@ -8400,7 +8902,8 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Identity",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Provider"
           ]
         },
         {
@@ -8414,7 +8917,9 @@
             "kernel.Plan",
             "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.GitAuthority"
           ]
         },
         {
@@ -8431,12 +8936,21 @@
         {
           "id": "host.Credentials",
           "owner": "core",
-          "path": "packages/kernel/src/platform/Credentials.ts",
+          "path": "packages/kernel/src/platform/GithubOidc.ts",
           "zone": "host",
           "dependencies": [
             "kernel.Http",
-            "kernel.Error"
-          ]
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.NativeJson",
+            "host.Http"
+          ],
+          "externalImports": [
+            "effect/Config",
+            "effect/ConfigProvider",
+            "node:crypto"
+          ],
+          "purpose": "Actual GitHub OIDC host, signed token and public claim admission; live credentials remain in the host boundary."
         },
         {
           "id": "host.Http",
@@ -8446,12 +8960,13 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Http",
+            "kernel.Provider",
             "kernel.Error",
-            "host.Credentials"
+            "kernel.Identity"
           ],
           "externalImports": [
-            "node:http",
-            "node:https"
+            "undici/lib/dispatcher/client.js",
+            "undici/lib/core/connect.js"
           ]
         },
         {
@@ -8473,11 +8988,18 @@
           "zone": "host",
           "dependencies": [
             "host.StoreCodec",
-            "host.NativeGit",
-            "kernel.Journal",
+            "host.GitProcess",
+            "host.GitRemote",
+            "kernel.GitCatalog",
+            "kernel.GitAuthority",
+            "kernel.Identity",
             "kernel.Error"
           ],
-          "purpose": "Reuses the bounded native Git command/private-environment helper with explicit remote, principal, scope and reacquired credentials; no ambient Git credential authority."
+          "purpose": "One canonical event per native one-parent commit; fresh remote reads and exact expected-old push. Native = never grants new append authority. Bounded output/history and timeout do not claim a fetched-pack disk byte cap.",
+          "externalImports": [
+            "node:crypto",
+            "node:fs"
+          ]
         },
         {
           "id": "host.Sqlite",
@@ -8510,19 +9032,19 @@
         {
           "id": "host.NativeGit",
           "owner": "core",
-          "path": "packages/kernel/src/platform/NativeGit.ts",
+          "path": "packages/kernel/src/platform/GitHost.ts",
           "zone": "host",
           "dependencies": [
             "kernel.GitCatalog",
             "kernel.GitAuthority",
-            "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity",
+            "host.GitProcess",
+            "host.GitObjects",
+            "host.GitRemote"
           ],
-          "externalImports": [
-            "node:child_process",
-            "node:fs/promises"
-          ]
+          "externalImports": []
         },
         {
           "id": "host.Application",
@@ -8554,10 +9076,8 @@
             "host.Http",
             "host.Content",
             "host.NativeGit",
-            "host.Application"
-          ],
-          "externalImports": [
-            "@effect/platform-node/NodeServices"
+            "host.Application",
+            "host.Credentials"
           ]
         },
         {
@@ -8571,10 +9091,8 @@
             "host.Http",
             "host.Content",
             "host.NativeGit",
-            "host.Application"
-          ],
-          "externalImports": [
-            "@effect/platform-bun/BunServices"
+            "host.Application",
+            "host.Credentials"
           ]
         },
         {
@@ -8711,6 +9229,49 @@
             "kernel.Error"
           ],
           "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
+          "id": "host.GitProcess",
+          "owner": "core",
+          "path": "packages/kernel/src/platform/GitProcess.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Error"
+          ],
+          "externalImports": [
+            "node:child_process",
+            "node:fs",
+            "node:path"
+          ]
+        },
+        {
+          "id": "host.GitObjects",
+          "owner": "core",
+          "path": "packages/kernel/src/platform/GitObjects.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Content",
+            "kernel.Identity",
+            "kernel.Error",
+            "host.GitProcess"
+          ],
+          "externalImports": [
+            "node:crypto"
+          ]
+        },
+        {
+          "id": "host.GitRemote",
+          "owner": "core",
+          "path": "packages/kernel/src/platform/GitRemote.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Error",
+            "host.GitProcess"
+          ],
+          "externalImports": []
         },
         {
           "id": "provider.npm.Model",
@@ -9136,8 +9697,8 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "615d0367856aba3b8fbf1a5866b8464e7c22ebe6bf6c76cf107aa56a940ddc79",
-        "packageEdgesSha256": "3812d68f73ee6919584169085d58a11e809c3dbf75bf0eb00c96a6b03d76bea2",
+        "sourceEdgesSha256": "89e4837e6dd6060e3f44a88a420ad3b63626d88f59e21b07edd09967317fb325",
+        "packageEdgesSha256": "d401467496589dd5e98b4275d321ea18ff570cc127a1d1b42cb8197accb821b0",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -9300,6 +9861,12 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Content",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
           },
           {
             "from": "kernel.BundleCodec",
@@ -9608,6 +10175,12 @@
             "specifier": "./Error.js"
           },
           {
+            "from": "kernel.GitAuthority",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "../Provider.js"
+          },
+          {
             "from": "kernel.GitCatalog",
             "to": "kernel.Model",
             "loading": "static",
@@ -9644,6 +10217,18 @@
             "specifier": "./Error.js"
           },
           {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "./GitAuthority.js"
+          },
+          {
             "from": "kernel.Git",
             "to": "kernel.Model",
             "loading": "static",
@@ -9674,6 +10259,24 @@
             "specifier": "../internal/Error.js"
           },
           {
+            "from": "host.Credentials",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.Credentials",
+            "to": "kernel.NativeJson",
+            "loading": "static",
+            "specifier": "../internal/NativeJson.js"
+          },
+          {
+            "from": "host.Credentials",
+            "to": "host.Http",
+            "loading": "static",
+            "specifier": "./HttpTransport.js"
+          },
+          {
             "from": "host.Http",
             "to": "kernel.Model",
             "loading": "static",
@@ -9687,15 +10290,21 @@
           },
           {
             "from": "host.Http",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "../Provider.js"
+          },
+          {
+            "from": "host.Http",
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "../internal/Error.js"
           },
           {
             "from": "host.Http",
-            "to": "host.Credentials",
+            "to": "kernel.Identity",
             "loading": "static",
-            "specifier": "./Credentials.js"
+            "specifier": "../internal/Identity.js"
           },
           {
             "from": "host.StoreCodec",
@@ -9729,15 +10338,33 @@
           },
           {
             "from": "host.GitJournal",
-            "to": "host.NativeGit",
+            "to": "host.GitProcess",
             "loading": "static",
-            "specifier": "./NativeGit.js"
+            "specifier": "./GitProcess.js"
           },
           {
             "from": "host.GitJournal",
-            "to": "kernel.Journal",
+            "to": "host.GitRemote",
             "loading": "static",
-            "specifier": "../Journal.js"
+            "specifier": "./GitRemote.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "../internal/GitAuthority.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
           },
           {
             "from": "host.GitJournal",
@@ -9789,12 +10416,6 @@
           },
           {
             "from": "host.NativeGit",
-            "to": "kernel.ArtifactModel",
-            "loading": "static",
-            "specifier": "../internal/ArtifactModel.js"
-          },
-          {
-            "from": "host.NativeGit",
             "to": "kernel.Content",
             "loading": "static",
             "specifier": "../internal/Content.js"
@@ -9804,6 +10425,30 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitObjects",
+            "loading": "static",
+            "specifier": "./GitObjects.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitRemote",
+            "loading": "static",
+            "specifier": "./GitRemote.js"
           },
           {
             "from": "host.Application",
@@ -9863,13 +10508,19 @@
             "from": "host.Node",
             "to": "host.NativeGit",
             "loading": "static",
-            "specifier": "./platform/NativeGit.js"
+            "specifier": "./platform/GitHost.js"
           },
           {
             "from": "host.Node",
             "to": "host.Application",
             "loading": "static",
             "specifier": "./platform/Application.js"
+          },
+          {
+            "from": "host.Node",
+            "to": "host.Credentials",
+            "loading": "static",
+            "specifier": "./platform/GithubOidc.js"
           },
           {
             "from": "host.Bun",
@@ -9899,13 +10550,19 @@
             "from": "host.Bun",
             "to": "host.NativeGit",
             "loading": "static",
-            "specifier": "./platform/NativeGit.js"
+            "specifier": "./platform/GitHost.js"
           },
           {
             "from": "host.Bun",
             "to": "host.Application",
             "loading": "static",
             "specifier": "./platform/Application.js"
+          },
+          {
+            "from": "host.Bun",
+            "to": "host.Credentials",
+            "loading": "static",
+            "specifier": "./platform/GithubOidc.js"
           },
           {
             "from": "kernel.Entry",
@@ -10152,6 +10809,66 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./Error.js"
+          },
+          {
+            "from": "host.GitProcess",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitProcess",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "../internal/Content.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
           },
           {
             "from": "provider.npm.Model",
@@ -10872,6 +11589,13 @@
           },
           {
             "from": "core",
+            "to": "undici",
+            "version": "8.10.1",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "core",
             "to": "effect",
             "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
@@ -11277,12 +12001,32 @@
             "specifier": "effect-build-apple/Notary"
           },
           {
-            "from": "host.Http",
-            "specifier": "node:http"
+            "from": "host.Credentials",
+            "specifier": "effect/Config"
+          },
+          {
+            "from": "host.Credentials",
+            "specifier": "effect/ConfigProvider"
+          },
+          {
+            "from": "host.Credentials",
+            "specifier": "node:crypto"
           },
           {
             "from": "host.Http",
-            "specifier": "node:https"
+            "specifier": "undici/lib/dispatcher/client.js"
+          },
+          {
+            "from": "host.Http",
+            "specifier": "undici/lib/core/connect.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "host.GitJournal",
+            "specifier": "node:fs"
           },
           {
             "from": "host.Sqlite",
@@ -11297,28 +12041,12 @@
             "specifier": "node:crypto"
           },
           {
-            "from": "host.NativeGit",
-            "specifier": "node:child_process"
-          },
-          {
-            "from": "host.NativeGit",
-            "specifier": "node:fs/promises"
-          },
-          {
             "from": "host.Application",
             "specifier": "node:path"
           },
           {
             "from": "host.Application",
             "specifier": "node:url"
-          },
-          {
-            "from": "host.Node",
-            "specifier": "@effect/platform-node/NodeServices"
-          },
-          {
-            "from": "host.Bun",
-            "specifier": "@effect/platform-bun/BunServices"
           },
           {
             "from": "app.cli",
@@ -11331,6 +12059,22 @@
           {
             "from": "kernel.EffectTypes",
             "specifier": "effect/SchemaAST"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:child_process"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:fs"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:path"
+          },
+          {
+            "from": "host.GitObjects",
+            "specifier": "node:crypto"
           },
           {
             "from": "provider.npm.Model",
@@ -11416,7 +12160,7 @@
         {
           "id": "host.Credentials",
           "owner": "core",
-          "path": "packages/kernel/src/platform/Credentials.ts"
+          "path": "packages/kernel/src/platform/GithubOidc.ts"
         },
         {
           "id": "host.GitJournal",
@@ -11525,13 +12269,13 @@
         }
       ],
       "metadata": {
-        "publicPackageJsonLines": 303,
+        "publicPackageJsonLines": 304,
         "privatePackageJsonLines": 87,
         "actionYamlLines": 22,
         "tsconfigJsonLines": 174,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 79,
+        "authoredProductModuleFiles": 82,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -11608,7 +12352,8 @@
               }
             },
             "dependencies": {
-              "effect-build": "0.6.3"
+              "effect-build": "0.6.3",
+              "undici": "8.10.1"
             },
             "peerDependencies": {
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
@@ -11628,8 +12373,8 @@
               }
             }
           },
-          "manifestSha256": "65b75c42b2f61ac8cc4b8e0b75c83c8d4a962e16677088e11a7bf386ace01bec",
-          "manifestLines": 77
+          "manifestSha256": "736235c877113479ea260004bb39e0a7fbd803871ba2f6d09ffcc8dd75d30795",
+          "manifestLines": 78
         },
         {
           "id": "provider.npm",
@@ -12320,7 +13065,8 @@
           "zone": "neutral",
           "dependencies": [
             "kernel.ArtifactModel",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity"
           ]
         },
         {
@@ -12485,7 +13231,8 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Identity",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Provider"
           ]
         },
         {
@@ -12499,7 +13246,9 @@
             "kernel.Plan",
             "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.GitAuthority"
           ]
         },
         {
@@ -12516,12 +13265,21 @@
         {
           "id": "host.Credentials",
           "owner": "core",
-          "path": "packages/ts-release/src/platform/Credentials.ts",
+          "path": "packages/ts-release/src/platform/GithubOidc.ts",
           "zone": "host",
           "dependencies": [
             "kernel.Http",
-            "kernel.Error"
-          ]
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.NativeJson",
+            "host.Http"
+          ],
+          "externalImports": [
+            "effect/Config",
+            "effect/ConfigProvider",
+            "node:crypto"
+          ],
+          "purpose": "Actual GitHub OIDC host, signed token and public claim admission; live credentials remain in the host boundary."
         },
         {
           "id": "host.Http",
@@ -12531,12 +13289,13 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Http",
+            "kernel.Provider",
             "kernel.Error",
-            "host.Credentials"
+            "kernel.Identity"
           ],
           "externalImports": [
-            "node:http",
-            "node:https"
+            "undici/lib/dispatcher/client.js",
+            "undici/lib/core/connect.js"
           ]
         },
         {
@@ -12558,11 +13317,18 @@
           "zone": "host",
           "dependencies": [
             "host.StoreCodec",
-            "host.NativeGit",
-            "kernel.Journal",
+            "host.GitProcess",
+            "host.GitRemote",
+            "kernel.GitCatalog",
+            "kernel.GitAuthority",
+            "kernel.Identity",
             "kernel.Error"
           ],
-          "purpose": "Reuses the bounded native Git command/private-environment helper with explicit remote, principal, scope and reacquired credentials; no ambient Git credential authority."
+          "purpose": "One canonical event per native one-parent commit; fresh remote reads and exact expected-old push. Native = never grants new append authority. Bounded output/history and timeout do not claim a fetched-pack disk byte cap.",
+          "externalImports": [
+            "node:crypto",
+            "node:fs"
+          ]
         },
         {
           "id": "host.Sqlite",
@@ -12595,19 +13361,19 @@
         {
           "id": "host.NativeGit",
           "owner": "core",
-          "path": "packages/ts-release/src/platform/NativeGit.ts",
+          "path": "packages/ts-release/src/platform/GitHost.ts",
           "zone": "host",
           "dependencies": [
             "kernel.GitCatalog",
             "kernel.GitAuthority",
-            "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Identity",
+            "host.GitProcess",
+            "host.GitObjects",
+            "host.GitRemote"
           ],
-          "externalImports": [
-            "node:child_process",
-            "node:fs/promises"
-          ]
+          "externalImports": []
         },
         {
           "id": "host.Application",
@@ -12639,10 +13405,8 @@
             "host.Http",
             "host.Content",
             "host.NativeGit",
-            "host.Application"
-          ],
-          "externalImports": [
-            "@effect/platform-node/NodeServices"
+            "host.Application",
+            "host.Credentials"
           ]
         },
         {
@@ -12656,10 +13420,8 @@
             "host.Http",
             "host.Content",
             "host.NativeGit",
-            "host.Application"
-          ],
-          "externalImports": [
-            "@effect/platform-bun/BunServices"
+            "host.Application",
+            "host.Credentials"
           ]
         },
         {
@@ -12796,6 +13558,49 @@
             "kernel.Error"
           ],
           "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
+          "id": "host.GitProcess",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/GitProcess.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Error"
+          ],
+          "externalImports": [
+            "node:child_process",
+            "node:fs",
+            "node:path"
+          ]
+        },
+        {
+          "id": "host.GitObjects",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/GitObjects.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Content",
+            "kernel.Identity",
+            "kernel.Error",
+            "host.GitProcess"
+          ],
+          "externalImports": [
+            "node:crypto"
+          ]
+        },
+        {
+          "id": "host.GitRemote",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/GitRemote.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.Error",
+            "host.GitProcess"
+          ],
+          "externalImports": []
         },
         {
           "id": "provider.npm.Model",
@@ -13221,8 +14026,8 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "4ef620866329cfeb47b86ada562cd43a47ffef359d98fcbfb024bad831615936",
-        "packageEdgesSha256": "cc4057e295dee1a2045789315064ad848a23f1b8264555d916dc2ff164848d90",
+        "sourceEdgesSha256": "c7552ae38f07d3582d8dbdc833eb0aeacd6a4a33a8736a646fa8255bb9d92ef5",
+        "packageEdgesSha256": "e6e153576fe35b9b77916a2cdd382dc95dffcbf221af4f07e5c3a4591f6112df",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -13385,6 +14190,12 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Content",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
           },
           {
             "from": "kernel.BundleCodec",
@@ -13693,6 +14504,12 @@
             "specifier": "./Error.js"
           },
           {
+            "from": "kernel.GitAuthority",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "../Provider.js"
+          },
+          {
             "from": "kernel.GitCatalog",
             "to": "kernel.Model",
             "loading": "static",
@@ -13729,6 +14546,18 @@
             "specifier": "./Error.js"
           },
           {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "./GitAuthority.js"
+          },
+          {
             "from": "kernel.Git",
             "to": "kernel.Model",
             "loading": "static",
@@ -13759,6 +14588,24 @@
             "specifier": "../internal/Error.js"
           },
           {
+            "from": "host.Credentials",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.Credentials",
+            "to": "kernel.NativeJson",
+            "loading": "static",
+            "specifier": "../internal/NativeJson.js"
+          },
+          {
+            "from": "host.Credentials",
+            "to": "host.Http",
+            "loading": "static",
+            "specifier": "./HttpTransport.js"
+          },
+          {
             "from": "host.Http",
             "to": "kernel.Model",
             "loading": "static",
@@ -13772,15 +14619,21 @@
           },
           {
             "from": "host.Http",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "../Provider.js"
+          },
+          {
+            "from": "host.Http",
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "../internal/Error.js"
           },
           {
             "from": "host.Http",
-            "to": "host.Credentials",
+            "to": "kernel.Identity",
             "loading": "static",
-            "specifier": "./Credentials.js"
+            "specifier": "../internal/Identity.js"
           },
           {
             "from": "host.StoreCodec",
@@ -13814,15 +14667,33 @@
           },
           {
             "from": "host.GitJournal",
-            "to": "host.NativeGit",
+            "to": "host.GitProcess",
             "loading": "static",
-            "specifier": "./NativeGit.js"
+            "specifier": "./GitProcess.js"
           },
           {
             "from": "host.GitJournal",
-            "to": "kernel.Journal",
+            "to": "host.GitRemote",
             "loading": "static",
-            "specifier": "../Journal.js"
+            "specifier": "./GitRemote.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "../internal/GitAuthority.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
           },
           {
             "from": "host.GitJournal",
@@ -13874,12 +14745,6 @@
           },
           {
             "from": "host.NativeGit",
-            "to": "kernel.ArtifactModel",
-            "loading": "static",
-            "specifier": "../internal/ArtifactModel.js"
-          },
-          {
-            "from": "host.NativeGit",
             "to": "kernel.Content",
             "loading": "static",
             "specifier": "../internal/Content.js"
@@ -13889,6 +14754,30 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitObjects",
+            "loading": "static",
+            "specifier": "./GitObjects.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "host.GitRemote",
+            "loading": "static",
+            "specifier": "./GitRemote.js"
           },
           {
             "from": "host.Application",
@@ -13948,13 +14837,19 @@
             "from": "host.Node",
             "to": "host.NativeGit",
             "loading": "static",
-            "specifier": "./platform/NativeGit.js"
+            "specifier": "./platform/GitHost.js"
           },
           {
             "from": "host.Node",
             "to": "host.Application",
             "loading": "static",
             "specifier": "./platform/Application.js"
+          },
+          {
+            "from": "host.Node",
+            "to": "host.Credentials",
+            "loading": "static",
+            "specifier": "./platform/GithubOidc.js"
           },
           {
             "from": "host.Bun",
@@ -13984,13 +14879,19 @@
             "from": "host.Bun",
             "to": "host.NativeGit",
             "loading": "static",
-            "specifier": "./platform/NativeGit.js"
+            "specifier": "./platform/GitHost.js"
           },
           {
             "from": "host.Bun",
             "to": "host.Application",
             "loading": "static",
             "specifier": "./platform/Application.js"
+          },
+          {
+            "from": "host.Bun",
+            "to": "host.Credentials",
+            "loading": "static",
+            "specifier": "./platform/GithubOidc.js"
           },
           {
             "from": "kernel.Entry",
@@ -14237,6 +15138,66 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./Error.js"
+          },
+          {
+            "from": "host.GitProcess",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitProcess",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "../internal/Content.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitObjects",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitRemote",
+            "to": "host.GitProcess",
+            "loading": "static",
+            "specifier": "./GitProcess.js"
           },
           {
             "from": "provider.npm.Model",
@@ -14957,6 +15918,13 @@
           },
           {
             "from": "core",
+            "to": "undici",
+            "version": "8.10.1",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "core",
             "to": "effect",
             "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
@@ -15327,12 +16295,32 @@
             "specifier": "effect-build-apple/Notary"
           },
           {
-            "from": "host.Http",
-            "specifier": "node:http"
+            "from": "host.Credentials",
+            "specifier": "effect/Config"
+          },
+          {
+            "from": "host.Credentials",
+            "specifier": "effect/ConfigProvider"
+          },
+          {
+            "from": "host.Credentials",
+            "specifier": "node:crypto"
           },
           {
             "from": "host.Http",
-            "specifier": "node:https"
+            "specifier": "undici/lib/dispatcher/client.js"
+          },
+          {
+            "from": "host.Http",
+            "specifier": "undici/lib/core/connect.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "host.GitJournal",
+            "specifier": "node:fs"
           },
           {
             "from": "host.Sqlite",
@@ -15347,28 +16335,12 @@
             "specifier": "node:crypto"
           },
           {
-            "from": "host.NativeGit",
-            "specifier": "node:child_process"
-          },
-          {
-            "from": "host.NativeGit",
-            "specifier": "node:fs/promises"
-          },
-          {
             "from": "host.Application",
             "specifier": "node:path"
           },
           {
             "from": "host.Application",
             "specifier": "node:url"
-          },
-          {
-            "from": "host.Node",
-            "specifier": "@effect/platform-node/NodeServices"
-          },
-          {
-            "from": "host.Bun",
-            "specifier": "@effect/platform-bun/BunServices"
           },
           {
             "from": "app.cli",
@@ -15381,6 +16353,22 @@
           {
             "from": "kernel.EffectTypes",
             "specifier": "effect/SchemaAST"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:child_process"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:fs"
+          },
+          {
+            "from": "host.GitProcess",
+            "specifier": "node:path"
+          },
+          {
+            "from": "host.GitObjects",
+            "specifier": "node:crypto"
           },
           {
             "from": "provider.npm.Model",
@@ -15466,7 +16454,7 @@
         {
           "id": "host.Credentials",
           "owner": "core",
-          "path": "packages/ts-release/src/platform/Credentials.ts"
+          "path": "packages/ts-release/src/platform/GithubOidc.ts"
         },
         {
           "id": "host.GitJournal",
@@ -15575,13 +16563,13 @@
         }
       ],
       "metadata": {
-        "publicPackageJsonLines": 276,
+        "publicPackageJsonLines": 277,
         "privatePackageJsonLines": 83,
         "actionYamlLines": 22,
         "tsconfigJsonLines": 160,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 79,
+        "authoredProductModuleFiles": 82,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }

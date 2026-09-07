@@ -1,5 +1,7 @@
-/** PROPOSED signatures only. Schema declarations are emitted using Effect
- * 4.0.0-rc.108; provider-api.md records donor coordinates and untested laws. */
+/** Unimplemented signatures remain research proposals emitted with Effect
+ * 4.0.0-rc.108. Reexports from production-api are actual beta.107 compiler
+ * output; emission.json binds their owners. Remaining donor laws are in
+ * provider-api.md; this mixed projection is not full-product certification. */
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import type * as Redacted from "effect/Redacted";
@@ -249,106 +251,8 @@ export declare namespace Scoop {
     export function render(input: Manifest, bundle: Bundle): Effect.Effect<Uint8Array, ReleaseError>;
     export {};
 }
-/** Root-owned conditional Git mechanism. Catalog providers only render bytes. */
-export declare namespace GitCatalog {
-    const FileEdit_base: Schema.Class<FileEdit, Schema.Struct<{
-        readonly path: Schema.String;
-        readonly mode: Schema.Literals<readonly ["100644", "100755"]>;
-        readonly content: typeof Content;
-    }>, {}>;
-    export class FileEdit extends FileEdit_base {
-    }
-    const Identity_base: Schema.Class<Identity, Schema.Struct<{
-        readonly name: Schema.String;
-        readonly email: Schema.String;
-        readonly timestamp: Schema.String;
-        readonly timezone: Schema.String;
-    }>, {}>;
-    export class Identity extends Identity_base {
-    }
-    const CommitInput_base: Schema.Class<CommitInput, Schema.Struct<{
-        readonly remote: Schema.String;
-        readonly ref: Schema.String;
-        readonly expectedOld: Schema.String;
-        readonly baseObjects: typeof Content;
-        readonly files: Schema.$Array<typeof FileEdit>;
-        readonly message: Schema.String;
-        readonly author: typeof Identity;
-        readonly committer: typeof Identity;
-        readonly principal: Schema.String;
-        readonly scope: Schema.String;
-    }>, {}>;
-    export class CommitInput extends CommitInput_base {
-    }
-    const Intent_base: Schema.Class<Intent, Schema.Struct<{
-        readonly remote: Schema.String;
-        readonly ref: Schema.String;
-        readonly expectedOld: Schema.String;
-        readonly desiredNew: Schema.String;
-        readonly objectFormat: Schema.Literals<readonly ["sha1", "sha256"]>;
-        readonly objectSet: typeof Content;
-        readonly files: Schema.$Array<typeof FileEdit>;
-        readonly principal: Schema.String;
-        readonly scope: Schema.String;
-    }>, {}>;
-    export class Intent extends Intent_base {
-    }
-    export interface ObjectBuilder {
-        /** Reuse retained core-git-object-set/v1 canonical JSON: type+base64 bytes,
-         * not a newly invented native .pack format. Validate baseObjects against
-         * expectedOld; create exactly one desired commit and changed tree/blobs. */
-        readonly construct: (input: CommitInput, read: ReadContent) => Effect.Effect<{
-            readonly desiredNew: string;
-            readonly objectFormat: "sha1" | "sha256";
-            readonly objectSetBytes: Uint8Array;
-        }, ReleaseError>;
-    }
-    export type RefCoordinate = Pick<Intent, "remote" | "ref" | "principal" | "scope">;
-    export type ObserveRef = (input: RefCoordinate) => Effect.Effect<{
-        readonly oid: string | null;
-    }, ReleaseError>;
-    export function prepare(input: CommitInput, dependencies: {
-        readonly objects: ObjectBuilder;
-        readonly readContent: ReadContent;
-        readonly putContent: PutContent;
-    }): Effect.Effect<Intent, ReleaseError>;
-    export const update: Author<Intent>;
-    export function definition(dependencies: {
-        readonly readContent: ReadContent;
-        readonly observeRef: ObserveRef;
-    }): ProviderDefinition;
-    export type Credentials = {
-        readonly _tag: "Anonymous";
-    } | {
-        readonly _tag: "Bearer";
-        readonly token: Redacted.Redacted<string>;
-    } | {
-        readonly _tag: "Basic";
-        readonly username: string;
-        readonly password: Redacted.Redacted<string>;
-    };
-    export interface NativeHost {
-        readonly objects: ObjectBuilder;
-        readonly captureBase: (input: RefCoordinate & {
-            readonly expectedOld: string;
-        }) => Effect.Effect<Uint8Array, ReleaseError>;
-        readonly observeRef: ObserveRef;
-        /** Captures exact durable inputs in the existing protected core authority
-         * table. Request body remains empty. Each execute closure resolves owned
-         * objectSet content, checks native graph/paths and the complete lease argv
-         * in its private repository before the one conditional native push. */
-        readonly transport: (intents: readonly [Intent, ...Intent[]], otherwise?: Transport) => Transport;
-    }
-    export function nativeHost(options: {
-        readonly gitExecutable: string;
-        readonly temporaryRoot: string;
-        readonly timeoutMilliseconds: number;
-        readonly maximumOutputBytes: number;
-        readonly readContent: ReadContent;
-        readonly credentials: (input: RefCoordinate) => Effect.Effect<Credentials, ReleaseError>;
-    }): Effect.Effect<NativeHost, ReleaseError, Scope.Scope>;
-    export {};
-}
+/** Implemented conditional Git API: emitted from actual production owners. */
+export * as GitCatalog from "./production-api/Git.js";
 export declare namespace Mcp {
     export const schemaUrl: "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json";
     const Input_base: Schema.Class<Input, Schema.Struct<{

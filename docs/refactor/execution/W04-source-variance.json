@@ -1,0 +1,22 @@
+{
+  "format": "ts-release/source-planning-variance/1",
+  "wave": "W04",
+  "originalTripwire": 6200,
+  "replacementLines": 7891,
+  "replacementSha256": "db8a503ffd3e2edd605d04294fbdfe217be00907d1ebbca6c74a438900643faf",
+  "completeProductCeiling": 11485,
+  "completeProductWaiver": false,
+  "decision": "Continue implementation with this exact planning variance; no complete-product source pass or release waiver.",
+  "reason": "W04 adds 2090 replacement lines against 1700 allocated:390 new excess plus1301 inherited. Actual complete native HTTP/OIDC is761lines, journals342 and native Git/catalog1110, with protected Git authority charged once to the2383line kernel. Real empty-tree preservation, process/socket ownership, exact credential routing and conditional native evidence are selected guarantees. They cannot be removed to fit an estimate.",
+  "review": "docs/refactor/execution/W04-review.md",
+  "forecastExpected": 12862,
+  "forecastDeficit": 1377,
+  "accounting": "13747physical product=7891replacement+5856legacy. Assigned1083line/81declaration credential donor physically retired with W05/W10 responsibilities carried explicitly. Owned generated SPDX data789lines/15973bytes remains separate; current product+data14536. Original22971denominator,11485ceiling and40line marginal target unchanged.",
+  "simplificationPerformed": "One verified Content reader now serves artifacts and Git object sets; ArtifactReader delegates duplicate hash/size logic. Native Git process/credential/remote primitives serve both catalog and journal. Native complete-tree grafting replaces the lossy index roundtrip. Removed two unused journal runtime imports. No density change, fixture shrinkage, hidden replacement code or selected scope cut.",
+  "nextSimplification": "W05 must reuse the existing HTTP/request/evidence and Plan dependency owners for GitHub instead of transplanting its separate legacy release engine. W06 catalog renderers must use the one native Git owner. Measure those actual deletions and complete W08/W10 application integration before a full-product simplification pass against the unchanged1377line forecast deficit. Future savings are estimates until implemented and independently reviewed.",
+  "notEvidenceOf": [
+    "complete-product source reduction",
+    "all native or hosted outcomes",
+    "release certification"
+  ]
+}

@@ -1,8 +1,9 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { ReleaseError, attempt, fail } from "./Error.js"
-import { type Transport } from "../Provider.js"
+import { verifyRequest, type Transport } from "../Provider.js"
 import { RequestFacts } from "./ReleaseModel.js"
+import { canonical } from "./Identity.js"
 
 export class GitReceipt extends Schema.Class<GitReceipt>("ReleaseGitReceipt")({
   kind: Schema.Literal("git-push"),
@@ -19,8 +20,26 @@ export interface CoreGitOptions {
   readonly scope: string
   /** Captured at the host boundary; implement with execFile/spawn, never a shell. */
   readonly execute: (arguments_: ReadonlyArray<string>) => Effect.Effect<GitExecution, ReleaseError>
+  /** Resolve credentials and verify native objects before DispatchStarted. */
+  readonly prepare?: (
+    arguments_: ReadonlyArray<string>,
+  ) => Effect.Effect<CoreGitOptions["execute"], ReleaseError>
   readonly otherwise?: Transport
 }
+export const conditionalArguments = (
+  remote: string,
+  ref: string,
+  expectedOld: string,
+  desiredNew: string,
+): readonly string[] =>
+  Object.freeze([
+    "push",
+    "--porcelain",
+    `--force-with-lease=${ref}:${expectedOld}`,
+    "--",
+    remote,
+    `${desiredNew}:${ref}`,
+  ])
 export // Possession follows this core constructor, never a provider's data tag.
 const authorityKey = (principal: string, scope: string): string =>
   JSON.stringify([principal, scope])
@@ -56,19 +75,54 @@ export const assertTransportBinding = (transport: Transport, facts: RequestFacts
   if (
     !/^refs\/(?:heads|tags)\/[A-Za-z0-9][A-Za-z0-9/_.-]*$/u.test(ref) ||
     ref.includes("..") ||
-    ref.endsWith(".") ||
-    ref.endsWith("/")
+    ref
+      .split("/")
+      .some((part) => !part || part.startsWith(".") || part.endsWith(".") || part.endsWith(".lock"))
   )
     fail("git-ref", "Conditional Git request has an invalid ref")
   if (
     !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(expectedOld) ||
-    !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(desiredNew)
+    !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(desiredNew) ||
+    expectedOld.length !== desiredNew.length ||
+    /^0+$/u.test(desiredNew)
   )
     fail("git-oid", "Conditional Git request requires full native object IDs")
   if (!facts.endpoint || facts.endpoint.startsWith("-") || /[\u0000-\u0020]/u.test(facts.endpoint))
     fail("git-endpoint", "Git endpoint must be one literal argument")
 }
-/** The only protected mechanism in this experiment is one exact conditional push. */
+/** Retain only the exact native status line; remote messages are not receipts. */
+export const pushWitness = (
+  result: GitExecution,
+  ref: string,
+  expectedOld: string,
+  desiredNew: string,
+): string | undefined => {
+  if (result.exitCode !== 0 || result.stdout.length > 65536) return
+  const updates = result.stdout.split("\n").filter((line) => /^[ *+=!\-]\t/u.test(line))
+  if (updates.length !== 1) return
+  const line = updates[0]!,
+    fields = line.split("\t")
+  if (fields.length !== 3 || fields[1] !== `${desiredNew}:${ref}`) return
+  const flag = fields[0],
+    summary = fields[2]!
+  if (flag === "=" && summary === "[up to date]") return line
+  if (
+    flag === "*" &&
+    /^0+$/u.test(expectedOld) &&
+    summary === (ref.startsWith("refs/tags/") ? "[new tag]" : "[new branch]")
+  )
+    return line
+  const range = /^([0-9a-f]{4,64})(\.{2,3})([0-9a-f]{4,64})( \(forced update\))?$/u.exec(summary)
+  if (
+    range &&
+    expectedOld.startsWith(range[1]!) &&
+    desiredNew.startsWith(range[3]!) &&
+    ((flag === " " && range[2] === ".." && !range[4]) ||
+      (flag === "+" && range[2] === "..." && range[4]))
+  )
+    return line
+}
+/** The protected mechanism is one exact conditional push. */
 export function makeCoreGitTransport(options: CoreGitOptions): Transport
 export function makeCoreGitTransport(
   options: readonly [CoreGitOptions, ...CoreGitOptions[]],
@@ -85,7 +139,13 @@ export function makeCoreGitTransport(
     fail("git-bindings", "Conditional Git needs at least one authority binding")
   const bindings = new Map<string, CoreGitOptions>()
   for (const option of options) {
-    const key = authorityKey(option.principal, option.scope)
+    const principal = option.principal,
+      scope = option.scope,
+      execute = option.execute,
+      prepare = option.prepare
+    const key = authorityKey(principal, scope)
+    if (typeof execute !== "function" || (prepare !== undefined && typeof prepare !== "function"))
+      fail("git-bindings", "Git execution and any preparation must be callable")
     if (bindings.has(key) || (Array.isArray(input) && option.otherwise !== undefined))
       fail(
         "git-bindings",
@@ -94,15 +154,44 @@ export function makeCoreGitTransport(
     bindings.set(
       key,
       Object.freeze({
-        principal: option.principal,
-        scope: option.scope,
-        execute: option.execute.bind(option),
+        principal,
+        scope,
+        execute: execute.bind(option),
+        ...(prepare === undefined ? {} : { prepare: prepare.bind(option) }),
       }),
     )
   }
   const transport: Transport = {
     prepare: Effect.fn("ts-release.prepareCoreTransport")(function* (request) {
-      if (request.facts.replay._tag === "GitCas") return transport.send
+      const selected = yield* verifyRequest(request)
+      if (selected.facts.replay._tag === "GitCas") {
+        yield* attempt(() => assertTransportBinding(transport, selected.facts))
+        const owned = bindings.get(authorityKey(selected.facts.principal, selected.facts.scope))!
+        const { ref, expectedOld, desiredNew } = selected.facts.replay
+        const args = conditionalArguments(selected.facts.endpoint, ref, expectedOld, desiredNew)
+        const execute = owned.prepare ? yield* owned.prepare(args) : owned.execute
+        if (typeof execute !== "function")
+          return yield* attempt(() =>
+            fail("git-bindings", "Prepared Git execution must be callable"),
+          )
+        return Effect.fn("ts-release.coreConditionalGit")(function* (actual) {
+          const checked = yield* verifyRequest(actual)
+          if (canonical(checked.facts) !== canonical(selected.facts))
+            return yield* attempt(() =>
+              fail("git-request", "Prepared Git request changed before execution"),
+            )
+          const porcelain = pushWitness(yield* execute(args), ref, expectedOld, desiredNew)
+          return porcelain === undefined
+            ? {
+                _tag: "Unknown" as const,
+                reason: "Git did not confirm the exact conditional update",
+              }
+            : {
+                _tag: "Accepted" as const,
+                receipt: new GitReceipt({ kind: "git-push", ref, desiredNew, porcelain }),
+              }
+        }) as Transport["send"]
+      }
       if (!fallback)
         return yield* new ReleaseError({
           code: "unsupported-transport",
@@ -118,29 +207,7 @@ export function makeCoreGitTransport(
           message: "No ordinary transport was installed",
         })
       }
-      yield* attempt(() => assertTransportBinding(transport, request.facts))
-      const owned = bindings.get(authorityKey(request.facts.principal, request.facts.scope))!
-      const { ref, expectedOld, desiredNew } = request.facts.replay
-      const result = yield* owned.execute([
-        "push",
-        "--porcelain",
-        `--force-with-lease=${ref}:${expectedOld}`,
-        "--",
-        request.facts.endpoint,
-        `${desiredNew}:${ref}`,
-      ])
-      const updates = result.stdout
-        .split("\n")
-        .filter((line) => line.includes(`\t${desiredNew}:${ref}\t`))
-      if (result.exitCode !== 0 || updates.length !== 1 || !/^[ *+=]\t/u.test(updates[0]!))
-        return {
-          _tag: "Unknown" as const,
-          reason: "Git did not confirm the exact conditional update",
-        }
-      return {
-        _tag: "Accepted" as const,
-        receipt: new GitReceipt({ kind: "git-push", ref, desiredNew, porcelain: result.stdout }),
-      }
+      return yield* (yield* transport.prepare!(request))(request)
     }),
   }
   mechanisms.set(transport, bindings)

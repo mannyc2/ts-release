@@ -1,7 +1,7 @@
-import type * as Effect from "effect/Effect";
+import * as Effect from "effect/Effect";
 import type * as Artifact from "effect-build/Artifact";
-import type { AdoptionError, Content, OwnedBundle } from "./ArtifactModel.js";
-import type { ReleaseError } from "./Error.js";
+import { Content, type AdoptionError, type OwnedBundle } from "./ArtifactModel.js";
+import { type ReleaseError } from "./Error.js";
 export interface ContentOwner {
     /** Copy before retention; return the identity of the stored copy. */
     readonly putOwned: (bytes: Uint8Array) => Effect.Effect<Content, AdoptionError>;
@@ -16,3 +16,5 @@ export interface ArtifactAccess {
     readonly bundle: OwnedBundle;
     readonly readContent: ReadContent;
 }
+/** Verify owned content before an adapter uses its bytes; never grants dispatch. */
+export declare const readVerifiedContent: (read: ReadContent, input: Content, maximumBytes: number) => Effect.Effect<Uint8Array<ArrayBuffer>, ReleaseError, never>;

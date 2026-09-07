@@ -30,6 +30,10 @@
       "types": "./dist/Http.d.ts",
       "import": "./dist/Http.js"
     },
+    "./git": {
+      "types": "./dist/Git.d.ts",
+      "import": "./dist/Git.js"
+    },
     "./bun": {
       "types": "./dist/Bun.d.ts",
       "import": "./dist/Bun.js"
@@ -40,7 +44,8 @@
     }
   },
   "dependencies": {
-    "effect-build": "0.6.3"
+    "effect-build": "0.6.3",
+    "undici": "8.10.1"
   },
   "peerDependencies": {
     "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",

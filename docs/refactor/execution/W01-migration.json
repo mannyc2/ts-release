@@ -7883,7 +7883,15 @@
         "src/publication/coordinator.ts"
       ],
       "responsibility": "Capture full origin/principal/scope and native request correspondence, reject secret header collisions, bound/redact diagnostics and preserve predispatch credential failure. C08 actual configured provider observation I/O remains to be qualified at the shared host boundary.",
-      "status": "open"
+      "status": "verified",
+      "verification": {
+        "scope": "Local W04 exact request/authority/secret collision/predispatch/cancellation and actual configured PyPI provider observation I/O. Hosted native policy remains Plans009/010.",
+        "evidence": [
+          "W04.md",
+          "test/reimplementation/transports",
+          "current-packed-transports.json"
+        ]
+      }
     },
     {
       "wave": "W05",

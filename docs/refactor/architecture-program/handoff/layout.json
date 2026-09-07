@@ -41,7 +41,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "d686effae93ce2ba3f390c0c5ac17348b1cd7aac22e4758f64d52a976af2d446"
+    "sha256": "2ba3f9df7672ca62504dd0361c8724f4275b354ebd29d5018e95e40cb2c87f1a"
   },
   "migration": {
     "path": "docs/refactor/architecture-program/handoff/migration.json",
@@ -88,7 +88,7 @@
     },
     "application": {
       "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
-      "sha256": "ed80182ff1829ce3d16711f794346a816af816766537209a17a56afa4fa78ba3"
+      "sha256": "9c751bb563831d7d375e2ef117e0ed8e6c51973e3cd075815be0a2104a28af4d"
     },
     "npm": {
       "path": "docs/refactor/architecture-program/handoff/production-api/npm/index.d.ts",
@@ -127,7 +127,7 @@
       "sha256": "a9da885f1abf6367dc56b8a4c1dac15c12620abe5adadae7fc6914dd83d034db"
     }
   },
-  "publicSurfaceSha256": "f982fdf736c08e1a448265222057d9fa32ff0bedde682f9ceef288cbd5af8cb6",
+  "publicSurfaceSha256": "5ebec1512799108dc1eb1afb45af5bae7b465158018f3dc2e26a147a4c0b15f1",
   "effectPatch": {
     "required": false,
     "donorPath": "patches/effect@4.0.0-rc.108.patch",
@@ -1310,9 +1310,10 @@
             "host.Application"
           ],
           "externalImports": [
+            "node:fs",
             "node:fs/promises"
           ],
-          "purpose": "One argument decoder and application loader used by the root bin and private CLI delivery workspace. The selected application provides its own host layers; CLI never auto-imports Node/Bun platform facades."
+          "purpose": "Shared two-argument CLI decodes a regular JSON input file and runs the explicit trusted application. Application supplies provider/host layers and authorization. Default Effect logs use stderr; native signal teardown follows awaited scoped interruption."
         },
         {
           "id": "app.bin",
@@ -4598,6 +4599,10 @@
           {
             "from": "host.Application",
             "specifier": "node:url"
+          },
+          {
+            "from": "app.cli",
+            "specifier": "node:fs"
           },
           {
             "from": "app.cli",

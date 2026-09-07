@@ -14,4 +14,4 @@ export interface Application {
 export type CreateApplication = (input: unknown) => Effect.Effect<Application, ReleaseError, Scope.Scope>;
 /** This explicit path selects trusted application code. Neither Plan nor Journal
  * data can choose an import. The application supplies its complete host layers. */
-export declare const runApplication: (applicationPath: string, input: unknown) => Promise<FinalizedReport>;
+export declare const runApplication: (applicationPath: string, input: unknown, signal?: AbortSignal) => Promise<FinalizedReport>;

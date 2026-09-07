@@ -1,6 +1,6 @@
 {
   "format": "ts-release/production-imports/1",
-  "files": 70,
+  "files": 72,
   "edges": [
     {
       "file": "packages/catalog/src/Shared.ts",
@@ -690,6 +690,21 @@
     {
       "file": "packages/ts-release/src/internal/Identity.ts",
       "specifier": "./Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/CommandLine.ts",
+      "specifier": "node:fs",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/CommandLine.ts",
+      "specifier": "node:fs/promises",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/CommandLine.ts",
+      "specifier": "../platform/Application.js",
       "typeOnly": false
     },
     {
@@ -1534,6 +1549,11 @@
     },
     {
       "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "effect/Logger",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
       "specifier": "effect/Scope",
       "typeOnly": true
     },
@@ -1575,6 +1595,11 @@
     {
       "file": "packages/ts-release/src/platform/Application.ts",
       "specifier": "../Release.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/bin/ts-release.ts",
+      "specifier": "../internal/CommandLine.js",
       "typeOnly": false
     },
     {
@@ -2195,6 +2220,7 @@
       "effect/Context",
       "effect/Effect",
       "effect/Layer",
+      "effect/Logger",
       "effect/Redacted",
       "effect/Schema",
       "node:child_process",
@@ -2216,6 +2242,7 @@
       "effect/Context",
       "effect/Effect",
       "effect/Layer",
+      "effect/Logger",
       "effect/Redacted",
       "effect/Schema",
       "node:child_process",

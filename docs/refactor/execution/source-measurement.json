@@ -1,126 +1,96 @@
 {
-  "wave": "W06",
+  "wave": "W07",
   "counts": {
-    "product": 13667,
+    "product": 13757,
     "unchangedLegacy": 4020,
-    "replacement": 9647,
-    "metadata": 616,
+    "replacement": 9737,
+    "metadata": 620,
     "productData": 789,
     "productDataBytes": 15973,
-    "tests": 42312,
+    "tests": 44116,
     "fixtureText": 5756,
     "fixtureBinaryBytes": 727372,
     "generatedDelivery": 678,
-    "tooling": 44741
+    "tooling": 45010
   },
   "files": [
     {
-      "path": "packages/catalog/package.json",
-      "lines": 35,
-      "lane": "metadata",
-      "sha256": "d76c469aab16ed24f857fcaa3dfac3319c9b2c6f389b71ac65ea71fb6ce13d6a"
+      "path": "packages/ts-release/src/bin/ts-release.ts",
+      "lines": 7,
+      "lane": "product",
+      "sha256": "e64ed1d182e45058278676a72520948d2be23ed9ce53de4c8469bdd621ff4504"
     },
     {
-      "path": "packages/catalog/src/Shared.ts",
+      "path": "packages/ts-release/src/internal/CommandLine.ts",
       "lines": 77,
       "lane": "product",
-      "sha256": "eaee3b955220e7fa77cbc7cda3a8587c7d2c6082319ce2d018c275e7f13b09de"
+      "sha256": "6e0c28a5fed0e24404918f886201a3fc08f979af204b37713ab9c3f67665f28c"
     },
     {
-      "path": "packages/catalog/src/homebrew/Formula.ts",
-      "lines": 68,
-      "lane": "product",
-      "sha256": "d65e9422f73f082aee4717c157dbff53354336d596ff24975f506eeb91556cda"
-    },
-    {
-      "path": "packages/catalog/src/homebrew/index.ts",
-      "lines": 1,
-      "lane": "product",
-      "sha256": "3f399b30c4d53be10441c0cc5a84fe8ed76b1c1d5dd4bc72dfa6014f323eccd0"
-    },
-    {
-      "path": "packages/catalog/src/scoop/Manifest.ts",
-      "lines": 47,
-      "lane": "product",
-      "sha256": "a62a869775f94d8700005097549bd175d9b6a6f504059c4816dddc2fdcd0c558"
-    },
-    {
-      "path": "packages/catalog/src/scoop/index.ts",
-      "lines": 1,
-      "lane": "product",
-      "sha256": "3e18c5813453766bc0d1ab2446258a7192fe8ed15d9a7bed9c75a2221963e737"
-    },
-    {
-      "path": "packages/catalog/tsconfig.build.json",
-      "lines": 10,
-      "lane": "metadata",
-      "sha256": "a9a7b2d4b4378c789df8fc80cafa1a805a13d58fed9812f7b06d706068a0f694"
-    },
-    {
-      "path": "scripts/setup-native-catalog.ts",
-      "lines": 89,
+      "path": "scripts/check-packed-external.ts",
+      "lines": 269,
       "lane": "tooling",
-      "sha256": "f5ae6b14c0ee19b81f52ff927491a7576e440d23bc5121a88dc73bcefd9e4c29"
+      "sha256": "0a7864ba017d14c5642153ee64eda41667cfc772c6eaf705ac92c6fd2d2fa15f"
     },
     {
-      "path": "test/reimplementation/catalog/fixtures.ts",
-      "lines": 62,
+      "path": "test/reimplementation/external/application.mjs",
+      "lines": 219,
       "lane": "tests",
-      "sha256": "39d07f7bf5a3c288bcb0874aa5477bfe58e3031098a5d23449e9da1561cbdbfc"
+      "sha256": "7fe7856cd85a1743f41f6df639556bf072db2a87d45f764abdfe6061d2075879"
     },
     {
-      "path": "test/reimplementation/catalog/git.test.ts",
-      "lines": 216,
+      "path": "test/reimplementation/external/consumer.mjs",
+      "lines": 665,
       "lane": "tests",
-      "sha256": "ef481c2e01566df43ee5b9ae5d6988782796cc1a40c98a0dba04da829e47be88"
+      "sha256": "1e5f5c07dfaa51ea7da9577b53c81d0c89e2ef1296ea1b2b2ff2e9612aa8b3a3"
     },
     {
-      "path": "test/reimplementation/catalog/homebrew-oracle.rb",
-      "lines": 18,
+      "path": "test/reimplementation/external/consumer.ts.txt",
+      "lines": 36,
       "lane": "tests",
-      "sha256": "26cd9b400c7974f87bca84c8428c5e1529809f4d8904b6bd0c2e41dd28b1df50"
+      "sha256": "5a42ef9241c73a61eebe9786151cf000eb16868c7e923a8b44a83d2959d5171c"
     },
     {
-      "path": "test/reimplementation/catalog/native-tools.json",
-      "lines": 71,
+      "path": "test/reimplementation/external/packed.test.ts",
+      "lines": 17,
       "lane": "tests",
-      "sha256": "e0b4e8645a941c4e7003c9971093148d0de09b7038480e7976530ad84e9b9d70"
+      "sha256": "a218960ec6b58adc6998de84c944381bdb0e88570b196c9b09c9e713b83bd939"
     },
     {
-      "path": "test/reimplementation/catalog/native.test.ts",
-      "lines": 211,
+      "path": "test/reimplementation/external/provider/cache.ts",
+      "lines": 70,
       "lane": "tests",
-      "sha256": "35d41b27f1a3dc222dbe3b9430c535b3e4db1f60c0aed60ed59cb6c083106b38"
+      "sha256": "acded9926cf624badc0da5ad062008701745bd7e76a53dffaa54f29f1aa8cf56"
     },
     {
-      "path": "test/reimplementation/catalog/packed-consumer.mjs",
-      "lines": 82,
+      "path": "test/reimplementation/external/provider/index.ts",
+      "lines": 258,
       "lane": "tests",
-      "sha256": "61ce2f4cb2ab3efe502fff4eaf74da5d39956db44441a1e0001876d4073b5afc"
+      "sha256": "42745af0d37f420e6c29a3593f789a98a34f5443de470bae94ffe83a9956e3a2"
     },
     {
-      "path": "test/reimplementation/catalog/render.test.ts",
-      "lines": 144,
+      "path": "test/reimplementation/external/provider/machine.ts",
+      "lines": 328,
       "lane": "tests",
-      "sha256": "e2e9818bdc61be1d2ee1dc8a1da9d0f6890157b348dc56426f2f5a34a412ba23"
+      "sha256": "5f26d38c0f5cd937705c51a5b5b3003eeda502a40adf5b3f948eff0bceb715d9"
     },
     {
-      "path": "test/reimplementation/catalog/scoop-install-policy.ps1",
-      "lines": 14,
+      "path": "test/reimplementation/kernel/cli-fixture.mjs",
+      "lines": 54,
       "lane": "tests",
-      "sha256": "ee43ff0c9575b28060087e6875380ecc86acd50e01dd0e7aaf427160ed73b6d8"
+      "sha256": "0659e1b7c0d074c83982cde59d195c8b94794efb2a229bb52fabaf94d961a621"
     },
     {
-      "path": "test/reimplementation/catalog/scoop-oracle.ps1",
-      "lines": 10,
+      "path": "test/reimplementation/kernel/cli-pipes.py",
+      "lines": 48,
       "lane": "tests",
-      "sha256": "2ee7cab9edf545f9517b7863ddc212434a52a70e16c5217360db5ebd8d13d6b3"
+      "sha256": "dbb6042cc49caf5e218fda8568125faf7346c65d42da789a52fe73110c6eb6fa"
     },
     {
-      "path": "test/reimplementation/catalog/scoop-shim-policy.ps1",
-      "lines": 34,
+      "path": "test/reimplementation/kernel/cli.test.ts",
+      "lines": 109,
       "lane": "tests",
-      "sha256": "5676f73f21760e010f61a8a0f013a20e904d335d824968a29cd467600992bfd6"
+      "sha256": "a064bb3731a20999b92ef3d961c9c5ec0334188dba5ed3a436d696e35e9a1b6e"
     },
     {
       "path": "apps/release-ts/package.json",
@@ -358,9 +328,51 @@
     },
     {
       "path": "package.json",
-      "lines": 60,
+      "lines": 61,
       "lane": "metadata",
-      "sha256": "73fd95da620887bff5ebadc8bd57b9629f8bb069f5e7ec98df4945a34b8d54aa"
+      "sha256": "7eb8ad1e9138aa3a296ed431dca5d7c84cf4126fb2126400e050c3b601d64240"
+    },
+    {
+      "path": "packages/catalog/package.json",
+      "lines": 35,
+      "lane": "metadata",
+      "sha256": "d76c469aab16ed24f857fcaa3dfac3319c9b2c6f389b71ac65ea71fb6ce13d6a"
+    },
+    {
+      "path": "packages/catalog/src/Shared.ts",
+      "lines": 77,
+      "lane": "product",
+      "sha256": "eaee3b955220e7fa77cbc7cda3a8587c7d2c6082319ce2d018c275e7f13b09de"
+    },
+    {
+      "path": "packages/catalog/src/homebrew/Formula.ts",
+      "lines": 68,
+      "lane": "product",
+      "sha256": "d65e9422f73f082aee4717c157dbff53354336d596ff24975f506eeb91556cda"
+    },
+    {
+      "path": "packages/catalog/src/homebrew/index.ts",
+      "lines": 1,
+      "lane": "product",
+      "sha256": "3f399b30c4d53be10441c0cc5a84fe8ed76b1c1d5dd4bc72dfa6014f323eccd0"
+    },
+    {
+      "path": "packages/catalog/src/scoop/Manifest.ts",
+      "lines": 47,
+      "lane": "product",
+      "sha256": "a62a869775f94d8700005097549bd175d9b6a6f504059c4816dddc2fdcd0c558"
+    },
+    {
+      "path": "packages/catalog/src/scoop/index.ts",
+      "lines": 1,
+      "lane": "product",
+      "sha256": "3e18c5813453766bc0d1ab2446258a7192fe8ed15d9a7bed9c75a2221963e737"
+    },
+    {
+      "path": "packages/catalog/tsconfig.build.json",
+      "lines": 10,
+      "lane": "metadata",
+      "sha256": "a9a7b2d4b4378c789df8fc80cafa1a805a13d58fed9812f7b06d706068a0f694"
     },
     {
       "path": "packages/github/package.json",
@@ -574,9 +586,9 @@
     },
     {
       "path": "packages/ts-release/package.json",
-      "lines": 67,
+      "lines": 70,
       "lane": "metadata",
-      "sha256": "d050bbc974dd1123d24f74863ce5f035d061ce08ceb4088693f0253a556b46b8"
+      "sha256": "5e37c90a713042f4a3d6eec625aaeb7b08a473ff6283c2f968f2d5416ab535bd"
     },
     {
       "path": "packages/ts-release/src/Bun.ts",
@@ -736,9 +748,9 @@
     },
     {
       "path": "packages/ts-release/src/platform/Application.ts",
-      "lines": 62,
+      "lines": 68,
       "lane": "product",
-      "sha256": "1589157f2e19456d56b5721c05fca9d2459c5079b359c5fd70e0378cbab4baa8"
+      "sha256": "fd8e8da6ef2d50ef76741b54c84b787acd08a92c0c52d9b4a709cc0bf4bcd477"
     },
     {
       "path": "packages/ts-release/src/platform/ContentStore.ts",
@@ -1647,6 +1659,12 @@
       "sha256": "627c8b447c47da7dd247aaa9d9edda57caa7fdac60baacb56cbdc03e1f9859c4"
     },
     {
+      "path": "scripts/setup-native-catalog.ts",
+      "lines": 89,
+      "lane": "tooling",
+      "sha256": "f5ae6b14c0ee19b81f52ff927491a7576e440d23bc5121a88dc73bcefd9e4c29"
+    },
+    {
       "path": "scripts/setup-native-python.ts",
       "lines": 25,
       "lane": "tooling",
@@ -2359,6 +2377,66 @@
       "lines": 632,
       "lane": "tests",
       "sha256": "5d89853c89edcf139413d328d5ec2b1f49abc3664fb0463945bef0947a1045a3"
+    },
+    {
+      "path": "test/reimplementation/catalog/fixtures.ts",
+      "lines": 62,
+      "lane": "tests",
+      "sha256": "39d07f7bf5a3c288bcb0874aa5477bfe58e3031098a5d23449e9da1561cbdbfc"
+    },
+    {
+      "path": "test/reimplementation/catalog/git.test.ts",
+      "lines": 216,
+      "lane": "tests",
+      "sha256": "ef481c2e01566df43ee5b9ae5d6988782796cc1a40c98a0dba04da829e47be88"
+    },
+    {
+      "path": "test/reimplementation/catalog/homebrew-oracle.rb",
+      "lines": 18,
+      "lane": "tests",
+      "sha256": "26cd9b400c7974f87bca84c8428c5e1529809f4d8904b6bd0c2e41dd28b1df50"
+    },
+    {
+      "path": "test/reimplementation/catalog/native-tools.json",
+      "lines": 71,
+      "lane": "tests",
+      "sha256": "e0b4e8645a941c4e7003c9971093148d0de09b7038480e7976530ad84e9b9d70"
+    },
+    {
+      "path": "test/reimplementation/catalog/native.test.ts",
+      "lines": 211,
+      "lane": "tests",
+      "sha256": "35d41b27f1a3dc222dbe3b9430c535b3e4db1f60c0aed60ed59cb6c083106b38"
+    },
+    {
+      "path": "test/reimplementation/catalog/packed-consumer.mjs",
+      "lines": 82,
+      "lane": "tests",
+      "sha256": "61ce2f4cb2ab3efe502fff4eaf74da5d39956db44441a1e0001876d4073b5afc"
+    },
+    {
+      "path": "test/reimplementation/catalog/render.test.ts",
+      "lines": 144,
+      "lane": "tests",
+      "sha256": "e2e9818bdc61be1d2ee1dc8a1da9d0f6890157b348dc56426f2f5a34a412ba23"
+    },
+    {
+      "path": "test/reimplementation/catalog/scoop-install-policy.ps1",
+      "lines": 14,
+      "lane": "tests",
+      "sha256": "ee43ff0c9575b28060087e6875380ecc86acd50e01dd0e7aaf427160ed73b6d8"
+    },
+    {
+      "path": "test/reimplementation/catalog/scoop-oracle.ps1",
+      "lines": 10,
+      "lane": "tests",
+      "sha256": "2ee7cab9edf545f9517b7863ddc212434a52a70e16c5217360db5ebd8d13d6b3"
+    },
+    {
+      "path": "test/reimplementation/catalog/scoop-shim-policy.ps1",
+      "lines": 34,
+      "lane": "tests",
+      "sha256": "5676f73f21760e010f61a8a0f013a20e904d335d824968a29cd467600992bfd6"
     },
     {
       "path": "test/reimplementation/github/authority.test.ts",
@@ -3666,7 +3744,7 @@
       "path": "tools/architecture-lab/verify.mjs",
       "lines": 121,
       "lane": "tooling",
-      "sha256": "faa147a48f408f49dad3a36593b6f26fa3382636d4d256565a293cd3c2e4afba"
+      "sha256": "9f9a4ba36703a63ae27918ca4596917975e8ae2dcab525f46cada6dfc82212ca"
     },
     {
       "path": "tools/architecture-program/package.json",

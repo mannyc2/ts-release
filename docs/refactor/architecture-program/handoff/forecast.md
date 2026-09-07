@@ -1,8 +1,8 @@
 # Full-scope source and maintenance forecast
 
-The expected replacement is approximately **12,778 physical product lines**,
-with an engineering range of **11,781–14,126**. It exceeds the unchanged
-**11,485** ceiling by **1,293**, against the preserved 22,971-line baseline.
+The expected replacement is approximately **12,728 physical product lines**,
+with an engineering range of **11,781–13,996**. It exceeds the unchanged
+**11,485** ceiling by **1,243**, against the preserved 22,971-line baseline.
 All package metadata makes the conservative combined estimate exceed that
 ceiling. This is a credible cost forecast, **not an achieved reduction or a
 source-budget pass**. Keep the original ceiling; measure each implementation
@@ -22,7 +22,7 @@ not statistical confidence intervals or permission to choose the lowest number.
 | Owned artifacts and full Apple preparation/composition | 967 | Prior 945 full responsibility estimate plus 22 actual shared-reader lines; 408 partial production lines separately bound |
 | Shared HTTP, credentials and OIDC | 761 | Actual W04 native transport, credential and OIDC files; hosted grants remain open |
 | SQLite and Git journals | 342 | Actual W04 stores; shared native process charged once to Git below |
-| CLI, Action and self-release application | 663 | 103 actual host-entry lines plus 560 estimated future CLI/Action/self-release lines |
+| CLI, Action and self-release application | 613 | 193 actual host-entry/shared-CLI lines plus 420 estimated future Action/self-release lines |
 | Action YAML | 22 | Exact proposed template; replaces the original 55-line generated-input lane |
 | npm / Warehouse / GitHub | 1,406 / 1,378 / 1,502 | Exact production bindings; GitHub uses the common kernel/HTTP and declared parent history |
 | Homebrew / Scoop / shared catalog | 69 / 48 / 77 | Actual W06 source; native Git reused without a second lifecycle |
@@ -31,8 +31,8 @@ not statistical confidence intervals or permission to choose the lowest number.
 | Q01 checksum projection and verification | 80 | 68 measured lines with native checksum consumers; 12 remaining integration estimate |
 
 The JSON owns exact totals and assigns every module once. Its actual source
-bindings total 9,647 replacement lines. Future or hybrid components contribute
-3,131 expected lines. Adoption/Apple still uses a hybrid research/future estimate;
+bindings total 9,737 replacement lines. Future or hybrid components contribute
+2,991 expected lines. Adoption/Apple still uses a hybrid research/future estimate;
 the 408 actual lines are included in that row, not added twice. W08 must replace
 the hybrid estimate with complete implementation. No native process or credential
 logic is excluded or moved into fixtures for counting purposes.
@@ -45,17 +45,17 @@ Action-YAML product input = 22,971**. The 55 lines were recovered from
 Root package JSON and build tsconfigs were absent from that original numerator.
 The new exact public/private manifests and tsconfig templates are reported
 separately for the selected layout; rejected alternatives remain historical evidence at 3b712db and added in a conservative combined view in JSON.
-Selected template metadata277+83+160=520 adds to expected product for13,298;
-including owned SPDX data gives14,087. The22Action lines are already in product.
-Actual current product plus observed616metadata is14,283, or15,072with owned data.
+Selected template metadata277+83+160=520 adds to expected product for13,248;
+including owned SPDX data gives14,037. The22Action lines are already in product.
+Actual current product plus observed620metadata is14,377, or15,166with owned data.
 Future metadata remains a projection; rejected historical layouts are excluded.
 Package boundaries, exports and release coordination are not free because a
 historical line-count classifier excluded their metadata.
 
 W03 additionally owns **789 lines / 15,973 bytes** of generated SPDX catalog data,
 bound to native packaging 26.3. Its parser remains counted TypeScript. The current
-physical product plus owned data is **14,456** lines; the expected complete product
-plus that data is **13,567**, before package/config metadata. Native wheel fixtures
+physical product plus owned data is **14,546** lines; the expected complete product
+plus that data is **13,517**, before package/config metadata. Native wheel fixtures
 are counted as binary bytes, not misclassified as text. These separate views do
 not change the historical source denominator or grant a complete-product waiver.
 

@@ -18,7 +18,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "d686effae93ce2ba3f390c0c5ac17348b1cd7aac22e4758f64d52a976af2d446"
+    "sha256": "2ba3f9df7672ca62504dd0361c8724f4275b354ebd29d5018e95e40cb2c87f1a"
   },
   "authorityBindings": {
     "kernel": {
@@ -59,7 +59,7 @@
     },
     "application": {
       "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
-      "sha256": "ed80182ff1829ce3d16711f794346a816af816766537209a17a56afa4fa78ba3"
+      "sha256": "9c751bb563831d7d375e2ef117e0ed8e6c51973e3cd075815be0a2104a28af4d"
     },
     "npm": {
       "path": "docs/refactor/architecture-program/handoff/production-api/npm/index.d.ts",
@@ -4710,7 +4710,7 @@
       "declarations": [
         {
           "line": 17,
-          "sha256": "c9cb124df3aed853bfb95b477dbcc421d68ca9f1d4a14ed2b3450343394fa1fd"
+          "sha256": "ca79a2ad20d24fb6702126d38f5683ff3c3d0c703ad4c6d9b3e123543b507bec"
         }
       ]
     },
@@ -4951,7 +4951,7 @@
       "declarations": [
         {
           "line": 17,
-          "sha256": "c9cb124df3aed853bfb95b477dbcc421d68ca9f1d4a14ed2b3450343394fa1fd"
+          "sha256": "ca79a2ad20d24fb6702126d38f5683ff3c3d0c703ad4c6d9b3e123543b507bec"
         }
       ]
     }

@@ -17,6 +17,9 @@
     "registry": "https://registry.npmjs.org/"
   },
   "name": "@mannyc1/ts-release",
+  "bin": {
+    "ts-release": "./dist/bin/ts-release.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

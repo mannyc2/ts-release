@@ -1,5 +1,6 @@
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Logger from "effect/Logger"
 import type * as Scope from "effect/Scope"
 import { resolve } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -22,7 +23,11 @@ export type CreateApplication = (
 
 /** This explicit path selects trusted application code. Neither Plan nor Journal
  * data can choose an import. The application supplies its complete host layers. */
-export const runApplication = (applicationPath: string, input: unknown): Promise<FinalizedReport> =>
+export const runApplication = (
+  applicationPath: string,
+  input: unknown,
+  signal?: AbortSignal,
+): Promise<FinalizedReport> =>
   Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {
@@ -58,5 +63,6 @@ export const runApplication = (applicationPath: string, input: unknown): Promise
           return yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
         }).pipe(Effect.provide(Layer.succeed(Host, host)))
       }),
-    ),
+    ).pipe(Effect.provideService(Logger.LogToStderr, true)),
+    { signal },
   )

@@ -1,0 +1,22 @@
+{
+  "format": "ts-release/source-planning-variance/1",
+  "wave": "W07",
+  "originalTripwire": 8200,
+  "replacementLines": 9737,
+  "replacementSha256": "aa33efe7cbc99c671ba35b24ec7384734f8d3a462e4b88ef6298fd6dae400597",
+  "completeProductCeiling": 11485,
+  "completeProductWaiver": false,
+  "decision": "Continue implementation with this exact planning variance; no final source or release waiver.",
+  "reason": "W07adds90product lines against100allocated, reducing inherited tripwire excess1547to1537. The shared CLI has77lines, bin7, and application runtime adds6. External implementations require zero subsequent core/CLI/first-party source edits.",
+  "review": "docs/refactor/execution/W07-review.md",
+  "forecastExpected": 12728,
+  "forecastDeficit": 1243,
+  "accounting": "13757physical product=9737replacement+4020legacy.72actualsource/declarationfiles,89logicalmoduleowners. OwnedSPDX789lines15973bytes remains separately charged; currentmetadata620. No deleted source or declarations in W07.",
+  "simplificationPerformed": "One existing application loader and explicit composition serve the shared CLI; no new configuration language, plugin discovery, allowlist, replay interpreter or journal format.",
+  "nextSimplification": "Complete W08-W10 then simplify the actual full selected product against the unchanged11485ceiling. Forecast12728stillfailsby1243; no scope or formatting cuts.",
+  "notEvidenceOf": [
+    "complete-product source reduction",
+    "full native acceptance",
+    "publication"
+  ]
+}

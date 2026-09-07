@@ -6,7 +6,7 @@
   "packages": [
     {
       "path": "packages/ts-release/package.json",
-      "sha256": "d050bbc974dd1123d24f74863ce5f035d061ce08ceb4088693f0253a556b46b8"
+      "sha256": "5e37c90a713042f4a3d6eec625aaeb7b08a473ff6283c2f968f2d5416ab535bd"
     },
     {
       "path": "packages/npm/package.json",
@@ -484,7 +484,6 @@
     "@mannyc1/ts-release/bundle:type:ChecksumInput",
     "@mannyc1/ts-release/bundle:value:renderSha256Sums",
     "@mannyc1/ts-release/bundle:value:verifySha256Sums",
-    "@mannyc1/ts-release:bin",
     "@mannyc1/ts-release-mcp",
     "@mannyc1/ts-release-openai"
   ]

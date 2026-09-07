@@ -55,6 +55,7 @@
     "setup:native-python": "bun scripts/setup-native-python.ts",
     "check:packed-github": "bun scripts/check-packed-npm.ts --github --transports",
     "check:packed-catalog": "bun scripts/check-packed-npm.ts --catalog --transports",
-    "setup:native-catalog": "bun scripts/setup-native-catalog.ts"
+    "setup:native-catalog": "bun scripts/setup-native-catalog.ts",
+    "check:packed-external": "bun scripts/check-packed-external.ts"
   }
 }

@@ -1,6 +1,6 @@
 {
   "format": "ts-release/architecture-forecast/1",
-  "status": "mixed-actual-W06-and-unimplemented-engineering-estimates-not-achieved-reduction",
+  "status": "mixed-actual-W07-and-unimplemented-engineering-estimates-not-achieved-reduction",
   "basisCommit": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
   "denominator": {
     "productPhysicalLines": 22916,
@@ -338,18 +338,11 @@
       ],
       "components": [
         {
-          "name": "Actual W04 production owners",
-          "low": 103,
-          "expected": 103,
-          "high": 103,
-          "basis": "Exact normally formatted source bindings in actualImplementation; shared native Git process counted only in native-git-additional."
-        },
-        {
-          "name": "CLI input/report/diagnostic and host layer completion",
-          "low": 90,
-          "expected": 140,
-          "high": 220,
-          "basis": "Overlay application-module.ts48 +release-cli.ts523 +bun-main.ts132; replace old flags with exact two-argument command; retain safe I/O/errors"
+          "name": "Actual W07 host entries and shared CLI",
+          "low": 193,
+          "expected": 193,
+          "high": 193,
+          "basis": "Exact normally formatted runtime/application/CLI source. Actual shared-bin native Node/Bun and packed external application witnesses pass; remaining complete Action/self-release and platform qualification remain separate."
         },
         {
           "name": "Action inputs/outputs and immutable artifact transfer",
@@ -368,17 +361,17 @@
       ],
       "fullReplacementPhysicalLines": {
         "low": 453,
-        "expected": 663,
-        "high": 983
+        "expected": 613,
+        "high": 853
       },
       "actualImplementation": {
-        "wave": "W04",
-        "lines": 103,
+        "wave": "W07",
+        "lines": 193,
         "files": [
           {
             "path": "packages/ts-release/src/platform/Application.ts",
-            "lines": 62,
-            "sha256": "1589157f2e19456d56b5721c05fca9d2459c5079b359c5fd70e0378cbab4baa8"
+            "lines": 68,
+            "sha256": "fd8e8da6ef2d50ef76741b54c84b787acd08a92c0c52d9b4a709cc0bf4bcd477"
           },
           {
             "path": "packages/ts-release/src/Node.ts",
@@ -389,6 +382,16 @@
             "path": "packages/ts-release/src/Bun.ts",
             "lines": 21,
             "sha256": "d8316f1de07b5d5940f76685956b3bae381fd39e59ddfbcdbfde098837266206"
+          },
+          {
+            "path": "packages/ts-release/src/internal/CommandLine.ts",
+            "lines": 77,
+            "sha256": "6e0c28a5fed0e24404918f886201a3fc08f979af204b37713ab9c3f67665f28c"
+          },
+          {
+            "path": "packages/ts-release/src/bin/ts-release.ts",
+            "lines": 7,
+            "sha256": "e64ed1d182e45058278676a72520948d2be23ed9ce53de4c8469bdd621ff4504"
           }
         ],
         "qualification": "Implemented source, not hosted/native full-product certification"
@@ -999,18 +1002,18 @@
   ],
   "totals": {
     "low": 11781,
-    "expected": 12778,
-    "high": 14126
+    "expected": 12728,
+    "high": 13996
   },
-  "expectedHeadroom": -1293,
+  "expectedHeadroom": -1243,
   "reductionPercent": {
     "low": 48.71,
-    "expected": 44.37,
-    "high": 38.51
+    "expected": 44.59,
+    "high": 39.07
   },
   "unknowns": [
     "Two remaining public provider packages (MCP and OpenAI) are not implemented. Their complete native parsing, evidence, authentication and selected agent-product composition must be measured.",
-    "Kernel and GitHub use actual W05 source; npm, PyPI, HTTP/OIDC, journals and native Git retain exact W04 source bindings. CLI/Action/self-release retains 560 expected future lines above 103 actual host-entry lines. Adoption/Apple retains its prior full responsibility estimate plus the 22-line W04 shared-reader delta, with 408 actual partial lines exposed; W08 must replace this hybrid estimate.",
+    "Kernel and GitHub use actual W05 source; npm, PyPI, HTTP/OIDC, journals and native Git retain exact W04 source bindings. CLI/Action/self-release retains420expected future Action/self-release lines above193actual host-entry/shared-CLI lines; all full native host/delivery qualification remains open. Adoption/Apple retains its prior full responsibility estimate plus the 22-line W04 shared-reader delta, with 408 actual partial lines exposed; W08 must replace this hybrid estimate.",
     "Native hosted OIDC, Bun Sigstore, all selected platform acceptance and remaining host integration can change source costs. Implemented file counts are not acceptance.",
     "Exact layout metadata remains separate and in the combined view. All newly maintained owned or upstream logic counts; no forecast closes the 11485 gate."
   ],
@@ -1031,7 +1034,7 @@
     }
   ],
   "newRequiredUpstreamImplementationLines": 0,
-  "sourceCeilingPolicy": "Expected12778 exceeds unchanged11485 ceiling by1293. No achieved reduction or complete-product waiver; actual full selected product must pass before release.",
+  "sourceCeilingPolicy": "Expected12728 exceeds unchanged11485 ceiling by1243. No achieved reduction or complete-product waiver; actual full selected product must pass before release.",
   "maintenanceLanes": [
     "product and Action source",
     "generated runtime product inputs including Action YAML",
@@ -1089,7 +1092,7 @@
     "lines": 789,
     "bytes": 15973,
     "role": "Pinned native SPDX membership data; generated from packaging26.3 with source hash; validation logic remains counted TypeScript",
-    "forecastProductAndDataLines": 13567
+    "forecastProductAndDataLines": 13517
   },
   "historicalLayoutMetadata": {
     "commit": "3b712db",
@@ -1136,10 +1139,10 @@
   "conservativeCombinedViews": {
     "layout": "T3c",
     "projectedMetadataExcludingAlreadyCountedActionYaml": 520,
-    "forecastProductAndProjectedMetadata": 13298,
-    "forecastProductProjectedMetadataAndOwnedData": 14087,
-    "actualProductAndObservedMetadata": 14283,
-    "actualProductObservedMetadataAndOwnedData": 15072,
-    "basis": "Selected template metadata277public+83private+160tsconfig=520; Action22alreadyinproduct. Actual metadata616 is separately measured current manifests/configs, not a complete future metadata guarantee. Rejected historical alternatives excluded."
+    "forecastProductAndProjectedMetadata": 13248,
+    "forecastProductProjectedMetadataAndOwnedData": 14037,
+    "actualProductAndObservedMetadata": 14377,
+    "actualProductObservedMetadataAndOwnedData": 15166,
+    "basis": "Selected template metadata277public+83private+160tsconfig=520; Action22alreadyinproduct. Actual metadata620 is separately measured current manifests/configs, not a complete future metadata guarantee. Rejected historical alternatives excluded."
   }
 }

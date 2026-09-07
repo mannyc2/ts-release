@@ -101,7 +101,7 @@ if (process.argv.includes("--execute")) {
     console.log(JSON.stringify({argv,exitCode:result.exitCode}))
     if (result.exitCode !== 0) fail(output)
   }
-  writeFileSync(join(root,`${handoff}/production-verification.json`),JSON.stringify({format:"architecture-production-verification/1", scope:"Implemented production suites; active wave is in execution/progress.json; historical P3 receipt remains verification.json",observedAt:new Date().toISOString(),commands:receipts,limits:"Direct local checks. Full packed tournament receipts are separately retained; this command does not rerun them or qualify hosted/native product outcomes."},null,2)+"\n")
+  writeFileSync(join(root,`${handoff}/production-verification.json`),JSON.stringify({format:"architecture-production-verification/1", scope:"Implemented production suites; active wave is in execution/progress.json; historical P3 receipt remains verification.json",observedAt:new Date().toISOString(),commands:receipts,limits:"Direct production checks; the test suite includes the W07 packed external native consumers. Original tournament and other packed provider receipts are separately retained. This is not full hosted/platform product certification."},null,2)+"\n")
 }
 if (process.argv.includes("--seal")) {
   const contract = {

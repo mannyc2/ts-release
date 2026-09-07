@@ -3,15 +3,18 @@
 The active objective is the complete refactor and verified published release in
 [GOAL.md](../../execution/GOAL.md). The user authorized implementation and release
 on 2026-09-06. Historical research-only restrictions describe earlier tasks.
-**All 69 selected outcomes and 226 propositions remain required.** W01–W06 have
-local cutover evidence:246tests/2720assertions, five-package Bun/npm installs
-and48Node/Bun consumer checks, native compatible servers, hosted existing GitHub
-release reads, native Ruby/Homebrew and PowerShell/Scoop format controls, and
-independent recovery review. All58assigned legacy files are retired. The cumulative
-8100planning tripwire fails with9647replacement lines; an exact-source variance
-permits continued implementation. Native hosted mutations, Bun Sigstore, remaining
-platform/app work and full release certification remain open. See
-[W06](../../execution/W06.md) for current evidence and limits. Nothing is published.
+**All 69 selected outcomes and 226 propositions remain required.** W01–W07 have
+local cutover evidence:255tests/2782assertions, five-package consumers and a
+separately built external provider after the kernel/CLI freeze. Four fresh Bun/npm
+× Node/Bun external cells pass796native checks and140CLI processes with zero
+subsequent source edits. Native compatible servers, existing hosted GitHub reads,
+Ruby/Homebrew and PowerShell/Scoop controls, and independent recovery review are
+retained. All58assigned legacy files throughW06 are retired; W07has no retirement
+rows. The cumulative8200planning tripwire fails with9737replacement lines; an
+exact-source variance permits continued implementation. Native hosted mutations,
+Bun Sigstore, remaining platform/app/producer work and full release certification
+remain open. See [W07](../../execution/W07.md) for current evidence and limits.
+Nothing is published.
 
 [design.json](design.json) is the editable architecture authority. The approved
 layout is **T3c: seven public packages**: ts-release, npm, pypi, github, catalog,
@@ -75,14 +78,14 @@ Fresh prerequisite evidence:
 
 The amended prerequisite kernel is **1,024 physical / 1,145 printer lines**;
 external M2/cache witnesses are separate test/tooling costs. The conservative
-mixed actual/future full-product forecast is **12,778**, already 1,293 above the unchanged **11,485**
+mixed actual/future full-product forecast is **12,728**, already 1,243 above the unchanged **11,485**
 ceiling against **22,971**. [forecast.json](forecast.json) records full component
 costs and per-wave tripwires. Normal formatting and actual production counts
 must establish the reduction; no scope cut, density trick or waiver is permitted.
 
 Run `bun run check:architecture-program` for retained evidence integrity,
-projection, ancestry and source accounting. W06 exceeds its 8,100-line
-planning tripwire with 9,647 replacement lines; the complete-product ceiling is
+projection, ancestry and source accounting. W07 exceeds its 8,200-line
+planning tripwire with 9,737 replacement lines; the complete-product ceiling is
 unchanged. `bun tools/architecture-lab/verify.mjs
 --execute --seal` executes direct checks and refreshes reviewed bindings; it is
 not a readiness certificate. Native/socket fixtures require local socket access.

@@ -13,6 +13,12 @@
   "generator": "scripts/project-production-api.ts",
   "records": [
     {
+      "declaration": "bin/ts-release.d.ts",
+      "declarationSha256": "43e818adf60173644896298637f47b01d5819b17eda46eaa32d0c7d64724d012",
+      "source": "packages/ts-release/src/bin/ts-release.ts",
+      "sourceSha256": "e64ed1d182e45058278676a72520948d2be23ed9ce53de4c8469bdd621ff4504"
+    },
+    {
       "declaration": "Bun.d.ts",
       "declarationSha256": "c751957811c02883541f365ad272b2b0d2dc90c6822c5d1057ef7035f7fee5f1",
       "source": "packages/ts-release/src/Bun.ts",
@@ -157,6 +163,12 @@
       "sourceSha256": "5380f88fdaf236090232118840dac8d5c4a8c6bce06f2c925ca7d7b2165ee3f3"
     },
     {
+      "declaration": "internal/CommandLine.d.ts",
+      "declarationSha256": "3a8b1b38cf1123bb65f25294b2ac733d42e1403dd701a7bf42b681457bc45707",
+      "source": "packages/ts-release/src/internal/CommandLine.ts",
+      "sourceSha256": "6e0c28a5fed0e24404918f886201a3fc08f979af204b37713ab9c3f67665f28c"
+    },
+    {
       "declaration": "internal/Content.d.ts",
       "declarationSha256": "8af946fc763339f0f7dfbfade463a79c5cba24188a4ef00377f7acb8eb7d0fee",
       "source": "packages/ts-release/src/internal/Content.ts",
@@ -290,9 +302,9 @@
     },
     {
       "declaration": "platform/Application.d.ts",
-      "declarationSha256": "ed80182ff1829ce3d16711f794346a816af816766537209a17a56afa4fa78ba3",
+      "declarationSha256": "9c751bb563831d7d375e2ef117e0ed8e6c51973e3cd075815be0a2104a28af4d",
       "source": "packages/ts-release/src/platform/Application.ts",
-      "sourceSha256": "1589157f2e19456d56b5721c05fca9d2459c5079b359c5fd70e0378cbab4baa8"
+      "sourceSha256": "fd8e8da6ef2d50ef76741b54c84b787acd08a92c0c52d9b4a709cc0bf4bcd477"
     },
     {
       "declaration": "platform/ContentStore.d.ts",

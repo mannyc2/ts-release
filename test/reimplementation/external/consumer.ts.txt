@@ -1,0 +1,36 @@
+import { Schema } from "effect"
+import type { Json, MachineConstructor, JournalStore } from "@mannyc1/ts-release"
+import type { HttpProviderDefinition } from "@mannyc1/ts-release/http"
+import type { CreateApplication } from "@mannyc1/ts-release/node"
+import {
+  intentCodec,
+  Intent,
+  Receipt,
+  Observation,
+  NativeError,
+  definition,
+  gitDefinition,
+  transitionMachine,
+  CachingJournalStore,
+  encodeIntent,
+} from "@fixture/external-provider"
+const codec: Schema.Codec<Intent, Json, never, never> = intentCodec
+const receipt: Schema.Codec<Receipt, Json, never, never> = Receipt
+const observation: Schema.Codec<Observation, Json, never, never> = Observation
+const error: Schema.Codec<NativeError, Json, never, never> = NativeError
+const evaluator: MachineConstructor = transitionMachine
+const provider: HttpProviderDefinition = definition(null as never).provider
+const store: JournalStore = new CachingJournalStore(null as never)
+const application: CreateApplication = null as never
+void [
+  codec,
+  receipt,
+  observation,
+  error,
+  evaluator,
+  provider,
+  store,
+  application,
+  encodeIntent,
+  gitDefinition,
+]

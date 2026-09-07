@@ -619,9 +619,10 @@
         "host.Application"
       ],
       "externalImports": [
+        "node:fs",
         "node:fs/promises"
       ],
-      "purpose": "One argument decoder and application loader used by the root bin and private CLI delivery workspace. The selected application provides its own host layers; CLI never auto-imports Node/Bun platform facades."
+      "purpose": "Shared two-argument CLI decodes a regular JSON input file and runs the explicit trusted application. Application supplies provider/host layers and authorization. Default Effect logs use stderr; native signal teardown follows awaited scoped interruption."
     },
     {
       "id": "app.bin",

@@ -1,20 +1,20 @@
 {
   "format": "ts-release/refactor-progress/1",
   "goal": "active",
-  "completedWave": "W06",
+  "completedWave": "W07",
   "prerequisites": {
     "P0": "seven-package projection implemented; beta.107 exact type repair passes actual producer fixture and independent review; real packed production graph follows in waves",
     "P1": "fresh original-slice/helper proof:60packed,27extensions,TS37/37/37; archive retained",
     "P2": "entrypoints and final direct verification pass;69open closure red",
     "P3": "168tests/993assertions; independent prerequisite review passed; fresh Apple/source/declaration receipts"
   },
-  "productionWaves": "W01-W05 committed and pushed; W06 verified locally and ready to commit. W07-W10 remain.",
-  "acceptance": "W06 full246tests2720assertions39files; direct verification281sealedfiles/226propositions.15catalogtests397assertions, nativeRuby/Homebrew andPowerShell/Scoop policies, nativeGit one/two paths andlostACK/reopenedSQLite. FiveactualpackedBun/npm consumers48Node/Bunchecks pass. Independent material/accountingreview closed. All69outcomes open; no publication.",
+  "productionWaves": "W01-W06 committed and pushed. W07 locally verified and independently reviewed; checkpoint commit/push next, then W08-W10.",
+  "acceptance": "W07 full255tests2782assertions41files; direct verification283sealedfiles/226propositions. Four fresh Bun/npm Node/Bun external cells796nativechecks140CLIprocesses pass with0sourceedits after78bindings frozen. Independent material/accounting review closed. All69outcomes open; no publication.",
   "publication": "No release published; registry0.3.0 observation is historical, recheck before choosing final cohort",
-  "nextAction": "Retain W06 verification receipt, commit/push, then implement W07 kernel CLI prerequisite and external provider packed composition without kernel/CLI edits for external cases. Continue W08-W10 and final release gates.",
-  "updatedAt": "2026-09-07T10:29:25.659815+00:00",
+  "nextAction": "Retain final W07 evidence, run accounting/architecture/launch integrity, commit/push W07. Then implement W08 exact effect-build0.6.3 adoption and Apple preparations against the existing owned Bundle/journal; no W08 source changes yet.",
+  "updatedAt": "2026-09-07T11:25:39.603450+00:00",
   "goalTool": "active",
-  "activeWave": "W06",
-  "source": "W06 13667product=9647replacement+4020legacy;8100tripwire exceeds1547with exactplanningvariance/no finalwaiver.194catalog lines replace882donor lines. Forecast12778deficit1293; low11781 exceeds11485. OwnedSPDX789lines15973bytes separate.",
-  "checkpoint": "W05 3b712db pushed. W06 finalreview/seal passes281files;194cataloglines,882lines62declarations retired,70actualsource/declarationfiles89modules. W06commit/pushnext."
+  "activeWave": "W07",
+  "source": "W07 13757product=9737replacement+4020legacy;8200tripwireexceeds1537 with exactplanningvariance/no finalwaiver.90newCLI/runtime lines,0retiredlines. Forecast12728deficit1243; low11781exceeds11485. Metadata620; ownedSPDX789lines15973bytes separate.",
+  "checkpoint": "W06 64a5204 pushed. W07 full direct verifier exited0; fresh packed work /tmp/ts-release-packed-external-XkpTGS.255tests2782assertions41files. No W07commit yet."
 }

@@ -22,9 +22,9 @@ blindly. Missing external authority is recorded as a concrete blocker.
 - Implementation checkout: `/tmp/ts-release-implementation`, branch
   `codex/complete-hard-cut`; remote `git@github.com:mannyc2/ts-release.git`.
 - Original workspace `/mnt/models/dev/ts-release` and its index remain untouched.
-- Starting HEAD: `9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d`.
+- Starting HEAD: `9 b14 c6 c14 aec5 c5 a41 b2 cb0 f98 d6 f1 c63 bca4 d3 d`.
 - Starting staged tree reproduced exactly in this clone:
-  `72323d6191b11d69a77022f278bd3de671f43cbe` (190 staged paths, no unstaged changes).
+  `72323 d6191 b11 d69 a77022 f278 bd3 de671 f43 cbe` (190 staged paths, no unstaged changes).
 - Untracked `.effect-build-hard-cut/` and `.effect-build-landing/` remain in the
   original workspace; neither is imported or staged. `.repos/effect` is read-only.
 - Ignored refinement and audit packets are preserved verbatim under
@@ -50,7 +50,8 @@ fixtures, generated delivery, docs and research/tooling separately. Keep the
 
 ## Progress and exact next action
 
-- Preservation checkpoint: `7da2877`. Original staged tree remains untouched.
+- Preservation checkpoint: `7 da2877`; reviewed prerequisite checkpoint: `65 f65 b1`.
+  Original staged tree remains untouched.
 - P0: approved seven-package projection and exact declaration ownership are
   implemented; full product packages/consumer graph are not yet implemented.
 - P1: retained original slice plus helper relocation passes 60 packed scenarios
@@ -64,28 +65,48 @@ fixtures, generated delivery, docs and research/tooling separately. Keep the
   eight processes, two preparations, one publication, zero resume sends. Native
   Apple services are protocol doubles; production certification is not claimed.
 - Final prerequisite verification now passes, including strict TypeScript,
-  generated declaration checks,168tests/993assertions, integrity, projection,
+  generated declaration checks,168 tests/993 assertions, integrity, projection,
   ancestry and budget accounting. Launch closure remains intentionally red.
 - Mainline PR30/31 report-retention and draft-recovery regressions are recorded
   in handoff/mainline-donors.json. Preserve required PR21 ancestry at integration.
 - Effect beta.107 compatibility is now established for the producer fixture.
   An exact owned declaration augmentation restores the stripped internal Sentinel
   type without changing runtime files or weakening strict checks. Both Node/Bun
-  pass34adoption checks. Independent type review passed; packed declaration
+  pass34 adoption checks. Independent type review passed; packed declaration
   reachability remains a W01 gate. Earlier observations follow for provenance: Official beta.102/.104/.107 have
   a broken Sentinel declaration. Beta.101 strictly compiles after adapting local
   TaggedErrorClass spelling, but published effect-build0.6.3 fails at runtime
   because it calls Schema.TaggedError. Official rc.108 passes the same actual
   producer fixture. Current user instructions still require aligned betas.
-- Product source is still 18,276 lines. Corrected conservative forecast is 11,529
-  against the unchanged 11,485 ceiling; simplification remains required.
+- W01 now has the actual release kernel, owned Bundle/content, complete internal
+  report projection, and scoped Bun SQLite. Strict build/check and113 production
+  tests/742 assertions pass. Tests include real local HTTP/Git/SQLite, process
+  replacement, exact1 MiB/+1 envelope bounds, special-file rejection and actual
+  effect-build File/Tree finalizers. These are local mechanism witnesses, not
+  native compiler/signing/hosted release acceptance.
+- Bounded independent reviews resolved mutable event/snapshot/request aliases,
+  codec version admission, symlink traversal/order/finalization and FIFO issues,
+  observation routing overrides, and evaluator-fabricated reports. A complete
+  terminal candidate review remains required.
+- Real tarball consumers support the implemented root/bundle/http/bun/node
+  subsets under fresh Bun/npm installs, Node22.22.2/Bun, strict declaration checks
+  and negative controls, with optional platform/Apple peers absent. Full surface
+  projection still reports39 pending requirements and only1 of 7 public packages.
+- Current physical product source: 2,629 replacement +18,276 unchanged
+  legacy =20,905. W01's1,700 planning tripwire remains red. Two simplification
+  passes removed redundant handling/copies and shared observation/projection
+  ownership. Bundle/report obligations were added and charged. No deletion or
+  completed-product reduction is claimed; ceiling11,485 remains unchanged.
+- All51 assigned W01 migration rows (10,318 original physical lines) remain open.
+  Current architecture seals/declaration/vocabulary ownership must be reconciled
+  with actual production before claiming the wave complete. See W01.md.
 - W01–W10 and Plans009/010 are not completed. No new release is published.
   Registry observation found only kernel0.3.0 and six absent package names;
   recheck coordinates at release time. Existing protected GitHub environments
   require the actual human approval when a tested candidate reaches those gates.
 
-Next: commit the reviewed prerequisite checkpoint; implement W01 under aligned
-beta.107 with the exact declaration repair; prove packed declaration reachability,
-production kernel laws and local-host process restart, then close the wave’s
-assigned migration rows. Continue independent work while native acceptance gates
-remain open.
+Next: preserve this tested W01 progress checkpoint; finish actual-owner handoff,
+vocabulary and declaration projection, the application/report boundary and exact
+C08 before-observation witness; resolve the51 assigned migration rows with physical
+deletion accounting and source tradeoff review. W02 follows the terminal W01
+commit. All69 launch outcomes remain open; full publication certification is ahead.

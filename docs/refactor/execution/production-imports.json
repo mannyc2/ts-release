@@ -1,0 +1,709 @@
+{
+  "format": "ts-release/production-imports/1",
+  "files": 25,
+  "edges": [
+    {
+      "file": "packages/ts-release/src/Node.ts",
+      "specifier": "./internal/EffectTypes.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Node.ts",
+      "specifier": "./platform/ContentStore.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Http.ts",
+      "specifier": "./internal/EffectTypes.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Http.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Http.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Provider.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Provider.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Provider.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Provider.ts",
+      "specifier": "./internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Provider.ts",
+      "specifier": "./internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./internal/Host.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./Journal.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./internal/Decision.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./Plan.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./internal/GitAuthority.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/EffectTypes.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/Content.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/BundleFinalize.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/BundleCodec.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bun.ts",
+      "specifier": "./internal/EffectTypes.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Bun.ts",
+      "specifier": "./platform/SqliteJournal.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bun.ts",
+      "specifier": "./platform/ContentStore.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Journal.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Journal.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Journal.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Journal.ts",
+      "specifier": "./internal/Host.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Journal.ts",
+      "specifier": "./internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Journal.ts",
+      "specifier": "./internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Journal.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Journal.ts",
+      "specifier": "./Http.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./internal/EffectTypes.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./Journal.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./internal/Host.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./internal/Decision.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./Plan.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./internal/GitAuthority.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./Release.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Plan.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Plan.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Plan.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Plan.ts",
+      "specifier": "./internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Plan.ts",
+      "specifier": "./internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Plan.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Plan.ts",
+      "specifier": "./Journal.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Identity.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Identity.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Identity.ts",
+      "specifier": "./Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Error.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Error.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Content.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/Content.ts",
+      "specifier": "effect-build/Artifact",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/Content.ts",
+      "specifier": "./ArtifactModel.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/Content.ts",
+      "specifier": "./Error.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/ReleaseModel.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/ReleaseModel.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/ReleaseModel.ts",
+      "specifier": "./Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitAuthority.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitAuthority.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitAuthority.ts",
+      "specifier": "./Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitAuthority.ts",
+      "specifier": "../Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/GitAuthority.ts",
+      "specifier": "./ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/BundleFinalize.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/BundleFinalize.ts",
+      "specifier": "./ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/BundleFinalize.ts",
+      "specifier": "./Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/BundleFinalize.ts",
+      "specifier": "./TreeManifest.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/EffectTypes.ts",
+      "specifier": "effect/SchemaAST",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "effect/Context",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "../Journal.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "../Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "./Decision.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "./ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "./Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "./Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "../Plan.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "specifier": "./ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "specifier": "./BundleCodec.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "specifier": "./Host.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "specifier": "./ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "specifier": "./Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "specifier": "./Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "specifier": "../Plan.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "specifier": "./BundleFinalize.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Decision.ts",
+      "specifier": "./ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Decision.ts",
+      "specifier": "./Host.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Decision.ts",
+      "specifier": "../Journal.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Decision.ts",
+      "specifier": "./Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Decision.ts",
+      "specifier": "./Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/TreeManifest.ts",
+      "specifier": "./ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/TreeManifest.ts",
+      "specifier": "./Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/BundleCodec.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/BundleCodec.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/BundleCodec.ts",
+      "specifier": "./ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/BundleCodec.ts",
+      "specifier": "./Content.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/BundleCodec.ts",
+      "specifier": "./BundleFinalize.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/BundleCodec.ts",
+      "specifier": "./Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/ArtifactModel.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/ArtifactModel.ts",
+      "specifier": "effect-build/Artifact",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/ArtifactModel.ts",
+      "specifier": "effect-build/SystemTarget",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/ContentStore.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/ContentStore.ts",
+      "specifier": "node:crypto",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/ContentStore.ts",
+      "specifier": "node:fs",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/ContentStore.ts",
+      "specifier": "node:fs/promises",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/ContentStore.ts",
+      "specifier": "node:path",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/ContentStore.ts",
+      "specifier": "../internal/ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/ContentStore.ts",
+      "specifier": "../internal/Content.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/ContentStore.ts",
+      "specifier": "../internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "specifier": "bun:sqlite",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "specifier": "node:fs",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "specifier": "node:path",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "specifier": "effect/Scope",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "specifier": "../Journal.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "specifier": "../internal/ReleaseModel.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "specifier": "./StoreCodec.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/StoreCodec.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/StoreCodec.ts",
+      "specifier": "../internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/StoreCodec.ts",
+      "specifier": "../internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/StoreCodec.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    }
+  ],
+  "runtimeClosures": {
+    ".": [
+      "effect/Context",
+      "effect/Effect",
+      "effect/Schema"
+    ],
+    "./bundle": [
+      "effect-build/Artifact",
+      "effect-build/SystemTarget",
+      "effect/Effect",
+      "effect/Schema"
+    ],
+    "./http": [
+      "effect/Effect",
+      "effect/Schema"
+    ],
+    "./bun": [
+      "bun:sqlite",
+      "effect-build/Artifact",
+      "effect-build/SystemTarget",
+      "effect/Effect",
+      "effect/Schema",
+      "node:crypto",
+      "node:fs",
+      "node:fs/promises",
+      "node:path"
+    ],
+    "./node": [
+      "effect-build/Artifact",
+      "effect-build/SystemTarget",
+      "effect/Effect",
+      "effect/Schema",
+      "node:crypto",
+      "node:fs",
+      "node:fs/promises",
+      "node:path"
+    ]
+  }
+}

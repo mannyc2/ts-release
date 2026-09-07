@@ -32,7 +32,7 @@ for (const path of paths) {
   if (product) counts[legacy.get(path) === sha256 ? "unchangedLegacy" : "replacement"] += lines
   files.push({ path, lines, lane, sha256 })
 }
-const wave = progress.completedWave
+const wave = (progress.activeWave ?? progress.completedWave)
 const limit = forecast.perWaveBudget[wave]
 if (typeof limit !== "number") throw new Error(`No reviewed budget tripwire for ${wave}`)
 console.log(JSON.stringify({ baseline: 22971, ceiling: 11485, wave, replacementTripwire: limit, counts, achievedReduction: wave === "W10" && counts.product <= 11485 }, null, 2))

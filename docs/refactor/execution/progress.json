@@ -8,10 +8,13 @@
     "P2": "entrypoints and final direct verification pass;69open closure red",
     "P3": "168tests/993assertions; independent prerequisite review passed; fresh Apple/source/declaration receipts"
   },
-  "productionWaves": "W01\u2013W10 not started",
-  "acceptance": "Plans 009/010 not started; 69 outcomes remain open",
-  "publication": "No release published; 0.4.0 absent in fresh registry history",
-  "nextAction": "Commit prerequisite checkpoint; W01 production kernel, aligned beta.107, packed declaration repair reachability and local native/restart gates",
+  "productionWaves": "W01 in progress: actual beta.107 kernel, owned Bundle/content, full internal report projection and scoped SQLite;113 tests/742 assertions; bounded independent reviews resolved. All51 assigned migration rows remain open; W02\u2013W10 not started.",
+  "acceptance": "113 local production tests pass. Partial five-entry packed consumers pass; whole public surfaces/CLI/Action/seven packages and Plans009/010 remain open. All69 launch outcomes remain open.",
+  "publication": "No release published; registry0.3.0 observation is historical, recheck before choosing final cohort",
+  "nextAction": "Preserve the tested W01 progress checkpoint; finish actual-owner handoff/vocabulary/declaration projection, application/report boundary and exact C08 before-observation witness; resolve all51 W01 migration rows with deletion accounting and source tradeoff review; then enter W02 from the terminal W01 commit",
   "updatedAt": "2026-09-07",
-  "goalTool": "active"
+  "goalTool": "active",
+  "activeWave": "W01",
+  "source": "2629 replacement +18276 unchanged legacy =20905 physical product lines; W01 planning tripwire1700 remains red; ceiling11485 unchanged",
+  "checkpoint": "W01 progress checkpoint pending commit; 65f65b1 is the prerequisite checkpoint"
 }

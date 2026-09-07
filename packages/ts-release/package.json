@@ -1,0 +1,62 @@
+{
+  "version": "0.4.0",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+    "bun": ">=1.3.14"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "name": "@mannyc1/ts-release",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./bundle": {
+      "types": "./dist/Bundle.d.ts",
+      "import": "./dist/Bundle.js"
+    },
+    "./http": {
+      "types": "./dist/Http.d.ts",
+      "import": "./dist/Http.js"
+    },
+    "./bun": {
+      "types": "./dist/Bun.d.ts",
+      "import": "./dist/Bun.js"
+    },
+    "./node": {
+      "types": "./dist/Node.d.ts",
+      "import": "./dist/Node.js"
+    }
+  },
+  "dependencies": {
+    "effect-build": "0.6.3"
+  },
+  "peerDependencies": {
+    "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
+    "@effect/platform-node": ">=4.0.0-beta.107 <4.0.0-beta.108",
+    "@effect/platform-bun": ">=4.0.0-beta.107 <4.0.0-beta.108",
+    "effect-build-apple": "0.6.3"
+  },
+  "peerDependenciesMeta": {
+    "@effect/platform-node": {
+      "optional": true
+    },
+    "@effect/platform-bun": {
+      "optional": true
+    },
+    "effect-build-apple": {
+      "optional": true
+    }
+  }
+}

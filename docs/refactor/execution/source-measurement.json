@@ -1,116 +1,308 @@
 {
-  "wave": "P0",
+  "wave": "W01",
   "counts": {
-    "product": 18276,
+    "product": 20905,
     "unchangedLegacy": 18276,
-    "replacement": 0,
-    "metadata": 449,
-    "tests": 31517,
+    "replacement": 2629,
+    "metadata": 431,
+    "tests": 34761,
     "generatedDelivery": 678,
-    "tooling": 44154
+    "tooling": 43958
   },
   "files": [
     {
-      "path": "scripts/check-architecture-ancestry.ts",
+      "path": "packages/ts-release/package.json",
+      "lines": 62,
+      "lane": "metadata",
+      "sha256": "a67609d81fa1051b5403336aec006f02345785f0397b230703c1e5f57b507d38"
+    },
+    {
+      "path": "packages/ts-release/src/Bun.ts",
+      "lines": 3,
+      "lane": "product",
+      "sha256": "6f4085a42414d5743a11d84ad0168996aff753f194ef65c8fc58cd66127fd83d"
+    },
+    {
+      "path": "packages/ts-release/src/Bundle.ts",
+      "lines": 12,
+      "lane": "product",
+      "sha256": "81020fd7a563b2e046ddc45bc896641c537d0c226ea988e634e64d9032884bc5"
+    },
+    {
+      "path": "packages/ts-release/src/Http.ts",
+      "lines": 22,
+      "lane": "product",
+      "sha256": "dbea3dd230a050c122c2a046751df3cc826b4916445f530e3b444d1844c72fa7"
+    },
+    {
+      "path": "packages/ts-release/src/Journal.ts",
+      "lines": 198,
+      "lane": "product",
+      "sha256": "be0fd6e56767380becd7f90188ab35a5f1d58ed0e12e38ea1f84c5e7babd97d4"
+    },
+    {
+      "path": "packages/ts-release/src/Node.ts",
+      "lines": 2,
+      "lane": "product",
+      "sha256": "6365404dc0cca66b3c623b63161b77b740862273e1f3622df9e8524fbb781e23"
+    },
+    {
+      "path": "packages/ts-release/src/Plan.ts",
+      "lines": 134,
+      "lane": "product",
+      "sha256": "ca99ed5271366fd9da4789b45bbe2c3a00063fe478b33bf55059805ed9cac6f7"
+    },
+    {
+      "path": "packages/ts-release/src/Provider.ts",
+      "lines": 260,
+      "lane": "product",
+      "sha256": "b0a4296b76a081bee04b12e937daaf1f944ca049147cb5be3435709339959437"
+    },
+    {
+      "path": "packages/ts-release/src/Release.ts",
+      "lines": 397,
+      "lane": "product",
+      "sha256": "2546b91bad568149a99876256297f2655d9635d8c781d9c41708c84029aab76d"
+    },
+    {
+      "path": "packages/ts-release/src/index.ts",
+      "lines": 71,
+      "lane": "product",
+      "sha256": "daa1fb4f6c77726a93e03d6925db808886915d6553e452197842f3609db2547a"
+    },
+    {
+      "path": "packages/ts-release/src/internal/ArtifactModel.ts",
+      "lines": 59,
+      "lane": "product",
+      "sha256": "27b57b6943a876b1eebb4915cfdc27e6e36120b7739db94ae8c07474092ee48c"
+    },
+    {
+      "path": "packages/ts-release/src/internal/BundleCodec.ts",
+      "lines": 30,
+      "lane": "product",
+      "sha256": "c021d823a4cb708162eb6fe73d1cc9814b8a9b066dd5e65a9a133147bad2ba7a"
+    },
+    {
+      "path": "packages/ts-release/src/internal/BundleFinalize.ts",
+      "lines": 38,
+      "lane": "product",
+      "sha256": "5380f88fdaf236090232118840dac8d5c4a8c6bce06f2c925ca7d7b2165ee3f3"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Content.ts",
+      "lines": 21,
+      "lane": "product",
+      "sha256": "9a06b956527f8d994d1612a8919297167bb64e757d24fde0823ffe39de4f1edc"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Decision.ts",
+      "lines": 330,
+      "lane": "product",
+      "sha256": "9431d65013e22246a31585c2cc60858795399e6c74614f47fba817070e9ab4cf"
+    },
+    {
+      "path": "packages/ts-release/src/internal/EffectTypes.ts",
+      "lines": 10,
+      "lane": "product",
+      "sha256": "fbf72e6ca89f37f162f3a6e455b9da742f7b6c542ae116c254f2e88266a842de"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Error.ts",
+      "lines": 19,
+      "lane": "product",
+      "sha256": "72e2cbc4d1dced743dcf68777d5754995e2c4e63ddb43fc67d2229ae87f06ed2"
+    },
+    {
+      "path": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "lines": 71,
+      "lane": "product",
+      "sha256": "cb16ba8b9346110ff79472a6b003dfcdef356e686a9d53d2ed6f87718bf0a94d"
+    },
+    {
+      "path": "packages/ts-release/src/internal/GitAuthority.ts",
+      "lines": 121,
+      "lane": "product",
+      "sha256": "42cb1a3ab2995991b4fc8e9200fd69adc795da1f5690f02effcbf0be754509f9"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Host.ts",
+      "lines": 196,
+      "lane": "product",
+      "sha256": "e9785a16798965b006bb534c24557d7aad0ee9b1df4bdf5be91a189b338e8104"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Identity.ts",
+      "lines": 119,
+      "lane": "product",
+      "sha256": "ab9cf2c26135a2a4e7a51e9beee887f789bbb9bfb1b8a84d163fc608b489c7cc"
+    },
+    {
+      "path": "packages/ts-release/src/internal/ReleaseModel.ts",
+      "lines": 158,
+      "lane": "product",
+      "sha256": "971fafc2674743e3a79639c67c024b5126d2946a1956d692187198a44960d437"
+    },
+    {
+      "path": "packages/ts-release/src/internal/TreeManifest.ts",
+      "lines": 88,
+      "lane": "product",
+      "sha256": "c3dff093aded6406e0739ba1af21afdbd569c2ca42006589009a305bb0df2373"
+    },
+    {
+      "path": "packages/ts-release/src/platform/ContentStore.ts",
+      "lines": 137,
+      "lane": "product",
+      "sha256": "0b70de2d4e95ab73c7678ed1a004fa101601e689e32ec82b53b8db2d83a32182"
+    },
+    {
+      "path": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "lines": 111,
+      "lane": "product",
+      "sha256": "8537597f4e9c692878011ac8cf45b137c9d419e998471532a97a32059d257bfb"
+    },
+    {
+      "path": "packages/ts-release/src/platform/StoreCodec.ts",
+      "lines": 22,
+      "lane": "product",
+      "sha256": "06a572008f64d8999566bc1ba33d9139a247ff4c146b723753ac1fb6041900b0"
+    },
+    {
+      "path": "packages/ts-release/tsconfig.build.json",
+      "lines": 14,
+      "lane": "metadata",
+      "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8"
+    },
+    {
+      "path": "scripts/build.ts",
+      "lines": 18,
+      "lane": "tooling",
+      "sha256": "e1ac8ad797243d183a65fc29d39a419f7081ed850bc7e49e4bc6b94e88035616"
+    },
+    {
+      "path": "scripts/check-packed-kernel.ts",
+      "lines": 179,
+      "lane": "tooling",
+      "sha256": "6d23083c92c8075501dd8f7937043290d3d1b681795ad0965ddbb4d453706c3e"
+    },
+    {
+      "path": "scripts/check.ts",
       "lines": 11,
       "lane": "tooling",
-      "sha256": "4d1fe5481b4b6f538ee5ee3dff111512ad97d66e3041d622e77ea19e19192367"
+      "sha256": "4733c631c2cadf49dc908e4039eefbdfe3328b604611d3cae743e3ff492e2acd"
     },
     {
-      "path": "scripts/check-architecture-budget.ts",
-      "lines": 42,
-      "lane": "tooling",
-      "sha256": "47ee96321d16c0fd3cff3a451ec0907c804e72d13fc07c3b714aff30f90b1a0d"
+      "path": "test/reimplementation/kernel/admission.test.ts",
+      "lines": 366,
+      "lane": "tests",
+      "sha256": "3152e30b1c726a6be80d8465aa2d8b9fb71e5d41176dee8ba4beb94b68e814df"
     },
     {
-      "path": "scripts/check-launch-evidence.ts",
-      "lines": 31,
-      "lane": "tooling",
-      "sha256": "d8a972b2c02f7b80f338df3af70580d79145af5ea4fb83b56e4d74871fb6efd0"
+      "path": "test/reimplementation/kernel/boundaries.test.ts",
+      "lines": 418,
+      "lane": "tests",
+      "sha256": "c54fc622ddf61df32c71bf34e2aea52beb621d8d50b147e18515b81a643c5bd9"
     },
     {
-      "path": "scripts/check-wave-prerequisite.ts",
-      "lines": 3,
-      "lane": "tooling",
-      "sha256": "4085c6c96b14679a4d5cef799f741a0719b78c3317f3c6148947c6dc6990f537"
+      "path": "test/reimplementation/kernel/bundle.test.ts",
+      "lines": 308,
+      "lane": "tests",
+      "sha256": "65eeda33021db5d8047d3f4ebecb189ac26566320bc458a6fbe9cc5d85c807c3"
     },
     {
-      "path": "tools/architecture-lab/machine/src/http-evidence.ts",
-      "lines": 13,
-      "lane": "tooling",
-      "sha256": "9897e521b873a556708d041a4439ea3e14775b9ffedfd469efaa757c96b6949b"
+      "path": "test/reimplementation/kernel/content-runner.ts",
+      "lines": 22,
+      "lane": "tests",
+      "sha256": "0e720afd7690a193da2041e6f15546e9d500b7269e452ad20c9100d89f0feb55"
     },
     {
-      "path": "tools/architecture-lab/machine/src/laws.ts",
-      "lines": 87,
-      "lane": "tooling",
-      "sha256": "2b21b41a5c50d820d5b52453b25c31b7700c7b36794220a0a2b125b5804e4820"
+      "path": "test/reimplementation/kernel/errors.test.ts",
+      "lines": 202,
+      "lane": "tests",
+      "sha256": "430ef3c87635cc3caea08b5c747d81c20cf25f0a5bf903c886b5656f7b0f3540"
     },
     {
-      "path": "tools/architecture-lab/machine/witnesses/application-example.ts",
-      "lines": 41,
-      "lane": "tooling",
-      "sha256": "846399d5cfa938ee3f16d29a37324b510559c75427cc930e0a7a2e5e4a0cc9eb"
+      "path": "test/reimplementation/kernel/fixtures.ts",
+      "lines": 204,
+      "lane": "tests",
+      "sha256": "50e3e065f6753c634aac40e56a144ab36cc8727e3afd9fb634308f06cf01e8ad"
     },
     {
-      "path": "tools/architecture-lab/machine/witnesses/cache.test.ts",
-      "lines": 118,
-      "lane": "tooling",
-      "sha256": "1ba68d6ac3cd9f9de675e0e62f82a22bda23260a12097c50c98cef37745b58c0"
+      "path": "test/reimplementation/kernel/git.test.ts",
+      "lines": 116,
+      "lane": "tests",
+      "sha256": "e43652f915e2b4b50ef8441778f25c9677973b45b1bf81756d8a9e772a50d515"
     },
     {
-      "path": "tools/architecture-lab/machine/witnesses/caching-store.ts",
-      "lines": 39,
-      "lane": "tooling",
-      "sha256": "807849a337f24a29bdfdde5a97f565fa05e3edca3a9308e73ecbf73011013975"
+      "path": "test/reimplementation/kernel/kernel.ts",
+      "lines": 61,
+      "lane": "tests",
+      "sha256": "9b036eb14c61524ce82ae94d1189e1e434827bf939df1c8b2f0e6f2ea54ba6d6"
     },
     {
-      "path": "tools/architecture-lab/machine/witnesses/contract.test.ts",
-      "lines": 36,
-      "lane": "tooling",
-      "sha256": "fe0ec96731df549f57569da0d26eccf50a91195cdfca7b16c521da853eb7faf4"
+      "path": "test/reimplementation/kernel/observable.test.ts",
+      "lines": 577,
+      "lane": "tests",
+      "sha256": "ee04155c62047c7d70ab060fbd00f264fb307855ace3c69436705fe8ac084ba6"
     },
     {
-      "path": "tools/architecture-lab/machine/witnesses/executor-laws.test.ts",
-      "lines": 91,
-      "lane": "tooling",
-      "sha256": "a5c8448657479ed1849ee904d465592e706209f32eaeb909a50210bd6ad13d14"
+      "path": "test/reimplementation/kernel/process-runner.ts",
+      "lines": 96,
+      "lane": "tests",
+      "sha256": "edd9f9982c4ba12fbe2e9cbbf7c263c1119ebfbcc141a8c31f4f8851f7af425c"
     },
     {
-      "path": "tools/architecture-lab/machine/witnesses/m2-transition.ts",
-      "lines": 157,
-      "lane": "tooling",
-      "sha256": "6df87645f38acca3ebe8f7458bd9e14de5c636b8f2702969ac016bb15b9abadb"
+      "path": "test/reimplementation/kernel/process.test.ts",
+      "lines": 86,
+      "lane": "tests",
+      "sha256": "67b669b4d783d590eb4cae8770a93dffd15dc69d810eca8d403874470627d6db"
     },
     {
-      "path": "tools/architecture-lab/machine/witnesses/memoized-machine.ts",
+      "path": "test/reimplementation/kernel/report.test.ts",
+      "lines": 134,
+      "lane": "tests",
+      "sha256": "6f0ae80b1bdc3c3162671c145c2944bda1ea5824e3f2642bb38ac1e8fe8d817a"
+    },
+    {
+      "path": "test/reimplementation/kernel/sqlite-fixture.ts",
+      "lines": 23,
+      "lane": "tests",
+      "sha256": "5f351a3e7621d8ceb5c51267e236bb43c80f57f5c9763a59ca1637a58f636c9d"
+    },
+    {
+      "path": "test/reimplementation/kernel/sqlite.test.ts",
+      "lines": 75,
+      "lane": "tests",
+      "sha256": "a328f004bdd47492c5cf0c0457954deb246d36dd355f86a78f1093722a90dc5f"
+    },
+    {
+      "path": "test/reimplementation/kernel/witnesses/caching-store.ts",
+      "lines": 70,
+      "lane": "tests",
+      "sha256": "5e334a89c3230000151799c94230d28732eabd4b05517239617aa98cca101291"
+    },
+    {
+      "path": "test/reimplementation/kernel/witnesses/m2-transition.ts",
+      "lines": 328,
+      "lane": "tests",
+      "sha256": "d3df92f1a21957dbe7a549075f51589fe5a8d84ab4f6e05a61334b805646e542"
+    },
+    {
+      "path": "test/reimplementation/kernel/witnesses/memoized-machine.ts",
       "lines": 15,
-      "lane": "tooling",
-      "sha256": "27f69ac4f9aa01784ecac378168cd516e5827e3f3a219963ece7050fd4e82bb2"
+      "lane": "tests",
+      "sha256": "4a90261e484ff9e886f0532c8d49dacc1ba05f73f679f5154b67f4d59e954b4a"
     },
     {
-      "path": "tools/architecture-lab/machine/witnesses/preparation-selection.test.ts",
-      "lines": 29,
-      "lane": "tooling",
-      "sha256": "a148d1820e70c97595fef65b919135a42740cbefd7e9b331efaea4ad8304ae9a"
+      "path": "test/reimplementation/packed-kernel/bun.mjs",
+      "lines": 38,
+      "lane": "tests",
+      "sha256": "38fd5648afe4af3718305197c43085f66fec73600f0456f632cd12e5bb10cd71"
     },
     {
-      "path": "tools/architecture-lab/machine/witnesses/store-laws.test.ts",
-      "lines": 39,
-      "lane": "tooling",
-      "sha256": "7637f643d77fc94ada2e55b4cd5a6a689a84ffeac74c5180170f579ee2f739c0"
-    },
-    {
-      "path": "tools/architecture-lab/machine/witnesses/store-laws.ts",
-      "lines": 25,
-      "lane": "tooling",
-      "sha256": "07f6086048d12af16e5a6a2b3722a7d9314eea81ae46656b1ecd4e1482f6139a"
-    },
-    {
-      "path": "tools/architecture-lab/machine/witnesses/undecodable-receipt.test.ts",
-      "lines": 29,
-      "lane": "tooling",
-      "sha256": "e6f8e04c3269d3a6c0beea1283943ea48ba6ac358b0790f755714eee4252243a"
+      "path": "test/reimplementation/packed-kernel/portable.mjs",
+      "lines": 105,
+      "lane": "tests",
+      "sha256": "a2b432968d6b4d964b094a04d230ec1226a699967183701026351a5fc6e3877f"
     },
     {
       "path": "apps/release-ts/package.json",
@@ -288,9 +480,9 @@
     },
     {
       "path": "package.json",
-      "lines": 149,
+      "lines": 48,
       "lane": "metadata",
-      "sha256": "ae18040c65468fafc34d41b19c2f773754dff0577780ea247dc64756b5cc35db"
+      "sha256": "8860977a25ffa78db6f839aaf967d33ff8d094b7409d9be8541e852a7cd23303"
     },
     {
       "path": "prototypes/research-complete-machine/M1-extracted-fold/src/boundaries.ts",
@@ -869,6 +1061,18 @@
       "sha256": "d4eacc003853f89fc8c65a10176e500eb657571d7d6c232413bc8158946c8897"
     },
     {
+      "path": "scripts/check-architecture-ancestry.ts",
+      "lines": 11,
+      "lane": "tooling",
+      "sha256": "4d1fe5481b4b6f538ee5ee3dff111512ad97d66e3041d622e77ea19e19192367"
+    },
+    {
+      "path": "scripts/check-architecture-budget.ts",
+      "lines": 42,
+      "lane": "tooling",
+      "sha256": "236e97fdde4684d97f3a98a436d208145998292e8e02857d1efeae6e1b02c3e5"
+    },
+    {
       "path": "scripts/check-capabilities.ts",
       "lines": 17,
       "lane": "tooling",
@@ -900,15 +1104,21 @@
     },
     {
       "path": "scripts/check-import-rules.ts",
-      "lines": 14,
+      "lines": 136,
       "lane": "tooling",
-      "sha256": "ff14d1f0fda2dc4b7234c9b6f82620bcd1c7367159e6dd1153dbbd8e25bc951b"
+      "sha256": "ddf644faae62c330cd85e9e834824491909e9f5aa78d6102478d0d8383bf12ec"
+    },
+    {
+      "path": "scripts/check-launch-evidence.ts",
+      "lines": 31,
+      "lane": "tooling",
+      "sha256": "d8a972b2c02f7b80f338df3af70580d79145af5ea4fb83b56e4d74871fb6efd0"
     },
     {
       "path": "scripts/check-package-exports.ts",
-      "lines": 694,
+      "lines": 135,
       "lane": "tooling",
-      "sha256": "35b5e9ee13b974f4dceeded5bb9a1188993c52f9425f02d0b871afb33bd4c642"
+      "sha256": "da1fae050add15e9f6ae903fbe2066c3159114396145182cc60007fa1096a324"
     },
     {
       "path": "scripts/check-packed-consumers.ts",
@@ -939,6 +1149,12 @@
       "lines": 14,
       "lane": "tooling",
       "sha256": "a41d09e278f8e971822a4c599152743d3b0c982dd70e1159efab000726cc925e"
+    },
+    {
+      "path": "scripts/check-wave-prerequisite.ts",
+      "lines": 3,
+      "lane": "tooling",
+      "sha256": "4085c6c96b14679a4d5cef799f741a0719b78c3317f3c6148947c6dc6990f537"
     },
     {
       "path": "scripts/generate-capabilities.ts",
@@ -2190,9 +2406,9 @@
     },
     {
       "path": "tools/architecture-lab/apple-composition/run.mjs",
-      "lines": 30,
+      "lines": 32,
       "lane": "tooling",
-      "sha256": "b96600cc289cbec62a6f317d0e4def62192564f3f523c225b457244b5f3ebd82"
+      "sha256": "371398791748e397da23f16e75bca607efb60ba5286a37bdfa7d64443908236b"
     },
     {
       "path": "tools/architecture-lab/apple/adoption-fixture.ts",
@@ -2334,9 +2550,9 @@
     },
     {
       "path": "tools/architecture-lab/machine/measure.mjs",
-      "lines": 40,
+      "lines": 41,
       "lane": "tooling",
-      "sha256": "a496c69aa0797dbce066a96fcd6c57419b29eb14301b93d535b04663f72266f9"
+      "sha256": "ea1b9fc9a3047636c9e3e329b3b98ad013c0def259eef79a5ecaa42bdfe33466"
     },
     {
       "path": "tools/architecture-lab/machine/src/contracts.ts",
@@ -2351,6 +2567,12 @@
       "sha256": "7a58500b527478c640e7a9fb5e19a1212c3c5bf155584ab2e3ea56ef4a43ac26"
     },
     {
+      "path": "tools/architecture-lab/machine/src/http-evidence.ts",
+      "lines": 13,
+      "lane": "tooling",
+      "sha256": "9897e521b873a556708d041a4439ea3e14775b9ffedfd469efaa757c96b6949b"
+    },
+    {
       "path": "tools/architecture-lab/machine/src/identity.ts",
       "lines": 292,
       "lane": "tooling",
@@ -2361,6 +2583,12 @@
       "lines": 11,
       "lane": "tooling",
       "sha256": "9c5aa0ca0c55702388688fcf5fbe548a87c0f7cf90acf283c8f564c32c07b6d6"
+    },
+    {
+      "path": "tools/architecture-lab/machine/src/laws.ts",
+      "lines": 87,
+      "lane": "tooling",
+      "sha256": "2b21b41a5c50d820d5b52453b25c31b7700c7b36794220a0a2b125b5804e4820"
     },
     {
       "path": "tools/architecture-lab/machine/src/m1-history.ts",
@@ -2459,6 +2687,72 @@
       "sha256": "57b6f99e3308a3b27e832f0da3565fc1327de8b3b3ca0fceb719072b36ae4cf0"
     },
     {
+      "path": "tools/architecture-lab/machine/witnesses/application-example.ts",
+      "lines": 41,
+      "lane": "tooling",
+      "sha256": "846399d5cfa938ee3f16d29a37324b510559c75427cc930e0a7a2e5e4a0cc9eb"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/cache.test.ts",
+      "lines": 118,
+      "lane": "tooling",
+      "sha256": "1ba68d6ac3cd9f9de675e0e62f82a22bda23260a12097c50c98cef37745b58c0"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/caching-store.ts",
+      "lines": 39,
+      "lane": "tooling",
+      "sha256": "807849a337f24a29bdfdde5a97f565fa05e3edca3a9308e73ecbf73011013975"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/contract.test.ts",
+      "lines": 36,
+      "lane": "tooling",
+      "sha256": "fe0ec96731df549f57569da0d26eccf50a91195cdfca7b16c521da853eb7faf4"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/executor-laws.test.ts",
+      "lines": 91,
+      "lane": "tooling",
+      "sha256": "a5c8448657479ed1849ee904d465592e706209f32eaeb909a50210bd6ad13d14"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/m2-transition.ts",
+      "lines": 157,
+      "lane": "tooling",
+      "sha256": "6df87645f38acca3ebe8f7458bd9e14de5c636b8f2702969ac016bb15b9abadb"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/memoized-machine.ts",
+      "lines": 15,
+      "lane": "tooling",
+      "sha256": "27f69ac4f9aa01784ecac378168cd516e5827e3f3a219963ece7050fd4e82bb2"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/preparation-selection.test.ts",
+      "lines": 29,
+      "lane": "tooling",
+      "sha256": "a148d1820e70c97595fef65b919135a42740cbefd7e9b331efaea4ad8304ae9a"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/store-laws.test.ts",
+      "lines": 39,
+      "lane": "tooling",
+      "sha256": "7637f643d77fc94ada2e55b4cd5a6a689a84ffeac74c5180170f579ee2f739c0"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/store-laws.ts",
+      "lines": 25,
+      "lane": "tooling",
+      "sha256": "07f6086048d12af16e5a6a2b3722a7d9314eea81ae46656b1ecd4e1482f6139a"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/undecodable-receipt.test.ts",
+      "lines": 58,
+      "lane": "tooling",
+      "sha256": "d7a1948e77434c1a285cbcbe9d9db40dff12a48c29b40e216fc2a9dd502649d2"
+    },
+    {
       "path": "tools/architecture-lab/migration.ts",
       "lines": 66,
       "lane": "tooling",
@@ -2474,7 +2768,7 @@
       "path": "tools/architecture-lab/project.ts",
       "lines": 342,
       "lane": "tooling",
-      "sha256": "cc84d4c0cdd5dfa391a7ec0340d7dc9060388a5d7e6b00364cdab7df5a3bae69"
+      "sha256": "4018aae2478c8085171d203839e69d82a60777f7a72918dc46d5b3fb725750ac"
     },
     {
       "path": "tools/architecture-lab/proposal/apple.ts",
@@ -2766,9 +3060,9 @@
     },
     {
       "path": "tools/architecture-lab/verify.mjs",
-      "lines": 119,
+      "lines": 120,
       "lane": "tooling",
-      "sha256": "6ebcdb17205e0670ce47180c0a6418d608d3ff31e150ca1c0e20ad14decc52d9"
+      "sha256": "9e9d9b20313f7af437d86a0e40ff247ce90a28fd4776d9ac2713c3b23eeb762f"
     },
     {
       "path": "tools/architecture-program/package.json",
@@ -3312,9 +3606,9 @@
     },
     {
       "path": "tsconfig.json",
-      "lines": 30,
+      "lines": 37,
       "lane": "metadata",
-      "sha256": "9bab744deef27012556371f71bd44c9b8f04e1fc19c791da87848e6ba8b737cf"
+      "sha256": "0f165251fe6ac7b06fcc0229098f3efdd54a88c4c1deca47f58933406b9223a9"
     },
     {
       "path": "vendor/effect-bun-test/package.json",

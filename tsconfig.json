@@ -1,30 +1,37 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable",
+      "ESNext.Disposable"
+    ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": true,
-    "resolveJsonModule": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "skipLibCheck": false,
+    "verbatimModuleSyntax": true,
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "paths": {
-      "@mannyc1/ts-release": ["./src/index.ts"],
-      "@mannyc1/ts-release/node": ["./src/platform/node.ts"],
-      "@mannyc1/ts-release/bun": ["./src/platform/bun.ts"],
-      "@mannyc1/ts-release/store": ["./src/store.ts"],
-      "@mannyc1/ts-release/host": ["./src/host.ts"],
-      "@mannyc1/ts-release/*": ["./src/*.ts"]
-    },
-    "types": ["bun-types"],
-    "rootDir": ".",
-    "outDir": "dist",
-    "noEmit": true
+    "declarationMap": false,
+    "sourceMap": false,
+    "noEmit": true,
+    "types": [
+      "bun-types"
+    ],
+    "paths": {}
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "test/**/*.ts", "scripts/**/*.ts"],
-  "exclude": ["dist", ".repos", "node_modules"]
+  "include": [
+    "packages/**/*.ts",
+    "test/reimplementation/**/*.ts"
+  ],
+  "exclude": [
+    "**/dist",
+    "**/node_modules",
+    ".repos",
+    "tools",
+    "docs"
+  ]
 }

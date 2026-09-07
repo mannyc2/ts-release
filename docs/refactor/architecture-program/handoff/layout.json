@@ -41,7 +41,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "eb0716306ab3c300b84a210fa892a8c705d40476c7651175e9db76adb52f3cdf"
+    "sha256": "d268e1c1464b918c9e10dc07f2dbced64241413f715f4e56aeaac932746b3811"
   },
   "migration": {
     "path": "docs/refactor/architecture-program/handoff/migration.json",
@@ -87,7 +87,7 @@
       "sha256": "fa50a9a495f28fefa21946669aa92828119e5959823b1b237347d2a2a6af8a4d"
     }
   },
-  "publicSurfaceSha256": "3cf9e560bb7139e4e0c05f3f8cf6a0d6fd15e518653a9c3625da318718d2f7df",
+  "publicSurfaceSha256": "ed557bcd092f246212655fb2cfd2743a87b1a2ca5bb58077e0c3a1a9b922cb2e",
   "effectPatch": {
     "required": false,
     "donorPath": "patches/effect@4.0.0-rc.108.patch",
@@ -96,7 +96,7 @@
       "path": "docs/refactor/architecture-program/handoff/upstream/unpatched-effect-consumer.json",
       "sha256": "a80eb091029a743c95a0f6e848d44dd0bd7f2c64b9d1624f1763665d3f795f1d"
     },
-    "rationale": "Historical donor/research patch only. Official unpatched rc.108 passes the selected API and actual published producer consumer; omit patchedDependencies from the proposed manifest. The negative control confirms the donor-only private Param declaration is absent."
+    "rationale": "Historical rc.108 private Param donor patch only; omit patchedDependencies. The production beta.107 declaration repair is owned source recorded separately, not a runtime or dependency patch."
   },
   "alternatives": [
     {
@@ -204,9 +204,9 @@
               "sigstore": "5.0.0"
             },
             "peerDependencies": {
-              "effect": ">=4.0.0-rc.108 <4.1.0-0",
-              "@effect/platform-node": ">=4.0.0-rc.108 <4.1.0-0",
-              "@effect/platform-bun": ">=4.0.0-rc.108 <4.1.0-0",
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
+              "@effect/platform-node": ">=4.0.0-beta.107 <4.0.0-beta.108",
+              "@effect/platform-bun": ">=4.0.0-beta.107 <4.0.0-beta.108",
               "effect-build-apple": "0.6.3"
             },
             "peerDependenciesMeta": {
@@ -225,16 +225,16 @@
               "apps/*"
             ],
             "devDependencies": {
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108",
-              "@effect/platform-bun": "4.0.0-rc.108",
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107",
+              "@effect/platform-bun": "4.0.0-beta.107",
               "effect-build-apple": "0.6.3",
               "typescript": "6.0.3",
               "bun-types": "1.3.14",
               "@types/semver": "7.7.1"
             },
             "overrides": {
-              "@effect/platform-node-shared": "4.0.0-rc.108"
+              "@effect/platform-node-shared": "4.0.0-beta.107"
             },
             "scripts": {
               "build": "bun scripts/build.ts",
@@ -243,7 +243,7 @@
               "build:delivery": "bun scripts/build-delivery.ts"
             }
           },
-          "manifestSha256": "8c087a8fbece183f3420a0bd117323987e98a047f985a41e0e6950ca80646326",
+          "manifestSha256": "359800b91b13ac68b6bbc3926e0c7a212976fb41d4e8eb566c397305eb256bea",
           "manifestLines": 129
         }
       ],
@@ -263,10 +263,10 @@
             },
             "dependencies": {
               "@mannyc1/ts-release": "0.4.0",
-              "effect": "4.0.0-rc.108"
+              "effect": "4.0.0-beta.107"
             }
           },
-          "manifestSha256": "95a9368129c3b9d3ac06c6e867138fbee76ebfcd925b681a741d21e64975815b",
+          "manifestSha256": "76c13cf8250428b0d0472a4fe6401611d5de28b5276a701fb0ab6542f37bd70c",
           "manifestLines": 14,
           "deliverySource": "src/bin/ts-release.ts",
           "artifact": "dist/bin/ts-release.js",
@@ -287,11 +287,11 @@
             },
             "dependencies": {
               "@mannyc1/ts-release": "0.4.0",
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108"
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107"
             }
           },
-          "manifestSha256": "7a37c14d08588b09d594c17945f31ae28e445c083b0b0e1371087551da48a5e5",
+          "manifestSha256": "ecec8b68795ca7dcdd9c1aaca105b42b6853086213a1e2d759a54b58d92ac501",
           "manifestLines": 15,
           "deliverySource": "apps/action/src/launcher.ts",
           "artifact": "apps/action/dist/launcher.cjs",
@@ -315,13 +315,13 @@
             },
             "dependencies": {
               "@mannyc1/ts-release": "0.4.0",
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108",
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107",
               "effect-build": "0.6.3",
               "effect-build-apple": "0.6.3"
             }
           },
-          "manifestSha256": "133a6198b2881c45d36e69a505c5c0691d90e6cba9ff82d5587005562f7e6d98",
+          "manifestSha256": "49757e69deb027633cf8f704f9541bf1d4961dafd733c1c78f57e90ff8aaac27",
           "manifestLines": 17,
           "application": "apps/self-release/src/application.ts"
         }
@@ -1215,7 +1215,7 @@
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
         "sourceEdgesSha256": "a33fb7df0cf5907ddc6edbd592483ba7d27ec726286f9db53d9cbc691701aea6",
-        "packageEdgesSha256": "532a62dcfa9eb2868c45893b21342d99e8c05f38bc1abecbe67f884fbc9b4820",
+        "packageEdgesSha256": "4956bd597d16f55c79c94559faf658c1594b16c74bb5e6ba4e672b7c0fd2cf4f",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -2509,21 +2509,21 @@
           {
             "from": "core",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "core",
             "to": "@effect/platform-node",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": true
           },
           {
             "from": "core",
             "to": "@effect/platform-bun",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": true
           },
@@ -2537,21 +2537,21 @@
           {
             "from": "core",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
           {
             "from": "core",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
           {
             "from": "core",
             "to": "@effect/platform-bun",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
@@ -2593,7 +2593,7 @@
           {
             "from": "app.cli",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
@@ -2607,14 +2607,14 @@
           {
             "from": "app.action",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
           {
             "from": "app.action",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
@@ -2628,14 +2628,14 @@
           {
             "from": "app.self-release",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
           {
             "from": "app.self-release",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
@@ -2790,7 +2790,7 @@
         ],
         "universalDependency": {
           "specifier": "effect",
-          "version": "4.0.0-rc.108",
+          "version": "4.0.0-beta.107",
           "ownership": "Required peer available to every module; each implementation's exact import list is qualified after emission."
         },
         "dynamicApplications": [
@@ -3034,9 +3034,9 @@
               "effect-build": "0.6.3"
             },
             "peerDependencies": {
-              "effect": ">=4.0.0-rc.108 <4.1.0-0",
-              "@effect/platform-node": ">=4.0.0-rc.108 <4.1.0-0",
-              "@effect/platform-bun": ">=4.0.0-rc.108 <4.1.0-0",
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
+              "@effect/platform-node": ">=4.0.0-beta.107 <4.0.0-beta.108",
+              "@effect/platform-bun": ">=4.0.0-beta.107 <4.0.0-beta.108",
               "effect-build-apple": "0.6.3"
             },
             "peerDependenciesMeta": {
@@ -3051,7 +3051,7 @@
               }
             }
           },
-          "manifestSha256": "4d20d18b994ec2408c03981a2b1d64bf6bbdaebccbb739a39f9c05293f5a0461",
+          "manifestSha256": "b984c0a66558256e30ca3601fafe7cdf905524ed68b7498c13e376fdc26d46b8",
           "manifestLines": 77
         },
         {
@@ -3113,10 +3113,10 @@
             },
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "113a3492a8446f324aac1194030baa3acd6ab02639657524093e2ac0a092316c",
+          "manifestSha256": "37e5c4dddc4b791725674fb59b6f7c175c4cf4e53e21dddcd6fd241559c8abfc",
           "manifestLines": 58
         }
       ],
@@ -3142,16 +3142,16 @@
               "packages/providers"
             ],
             "devDependencies": {
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108",
-              "@effect/platform-bun": "4.0.0-rc.108",
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107",
+              "@effect/platform-bun": "4.0.0-beta.107",
               "effect-build-apple": "0.6.3",
               "typescript": "6.0.3",
               "bun-types": "1.3.14",
               "@types/semver": "7.7.1"
             },
             "overrides": {
-              "@effect/platform-node-shared": "4.0.0-rc.108"
+              "@effect/platform-node-shared": "4.0.0-beta.107"
             },
             "scripts": {
               "build": "bun scripts/build.ts",
@@ -3160,7 +3160,7 @@
               "build:delivery": "bun scripts/build-delivery.ts"
             }
           },
-          "manifestSha256": "37072c409e0271cd44a3ae8e2bade21a5160f2240372e55a214ba44f9be42cb7",
+          "manifestSha256": "676ee881239d8de1a13694803d7b34798ad333d979a8ee7e8f7e8673743819ec",
           "manifestLines": 35
         },
         {
@@ -3178,10 +3178,10 @@
             },
             "dependencies": {
               "@mannyc1/ts-release": "0.4.0",
-              "effect": "4.0.0-rc.108"
+              "effect": "4.0.0-beta.107"
             }
           },
-          "manifestSha256": "95a9368129c3b9d3ac06c6e867138fbee76ebfcd925b681a741d21e64975815b",
+          "manifestSha256": "76c13cf8250428b0d0472a4fe6401611d5de28b5276a701fb0ab6542f37bd70c",
           "manifestLines": 14,
           "deliverySource": "packages/kernel/src/bin/ts-release.ts",
           "artifact": "packages/kernel/dist/bin/ts-release.js",
@@ -3202,11 +3202,11 @@
             },
             "dependencies": {
               "@mannyc1/ts-release": "0.4.0",
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108"
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107"
             }
           },
-          "manifestSha256": "7a37c14d08588b09d594c17945f31ae28e445c083b0b0e1371087551da48a5e5",
+          "manifestSha256": "ecec8b68795ca7dcdd9c1aaca105b42b6853086213a1e2d759a54b58d92ac501",
           "manifestLines": 15,
           "deliverySource": "apps/action/src/launcher.ts",
           "artifact": "apps/action/dist/launcher.cjs",
@@ -3230,14 +3230,14 @@
             },
             "dependencies": {
               "@mannyc1/ts-release": "0.4.0",
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108",
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107",
               "effect-build": "0.6.3",
               "effect-build-apple": "0.6.3",
               "@mannyc1/ts-release-providers": "0.4.0"
             }
           },
-          "manifestSha256": "f2b578f3f5dbae9545857307fdc9e9cd622de4918f43d3102279056a9398f98b",
+          "manifestSha256": "6434155da7476660f8e992982933225e9e17008a39a79cfa8f8e50c40f096508",
           "manifestLines": 18,
           "application": "apps/self-release/src/application.ts"
         }
@@ -4150,7 +4150,7 @@
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
         "sourceEdgesSha256": "91e8615cf58d6ba9f96bd03385a8999bb9695855ecd1fe6dbbaee6bbf879ceff",
-        "packageEdgesSha256": "e1c400ad216792335df8acafbd95b9eec687acb24ecdb0ad1e6c0618845693c7",
+        "packageEdgesSha256": "58b5476249a3db40865745e36e66fc3ec2643bc40ec971c8bd381a885864f0ae",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -5430,21 +5430,21 @@
           {
             "from": "core",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "core",
             "to": "@effect/platform-node",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": true
           },
           {
             "from": "core",
             "to": "@effect/platform-bun",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": true
           },
@@ -5479,28 +5479,28 @@
           {
             "from": "providers",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "app.workspace",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
           {
             "from": "app.workspace",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
           {
             "from": "app.workspace",
             "to": "@effect/platform-bun",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
@@ -5542,7 +5542,7 @@
           {
             "from": "app.cli",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
@@ -5556,14 +5556,14 @@
           {
             "from": "app.action",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
           {
             "from": "app.action",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
@@ -5577,14 +5577,14 @@
           {
             "from": "app.self-release",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
           {
             "from": "app.self-release",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
@@ -5746,7 +5746,7 @@
         ],
         "universalDependency": {
           "specifier": "effect",
-          "version": "4.0.0-rc.108",
+          "version": "4.0.0-beta.107",
           "ownership": "Required peer available to every module; each implementation's exact import list is qualified after emission."
         },
         "dynamicApplications": [
@@ -5990,9 +5990,9 @@
               "effect-build": "0.6.3"
             },
             "peerDependencies": {
-              "effect": ">=4.0.0-rc.108 <4.1.0-0",
-              "@effect/platform-node": ">=4.0.0-rc.108 <4.1.0-0",
-              "@effect/platform-bun": ">=4.0.0-rc.108 <4.1.0-0",
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
+              "@effect/platform-node": ">=4.0.0-beta.107 <4.0.0-beta.108",
+              "@effect/platform-bun": ">=4.0.0-beta.107 <4.0.0-beta.108",
               "effect-build-apple": "0.6.3"
             },
             "peerDependenciesMeta": {
@@ -6007,7 +6007,7 @@
               }
             }
           },
-          "manifestSha256": "4d20d18b994ec2408c03981a2b1d64bf6bbdaebccbb739a39f9c05293f5a0461",
+          "manifestSha256": "b984c0a66558256e30ca3601fafe7cdf905524ed68b7498c13e376fdc26d46b8",
           "manifestLines": 77
         },
         {
@@ -6045,10 +6045,10 @@
             },
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "d594a1814776d248cb4b6fd3159e95deb4d0b0a234efd13aaaac5000c5f396cc",
+          "manifestSha256": "50540e6c0b57c21743dec3beef400b2a1cd4e25984a4e886c60f347971a3e000",
           "manifestLines": 34
         },
         {
@@ -6083,10 +6083,10 @@
             "dependencies": {},
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "221ef07137dc32002811e2d5080c5f795ae4bfb219a9845b9fa9cab0a349271e",
+          "manifestSha256": "a23e391e675c262fa89fce838eaffcd34a1d29c85bc4471bed66dfa856e59a92",
           "manifestLines": 31
         },
         {
@@ -6121,10 +6121,10 @@
             "dependencies": {},
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "a60058e13e34cfbda016aac8071def08c85557715d8351a7c52e71656f32ec45",
+          "manifestSha256": "b9089b3a537ed96f5067ffafeb9b6a813458da0053a949d1408820cead6c1779",
           "manifestLines": 31
         },
         {
@@ -6159,10 +6159,10 @@
             "dependencies": {},
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "e2bdc0fecf2272ca5fc57594ee9bd24858d2dfdc823dd6f1313781b7408cb072",
+          "manifestSha256": "314d52fb3f0e72bd93023c1b7c0de608d224aa9a3e586fc7157d5377db37fbc6",
           "manifestLines": 31
         },
         {
@@ -6197,10 +6197,10 @@
             "dependencies": {},
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "3d388552b8fb9f12eb42a87af18c8c28db1fd4199aa3370ffc3e93098b6a7759",
+          "manifestSha256": "e1913593241d926aecfbe4c931c6cf7c20c5aaf49bfdebee574c31892cf51a54",
           "manifestLines": 31
         },
         {
@@ -6235,10 +6235,10 @@
             "dependencies": {},
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "fef5f6d86b4989d3e09df5b0da5d5e9cba16b3d8151b08c01962b78f71944bc8",
+          "manifestSha256": "803e7c33b376634d9946c52bbf299438db1dde57191b8c867437f134b4bed655",
           "manifestLines": 31
         },
         {
@@ -6275,10 +6275,10 @@
             },
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "c860f06ecd94a1b3809d55092d2c3e319bb45ef87c074bf10b91065012ec9fa3",
+          "manifestSha256": "80c9a0d03c31e83930c183ee4615abef1a5e0ccde3e8fc2450d27abff6a45784",
           "manifestLines": 33
         }
       ],
@@ -6303,16 +6303,16 @@
               "packages/*"
             ],
             "devDependencies": {
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108",
-              "@effect/platform-bun": "4.0.0-rc.108",
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107",
+              "@effect/platform-bun": "4.0.0-beta.107",
               "effect-build-apple": "0.6.3",
               "typescript": "6.0.3",
               "bun-types": "1.3.14",
               "@types/semver": "7.7.1"
             },
             "overrides": {
-              "@effect/platform-node-shared": "4.0.0-rc.108"
+              "@effect/platform-node-shared": "4.0.0-beta.107"
             },
             "scripts": {
               "build": "bun scripts/build.ts",
@@ -6321,7 +6321,7 @@
               "build:delivery": "bun scripts/build-delivery.ts"
             }
           },
-          "manifestSha256": "e9730398fbcc842713cc893b998ab36112de317b51fdb74b57a2db14d62ee259",
+          "manifestSha256": "8fa20a3f88247233be06cbd173b252ef32cc2dcc4be5ed73fdbe92c521832e55",
           "manifestLines": 34
         },
         {
@@ -6339,10 +6339,10 @@
             },
             "dependencies": {
               "@mannyc1/ts-release": "0.4.0",
-              "effect": "4.0.0-rc.108"
+              "effect": "4.0.0-beta.107"
             }
           },
-          "manifestSha256": "95a9368129c3b9d3ac06c6e867138fbee76ebfcd925b681a741d21e64975815b",
+          "manifestSha256": "76c13cf8250428b0d0472a4fe6401611d5de28b5276a701fb0ab6542f37bd70c",
           "manifestLines": 14,
           "deliverySource": "packages/kernel/src/bin/ts-release.ts",
           "artifact": "packages/kernel/dist/bin/ts-release.js",
@@ -6363,11 +6363,11 @@
             },
             "dependencies": {
               "@mannyc1/ts-release": "0.4.0",
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108"
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107"
             }
           },
-          "manifestSha256": "7a37c14d08588b09d594c17945f31ae28e445c083b0b0e1371087551da48a5e5",
+          "manifestSha256": "ecec8b68795ca7dcdd9c1aaca105b42b6853086213a1e2d759a54b58d92ac501",
           "manifestLines": 15,
           "deliverySource": "apps/action/src/launcher.ts",
           "artifact": "apps/action/dist/launcher.cjs",
@@ -6391,8 +6391,8 @@
             },
             "dependencies": {
               "@mannyc1/ts-release": "0.4.0",
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108",
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107",
               "effect-build": "0.6.3",
               "effect-build-apple": "0.6.3",
               "@mannyc1/ts-release-npm": "0.4.0",
@@ -6404,7 +6404,7 @@
               "@mannyc1/ts-release-openai": "0.4.0"
             }
           },
-          "manifestSha256": "6f37944120f8db48da528700f10a2bf2a9c2841ba8b389a84539df2c0bebe89e",
+          "manifestSha256": "ba165c5c6843a8622e7ed2edb9580a0e25e24eac0df68a73f360f1b4ed42ae73",
           "manifestLines": 24,
           "application": "apps/self-release/src/application.ts"
         }
@@ -7431,7 +7431,7 @@
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
         "sourceEdgesSha256": "bb07195317a20bcebc31ddc3fbdf5a154b287eb8f527fd563c0d00f93705f975",
-        "packageEdgesSha256": "e3d31fc608b6d9364fe9e0d77f8d9ffe7afdedc3738abe3a3b437bd5ebf2ca92",
+        "packageEdgesSha256": "b298428b1bc4fb4d172fb7fe9721f0cdb99994682693474b37014e467fcee1d0",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -8711,21 +8711,21 @@
           {
             "from": "core",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "core",
             "to": "@effect/platform-node",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": true
           },
           {
             "from": "core",
             "to": "@effect/platform-bun",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": true
           },
@@ -8760,7 +8760,7 @@
           {
             "from": "provider.npm",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -8774,7 +8774,7 @@
           {
             "from": "provider.warehouse",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -8788,7 +8788,7 @@
           {
             "from": "provider.github",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -8802,7 +8802,7 @@
           {
             "from": "provider.homebrew",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -8816,7 +8816,7 @@
           {
             "from": "provider.scoop",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -8830,7 +8830,7 @@
           {
             "from": "provider.mcp",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -8851,28 +8851,28 @@
           {
             "from": "provider.openai",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "app.workspace",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
           {
             "from": "app.workspace",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
           {
             "from": "app.workspace",
             "to": "@effect/platform-bun",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
@@ -8914,7 +8914,7 @@
           {
             "from": "app.cli",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
@@ -8928,14 +8928,14 @@
           {
             "from": "app.action",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
           {
             "from": "app.action",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
@@ -8949,14 +8949,14 @@
           {
             "from": "app.self-release",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
           {
             "from": "app.self-release",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
@@ -9160,7 +9160,7 @@
         ],
         "universalDependency": {
           "specifier": "effect",
-          "version": "4.0.0-rc.108",
+          "version": "4.0.0-beta.107",
           "ownership": "Required peer available to every module; each implementation's exact import list is qualified after emission."
         },
         "dynamicApplications": [
@@ -9404,9 +9404,9 @@
               "effect-build": "0.6.3"
             },
             "peerDependencies": {
-              "effect": ">=4.0.0-rc.108 <4.1.0-0",
-              "@effect/platform-node": ">=4.0.0-rc.108 <4.1.0-0",
-              "@effect/platform-bun": ">=4.0.0-rc.108 <4.1.0-0",
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
+              "@effect/platform-node": ">=4.0.0-beta.107 <4.0.0-beta.108",
+              "@effect/platform-bun": ">=4.0.0-beta.107 <4.0.0-beta.108",
               "effect-build-apple": "0.6.3"
             },
             "peerDependenciesMeta": {
@@ -9421,7 +9421,7 @@
               }
             }
           },
-          "manifestSha256": "4d20d18b994ec2408c03981a2b1d64bf6bbdaebccbb739a39f9c05293f5a0461",
+          "manifestSha256": "b984c0a66558256e30ca3601fafe7cdf905524ed68b7498c13e376fdc26d46b8",
           "manifestLines": 77
         },
         {
@@ -9459,10 +9459,10 @@
             },
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "d594a1814776d248cb4b6fd3159e95deb4d0b0a234efd13aaaac5000c5f396cc",
+          "manifestSha256": "50540e6c0b57c21743dec3beef400b2a1cd4e25984a4e886c60f347971a3e000",
           "manifestLines": 34
         },
         {
@@ -9497,10 +9497,10 @@
             "dependencies": {},
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "1fed3bee5b8689cc61375584a73e5e7ebe334551c094a3bc1463fdbff66c588c",
+          "manifestSha256": "48c58e16e47f37ea279ae9b61d67ff681b342c4ccd30ae3a570ba0fb30c273eb",
           "manifestLines": 31
         },
         {
@@ -9535,10 +9535,10 @@
             "dependencies": {},
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "a60058e13e34cfbda016aac8071def08c85557715d8351a7c52e71656f32ec45",
+          "manifestSha256": "b9089b3a537ed96f5067ffafeb9b6a813458da0053a949d1408820cead6c1779",
           "manifestLines": 31
         },
         {
@@ -9577,10 +9577,10 @@
             "dependencies": {},
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "9aabe0c50d530570391c5accf3f9cb42f12e67784909102342caaef126a5d74d",
+          "manifestSha256": "e21c0222636ff0fc07f79df80523297fb28b6527b8c02d549f4b1416990d32d2",
           "manifestLines": 35
         },
         {
@@ -9615,10 +9615,10 @@
             "dependencies": {},
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "fef5f6d86b4989d3e09df5b0da5d5e9cba16b3d8151b08c01962b78f71944bc8",
+          "manifestSha256": "803e7c33b376634d9946c52bbf299438db1dde57191b8c867437f134b4bed655",
           "manifestLines": 31
         },
         {
@@ -9655,10 +9655,10 @@
             },
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
-              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+              "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "c860f06ecd94a1b3809d55092d2c3e319bb45ef87c074bf10b91065012ec9fa3",
+          "manifestSha256": "80c9a0d03c31e83930c183ee4615abef1a5e0ccde3e8fc2450d27abff6a45784",
           "manifestLines": 33
         }
       ],
@@ -9683,16 +9683,16 @@
               "packages/*"
             ],
             "devDependencies": {
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108",
-              "@effect/platform-bun": "4.0.0-rc.108",
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107",
+              "@effect/platform-bun": "4.0.0-beta.107",
               "effect-build-apple": "0.6.3",
               "typescript": "6.0.3",
               "bun-types": "1.3.14",
               "@types/semver": "7.7.1"
             },
             "overrides": {
-              "@effect/platform-node-shared": "4.0.0-rc.108"
+              "@effect/platform-node-shared": "4.0.0-beta.107"
             },
             "scripts": {
               "build": "bun scripts/build.ts",
@@ -9701,7 +9701,7 @@
               "build:delivery": "bun scripts/build-delivery.ts"
             }
           },
-          "manifestSha256": "e9730398fbcc842713cc893b998ab36112de317b51fdb74b57a2db14d62ee259",
+          "manifestSha256": "8fa20a3f88247233be06cbd173b252ef32cc2dcc4be5ed73fdbe92c521832e55",
           "manifestLines": 34
         },
         {
@@ -9719,11 +9719,11 @@
             },
             "dependencies": {
               "@mannyc1/ts-release": "0.4.0",
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108"
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107"
             }
           },
-          "manifestSha256": "7a37c14d08588b09d594c17945f31ae28e445c083b0b0e1371087551da48a5e5",
+          "manifestSha256": "ecec8b68795ca7dcdd9c1aaca105b42b6853086213a1e2d759a54b58d92ac501",
           "manifestLines": 15,
           "deliverySource": "apps/action/src/launcher.ts",
           "artifact": "apps/action/dist/launcher.cjs",
@@ -9747,8 +9747,8 @@
             },
             "dependencies": {
               "@mannyc1/ts-release": "0.4.0",
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108",
+              "effect": "4.0.0-beta.107",
+              "@effect/platform-node": "4.0.0-beta.107",
               "effect-build": "0.6.3",
               "effect-build-apple": "0.6.3",
               "@mannyc1/ts-release-npm": "0.4.0",
@@ -9759,7 +9759,7 @@
               "@mannyc1/ts-release-openai": "0.4.0"
             }
           },
-          "manifestSha256": "89d93846216d3011ba5e34f08c50c2506ab84fafafca5e9bd03d74b7a31b2486",
+          "manifestSha256": "c0a41bbe2f2dfb2665aa8842f79ae8ff514ade143ddbc6e1cfbfa16b388bada3",
           "manifestLines": 23,
           "application": "apps/self-release/src/application.ts"
         },
@@ -10785,7 +10785,7 @@
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
         "sourceEdgesSha256": "25b2399f75f86d257ecfd09a5e07e0f390a9fefab976d579d9816a19fe8590de",
-        "packageEdgesSha256": "c67de10097c385ff98e59d95cafc51aaac3cc1abf8e68df993105c32df75c038",
+        "packageEdgesSha256": "bb5683f96928748e1531eac43b252d9edc34daadd5d7c8b0fb3561d5e46bcf3e",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -12065,21 +12065,21 @@
           {
             "from": "core",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "core",
             "to": "@effect/platform-node",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": true
           },
           {
             "from": "core",
             "to": "@effect/platform-bun",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": true
           },
@@ -12114,7 +12114,7 @@
           {
             "from": "provider.npm",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -12128,7 +12128,7 @@
           {
             "from": "provider.pypi",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -12142,7 +12142,7 @@
           {
             "from": "provider.github",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -12156,7 +12156,7 @@
           {
             "from": "provider.catalog",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -12170,7 +12170,7 @@
           {
             "from": "provider.mcp",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -12191,28 +12191,28 @@
           {
             "from": "provider.openai",
             "to": "effect",
-            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "app.workspace",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
           {
             "from": "app.workspace",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
           {
             "from": "app.workspace",
             "to": "@effect/platform-bun",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "devDependencies",
             "optional": false
           },
@@ -12254,14 +12254,14 @@
           {
             "from": "app.action",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
           {
             "from": "app.action",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
@@ -12275,14 +12275,14 @@
           {
             "from": "app.self-release",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
           {
             "from": "app.self-release",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": "4.0.0-beta.107",
             "kind": "dependencies",
             "optional": false
           },
@@ -12479,7 +12479,7 @@
         ],
         "universalDependency": {
           "specifier": "effect",
-          "version": "4.0.0-rc.108",
+          "version": "4.0.0-beta.107",
           "ownership": "Required peer available to every module; each implementation's exact import list is qualified after emission."
         },
         "dynamicApplications": [

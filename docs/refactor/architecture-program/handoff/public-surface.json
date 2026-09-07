@@ -18,7 +18,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "eb0716306ab3c300b84a210fa892a8c705d40476c7651175e9db76adb52f3cdf"
+    "sha256": "d268e1c1464b918c9e10dc07f2dbced64241413f715f4e56aeaac932746b3811"
   },
   "authorityBindings": {
     "kernel": {

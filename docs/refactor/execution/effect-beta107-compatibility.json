@@ -51,5 +51,6 @@
     "path": "src/effect-types.d.ts",
     "source": "import \"effect/SchemaAST\"\n\ndeclare module \"effect/SchemaAST\" {\n  interface Sentinel {\n    readonly key: PropertyKey\n    readonly literal: LiteralValue | symbol\n  }\n}\n",
     "basis": "Official beta.107 src/SchemaAST.ts:2515-2518; identical shape restored from stripInternal omission; no runtime files changed"
-  }
+  },
+  "scope": "Official aligned beta.107 runtime/declarations with owned exact Sentinel declaration restoration. The earlier unmodified archive failed TS2694; independent negative control confirms that failure. Consumer manifest originally came from the rc.108 fixture; installed package identities are recorded explicitly. Fresh package-manager and packed production consumers remain separate W01 gates."
 }

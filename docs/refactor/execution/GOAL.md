@@ -1,4 +1,8 @@
-# Current user stopping point: close W08, then stop
+# Current status: W08 committed and pushed; execution paused
+
+W08 closed in commit `e393dd098090761d4157d4ea5af1c5676e4dc485` and is verified
+on `origin/codex/complete-hard-cut`. The execution process stopped at that checkpoint.
+Wait for an explicit user instruction before starting W09, W10, or publication.
 
 **Latest user instruction, 2026-09-07:** "once its closed w08 can you tell it to stop".
 
@@ -56,8 +60,9 @@ as final. Prerequisites passed168tests/993assertions and exact helper medians37/
 with separate metadata; target40 is unchanged. These research witnesses do not
 certify the complete production graph.
 
-W08 is locally verified, including final direct execution, independent material
-and retained-evidence review. The seal and checkpoint commit are being saved. Actual adopted File/Tree ownership, bounded native
+W08 is locally verified, committed and pushed as `e393dd0`, including final direct
+execution, independent material and retained-evidence review. Its reviewed seal
+is retained with the checkpoint. Actual adopted File/Tree ownership, bounded native
 I/O, public restoration/checksums and Apple one-journal preparations are implemented.
 All14 assigned legacy files are retired:1581lines/118declarations, with explicitW10
 source/application/native acquisition duties. There are81 actual source/declaration

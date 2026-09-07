@@ -1,6 +1,8 @@
 {
   "format": "ts-release/refactor-progress/1",
   "goal": "active",
+  "executionStatus": "paused-by-user",
+  "resumeRequires": "explicit user instruction",
   "completedWave": "W08",
   "prerequisites": {
     "P0": "seven-package projection implemented; beta.107 exact type repair passes actual producer fixture and independent review; real packed production graph follows in waves",
@@ -8,13 +10,13 @@
     "P2": "entrypoints and final direct verification pass;69open closure red",
     "P3": "168tests/993assertions; independent prerequisite review passed; fresh Apple/source/declaration receipts"
   },
-  "productionWaves": "W01-W08 locally verified. W01-W07 committed/pushed; W08 checkpoint commit pending. W09-W10 not started. Native/final certification remains open.",
+  "productionWaves": "W01-W08 locally verified, committed and pushed through e393dd098090761d4157d4ea5af1c5676e4dc485 on origin/codex/complete-hard-cut. Execution stopped after W08. W09-W10 not started. Native/final certification remains open.",
   "acceptance": "W08 full273tests2941assertions47files; final producer4cells780checks/36commands, Apple4cells48commands120driverchecks32installedchecks8SIGKILL. Independent material/accounting/exactpack/eightGitjournal evidence review closed. Fresh external4cells796checks140CLIprocesses87bindings0sourceedits, same eb038cb corearchive. All69outcomesopen; no publication.",
   "publication": "No release published; registry0.3.0 observation is historical, recheck before choosing final cohort",
-  "nextAction": "Finish reviewed seal and scoped W08 commit/push, then stop and wait per saved user request. Do not beginW09/W10 or publish. On future explicit resume, start W09 from advisor-plans/008b-integrate-late-providers-and-hosts.md and handoff/waves.json, preserving all W08 native/host/candidate carry-forward and final source ceiling.",
-  "updatedAt": "2026-09-07T14:13:02.999875+00:00",
+  "nextAction": "Wait for explicit user resumption. W08 closure and push are complete. Do not begin W09/W10 or publish. On future explicit resume, start W09 from advisor-plans/008b-integrate-late-providers-and-hosts.md and handoff/waves.json, preserving all W08 native/host/candidate carry-forward and final source ceiling.",
+  "updatedAt": "2026-09-07T14:40:58.063Z",
   "goalTool": "active",
-  "activeWave": "W08",
+  "activeWave": null,
   "source": "W08 13570product=11131replacement+2439legacy;9200tripwireexcess1931 with exactplanningvariance/no finalwaiver.14retiredfiles1581lines118declarations. Forecast13483deficit1998; low12723fails11485. Metadata640; ownedSPDX789lines15973bytes separate.",
-  "checkpoint": "W08 uncommitted. Independent Apple/recovery/restoration/projection reviews closed. Prior second packed producer cFvE4l and Apple m0xpqP passed after restoreTree correction, before final type-only import edits. Source 13570, final ceiling unmet. Migration14files1581lines118declarations. No publication; all69outcomes open."
+  "checkpoint": "W08 committed as e393dd098090761d4157d4ea5af1c5676e4dc485 and verified on origin/codex/complete-hard-cut. The runner exited after the requested W08 stop. Final exact-archive, retained-evidence and production results are recorded in acceptance above and W08-verification.json. Source 13570, final ceiling unmet. Migration14files1581lines118declarations. No publication; all69outcomes open."
 }

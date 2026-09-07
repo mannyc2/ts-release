@@ -3,3 +3,4 @@ export { Content, AdoptionError, OwnedFile as File, OwnedTree as Tree, OwnedArti
 export type { ContentOwner, ReadContent, PutContent, ArtifactAccess } from "./internal/Content.js";
 export { finalize } from "./internal/BundleFinalize.js";
 export { encodeBundle, loadBundle } from "./internal/BundleCodec.js";
+export { verifiedArtifacts } from "./internal/ArtifactReader.js";

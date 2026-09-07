@@ -1,6 +1,6 @@
 {
   "format": "ts-release/production-imports/1",
-  "files": 33,
+  "files": 46,
   "edges": [
     {
       "file": "packages/npm/src/Evidence.ts",
@@ -233,6 +233,16 @@
       "typeOnly": false
     },
     {
+      "file": "packages/npm/src/Native.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Native.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
       "file": "packages/ts-release/src/Node.ts",
       "specifier": "./internal/EffectTypes.js",
       "typeOnly": true
@@ -251,6 +261,11 @@
       "file": "packages/ts-release/src/Http.ts",
       "specifier": "./internal/EffectTypes.js",
       "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Http.ts",
+      "specifier": "./internal/NativeJson.js",
+      "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/Http.ts",
@@ -380,6 +395,11 @@
     {
       "file": "packages/ts-release/src/Bundle.ts",
       "specifier": "./internal/BundleCodec.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/ArtifactReader.js",
       "typeOnly": false
     },
     {
@@ -743,6 +763,31 @@
       "typeOnly": false
     },
     {
+      "file": "packages/ts-release/src/internal/ArtifactReader.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/ArtifactReader.ts",
+      "specifier": "./ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/ArtifactReader.ts",
+      "specifier": "./Content.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/ArtifactReader.ts",
+      "specifier": "./Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/ArtifactReader.ts",
+      "specifier": "./Error.js",
+      "typeOnly": false
+    },
+    {
       "file": "packages/ts-release/src/internal/Decision.ts",
       "specifier": "./ReleaseModel.js",
       "typeOnly": false
@@ -805,6 +850,11 @@
     {
       "file": "packages/ts-release/src/internal/BundleCodec.ts",
       "specifier": "./Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/NativeJson.ts",
+      "specifier": "./Error.js",
       "typeOnly": false
     },
     {
@@ -985,6 +1035,251 @@
     {
       "file": "packages/ts-release/src/platform/Application.ts",
       "specifier": "../Release.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Requirement.ts",
+      "specifier": "@renovatebot/pep440",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Requirement.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Metadata.ts",
+      "specifier": "./Archive.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Metadata.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Metadata.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Metadata.ts",
+      "specifier": "./MetadataFields.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Evidence.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Evidence.ts",
+      "specifier": "parse5",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Evidence.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Evidence.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Evidence.ts",
+      "specifier": "./Wire.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Evidence.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Evidence.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "./Wire.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "./Metadata.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "./Evidence.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Wire.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Wire.ts",
+      "specifier": "./Model.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/pypi/src/Wire.ts",
+      "specifier": "./Metadata.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Wire.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/MetadataFields.ts",
+      "specifier": "content-type",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/MetadataFields.ts",
+      "specifier": "./SpdxCatalog.json",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/MetadataFields.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/MetadataFields.ts",
+      "specifier": "./Requirement.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Auth.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Auth.ts",
+      "specifier": "effect/Redacted",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Auth.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Auth.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Auth.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Model.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Model.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/index.ts",
+      "specifier": "./Protocol.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/index.ts",
+      "specifier": "./Auth.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Native.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Native.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Native.ts",
+      "specifier": "node:crypto",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Native.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Native.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Native.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Archive.ts",
+      "specifier": "node:zlib",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Archive.ts",
+      "specifier": "./Native.js",
       "typeOnly": false
     }
   ],

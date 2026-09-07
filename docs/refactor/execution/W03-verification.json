@@ -1,0 +1,538 @@
+{
+  "format": "ts-release/wave-local-verification/1",
+  "wave": "W03",
+  "status": "implemented-local-cutover-with-recorded-planning-variance",
+  "observedAt": "2026-09-07T06:08:49.779Z",
+  "sources": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "6ab50273779339e41a30620c7ab3a1ce38007cd2f6c65732fffa72dd55bc2d30"
+    },
+    {
+      "path": "bun.lock",
+      "sha256": "9062ee90bf313c9ac9bd726250d66635abbd1add482b1c34f978708d57172091"
+    },
+    {
+      "path": "docs/refactor/execution/W03-migration.json",
+      "sha256": "bd2da4b2199142067a891656d85628bd22daf5735bd339c020dc8597df257f45"
+    },
+    {
+      "path": "docs/refactor/execution/W03-native-servers.json",
+      "sha256": "eb6aa3d6434e496c7c711cd97b4f3bcc30d1450c7017141c9fae631b013f28d8"
+    },
+    {
+      "path": "docs/refactor/execution/W03-packed-providers.json",
+      "sha256": "42dcbcf1d19c2fc1fb0cc1acd55550222a7054a88cb2bcbd70906cbf8ecb623b"
+    },
+    {
+      "path": "docs/refactor/execution/W03-review.md",
+      "sha256": "7f5cdcb945827dcf0f6b1b8ddb3c7f997b979312f7b3e72a8f5d2df65cb37ee2"
+    },
+    {
+      "path": "docs/refactor/execution/W03-source-variance.json",
+      "sha256": "0de4f8e9bdb6a627912cc5455df7ab14408404565ce2fab284edb7c15f17e7ec"
+    },
+    {
+      "path": "package.json",
+      "sha256": "4c40c1b1e38e2dc3c9f7ba1dba969238179554328a48e9aac903bc1384c94037"
+    },
+    {
+      "path": "packages/npm/package.json",
+      "sha256": "b904cbf11544bf2f262203344cda109fbff69bedd12206d84c01fb7d85b5c296"
+    },
+    {
+      "path": "packages/npm/src/Auth.ts",
+      "sha256": "e8c2552d35d77d6886aee588432f182558eb7540a3ecc62769321eed5f27950d"
+    },
+    {
+      "path": "packages/npm/src/Evidence.ts",
+      "sha256": "1ffb3a01d26b9d9e6caf2d44695bdd00e37787b6aead3507c3a5fa1c41fb272d"
+    },
+    {
+      "path": "packages/npm/src/index.ts",
+      "sha256": "24f761eeafea23755b822b81dcd2f4d408a21d87569915e30ba8c6e578f127dd"
+    },
+    {
+      "path": "packages/npm/src/Model.ts",
+      "sha256": "f1c342927915077b7dcb6bff5ffef0e342c200698ebc1c1e2d0e2896abcfaf7b"
+    },
+    {
+      "path": "packages/npm/src/Native.ts",
+      "sha256": "07a59f58cb83e37d14da45351fd615cf8bc4f5399bad4878e1404a7fe97c0696"
+    },
+    {
+      "path": "packages/npm/src/Protocol.ts",
+      "sha256": "abdc77a7ee507ecadd08cb5cf74afac2f7776cc804550238fef4d544ebc2fced"
+    },
+    {
+      "path": "packages/npm/src/Wire.ts",
+      "sha256": "4e1e6495282acbb97a160c3be004112eb421d2cdbedf607efacbf25291d05e64"
+    },
+    {
+      "path": "packages/npm/tsconfig.build.json",
+      "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8"
+    },
+    {
+      "path": "packages/pypi/package.json",
+      "sha256": "fd12e9c096d0004ab912a47fb8477674d1ef889f251b1e8053b05389416d5635"
+    },
+    {
+      "path": "packages/pypi/src/Archive.ts",
+      "sha256": "f090db2a967776161e7827c0a273d70c6fc76a40fc7bcdce700dd775719fe70b"
+    },
+    {
+      "path": "packages/pypi/src/Auth.ts",
+      "sha256": "844bcfca5053704557807ddf3bb16f414322247a023b0c5b98d2b8e6220a3821"
+    },
+    {
+      "path": "packages/pypi/src/Evidence.ts",
+      "sha256": "9e19f3eb979a800b728ddef4642814042c0da0b718b8c063d9a823c2ac430feb"
+    },
+    {
+      "path": "packages/pypi/src/index.ts",
+      "sha256": "d9984fdd2b297dbb6c10e355e2f1c25546797e2c93bbb14fa21e9114d1bed316"
+    },
+    {
+      "path": "packages/pypi/src/Metadata.ts",
+      "sha256": "27f6a8dbf7fd2f237fe64298ef15c882858a9d42bdda6c9406e9ddb8c8530a99"
+    },
+    {
+      "path": "packages/pypi/src/MetadataFields.ts",
+      "sha256": "1d25e8634252ef8e49f07e23991e0f965b5266e80582f89f818651bc4b4f0c37"
+    },
+    {
+      "path": "packages/pypi/src/Model.ts",
+      "sha256": "f7642e065df4937cb42622b5be54b7947d1bbb9000913c3adff3241d461b18d5"
+    },
+    {
+      "path": "packages/pypi/src/Native.ts",
+      "sha256": "eb7ad944bdf3288b2904c9b809b59817fb2093d77f5875881e187a20317c39b3"
+    },
+    {
+      "path": "packages/pypi/src/Protocol.ts",
+      "sha256": "d3846d46629c921ed4269b5a7c6dc85c331b49aef16991a5273bcb65da268bba"
+    },
+    {
+      "path": "packages/pypi/src/Requirement.ts",
+      "sha256": "77a8f7ceef823dbac2d599d57bb9a1bb8bb098ca7865010deb78f38c93e440d3"
+    },
+    {
+      "path": "packages/pypi/src/SpdxCatalog.json",
+      "sha256": "c3518b07431b2bb2a41d5e3e56d09f1977dc2932ea86a8f2d575f6774f1e4ee3"
+    },
+    {
+      "path": "packages/pypi/src/Wire.ts",
+      "sha256": "0c16baf79bc497e3b1b712ce559d5dddc9ce645dc732fc94fdc4e0064e6f2809"
+    },
+    {
+      "path": "packages/pypi/tsconfig.build.json",
+      "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8"
+    },
+    {
+      "path": "packages/ts-release/package.json",
+      "sha256": "00809310590bb651c9b1193835ae4d634fa9b4ff3f1af91774dfed46c1287119"
+    },
+    {
+      "path": "packages/ts-release/src/Bun.ts",
+      "sha256": "9d711fd918def408ca13aa584d3a0768160c31b0157da2fb13fdca9049d73af5"
+    },
+    {
+      "path": "packages/ts-release/src/Bundle.ts",
+      "sha256": "5f4e37afc336a2dc7d8f4118d3a37ba0e56ff2d4d10d26069694739cebd06314"
+    },
+    {
+      "path": "packages/ts-release/src/Http.ts",
+      "sha256": "9dc9ebdb18ad0331371d110ad70f45348834a8a810a683a9678cb87089d12f03"
+    },
+    {
+      "path": "packages/ts-release/src/index.ts",
+      "sha256": "daa1fb4f6c77726a93e03d6925db808886915d6553e452197842f3609db2547a"
+    },
+    {
+      "path": "packages/ts-release/src/internal/ArtifactModel.ts",
+      "sha256": "27b57b6943a876b1eebb4915cfdc27e6e36120b7739db94ae8c07474092ee48c"
+    },
+    {
+      "path": "packages/ts-release/src/internal/ArtifactReader.ts",
+      "sha256": "02661ed861ccf168e6e11c20034b04bc64978581ed977ea0aabb431a33098ec1"
+    },
+    {
+      "path": "packages/ts-release/src/internal/BundleCodec.ts",
+      "sha256": "c021d823a4cb708162eb6fe73d1cc9814b8a9b066dd5e65a9a133147bad2ba7a"
+    },
+    {
+      "path": "packages/ts-release/src/internal/BundleFinalize.ts",
+      "sha256": "5380f88fdaf236090232118840dac8d5c4a8c6bce06f2c925ca7d7b2165ee3f3"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Content.ts",
+      "sha256": "9a06b956527f8d994d1612a8919297167bb64e757d24fde0823ffe39de4f1edc"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Decision.ts",
+      "sha256": "9431d65013e22246a31585c2cc60858795399e6c74614f47fba817070e9ab4cf"
+    },
+    {
+      "path": "packages/ts-release/src/internal/EffectTypes.ts",
+      "sha256": "fbf72e6ca89f37f162f3a6e455b9da742f7b6c542ae116c254f2e88266a842de"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Error.ts",
+      "sha256": "72e2cbc4d1dced743dcf68777d5754995e2c4e63ddb43fc67d2229ae87f06ed2"
+    },
+    {
+      "path": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "sha256": "edb4920d6b9867c971568786cbef394de49873bfcb742a57577a80d41bbcbe48"
+    },
+    {
+      "path": "packages/ts-release/src/internal/GitAuthority.ts",
+      "sha256": "b0b9d0d44c9ba28d17c4071e26b486dce3b93e8802d10b8337842175b8eb8d03"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Host.ts",
+      "sha256": "c0e94663e49b1910800a8d7d58cb6ab3c74a0bf8e75f85f26d3fb58748fa14ad"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Identity.ts",
+      "sha256": "ab9cf2c26135a2a4e7a51e9beee887f789bbb9bfb1b8a84d163fc608b489c7cc"
+    },
+    {
+      "path": "packages/ts-release/src/internal/NativeJson.ts",
+      "sha256": "8395ebcdf181e67682fa8080403947b8e0680c1f4199e061f50e4648ac595b31"
+    },
+    {
+      "path": "packages/ts-release/src/internal/ReleaseModel.ts",
+      "sha256": "971fafc2674743e3a79639c67c024b5126d2946a1956d692187198a44960d437"
+    },
+    {
+      "path": "packages/ts-release/src/internal/TreeManifest.ts",
+      "sha256": "c3dff093aded6406e0739ba1af21afdbd569c2ca42006589009a305bb0df2373"
+    },
+    {
+      "path": "packages/ts-release/src/Journal.ts",
+      "sha256": "be0fd6e56767380becd7f90188ab35a5f1d58ed0e12e38ea1f84c5e7babd97d4"
+    },
+    {
+      "path": "packages/ts-release/src/Node.ts",
+      "sha256": "4d0bf89dbb80e356c289ee164e3630a919e4ca8543c439f2879e0b1926209a23"
+    },
+    {
+      "path": "packages/ts-release/src/Plan.ts",
+      "sha256": "ca99ed5271366fd9da4789b45bbe2c3a00063fe478b33bf55059805ed9cac6f7"
+    },
+    {
+      "path": "packages/ts-release/src/platform/Application.ts",
+      "sha256": "1589157f2e19456d56b5721c05fca9d2459c5079b359c5fd70e0378cbab4baa8"
+    },
+    {
+      "path": "packages/ts-release/src/platform/ContentStore.ts",
+      "sha256": "0b70de2d4e95ab73c7678ed1a004fa101601e689e32ec82b53b8db2d83a32182"
+    },
+    {
+      "path": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "sha256": "8537597f4e9c692878011ac8cf45b137c9d419e998471532a97a32059d257bfb"
+    },
+    {
+      "path": "packages/ts-release/src/platform/StoreCodec.ts",
+      "sha256": "06a572008f64d8999566bc1ba33d9139a247ff4c146b723753ac1fb6041900b0"
+    },
+    {
+      "path": "packages/ts-release/src/Provider.ts",
+      "sha256": "3bb6343e1a856e36e617bfd0554dd4855a60252db3c7018199f143c94c6e3d36"
+    },
+    {
+      "path": "packages/ts-release/src/Release.ts",
+      "sha256": "7b5533f12dfaf716a2b9a9319780f0639f8325cd95dadb1ccd64a74f597adec9"
+    },
+    {
+      "path": "packages/ts-release/tsconfig.build.json",
+      "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8"
+    },
+    {
+      "path": "scripts/check-action-bundle.ts",
+      "sha256": "d4eacc003853f89fc8c65a10176e500eb657571d7d6c232413bc8158946c8897"
+    },
+    {
+      "path": "scripts/check-architecture-ancestry.ts",
+      "sha256": "4d1fe5481b4b6f538ee5ee3dff111512ad97d66e3041d622e77ea19e19192367"
+    },
+    {
+      "path": "scripts/check-architecture-budget.ts",
+      "sha256": "6499315f24082bfb34bc02b956bd223bec280d275469d12d5306cd857651c7b6"
+    },
+    {
+      "path": "scripts/check-capabilities.ts",
+      "sha256": "5f8430e099b3063a559de7b4ca071cfeb59d258ca1d550b72553b07d77193de2"
+    },
+    {
+      "path": "scripts/check-cli-bundle.ts",
+      "sha256": "1f023be094d06d8ec603488c82537b7d4d94f3fbb04678946e1b4da8528c6f68"
+    },
+    {
+      "path": "scripts/check-config-schema.ts",
+      "sha256": "87336d4751950dfa3ce5ac828a3cadb419c66b6f0dc2335aaa49d3ad417c92f3"
+    },
+    {
+      "path": "scripts/check-examples.ts",
+      "sha256": "31d679f5766790ae3fcbb89058d9b006bdbd9f7fbf060cea983833143d60801a"
+    },
+    {
+      "path": "scripts/check-feature-translation.ts",
+      "sha256": "eb9d7563611361422d60c36dad4fd5d4d1a4a788e3d51f73d66c76b6665daaaf"
+    },
+    {
+      "path": "scripts/check-import-rules.ts",
+      "sha256": "70ebd36eb7d7b37bea2fe5d147896d02fc6fc9afdfffe355910e62c09e09f334"
+    },
+    {
+      "path": "scripts/check-launch-evidence.ts",
+      "sha256": "d8a972b2c02f7b80f338df3af70580d79145af5ea4fb83b56e4d74871fb6efd0"
+    },
+    {
+      "path": "scripts/check-migration-execution.ts",
+      "sha256": "4cc748dde6fdb61e1e56a64887b17a689d2b4c68b726586f37ecb13557b5405d"
+    },
+    {
+      "path": "scripts/check-native-npm-sigstore.ts",
+      "sha256": "2382c13d545fb1b4f0d5d8f2d776ad4fff83287fce634ba340b4a6a99ae0ca92"
+    },
+    {
+      "path": "scripts/check-package-exports.ts",
+      "sha256": "da1fae050add15e9f6ae903fbe2066c3159114396145182cc60007fa1096a324"
+    },
+    {
+      "path": "scripts/check-packed-consumers.ts",
+      "sha256": "11afab97c85d11b62eac6b541a96248cae5bcd4c8645dc2071837618f67618b3"
+    },
+    {
+      "path": "scripts/check-packed-kernel.ts",
+      "sha256": "880bd414de786346b712081bc27373d45388736f864cab8fb4cc716889638c2c"
+    },
+    {
+      "path": "scripts/check-packed-npm.ts",
+      "sha256": "810449d5895ddd52e3804d7795d7da94a16b22448b2ddf4163db136091d291a5"
+    },
+    {
+      "path": "scripts/check-readme.ts",
+      "sha256": "28edd37b301293d4d9a69830a68443c0c3f7a8fe6fe4bd5c8a81cc20689bb598"
+    },
+    {
+      "path": "scripts/check-recovery-docs.ts",
+      "sha256": "8cad929d1ca666b0d0bcab0832b61b1fee885d7e9748a825edded9a54c6d7a7d"
+    },
+    {
+      "path": "scripts/check-tree-shaking.ts",
+      "sha256": "c3e0bad627da0f6888d4a5d538667e2cc9230b13b9f6d0c4ccb8180cd76a875a"
+    },
+    {
+      "path": "scripts/check-versions.ts",
+      "sha256": "a41d09e278f8e971822a4c599152743d3b0c982dd70e1159efab000726cc925e"
+    },
+    {
+      "path": "scripts/check-wave-prerequisite.ts",
+      "sha256": "4085c6c96b14679a4d5cef799f741a0719b78c3317f3c6148947c6dc6990f537"
+    },
+    {
+      "path": "scripts/project-production-api.ts",
+      "sha256": "4213b3b3acea367177825d4be42de23b3ccd6032138a82266321fdcfaca98210"
+    },
+    {
+      "path": "scripts/setup-native-python.ts",
+      "sha256": "209cd08ef6ead5b0aee0d2d56159a92fef48eecdfd91d92648206d55a0586aab"
+    },
+    {
+      "path": "scripts/update-pypi-spdx-catalog.ts",
+      "sha256": "18738c18b7e8d6597a9c35f680fa197be339bdeb2d440c6f075e1d0a49f684b2"
+    },
+    {
+      "path": "test/reimplementation/warehouse/build-fixtures.ts",
+      "sha256": "fa36f1d89c43866d3987e00911c01b1b7a4c24ec8cc4985a18d3049cca8b8ee5"
+    },
+    {
+      "path": "test/reimplementation/warehouse/capture-metadata-oracle.py",
+      "sha256": "704e0b066f834ab9e5bb637a68923ec819b60a01d0b8a76f2623f47ba716c020"
+    },
+    {
+      "path": "test/reimplementation/warehouse/capture-native-oracle.py",
+      "sha256": "fb45f647413f480bdaaf5821d07de1a90e5d92176a3ee03500616d98a0022446"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixture-project/pyproject.toml",
+      "sha256": "5db46f340ae6eeccef83ad845a6cc58be71ac0ace6989f377722a605ed6ec0ac"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixture-project/README.md",
+      "sha256": "2986022e3678900f6781e4be89906205e28a34fe35c91844ae955b50a3a6ed1f"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixture-project/src/ts_release_native_fixture/__init__.py",
+      "sha256": "0fc2cafbac8860959afa00254520d4d5212f132f9bb8b2e91ec987dcb6a65a27"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures.ts",
+      "sha256": "ecaf46e92465782965b7ca3c782d1b04b2cb6c33289607803b0fbc4a49b3f0ab"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/build.json",
+      "sha256": "624bc99adf08a619b4969c24cdecf6d4f169df7e4203afd9fe45d95446eba06c"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/distributions/ts_release_native_fixture-1.2.3-cp312-cp312-macosx_11_0_arm64.whl",
+      "sha256": "b7363d51b8c73e208649caf6668e590a2b30b691b8bbe51fb01856063f2f97fa"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/distributions/ts_release_native_fixture-1.2.3-cp312-cp312-manylinux_2_17_x86_64.whl",
+      "sha256": "6eeecc169c304f8700c1189955316a1b68afcc2efef876f11f1ba40bf9f6ef9a"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/distributions/ts_release_native_fixture-1.2.3-py3-none-any.whl",
+      "sha256": "7e622a17c857f6e9073f18b56fb1504643ef71cb8a9f89e149d6bbbae7c6642f"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/distributions/ts_release_native_fixture-1.2.3.tar.gz",
+      "sha256": "cb2ce8a825e3822150c88574c6b27a26c7eb95d9f3ac747d75ba9e483527a65d"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/grammar-cases.json",
+      "sha256": "61450e515f8bfeffad0ed888afc2d4bf7ea35fa09688376325493de7a4ebf3f9"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/metadata-oracle.json",
+      "sha256": "d03218f5ed1233608af32c9bbdcb8ff95051aad185a573c33e974010eba1445c"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/native-oracle.json",
+      "sha256": "644061f61c7d4202878c01150a13c5f881456a67a1c598be7b3c7980c8b60345"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/warehouse-legacy.py",
+      "sha256": "a1a09c16b9b5c44d270d01c6d6fd8fe77c4c655c4c5d4d538aea39247c2a5b0d"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/warehouse-source-law.json",
+      "sha256": "7ff7f8d20e25d00adb0cf0675c5c6483c8c9cb25c54e2458103575b190efdbc2"
+    },
+    {
+      "path": "test/reimplementation/warehouse/native-oracle.test.ts",
+      "sha256": "642c2b7e5cb7d467f9b30f2820a9e741b10257d3caee0af936053a52e04a0af2"
+    },
+    {
+      "path": "test/reimplementation/warehouse/native-server.test.ts",
+      "sha256": "b6321b9f3c23f4a4cc43fbeffe57c56c1b384ace21c649ce572bf465c7535b92"
+    },
+    {
+      "path": "test/reimplementation/warehouse/native-server.ts",
+      "sha256": "0ace21227665fdecb8e437dd11fb85c39e189ff08a8911965253e6870e96a1cb"
+    },
+    {
+      "path": "test/reimplementation/warehouse/packed-consumer.mjs",
+      "sha256": "a8f506a6ea5503b767aa0e7e1d504713bb87047027414096bfc678de4c62e315"
+    },
+    {
+      "path": "test/reimplementation/warehouse/process-worker.ts",
+      "sha256": "d5da3e70442d691b39b5cbcd125a197a71ec2becd3312339509a7626722ec806"
+    },
+    {
+      "path": "test/reimplementation/warehouse/protocol.test.ts",
+      "sha256": "d2bbd75c7b0b726e91dd9790a754535adb2014f45deb2718491d8b4d8bc1a5d5"
+    },
+    {
+      "path": "test/reimplementation/warehouse/requirements.txt",
+      "sha256": "7ed3053f1e1c8cf5b551a63f2a6d0c9c2e04940651ecdd62df308accafce5054"
+    },
+    {
+      "path": "test/reimplementation/warehouse/warehouse-source-law.py",
+      "sha256": "22b7dcd5e7dcbae0dbed9ab936dfd4b58f799736dd701272cd912180a6d32052"
+    },
+    {
+      "path": "test/reimplementation/warehouse/warehouse-source-law.test.ts",
+      "sha256": "ccc811569663da0e1422ff5b21588f35a48548ddee8e9afad12712cf22729e8e"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "568967d1e67f8d8b013dbb5fc5eb1e6d5fc022f4285ccf6204d2af938e1ee908"
+    }
+  ],
+  "logs": [
+    {
+      "path": "docs/refactor/execution/logs/W03-direct-verification.log",
+      "sha256": "0f33d581ad6520a172dbada3a8659c5f5ddda75c1c875aca2f7adaccf65ecb96",
+      "bytes": 941
+    },
+    {
+      "path": "docs/refactor/execution/logs/W03-production-tests.log",
+      "sha256": "3bf237b710654d54c4392e2619004fd015213d5749e0a015d256406ae0fb357b",
+      "bytes": 17810
+    },
+    {
+      "path": "docs/refactor/execution/logs/W03-packed.log",
+      "sha256": "fe9863d2bf7ce8cf437b0f20a11ec59c0f019d0462f9dee9e493eecfa54279ad",
+      "bytes": 18876
+    },
+    {
+      "path": "docs/refactor/execution/logs/W03-architecture.log",
+      "sha256": "f2deb787f02cf55cff9798aba3ec0d6ebc867cc02b79a12b819e9948b2523ef1",
+      "bytes": 1608
+    },
+    {
+      "path": "docs/refactor/execution/logs/W03-launch.log",
+      "sha256": "db1c3134e0d828f123e100a707508b09511e41501b4feee0f00bc7f0481b0ee5",
+      "bytes": 105
+    },
+    {
+      "path": "docs/refactor/execution/logs/W03-variance.log",
+      "sha256": "3fcc538489809b2c6b8873a4b495a9897929114e4103efd57f7d6b5fa4416a74",
+      "bytes": 617
+    }
+  ],
+  "production": {
+    "tests": 159,
+    "assertions": 1379,
+    "files": 21
+  },
+  "independent": {
+    "nativeMetadataControls": 82,
+    "positiveControls": 34,
+    "finalTests": 3,
+    "finalAssertions": 196,
+    "review": "W03-review.md"
+  },
+  "packed": {
+    "record": "W03-packed-providers.json",
+    "packages": 3,
+    "managers": [
+      "bun",
+      "npm"
+    ],
+    "runtimes": [
+      "Node22.22.2",
+      "Bun1.3.14"
+    ],
+    "smokes": 20,
+    "published": false
+  },
+  "native": {
+    "record": "W03-native-servers.json",
+    "implementations": [
+      "pypiserver2.4.1",
+      "devpi-server6.20.3"
+    ],
+    "fileCounts": [
+      2,
+      4
+    ]
+  },
+  "migration": {
+    "files": 2,
+    "lines": 494,
+    "declarations": 32
+  },
+  "limits": [
+    "All69launch outcomes remain open",
+    "Hosted Warehouse/PyPI/TestPyPI/OIDC and full native host are Plans009/010",
+    "Pure Python platform tags are not compiled-extension platform acceptance",
+    "Common native HTTP/Git transports remain W04",
+    "No actual release publication or final candidate certification",
+    "Source ceiling fails forecast; exact planning variance does not waive11485"
+  ]
+}

@@ -1,8 +1,8 @@
 # Full-scope source and maintenance forecast
 
-The expected replacement is approximately **12,451 physical product lines**,
-with an engineering range of **9,809–16,199**. That is roughly half the preserved
-22,971-line baseline, and exceeds the **11,485** ceiling by **966**.
+The expected replacement is approximately **12,723 physical product lines**,
+with an engineering range of **10,471–15,971**. That is roughly half the preserved
+22,971-line baseline, and exceeds the **11,485** ceiling by **1,238**.
 All package metadata makes the conservative combined estimate exceed that
 ceiling. This is a credible cost forecast, **not an achieved reduction or a
 source-budget pass**. Keep the original ceiling; measure each implementation
@@ -12,19 +12,19 @@ wave and continue structural work if its actual result misses it.
 donor/prototype basis, module owner and uncertainty. It assigns all proposed
 product modules once, including native wrappers, shared hosts, CLI/Action,
 self-release, Q01 checksums, complete Apple composition and retained native
-protocol validation. Five provider packages and shared native hosts remain
+protocol validation. Four provider packages and shared native hosts remain
 unimplemented. The low/expected/high scenarios are engineering estimates,
 not statistical confidence intervals or permission to choose the lowest number.
 
 | Responsibility | Expected physical lines | Basis |
 | --- | ---: | --- |
-| Complete kernel, strict admission and derived report | 2,203 | Measured normally formatted W02 production owners, including preflight without dispatch authority |
+| Complete kernel, strict admission and derived report | 2,334 | Measured W03 owners, including shared verified artifact reads and strict native JSON with two actual provider callers |
 | Owned artifacts and full Apple preparation/composition | 945 | 615 measured source including mixed release mechanism; 330 remaining native/host/integration estimate |
 | Shared HTTP, credentials and OIDC | 780 | Actual single-send/cancellation prototype and complete donor boundary inventory |
 | SQLite and Git journals | 496 | 146 measured mechanics plus native path/scope/bounded-history completion |
 | CLI, Action and self-release application | 603 | 43 measured loading/bridge lines plus explicit native I/O and complete release wiring |
 | Action YAML | 22 | Exact proposed template; replaces the original 55-line generated-input lane |
-| npm / Warehouse / GitHub | 1,513 / 1,130 / 1,520 | npm is measured W02 source; Warehouse and GitHub remain independent estimates |
+| npm / Warehouse / GitHub | 1,406 / 1,378 / 1,520 | npm and Warehouse are measured W03 source; GitHub remains an independent estimate |
 | Homebrew / Scoop / MCP / OpenAI | 200 / 120 / 1,180 / 730 | Native renderers, full official schemas, human-submission handoff |
 | Additional native Git/catalog implementation | 929 | Full 1,000 estimate minus 71 protected-transport lines already charged to kernel |
 | Q01 checksum projection and verification | 80 | 68 measured lines with native checksum consumers; 12 remaining integration estimate |
@@ -45,6 +45,13 @@ The new exact public/private manifests and tsconfig templates are reported
 separately for every layout and added in a conservative combined view in JSON.
 Package boundaries, exports and release coordination are not free because a
 historical line-count classifier excluded their metadata.
+
+W03 additionally owns **789 lines / 15,973 bytes** of generated SPDX catalog data,
+bound to native packaging 26.3. Its parser remains counted TypeScript. The current
+physical product plus owned data is **13,529** lines; the expected complete product
+plus that data is **13,512**, before package/config metadata. Native wheel fixtures
+are counted as binary bytes, not misclassified as text. These separate views do
+not change the historical source denominator or grant a complete-product waiver.
 
 The new Action manifest has 22 lines. There is no runtime-generated provider
 allowlist, central release-config schema or parallel capability registry. Build,

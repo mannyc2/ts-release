@@ -7865,7 +7865,13 @@
         "src/resolve/resolve.ts"
       ],
       "responsibility": "Native PyPI file/repository/identity/authentication binding remains a provider obligation; selected OIDC requires actual exchange/admission rather than the old external-action-only restriction. Also retain resolve.ts normalized project identities and exact authentication project-set admission.",
-      "status": "open"
+      "status": "verified",
+      "evidence": [
+        "test/reimplementation/warehouse",
+        "docs/refactor/execution/W03-packed-providers.json",
+        "docs/refactor/execution/W03-review.md"
+      ],
+      "qualification": "W03 local native file/endpoint/project-set/OIDC exchange admission; actual hosted OIDC and complete native host remain Plans009/010"
     },
     {
       "wave": "W04",

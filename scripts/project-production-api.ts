@@ -8,7 +8,7 @@ const destination = join(root, "docs/refactor/architecture-program/handoff/produ
 const check = process.argv.includes("--check")
 const hash = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex")
 const records = []
-for (const owner of ["ts-release", "npm"]) {
+for (const owner of ["ts-release", "npm", "pypi"]) {
   for await (const path of new Bun.Glob("**/*.d.ts").scan({
     cwd: join(root, "packages", owner, "dist"),
   })) {
@@ -43,7 +43,7 @@ const manifest =
   JSON.stringify(
     {
       format: "ts-release/production-api/1",
-      owners: ["packages/ts-release", "packages/npm"],
+      owners: ["packages/ts-release", "packages/npm", "packages/pypi"],
       compiler: "typescript@6.0.3",
       effect: "4.0.0-beta.107",
       scope:

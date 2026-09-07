@@ -4,7 +4,8 @@ import * as Model from "./Model.js"
 import { createHash } from "node:crypto"
 import { gunzipSync } from "node:zlib"
 import { ReleaseError } from "@mannyc1/ts-release"
-import { File, type ArtifactAccess } from "@mannyc1/ts-release/bundle"
+import { verifiedArtifacts, type ArtifactAccess } from "@mannyc1/ts-release/bundle"
+import { decodeJson as parseJson } from "@mannyc1/ts-release/http"
 
 export const invalid = (code: string): never => {
   throw new ReleaseError({
@@ -28,79 +29,7 @@ export const object = (input: unknown): Record<string, unknown> => {
   return input as Record<string, unknown>
 }
 
-/** Match the retained native policy: no duplicate keys, unsafe integers, or
- * ambiguous strings. JSON.parse builds the value only after lexical admission. */
-export const parseJson = (bytes: Uint8Array): unknown => {
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
-  const lexer =
-    /[\t\n\r ]+|"(?:[^"\\\u0000-\u001f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"|true|false|null|-?(?:0|[1-9][0-9]*)|[{}\[\]:,]/uy
-  let token = "",
-    offset = 0
-  const next = () => {
-    do {
-      if (offset === text.length) {
-        token = ""
-        return
-      }
-      lexer.lastIndex = offset
-      const match = lexer.exec(text)
-      if (!match) return invalid("json-token")
-      token = match[0]
-      offset = lexer.lastIndex
-    } while (/^[\t\n\r ]/u.test(token))
-  }
-  const string = () => {
-    if (!token.startsWith('"')) return invalid("json-string")
-    const value = JSON.parse(token) as string
-    if (
-      value !== value.normalize("NFC") ||
-      /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(value)
-    )
-      invalid("json-string")
-    return value
-  }
-  const value = (depth: number): void => {
-    if (depth > 128) invalid("json-depth")
-    if (["{", "["].includes(token)) {
-      const record = ["{"].includes(token),
-        end = record ? "}" : "]",
-        keys = new Set<string>()
-      next()
-      if (token === end) {
-        next()
-        return
-      }
-      while (true) {
-        if (record) {
-          const key = string()
-          if (keys.has(key)) invalid("duplicate-json-key")
-          keys.add(key)
-          next()
-          if (token !== ":") invalid("json-colon")
-          next()
-        }
-        value(depth + 1)
-        if (token === end) {
-          next()
-          return
-        }
-        if (token !== ",") invalid("json-separator")
-        next()
-      }
-    }
-    if (token.startsWith('"')) string()
-    else if (!["true", "false", "null"].includes(token)) {
-      if (!token || !Number.isSafeInteger(Number(token)) || Object.is(Number(token), -0))
-        invalid("json-integer")
-    }
-    next()
-  }
-  next()
-  value(0)
-  if (token !== "") invalid("json-trailing-input")
-  return JSON.parse(text)
-}
-
+export { decodeJson as parseJson } from "@mannyc1/ts-release/http"
 const tarString = (bytes: Uint8Array) =>
   new TextDecoder("utf-8", { fatal: true }).decode(
     bytes.subarray(0, bytes.indexOf(0) < 0 ? bytes.length : bytes.indexOf(0)),
@@ -199,44 +128,8 @@ export const own = <A, I>(codec: Schema.Codec<A, I>, input: unknown): A => {
   const value = decode(input)
   return decode(parseJson(encode(Schema.encodeSync(codec)(value))))
 }
-export const captureArtifacts = (access: ArtifactAccess) => {
-  const members = new Map(
-    access.bundle.artifacts
-      .filter((artifact) => artifact._tag === "OwnedFile")
-      .map((artifact) => [
-        artifact.logicalName,
-        JSON.stringify(Schema.encodeSync(File)(own(File, artifact))),
-      ]),
-  )
-  const read = access.readContent.bind(access)
-  const has = (file: File) =>
-    members.get(file.logicalName) === JSON.stringify(Schema.encodeSync(File)(own(File, file)))
-  const readOwned = Effect.fn("npm.readOwnedArtifact")(function* (input: File) {
-    const file = yield* attempt(() => own(File, input))
-    if (!has(file))
-      return yield* new ReleaseError({
-        code: "npm-artifact-member",
-        message: "File is not the exact owned Bundle member",
-      })
-    if (BigInt(file.content.bytes) > 128n * 1024n * 1024n)
-      return yield* new ReleaseError({
-        code: "npm-artifact-bound",
-        message: "npm artifact exceeds128 MiB",
-      })
-    const bytes = new Uint8Array(yield* read(file.content))
-    if (
-      String(bytes.length) !== file.content.bytes ||
-      digest("sha256", bytes) !== file.content.sha256
-    )
-      return yield* new ReleaseError({
-        code: "npm-artifact-content",
-        message: "Owned artifact size or digest differs",
-      })
-    return bytes
-  })
-  return { read: readOwned, has }
-}
-
+export const captureArtifacts = (access: ArtifactAccess) =>
+  verifiedArtifacts(access, 128 * 1024 * 1024)
 export const metadataUrl = (packageName: string) =>
   `https://registry.npmjs.org/${encodeURIComponent(packageName).replace(/^%40/u, "@").replace(/%2F/gu, "%2f")}`
 export class NativeScope extends Schema.Class<NativeScope>("NpmNativeScope")({

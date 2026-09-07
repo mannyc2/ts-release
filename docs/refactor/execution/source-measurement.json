@@ -1,172 +1,282 @@
 {
-  "wave": "W02",
+  "wave": "W03",
   "counts": {
-    "product": 11832,
-    "unchangedLegacy": 7433,
-    "replacement": 4399,
-    "metadata": 485,
-    "tests": 35479,
-    "fixtureText": 1243,
-    "fixtureBinaryBytes": 720427,
+    "product": 12740,
+    "unchangedLegacy": 6939,
+    "replacement": 5801,
+    "metadata": 522,
+    "productData": 789,
+    "productDataBytes": 15973,
+    "tests": 36858,
+    "fixtureText": 5272,
+    "fixtureBinaryBytes": 727372,
     "generatedDelivery": 678,
-    "tooling": 44454
+    "tooling": 44531
   },
   "files": [
     {
-      "path": "packages/npm/package.json",
-      "lines": 34,
+      "path": "packages/pypi/package.json",
+      "lines": 35,
       "lane": "metadata",
-      "sha256": "b904cbf11544bf2f262203344cda109fbff69bedd12206d84c01fb7d85b5c296"
+      "sha256": "fd12e9c096d0004ab912a47fb8477674d1ef889f251b1e8053b05389416d5635"
     },
     {
-      "path": "packages/npm/src/Auth.ts",
-      "lines": 432,
+      "path": "packages/pypi/src/Archive.ts",
+      "lines": 180,
       "lane": "product",
-      "sha256": "e8c2552d35d77d6886aee588432f182558eb7540a3ecc62769321eed5f27950d"
+      "sha256": "f090db2a967776161e7827c0a273d70c6fc76a40fc7bcdce700dd775719fe70b"
     },
     {
-      "path": "packages/npm/src/Evidence.ts",
-      "lines": 236,
+      "path": "packages/pypi/src/Auth.ts",
+      "lines": 92,
       "lane": "product",
-      "sha256": "1ffb3a01d26b9d9e6caf2d44695bdd00e37787b6aead3507c3a5fa1c41fb272d"
+      "sha256": "844bcfca5053704557807ddf3bb16f414322247a023b0c5b98d2b8e6220a3821"
     },
     {
-      "path": "packages/npm/src/Model.ts",
-      "lines": 168,
+      "path": "packages/pypi/src/Evidence.ts",
+      "lines": 216,
       "lane": "product",
-      "sha256": "f1c342927915077b7dcb6bff5ffef0e342c200698ebc1c1e2d0e2896abcfaf7b"
+      "sha256": "9e19f3eb979a800b728ddef4642814042c0da0b718b8c063d9a823c2ac430feb"
     },
     {
-      "path": "packages/npm/src/Native.ts",
-      "lines": 281,
+      "path": "packages/pypi/src/Metadata.ts",
+      "lines": 115,
       "lane": "product",
-      "sha256": "f07126b0510dbc491ffb5eeaf6461cdfd5af1caba6d5a90627193cd12f26d60c"
+      "sha256": "27f6a8dbf7fd2f237fe64298ef15c882858a9d42bdda6c9406e9ddb8c8530a99"
     },
     {
-      "path": "packages/npm/src/Protocol.ts",
-      "lines": 256,
+      "path": "packages/pypi/src/MetadataFields.ts",
+      "lines": 199,
       "lane": "product",
-      "sha256": "abdc77a7ee507ecadd08cb5cf74afac2f7776cc804550238fef4d544ebc2fced"
+      "sha256": "1d25e8634252ef8e49f07e23991e0f965b5266e80582f89f818651bc4b4f0c37"
     },
     {
-      "path": "packages/npm/src/Wire.ts",
-      "lines": 112,
+      "path": "packages/pypi/src/Model.ts",
+      "lines": 159,
       "lane": "product",
-      "sha256": "4e1e6495282acbb97a160c3be004112eb421d2cdbedf607efacbf25291d05e64"
+      "sha256": "f7642e065df4937cb42622b5be54b7947d1bbb9000913c3adff3241d461b18d5"
     },
     {
-      "path": "packages/npm/src/index.ts",
-      "lines": 28,
+      "path": "packages/pypi/src/Native.ts",
+      "lines": 41,
       "lane": "product",
-      "sha256": "24f761eeafea23755b822b81dcd2f4d408a21d87569915e30ba8c6e578f127dd"
+      "sha256": "eb7ad944bdf3288b2904c9b809b59817fb2093d77f5875881e187a20317c39b3"
     },
     {
-      "path": "packages/npm/tsconfig.build.json",
+      "path": "packages/pypi/src/Protocol.ts",
+      "lines": 152,
+      "lane": "product",
+      "sha256": "d3846d46629c921ed4269b5a7c6dc85c331b49aef16991a5273bcb65da268bba"
+    },
+    {
+      "path": "packages/pypi/src/Requirement.ts",
+      "lines": 105,
+      "lane": "product",
+      "sha256": "77a8f7ceef823dbac2d599d57bb9a1bb8bb098ca7865010deb78f38c93e440d3"
+    },
+    {
+      "path": "packages/pypi/src/SpdxCatalog.json",
+      "lines": 789,
+      "lane": "productData",
+      "sha256": "c3518b07431b2bb2a41d5e3e56d09f1977dc2932ea86a8f2d575f6774f1e4ee3"
+    },
+    {
+      "path": "packages/pypi/src/Wire.ts",
+      "lines": 103,
+      "lane": "product",
+      "sha256": "0c16baf79bc497e3b1b712ce559d5dddc9ce645dc732fc94fdc4e0064e6f2809"
+    },
+    {
+      "path": "packages/pypi/src/index.ts",
+      "lines": 16,
+      "lane": "product",
+      "sha256": "d9984fdd2b297dbb6c10e355e2f1c25546797e2c93bbb14fa21e9114d1bed316"
+    },
+    {
+      "path": "packages/pypi/tsconfig.build.json",
       "lines": 14,
       "lane": "metadata",
       "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8"
     },
     {
-      "path": "scripts/check-native-npm-sigstore.ts",
-      "lines": 87,
+      "path": "packages/ts-release/src/internal/ArtifactReader.ts",
+      "lines": 55,
+      "lane": "product",
+      "sha256": "02661ed861ccf168e6e11c20034b04bc64978581ed977ea0aabb431a33098ec1"
+    },
+    {
+      "path": "packages/ts-release/src/internal/NativeJson.ts",
+      "lines": 74,
+      "lane": "product",
+      "sha256": "8395ebcdf181e67682fa8080403947b8e0680c1f4199e061f50e4648ac595b31"
+    },
+    {
+      "path": "scripts/setup-native-python.ts",
+      "lines": 25,
       "lane": "tooling",
-      "sha256": "2382c13d545fb1b4f0d5d8f2d776ad4fff83287fce634ba340b4a6a99ae0ca92"
+      "sha256": "209cd08ef6ead5b0aee0d2d56159a92fef48eecdfd91d92648206d55a0586aab"
     },
     {
-      "path": "scripts/check-packed-npm.ts",
-      "lines": 157,
+      "path": "scripts/update-pypi-spdx-catalog.ts",
+      "lines": 13,
       "lane": "tooling",
-      "sha256": "7828c7560e2ef9d9ff24ae5d23a095a63c88754eafd04856765482dc2c16a0af"
+      "sha256": "18738c18b7e8d6597a9c35f680fa197be339bdeb2d440c6f075e1d0a49f684b2"
     },
     {
-      "path": "test/reimplementation/kernel/transport-preparation.test.ts",
-      "lines": 183,
+      "path": "test/reimplementation/warehouse/build-fixtures.ts",
+      "lines": 44,
       "lane": "tests",
-      "sha256": "37ed37e63bf4a56e62a2c7bda333cc3f7fe84fa79998da7968467bdbed277714"
+      "sha256": "fa36f1d89c43866d3987e00911c01b1b7a4c24ec8cc4985a18d3049cca8b8ee5"
     },
     {
-      "path": "test/reimplementation/npm/auth.test.ts",
-      "lines": 382,
+      "path": "test/reimplementation/warehouse/capture-metadata-oracle.py",
+      "lines": 106,
       "lane": "tests",
-      "sha256": "b16b8aad73750624a1dc003928aa2b682409894d1e7afd713711a06a80fbc2e6"
+      "sha256": "704e0b066f834ab9e5bb637a68923ec819b60a01d0b8a76f2623f47ba716c020"
     },
     {
-      "path": "test/reimplementation/npm/authoring.test.ts",
-      "lines": 115,
+      "path": "test/reimplementation/warehouse/capture-native-oracle.py",
+      "lines": 40,
       "lane": "tests",
-      "sha256": "7e0eb43747b86a64cce1fd18cc589ee559e25ed31eadda8e574418a3cde0e56e"
+      "sha256": "fb45f647413f480bdaaf5821d07de1a90e5d92176a3ee03500616d98a0022446"
     },
     {
-      "path": "test/reimplementation/npm/capture-native-oracle.mjs",
-      "lines": 64,
-      "lane": "tests",
-      "sha256": "85df5213a211f0619f9f02a8bca1f7a8f3c4a0d7fba826494d07ba7bd140a965"
-    },
-    {
-      "path": "test/reimplementation/npm/fixtures.ts",
-      "lines": 80,
-      "lane": "tests",
-      "sha256": "71668179a08fc08f14ed5c1576bbdd87b9615d6204db45694ee3ee24e97f905f"
-    },
-    {
-      "path": "test/reimplementation/npm/fixtures/native-manifest.json",
+      "path": "test/reimplementation/warehouse/fixture-project/README.md",
       "lines": 1,
-      "lane": "fixtureText",
-      "sha256": "2b76500a58cef8352395fef73f4417590c7c8ff7698e79940bbab21e97fba19b"
+      "lane": "tests",
+      "sha256": "2986022e3678900f6781e4be89906205e28a34fe35c91844ae955b50a3a6ed1f"
     },
     {
-      "path": "test/reimplementation/npm/fixtures/native-oracle.json",
+      "path": "test/reimplementation/warehouse/fixture-project/pyproject.toml",
+      "lines": 18,
+      "lane": "tests",
+      "sha256": "5db46f340ae6eeccef83ad845a6cc58be71ac0ace6989f377722a605ed6ec0ac"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixture-project/src/ts_release_native_fixture/__init__.py",
+      "lines": 2,
+      "lane": "tests",
+      "sha256": "0fc2cafbac8860959afa00254520d4d5212f132f9bb8b2e91ec987dcb6a65a27"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures.ts",
+      "lines": 53,
+      "lane": "tests",
+      "sha256": "ecaf46e92465782965b7ca3c782d1b04b2cb6c33289607803b0fbc4a49b3f0ab"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/build.json",
       "lines": 35,
       "lane": "fixtureText",
-      "sha256": "14767125d5f1012769bc4d70a86e926d7e02063a0888161eb6976f152abaf35b"
+      "sha256": "624bc99adf08a619b4969c24cdecf6d4f169df7e4203afd9fe45d95446eba06c"
     },
     {
-      "path": "test/reimplementation/npm/fixtures/native-package.tgz",
+      "path": "test/reimplementation/warehouse/fixtures/distributions/ts_release_native_fixture-1.2.3-cp312-cp312-macosx_11_0_arm64.whl",
       "lines": 0,
       "lane": "fixtureBinaryBytes",
-      "sha256": "fe871fc21fc056d9f745cb0a8318abf9c90ecc985cd77a6acce267de198a8365"
+      "sha256": "b7363d51b8c73e208649caf6668e590a2b30b691b8bbe51fb01856063f2f97fa"
     },
     {
-      "path": "test/reimplementation/npm/fixtures/sigstore-5.0.0-attestations.json",
+      "path": "test/reimplementation/warehouse/fixtures/distributions/ts_release_native_fixture-1.2.3-cp312-cp312-manylinux_2_17_x86_64.whl",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "6eeecc169c304f8700c1189955316a1b68afcc2efef876f11f1ba40bf9f6ef9a"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/distributions/ts_release_native_fixture-1.2.3-py3-none-any.whl",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "7e622a17c857f6e9073f18b56fb1504643ef71cb8a9f89e149d6bbbae7c6642f"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/distributions/ts_release_native_fixture-1.2.3.tar.gz",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "cb2ce8a825e3822150c88574c6b27a26c7eb95d9f3ac747d75ba9e483527a65d"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/grammar-cases.json",
+      "lines": 130,
+      "lane": "fixtureText",
+      "sha256": "61450e515f8bfeffad0ed888afc2d4bf7ea35fa09688376325493de7a4ebf3f9"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/metadata-oracle.json",
+      "lines": 1836,
+      "lane": "fixtureText",
+      "sha256": "d03218f5ed1233608af32c9bbdcb8ff95051aad185a573c33e974010eba1445c"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/native-oracle.json",
+      "lines": 128,
+      "lane": "fixtureText",
+      "sha256": "644061f61c7d4202878c01150a13c5f881456a67a1c598be7b3c7980c8b60345"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/warehouse-legacy.py",
+      "lines": 1899,
+      "lane": "fixtureText",
+      "sha256": "a1a09c16b9b5c44d270d01c6d6fd8fe77c4c655c4c5d4d538aea39247c2a5b0d"
+    },
+    {
+      "path": "test/reimplementation/warehouse/fixtures/warehouse-source-law.json",
       "lines": 1,
       "lane": "fixtureText",
-      "sha256": "ab9228005186f50e545239d7c34d08459a82fe166af867f9bbeeb9cc1a8a426e"
+      "sha256": "7ff7f8d20e25d00adb0cf0675c5c6483c8c9cb25c54e2458103575b190efdbc2"
     },
     {
-      "path": "test/reimplementation/npm/native-oracle.test.ts",
-      "lines": 63,
+      "path": "test/reimplementation/warehouse/native-oracle.test.ts",
+      "lines": 56,
       "lane": "tests",
-      "sha256": "88274c9f241c57e0c25635a85f0ebbbb74afcc576a8d863d55acb79a279b920f"
+      "sha256": "642c2b7e5cb7d467f9b30f2820a9e741b10257d3caee0af936053a52e04a0af2"
     },
     {
-      "path": "test/reimplementation/npm/native-sigstore-consumer.mjs",
-      "lines": 57,
+      "path": "test/reimplementation/warehouse/native-server.test.ts",
+      "lines": 118,
       "lane": "tests",
-      "sha256": "8f2142699221d0e61fdc2fb47892df740ba748a0859f0be2b5a08aeed6ee227d"
+      "sha256": "b6321b9f3c23f4a4cc43fbeffe57c56c1b384ace21c649ce572bf465c7535b92"
     },
     {
-      "path": "test/reimplementation/npm/packed-consumer.mjs",
-      "lines": 101,
+      "path": "test/reimplementation/warehouse/native-server.ts",
+      "lines": 216,
       "lane": "tests",
-      "sha256": "d6c83c39124eb3aa053d99dab07c57e31fdbac860634e01ce1253da6626559e1"
+      "sha256": "0ace21227665fdecb8e437dd11fb85c39e189ff08a8911965253e6870e96a1cb"
     },
     {
-      "path": "test/reimplementation/npm/process-worker.ts",
-      "lines": 88,
+      "path": "test/reimplementation/warehouse/packed-consumer.mjs",
+      "lines": 172,
       "lane": "tests",
-      "sha256": "23bc3afcaf29e045fa1db11af3a60c753f63607bd5531f2e73347c11c0433491"
+      "sha256": "a8f506a6ea5503b767aa0e7e1d504713bb87047027414096bfc678de4c62e315"
     },
     {
-      "path": "test/reimplementation/npm/process.test.ts",
-      "lines": 70,
+      "path": "test/reimplementation/warehouse/process-worker.ts",
+      "lines": 108,
       "lane": "tests",
-      "sha256": "ce6bb0a259cd126eb83aa7a91a9472d41c6a02b2fdbb3ff736882eca2b86cb8d"
+      "sha256": "d5da3e70442d691b39b5cbcd125a197a71ec2becd3312339509a7626722ec806"
     },
     {
-      "path": "test/reimplementation/npm/protocol.test.ts",
-      "lines": 357,
+      "path": "test/reimplementation/warehouse/protocol.test.ts",
+      "lines": 263,
       "lane": "tests",
-      "sha256": "58bf7746f6da36b9935402e1ff338603ea0a6802aeb23d171effb33fc5bfc6b7"
+      "sha256": "d2bbd75c7b0b726e91dd9790a754535adb2014f45deb2718491d8b4d8bc1a5d5"
+    },
+    {
+      "path": "test/reimplementation/warehouse/requirements.txt",
+      "lines": 75,
+      "lane": "tests",
+      "sha256": "7ed3053f1e1c8cf5b551a63f2a6d0c9c2e04940651ecdd62df308accafce5054"
+    },
+    {
+      "path": "test/reimplementation/warehouse/warehouse-source-law.py",
+      "lines": 74,
+      "lane": "tests",
+      "sha256": "22b7dcd5e7dcbae0dbed9ab936dfd4b58f799736dd701272cd912180a6d32052"
+    },
+    {
+      "path": "test/reimplementation/warehouse/warehouse-source-law.test.ts",
+      "lines": 33,
+      "lane": "tests",
+      "sha256": "ccc811569663da0e1422ff5b21588f35a48548ddee8e9afad12712cf22729e8e"
     },
     {
       "path": "apps/release-ts/package.json",
@@ -355,10 +465,46 @@
       "sha256": "f5bb0164052f07ad5e5c7c4645f9d2354987c4a6bd814e7aaf7469628ec3f415"
     },
     {
+      "path": "examples/portable-cli/artifacts/portable_example-0.1.0-py3-none-macosx_10_15_x86_64.whl",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "1183ace360449b235e6955ec69822f8196c2c4a61713da5b44de64d33b0169a9"
+    },
+    {
+      "path": "examples/portable-cli/artifacts/portable_example-0.1.0-py3-none-macosx_11_0_arm64.whl",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "3c20f67321d01dfa6b0aace4d423f4db3753822a902b76a5a40bf37da8af4436"
+    },
+    {
+      "path": "examples/portable-cli/artifacts/portable_example-0.1.0-py3-none-manylinux2014_aarch64.whl",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "2645163e46373cf7435b50774886b7763af608eb68013d5019843b0b6ba25d09"
+    },
+    {
+      "path": "examples/portable-cli/artifacts/portable_example-0.1.0-py3-none-manylinux2014_x86_64.whl",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "f4cefe82f9a8889a98409f3bfe5d24fb7b65698b7cb121f5867871c1a4ce97f5"
+    },
+    {
+      "path": "examples/portable-cli/artifacts/portable_example-0.1.0-py3-none-win_amd64.whl",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "0829c8b0851b6e4330a9032c7279e86985b1a89296faa7097af9a642af5c1e92"
+    },
+    {
       "path": "examples/portable-cli/package.json",
       "lines": 9,
       "lane": "metadata",
       "sha256": "16df4f846bae3979e11896a9cc42f09a8d2b70b2407a1ff6f475f72348bae0e9"
+    },
+    {
+      "path": "examples/pypi-registry/artifacts/release_example_pypi-0.1.0-py3-none-any.whl",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "b1301a0f19618034c64562d39cd575ac4de4e528e538d966d6292cd78a90ba85"
     },
     {
       "path": "examples/scoop-bucket/artifacts/release-example-scoop-0.1.0.zip",
@@ -368,9 +514,63 @@
     },
     {
       "path": "package.json",
-      "lines": 54,
+      "lines": 57,
       "lane": "metadata",
-      "sha256": "899ef2b357cac100c8cc746fe179968adac05968b3e23d537b9341ffde7f5f2d"
+      "sha256": "4c40c1b1e38e2dc3c9f7ba1dba969238179554328a48e9aac903bc1384c94037"
+    },
+    {
+      "path": "packages/npm/package.json",
+      "lines": 34,
+      "lane": "metadata",
+      "sha256": "b904cbf11544bf2f262203344cda109fbff69bedd12206d84c01fb7d85b5c296"
+    },
+    {
+      "path": "packages/npm/src/Auth.ts",
+      "lines": 432,
+      "lane": "product",
+      "sha256": "e8c2552d35d77d6886aee588432f182558eb7540a3ecc62769321eed5f27950d"
+    },
+    {
+      "path": "packages/npm/src/Evidence.ts",
+      "lines": 236,
+      "lane": "product",
+      "sha256": "1ffb3a01d26b9d9e6caf2d44695bdd00e37787b6aead3507c3a5fa1c41fb272d"
+    },
+    {
+      "path": "packages/npm/src/Model.ts",
+      "lines": 168,
+      "lane": "product",
+      "sha256": "f1c342927915077b7dcb6bff5ffef0e342c200698ebc1c1e2d0e2896abcfaf7b"
+    },
+    {
+      "path": "packages/npm/src/Native.ts",
+      "lines": 174,
+      "lane": "product",
+      "sha256": "07a59f58cb83e37d14da45351fd615cf8bc4f5399bad4878e1404a7fe97c0696"
+    },
+    {
+      "path": "packages/npm/src/Protocol.ts",
+      "lines": 256,
+      "lane": "product",
+      "sha256": "abdc77a7ee507ecadd08cb5cf74afac2f7776cc804550238fef4d544ebc2fced"
+    },
+    {
+      "path": "packages/npm/src/Wire.ts",
+      "lines": 112,
+      "lane": "product",
+      "sha256": "4e1e6495282acbb97a160c3be004112eb421d2cdbedf607efacbf25291d05e64"
+    },
+    {
+      "path": "packages/npm/src/index.ts",
+      "lines": 28,
+      "lane": "product",
+      "sha256": "24f761eeafea23755b822b81dcd2f4d408a21d87569915e30ba8c6e578f127dd"
+    },
+    {
+      "path": "packages/npm/tsconfig.build.json",
+      "lines": 14,
+      "lane": "metadata",
+      "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8"
     },
     {
       "path": "packages/ts-release/package.json",
@@ -386,15 +586,15 @@
     },
     {
       "path": "packages/ts-release/src/Bundle.ts",
-      "lines": 12,
+      "lines": 13,
       "lane": "product",
-      "sha256": "81020fd7a563b2e046ddc45bc896641c537d0c226ea988e634e64d9032884bc5"
+      "sha256": "5f4e37afc336a2dc7d8f4118d3a37ba0e56ff2d4d10d26069694739cebd06314"
     },
     {
       "path": "packages/ts-release/src/Http.ts",
-      "lines": 86,
+      "lines": 87,
       "lane": "product",
-      "sha256": "35ff6d695f02d8807ee77157fba59fe0aa73fda1736a2bafda7d598534b60a4f"
+      "sha256": "9dc9ebdb18ad0331371d110ad70f45348834a8a810a683a9678cb87089d12f03"
     },
     {
       "path": "packages/ts-release/src/Journal.ts",
@@ -1130,9 +1330,9 @@
     },
     {
       "path": "scripts/check-architecture-budget.ts",
-      "lines": 127,
+      "lines": 133,
       "lane": "tooling",
-      "sha256": "4d1c50389d0aea63fe291d2c6e427358cc3844c74cd81008c64bafc606c85af8"
+      "sha256": "6499315f24082bfb34bc02b956bd223bec280d275469d12d5306cd857651c7b6"
     },
     {
       "path": "scripts/check-capabilities.ts",
@@ -1183,6 +1383,12 @@
       "sha256": "4cc748dde6fdb61e1e56a64887b17a689d2b4c68b726586f37ecb13557b5405d"
     },
     {
+      "path": "scripts/check-native-npm-sigstore.ts",
+      "lines": 87,
+      "lane": "tooling",
+      "sha256": "2382c13d545fb1b4f0d5d8f2d776ad4fff83287fce634ba340b4a6a99ae0ca92"
+    },
+    {
       "path": "scripts/check-package-exports.ts",
       "lines": 135,
       "lane": "tooling",
@@ -1199,6 +1405,12 @@
       "lines": 179,
       "lane": "tooling",
       "sha256": "880bd414de786346b712081bc27373d45388736f864cab8fb4cc716889638c2c"
+    },
+    {
+      "path": "scripts/check-packed-npm.ts",
+      "lines": 188,
+      "lane": "tooling",
+      "sha256": "810449d5895ddd52e3804d7795d7da94a16b22448b2ddf4163db136091d291a5"
     },
     {
       "path": "scripts/check-readme.ts",
@@ -1354,7 +1566,7 @@
       "path": "scripts/project-production-api.ts",
       "lines": 59,
       "lane": "tooling",
-      "sha256": "ab81ce89d435cd6cc50570aa3a4d86c9ce52b672a05200597abf7399adb0354e"
+      "sha256": "4213b3b3acea367177825d4be42de23b3ccd6032138a82266321fdcfaca98210"
     },
     {
       "path": "scripts/replay-provider-reads.ts",
@@ -1453,12 +1665,6 @@
       "sha256": "57f6d49daf02a7a0e9fd845de9ffc3bdf1253a62f9725995c92aff5d21cea361"
     },
     {
-      "path": "src/model/pypi.ts",
-      "lines": 31,
-      "lane": "product",
-      "sha256": "1bf34f5939ece2d810ce7a705095ff2c33bc67ca6a951ee285e9242a309938d1"
-    },
-    {
       "path": "src/model/python-distribution.ts",
       "lines": 360,
       "lane": "product",
@@ -1517,12 +1723,6 @@
       "lines": 954,
       "lane": "product",
       "sha256": "c7ea69ce971258343c7882f7415e3ece31231feefb0bec02fb598d7133bef4ce"
-    },
-    {
-      "path": "src/publication/pypi.ts",
-      "lines": 463,
-      "lane": "product",
-      "sha256": "3eceb7db2f2000b72124e5704f71eddcd84783525a9d942e5c66c5c175762d58"
     },
     {
       "path": "test/action-artifact-bridge.test.ts",
@@ -2209,6 +2409,12 @@
       "sha256": "a328f004bdd47492c5cf0c0457954deb246d36dd355f86a78f1093722a90dc5f"
     },
     {
+      "path": "test/reimplementation/kernel/transport-preparation.test.ts",
+      "lines": 183,
+      "lane": "tests",
+      "sha256": "37ed37e63bf4a56e62a2c7bda333cc3f7fe84fa79998da7968467bdbed277714"
+    },
+    {
       "path": "test/reimplementation/kernel/witnesses/caching-store.ts",
       "lines": 70,
       "lane": "tests",
@@ -2225,6 +2431,90 @@
       "lines": 15,
       "lane": "tests",
       "sha256": "4a90261e484ff9e886f0532c8d49dacc1ba05f73f679f5154b67f4d59e954b4a"
+    },
+    {
+      "path": "test/reimplementation/npm/auth.test.ts",
+      "lines": 382,
+      "lane": "tests",
+      "sha256": "b16b8aad73750624a1dc003928aa2b682409894d1e7afd713711a06a80fbc2e6"
+    },
+    {
+      "path": "test/reimplementation/npm/authoring.test.ts",
+      "lines": 115,
+      "lane": "tests",
+      "sha256": "7e0eb43747b86a64cce1fd18cc589ee559e25ed31eadda8e574418a3cde0e56e"
+    },
+    {
+      "path": "test/reimplementation/npm/capture-native-oracle.mjs",
+      "lines": 64,
+      "lane": "tests",
+      "sha256": "85df5213a211f0619f9f02a8bca1f7a8f3c4a0d7fba826494d07ba7bd140a965"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures.ts",
+      "lines": 80,
+      "lane": "tests",
+      "sha256": "71668179a08fc08f14ed5c1576bbdd87b9615d6204db45694ee3ee24e97f905f"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/native-manifest.json",
+      "lines": 1,
+      "lane": "fixtureText",
+      "sha256": "2b76500a58cef8352395fef73f4417590c7c8ff7698e79940bbab21e97fba19b"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/native-oracle.json",
+      "lines": 35,
+      "lane": "fixtureText",
+      "sha256": "14767125d5f1012769bc4d70a86e926d7e02063a0888161eb6976f152abaf35b"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/native-package.tgz",
+      "lines": 0,
+      "lane": "fixtureBinaryBytes",
+      "sha256": "fe871fc21fc056d9f745cb0a8318abf9c90ecc985cd77a6acce267de198a8365"
+    },
+    {
+      "path": "test/reimplementation/npm/fixtures/sigstore-5.0.0-attestations.json",
+      "lines": 1,
+      "lane": "fixtureText",
+      "sha256": "ab9228005186f50e545239d7c34d08459a82fe166af867f9bbeeb9cc1a8a426e"
+    },
+    {
+      "path": "test/reimplementation/npm/native-oracle.test.ts",
+      "lines": 63,
+      "lane": "tests",
+      "sha256": "88274c9f241c57e0c25635a85f0ebbbb74afcc576a8d863d55acb79a279b920f"
+    },
+    {
+      "path": "test/reimplementation/npm/native-sigstore-consumer.mjs",
+      "lines": 57,
+      "lane": "tests",
+      "sha256": "8f2142699221d0e61fdc2fb47892df740ba748a0859f0be2b5a08aeed6ee227d"
+    },
+    {
+      "path": "test/reimplementation/npm/packed-consumer.mjs",
+      "lines": 101,
+      "lane": "tests",
+      "sha256": "d6c83c39124eb3aa053d99dab07c57e31fdbac860634e01ce1253da6626559e1"
+    },
+    {
+      "path": "test/reimplementation/npm/process-worker.ts",
+      "lines": 88,
+      "lane": "tests",
+      "sha256": "23bc3afcaf29e045fa1db11af3a60c753f63607bd5531f2e73347c11c0433491"
+    },
+    {
+      "path": "test/reimplementation/npm/process.test.ts",
+      "lines": 70,
+      "lane": "tests",
+      "sha256": "ce6bb0a259cd126eb83aa7a91a9472d41c6a02b2fdbb3ff736882eca2b86cb8d"
+    },
+    {
+      "path": "test/reimplementation/npm/protocol.test.ts",
+      "lines": 357,
+      "lane": "tests",
+      "sha256": "58bf7746f6da36b9935402e1ff338603ea0a6802aeb23d171effb33fc5bfc6b7"
     },
     {
       "path": "test/reimplementation/packed-kernel/application.mjs",
@@ -2678,9 +2968,9 @@
     },
     {
       "path": "tools/architecture-lab/project.ts",
-      "lines": 372,
+      "lines": 374,
       "lane": "tooling",
-      "sha256": "9f21f901654ac8bb9f44950db249527dd5d34f0823cb088981b6a6855e49ff1b"
+      "sha256": "36ad1ff43c925dd0b450d66fbece4924d5c3c978b196ac75cb6d88eabcf8ecc3"
     },
     {
       "path": "tools/architecture-lab/proposal/apple.ts",
@@ -3524,9 +3814,9 @@
     },
     {
       "path": "tsconfig.json",
-      "lines": 37,
+      "lines": 22,
       "lane": "metadata",
-      "sha256": "0f165251fe6ac7b06fcc0229098f3efdd54a88c4c1deca47f58933406b9223a9"
+      "sha256": "568967d1e67f8d8b013dbb5fc5eb1e6d5fc022f4285ccf6204d2af938e1ee908"
     },
     {
       "path": "vendor/effect-bun-test/package.json",

@@ -211,7 +211,7 @@
       "dependsOn": [
         "W02"
       ],
-      "status": "planned-not-executed",
+      "status": "implemented-local-gates-with-recorded-source-variance",
       "productOutcomeIds": [
         "D02-01",
         "D02-02",
@@ -234,7 +234,7 @@
           "./test/reimplementation/warehouse"
         ]
       ],
-      "commandAvailability": "These future independent production contract suites must be created and bound before their implementation; current lab paths are supporting design evidence only.",
+      "commandAvailability": "Implemented production/native suites in test/reimplementation/warehouse; evidence in execution/W03-verification.json. Hosted PyPI/TestPyPI/OIDC remains Plans009/010.",
       "commonCommands": [
         [
           "bun",
@@ -703,7 +703,7 @@
         "E08",
         "E09"
       ],
-      "implementation": "Wire selected CLI/default SQLite and explicitly configured Action sharedjournal, scoped application acquisition, exact public input/output API and intended self-release. Assemble one sequential localcandidate from W01\u2013W09; no provider convergence merge or oldCLIparity reconstruction. Deliver the shared bin from packages/ts-release, with thin apps/action and apps/self-release plus reconciled ts-release-agents ownership. Verify actual seven-package manifests, public imports, optional-peer absence, package-manager skew and kernel-first partial publication recovery.",
+      "implementation": "Wire selected CLI/default SQLite and explicitly configured Action sharedjournal, scoped application acquisition, exact public input/output API and intended self-release. Assemble one sequential localcandidate from W01–W09; no provider convergence merge or oldCLIparity reconstruction. Deliver the shared bin from packages/ts-release, with thin apps/action and apps/self-release plus reconciled ts-release-agents ownership. Verify actual seven-package manifests, public imports, optional-peer absence, package-manager skew and kernel-first partial publication recovery.",
       "passWitness": "Actual packed NodeAction/BunCLI/library/external/upstream consumers, success/failure/interruption resource closure, zero-blind-resend process replacement and non-mutating full69-scope self-release intendedbyte plan pass. Candidate binds allsource/packages/graph/surface/cases/budget and remaining live obligations.",
       "productionAcceptanceCommands": [
         [
@@ -3385,7 +3385,7 @@
           "./test/reimplementation/warehouse"
         ]
       ],
-      "availability": "to-implement-before-product-cutover",
+      "availability": "implemented; W03 local native and packed evidence recorded",
       "requiredOutcomeIds": [
         "D02-01",
         "D02-02",

@@ -2,22 +2,20 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as Model from "./Model.js";
 import { ReleaseError } from "@mannyc1/ts-release";
-import { File, type ArtifactAccess } from "@mannyc1/ts-release/bundle";
+import { type ArtifactAccess } from "@mannyc1/ts-release/bundle";
 export declare const invalid: (code: string) => never;
 export declare const attempt: <A>(body: () => A) => Effect.Effect<A, ReleaseError, never>;
 export declare const digest: (algorithm: string, bytes: Uint8Array) => string;
 export declare const encode: (input: unknown) => Uint8Array<ArrayBuffer>;
 export declare const object: (input: unknown) => Record<string, unknown>;
-/** Match the retained native policy: no duplicate keys, unsafe integers, or
- * ambiguous strings. JSON.parse builds the value only after lexical admission. */
-export declare const parseJson: (bytes: Uint8Array) => unknown;
+export { decodeJson as parseJson } from "@mannyc1/ts-release/http";
 /** Native package metadata is extracted from the exact bounded owned tarball. */
 export declare const readManifest: (bytes: Uint8Array) => Record<string, unknown>;
 export declare const own: <A, I>(codec: Schema.Codec<A, I>, input: unknown) => A;
-export declare const captureArtifacts: (access: ArtifactAccess) => {
-    read: (input: File) => Effect.Effect<Uint8Array<ArrayBuffer>, ReleaseError, never>;
-    has: (file: File) => boolean;
-};
+export declare const captureArtifacts: (access: ArtifactAccess) => Readonly<{
+    has: (input: import("@mannyc1/ts-release/bundle").File) => boolean;
+    read: (input: import("@mannyc1/ts-release/bundle").File) => Effect.Effect<Uint8Array<ArrayBuffer>, ReleaseError, never>;
+}>;
 export declare const metadataUrl: (packageName: string) => string;
 declare const NativeScope_base: Schema.Class<NativeScope, Schema.Struct<{
     readonly definitionId: Schema.Literals<readonly ["npm.publish", "npm.dist-tag"]>;
@@ -103,7 +101,7 @@ declare const NativeScope_base: Schema.Class<NativeScope, Schema.Struct<{
         readonly registry: Schema.Literal<"https://registry.npmjs.org/">;
         readonly name: Schema.NonEmptyString;
         readonly version: Schema.NonEmptyString;
-        readonly tarball: typeof File;
+        readonly tarball: typeof import("@mannyc1/ts-release/bundle").File;
         readonly integrity: Schema.String;
         readonly shasum: Schema.String;
         readonly initialTag: Schema.NonEmptyString;
@@ -192,7 +190,7 @@ declare const NativeScope_base: Schema.Class<NativeScope, Schema.Struct<{
         readonly registry: Schema.Literal<"https://registry.npmjs.org/">;
         readonly name: Schema.NonEmptyString;
         readonly version: Schema.NonEmptyString;
-        readonly tarball: typeof File;
+        readonly tarball: typeof import("@mannyc1/ts-release/bundle").File;
         readonly integrity: Schema.String;
         readonly shasum: Schema.String;
         readonly initialTag: Schema.NonEmptyString;
@@ -210,4 +208,3 @@ export declare class NativeScope extends NativeScope_base {
 export declare const scopeFor: (input: Model.PublishIntent | Model.DistTagIntent) => string;
 export declare const readScope: (scope: string) => NativeScope;
 export declare const endpointFor: (scope: NativeScope, read?: boolean) => string;
-export {};

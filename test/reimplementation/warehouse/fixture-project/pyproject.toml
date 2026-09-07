@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools==80.9.0", "wheel==0.48.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ts-release-native-fixture"
+version = "1.2.3"
+description = "Native Python index acceptance fixture"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+classifiers = ["Programming Language :: Python :: 3"]
+
+[project.scripts]
+ts-release-native-fixture = "ts_release_native_fixture:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

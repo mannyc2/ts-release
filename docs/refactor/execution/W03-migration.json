@@ -1,0 +1,324 @@
+{
+  "format": "ts-release/migration-execution/1",
+  "wave": "W03",
+  "status": "native-pypi-local-cutover",
+  "sourceCommit": "9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d",
+  "preservationCommit": "fd4b8af",
+  "physicalDeletedLines": 494,
+  "rows": [
+    {
+      "path": "src/model/pypi.ts",
+      "sha256": "1bf34f5939ece2d810ce7a705095ff2c33bc67ca6a951ee285e9242a309938d1",
+      "owner": "warehouse",
+      "wave": "W03",
+      "disposition": "delete-replaced-legacy-pypi-schema-and-lifecycle",
+      "successors": [
+        "provider.warehouse"
+      ],
+      "lines": 31,
+      "retiredDeclarations": [
+        {
+          "name": "PyPiRepository",
+          "kind": "VariableDeclaration",
+          "line": 4,
+          "sha256": "a3da51f864509d2d318f7f151ebc0d0d1793432d07c06daedec2ee409799f97d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "PyPiRepository",
+          "kind": "TypeAliasDeclaration",
+          "line": 5,
+          "sha256": "08d63802920f8f90b08cb54335ce4ee4266cc326068c16b85c02f86d34536c68",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "normalizePyPiProjectName",
+          "kind": "VariableDeclaration",
+          "line": 7,
+          "sha256": "2d2d6268a6aeaeed4b9b174591f6b55fecab25372007c395aeb47bc60f0b0991",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "PyPiProjectName",
+          "kind": "VariableDeclaration",
+          "line": 14,
+          "sha256": "07048ca63a08f1cb17b5496e00f182116d778b74b10e68a7c278df62d47c522b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "PyPiProjectName",
+          "kind": "TypeAliasDeclaration",
+          "line": 21,
+          "sha256": "7d183371b9e9413f83fb90caff9412f751ba0296690bfc7f4adb53d012e15140",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "PyPiRepositoryEndpoints",
+          "kind": "InterfaceDeclaration",
+          "line": 23,
+          "sha256": "75d22328f6b8ce1393adfc59ac449b57595c5c5d4396147835b172e2cdc68fb9",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "pypiRepositoryEndpoints",
+          "kind": "VariableDeclaration",
+          "line": 28,
+          "sha256": "376c67eb1434972edad914555da64f9f60622a06c52d0e43876b472200fd9cc3",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        }
+      ],
+      "successorPaths": [
+        "packages/pypi/src/Model.ts",
+        "packages/pypi/src/Protocol.ts",
+        "packages/pypi/src/Metadata.ts",
+        "packages/pypi/src/Wire.ts",
+        "packages/pypi/src/Evidence.ts",
+        "packages/pypi/src/Auth.ts",
+        "packages/ts-release/src/Release.ts"
+      ],
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "src/publication/pypi.ts",
+      "sha256": "3eceb7db2f2000b72124e5704f71eddcd84783525a9d942e5c66c5c175762d58",
+      "owner": "warehouse",
+      "wave": "W03",
+      "disposition": "delete-replaced-legacy-pypi-schema-and-lifecycle",
+      "successors": [
+        "provider.warehouse"
+      ],
+      "lines": 463,
+      "retiredDeclarations": [
+        {
+          "name": "pypiRecoveryCapabilityProfile",
+          "kind": "VariableDeclaration",
+          "line": 46,
+          "sha256": "934712f78f664cc313402087cfa93e59a13b6d54acad05640898abd2cf0f67bd",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "pypiProviderProtocolDocumentation",
+          "kind": "VariableDeclaration",
+          "line": 70,
+          "sha256": "bfaba14f21e7c4cbdb80d97ae137302ea50527dd953ee4a7d16612432031c3f9",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "PyPiYankUnsupported",
+          "kind": "ClassDeclaration",
+          "line": 79,
+          "sha256": "de1c45240cfa74de985971cf80400362e0b1d4f0ab167374e1680317e0c32da5",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "asObject",
+          "kind": "VariableDeclaration",
+          "line": 85,
+          "sha256": "f3058a8b355a3d04ae2f4269a6625b542cdb021d505c83e0aaf93957145f656b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "parseJson",
+          "kind": "VariableDeclaration",
+          "line": 90,
+          "sha256": "9cfec504cdec9740fe8b4ffe3abcbe12c777ff9846c7745f0ebf9052139400d4",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "header",
+          "kind": "VariableDeclaration",
+          "line": 99,
+          "sha256": "16796801557510c2a28f5f6b4346a216ba5382b1a1f895d6538c403d098a0cf0",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "contentType",
+          "kind": "VariableDeclaration",
+          "line": 104,
+          "sha256": "96e710348072e2ea048183d4f6118931066f35c397dc5f3b00ffd137a97ffc1d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "SimpleFile",
+          "kind": "TypeAliasDeclaration",
+          "line": 106,
+          "sha256": "0854e25cbf902ecf9f010fe15f1fc1b2ddd6234cf531ccf94aa16018c7bf19ad",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "SimpleProject",
+          "kind": "TypeAliasDeclaration",
+          "line": 113,
+          "sha256": "6605f16a385a1a09accca87e5c0405692555b920020f6be9c7c7b82dc9de9f92",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "simpleProject",
+          "kind": "VariableDeclaration",
+          "line": 119,
+          "sha256": "6cddc1577161c9611c50088bcef7674541c90d3be8b60ed76c5cbf4f9f39afbb",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "fingerprint",
+          "kind": "VariableDeclaration",
+          "line": 147,
+          "sha256": "424e27a63eb2cbf4c3bc3e1f81e95953b86ceaf28d1aae535aa71b73165ca70f",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "difference",
+          "kind": "VariableDeclaration",
+          "line": 151,
+          "sha256": "0fd5586054c22eb377ce03df4fd8ee4ec50d8c61b2507662364b7d9ce493b70e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "inconclusive",
+          "kind": "VariableDeclaration",
+          "line": 157,
+          "sha256": "25b414f7a8f86787682e00cb3640c5454bd783347e62b0a3cf5997c2a8dc5aa0",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "observationRequests",
+          "kind": "VariableDeclaration",
+          "line": 160,
+          "sha256": "da9e4984690a8a78f2046b91d1ac81aad28b96b2d6ea42ab9f4311b70b1ab49b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "mutationRequest",
+          "kind": "VariableDeclaration",
+          "line": 174,
+          "sha256": "35c5c95a0310b21bc138ef8fb427082047a273ee9c1baa49420a5a3597f0153a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "visibilityPending",
+          "kind": "VariableDeclaration",
+          "line": 182,
+          "sha256": "9bc172655fae5cfb4e611034c6b69e9340f803d15ece684735b7aa836f021189",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "visibleFileAbsent",
+          "kind": "VariableDeclaration",
+          "line": 191,
+          "sha256": "039f5bdd52cfffad4c5951de5b90384014e1c7cac5e543f881ecc5f994bec917",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "decide",
+          "kind": "VariableDeclaration",
+          "line": 199,
+          "sha256": "ffe21fe030c0e2ddea8dbc632fa42fbf6da75d10e9e4cd34d8bb6a3f4aa42482",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "bytesConcat",
+          "kind": "VariableDeclaration",
+          "line": 220,
+          "sha256": "8624100b645b161ca0577b1e89c92a0b2c66fc140a525408afc148a9f0d0aa3a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "containsBytes",
+          "kind": "VariableDeclaration",
+          "line": 228,
+          "sha256": "ddf2dacbc9e5f8008432d13d1c512db4a42d50eb592d1126e4cae8a1f7c0061f",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "multipart",
+          "kind": "VariableDeclaration",
+          "line": 239,
+          "sha256": "8a0f406d27f036f08fb521b1e3ac83c4b09cec2b71ba662425b27e4dbeed1cfb",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "validDecision",
+          "kind": "VariableDeclaration",
+          "line": 273,
+          "sha256": "c044096584c139036c5f3e15607c26659f886f8fb34933a408941dcc13efaf44",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "mutationFailure",
+          "kind": "VariableDeclaration",
+          "line": 276,
+          "sha256": "e92bb0f3be4fb1f4863da3bc9093d7dcbdfd23678dba1c437141b862f5634349",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "makePyPiSubject",
+          "kind": "VariableDeclaration",
+          "line": 286,
+          "sha256": "e37ed2400bab9984b923aba48cfb6e90a50ebdc29d6345e64631f35ca323a679",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        },
+        {
+          "name": "makePyPiSubjects",
+          "kind": "VariableDeclaration",
+          "line": 456,
+          "sha256": "ac929a84bf912f060c1306611a0dc33fb68a416ae33f8b7809c235a51365c4e3",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "pypi"
+        }
+      ],
+      "successorPaths": [
+        "packages/pypi/src/Model.ts",
+        "packages/pypi/src/Protocol.ts",
+        "packages/pypi/src/Metadata.ts",
+        "packages/pypi/src/Wire.ts",
+        "packages/pypi/src/Evidence.ts",
+        "packages/pypi/src/Auth.ts",
+        "packages/ts-release/src/Release.ts"
+      ],
+      "nativeCarryForwardWaves": []
+    }
+  ],
+  "nativeCarryForward": [],
+  "evidence": [
+    "test/reimplementation/warehouse",
+    "docs/refactor/execution/W03-packed-providers.json",
+    "docs/refactor/execution/W03-review.md"
+  ],
+  "limits": [
+    "Local pinned compatible-server and extracted Warehouse source-law evidence; hosted PyPI/TestPyPI/OIDC remains Plans009/010",
+    "Common native HTTP credential/timeout/redirect implementation remains W04; this provider supplies explicit native ports",
+    "No implemented conditional yank adapter existed in the donor; no unsafe correction operation is advertised",
+    "Read convergence never grants resend permission; durable history retains uncertainty"
+  ]
+}

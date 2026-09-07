@@ -5,6 +5,8 @@ import { tmpdir } from "node:os"
 import { createHash } from "node:crypto"
 const root = resolve(import.meta.dir, ".."),
   work = await mkdtemp(join(tmpdir(), "ts-release-packed-npm-"))
+const includePyPi = process.argv.includes("--pypi")
+const owners = includePyPi ? ["ts-release", "npm", "pypi"] : ["ts-release", "npm"]
 const node = process.env.TS_RELEASE_ACCEPTANCE_NODE ?? "node"
 const commands: unknown[] = []
 async function run(cwd: string, argv: string[]) {
@@ -26,7 +28,7 @@ async function run(cwd: string, argv: string[]) {
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex")
 await run(root, [process.execPath, "run", "build"])
 const archives = []
-for (const owner of ["ts-release", "npm"]) {
+for (const owner of owners) {
   const archive = join(work, `${owner}.tgz`)
   await run(join(root, "packages", owner), [
     process.execPath,
@@ -64,6 +66,7 @@ for (const manager of ["bun", "npm"]) {
       dependencies: {
         "@mannyc1/ts-release": `file:${archives[0]!.archive}`,
         "@mannyc1/ts-release-npm": `file:${archives[1]!.archive}`,
+        ...(includePyPi ? { "@mannyc1/ts-release-pypi": `file:${archives[2]!.archive}` } : {}),
         effect: "4.0.0-beta.107",
         typescript: "6.0.3",
       },
@@ -75,8 +78,8 @@ for (const manager of ["bun", "npm"]) {
       ? [process.execPath, "install", "--ignore-scripts", "--cache-dir", join(work, "bun-cache")]
       : ["npm", "install", "--ignore-scripts", "--omit=optional"],
   )
-  for (const owner of ["ts-release", "npm"]) {
-    const name = owner === "npm" ? "ts-release-npm" : "ts-release"
+  for (const owner of owners) {
+    const name = owner === "ts-release" ? "ts-release" : `ts-release-${owner}`
     const installed = join(cwd, "node_modules/@mannyc1", name)
     assert.equal((await lstat(installed)).isSymbolicLink(), false)
     for await (const path of new Bun.Glob("**/*").scan({
@@ -118,15 +121,40 @@ for (const manager of ["bun", "npm"]) {
       files: ["consumer.ts"],
     }),
   )
+  if (includePyPi) {
+    await writeFile(
+      join(cwd, "pypi-consumer.mjs"),
+      await readFile(join(root, "test/reimplementation/warehouse/packed-consumer.mjs")),
+    )
+    const source = await readFile(join(cwd, "consumer.ts"), "utf8")
+    await writeFile(
+      join(cwd, "consumer.ts"),
+      source +
+        `import * as PyPi from "@mannyc1/ts-release-pypi";\nconst pythonProviders: readonly HttpProviderDefinition[] = PyPi.definitions(null as never);\nconst pythonIntent: PyPi.UploadIntent = null as never;\nvoid [pythonProviders, pythonIntent, PyPi.inspectDistribution, PyPi.author, PyPi.upload, PyPi.authorizeToken, PyPi.authorizeTrusted];\n`,
+    )
+  }
   await run(cwd, [process.execPath, "node_modules/typescript/bin/tsc", "-p", "tsconfig.json"])
   const runtimes = []
   for (const runtime of [node, process.execPath])
     for (const [artifact, name] of [
       [tarball, "@fixture/packed-npm"],
-      [archives[0]!.archive, "@mannyc1/ts-release"],
-      [archives[1]!.archive, "@mannyc1/ts-release-npm"],
+      ...archives.map(({ owner, archive }) => [
+        archive,
+        owner === "ts-release" ? "@mannyc1/ts-release" : `@mannyc1/ts-release-${owner}`,
+      ]),
     ] as const)
       runtimes.push(JSON.parse(await run(cwd, [runtime, "consumer.mjs", artifact, name])))
+  if (includePyPi)
+    for (const runtime of [node, process.execPath])
+      runtimes.push(
+        JSON.parse(
+          await run(cwd, [
+            runtime,
+            "pypi-consumer.mjs",
+            join(root, "test/reimplementation/warehouse/fixtures"),
+          ]),
+        ),
+      )
   outcomes.push({
     manager,
     strictDeclarations: true,
@@ -136,14 +164,14 @@ for (const manager of ["bun", "npm"]) {
   })
 }
 const receipt = {
-  format: "ts-release/packed-npm/1",
+  format: includePyPi ? "ts-release/packed-providers/1" : "ts-release/packed-npm/1",
   checkedAt: new Date().toISOString(),
   work,
   archives,
   outcomes,
   commands,
   limits: [
-    "2 of7 packages; local unpublished candidate archives",
+    `${owners.length} of7 packages; local unpublished candidate archives`,
     "native HTTP transport/CLI/Action and full cohort remain open",
     "Sigstore trust has a separate Node-native public-attestation witness; Bun native Sigstore remains unqualified",
     "no registry publication",
@@ -151,7 +179,10 @@ const receipt = {
   ],
 }
 await writeFile(
-  join(root, "docs/refactor/execution/W02-packed-npm.json"),
+  join(
+    root,
+    `docs/refactor/execution/${includePyPi ? "W03-packed-providers" : "current-packed-npm"}.json`,
+  ),
   JSON.stringify(receipt, null, 2) + "\n",
 )
 console.log(JSON.stringify({ work, archives, outcomes }, null, 2))

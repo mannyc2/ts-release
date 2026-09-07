@@ -1,0 +1,13 @@
+import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
+import { ReleaseError } from "@mannyc1/ts-release";
+import { UploadIntent } from "./Model.js";
+export declare const invalid: (code: string) => never;
+export declare const attempt: <A>(body: () => A) => Effect.Effect<A, ReleaseError, never>;
+export declare const encode: (input: unknown) => Uint8Array<ArrayBuffer>;
+export declare const digest: (bytes: Uint8Array) => string;
+export declare const own: <A, I>(codec: Schema.Codec<A, I>, input: unknown) => A;
+export declare const object: (value: unknown) => Record<string, unknown>;
+export declare const scopeFor: (intent: UploadIntent) => string;
+export declare const readScope: (scope: string) => import("./Model.js").WheelUpload | import("./Model.js").SdistUpload;
+export declare const MAX_BYTES: number;

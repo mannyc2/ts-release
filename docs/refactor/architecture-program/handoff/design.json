@@ -128,7 +128,9 @@
     "checksum": "docs/refactor/architecture-program/handoff/checksum-api.d.ts",
     "http": "docs/refactor/architecture-program/handoff/production-api/Http.d.ts",
     "application": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
-    "npm": "docs/refactor/architecture-program/handoff/production-api/npm/index.d.ts"
+    "npm": "docs/refactor/architecture-program/handoff/production-api/npm/index.d.ts",
+    "pypi": "docs/refactor/architecture-program/handoff/production-api/pypi/index.d.ts",
+    "artifactReader": "docs/refactor/architecture-program/handoff/production-api/internal/ArtifactReader.d.ts"
   },
   "modules": [
     {
@@ -295,7 +297,8 @@
         "kernel.Content",
         "kernel.BundleCodec",
         "kernel.BundleFinalize",
-        "kernel.Checksums"
+        "kernel.Checksums",
+        "kernel.ArtifactReader"
       ]
     },
     {
@@ -397,7 +400,8 @@
         "kernel.Model",
         "kernel.Provider",
         "kernel.ArtifactModel",
-        "kernel.Error"
+        "kernel.Error",
+        "kernel.NativeJson"
       ]
     },
     {
@@ -696,6 +700,29 @@
         "kernel.Plan"
       ],
       "purpose": "K01 complete derived report over canonical Bundle, publication/preparation Plans and global Journal; no dispatch authority."
+    },
+    {
+      "id": "kernel.ArtifactReader",
+      "owner": "core",
+      "path": "src/internal/ArtifactReader.ts",
+      "zone": "neutral",
+      "dependencies": [
+        "kernel.ArtifactModel",
+        "kernel.Content",
+        "kernel.Identity",
+        "kernel.Error"
+      ],
+      "purpose": "Shared native provider admission, implemented by npm and PyPI"
+    },
+    {
+      "id": "kernel.NativeJson",
+      "owner": "core",
+      "path": "src/internal/NativeJson.ts",
+      "zone": "neutral",
+      "dependencies": [
+        "kernel.Error"
+      ],
+      "purpose": "Shared native provider admission, implemented by npm and PyPI"
     }
   ],
   "providers": [
@@ -784,7 +811,8 @@
           "dependencies": [
             "provider.npm.Model",
             "kernel.Entry",
-            "kernel.Bundle"
+            "kernel.Bundle",
+            "kernel.Http"
           ]
         },
         {
@@ -813,7 +841,11 @@
       "id": "warehouse",
       "package": "pypi",
       "namespace": "Warehouse",
-      "dependencies": {},
+      "dependencies": {
+        "@renovatebot/pep440": "5.0.1",
+        "content-type": "1.0.5",
+        "parse5": "8.0.0"
+      },
       "files": [
         {
           "name": "Model",
@@ -827,22 +859,28 @@
             "Authorization",
             "WheelUpload",
             "SdistUpload",
-            "UploadIntent"
+            "UploadIntent",
+            "DistributionMetadata",
+            "normalizeProject"
           ],
           "dependencies": [
-            "kernel.Entry",
-            "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Bundle"
           ]
         },
         {
           "name": "Protocol",
           "symbols": [
             "upload",
+            "author",
+            "inspectDistribution",
             "definitions"
           ],
           "dependencies": [
             "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "provider.warehouse.Metadata",
+            "provider.warehouse.Evidence",
             "kernel.Entry",
             "kernel.Bundle",
             "kernel.Http"
@@ -856,8 +894,93 @@
           ],
           "dependencies": [
             "provider.warehouse.Model",
+            "provider.warehouse.Native",
             "kernel.Http"
           ]
+        },
+        {
+          "name": "Native",
+          "symbols": [],
+          "dependencies": [
+            "provider.warehouse.Model",
+            "kernel.Entry",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "node:crypto"
+          ]
+        },
+        {
+          "name": "Wire",
+          "symbols": [],
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Metadata",
+            "kernel.Entry"
+          ]
+        },
+        {
+          "name": "Evidence",
+          "symbols": [],
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "kernel.Entry",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "parse5"
+          ]
+        },
+        {
+          "name": "Archive",
+          "symbols": [],
+          "dependencies": [
+            "provider.warehouse.Native"
+          ],
+          "externalImports": [
+            "node:zlib"
+          ]
+        },
+        {
+          "name": "Metadata",
+          "symbols": [],
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Archive",
+            "provider.warehouse.MetadataFields"
+          ]
+        },
+        {
+          "name": "MetadataFields",
+          "symbols": [],
+          "dependencies": [
+            "provider.warehouse.Native",
+            "provider.warehouse.Requirement",
+            "provider.warehouse.SpdxCatalog"
+          ],
+          "externalImports": [
+            "content-type"
+          ]
+        },
+        {
+          "name": "Requirement",
+          "symbols": [],
+          "dependencies": [
+            "provider.warehouse.Native"
+          ],
+          "externalImports": [
+            "@renovatebot/pep440"
+          ]
+        },
+        {
+          "name": "SpdxCatalog",
+          "symbols": [],
+          "dependencies": [],
+          "extension": ".json"
         }
       ]
     },

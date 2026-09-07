@@ -1,0 +1,21 @@
+{
+  "format": "ts-release/source-planning-variance/1",
+  "wave": "W03",
+  "originalTripwire": 4500,
+  "replacementLines": 5801,
+  "replacementSha256": "f5536893f78c5a7c956c811800a0c87d945a7948bcff6648a294bfcc0f18b0ca",
+  "completeProductCeiling": 11485,
+  "completeProductWaiver": false,
+  "decision": "Continue the exact W03 planning variance; the full source ceiling remains a release gate, with no achieved reduction.",
+  "reason": "W03 adds 1402 product lines:1378PyPI plus131shared-kernel minus107npm. The shared reader/parser replaces duplicated logic with two production callers. W03 allocation1150 is exceeded252, adding to1049inherited overage. Native metadata admission, archives and full-body verification remain selected correctness duties. No formatting density, fixture shrinkage or scope cut was used.",
+  "review": "docs/refactor/execution/W03-review.md",
+  "forecastExpected": 12723,
+  "forecastDeficit": 1238,
+  "accounting": "12740physical product=5801replacement+6939legacy.494assigned donor lines retired. Owned generated SPDX data adds789lines/15973bytes separately; combined current product+data13529. Original22971and11485ceilingunchanged.",
+  "nextSimplification": "Measure W04-W10 and replace remaining lifecycle duplication with shared owned transports/composition. Full product must remove the forecast deficit through actual simplification before release, with independent review of material recovery changes.",
+  "notEvidenceOf": [
+    "complete-product source reduction",
+    "hosted native acceptance",
+    "release certification"
+  ]
+}

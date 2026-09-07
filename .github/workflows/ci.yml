@@ -38,6 +38,14 @@ jobs:
       - name: Verify lockfile stability
         run: git diff --exit-code -- bun.lock
 
+      - name: Setup native Python acceptance
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.14"
+
+      - name: Install pinned native Python fixtures
+        run: bun scripts/setup-native-python.ts
+
       - name: Verify current architecture handoff and source tripwire
         run: bun run check:architecture-program
 
@@ -83,6 +91,14 @@ jobs:
 
       - name: Install
         run: bun install --frozen-lockfile
+
+      - name: Setup native Python acceptance
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.14"
+
+      - name: Install pinned native Python fixtures
+        run: bun scripts/setup-native-python.ts
 
       - name: Run portable package checks
         run: bun run check:portable

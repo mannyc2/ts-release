@@ -27,21 +27,23 @@
         "kernel.GitAuthority",
         "kernel.Entry",
         "kernel.EffectTypes",
-        "kernel.Report"
+        "kernel.Report",
+        "kernel.ArtifactReader",
+        "kernel.NativeJson"
       ],
       "components": [
         {
-          "name": "Actual W02 kernel including strict owned request/transport preparation and full journal/report admission",
-          "low": 2203,
-          "expected": 2203,
-          "high": 2203,
-          "basis": "Normally formatted actual source, execution/source-measurement.json; W02 changes preserve fresh CAS and invocation-local preflight. Full host/native acceptance remains open."
+          "name": "Actual W03 kernel production",
+          "low": 2334,
+          "expected": 2334,
+          "high": 2334,
+          "basis": "Normally formatted source in execution/source-measurement.json. Shared ownership charged to kernel; full native/host qualification remains separately open."
         }
       ],
       "fullReplacementPhysicalLines": {
-        "low": 2203,
-        "expected": 2203,
-        "high": 2203
+        "low": 2334,
+        "expected": 2334,
+        "high": 2334
       }
     },
     {
@@ -284,59 +286,17 @@
         "provider.npm"
       ],
       "fullReplacementPhysicalLines": {
-        "low": 1513,
-        "expected": 1513,
-        "high": 1513
+        "low": 1406,
+        "expected": 1406,
+        "high": 1406
       },
       "components": [
         {
-          "name": "packages/npm/src/Auth.ts",
-          "low": 432,
-          "expected": 432,
-          "high": 432,
-          "basis": "Actual normally formatted W02 production SHA256e8c2552d35d77d6886aee588432f182558eb7540a3ecc62769321eed5f27950d; native host/whole-product acceptance remains open."
-        },
-        {
-          "name": "packages/npm/src/Evidence.ts",
-          "low": 236,
-          "expected": 236,
-          "high": 236,
-          "basis": "Actual normally formatted W02 production SHA2561ffb3a01d26b9d9e6caf2d44695bdd00e37787b6aead3507c3a5fa1c41fb272d; native host/whole-product acceptance remains open."
-        },
-        {
-          "name": "packages/npm/src/Model.ts",
-          "low": 168,
-          "expected": 168,
-          "high": 168,
-          "basis": "Actual normally formatted W02 production SHA256f1c342927915077b7dcb6bff5ffef0e342c200698ebc1c1e2d0e2896abcfaf7b; native host/whole-product acceptance remains open."
-        },
-        {
-          "name": "packages/npm/src/Native.ts",
-          "low": 281,
-          "expected": 281,
-          "high": 281,
-          "basis": "Actual normally formatted W02 production SHA256f07126b0510dbc491ffb5eeaf6461cdfd5af1caba6d5a90627193cd12f26d60c; native host/whole-product acceptance remains open."
-        },
-        {
-          "name": "packages/npm/src/Protocol.ts",
-          "low": 256,
-          "expected": 256,
-          "high": 256,
-          "basis": "Actual normally formatted W02 production SHA256abdc77a7ee507ecadd08cb5cf74afac2f7776cc804550238fef4d544ebc2fced; native host/whole-product acceptance remains open."
-        },
-        {
-          "name": "packages/npm/src/Wire.ts",
-          "low": 112,
-          "expected": 112,
-          "high": 112,
-          "basis": "Actual normally formatted W02 production SHA2564e1e6495282acbb97a160c3be004112eb421d2cdbedf607efacbf25291d05e64; native host/whole-product acceptance remains open."
-        },
-        {
-          "name": "packages/npm/src/index.ts",
-          "low": 28,
-          "expected": 28,
-          "high": 28,
-          "basis": "Actual normally formatted W02 production SHA25624f761eeafea23755b822b81dcd2f4d408a21d87569915e30ba8c6e578f127dd; native host/whole-product acceptance remains open."
+          "name": "Actual W03 provider-npm production",
+          "low": 1406,
+          "expected": 1406,
+          "high": 1406,
+          "basis": "Normally formatted source in execution/source-measurement.json. Shared ownership charged to kernel; full native/host qualification remains separately open."
         }
       ],
       "donors": [
@@ -349,58 +309,31 @@
     {
       "owner": "provider-warehouse",
       "modules": [
+        "provider.warehouse",
         "provider.warehouse.Model",
         "provider.warehouse.Protocol",
         "provider.warehouse.Auth",
-        "provider.warehouse"
+        "provider.warehouse.Native",
+        "provider.warehouse.Wire",
+        "provider.warehouse.Evidence",
+        "provider.warehouse.Archive",
+        "provider.warehouse.Metadata",
+        "provider.warehouse.MetadataFields",
+        "provider.warehouse.Requirement",
+        "provider.warehouse.SpdxCatalog"
       ],
       "fullReplacementPhysicalLines": {
-        "low": 740,
-        "expected": 1130,
-        "high": 1630
+        "low": 1378,
+        "expected": 1378,
+        "high": 1378
       },
       "components": [
         {
-          "name": "Schemas and hosted/compatible native laws",
-          "low": 160,
-          "expected": 220,
-          "high": 310,
-          "basis": "warehouse-native.ts:139-310; endpoint, authorization, distinct wheel/sdist, compatible law pin"
-        },
-        {
-          "name": "Wheel/sdist metadata and multipart bytes",
-          "low": 190,
-          "expected": 290,
-          "high": 420,
-          "basis": "warehouse-native.ts:476-905; immutable content does not remove native metadata parsing"
-        },
-        {
-          "name": "Receipt and Simple observations",
-          "low": 210,
-          "expected": 330,
-          "high": 460,
-          "basis": "warehouse-native.ts:918-1343; JSON/HTML, filename/digest/size and deleted-filename conflicts"
-        },
-        {
-          "name": "Author and kernel bindings",
-          "low": 70,
-          "expected": 110,
-          "high": 170,
-          "basis": "warehouse-native.ts:319-434 and warehouse-application.ts"
-        },
-        {
-          "name": "Provider-specific authorization",
-          "low": 90,
-          "expected": 140,
-          "high": 210,
-          "basis": "warehouse-live.ts:1-206; explicit Basic username and trusted audience/exchange response"
-        },
-        {
-          "name": "Exports and thin wrappers",
-          "low": 20,
-          "expected": 40,
-          "high": 60,
-          "basis": "warehouse.ts and dependency construction"
+          "name": "Actual W03 provider-warehouse production",
+          "low": 1378,
+          "expected": 1378,
+          "high": 1378,
+          "basis": "Normally formatted source in execution/source-measurement.json. Shared ownership charged to kernel; full native/host qualification remains separately open."
         }
       ],
       "donors": [
@@ -713,15 +646,15 @@
     }
   ],
   "totals": {
-    "low": 9809,
-    "expected": 12451,
-    "high": 16199
+    "low": 10471,
+    "expected": 12723,
+    "high": 15971
   },
-  "expectedHeadroom": -966,
+  "expectedHeadroom": -1238,
   "reductionPercent": {
-    "low": 57.3,
-    "expected": 45.8,
-    "high": 29.48
+    "low": 54.42,
+    "expected": 44.61,
+    "high": 30.47
   },
   "unknowns": [
     "Five remaining public provider packages are not implemented; their actual parsing/evidence/authentication cost must be measured. Shared HTTP declarations implemented during W02 remain within the full HTTP row, not an extra cost.",
@@ -746,7 +679,7 @@
     }
   ],
   "newRequiredUpstreamImplementationLines": 0,
-  "sourceCeilingPolicy": "Keep11485. Mixed actual/forecast expected total12451 exceeds ceiling by966; continue real simplification without scope cuts or counting changes.",
+  "sourceCeilingPolicy": "Keep 11485. Mixed actual/forecast expected total12723 exceeds the ceiling by1238; continue actual simplification without scope cuts or counting changes. Owned generated catalog data adds789lines separately.",
   "maintenanceLanes": [
     "product and Action source",
     "generated runtime product inputs including Action YAML",
@@ -761,49 +694,49 @@
   "layoutMetadata": [
     {
       "layout": "T1",
-      "publicPackageJsonLines": 129,
+      "publicPackageJsonLines": 132,
       "privatePackageJsonLines": 46,
       "actionYamlLines": 22,
       "tsconfigJsonLines": 76,
       "futureScriptFiles": 3,
       "futureScriptLines": null,
-      "authoredProductModuleFiles": 63,
+      "authoredProductModuleFiles": 79,
       "generatedRuntimePolicyFiles": 0,
       "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
     },
     {
       "layout": "T2",
-      "publicPackageJsonLines": 135,
+      "publicPackageJsonLines": 138,
       "privatePackageJsonLines": 82,
       "actionYamlLines": 22,
       "tsconfigJsonLines": 90,
       "futureScriptFiles": 3,
       "futureScriptLines": null,
-      "authoredProductModuleFiles": 63,
+      "authoredProductModuleFiles": 79,
       "generatedRuntimePolicyFiles": 0,
       "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
     },
     {
       "layout": "T3",
-      "publicPackageJsonLines": 299,
+      "publicPackageJsonLines": 303,
       "privatePackageJsonLines": 87,
       "actionYamlLines": 22,
       "tsconfigJsonLines": 174,
       "futureScriptFiles": 3,
       "futureScriptLines": null,
-      "authoredProductModuleFiles": 63,
+      "authoredProductModuleFiles": 79,
       "generatedRuntimePolicyFiles": 0,
       "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
     },
     {
       "layout": "T3c",
-      "publicPackageJsonLines": 272,
+      "publicPackageJsonLines": 276,
       "privatePackageJsonLines": 83,
       "actionYamlLines": 22,
       "tsconfigJsonLines": 160,
       "futureScriptFiles": 3,
       "futureScriptLines": null,
-      "authoredProductModuleFiles": 63,
+      "authoredProductModuleFiles": 79,
       "generatedRuntimePolicyFiles": 0,
       "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
     }
@@ -834,5 +767,12 @@
       "lines": 24,
       "basis": "Unchanged current-checkout Action input. Original denominator remains overlay source plus its 55-line Action input."
     }
-  ]
+  ],
+  "ownedGeneratedData": {
+    "path": "packages/pypi/src/SpdxCatalog.json",
+    "lines": 789,
+    "bytes": 15973,
+    "role": "Pinned native SPDX membership data; generated from packaging26.3 with source hash; validation logic remains counted TypeScript",
+    "forecastProductAndDataLines": 13512
+  }
 }

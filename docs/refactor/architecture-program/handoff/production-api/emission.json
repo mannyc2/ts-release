@@ -2,7 +2,8 @@
   "format": "ts-release/production-api/1",
   "owners": [
     "packages/ts-release",
-    "packages/npm"
+    "packages/npm",
+    "packages/pypi"
   ],
   "compiler": "typescript@6.0.3",
   "effect": "4.0.0-beta.107",
@@ -17,15 +18,15 @@
     },
     {
       "declaration": "Bundle.d.ts",
-      "declarationSha256": "0918c0bf32af283678035498b0d87734411d59b6e87353214044e4dfcce37fc1",
+      "declarationSha256": "e220f89a09629240873f99ac158474b18918975f558aa5dc6546bdbf04dbd666",
       "source": "packages/ts-release/src/Bundle.ts",
-      "sourceSha256": "81020fd7a563b2e046ddc45bc896641c537d0c226ea988e634e64d9032884bc5"
+      "sourceSha256": "5f4e37afc336a2dc7d8f4118d3a37ba0e56ff2d4d10d26069694739cebd06314"
     },
     {
       "declaration": "Http.d.ts",
-      "declarationSha256": "21939ea2a65f7aeeeba264304eb5fdf103ffe5465f342c945740da7d5a56fd5b",
+      "declarationSha256": "cb9d38234c3fe17cb6b3d42c6834adc13538debd57541cda31aca53ac41450bc",
       "source": "packages/ts-release/src/Http.ts",
-      "sourceSha256": "35ff6d695f02d8807ee77157fba59fe0aa73fda1736a2bafda7d598534b60a4f"
+      "sourceSha256": "9dc9ebdb18ad0331371d110ad70f45348834a8a810a683a9678cb87089d12f03"
     },
     {
       "declaration": "index.d.ts",
@@ -38,6 +39,12 @@
       "declarationSha256": "d611273978b4ee31d4730ebc664c248b9b09b7022b6d50251d2ade9b5ef3cbb0",
       "source": "packages/ts-release/src/internal/ArtifactModel.ts",
       "sourceSha256": "27b57b6943a876b1eebb4915cfdc27e6e36120b7739db94ae8c07474092ee48c"
+    },
+    {
+      "declaration": "internal/ArtifactReader.d.ts",
+      "declarationSha256": "4137309152a59254edc0e8c5bb267eec32a1de34f8d72bf09896ff17d0f28837",
+      "source": "packages/ts-release/src/internal/ArtifactReader.ts",
+      "sourceSha256": "02661ed861ccf168e6e11c20034b04bc64978581ed977ea0aabb431a33098ec1"
     },
     {
       "declaration": "internal/BundleCodec.d.ts",
@@ -100,6 +107,12 @@
       "sourceSha256": "ab9cf2c26135a2a4e7a51e9beee887f789bbb9bfb1b8a84d163fc608b489c7cc"
     },
     {
+      "declaration": "internal/NativeJson.d.ts",
+      "declarationSha256": "403171618631aae907f1149deea68ac1129ab1662660b7a8765e54048c36aee4",
+      "source": "packages/ts-release/src/internal/NativeJson.ts",
+      "sourceSha256": "8395ebcdf181e67682fa8080403947b8e0680c1f4199e061f50e4648ac595b31"
+    },
+    {
       "declaration": "internal/ReleaseModel.d.ts",
       "declarationSha256": "6d16174d0c610a48eb00fe31f86eba2264697f1b6721b8576919d5cd1c39195b",
       "source": "packages/ts-release/src/internal/ReleaseModel.ts",
@@ -149,9 +162,9 @@
     },
     {
       "declaration": "npm/Native.d.ts",
-      "declarationSha256": "8241211ea957f3d52bf2c9086a936515058b4b82bb2829b4b37730f4e1e79a3c",
+      "declarationSha256": "00948d1535993f5e5f805e5e1b4c67f8598a9ae3eeb5ad40bfd259fca23edf4c",
       "source": "packages/npm/src/Native.ts",
-      "sourceSha256": "f07126b0510dbc491ffb5eeaf6461cdfd5af1caba6d5a90627193cd12f26d60c"
+      "sourceSha256": "07a59f58cb83e37d14da45351fd615cf8bc4f5399bad4878e1404a7fe97c0696"
     },
     {
       "declaration": "npm/Protocol.d.ts",
@@ -200,6 +213,72 @@
       "declarationSha256": "23039e0e166534afb2dda75d64c223832b86e51315b3e68c3831b452f1b455b2",
       "source": "packages/ts-release/src/Provider.ts",
       "sourceSha256": "3bb6343e1a856e36e617bfd0554dd4855a60252db3c7018199f143c94c6e3d36"
+    },
+    {
+      "declaration": "pypi/Archive.d.ts",
+      "declarationSha256": "8a509901292bcca5a3a9e7dd6f766bc100a9c4d9085629bcac4a9568113812a6",
+      "source": "packages/pypi/src/Archive.ts",
+      "sourceSha256": "f090db2a967776161e7827c0a273d70c6fc76a40fc7bcdce700dd775719fe70b"
+    },
+    {
+      "declaration": "pypi/Auth.d.ts",
+      "declarationSha256": "82c581dd9b0ac27ad4a80231ccf133e942ab940846b6b6ac725fd4216c155d10",
+      "source": "packages/pypi/src/Auth.ts",
+      "sourceSha256": "844bcfca5053704557807ddf3bb16f414322247a023b0c5b98d2b8e6220a3821"
+    },
+    {
+      "declaration": "pypi/Evidence.d.ts",
+      "declarationSha256": "fd92b33b398a3bf3bf142c18c289a26e8886d1fc37892059261ee6577721f77d",
+      "source": "packages/pypi/src/Evidence.ts",
+      "sourceSha256": "9e19f3eb979a800b728ddef4642814042c0da0b718b8c063d9a823c2ac430feb"
+    },
+    {
+      "declaration": "pypi/index.d.ts",
+      "declarationSha256": "b70b66212c0e9e0e7512db57653ad9d5dea16158a455f355078652db424e9917",
+      "source": "packages/pypi/src/index.ts",
+      "sourceSha256": "d9984fdd2b297dbb6c10e355e2f1c25546797e2c93bbb14fa21e9114d1bed316"
+    },
+    {
+      "declaration": "pypi/Metadata.d.ts",
+      "declarationSha256": "d279d2a0e55a080ad00795166de0f50653d2a33a241130746e0dcdd4e56f6ab2",
+      "source": "packages/pypi/src/Metadata.ts",
+      "sourceSha256": "27f6a8dbf7fd2f237fe64298ef15c882858a9d42bdda6c9406e9ddb8c8530a99"
+    },
+    {
+      "declaration": "pypi/MetadataFields.d.ts",
+      "declarationSha256": "df4cd86033c3a2e8b90eb09f84fed75414771e0083e395f6316fbe0c95a19639",
+      "source": "packages/pypi/src/MetadataFields.ts",
+      "sourceSha256": "1d25e8634252ef8e49f07e23991e0f965b5266e80582f89f818651bc4b4f0c37"
+    },
+    {
+      "declaration": "pypi/Model.d.ts",
+      "declarationSha256": "6c3eb2ed3f98f7fdb2d0ec79e1b1d322a613aff1cd75a6e56d43ff2d1e04d63e",
+      "source": "packages/pypi/src/Model.ts",
+      "sourceSha256": "f7642e065df4937cb42622b5be54b7947d1bbb9000913c3adff3241d461b18d5"
+    },
+    {
+      "declaration": "pypi/Native.d.ts",
+      "declarationSha256": "03d04978809dfd4adcaf5fc4fca78d7b708c7c442a9a1bac36a2b4572e887b6c",
+      "source": "packages/pypi/src/Native.ts",
+      "sourceSha256": "eb7ad944bdf3288b2904c9b809b59817fb2093d77f5875881e187a20317c39b3"
+    },
+    {
+      "declaration": "pypi/Protocol.d.ts",
+      "declarationSha256": "b70f674e42d9576ae5f269a99e044458e22dad202bcadaf3152fbe64f729eed7",
+      "source": "packages/pypi/src/Protocol.ts",
+      "sourceSha256": "d3846d46629c921ed4269b5a7c6dc85c331b49aef16991a5273bcb65da268bba"
+    },
+    {
+      "declaration": "pypi/Requirement.d.ts",
+      "declarationSha256": "656a95bc537ff5dd68774c3076eba02e35f7b716a37652de568c9cda74dbc0a0",
+      "source": "packages/pypi/src/Requirement.ts",
+      "sourceSha256": "77a8f7ceef823dbac2d599d57bb9a1bb8bb098ca7865010deb78f38c93e440d3"
+    },
+    {
+      "declaration": "pypi/Wire.d.ts",
+      "declarationSha256": "60efdab149040fd0ff18c79d75576e19d15ed96a4e26bd3268be719388d7bce6",
+      "source": "packages/pypi/src/Wire.ts",
+      "sourceSha256": "0c16baf79bc497e3b1b712ce559d5dddc9ce645dc732fc94fdc4e0064e6f2809"
     },
     {
       "declaration": "Release.d.ts",

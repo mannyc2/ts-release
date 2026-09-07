@@ -35,6 +35,7 @@ type Provider = {
         symbols: string[];
         dependencies: string[];
         externalImports?: string[];
+        extension?: ".json";
     }[];
 };
 type Design = {
@@ -99,7 +100,7 @@ const authorityTexts: Record<string, string> = Object.fromEntries(await Promise.
 const declarations = new Map<string, Declaration>();
 // Implemented kernel exports are resolved by the compiler through their real
 // declaration owners. Unimplemented provider/host proposals retain their parser.
-const implementedAuthorities = ["kernel", "application", "npm", "http"];
+const implementedAuthorities = ["kernel", "application", "npm", "pypi", "artifactReader", "http"];
 const apiProgram = ts.createProgram(implementedAuthorities.map(key => resolve(root, design.authorities[key]!)), {
     target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext,
     moduleResolution: ts.ModuleResolutionKind.NodeNext, types: [],
@@ -116,8 +117,8 @@ for (const [authority, text] of Object.entries(authorityTexts)) {
                 ...(symbol.flags & ts.SymbolFlags.Type ? ["type"] : []),
                 ...(symbol.flags & ts.SymbolFlags.Value ? ["value"] : []),
             ];
-            const owner = authority === "npm" ? "provider" : authority;
-            const namespace = authority === "npm" ? "Npm" : null;
+            const owner = ["npm", "pypi"].includes(authority) ? "provider" : authority;
+            const namespace = authority === "npm" ? "Npm" : authority === "pypi" ? "Warehouse" : null;
             const id = `${owner}:${namespace ? `${namespace}.` : ""}${exported.name}`;
             declarations.set(id, { id, authority: owner, namespace, sourceName: exported.name, spaces,
                 declarations: (symbol.declarations ?? []).map(node => ({
@@ -175,6 +176,7 @@ const applePreparation = ["createApplePreparations", "loadApplePreparations", "p
 const surfaces: Surface[] = [
     { id: "core.root", entry: "kernel.Entry", symbols: kernel },
     { id: "core.bundle", entry: "kernel.Bundle", symbols: [
+            ...picks("artifactReader", ["verifiedArtifacts"], "kernel.ArtifactReader"),
             ...picks("adoption", ["Content", "AdoptionError"], "kernel.ArtifactModel"),
             ...[["OwnedFile", "File"], ["OwnedTree", "Tree"], ["OwnedArtifact", "Artifact"], ["OwnedBundle", "Bundle"]].map(([name, alias]) => pick("adoption", name!, "kernel.ArtifactModel", alias!)),
             ...picks("adoption", ["ContentOwner"], "kernel.Content"), ...picks("adoption", ["finalize"], "kernel.BundleFinalize"),
@@ -232,7 +234,7 @@ for (const alternative of design.alternatives) {
     for (const provider of design.providers) {
         const prefix = `provider.${provider.id}`;
         for (const file of provider.files)
-            modules.push({ id: `${prefix}.${file.name}`, owner: providerPackage(provider.id), path: `${providerDirectory(provider.id)}/${file.name}.ts`, zone: "provider", dependencies: file.dependencies, ...(file.externalImports ? { externalImports: file.externalImports } : {}) });
+            modules.push({ id: `${prefix}.${file.name}`, owner: providerPackage(provider.id), path: `${providerDirectory(provider.id)}/${file.name}${file.extension ?? ".ts"}`, zone: "provider", dependencies: file.dependencies, ...(file.externalImports ? { externalImports: file.externalImports } : {}) });
         modules.push({ id: prefix, owner: providerPackage(provider.id), path: `${providerDirectory(provider.id)}/index.ts`, zone: "provider", dependencies: provider.files.map((file) => `${prefix}.${file.name}`) });
     }
     const moduleMap = new Map(modules.map((item) => [item.id, item]));

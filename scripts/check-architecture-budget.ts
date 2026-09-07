@@ -25,6 +25,8 @@ const counts = {
   unchangedLegacy: 0,
   replacement: 0,
   metadata: 0,
+  productData: 0,
+  productDataBytes: 0,
   tests: 0,
   fixtureText: 0,
   fixtureBinaryBytes: 0,
@@ -42,8 +44,8 @@ for (const path of paths) {
     /^apps\/[^/]+\/action\.yml$/.test(path)
   const lane = product
     ? "product"
-    : /(?:^|\/)(?:fixtures|golden)\//.test(path) || /\.(?:tgz|tar\.gz|zip|png|jpg|wasm)$/.test(path)
-      ? /\.(?:tgz|tar\.gz|zip|png|jpg|wasm)$/.test(path)
+    : /(?:^|\/)(?:fixtures|golden)\//.test(path) || /\.(?:tgz|tar\.gz|zip|whl|png|jpg|wasm)$/.test(path)
+      ? /\.(?:tgz|tar\.gz|zip|whl|png|jpg|wasm)$/.test(path)
         ? "fixtureBinaryBytes"
         : "fixtureText"
       : /(?:^|\/)test(?:s)?\//.test(path)
@@ -52,9 +54,11 @@ for (const path of paths) {
           ? "generatedDelivery"
           : source && /^(?:tools|scripts|prototypes)\//.test(path)
             ? "tooling"
-            : /(?:package|tsconfig[^/]*)\.json$/.test(path)
-              ? "metadata"
-              : undefined
+            : /^(?:apps|packages)\/[^/]+\/src\/.*\.json$/.test(path)
+              ? "productData"
+              : /(?:package|tsconfig[^/]*)\.json$/.test(path)
+                ? "metadata"
+                : undefined
   if (!lane) continue
   const bytes = readFileSync(resolve(root, path))
   const lines =
@@ -63,6 +67,7 @@ for (const path of paths) {
       : bytes.filter((byte) => byte === 10).length + (bytes.at(-1) === 10 ? 0 : 1)
   const sha256 = createHash("sha256").update(bytes).digest("hex")
   counts[lane] += lane === "fixtureBinaryBytes" ? bytes.length : lines
+  if (lane === "productData") counts.productDataBytes += bytes.length
   if (product) counts[legacy.get(path) === sha256 ? "unchangedLegacy" : "replacement"] += lines
   files.push({ path, lines, lane, sha256 })
 }
@@ -107,6 +112,7 @@ console.log(
       planningVarianceAccepted,
       replacementSha256,
       achievedReduction: wave === "W10" && counts.product <= 11485,
+      productAndDataLines: counts.product + counts.productData,
     },
     null,
     2,

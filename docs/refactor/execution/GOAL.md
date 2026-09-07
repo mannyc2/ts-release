@@ -23,7 +23,7 @@ repeatedly blocked under the goal-tool rules.
 - Original HEAD `9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d`; exact staged tree
   `72323d6191b11d69a77022f278bd3de671f43cbe` preserved (190 staged paths).
 - Checkpoints `7da2877` (preservation), `65f65b1` (prerequisites), `8fe9891`
-  (tested W01 progress). The branch throughd214df5 is pushed; no integration yet.
+  (tested W01 progress). The branch through `fd4b8af` (W02) is pushed; no integration yet.
 - Ignored refinement/audit promoted verbatim under `../research/` at preservation.
   Active design authority is `../architecture-program/handoff/design.json`.
 - Required PR21 ancestry remains; no PR22/overlay merge. Mainline PR30/31 native
@@ -46,14 +46,15 @@ mixed native obligations explicitly carried to later waves in W01-migration.json
 Remaining legacy files are unshipped donors. See W01.md and progress.json for the
 latest test counts, exact pending check and limitations.
 
-Current physical product11832 =4399 replacement +7433 legacy. Incomplete scope:
-no achieved reduction. Cumulative W02 tripwire3350 is exceeded1049; mixed actual/
-future forecast12451 exceeds the unchanged full-product11485 ceiling by966.
+Current physical product12,740 =5,801 replacement +6,939 legacy. Incomplete scope:
+no achieved reduction. Cumulative W03 tripwire4,500 is exceeded1,301; mixed actual/
+future forecast12,723 exceeds the unchanged full-product11,485 ceiling by1,238.
+Owned generated catalog data adds789lines/15,973bytes separately.
 Original denominator22971 and marginal40-line target are unchanged. A concrete
 planning variance may permit continued implementation; it cannot qualify the
 complete-product source target or release.
 
-All69 launch outcomes remain open. W01/W02 local implementation has recorded
+All69 launch outcomes remain open. W01/W02/W03 local implementation has recorded
 planning variances and later native duties; Plans009/010 certification is incomplete. No release has been published. Historical registry observation:
 kernel0.3.0, six new names absent. Recheck actual versions/tags before choosing the
 cohort. Existing protected GitHub environments require actual human approval when
@@ -63,6 +64,11 @@ W01 cutover commit: `d214df5`. W02 npm passes148local tests/1024assertions, inde
 native request oracle and actual Node Sigstore verification,2-package fresh consumers
 and process recovery. Direct Bun Sigstore and all native hosted publication remain
 open. Its525-line donor is retired; see W02.md for exact local evidence and limits.
-Next: checkpoint W02 and implement W03 Warehouse/PyPI and pinned compatible-server
-acceptance. Preserve full CLI/Action/self-release/agents scope, seven-package
-consumers and independent final candidate review. Continue through verified release.
+W03 is locally verified:159tests/1,379assertions, native pypiserver/devpi two/four-file
+SIGKILL/restart and clean pip consumers,82native Twine controls, independent review
+and fresh three-package Bun/npm installs with20Node/Bun smokes. Both assigned
+legacy PyPI files are retired (494lines/32declarations). Direct verification passes
+257sealedfiles/226propositions, with69outcomes still open. See W03.md and progress.json.
+Next: commit/push W03, then implement W04 native HTTP and conditional Git transports.
+Preserve full CLI/Action/self-release/agents scope, seven-package consumers and
+independent final candidate review. Continue through verified published release.

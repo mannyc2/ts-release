@@ -1,4 +1,5 @@
 export type {} from "./internal/EffectTypes.js";
+export { decodeJson } from "./internal/NativeJson.js";
 import * as Schema from "effect/Schema";
 import type * as Effect from "effect/Effect";
 import type * as Redacted from "effect/Redacted";

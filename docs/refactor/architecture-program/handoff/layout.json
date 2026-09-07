@@ -41,7 +41,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "cc2f83c0dfacf05ac56ecd881c866d340acf250f2c30218bb5b20e112fdbaf7d"
+    "sha256": "13ce7d09133479b2531f82a4365a55d20c2435d2fe8a9954999a0d89f3851026"
   },
   "migration": {
     "path": "docs/refactor/architecture-program/handoff/migration.json",
@@ -56,7 +56,7 @@
     },
     "provider": {
       "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
-      "sha256": "3267f8349411bd1b428b155fd19d781074284e94ea857c878b8906307e27cf09"
+      "sha256": "6e767bf8480911d8e74c95b974b402b3409a54ed93dff9f66935fbb5eb5a4b52"
     },
     "host": {
       "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
@@ -84,7 +84,7 @@
     },
     "http": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Http.d.ts",
-      "sha256": "21939ea2a65f7aeeeba264304eb5fdf103ffe5465f342c945740da7d5a56fd5b"
+      "sha256": "cb9d38234c3fe17cb6b3d42c6834adc13538debd57541cda31aca53ac41450bc"
     },
     "application": {
       "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
@@ -93,9 +93,17 @@
     "npm": {
       "path": "docs/refactor/architecture-program/handoff/production-api/npm/index.d.ts",
       "sha256": "fa0447e6bc92155425681adf3f5929065271d1523716bad2cdb9001c29dc7423"
+    },
+    "pypi": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/pypi/index.d.ts",
+      "sha256": "b70b66212c0e9e0e7512db57653ad9d5dea16158a455f355078652db424e9917"
+    },
+    "artifactReader": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/ArtifactReader.d.ts",
+      "sha256": "4137309152a59254edc0e8c5bb267eec32a1de34f8d72bf09896ff17d0f28837"
     }
   },
-  "publicSurfaceSha256": "b8eb4498cc523b719856e53420a3b8b85c6cede293a8888a3106f0ae10ba4613",
+  "publicSurfaceSha256": "1400beb23a7543f931dcd28372c2b1b2bc8d51eb0a7d35f5bb4598f0a889655f",
   "effectPatch": {
     "required": false,
     "donorPath": "patches/effect@4.0.0-rc.108.patch",
@@ -209,7 +217,10 @@
             "dependencies": {
               "effect-build": "0.6.3",
               "semver": "7.8.5",
-              "sigstore": "5.0.0"
+              "sigstore": "5.0.0",
+              "@renovatebot/pep440": "5.0.1",
+              "content-type": "1.0.5",
+              "parse5": "8.0.0"
             },
             "peerDependencies": {
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
@@ -251,8 +262,8 @@
               "build:delivery": "bun scripts/build-delivery.ts"
             }
           },
-          "manifestSha256": "a2fc9632004a9b8531711e9e0ce6ba4bde5c842a203f86a1d3d0f5d8d9e3f166",
-          "manifestLines": 129
+          "manifestSha256": "fe1c9a2ef4d1529bd48181b420c3743091a43ab15c391cd85b6e9d15bb02a39d",
+          "manifestLines": 132
         }
       ],
       "privateWorkspaces": [
@@ -597,7 +608,8 @@
             "kernel.Content",
             "kernel.BundleCodec",
             "kernel.BundleFinalize",
-            "kernel.Checksums"
+            "kernel.Checksums",
+            "kernel.ArtifactReader"
           ]
         },
         {
@@ -699,7 +711,8 @@
             "kernel.Model",
             "kernel.Provider",
             "kernel.ArtifactModel",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.NativeJson"
           ]
         },
         {
@@ -1000,6 +1013,29 @@
           "purpose": "K01 complete derived report over canonical Bundle, publication/preparation Plans and global Journal; no dispatch authority."
         },
         {
+          "id": "kernel.ArtifactReader",
+          "owner": "core",
+          "path": "src/internal/ArtifactReader.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.Identity",
+            "kernel.Error"
+          ],
+          "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
+          "id": "kernel.NativeJson",
+          "owner": "core",
+          "path": "src/internal/NativeJson.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Error"
+          ],
+          "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
           "id": "provider.npm.Model",
           "owner": "core",
           "path": "src/providers/npm/Model.ts",
@@ -1053,7 +1089,8 @@
           "dependencies": [
             "provider.npm.Model",
             "kernel.Entry",
-            "kernel.Bundle"
+            "kernel.Bundle",
+            "kernel.Http"
           ]
         },
         {
@@ -1100,9 +1137,7 @@
           "path": "src/providers/warehouse/Model.ts",
           "zone": "provider",
           "dependencies": [
-            "kernel.Entry",
-            "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Bundle"
           ]
         },
         {
@@ -1112,6 +1147,10 @@
           "zone": "provider",
           "dependencies": [
             "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "provider.warehouse.Metadata",
+            "provider.warehouse.Evidence",
             "kernel.Entry",
             "kernel.Bundle",
             "kernel.Http"
@@ -1124,8 +1163,108 @@
           "zone": "provider",
           "dependencies": [
             "provider.warehouse.Model",
+            "provider.warehouse.Native",
             "kernel.Http"
           ]
+        },
+        {
+          "id": "provider.warehouse.Native",
+          "owner": "core",
+          "path": "src/providers/warehouse/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "kernel.Entry",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "node:crypto"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Wire",
+          "owner": "core",
+          "path": "src/providers/warehouse/Wire.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Metadata",
+            "kernel.Entry"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Evidence",
+          "owner": "core",
+          "path": "src/providers/warehouse/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "kernel.Entry",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "parse5"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Archive",
+          "owner": "core",
+          "path": "src/providers/warehouse/Archive.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native"
+          ],
+          "externalImports": [
+            "node:zlib"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Metadata",
+          "owner": "core",
+          "path": "src/providers/warehouse/Metadata.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Archive",
+            "provider.warehouse.MetadataFields"
+          ]
+        },
+        {
+          "id": "provider.warehouse.MetadataFields",
+          "owner": "core",
+          "path": "src/providers/warehouse/MetadataFields.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native",
+            "provider.warehouse.Requirement",
+            "provider.warehouse.SpdxCatalog"
+          ],
+          "externalImports": [
+            "content-type"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Requirement",
+          "owner": "core",
+          "path": "src/providers/warehouse/Requirement.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native"
+          ],
+          "externalImports": [
+            "@renovatebot/pep440"
+          ]
+        },
+        {
+          "id": "provider.warehouse.SpdxCatalog",
+          "owner": "core",
+          "path": "src/providers/warehouse/SpdxCatalog.json",
+          "zone": "provider",
+          "dependencies": []
         },
         {
           "id": "provider.warehouse",
@@ -1135,7 +1274,15 @@
           "dependencies": [
             "provider.warehouse.Model",
             "provider.warehouse.Protocol",
-            "provider.warehouse.Auth"
+            "provider.warehouse.Auth",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "provider.warehouse.Evidence",
+            "provider.warehouse.Archive",
+            "provider.warehouse.Metadata",
+            "provider.warehouse.MetadataFields",
+            "provider.warehouse.Requirement",
+            "provider.warehouse.SpdxCatalog"
           ]
         },
         {
@@ -1312,8 +1459,8 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "78b21e1033cec6e3e6e5d25137769051f7593b5cbcfc1c3ab8ef5774cccea853",
-        "packageEdgesSha256": "4956bd597d16f55c79c94559faf658c1594b16c74bb5e6ba4e672b7c0fd2cf4f",
+        "sourceEdgesSha256": "0e392436aee8062d56652a6eff5ae0fab97828e82830dcbed9f62462fef93fc1",
+        "packageEdgesSha256": "45f9169109a71514e2119d81b29695a11c94bdf5febe27e934f1afc432cdfd8c",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -1568,6 +1715,12 @@
             "specifier": "./internal/Checksums.js"
           },
           {
+            "from": "kernel.Bundle",
+            "to": "kernel.ArtifactReader",
+            "loading": "static",
+            "specifier": "./internal/ArtifactReader.js"
+          },
+          {
             "from": "kernel.EffectBuild",
             "to": "kernel.ArtifactModel",
             "loading": "static",
@@ -1752,6 +1905,12 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./internal/Error.js"
+          },
+          {
+            "from": "kernel.Http",
+            "to": "kernel.NativeJson",
+            "loading": "static",
+            "specifier": "./internal/NativeJson.js"
           },
           {
             "from": "kernel.GitAuthority",
@@ -2288,6 +2447,36 @@
             "specifier": "../Plan.js"
           },
           {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "./Content.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.NativeJson",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
             "from": "provider.npm.Model",
             "to": "kernel.Entry",
             "loading": "static",
@@ -2400,6 +2589,12 @@
             "to": "kernel.Bundle",
             "loading": "static",
             "specifier": "../../Bundle.js"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "../../Http.js"
           },
           {
             "from": "provider.npm.Wire",
@@ -2487,27 +2682,39 @@
           },
           {
             "from": "provider.warehouse.Model",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "../../index.js"
-          },
-          {
-            "from": "provider.warehouse.Model",
             "to": "kernel.Bundle",
             "loading": "static",
             "specifier": "../../Bundle.js"
-          },
-          {
-            "from": "provider.warehouse.Model",
-            "to": "kernel.Http",
-            "loading": "static",
-            "specifier": "../../Http.js"
           },
           {
             "from": "provider.warehouse.Protocol",
             "to": "provider.warehouse.Model",
             "loading": "static",
             "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
           },
           {
             "from": "provider.warehouse.Protocol",
@@ -2535,9 +2742,141 @@
           },
           {
             "from": "provider.warehouse.Auth",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Auth",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "../../Http.js"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "../../Http.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "../../Http.js"
+          },
+          {
+            "from": "provider.warehouse.Archive",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Archive",
+            "loading": "static",
+            "specifier": "./Archive.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.MetadataFields",
+            "loading": "static",
+            "specifier": "./MetadataFields.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.Requirement",
+            "loading": "static",
+            "specifier": "./Requirement.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.SpdxCatalog",
+            "loading": "static",
+            "specifier": "./SpdxCatalog.json"
+          },
+          {
+            "from": "provider.warehouse.Requirement",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
           },
           {
             "from": "provider.warehouse",
@@ -2556,6 +2895,54 @@
             "to": "provider.warehouse.Auth",
             "loading": "static",
             "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Archive",
+            "loading": "static",
+            "specifier": "./Archive.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.MetadataFields",
+            "loading": "static",
+            "specifier": "./MetadataFields.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Requirement",
+            "loading": "static",
+            "specifier": "./Requirement.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.SpdxCatalog",
+            "loading": "static",
+            "specifier": "./SpdxCatalog.json"
           },
           {
             "from": "provider.github.Model",
@@ -2817,6 +3204,27 @@
             "from": "core",
             "to": "sigstore",
             "version": "5.0.0",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "core",
+            "to": "@renovatebot/pep440",
+            "version": "5.0.1",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "core",
+            "to": "content-type",
+            "version": "1.0.5",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "core",
+            "to": "parse5",
+            "version": "8.0.0",
             "kind": "dependencies",
             "optional": false
           },
@@ -3102,6 +3510,26 @@
             "specifier": "sigstore"
           },
           {
+            "from": "provider.warehouse.Native",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "specifier": "parse5"
+          },
+          {
+            "from": "provider.warehouse.Archive",
+            "specifier": "node:zlib"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "specifier": "content-type"
+          },
+          {
+            "from": "provider.warehouse.Requirement",
+            "specifier": "@renovatebot/pep440"
+          },
+          {
             "from": "provider.openai.Package",
             "specifier": "semver"
           }
@@ -3266,13 +3694,13 @@
         }
       ],
       "metadata": {
-        "publicPackageJsonLines": 129,
+        "publicPackageJsonLines": 132,
         "privatePackageJsonLines": 46,
         "actionYamlLines": 22,
         "tsconfigJsonLines": 76,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 69,
+        "authoredProductModuleFiles": 79,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -3427,15 +3855,18 @@
             },
             "dependencies": {
               "semver": "7.8.5",
-              "sigstore": "5.0.0"
+              "sigstore": "5.0.0",
+              "@renovatebot/pep440": "5.0.1",
+              "content-type": "1.0.5",
+              "parse5": "8.0.0"
             },
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "2265c1905e5bb439fa89f90af9f5155415c16d836dfaf3988b1870488f532590",
-          "manifestLines": 58
+          "manifestSha256": "7669ffdbd13c85c0e308e39d552b405c861280200b5fe4880b33ebef0e63d784",
+          "manifestLines": 61
         }
       ],
       "privateWorkspaces": [
@@ -3842,7 +4273,8 @@
             "kernel.Content",
             "kernel.BundleCodec",
             "kernel.BundleFinalize",
-            "kernel.Checksums"
+            "kernel.Checksums",
+            "kernel.ArtifactReader"
           ]
         },
         {
@@ -3944,7 +4376,8 @@
             "kernel.Model",
             "kernel.Provider",
             "kernel.ArtifactModel",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.NativeJson"
           ]
         },
         {
@@ -4245,6 +4678,29 @@
           "purpose": "K01 complete derived report over canonical Bundle, publication/preparation Plans and global Journal; no dispatch authority."
         },
         {
+          "id": "kernel.ArtifactReader",
+          "owner": "core",
+          "path": "packages/kernel/src/internal/ArtifactReader.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.Identity",
+            "kernel.Error"
+          ],
+          "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
+          "id": "kernel.NativeJson",
+          "owner": "core",
+          "path": "packages/kernel/src/internal/NativeJson.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Error"
+          ],
+          "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
           "id": "provider.npm.Model",
           "owner": "providers",
           "path": "packages/providers/src/npm/Model.ts",
@@ -4298,7 +4754,8 @@
           "dependencies": [
             "provider.npm.Model",
             "kernel.Entry",
-            "kernel.Bundle"
+            "kernel.Bundle",
+            "kernel.Http"
           ]
         },
         {
@@ -4345,9 +4802,7 @@
           "path": "packages/providers/src/warehouse/Model.ts",
           "zone": "provider",
           "dependencies": [
-            "kernel.Entry",
-            "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Bundle"
           ]
         },
         {
@@ -4357,6 +4812,10 @@
           "zone": "provider",
           "dependencies": [
             "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "provider.warehouse.Metadata",
+            "provider.warehouse.Evidence",
             "kernel.Entry",
             "kernel.Bundle",
             "kernel.Http"
@@ -4369,8 +4828,108 @@
           "zone": "provider",
           "dependencies": [
             "provider.warehouse.Model",
+            "provider.warehouse.Native",
             "kernel.Http"
           ]
+        },
+        {
+          "id": "provider.warehouse.Native",
+          "owner": "providers",
+          "path": "packages/providers/src/warehouse/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "kernel.Entry",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "node:crypto"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Wire",
+          "owner": "providers",
+          "path": "packages/providers/src/warehouse/Wire.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Metadata",
+            "kernel.Entry"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Evidence",
+          "owner": "providers",
+          "path": "packages/providers/src/warehouse/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "kernel.Entry",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "parse5"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Archive",
+          "owner": "providers",
+          "path": "packages/providers/src/warehouse/Archive.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native"
+          ],
+          "externalImports": [
+            "node:zlib"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Metadata",
+          "owner": "providers",
+          "path": "packages/providers/src/warehouse/Metadata.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Archive",
+            "provider.warehouse.MetadataFields"
+          ]
+        },
+        {
+          "id": "provider.warehouse.MetadataFields",
+          "owner": "providers",
+          "path": "packages/providers/src/warehouse/MetadataFields.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native",
+            "provider.warehouse.Requirement",
+            "provider.warehouse.SpdxCatalog"
+          ],
+          "externalImports": [
+            "content-type"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Requirement",
+          "owner": "providers",
+          "path": "packages/providers/src/warehouse/Requirement.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native"
+          ],
+          "externalImports": [
+            "@renovatebot/pep440"
+          ]
+        },
+        {
+          "id": "provider.warehouse.SpdxCatalog",
+          "owner": "providers",
+          "path": "packages/providers/src/warehouse/SpdxCatalog.json",
+          "zone": "provider",
+          "dependencies": []
         },
         {
           "id": "provider.warehouse",
@@ -4380,7 +4939,15 @@
           "dependencies": [
             "provider.warehouse.Model",
             "provider.warehouse.Protocol",
-            "provider.warehouse.Auth"
+            "provider.warehouse.Auth",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "provider.warehouse.Evidence",
+            "provider.warehouse.Archive",
+            "provider.warehouse.Metadata",
+            "provider.warehouse.MetadataFields",
+            "provider.warehouse.Requirement",
+            "provider.warehouse.SpdxCatalog"
           ]
         },
         {
@@ -4557,8 +5124,8 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "318b0940b97bb5525e1a8c7adae3333d19808d48d5b97202664e086d0b01efb1",
-        "packageEdgesSha256": "58b5476249a3db40865745e36e66fc3ec2643bc40ec971c8bd381a885864f0ae",
+        "sourceEdgesSha256": "ca94f2fa57c746206605e7c82d4d8f488a0900e5894e032e5a951801888ef989",
+        "packageEdgesSha256": "d25a0dc69e494a9164bce567f0fd187a70e1cec95532172ec2729b1c7293abd8",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -4813,6 +5380,12 @@
             "specifier": "./internal/Checksums.js"
           },
           {
+            "from": "kernel.Bundle",
+            "to": "kernel.ArtifactReader",
+            "loading": "static",
+            "specifier": "./internal/ArtifactReader.js"
+          },
+          {
             "from": "kernel.EffectBuild",
             "to": "kernel.ArtifactModel",
             "loading": "static",
@@ -4997,6 +5570,12 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./internal/Error.js"
+          },
+          {
+            "from": "kernel.Http",
+            "to": "kernel.NativeJson",
+            "loading": "static",
+            "specifier": "./internal/NativeJson.js"
           },
           {
             "from": "kernel.GitAuthority",
@@ -5533,6 +6112,36 @@
             "specifier": "../Plan.js"
           },
           {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "./Content.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.NativeJson",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
             "from": "provider.npm.Model",
             "to": "kernel.Entry",
             "loading": "static",
@@ -5645,6 +6254,12 @@
             "to": "kernel.Bundle",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
           },
           {
             "from": "provider.npm.Wire",
@@ -5732,27 +6347,39 @@
           },
           {
             "from": "provider.warehouse.Model",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release"
-          },
-          {
-            "from": "provider.warehouse.Model",
             "to": "kernel.Bundle",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/bundle"
-          },
-          {
-            "from": "provider.warehouse.Model",
-            "to": "kernel.Http",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release/http"
           },
           {
             "from": "provider.warehouse.Protocol",
             "to": "provider.warehouse.Model",
             "loading": "static",
             "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
           },
           {
             "from": "provider.warehouse.Protocol",
@@ -5780,9 +6407,141 @@
           },
           {
             "from": "provider.warehouse.Auth",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Auth",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse.Archive",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Archive",
+            "loading": "static",
+            "specifier": "./Archive.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.MetadataFields",
+            "loading": "static",
+            "specifier": "./MetadataFields.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.Requirement",
+            "loading": "static",
+            "specifier": "./Requirement.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.SpdxCatalog",
+            "loading": "static",
+            "specifier": "./SpdxCatalog.json"
+          },
+          {
+            "from": "provider.warehouse.Requirement",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
           },
           {
             "from": "provider.warehouse",
@@ -5801,6 +6560,54 @@
             "to": "provider.warehouse.Auth",
             "loading": "static",
             "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Archive",
+            "loading": "static",
+            "specifier": "./Archive.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.MetadataFields",
+            "loading": "static",
+            "specifier": "./MetadataFields.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Requirement",
+            "loading": "static",
+            "specifier": "./Requirement.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.SpdxCatalog",
+            "loading": "static",
+            "specifier": "./SpdxCatalog.json"
           },
           {
             "from": "provider.github.Model",
@@ -6095,6 +6902,27 @@
           },
           {
             "from": "providers",
+            "to": "@renovatebot/pep440",
+            "version": "5.0.1",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "providers",
+            "to": "content-type",
+            "version": "1.0.5",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "providers",
+            "to": "parse5",
+            "version": "8.0.0",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "providers",
             "to": "@mannyc1/ts-release",
             "version": ">=0.4.0 <0.5.0",
             "kind": "peerDependencies",
@@ -6368,6 +7196,26 @@
             "specifier": "sigstore"
           },
           {
+            "from": "provider.warehouse.Native",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "specifier": "parse5"
+          },
+          {
+            "from": "provider.warehouse.Archive",
+            "specifier": "node:zlib"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "specifier": "content-type"
+          },
+          {
+            "from": "provider.warehouse.Requirement",
+            "specifier": "@renovatebot/pep440"
+          },
+          {
             "from": "provider.openai.Package",
             "specifier": "semver"
           }
@@ -6532,13 +7380,13 @@
         }
       ],
       "metadata": {
-        "publicPackageJsonLines": 135,
+        "publicPackageJsonLines": 138,
         "privatePackageJsonLines": 82,
         "actionYamlLines": 22,
         "tsconfigJsonLines": 90,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 69,
+        "authoredProductModuleFiles": 79,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -6708,14 +7556,18 @@
                 "import": "./dist/index.js"
               }
             },
-            "dependencies": {},
+            "dependencies": {
+              "@renovatebot/pep440": "5.0.1",
+              "content-type": "1.0.5",
+              "parse5": "8.0.0"
+            },
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "40dee38bff12510eb12b26bdba72831bb797218fc8b6a389c8149533dac0badb",
-          "manifestLines": 31
+          "manifestSha256": "c0152dd7b26e8ef5aa6c33106b2225a78653e856c79bdd3d0609df7834cfafc5",
+          "manifestLines": 35
         },
         {
           "id": "provider.github",
@@ -7433,7 +8285,8 @@
             "kernel.Content",
             "kernel.BundleCodec",
             "kernel.BundleFinalize",
-            "kernel.Checksums"
+            "kernel.Checksums",
+            "kernel.ArtifactReader"
           ]
         },
         {
@@ -7535,7 +8388,8 @@
             "kernel.Model",
             "kernel.Provider",
             "kernel.ArtifactModel",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.NativeJson"
           ]
         },
         {
@@ -7836,6 +8690,29 @@
           "purpose": "K01 complete derived report over canonical Bundle, publication/preparation Plans and global Journal; no dispatch authority."
         },
         {
+          "id": "kernel.ArtifactReader",
+          "owner": "core",
+          "path": "packages/kernel/src/internal/ArtifactReader.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.Identity",
+            "kernel.Error"
+          ],
+          "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
+          "id": "kernel.NativeJson",
+          "owner": "core",
+          "path": "packages/kernel/src/internal/NativeJson.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Error"
+          ],
+          "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
           "id": "provider.npm.Model",
           "owner": "provider.npm",
           "path": "packages/npm/src/Model.ts",
@@ -7889,7 +8766,8 @@
           "dependencies": [
             "provider.npm.Model",
             "kernel.Entry",
-            "kernel.Bundle"
+            "kernel.Bundle",
+            "kernel.Http"
           ]
         },
         {
@@ -7936,9 +8814,7 @@
           "path": "packages/warehouse/src/Model.ts",
           "zone": "provider",
           "dependencies": [
-            "kernel.Entry",
-            "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Bundle"
           ]
         },
         {
@@ -7948,6 +8824,10 @@
           "zone": "provider",
           "dependencies": [
             "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "provider.warehouse.Metadata",
+            "provider.warehouse.Evidence",
             "kernel.Entry",
             "kernel.Bundle",
             "kernel.Http"
@@ -7960,8 +8840,108 @@
           "zone": "provider",
           "dependencies": [
             "provider.warehouse.Model",
+            "provider.warehouse.Native",
             "kernel.Http"
           ]
+        },
+        {
+          "id": "provider.warehouse.Native",
+          "owner": "provider.warehouse",
+          "path": "packages/warehouse/src/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "kernel.Entry",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "node:crypto"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Wire",
+          "owner": "provider.warehouse",
+          "path": "packages/warehouse/src/Wire.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Metadata",
+            "kernel.Entry"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Evidence",
+          "owner": "provider.warehouse",
+          "path": "packages/warehouse/src/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "kernel.Entry",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "parse5"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Archive",
+          "owner": "provider.warehouse",
+          "path": "packages/warehouse/src/Archive.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native"
+          ],
+          "externalImports": [
+            "node:zlib"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Metadata",
+          "owner": "provider.warehouse",
+          "path": "packages/warehouse/src/Metadata.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Archive",
+            "provider.warehouse.MetadataFields"
+          ]
+        },
+        {
+          "id": "provider.warehouse.MetadataFields",
+          "owner": "provider.warehouse",
+          "path": "packages/warehouse/src/MetadataFields.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native",
+            "provider.warehouse.Requirement",
+            "provider.warehouse.SpdxCatalog"
+          ],
+          "externalImports": [
+            "content-type"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Requirement",
+          "owner": "provider.warehouse",
+          "path": "packages/warehouse/src/Requirement.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native"
+          ],
+          "externalImports": [
+            "@renovatebot/pep440"
+          ]
+        },
+        {
+          "id": "provider.warehouse.SpdxCatalog",
+          "owner": "provider.warehouse",
+          "path": "packages/warehouse/src/SpdxCatalog.json",
+          "zone": "provider",
+          "dependencies": []
         },
         {
           "id": "provider.warehouse",
@@ -7971,7 +8951,15 @@
           "dependencies": [
             "provider.warehouse.Model",
             "provider.warehouse.Protocol",
-            "provider.warehouse.Auth"
+            "provider.warehouse.Auth",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "provider.warehouse.Evidence",
+            "provider.warehouse.Archive",
+            "provider.warehouse.Metadata",
+            "provider.warehouse.MetadataFields",
+            "provider.warehouse.Requirement",
+            "provider.warehouse.SpdxCatalog"
           ]
         },
         {
@@ -8148,8 +9136,8 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "977bd967f012fae955c84d0e49e03452e3f53c0f9b24456c40feb9350271a16b",
-        "packageEdgesSha256": "b298428b1bc4fb4d172fb7fe9721f0cdb99994682693474b37014e467fcee1d0",
+        "sourceEdgesSha256": "615d0367856aba3b8fbf1a5866b8464e7c22ebe6bf6c76cf107aa56a940ddc79",
+        "packageEdgesSha256": "3812d68f73ee6919584169085d58a11e809c3dbf75bf0eb00c96a6b03d76bea2",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -8404,6 +9392,12 @@
             "specifier": "./internal/Checksums.js"
           },
           {
+            "from": "kernel.Bundle",
+            "to": "kernel.ArtifactReader",
+            "loading": "static",
+            "specifier": "./internal/ArtifactReader.js"
+          },
+          {
             "from": "kernel.EffectBuild",
             "to": "kernel.ArtifactModel",
             "loading": "static",
@@ -8588,6 +9582,12 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./internal/Error.js"
+          },
+          {
+            "from": "kernel.Http",
+            "to": "kernel.NativeJson",
+            "loading": "static",
+            "specifier": "./internal/NativeJson.js"
           },
           {
             "from": "kernel.GitAuthority",
@@ -9124,6 +10124,36 @@
             "specifier": "../Plan.js"
           },
           {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "./Content.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.NativeJson",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
             "from": "provider.npm.Model",
             "to": "kernel.Entry",
             "loading": "static",
@@ -9236,6 +10266,12 @@
             "to": "kernel.Bundle",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
           },
           {
             "from": "provider.npm.Wire",
@@ -9323,27 +10359,39 @@
           },
           {
             "from": "provider.warehouse.Model",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release"
-          },
-          {
-            "from": "provider.warehouse.Model",
             "to": "kernel.Bundle",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/bundle"
-          },
-          {
-            "from": "provider.warehouse.Model",
-            "to": "kernel.Http",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release/http"
           },
           {
             "from": "provider.warehouse.Protocol",
             "to": "provider.warehouse.Model",
             "loading": "static",
             "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
           },
           {
             "from": "provider.warehouse.Protocol",
@@ -9371,9 +10419,141 @@
           },
           {
             "from": "provider.warehouse.Auth",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Auth",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse.Archive",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Archive",
+            "loading": "static",
+            "specifier": "./Archive.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.MetadataFields",
+            "loading": "static",
+            "specifier": "./MetadataFields.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.Requirement",
+            "loading": "static",
+            "specifier": "./Requirement.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.SpdxCatalog",
+            "loading": "static",
+            "specifier": "./SpdxCatalog.json"
+          },
+          {
+            "from": "provider.warehouse.Requirement",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
           },
           {
             "from": "provider.warehouse",
@@ -9392,6 +10572,54 @@
             "to": "provider.warehouse.Auth",
             "loading": "static",
             "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Archive",
+            "loading": "static",
+            "specifier": "./Archive.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.MetadataFields",
+            "loading": "static",
+            "specifier": "./MetadataFields.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Requirement",
+            "loading": "static",
+            "specifier": "./Requirement.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.SpdxCatalog",
+            "loading": "static",
+            "specifier": "./SpdxCatalog.json"
           },
           {
             "from": "provider.github.Model",
@@ -9696,6 +10924,27 @@
             "to": "effect",
             "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "@renovatebot/pep440",
+            "version": "5.0.1",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "content-type",
+            "version": "1.0.5",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "parse5",
+            "version": "8.0.0",
+            "kind": "dependencies",
             "optional": false
           },
           {
@@ -10092,6 +11341,26 @@
             "specifier": "sigstore"
           },
           {
+            "from": "provider.warehouse.Native",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "specifier": "parse5"
+          },
+          {
+            "from": "provider.warehouse.Archive",
+            "specifier": "node:zlib"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "specifier": "content-type"
+          },
+          {
+            "from": "provider.warehouse.Requirement",
+            "specifier": "@renovatebot/pep440"
+          },
+          {
             "from": "provider.openai.Package",
             "specifier": "semver"
           }
@@ -10256,13 +11525,13 @@
         }
       ],
       "metadata": {
-        "publicPackageJsonLines": 299,
+        "publicPackageJsonLines": 303,
         "privatePackageJsonLines": 87,
         "actionYamlLines": 22,
         "tsconfigJsonLines": 174,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 69,
+        "authoredProductModuleFiles": 79,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -10432,14 +11701,18 @@
                 "import": "./dist/index.js"
               }
             },
-            "dependencies": {},
+            "dependencies": {
+              "@renovatebot/pep440": "5.0.1",
+              "content-type": "1.0.5",
+              "parse5": "8.0.0"
+            },
             "peerDependencies": {
               "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "10565ab6fce7a3f01a7ee1056bdede815ab4602e5c198cfeb4df46ab6f2dcf27",
-          "manifestLines": 31
+          "manifestSha256": "fd12e9c096d0004ab912a47fb8477674d1ef889f251b1e8053b05389416d5635",
+          "manifestLines": 35
         },
         {
           "id": "provider.github",
@@ -11097,7 +12370,8 @@
             "kernel.Content",
             "kernel.BundleCodec",
             "kernel.BundleFinalize",
-            "kernel.Checksums"
+            "kernel.Checksums",
+            "kernel.ArtifactReader"
           ]
         },
         {
@@ -11199,7 +12473,8 @@
             "kernel.Model",
             "kernel.Provider",
             "kernel.ArtifactModel",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.NativeJson"
           ]
         },
         {
@@ -11500,6 +12775,29 @@
           "purpose": "K01 complete derived report over canonical Bundle, publication/preparation Plans and global Journal; no dispatch authority."
         },
         {
+          "id": "kernel.ArtifactReader",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/ArtifactReader.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.Identity",
+            "kernel.Error"
+          ],
+          "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
+          "id": "kernel.NativeJson",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/NativeJson.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Error"
+          ],
+          "purpose": "Shared native provider admission, implemented by npm and PyPI"
+        },
+        {
           "id": "provider.npm.Model",
           "owner": "provider.npm",
           "path": "packages/npm/src/Model.ts",
@@ -11553,7 +12851,8 @@
           "dependencies": [
             "provider.npm.Model",
             "kernel.Entry",
-            "kernel.Bundle"
+            "kernel.Bundle",
+            "kernel.Http"
           ]
         },
         {
@@ -11600,9 +12899,7 @@
           "path": "packages/pypi/src/Model.ts",
           "zone": "provider",
           "dependencies": [
-            "kernel.Entry",
-            "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Bundle"
           ]
         },
         {
@@ -11612,6 +12909,10 @@
           "zone": "provider",
           "dependencies": [
             "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "provider.warehouse.Metadata",
+            "provider.warehouse.Evidence",
             "kernel.Entry",
             "kernel.Bundle",
             "kernel.Http"
@@ -11624,8 +12925,108 @@
           "zone": "provider",
           "dependencies": [
             "provider.warehouse.Model",
+            "provider.warehouse.Native",
             "kernel.Http"
           ]
+        },
+        {
+          "id": "provider.warehouse.Native",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "kernel.Entry",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "node:crypto"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Wire",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/Wire.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Metadata",
+            "kernel.Entry"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Evidence",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "kernel.Entry",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "parse5"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Archive",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/Archive.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native"
+          ],
+          "externalImports": [
+            "node:zlib"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Metadata",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/Metadata.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Native",
+            "provider.warehouse.Archive",
+            "provider.warehouse.MetadataFields"
+          ]
+        },
+        {
+          "id": "provider.warehouse.MetadataFields",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/MetadataFields.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native",
+            "provider.warehouse.Requirement",
+            "provider.warehouse.SpdxCatalog"
+          ],
+          "externalImports": [
+            "content-type"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Requirement",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/Requirement.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Native"
+          ],
+          "externalImports": [
+            "@renovatebot/pep440"
+          ]
+        },
+        {
+          "id": "provider.warehouse.SpdxCatalog",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/SpdxCatalog.json",
+          "zone": "provider",
+          "dependencies": []
         },
         {
           "id": "provider.warehouse",
@@ -11635,7 +13036,15 @@
           "dependencies": [
             "provider.warehouse.Model",
             "provider.warehouse.Protocol",
-            "provider.warehouse.Auth"
+            "provider.warehouse.Auth",
+            "provider.warehouse.Native",
+            "provider.warehouse.Wire",
+            "provider.warehouse.Evidence",
+            "provider.warehouse.Archive",
+            "provider.warehouse.Metadata",
+            "provider.warehouse.MetadataFields",
+            "provider.warehouse.Requirement",
+            "provider.warehouse.SpdxCatalog"
           ]
         },
         {
@@ -11812,8 +13221,8 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "62c75d063093b3982b275794c94af98193072061775ef55de3999a7e18a6f571",
-        "packageEdgesSha256": "bb5683f96928748e1531eac43b252d9edc34daadd5d7c8b0fb3561d5e46bcf3e",
+        "sourceEdgesSha256": "4ef620866329cfeb47b86ada562cd43a47ffef359d98fcbfb024bad831615936",
+        "packageEdgesSha256": "cc4057e295dee1a2045789315064ad848a23f1b8264555d916dc2ff164848d90",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -12068,6 +13477,12 @@
             "specifier": "./internal/Checksums.js"
           },
           {
+            "from": "kernel.Bundle",
+            "to": "kernel.ArtifactReader",
+            "loading": "static",
+            "specifier": "./internal/ArtifactReader.js"
+          },
+          {
             "from": "kernel.EffectBuild",
             "to": "kernel.ArtifactModel",
             "loading": "static",
@@ -12252,6 +13667,12 @@
             "to": "kernel.Error",
             "loading": "static",
             "specifier": "./internal/Error.js"
+          },
+          {
+            "from": "kernel.Http",
+            "to": "kernel.NativeJson",
+            "loading": "static",
+            "specifier": "./internal/NativeJson.js"
           },
           {
             "from": "kernel.GitAuthority",
@@ -12788,6 +14209,36 @@
             "specifier": "../Plan.js"
           },
           {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "./Content.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.ArtifactReader",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.NativeJson",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
             "from": "provider.npm.Model",
             "to": "kernel.Entry",
             "loading": "static",
@@ -12900,6 +14351,12 @@
             "to": "kernel.Bundle",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.npm.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
           },
           {
             "from": "provider.npm.Wire",
@@ -12987,27 +14444,39 @@
           },
           {
             "from": "provider.warehouse.Model",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release"
-          },
-          {
-            "from": "provider.warehouse.Model",
             "to": "kernel.Bundle",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/bundle"
-          },
-          {
-            "from": "provider.warehouse.Model",
-            "to": "kernel.Http",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release/http"
           },
           {
             "from": "provider.warehouse.Protocol",
             "to": "provider.warehouse.Model",
             "loading": "static",
             "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
           },
           {
             "from": "provider.warehouse.Protocol",
@@ -13035,9 +14504,141 @@
           },
           {
             "from": "provider.warehouse.Auth",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Auth",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.warehouse.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse.Wire",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse.Archive",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.Archive",
+            "loading": "static",
+            "specifier": "./Archive.js"
+          },
+          {
+            "from": "provider.warehouse.Metadata",
+            "to": "provider.warehouse.MetadataFields",
+            "loading": "static",
+            "specifier": "./MetadataFields.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.Requirement",
+            "loading": "static",
+            "specifier": "./Requirement.js"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "to": "provider.warehouse.SpdxCatalog",
+            "loading": "static",
+            "specifier": "./SpdxCatalog.json"
+          },
+          {
+            "from": "provider.warehouse.Requirement",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
           },
           {
             "from": "provider.warehouse",
@@ -13056,6 +14657,54 @@
             "to": "provider.warehouse.Auth",
             "loading": "static",
             "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Archive",
+            "loading": "static",
+            "specifier": "./Archive.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Metadata",
+            "loading": "static",
+            "specifier": "./Metadata.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.MetadataFields",
+            "loading": "static",
+            "specifier": "./MetadataFields.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Requirement",
+            "loading": "static",
+            "specifier": "./Requirement.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.SpdxCatalog",
+            "loading": "static",
+            "specifier": "./SpdxCatalog.json"
           },
           {
             "from": "provider.github.Model",
@@ -13360,6 +15009,27 @@
             "to": "effect",
             "version": ">=4.0.0-beta.107 <4.0.0-beta.108",
             "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.pypi",
+            "to": "@renovatebot/pep440",
+            "version": "5.0.1",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.pypi",
+            "to": "content-type",
+            "version": "1.0.5",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.pypi",
+            "to": "parse5",
+            "version": "8.0.0",
+            "kind": "dependencies",
             "optional": false
           },
           {
@@ -13721,6 +15391,26 @@
             "specifier": "sigstore"
           },
           {
+            "from": "provider.warehouse.Native",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "provider.warehouse.Evidence",
+            "specifier": "parse5"
+          },
+          {
+            "from": "provider.warehouse.Archive",
+            "specifier": "node:zlib"
+          },
+          {
+            "from": "provider.warehouse.MetadataFields",
+            "specifier": "content-type"
+          },
+          {
+            "from": "provider.warehouse.Requirement",
+            "specifier": "@renovatebot/pep440"
+          },
+          {
             "from": "provider.openai.Package",
             "specifier": "semver"
           }
@@ -13885,13 +15575,13 @@
         }
       ],
       "metadata": {
-        "publicPackageJsonLines": 272,
+        "publicPackageJsonLines": 276,
         "privatePackageJsonLines": 83,
         "actionYamlLines": 22,
         "tsconfigJsonLines": 160,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 69,
+        "authoredProductModuleFiles": 79,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }

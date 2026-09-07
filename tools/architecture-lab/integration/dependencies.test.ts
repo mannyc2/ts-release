@@ -5,7 +5,8 @@ import { join } from "node:path"
 
 // Independent native service oracle: the child machine has no access to these
 // counters. Its output cannot manufacture the observed request count or URL.
-for (const candidate of ["M1", "M2"] as const) for (const replaceNativeParent of [false, true]) {
+import { evaluatorNames } from "../machine/test/fixtures.js"
+for (const candidate of evaluatorNames) for (const replaceNativeParent of [false, true]) {
   test(`${candidate}: native dependency ID survives restart; replacement=${replaceNativeParent}`, async () => {
     const directory = await mkdtemp(join(tmpdir(), "release-native-dependency-"))
     let id = 41

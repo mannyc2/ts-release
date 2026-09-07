@@ -11,6 +11,8 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
+/** Provider contract version spoken by this kernel. A definition built against another contract is rejected at Host verification, whatever the installer resolved. */
+export declare const PROVIDER_CONTRACT: "ts-release/provider/1";
 declare const ReleaseError_base: Schema.Class<ReleaseError, Schema.TaggedStruct<"ReleaseError", {
     readonly code: Schema.String;
     readonly message: Schema.String;
@@ -203,12 +205,22 @@ declare const CoreDispatchError_base: Schema.Class<CoreDispatchError, Schema.Str
 }>, {}>;
 export declare class CoreDispatchError extends CoreDispatchError_base {
 }
+declare const CoreUndecodableReceipt_base: Schema.Class<CoreUndecodableReceipt, Schema.Struct<{
+    readonly code: Schema.Literal<"undecodable-receipt">;
+    readonly message: Schema.Literal<"Committed response could not be admitted by the installed provider">;
+    readonly receiptSha256: Schema.NullOr<Schema.String>;
+    readonly receiptBytes: Schema.NullOr<Schema.String>;
+}>, {}>;
+/** Bounded, credential-free diagnostic for a committed send whose receipt failed strict decoding. No raw response bytes are retained. */
+export declare class CoreUndecodableReceipt extends CoreUndecodableReceipt_base {
+}
 export interface NativeFailureBoundary {
     readonly version: string;
     readonly codec: Schema.Codec<unknown, unknown>;
     readonly corresponds: (operation: Operation, request: RequestFacts, evidence: unknown) => boolean;
 }
 export interface ProviderDefinition {
+    readonly contract: typeof PROVIDER_CONTRACT;
     readonly definitionId: string;
     readonly intentVersion: string;
     readonly intentCodec: Schema.Codec<unknown, unknown>;
@@ -245,6 +257,8 @@ export interface HostShape {
     readonly now: () => number;
     readonly uniqueId: () => string;
     readonly journal?: JournalContext;
+    /** Decision evaluator over validated history. Default: the kernel's history machine (M1). Any implementation satisfying the Machine laws may be supplied by the application. */
+    readonly machine?: MachineConstructor;
 }
 declare const Host_base: Context.ServiceClass<Host, "ts-release/Host", HostShape>;
 export declare class Host extends Host_base {
@@ -270,6 +284,33 @@ export interface RunOptions {
     readonly observe?: boolean;
 }
 export {};
+
+export interface CandidateRequest {
+    readonly facts: RequestFacts;
+    readonly fingerprint: string;
+}
+export type Next = {
+    readonly _tag: "PrepareDispatch";
+} | {
+    readonly _tag: "AppendDispatch";
+    readonly basis: DispatchBasis;
+} | {
+    readonly _tag: "RequestRiskAcceptance";
+} | {
+    readonly _tag: "Finish";
+    readonly status: OperationStatus;
+};
+export interface Machine {
+    readonly append: (event: JournalEvent) => Machine;
+    readonly report: () => ReleaseReport;
+    readonly next: (operationId: string, candidate: CandidateRequest | null, now: number) => Next;
+}
+export type MachineConstructor = (plan: Plan, events: ReadonlyArray<JournalEvent>, scopeKind?: Scope["_tag"]) => Machine;
+/** Protocol law shared by representations, not inferred from provider labels. */
+export declare const sameProtectedRequest: (recorded: RequestFacts, candidate: RequestFacts) => boolean;
+export declare const sameStrings: (left: ReadonlyArray<string>, right: ReadonlyArray<string>) => boolean;
+
+export declare const historyMachine: (plan: Plan, events: ReadonlyArray<JournalEvent>, scopeKind?: Scope["_tag"]) => Machine;
 
 export declare const createOperation: (provider: ProviderDescriptor, intent: unknown, dependsOn?: readonly string[] | undefined) => Effect.Effect<Operation, ReleaseError, never>;
 export declare const createPlan: (bundleId: string, operations: readonly Operation[], journalId?: string | undefined) => Effect.Effect<Plan, ReleaseError, never>;

@@ -2,70 +2,70 @@
   "schema": "apple-source-inventory/1",
   "files": [
     {
-      "name": "run-experiments.ts",
+      "name": "apple-experiment.ts",
       "kind": "research-fixture-or-driver",
-      "physicalLines": 36,
-      "sha256": "9d46b7b543139650e397198ba1182fbad4b2b774c6b84a448c787d9aea8e22ea",
-      "printerNormalizedLines": 37
-    },
-    {
-      "name": "adoption.ts",
-      "kind": "production-prototype",
-      "physicalLines": 147,
-      "sha256": "e91edd67212d2dc9a245c8ce4bf4b7ff7af1ca8e9c36b464d557f895a36d1922",
-      "printerNormalizedLines": 162
+      "physicalLines": 257,
+      "printerNormalizedLines": 309,
+      "sha256": "07f3569d1c69caf63c67df86e6428ef5378bedf62bbe4e3275dd0c82e3a18b1f"
     },
     {
       "name": "bundle-codec.ts",
       "kind": "production-prototype",
       "physicalLines": 87,
-      "sha256": "04c0cd4f27275353aea1470d74a6da838d9712a368722f5a8602d7a432663fa6",
-      "printerNormalizedLines": 118
+      "printerNormalizedLines": 118,
+      "sha256": "04c0cd4f27275353aea1470d74a6da838d9712a368722f5a8602d7a432663fa6"
     },
     {
-      "name": "apple-experiment.ts",
-      "kind": "research-fixture-or-driver",
-      "physicalLines": 255,
-      "sha256": "f1006f0cde861d9bd013826318dfe11c07101eaa28d6bccd49ab8c88813b6667",
-      "printerNormalizedLines": 306
-    },
-    {
-      "name": "build-upstream.ts",
-      "kind": "research-fixture-or-driver",
-      "physicalLines": 49,
-      "sha256": "f649c82cff10e353429a1d77d268fb3e0927a77e1358686ff34c5ac61964d0c3",
-      "printerNormalizedLines": 51
+      "name": "apple-preparation.ts",
+      "kind": "production-prototype",
+      "physicalLines": 217,
+      "printerNormalizedLines": 206,
+      "sha256": "b966adbfa391bfa2d40df5d9f495674f3a8e07f213786db9a36f1fd132867dbf"
     },
     {
       "name": "adoption-fixture.ts",
       "kind": "research-fixture-or-driver",
       "physicalLines": 133,
-      "sha256": "743a132e54081b0bc8a3508b0683827e5b1305def1400a6b455bf5b7c1cac550",
-      "printerNormalizedLines": 148
+      "printerNormalizedLines": 148,
+      "sha256": "743a132e54081b0bc8a3508b0683827e5b1305def1400a6b455bf5b7c1cac550"
     },
     {
       "name": "content-owner.ts",
       "kind": "production-prototype",
       "physicalLines": 89,
-      "sha256": "b506e5158a1e6e4882fb380e79b2e4367f12923fffa25292829890dc0440302b",
-      "printerNormalizedLines": 157
+      "printerNormalizedLines": 157,
+      "sha256": "b506e5158a1e6e4882fb380e79b2e4367f12923fffa25292829890dc0440302b"
+    },
+    {
+      "name": "adoption.ts",
+      "kind": "production-prototype",
+      "physicalLines": 147,
+      "printerNormalizedLines": 162,
+      "sha256": "e91edd67212d2dc9a245c8ce4bf4b7ff7af1ca8e9c36b464d557f895a36d1922"
     },
     {
       "name": "public-api.ts",
       "kind": "production-prototype",
       "physicalLines": 5,
-      "sha256": "fe09bb835efc3e4015722009fb05931ead43c00bfafb22a3a225d083e6ed6c22",
-      "printerNormalizedLines": 5
+      "printerNormalizedLines": 5,
+      "sha256": "fe09bb835efc3e4015722009fb05931ead43c00bfafb22a3a225d083e6ed6c22"
     },
     {
-      "name": "apple-preparation.ts",
-      "kind": "production-prototype",
-      "physicalLines": 224,
-      "sha256": "7e6601c6648d3fc4191c454b60f957df7e1988711ad99c147642d1983b35d7d4",
-      "printerNormalizedLines": 219
+      "name": "build-upstream.ts",
+      "kind": "research-fixture-or-driver",
+      "physicalLines": 49,
+      "printerNormalizedLines": 51,
+      "sha256": "f923f69c019143958fb5f64f63988b596bcb36ab075e1442281f483a1b98bd0f"
+    },
+    {
+      "name": "run-experiments.ts",
+      "kind": "research-fixture-or-driver",
+      "physicalLines": 36,
+      "printerNormalizedLines": 37,
+      "sha256": "1f72b9cacfd2be2a8097ac7654f80d428d87e1690889206c11daa3021e8e9ccf"
     }
   ],
-  "productionPrototypeLines": 552,
-  "researchLines": 473,
-  "productionPrinterNormalizedLines": 661
+  "productionPrototypeLines": 545,
+  "productionPrinterNormalizedLines": 648,
+  "researchLines": 475
 }

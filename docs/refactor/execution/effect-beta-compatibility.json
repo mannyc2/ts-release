@@ -1,0 +1,28 @@
+{
+  "observedAt": "2026-09-06T21:07:33.707Z",
+  "consumer": "/tmp/ts-release-beta-compat",
+  "packages": [
+    {
+      "name": "effect",
+      "version": "4.0.0-beta.104",
+      "integrity": "sha512-YSSaaMc8gBoHnabYXlgHpKVctsj4ezTSoojdd8SA3NWHoZ7LMPiUDhCnP1ZSOfQ7ly6P6XLhAw216NfLEHfg2A=="
+    },
+    {
+      "name": "@effect/platform-node",
+      "version": "4.0.0-beta.104",
+      "integrity": "sha512-edqD0sRzL3Qow26TnD+RuHNVolFB7c1M/xWGzW0TRc7PzXpRWQawM1haMXOrB8W1UXpg8T8jF5MU56vFhPGJyw=="
+    },
+    {
+      "name": "@effect/platform-bun",
+      "version": "4.0.0-beta.104",
+      "integrity": "sha512-ECjT3zatrIAXVHVA8oc62e/kQ/zu98PfXfEVLlrQ0JeTLb0cDax9kcjUa8g3z0IbOuKpMlf87bCR6g6UDiJT7A=="
+    },
+    {
+      "name": "@effect/platform-node-shared",
+      "version": "4.0.0-beta.104",
+      "integrity": "sha512-wZQWlreuCfR+Ip6E93h2Wo56lFdBTflzSErFKxvrAW06/ORa7yZMD4oq4Ow5aU5+AlQgomQSEeBKM7uao4ZewQ=="
+    }
+  ],
+  "typecheckExit": 2,
+  "diagnostic": "node_modules/effect/dist/Schema.d.ts(10788,57): error TS2694: Namespace '\"/tmp/ts-release-beta-compat/node_modules/effect/dist/SchemaAST\"' has no exported member 'Sentinel'.\n"
+}

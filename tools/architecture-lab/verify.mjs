@@ -89,7 +89,8 @@ if (process.argv.includes("--execute")) {
     ["bun","tools/architecture-lab/machine/unpatched-effect.mjs"],
     ["bun","node_modules/typescript/bin/tsc","-p","tools/architecture-lab/tsconfig.json"],
     ["bun","tools/architecture-lab/proposal/emit.mjs","--check"],
-    ["bun","test","./tools/architecture-lab/machine/test","./tools/architecture-lab/storage","./tools/architecture-lab/integration","./tools/architecture-lab/git-catalog"]
+    ["bun","tools/architecture-lab/machine/emit-proposal.mjs","--check"],
+    ["bun","test","./tools/architecture-lab/machine/test","./tools/architecture-lab/storage","./tools/architecture-lab/integration","./tools/architecture-lab/git-catalog","./tools/architecture-lab/machine/witnesses"]
   ]
   const receipts = []
   for (const argv of commands) {
@@ -104,9 +105,9 @@ if (process.argv.includes("--execute")) {
 if (process.argv.includes("--seal")) {
   const contract = {
     format:"ts-release/architecture-handoff/1",
-    status:"reviewable-proposal-with-explicit-maintainer-decisions",
+    status:"implementation-authorized-prerequisite-evidence-not-release-certification",
     authority:{design:`${handoff}/design.json`,layout:`${handoff}/layout.json`,surface:`${handoff}/public-surface.json`,vocabulary:`${handoff}/durable-vocabulary.json`,migration:`${handoff}/migration.json`,waves:`${handoff}/waves.json`,qualification:`${handoff}/qualification.json`,forecast:`${handoff}/forecast.json`},
-    authorization:{researchAndPrototypes:true,productionRefactor:false,publication:false,compatibility:"Hard cut; user reports no known external consumers."},
+    authorization:{researchAndPrototypes:true,productionRefactor:true,publication:true,source:"Explicit 2026-09-06 user implementation and release instruction; execution status in docs/refactor/execution/GOAL.md",conditions:"Production gates, independent candidate review and real destination authority remain required",compatibility:"Hard cut; user reports no known external consumers."},
     preservation:{selectedOutcomes:69,propositions:226,originalTournament:"No frozen winner or full original gate pass is claimed.",budgetCeiling:11485},
     files:allFiles().map(binding)
   }

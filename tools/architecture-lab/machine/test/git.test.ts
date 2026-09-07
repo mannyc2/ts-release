@@ -7,7 +7,7 @@ import {
   GitCas, GitReceipt, makeCoreGitTransport, makeRequest, runRelease,
   type HostShape, type Operation, type RequestFacts
 } from "../src/index.js"
-import { makeFixture, providerFor, runWithHost, startEvents } from "./fixtures.js"
+import { evaluatorNames, makeFixture, providerFor, runWithHost, startEvents } from "./fixtures.js"
 
 const git = (args: ReadonlyArray<string>) => {
   const result = Bun.spawnSync(["git", ...args], { stdout: "pipe", stderr: "pipe" })
@@ -15,7 +15,7 @@ const git = (args: ReadonlyArray<string>) => {
   return result.stdout.toString().trim()
 }
 
-for (const candidate of ["M1", "M2"] as const) for (const competitor of [false, true]) {
+for (const candidate of evaluatorNames) for (const competitor of [false, true]) {
   test(`${candidate}: real native conditional Git replay ${competitor ? "rejects a competing update" : "confirms an already committed update"}`, async () => {
     const directory = mkdtempSync(join(tmpdir(), "machine-git-"))
     const source = join(directory, "source")
@@ -45,7 +45,7 @@ for (const candidate of ["M1", "M2"] as const) for (const competitor of [false, 
         },
         prepare: () => makeRequest({ transport: "core.git/1", endpoint: remote, method: "update-ref", headers: [], body: new Uint8Array(), principal: "local-fixture", scope: ref, replay: new GitCas({ ref, expectedOld: initial, desiredNew: desired }) })
       }
-      const fixture = await makeFixture(provider)
+      const fixture = await makeFixture(provider, candidate)
       const commands: Array<ReadonlyArray<string>> = []
       const host: HostShape = {
         ...fixture.host,
@@ -56,10 +56,10 @@ for (const candidate of ["M1", "M2"] as const) for (const competitor of [false, 
           return commands.length === 1 ? { exitCode: 1, stdout: "" } : { exitCode: result.exitCode, stdout: result.stdout.toString() }
         }) })
       }
-      expect((await runWithHost(host, runRelease({ candidate, plan: fixture.plan, authorize: true }))).operations[0]?.status).toBe("Inconclusive")
+      expect((await runWithHost(host, runRelease({ plan: fixture.plan, authorize: true }))).operations[0]?.status).toBe("Inconclusive")
       expect(git(["--git-dir", remote, "rev-parse", ref])).toBe(desired)
       if (competitor) git(["-C", source, "push", "--quiet", remote, `${competing}:${ref}`])
-      const resumed = await runWithHost(host, runRelease({ candidate, plan: fixture.plan, authorize: true }))
+      const resumed = await runWithHost(host, runRelease({ plan: fixture.plan, authorize: true }))
       expect(resumed.operations[0]?.status).toBe(competitor ? "Inconclusive" : "Satisfied")
       expect(git(["--git-dir", remote, "rev-parse", ref])).toBe(competitor ? competing : desired)
       expect(commands).toHaveLength(2)

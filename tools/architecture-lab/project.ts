@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 import ts from "typescript";
+import { satisfies, valid, validRange } from "semver";
 import { readRecordText } from "./records.js";
 const root = resolve(import.meta.dir, "../..");
 const handoff = "docs/refactor/architecture-program/handoff";
@@ -26,6 +27,7 @@ type Module = {
 };
 type Provider = {
     id: string;
+    package: string;
     namespace: string;
     dependencies: Record<string, string>;
     files: {
@@ -36,7 +38,7 @@ type Provider = {
     }[];
 };
 type Design = {
-    selection: unknown;
+    selection: { machine: string; topology: string; marginalPolicy: unknown };
     recommendation: {
         topology: string;
     };
@@ -46,6 +48,7 @@ type Design = {
     providerPackagePrefix: string;
     engines: Record<string, string>;
     pins: Record<string, string>;
+    peerPolicy: Record<string, string>;
     effectPatch: {
         required: boolean;
         path: string;
@@ -126,7 +129,8 @@ const picks = (authority: string, names: string[], module: string, namespace?: s
 const named = (authority: string, namespace: string | null = null) => [...declarations.values()].filter((item) => item.authority === authority && item.namespace === namespace).map((item) => item.sourceName);
 const kernelOwners: Record<string, string[]> = {
     "kernel.Error": ["ReleaseError"],
-    "kernel.Provider": ["ProviderDefinition", "ProviderDescriptor", "NativeFailureBoundary", "ProviderContext", "Observation", "OperationEvidence", "PreparedRequest", "SendResult", "Transport"],
+    "kernel.Provider": ["PROVIDER_CONTRACT", "ProviderDefinition", "ProviderDescriptor", "NativeFailureBoundary", "ProviderContext", "Observation", "OperationEvidence", "PreparedRequest", "SendResult", "Transport"],
+    "kernel.Decision": ["CandidateRequest", "Next", "Machine", "MachineConstructor", "historyMachine", "sameProtectedRequest", "sameStrings"],
     "kernel.Plan": ["createOperation", "createPlan", "createPreparationScope", "loadPlan", "makeRequest"],
     "kernel.Journal": ["Snapshot", "AppendResult", "JournalStore", "Scope", "JournalContext"],
     "kernel.Host": ["Host", "HostShape"],
@@ -148,7 +152,7 @@ const surfaces: Surface[] = [
         ] },
     { id: "core.effect-build", entry: "kernel.EffectBuild", symbols: [...picks("adoption", ["adoptFile", "adoptTree"], "kernel.EffectBuild"), pick("codec", "restoreTree", "kernel.EffectBuild")] },
     { id: "core.apple", entry: "kernel.Apple", symbols: named("apple").map((name) => pick("apple", name, appleNative.includes(name) ? "kernel.AppleNative" : applePreparation.includes(name) ? "kernel.ApplePreparation" : "kernel.AppleModel")) },
-    { id: "core.http", entry: "kernel.Http", symbols: [...picks("provider", ["Headers", "HttpReadRequest", "HttpResponse", "HttpRead", "HttpProviderDefinition", "CredentialBinding", "CredentialHeaders", "OidcTokenRequest", "OidcTokenSource", "CredentialExchange", "TrustedPublisherHost"], "kernel.Http"), ...picks("host", ["CredentialRequest", "ResolveCredentials", "HttpTransportOptions"], "kernel.Http")] },
+    { id: "core.http", entry: "kernel.Http", symbols: [...picks("http", named("http"), "kernel.Http"), ...picks("provider", ["Headers", "HttpReadRequest", "HttpResponse", "HttpRead", "HttpProviderDefinition", "CredentialBinding", "CredentialHeaders", "OidcTokenRequest", "OidcTokenSource", "CredentialExchange", "TrustedPublisherHost"], "kernel.Http"), ...picks("host", ["CredentialRequest", "ResolveCredentials", "HttpTransportOptions"], "kernel.Http")] },
     { id: "core.git", entry: "kernel.Git", symbols: [...picks("provider", named("provider", "GitCatalog").filter((name) => name !== "nativeHost"), "kernel.GitCatalog", "GitCatalog"), ...kernel.filter((item) => ["GitCas", "GitReceipt", "GitExecution", "CoreGitOptions", "makeCoreGitTransport"].includes(item.name))] },
     { id: "core.node", entry: "host.Node", symbols: host },
     { id: "core.bun", entry: "host.Bun", symbols: [...host, pick("host", "openSqliteJournal", "host.Sqlite")] }
@@ -190,8 +194,10 @@ const physicalSurfaces: unknown[] = [];
 for (const alternative of design.alternatives) {
     const coreDirectory = alternative.coreDirectory;
     const corePath = (path: string) => coreDirectory === "." ? path : `${coreDirectory}/${path}`;
-    const providerPackage = (id: string) => alternative.id === "T1" ? "core" : alternative.id === "T2" ? "providers" : `provider.${id}`;
-    const providerDirectory = (id: string) => alternative.id === "T1" ? `src/providers/${id}` : alternative.id === "T2" ? `packages/providers/src/${id}` : `packages/${id}/src`;
+    const packageName = (id: string) => alternative.providerPackaging === "grouped-by-capability" ? design.providers.find((provider) => provider.id === id)!.package : id;
+    const grouped = (id: string) => design.providers.filter((provider) => packageName(provider.id) === packageName(id)).length > 1;
+    const providerPackage = (id: string) => alternative.id === "T1" ? "core" : alternative.id === "T2" ? "providers" : `provider.${packageName(id)}`;
+    const providerDirectory = (id: string) => alternative.id === "T1" ? `src/providers/${id}` : alternative.id === "T2" ? `packages/providers/src/${id}` : `packages/${packageName(id)}/src${grouped(id) ? `/${id}` : ""}`;
     const modules: Module[] = design.modules.map((module) => ({...module, path: module.owner === "core" ? corePath(module.path) : module.path}));
     for (const provider of design.providers) {
         const prefix = `provider.${provider.id}`;
@@ -222,7 +228,7 @@ for (const alternative of design.alternatives) {
         directory: string;
         manifest: Manifest;
     }>();
-    const coreManifest: Manifest = { ...commonManifest, name: design.rootPackage, bin: { "ts-release": "./dist/bin/ts-release.js" }, exports: {}, dependencies: { "effect-build": design.pins["effect-build"]! }, peerDependencies: { effect: design.pins.effect, "@effect/platform-node": design.pins["@effect/platform-node"], "@effect/platform-bun": design.pins["@effect/platform-bun"], "effect-build-apple": design.pins["effect-build-apple"] }, peerDependenciesMeta: { "@effect/platform-node": { optional: true }, "@effect/platform-bun": { optional: true }, "effect-build-apple": { optional: true } } };
+    const coreManifest: Manifest = { ...commonManifest, name: design.rootPackage, bin: { "ts-release": "./dist/bin/ts-release.js" }, exports: {}, dependencies: { "effect-build": design.pins["effect-build"]! }, peerDependencies: Object.fromEntries(["effect", "@effect/platform-node", "@effect/platform-bun", "effect-build-apple"].map((name) => [name, design.peerPolicy[name]])), peerDependenciesMeta: { "@effect/platform-node": { optional: true }, "@effect/platform-bun": { optional: true }, "effect-build-apple": { optional: true } } };
     manifests.set("core", { directory: coreDirectory, manifest: coreManifest });
     const workspaceManifest: Manifest = coreDirectory === "." ? coreManifest : {name: "@ts-release-private/workspace", version: design.version, private: true, type: "module", engines: design.engines, dependencies: {}};
     workspaceManifest.packageManager = `bun@${design.pins.bun}`;
@@ -235,7 +241,7 @@ for (const alternative of design.alternatives) {
     for (const provider of design.providers) {
         const owner = providerPackage(provider.id);
         if (!manifests.has(owner))
-            manifests.set(owner, { directory: alternative.id === "T2" ? "packages/providers" : `packages/${provider.id}`, manifest: { ...commonManifest, name: alternative.id === "T2" ? design.aggregatePackage : `${design.providerPackagePrefix}${provider.id}`, exports: {}, dependencies: { [design.rootPackage]: design.version }, peerDependencies: { effect: design.pins.effect } } });
+            manifests.set(owner, { directory: alternative.id === "T2" ? "packages/providers" : `packages/${packageName(provider.id)}`, manifest: { ...commonManifest, name: alternative.id === "T2" ? design.aggregatePackage : `${design.providerPackagePrefix}${packageName(provider.id)}`, exports: {}, dependencies: {}, peerDependencies: { [design.rootPackage]: design.peerPolicy.kernelPeerRange, effect: design.peerPolicy.effect } } });
         Object.assign(manifests.get(owner)!.manifest.dependencies, provider.dependencies);
     }
     const exportEntries = surfaces.map((surface) => {
@@ -244,10 +250,13 @@ for (const alternative of design.alternatives) {
         const pkg = manifests.get(entry.owner)!;
         assert(pkg, `No public owner ${entry.owner}`);
         const name = surface.id.replace(/^core\./, "");
-        const subpath = surface.id === "core.root" || surface.id.startsWith("provider.") && alternative.id === "T3" ? "." : `./${surface.id.startsWith("provider.") ? surface.id.slice(9) : name}`;
+        const providerId = surface.id.startsWith("provider.") ? surface.id.slice(9) : null;
+        const providerRoot = providerId !== null && alternative.providerPackaging !== "root" && alternative.providerPackaging !== "aggregate" && !grouped(providerId);
+        const subpath = surface.id === "core.root" || providerRoot ? "." : `./${providerId ?? name}`;
         const emitted = `./${relative(resolve(pkg.directory), resolve(entry.path)).replace(/^src\//, "dist/").replace(/\.ts$/, ".js")}`;
         const conditions = { types: emitted.replace(/\.js$/, ".d.ts"), import: emitted };
         assert(!subpath.includes("*") && !emitted.includes("internal/"), `Private export ${subpath}`);
+        assert(!(subpath in pkg.manifest.exports!), `Duplicate package export ${pkg.manifest.name}${subpath}`);
         pkg.manifest.exports![subpath] = conditions;
         assert(new Set(surface.symbols.map((symbol) => symbol.name)).size === surface.symbols.length, `Duplicate export in ${surface.id}`);
         for (const symbol of surface.symbols)
@@ -255,8 +264,25 @@ for (const alternative of design.alternatives) {
         return { id: surface.id, package: pkg.manifest.name, subpath, specifier: `${pkg.manifest.name}${subpath === "." ? "" : subpath.slice(1)}`, entryModule: entry.id, source: entry.path, conditions, runtimeNames: surface.symbols.filter((symbol) => declarations.get(symbol.declaration)!.spaces.includes("value")).map((symbol) => symbol.name).sort(), typeNames: surface.symbols.filter((symbol) => declarations.get(symbol.declaration)!.spaces.includes("type")).map((symbol) => symbol.name).sort() };
     });
     assert(manifests.size === alternative.publicPackageCount, `Wrong public count ${alternative.id}`);
+    for (const [owner, { manifest }] of manifests) {
+        const peers = manifest.peerDependencies as Record<string, string>;
+        for (const [name, range] of Object.entries(peers)) {
+            if (name !== "effect" && !name.startsWith("@effect/")) continue;
+            assert(valid(range) === null && validRange(range) !== null && satisfies(design.pins[name]!, range, { includePrerelease: true }), `Effect peer must be a compatible range: ${manifest.name} ${name} ${range}`);
+        }
+        if (owner !== "core") {
+            assert(!(design.rootPackage in manifest.dependencies), `Provider nests the kernel: ${manifest.name}`);
+            assert(peers[design.rootPackage] === design.peerPolicy.kernelPeerRange && valid(peers[design.rootPackage]) === null && satisfies(design.version, peers[design.rootPackage]!), `Invalid kernel peer: ${manifest.name}`);
+        }
+    }
+    if (alternative.providerPackaging === "grouped-by-capability") {
+        const catalog = manifests.get("provider.catalog")!.manifest;
+        assert(json(Object.keys(catalog.exports!).sort()) === json(["./homebrew", "./scoop"]), "Catalog must expose exactly Homebrew and Scoop subpaths");
+        assert(!("semver" in catalog.dependencies), "OpenAI-only semver leaked into catalog");
+        assert(manifests.get("provider.openai")!.manifest.dependencies.semver === design.pins.semver, "OpenAI must own its semver dependency");
+    }
     const packages = [...manifests].map(([id, item]) => ({ id, directory: item.directory, manifestPath: `${item.directory === "." ? "" : `${item.directory}/`}package.json`, manifest: item.manifest, manifestSha256: hash(json(item.manifest)), manifestLines: lines(json(item.manifest)) }));
-    const privateWorkspaces = [...(coreDirectory === "." ? [] : [{id: "workspace", directory: ".", manifestPath: "package.json", manifest: workspaceManifest, manifestSha256: hash(json(workspaceManifest)), manifestLines: lines(json(workspaceManifest))}]), ...["cli", "action", "self-release"].map((id) => {
+    const privateWorkspaces = [...(coreDirectory === "." ? [] : [{id: "workspace", directory: ".", manifestPath: "package.json", manifest: workspaceManifest, manifestSha256: hash(json(workspaceManifest)), manifestLines: lines(json(workspaceManifest))}]), ...(alternative.providerPackaging === "grouped-by-capability" ? ["action", "self-release"] : ["cli", "action", "self-release"]).map((id) => {
         const dependencies: Record<string, string> = { [design.rootPackage]: design.version, effect: design.pins.effect! };
         if (id !== "cli")
             dependencies["@effect/platform-node"] = design.pins["@effect/platform-node"]!;
@@ -269,6 +295,10 @@ for (const alternative of design.alternatives) {
         const manifest = { name: `@ts-release-private/${id}`, private: true, type: "module", version: design.version, engines: design.engines, dependencies };
         return { id, directory: `apps/${id}`, manifestPath: `apps/${id}/package.json`, manifest, manifestSha256: hash(json(manifest)), manifestLines: lines(json(manifest)), ...(id === "cli" ? { deliverySource: corePath("src/bin/ts-release.ts"), artifact: corePath("dist/bin/ts-release.js"), ownership: "Stages the core package's shared CLI; no second authored parser or loader." } : id === "action" ? { deliverySource: "apps/action/src/launcher.ts", artifact: "apps/action/dist/launcher.cjs", actionYamlPath: "apps/action/action.yml", actionYaml, actionYamlSha256: hash(actionYaml), actionYamlLines: lines(actionYaml) } : { application: "apps/self-release/src/application.ts" }) };
     })];
+    if (alternative.providerPackaging === "grouped-by-capability") {
+        const manifest = JSON.parse(await read("apps/ts-release-agents/package.json"));
+        privateWorkspaces.push({ id: "ts-release-agents", directory: "apps/ts-release-agents", manifestPath: "apps/ts-release-agents/package.json", manifest, manifestSha256: hash(json(manifest)), manifestLines: lines(json(manifest)) });
+    }
     const baseTsconfig = { compilerOptions: { target: "ES2022", lib: ["ES2022", "DOM", "DOM.Iterable", "ESNext.Disposable"], module: "NodeNext", moduleResolution: "NodeNext", strict: true, noUncheckedIndexedAccess: true, exactOptionalPropertyTypes: true, skipLibCheck: false, verbatimModuleSyntax: true, declaration: true, declarationMap: false, sourceMap: false, noEmit: true, types: ["bun-types"], paths: {} }, include: [coreDirectory === "." ? "src/**/*.ts" : "packages/**/*.ts", "apps/**/*.ts", "test/**/*.ts", "scripts/**/*.ts"], exclude: ["**/dist", "**/node_modules", ".repos", "tools", "docs"] };
     const configs = [{ path: "tsconfig.json", template: baseTsconfig }, ...packages.map((pkg) => ({ path: `${pkg.directory === "." ? "" : `${pkg.directory}/`}tsconfig.build.json`, template: { extends: pkg.directory === "." ? "./tsconfig.json" : "../../tsconfig.json", compilerOptions: { rootDir: "./src", outDir: "./dist", noEmit: false }, include: ["src/**/*.ts"], exclude: ["src/**/*.test.ts"] } })), { path: "apps/action/tsconfig.json", template: { extends: "../../tsconfig.json", include: ["src/**/*.ts"], exclude: ["dist"] } }, { path: "apps/self-release/tsconfig.build.json", template: { extends: "../../tsconfig.json", compilerOptions: { rootDir: "./src", outDir: "./dist", noEmit: false }, include: ["src/**/*.ts"], exclude: ["src/**/*.test.ts"] } }].map((config) => ({ ...config, sha256: hash(json(config.template)), lines: lines(json(config.template)) }));
     for (const config of configs)
@@ -290,14 +320,14 @@ for (const alternative of design.alternatives) {
         return module ? { id, owner: module.owner, path: module.path } : { id, external: external!.package, version: external!.version };
     });
     const importPolicy = { edgeMeaning: "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.", sourceEdgesSha256: hash(json(sourceEdges)), packageEdgesSha256: hash(json(packageEdges)), sourceEdges, packageEdges, externalImports: modules.flatMap((module) => (module.externalImports ?? []).map((specifier) => ({ from: module.id, specifier }))), universalDependency: { specifier: "effect", version: design.pins.effect, ownership: "Required peer available to every module; each implementation's exact import list is qualified after emission." }, dynamicApplications: modules.filter((module) => module.dynamicBoundary).map((module) => ({ from: module.id, rule: module.dynamicBoundary })) };
-    projection.push({ id: alternative.id, status: alternative.id === design.recommendation.topology ? "recommended-proposal-pending-selection" : "retained-alternative", publicPackageCount: packages.length, workspaceRoot: {manifestPath: "package.json", private: coreDirectory !== ".", coreDirectory, rationale: "T2/T3 give the already independent kernel its own package directory; this relocates paths and development metadata without changing public coordinates or semantic dependency mechanisms."}, packages, privateWorkspaces, configs, modules, graph: importPolicy, resolvedSuccessors, metadata: { publicPackageJsonLines: packages.reduce((sum, item) => sum + item.manifestLines, 0), privatePackageJsonLines: privateWorkspaces.reduce((sum, item) => sum + item.manifestLines, 0), actionYamlLines: lines(actionYaml), tsconfigJsonLines: configs.reduce((sum, item) => sum + item.lines, 0), futureScriptFiles: 3, futureScriptLines: null, authoredProductModuleFiles: modules.length, generatedRuntimePolicyFiles: 0, countBoundary: "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count." } });
+    projection.push({ id: alternative.id, status: alternative.id === design.selection.topology ? "selected-for-implementation" : "retained-alternative", publicPackageCount: packages.length, workspaceRoot: {manifestPath: "package.json", private: coreDirectory !== ".", coreDirectory, rationale: "T2/T3 give the already independent kernel its own package directory; this relocates paths and development metadata without changing public coordinates or semantic dependency mechanisms."}, packages, privateWorkspaces, configs, modules, graph: importPolicy, resolvedSuccessors, metadata: { publicPackageJsonLines: packages.reduce((sum, item) => sum + item.manifestLines, 0), privatePackageJsonLines: privateWorkspaces.reduce((sum, item) => sum + item.manifestLines, 0), actionYamlLines: lines(actionYaml), tsconfigJsonLines: configs.reduce((sum, item) => sum + item.lines, 0), futureScriptFiles: 3, futureScriptLines: null, authoredProductModuleFiles: modules.length, generatedRuntimePolicyFiles: 0, countBoundary: "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count." } });
     physicalSurfaces.push({ id: alternative.id, entries: exportEntries, exportsSha256: hash(json(exportEntries)) });
 }
 const used = new Set(surfaces.flatMap((surface) => surface.symbols.map((symbol) => symbol.declaration)));
 const publicSurface = { format: "proposed-public-surface/1", status: "declaration-projection-not-emitted-production-evidence", selection: design.selection, design: { path: designPath, sha256: hash(designText) }, authorityBindings, symbols: [...declarations.values()].filter((item) => used.has(item.id)), logicalSurfaces: surfaces, alternatives: physicalSurfaces, intentionallyPrivateAuthorityExports: [...declarations.values()].filter((item) => !used.has(item.id)).map((item) => ({ id: item.id, reason: item.id === "host:runAction" ? "Private Action adapter, apps/action/src/launcher.ts; only host loading primitives are public." : "Implementation detail, not included in the explicit proposed public API." })), aliasRules: { GitCatalog_nativeHost: "provider:GitCatalog.nativeHost -> makeGitCatalogHost only on core.node and core.bun", providerNamespaces: "The seven source namespaces are unwrapped into direct named package-root exports (or provider subpaths in T1/T2). Namespace wrappers are provenance only.", adoption: "OwnedFile/OwnedTree/OwnedArtifact/OwnedBundle become File/Tree/Artifact/Bundle on core.bundle." }, qualifications: "Declaration hashes bind exact source signatures and private schema bases through whole authority-file hashes. No generated declaration stand-in or unimplemented JavaScript is represented as a consumer-tested package." };
 const patchText = await read(design.effectPatch.path);
 const patchProofText = await read(design.effectPatch.proof);
-const layout = { format: "proposed-package-layout/1", status: "all-alternatives-projected-selection-pending", selection: design.selection, recommendation: design.recommendation, design: { path: designPath, sha256: hash(designText) }, migration: { path: migrationPath, sha256: hash(await read(migrationPath)), expandedSha256: hash(migrationText), successorCount: successorIds.size }, authorityBindings, publicSurfaceSha256: hash(json(publicSurface)), effectPatch: { required: design.effectPatch.required, donorPath: design.effectPatch.path, donorSha256: hash(patchText), proof: {path: design.effectPatch.proof, sha256: hash(patchProofText)}, rationale: design.effectPatch.scope }, alternatives: projection, delivery: { stage: "Plan 009", sourceCompilation: "TypeScript ESM plus declarations from these physical sources, with explicit exports. Bundle only CLI/Action delivery applications; do not ship handwritten shadow dist.", scriptsAndConfigTemplates: "Per-layout exact tsconfig templates are in alternatives[].configs; root manifest contains exact commands.", scriptContracts: [{ path: "scripts/build.ts", task: "Run TypeScript with each selected public package tsconfig.build.json in core-first package-DAG order, then compile apps/self-release. No source path aliases." }, { path: "scripts/check.ts", task: "Build first, run strict root noEmit check, then verify actual emitted exports/import/package graphs against the selected contract." }, { path: "scripts/build-delivery.ts", task: "Stage the core-owned CLI and bundle apps/action/src/launcher.ts as node24 CommonJS apps/action/dist/launcher.cjs; validate dynamic application loading in fresh installed consumers." }], scriptsAndConfigStatus: "Exact configuration templates and script paths/contracts are proposed. Script implementations remain wave work and have no invented line totals.", actionRuntime: "node24", cliRuntimeSelection: "One shared loader runs the fully provided application Effect inside Scope. Application authors select/provide their host layers; CLI does not automatically import platform facades.", generatedRuntimePolicyFiles: 0 }, measuredEvidence: { path: "tools/architecture-lab/topology/results.json", relation: "Smaller identical real machine/provider/host fixture across T1/T2/T3. Its measured installed/runtime/declaration graphs are not the proposed full production graph or its added semver/sigstore/effect-build dependencies." }, invariants: design.invariants, qualification: design.qualification };
+const layout = { format: "proposed-package-layout/1", status: "selected-layout-with-retained-alternatives", selection: design.selection, recommendation: design.recommendation, design: { path: designPath, sha256: hash(designText) }, migration: { path: migrationPath, sha256: hash(await read(migrationPath)), expandedSha256: hash(migrationText), successorCount: successorIds.size }, authorityBindings, publicSurfaceSha256: hash(json(publicSurface)), effectPatch: { required: design.effectPatch.required, donorPath: design.effectPatch.path, donorSha256: hash(patchText), proof: {path: design.effectPatch.proof, sha256: hash(patchProofText)}, rationale: design.effectPatch.scope }, alternatives: projection, delivery: { stage: "Plan 009", sourceCompilation: "TypeScript ESM plus declarations from these physical sources, with explicit exports. Bundle only CLI/Action delivery applications; do not ship handwritten shadow dist.", scriptsAndConfigTemplates: "Per-layout exact tsconfig templates are in alternatives[].configs; root manifest contains exact commands.", scriptContracts: [{ path: "scripts/build.ts", task: "Run TypeScript with each selected public package tsconfig.build.json in core-first package-DAG order, then compile apps/self-release. No source path aliases." }, { path: "scripts/check.ts", task: "Build first, run strict root noEmit check, then verify actual emitted exports/import/package graphs against the selected contract." }, { path: "scripts/build-delivery.ts", task: "Stage the core-owned CLI and bundle apps/action/src/launcher.ts as node24 CommonJS apps/action/dist/launcher.cjs; validate dynamic application loading in fresh installed consumers." }], scriptsAndConfigStatus: "Exact configuration templates and script paths/contracts are proposed. Script implementations remain wave work and have no invented line totals.", actionRuntime: "node24", cliRuntimeSelection: "One shared loader runs the fully provided application Effect inside Scope. Application authors select/provide their host layers; CLI does not automatically import platform facades.", generatedRuntimePolicyFiles: 0 }, measuredEvidence: { path: "tools/architecture-lab/topology/results.json", relation: "Smaller identical real machine/provider/host fixture across T1/T2/T3. Its measured installed/runtime/declaration graphs are not the proposed full production graph or its added semver/sigstore/effect-build dependencies." }, invariants: design.invariants, qualification: design.qualification };
 for (const [file, value] of [["layout.json", layout], ["public-surface.json", publicSurface]] as const) {
     const path = `${handoff}/${file}`;
     if (process.argv.includes("--write"))

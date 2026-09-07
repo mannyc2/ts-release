@@ -4,7 +4,7 @@ import { appendFileSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { GitCas, GitReceipt, LabError, canonical, makeRequest, type CoreGitOptions, type ProviderDefinition } from "../src/index.js"
+import { GitCas, GitReceipt, LabError, canonical, makeRequest, type CoreGitOptions, type ProviderDefinition, PROVIDER_CONTRACT } from "../src/index.js"
 
 export const digest = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex")
 export const nativeOid = (type: string, bytes: Uint8Array) => createHash("sha1").update(`${type} ${bytes.length}\0`).update(bytes).digest("hex")
@@ -19,7 +19,7 @@ export class CatalogIntent extends Schema.Class<CatalogIntent>("CatalogIntent")(
 }) {}
 export const decodeIntent = Schema.decodeUnknownSync(CatalogIntent, { onExcessProperty: "error" })
 export const catalog: ProviderDefinition = {
-  definitionId: "fixture.git-catalog", intentVersion: "1", intentCodec: CatalogIntent,
+  contract: PROVIDER_CONTRACT, definitionId: "fixture.git-catalog", intentVersion: "1", intentCodec: CatalogIntent,
   receiptVersion: "git-push/1", receiptCodec: GitReceipt, classifyReceipt: () => "Satisfied",
   receiptCorresponds: (operation, request, native) => {
     const intent = decodeIntent(operation.intent), receipt = native as GitReceipt

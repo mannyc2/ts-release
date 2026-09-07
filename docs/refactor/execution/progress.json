@@ -1,0 +1,17 @@
+{
+  "format": "ts-release/refactor-progress/1",
+  "goal": "active",
+  "completedWave": "P0",
+  "prerequisites": {
+    "P0": "seven-package projection implemented; beta.107 exact type repair passes actual producer fixture and independent review; real packed production graph follows in waves",
+    "P1": "fresh original-slice/helper proof:60packed,27extensions,TS37/37/37; archive retained",
+    "P2": "entrypoints and final direct verification pass;69open closure red",
+    "P3": "168tests/993assertions; independent prerequisite review passed; fresh Apple/source/declaration receipts"
+  },
+  "productionWaves": "W01\u2013W10 not started",
+  "acceptance": "Plans 009/010 not started; 69 outcomes remain open",
+  "publication": "No release published; 0.4.0 absent in fresh registry history",
+  "nextAction": "Commit prerequisite checkpoint; W01 production kernel, aligned beta.107, packed declaration repair reachability and local native/restart gates",
+  "updatedAt": "2026-09-07",
+  "goalTool": "active"
+}

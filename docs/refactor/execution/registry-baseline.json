@@ -1,0 +1,66 @@
+{
+  "observedAt": "2026-09-06T20:53:57.354Z",
+  "rows": [
+    {
+      "name": "@mannyc1/ts-release",
+      "status": 200,
+      "tags": {
+        "latest": "0.3.0"
+      },
+      "versions": [
+        "0.0.0",
+        "0.0.1",
+        "0.0.2",
+        "0.0.3",
+        "0.0.5",
+        "0.0.6",
+        "0.0.7",
+        "0.2.2",
+        "0.3.0"
+      ],
+      "latest": {
+        "integrity": "sha512-FkDTQb/J4e5TVPDk/4Z1zNNzkGh5WYVvzUs/jjrplnC+V1UFG3CEJBSvGdyoYgGiKyoK5GwkofB5nmHEw33Ekg==",
+        "shasum": "a0ce896ee584f55fe36c6311e703c95112fe4a09",
+        "tarball": "https://registry.npmjs.org/@mannyc1/ts-release/-/ts-release-0.3.0.tgz",
+        "fileCount": 522,
+        "unpackedSize": 4292556,
+        "attestations": {
+          "url": "https://registry.npmjs.org/-/npm/v1/attestations/@mannyc1%2fts-release@0.3.0",
+          "provenance": {
+            "predicateType": "https://slsa.dev/provenance/v1"
+          }
+        },
+        "signatures": [
+          {
+            "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+            "sig": "MEQCIG4qaFK01pvQcHa/TwqXmW+zchzuSc65pHBqdXkCQGUWAiBvt8BbhCQw3F7F3fIOh5FNqTj8KO/0dx9+61vL2RMRzA=="
+          }
+        ]
+      }
+    },
+    {
+      "name": "@mannyc1/ts-release-npm",
+      "status": 404
+    },
+    {
+      "name": "@mannyc1/ts-release-pypi",
+      "status": 404
+    },
+    {
+      "name": "@mannyc1/ts-release-github",
+      "status": 404
+    },
+    {
+      "name": "@mannyc1/ts-release-catalog",
+      "status": 404
+    },
+    {
+      "name": "@mannyc1/ts-release-openai",
+      "status": 404
+    },
+    {
+      "name": "@mannyc1/ts-release-mcp",
+      "status": 404
+    }
+  ]
+}

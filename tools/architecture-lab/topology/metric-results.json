@@ -1,14 +1,14 @@
 {
   "format": "packed-extension-metrics/1",
-  "work": "/tmp/ts-release-topology-metrics-eeinli",
+  "work": "/tmp/ts-release-topology-metrics-1cBmgR",
   "method": "Actual git diff --no-index --numstat --no-renames --diff-algorithm=myers --no-ext-diff --no-textconv. Physical TypeScript source, generated package/export metadata, compiler configuration and emitted JS/declarations are separate lanes. Both source-only and conservative source-plus-package-metadata additions are reported. This supplements, and does not impersonate, the frozen candidate-manifest receipt protocol.",
-  "sourceSha256": "c653f05d28e8e968b79cdd09f6ec79d36f60163b32995303ab61a2de0474244b",
+  "sourceSha256": "fbba7ed792cf5540a51dc9e4da20f18b6c9ebca3de9838e13df3ab4b88a0f3d2",
   "evidenceArtifact": {
     "file": "metric-results.json.gz",
-    "sha256": "4892ef57772a3f427dc05ed3f78e8bbcaaf128ad48094c63da92ce167d1ce8c0",
-    "expandedSha256": "2304071b3a9f9ab3557a9346632a8cade963a72c1a452362f3b1afe25b587c67",
-    "expandedBytes": 210381,
-    "compressedBytes": 38007,
+    "sha256": "7051cede12f019bca84fc761742f819a84322b3fbf3a2f22756bbb3c22a48f15",
+    "expandedSha256": "a1869b52e0600c92400d125c207d906dd1ec62daf451a8c2fb667c1633c8eb18",
+    "expandedBytes": 206755,
+    "compressedBytes": 37300,
     "encoding": "gzip+json-with-content-addressed-sharing"
   },
   "probes": [
@@ -37,44 +37,37 @@
       "layout": "T1",
       "id": "P02",
       "source": {
-        "added": 46,
+        "added": 32,
         "removed": 0,
-        "files": 2
+        "files": 1
       },
       "packageMetadata": {
         "added": 19,
         "removed": 0,
         "files": 1
       },
-      "conservativeProductAdditions": 65,
+      "conservativeProductAdditions": 51,
       "conservativeProductDeletions": 0,
       "printerDiagnostic": {
         "changed": [
           {
             "path": "external.ts",
-            "added": 32,
+            "added": 31,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 32
-          },
-          {
-            "path": "http-evidence.ts",
-            "added": 13,
-            "removed": 0,
-            "beforeLines": 0,
-            "afterLines": 13
+            "afterLines": 31
           }
         ],
-        "added": 45,
+        "added": 31,
         "removed": 0
       },
-      "patchSha256": "fcfcffdebafa50a32c88ab719c3e2719cbb82535b8bd51b6506cb05c48357aae"
+      "patchSha256": "a9613826c2ddfd421f7f08d6ad32162c6f360294e9583ab182b9e8074b475e63"
     },
     {
       "layout": "T1",
       "id": "P03",
       "source": {
-        "added": 38,
+        "added": 37,
         "removed": 0,
         "files": 1
       },
@@ -83,28 +76,28 @@
         "removed": 0,
         "files": 1
       },
-      "conservativeProductAdditions": 42,
+      "conservativeProductAdditions": 41,
       "conservativeProductDeletions": 0,
       "printerDiagnostic": {
         "changed": [
           {
             "path": "providers/catalog.ts",
-            "added": 42,
+            "added": 41,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 42
+            "afterLines": 41
           }
         ],
-        "added": 42,
+        "added": 41,
         "removed": 0
       },
-      "patchSha256": "00eb3cc9867e101033598b730195fbdd5c2a89c85018098aa7557c341e64a41d"
+      "patchSha256": "ad5a6643bb4cc375b8adc29fc6647cc51a8a8738928905e193badbda09bbdd57"
     },
     {
       "layout": "T1",
       "id": "P05",
       "source": {
-        "added": 43,
+        "added": 42,
         "removed": 0,
         "files": 2
       },
@@ -113,7 +106,7 @@
         "removed": 0,
         "files": 0
       },
-      "conservativeProductAdditions": 43,
+      "conservativeProductAdditions": 42,
       "conservativeProductDeletions": 0,
       "printerDiagnostic": {
         "changed": [
@@ -121,21 +114,21 @@
             "path": "providers/npm.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 96,
-            "afterLines": 97
+            "beforeLines": 95,
+            "afterLines": 96
           },
           {
             "path": "providers/npm-tag.ts",
-            "added": 44,
+            "added": 43,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 44
+            "afterLines": 43
           }
         ],
-        "added": 45,
+        "added": 44,
         "removed": 0
       },
-      "patchSha256": "de91b1b9aa479c7f6b25f50d734f1b3c7dc1e4ed231ffea209c99fdcdbd69623"
+      "patchSha256": "06799697d3aa8687bd2ae09b23b985d5bda6a8284464a12cac21d2c21b1efa16"
     },
     {
       "layout": "T1",
@@ -283,8 +276,8 @@
             "path": "kernel/index.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 6,
-            "afterLines": 7
+            "beforeLines": 7,
+            "afterLines": 8
           },
           {
             "path": "kernel/m1-history.ts",
@@ -318,7 +311,7 @@
         "added": 49,
         "removed": 7
       },
-      "patchSha256": "e30ebb14c3f694888f5974b864c480af414c12e9dea5d3c6f15eb85cc4e608af"
+      "patchSha256": "ce2abf2cad8fd6669769a21a7e6f38488b173a20605a7fe1827de4304563cf34"
     },
     {
       "layout": "T1",
@@ -341,8 +334,8 @@
             "path": "kernel/index.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 6,
-            "afterLines": 7
+            "beforeLines": 7,
+            "afterLines": 8
           },
           {
             "path": "kernel/serialize-plan.ts",
@@ -355,7 +348,7 @@
         "added": 6,
         "removed": 0
       },
-      "patchSha256": "373cc946034467e772959af0b7f2d80ea3e7a8b08466ac7a9af14c4f7fa12a96"
+      "patchSha256": "8e68da779586cfd2519234c1e6c752c51aad54122dc463793fb6b9e73a773b89"
     },
     {
       "layout": "T2",
@@ -382,44 +375,37 @@
       "layout": "T2",
       "id": "P02",
       "source": {
-        "added": 46,
+        "added": 32,
         "removed": 0,
-        "files": 2
+        "files": 1
       },
       "packageMetadata": {
         "added": 19,
         "removed": 0,
         "files": 1
       },
-      "conservativeProductAdditions": 65,
+      "conservativeProductAdditions": 51,
       "conservativeProductDeletions": 0,
       "printerDiagnostic": {
         "changed": [
           {
             "path": "external.ts",
-            "added": 32,
+            "added": 31,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 32
-          },
-          {
-            "path": "http-evidence.ts",
-            "added": 13,
-            "removed": 0,
-            "beforeLines": 0,
-            "afterLines": 13
+            "afterLines": 31
           }
         ],
-        "added": 45,
+        "added": 31,
         "removed": 0
       },
-      "patchSha256": "108c2b6d67e61c1afefb712f35c1ecbccf5c226f973aa75e41b45682c1ba303b"
+      "patchSha256": "1e7529c4cb2397fe4bf7098bf0b3b321b0f592d8c18a8d6c6a048f9fc319dda3"
     },
     {
       "layout": "T2",
       "id": "P03",
       "source": {
-        "added": 38,
+        "added": 37,
         "removed": 0,
         "files": 1
       },
@@ -428,28 +414,28 @@
         "removed": 0,
         "files": 1
       },
-      "conservativeProductAdditions": 42,
+      "conservativeProductAdditions": 41,
       "conservativeProductDeletions": 0,
       "printerDiagnostic": {
         "changed": [
           {
             "path": "catalog.ts",
-            "added": 42,
+            "added": 41,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 42
+            "afterLines": 41
           }
         ],
-        "added": 42,
+        "added": 41,
         "removed": 0
       },
-      "patchSha256": "3fa3dc180aef9c87e3bcd6c522f94c7e709b6c1a06bccf9937b89c1e6bc979f2"
+      "patchSha256": "da0208a446f24a5734478783458cb9d1db5a5e16fc0d7da6b42f6fc1f30587bd"
     },
     {
       "layout": "T2",
       "id": "P05",
       "source": {
-        "added": 43,
+        "added": 42,
         "removed": 0,
         "files": 2
       },
@@ -458,7 +444,7 @@
         "removed": 0,
         "files": 0
       },
-      "conservativeProductAdditions": 43,
+      "conservativeProductAdditions": 42,
       "conservativeProductDeletions": 0,
       "printerDiagnostic": {
         "changed": [
@@ -466,21 +452,21 @@
             "path": "npm.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 96,
-            "afterLines": 97
+            "beforeLines": 95,
+            "afterLines": 96
           },
           {
             "path": "npm-tag.ts",
-            "added": 44,
+            "added": 43,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 44
+            "afterLines": 43
           }
         ],
-        "added": 45,
+        "added": 44,
         "removed": 0
       },
-      "patchSha256": "201f945153152ddd3f0ab7bbc3508e6b31c6e08921e80c4b5da9d638369ee84e"
+      "patchSha256": "eba22e72031a014142df650419c3b7d7a055bcbfeedb2c71db73e6705526899e"
     },
     {
       "layout": "T2",
@@ -628,8 +614,8 @@
             "path": "index.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 6,
-            "afterLines": 7
+            "beforeLines": 7,
+            "afterLines": 8
           },
           {
             "path": "m1-history.ts",
@@ -663,7 +649,7 @@
         "added": 49,
         "removed": 7
       },
-      "patchSha256": "e7ba9db4a5e4e38e615af326c5ccf70f06e6694b3b0dd4e8be1481724ff4cc28"
+      "patchSha256": "792e3349bc6c1a6758711a75a29d19e51582929cadde6c3edd4460cfcb4be01b"
     },
     {
       "layout": "T2",
@@ -686,8 +672,8 @@
             "path": "index.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 6,
-            "afterLines": 7
+            "beforeLines": 7,
+            "afterLines": 8
           },
           {
             "path": "serialize-plan.ts",
@@ -700,7 +686,7 @@
         "added": 6,
         "removed": 0
       },
-      "patchSha256": "ca52e095c7b16e1f4d2ad7688d926ef06f8c2438c738d93bd967b70953c40269"
+      "patchSha256": "b96aa97d3ac6c9dc2b344fae369fdc10b8531fb78f72bdc47482763b325e2f4a"
     },
     {
       "layout": "T3",
@@ -727,81 +713,67 @@
       "layout": "T3",
       "id": "P02",
       "source": {
-        "added": 46,
+        "added": 32,
         "removed": 0,
-        "files": 2
+        "files": 1
       },
       "packageMetadata": {
         "added": 19,
         "removed": 0,
         "files": 1
       },
-      "conservativeProductAdditions": 65,
+      "conservativeProductAdditions": 51,
       "conservativeProductDeletions": 0,
       "printerDiagnostic": {
         "changed": [
           {
             "path": "external.ts",
-            "added": 32,
+            "added": 31,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 32
-          },
-          {
-            "path": "http-evidence.ts",
-            "added": 13,
-            "removed": 0,
-            "beforeLines": 0,
-            "afterLines": 13
+            "afterLines": 31
           }
         ],
-        "added": 45,
+        "added": 31,
         "removed": 0
       },
-      "patchSha256": "108c2b6d67e61c1afefb712f35c1ecbccf5c226f973aa75e41b45682c1ba303b"
+      "patchSha256": "1e7529c4cb2397fe4bf7098bf0b3b321b0f592d8c18a8d6c6a048f9fc319dda3"
     },
     {
       "layout": "T3",
       "id": "P03",
       "source": {
-        "added": 51,
+        "added": 37,
         "removed": 0,
-        "files": 2
+        "files": 1
       },
       "packageMetadata": {
         "added": 19,
         "removed": 0,
         "files": 1
       },
-      "conservativeProductAdditions": 70,
+      "conservativeProductAdditions": 56,
       "conservativeProductDeletions": 0,
       "printerDiagnostic": {
         "changed": [
           {
             "path": "index.ts",
-            "added": 42,
+            "added": 41,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 42
-          },
-          {
-            "path": "http-evidence.ts",
-            "added": 13,
-            "removed": 0,
-            "beforeLines": 0,
-            "afterLines": 13
+            "afterLines": 41
           }
         ],
-        "added": 55,
+        "added": 41,
         "removed": 0
       },
-      "patchSha256": "60171e7aa494bef7202ff06bda6e0e983869c95fcfd0ef876b90877a0d2f26fa"
+      "patchSha256": "0d64309d597298c2ac0940801d26974a286c0b23b794c5921f339079876d40b5"
     },
     {
       "layout": "T3",
       "id": "P05",
       "source": {
-        "added": 43,
+        "added": 42,
         "removed": 0,
         "files": 2
       },
@@ -810,7 +782,7 @@
         "removed": 0,
         "files": 0
       },
-      "conservativeProductAdditions": 43,
+      "conservativeProductAdditions": 42,
       "conservativeProductDeletions": 0,
       "printerDiagnostic": {
         "changed": [
@@ -818,21 +790,21 @@
             "path": "index.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 96,
-            "afterLines": 97
+            "beforeLines": 95,
+            "afterLines": 96
           },
           {
             "path": "npm-tag.ts",
-            "added": 44,
+            "added": 43,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 44
+            "afterLines": 43
           }
         ],
-        "added": 45,
+        "added": 44,
         "removed": 0
       },
-      "patchSha256": "e5701d418ae5af949507aa24d1e469ea34675a1916d2e3a0c9b9e159e86ada35"
+      "patchSha256": "9857fef08a1cfc650e27697de641b1e05f38a4365af24d81721b393441e022b7"
     },
     {
       "layout": "T3",
@@ -980,8 +952,8 @@
             "path": "index.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 6,
-            "afterLines": 7
+            "beforeLines": 7,
+            "afterLines": 8
           },
           {
             "path": "m1-history.ts",
@@ -1015,7 +987,7 @@
         "added": 49,
         "removed": 7
       },
-      "patchSha256": "e7ba9db4a5e4e38e615af326c5ccf70f06e6694b3b0dd4e8be1481724ff4cc28"
+      "patchSha256": "792e3349bc6c1a6758711a75a29d19e51582929cadde6c3edd4460cfcb4be01b"
     },
     {
       "layout": "T3",
@@ -1038,8 +1010,8 @@
             "path": "index.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 6,
-            "afterLines": 7
+            "beforeLines": 7,
+            "afterLines": 8
           },
           {
             "path": "serialize-plan.ts",
@@ -1052,33 +1024,33 @@
         "added": 6,
         "removed": 0
       },
-      "patchSha256": "ca52e095c7b16e1f4d2ad7688d926ef06f8c2438c738d93bd967b70953c40269"
+      "patchSha256": "b96aa97d3ac6c9dc2b344fae369fdc10b8531fb78f72bdc47482763b325e2f4a"
     }
   ],
   "quantiles": [
     {
       "layout": "T1",
       "sourceAdditions": {
-        "total": 306,
-        "median": 40,
+        "total": 290,
+        "median": 37,
         "p90": 73,
         "maximum": 73
       },
       "sourceChurn": {
-        "total": 317,
-        "median": 40,
+        "total": 301,
+        "median": 37,
         "p90": 73,
         "maximum": 73
       },
       "sourcePlusPackageMetadata": {
-        "total": 337,
-        "median": 43,
+        "total": 321,
+        "median": 42,
         "p90": 77,
         "maximum": 77
       },
       "printerAdditions": {
-        "total": 323,
-        "median": 42,
+        "total": 307,
+        "median": 39,
         "p90": 82,
         "maximum": 82
       },
@@ -1087,26 +1059,26 @@
     {
       "layout": "T2",
       "sourceAdditions": {
-        "total": 306,
-        "median": 40,
+        "total": 290,
+        "median": 37,
         "p90": 73,
         "maximum": 73
       },
       "sourceChurn": {
-        "total": 317,
-        "median": 40,
+        "total": 301,
+        "median": 37,
         "p90": 73,
         "maximum": 73
       },
       "sourcePlusPackageMetadata": {
-        "total": 337,
-        "median": 43,
+        "total": 321,
+        "median": 42,
         "p90": 77,
         "maximum": 77
       },
       "printerAdditions": {
-        "total": 323,
-        "median": 42,
+        "total": 307,
+        "median": 39,
         "p90": 82,
         "maximum": 82
       },
@@ -1115,26 +1087,26 @@
     {
       "layout": "T3",
       "sourceAdditions": {
-        "total": 319,
-        "median": 43,
+        "total": 290,
+        "median": 37,
         "p90": 73,
         "maximum": 73
       },
       "sourceChurn": {
-        "total": 330,
-        "median": 43,
+        "total": 301,
+        "median": 37,
         "p90": 73,
         "maximum": 73
       },
       "sourcePlusPackageMetadata": {
-        "total": 365,
+        "total": 336,
         "median": 44,
         "p90": 77,
         "maximum": 77
       },
       "printerAdditions": {
-        "total": 336,
-        "median": 45,
+        "total": 307,
+        "median": 39,
         "p90": 82,
         "maximum": 82
       },

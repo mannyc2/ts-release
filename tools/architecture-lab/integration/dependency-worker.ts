@@ -3,11 +3,11 @@ import { randomUUID } from "node:crypto"
 import { Effect, Layer, Schema } from "effect"
 import {
   Host, LabError, NoReplay, Plan, createOperation, createPlan, makeRequest, runRelease,
-  type Candidate, type ProviderDefinition, type Transport
-} from "../machine/src/index.js"
+  type ProviderDefinition, type Transport, PROVIDER_CONTRACT } from "../machine/src/index.js"
+import { evaluators, type EvaluatorName } from "../machine/test/fixtures.js"
 import { SqliteJournal } from "../storage/sqlite.js"
 
-const [endpoint, directory, candidate, stage] = process.argv.slice(2) as [string, string, Candidate, string]
+const [endpoint, directory, candidate, stage] = process.argv.slice(2) as [string, string, EvaluatorName, string]
 const run = Effect.runPromise
 const nativeReceipt = Schema.Struct({ status: Schema.Number, endpoint: Schema.String,
   requestDigest: Schema.String, id: Schema.Number, tag: Schema.String, name: Schema.optionalKey(Schema.String) })
@@ -25,12 +25,12 @@ const make = (path: string, body: unknown) => makeRequest({
   scope: "research-release", replay: new NoReplay({}), body: new TextEncoder().encode(JSON.stringify(body))
 })
 const create: ProviderDefinition = {
-  ...common, definitionId: "research.create-release",
+  ...common, contract: PROVIDER_CONTRACT, definitionId: "research.create-release",
   intentCodec: Schema.Struct({ tag: Schema.String }),
   prepare: operation => make("/releases", operation.intent)
 }
 const upload: ProviderDefinition = {
-  ...common, definitionId: "research.upload-asset",
+  ...common, contract: PROVIDER_CONTRACT, definitionId: "research.upload-asset",
   intentCodec: Schema.Struct({ parent: Schema.String, name: Schema.String }),
   prepare: Effect.fn("research.bindNativeReleaseId")(function*(operation, context) {
     const intent = operation.intent as { parent: string; name: string }
@@ -68,9 +68,9 @@ const plan = stage === "create" ? await run(Effect.gen(function*() {
 if (stage === "create") await writeFile(path, JSON.stringify(Schema.encodeSync(Plan)(plan)))
 const store = new SqliteJournal(`${directory}/journal.sqlite`)
 try {
-  const result = await run(runRelease({ candidate, plan, authorize: true, observe: false,
+  const result = await run(runRelease({ plan, authorize: true, observe: false,
     maxDispatches: stage === "create" ? 1 : 2 }).pipe(Effect.provide(Layer.succeed(Host, {
-      store, transport, providers: [create, upload], now: Date.now, uniqueId: randomUUID
+      store, transport, providers: [create, upload], now: Date.now, uniqueId: randomUUID, machine: evaluators[candidate]
     }))))
   console.log(JSON.stringify(result))
 } finally { store.close() }

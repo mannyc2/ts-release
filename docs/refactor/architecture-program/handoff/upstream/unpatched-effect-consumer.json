@@ -1,8 +1,8 @@
 {
   "format": "unpatched-effect-consumer/1",
-  "verifiedAt": "2026-09-05T23:03:40.740Z",
-  "directory": "/tmp/ts-release-unpatched-effect-48nRHT",
-  "consumer": "/tmp/ts-release-unpatched-effect-48nRHT/consumer",
+  "verifiedAt": "2026-09-06T21:05:02.619Z",
+  "directory": "/tmp/ts-release-unpatched-effect-5g12oc",
+  "consumer": "/tmp/ts-release-unpatched-effect-5g12oc/consumer",
   "command": "bun tools/architecture-lab/machine/unpatched-effect.mjs --execute",
   "officialEffect": {
     "version": "4.0.0-rc.108",
@@ -161,32 +161,36 @@
   ],
   "sources": [
     {
-      "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
-      "sha256": "9037335c5975787fba2a9452c7ca85a62122caf61905cabd72fafdde2e8d175c"
+      "path": "docs/refactor/architecture-program/handoff/apple-api.typecheck.ts",
+      "sha256": "c3a996365ebfd5888955356a8fee96bcf962c311f8378b716719350917634a8e"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/apple-api.d.ts",
       "sha256": "d8b9ca49d503b3eb9c4f4bd112e986f50e082d43e2ae81a19d028fb86b5f1d44"
     },
     {
-      "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
-      "sha256": "0179c44f1f2e2bd8102f2b4cdcbf5788a5b3aebc4e0367e002e228bdc75452b3"
-    },
-    {
-      "path": "docs/refactor/architecture-program/handoff/apple-api.typecheck.ts",
-      "sha256": "c3a996365ebfd5888955356a8fee96bcf962c311f8378b716719350917634a8e"
-    },
-    {
       "path": "docs/refactor/architecture-program/handoff/checksum-api.d.ts",
       "sha256": "d16afc414edbb1192d7a1b8aaa8b92e4c0666c7f46ca80e33e85e167ce482254"
     },
     {
-      "path": "docs/refactor/architecture-program/handoff/kernel-api.d.ts",
-      "sha256": "a9f9242cb93b3114b9a103bf7d98c461e2c57506930c8a2c504abf8e0c9ebe8a"
+      "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
+      "sha256": "0179c44f1f2e2bd8102f2b4cdcbf5788a5b3aebc4e0367e002e228bdc75452b3"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/provider-api.typecheck.ts",
       "sha256": "e219e69f87307b7768d895518a842820251ddb7e145492a10f5d4988bec09166"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
+      "sha256": "9037335c5975787fba2a9452c7ca85a62122caf61905cabd72fafdde2e8d175c"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/kernel-api.d.ts",
+      "sha256": "b3fe44cce205ce93567279da4a2b490b9c66597013d5b0112815393a1f3eddfc"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/http-api.d.ts",
+      "sha256": "fa50a9a495f28fefa21946669aa92828119e5959823b1b237347d2a2a6af8a4d"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/bundle-codec.d.ts",
@@ -194,15 +198,15 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/apple-preparation.d.ts",
-      "sha256": "505cd760b6ef9b448112237800a905a4b2276f3fb518ed00c83d570dbed223c0"
-    },
-    {
-      "path": "docs/refactor/architecture-program/handoff/adoption-api/content-owner.d.ts",
-      "sha256": "eec70853dd6bb8f1d7ce891fde1e2c34064d9d420273ac90f6930d23c6d71280"
+      "sha256": "368d15aed6c3bebfdc57ca8fab88687831bb640fa10bddf6f67151e0338c09bd"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/adoption.d.ts",
       "sha256": "a4e44b378a64db213d2ce7a8af59ce7012a14550e00aa1c7b1c7087cba7d1ab8"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/adoption-api/content-owner.d.ts",
+      "sha256": "eec70853dd6bb8f1d7ce891fde1e2c34064d9d420273ac90f6930d23c6d71280"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/public-api.d.ts",
@@ -251,7 +255,7 @@
     "exitCode": 2,
     "expectedCode": "TS2339",
     "missingSymbol": "getParamMetadata",
-    "diagnostic": "node_modules/effect/dist/unstable/cli/internal/command.d.ts(66,122): error TS2339: Property 'getParamMetadata' does not exist on type 'typeof import(\"/tmp/ts-release-unpatched-effect-48nRHT/consumer/node_modules/effect/dist/unstable/cli/Param\", { with: { \"resolution-mode\": \"import\" } })'.\nprivate-param.ts(2,12): error TS2339: Property 'getParamMetadata' does not exist on type 'typeof import(\"/tmp/ts-release-unpatched-effect-48nRHT/consumer/node_modules/effect/dist/unstable/cli/Param\", { with: { \"resolution-mode\": \"import\" } })'.\n"
+    "diagnostic": "node_modules/effect/dist/unstable/cli/internal/command.d.ts(66,122): error TS2339: Property 'getParamMetadata' does not exist on type 'typeof import(\"/tmp/ts-release-unpatched-effect-5g12oc/consumer/node_modules/effect/dist/unstable/cli/Param\", { with: { \"resolution-mode\": \"import\" } })'.\nprivate-param.ts(2,12): error TS2339: Property 'getParamMetadata' does not exist on type 'typeof import(\"/tmp/ts-release-unpatched-effect-5g12oc/consumer/node_modules/effect/dist/unstable/cli/Param\", { with: { \"resolution-mode\": \"import\" } })'.\n"
   },
   "bunAdoption": {
     "schema": "adoption-experiment/1",

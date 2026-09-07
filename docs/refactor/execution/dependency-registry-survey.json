@@ -1,0 +1,437 @@
+{
+  "observedAt": "2026-09-07T01:15:02.550345+00:00",
+  "packages": [
+    {
+      "name": "effect-build",
+      "tags": {
+        "latest": "0.6.3"
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "peers": {
+            "effect": "4.0.0-beta.107"
+          },
+          "dependencies": {},
+          "time": "2026-08-12T11:04:07.841Z"
+        },
+        {
+          "version": "0.2.0",
+          "peers": {
+            "effect": "4.0.0-beta.107"
+          },
+          "dependencies": {},
+          "time": "2026-08-12T17:29:48.327Z"
+        },
+        {
+          "version": "0.3.0",
+          "peers": {
+            "effect": ">=4.0.0-beta.104 <4.1.0-0"
+          },
+          "dependencies": {},
+          "time": "2026-08-15T20:44:20.623Z"
+        },
+        {
+          "version": "0.6.0",
+          "peers": {
+            "effect": ">=4.0.0-beta.104 <4.1.0-0"
+          },
+          "dependencies": {},
+          "time": "2026-09-02T15:00:41.881Z"
+        },
+        {
+          "version": "0.6.1",
+          "peers": {
+            "effect": ">=4.0.0-beta.104 <4.1.0-0"
+          },
+          "dependencies": {},
+          "time": "2026-09-05T19:12:13.052Z"
+        },
+        {
+          "version": "0.6.2",
+          "peers": {
+            "effect": ">=4.0.0-beta.104 <4.1.0-0"
+          },
+          "dependencies": {},
+          "time": "2026-09-05T20:14:16.640Z"
+        },
+        {
+          "version": "0.6.3",
+          "peers": {
+            "effect": ">=4.0.0-beta.104 <4.1.0-0"
+          },
+          "dependencies": {},
+          "time": "2026-09-05T21:45:24.915Z"
+        }
+      ]
+    },
+    {
+      "name": "effect-build-apple",
+      "tags": {
+        "reserved": "0.0.0-reserved.0",
+        "latest": "0.6.3"
+      },
+      "versions": [
+        {
+          "version": "0.0.0-reserved.0",
+          "peers": {},
+          "dependencies": {},
+          "time": "2026-08-28T10:19:02.290Z"
+        },
+        {
+          "version": "0.6.2",
+          "peers": {
+            "effect": ">=4.0.0-beta.104 <4.1.0-0"
+          },
+          "dependencies": {
+            "effect-build": "^0.6.2"
+          },
+          "time": "2026-09-05T20:15:01.669Z"
+        },
+        {
+          "version": "0.6.3",
+          "peers": {
+            "effect": ">=4.0.0-beta.104 <4.1.0-0"
+          },
+          "dependencies": {
+            "effect-build": "^0.6.3"
+          },
+          "time": "2026-09-05T21:46:03.955Z"
+        }
+      ]
+    },
+    {
+      "name": "effect",
+      "tags": {
+        "snapshot": "0.0.0-snapshot-6ebc752baf28354006ca2a0ae783a5bccf5de9ad",
+        "latest": "3.22.1",
+        "beta": "4.0.0-beta.107",
+        "rc": "4.0.0-rc.112"
+      },
+      "versions": [
+        {
+          "version": "4.0.0-beta.100",
+          "peers": {},
+          "dependencies": {
+            "ini": "^7.0.0",
+            "toml": "^4.1.2",
+            "uuid": "^14.0.1",
+            "yaml": "^2.9.0",
+            "msgpackr": "^2.0.4",
+            "fast-check": "^4.9.0",
+            "multipasta": "^0.2.8",
+            "find-my-way-ts": "^0.1.6",
+            "kubernetes-types": "^1.30.0",
+            "@standard-schema/spec": "^1.1.0"
+          },
+          "time": "2026-07-21T05:05:56.050Z"
+        },
+        {
+          "version": "4.0.0-beta.101",
+          "peers": {},
+          "dependencies": {
+            "ini": "^7.0.0",
+            "toml": "^4.1.2",
+            "uuid": "^14.0.1",
+            "yaml": "^2.9.0",
+            "msgpackr": "^2.0.4",
+            "fast-check": "^4.9.0",
+            "multipasta": "^0.2.8",
+            "find-my-way-ts": "^0.1.6",
+            "kubernetes-types": "^1.30.0",
+            "@standard-schema/spec": "^1.1.0"
+          },
+          "time": "2026-07-23T02:53:36.587Z"
+        },
+        {
+          "version": "4.0.0-beta.102",
+          "peers": {},
+          "dependencies": {
+            "ini": "^7.0.0",
+            "toml": "^4.1.2",
+            "uuid": "^14.0.1",
+            "yaml": "^2.9.0",
+            "msgpackr": "^2.0.4",
+            "fast-check": "^4.9.0",
+            "multipasta": "^0.2.8",
+            "find-my-way-ts": "^0.1.6",
+            "kubernetes-types": "^1.30.0",
+            "@standard-schema/spec": "^1.1.0"
+          },
+          "time": "2026-07-26T22:24:42.705Z"
+        },
+        {
+          "version": "4.0.0-beta.103",
+          "peers": {},
+          "dependencies": {
+            "ini": "^7.0.0",
+            "toml": "^4.1.2",
+            "uuid": "^14.0.1",
+            "yaml": "^2.9.0",
+            "msgpackr": "^2.0.4",
+            "fast-check": "^4.9.0",
+            "multipasta": "^0.2.8",
+            "find-my-way-ts": "^0.1.6",
+            "kubernetes-types": "^1.30.0",
+            "@standard-schema/spec": "^1.1.0"
+          },
+          "time": "2026-08-04T00:10:07.428Z"
+        },
+        {
+          "version": "4.0.0-beta.104",
+          "peers": {},
+          "dependencies": {
+            "uuid": "^14.0.1",
+            "msgpackr": "^2.0.4",
+            "fast-check": "^4.9.0",
+            "kubernetes-types": "^1.30.0",
+            "@standard-schema/spec": "^1.1.0"
+          },
+          "time": "2026-08-06T02:31:34.432Z"
+        },
+        {
+          "version": "4.0.0-beta.105",
+          "peers": {},
+          "dependencies": {
+            "uuid": "^14.0.1",
+            "msgpackr": "^2.0.4",
+            "fast-check": "^4.9.0",
+            "kubernetes-types": "^1.30.0",
+            "@standard-schema/spec": "^1.1.0"
+          },
+          "time": "2026-08-07T01:37:58.225Z"
+        },
+        {
+          "version": "4.0.0-beta.106",
+          "peers": {},
+          "dependencies": {
+            "uuid": "^14.0.1",
+            "msgpackr": "^2.0.4",
+            "fast-check": "^4.9.0",
+            "kubernetes-types": "^1.30.0",
+            "@standard-schema/spec": "^1.1.0"
+          },
+          "time": "2026-08-08T10:02:00.707Z"
+        },
+        {
+          "version": "4.0.0-beta.107",
+          "peers": {},
+          "dependencies": {
+            "uuid": "^14.0.1",
+            "msgpackr": "^2.0.4",
+            "fast-check": "^4.9.0",
+            "kubernetes-types": "^1.30.0",
+            "@standard-schema/spec": "^1.1.0"
+          },
+          "time": "2026-08-10T04:57:48.469Z"
+        }
+      ]
+    },
+    {
+      "name": "@effect/platform-node",
+      "tags": {
+        "snapshot": "0.0.0-snapshot-6ebc752baf28354006ca2a0ae783a5bccf5de9ad",
+        "latest": "0.108.1",
+        "beta": "4.0.0-beta.107",
+        "rc": "4.0.0-rc.112"
+      },
+      "versions": [
+        {
+          "version": "4.0.0-beta.100",
+          "peers": {
+            "effect": "^4.0.0-beta.100",
+            "ioredis": "^5.7.0"
+          },
+          "dependencies": {
+            "mime": "^4.1.0",
+            "undici": "^8.7.0",
+            "@effect/platform-node-shared": "^4.0.0-beta.100"
+          },
+          "time": "2026-07-21T05:05:54.262Z"
+        },
+        {
+          "version": "4.0.0-beta.101",
+          "peers": {
+            "effect": "^4.0.0-beta.101",
+            "ioredis": "^5.7.0"
+          },
+          "dependencies": {
+            "mime": "^4.1.0",
+            "undici": "^8.7.0",
+            "@effect/platform-node-shared": "^4.0.0-beta.101"
+          },
+          "time": "2026-07-23T02:53:39.956Z"
+        },
+        {
+          "version": "4.0.0-beta.102",
+          "peers": {
+            "effect": "^4.0.0-beta.102",
+            "ioredis": "^5.7.0"
+          },
+          "dependencies": {
+            "mime": "^4.1.0",
+            "undici": "^8.7.0",
+            "@effect/platform-node-shared": "^4.0.0-beta.102"
+          },
+          "time": "2026-07-26T22:24:39.004Z"
+        },
+        {
+          "version": "4.0.0-beta.103",
+          "peers": {
+            "effect": "^4.0.0-beta.103",
+            "ioredis": "^5.7.0"
+          },
+          "dependencies": {
+            "mime": "^4.1.0",
+            "undici": "^8.7.0",
+            "@effect/platform-node-shared": "^4.0.0-beta.103"
+          },
+          "time": "2026-08-04T00:09:03.012Z"
+        },
+        {
+          "version": "4.0.0-beta.104",
+          "peers": {
+            "effect": "^4.0.0-beta.104",
+            "ioredis": "^5.7.0"
+          },
+          "dependencies": {
+            "mime": "^4.1.0",
+            "undici": "^8.7.0",
+            "@effect/platform-node-shared": "^4.0.0-beta.104"
+          },
+          "time": "2026-08-06T07:13:11.159Z"
+        },
+        {
+          "version": "4.0.0-beta.105",
+          "peers": {
+            "effect": "^4.0.0-beta.105",
+            "ioredis": ">=5.7.0 <6.0.0"
+          },
+          "dependencies": {
+            "mime": "^4.1.0",
+            "undici": "^8.7.0",
+            "@effect/platform-node-shared": "^4.0.0-beta.105"
+          },
+          "time": "2026-08-07T01:14:14.836Z"
+        },
+        {
+          "version": "4.0.0-beta.106",
+          "peers": {
+            "effect": "^4.0.0-beta.106",
+            "ioredis": ">=5.7.0 <6.0.0"
+          },
+          "dependencies": {
+            "mime": "^4.1.0",
+            "undici": "^8.7.0",
+            "@effect/platform-node-shared": "^4.0.0-beta.106"
+          },
+          "time": "2026-08-08T10:00:19.724Z"
+        },
+        {
+          "version": "4.0.0-beta.107",
+          "peers": {
+            "effect": "^4.0.0-beta.107",
+            "ioredis": ">=5.7.0 <6.0.0"
+          },
+          "dependencies": {
+            "mime": "^4.1.0",
+            "undici": "^8.7.0",
+            "@effect/platform-node-shared": "^4.0.0-beta.107"
+          },
+          "time": "2026-08-10T04:53:08.034Z"
+        }
+      ]
+    },
+    {
+      "name": "@effect/platform-bun",
+      "tags": {
+        "snapshot": "0.0.0-snapshot-6ebc752baf28354006ca2a0ae783a5bccf5de9ad",
+        "latest": "0.91.2",
+        "beta": "4.0.0-beta.107",
+        "rc": "4.0.0-rc.112"
+      },
+      "versions": [
+        {
+          "version": "4.0.0-beta.100",
+          "peers": {
+            "effect": "^4.0.0-beta.100"
+          },
+          "dependencies": {
+            "@effect/platform-node-shared": "^4.0.0-beta.100"
+          },
+          "time": "2026-07-21T05:05:53.029Z"
+        },
+        {
+          "version": "4.0.0-beta.101",
+          "peers": {
+            "effect": "^4.0.0-beta.101"
+          },
+          "dependencies": {
+            "@effect/platform-node-shared": "^4.0.0-beta.101"
+          },
+          "time": "2026-07-23T02:53:37.646Z"
+        },
+        {
+          "version": "4.0.0-beta.102",
+          "peers": {
+            "effect": "^4.0.0-beta.102"
+          },
+          "dependencies": {
+            "@effect/platform-node-shared": "^4.0.0-beta.102"
+          },
+          "time": "2026-07-26T22:24:35.293Z"
+        },
+        {
+          "version": "4.0.0-beta.103",
+          "peers": {
+            "effect": "^4.0.0-beta.103"
+          },
+          "dependencies": {
+            "@effect/platform-node-shared": "^4.0.0-beta.103"
+          },
+          "time": "2026-08-04T00:07:56.952Z"
+        },
+        {
+          "version": "4.0.0-beta.104",
+          "peers": {
+            "effect": "^4.0.0-beta.104"
+          },
+          "dependencies": {
+            "@effect/platform-node-shared": "^4.0.0-beta.104"
+          },
+          "time": "2026-08-06T07:12:04.624Z"
+        },
+        {
+          "version": "4.0.0-beta.105",
+          "peers": {
+            "effect": "^4.0.0-beta.105"
+          },
+          "dependencies": {
+            "@effect/platform-node-shared": "^4.0.0-beta.105"
+          },
+          "time": "2026-08-07T01:13:10.227Z"
+        },
+        {
+          "version": "4.0.0-beta.106",
+          "peers": {
+            "effect": "^4.0.0-beta.106"
+          },
+          "dependencies": {
+            "@effect/platform-node-shared": "^4.0.0-beta.106"
+          },
+          "time": "2026-08-08T09:57:12.253Z"
+        },
+        {
+          "version": "4.0.0-beta.107",
+          "peers": {
+            "effect": "^4.0.0-beta.107"
+          },
+          "dependencies": {
+            "@effect/platform-node-shared": "^4.0.0-beta.107"
+          },
+          "time": "2026-08-10T04:51:01.570Z"
+        }
+      ]
+    }
+  ]
+}

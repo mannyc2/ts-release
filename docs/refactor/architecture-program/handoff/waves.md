@@ -1,3 +1,8 @@
+> Current authority: [README](README.md), [design](design.json), and the matching
+> JSON records include the accepted P0–P3 amendments. The discussion below
+> preserves the earlier investigation; old topology/45-line proposals and
+> research-only authorization are superseded. Native oracles remain required.
+
 # Sequential implementation and acceptance handoff
 
 [Waves JSON](waves.json) assigns every one of the **69 selected outcomes** to

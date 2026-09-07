@@ -30,10 +30,10 @@
       "components": [
         {
           "name": "Measured complete selected M1 source including protected Git",
-          "low": 935,
-          "expected": 935,
-          "high": 935,
-          "basis": "machine/source-metrics.json:1089 total minus154 M2-only; includes explicit at-most-one-publication-scope guard;105 M1 file is not the whole kernel"
+          "low": 1024,
+          "expected": 1024,
+          "high": 1024,
+          "basis": "Fresh amended machine/source-metrics.json:1024 physical/1145 printer lines, including13 relocated HTTP lines and76 additional core-law/seam lines versus935. External M2 is a test/tooling witness."
         },
         {
           "name": "Strict target-coordinate and public input admission",
@@ -58,9 +58,9 @@
         }
       ],
       "fullReplacementPhysicalLines": {
-        "low": 995,
-        "expected": 1075,
-        "high": 1205
+        "low": 1084,
+        "expected": 1164,
+        "high": 1294
       }
     },
     {
@@ -81,10 +81,10 @@
       "components": [
         {
           "name": "Measured adoption/content/codec/Apple plus mixed release composition",
-          "low": 622,
-          "expected": 622,
-          "high": 622,
-          "basis": "apple/source-inventory.json552 plus70line apple-composition/composition.ts; amended224line app helper replaces original224, not an added copy"
+          "low": 615,
+          "expected": 615,
+          "high": 615,
+          "basis": "Fresh Apple source-inventory:545physical +70mixed composition; actual source measured, no native Apple acceptance inferred."
         },
         {
           "name": "Content host completion",
@@ -109,9 +109,9 @@
         }
       ],
       "fullReplacementPhysicalLines": {
-        "low": 772,
-        "expected": 952,
-        "high": 1262
+        "low": 765,
+        "expected": 945,
+        "high": 1255
       }
     },
     {
@@ -735,19 +735,19 @@
     }
   ],
   "totals": {
-    "low": 8185,
-    "expected": 11447,
-    "high": 16015
+    "low": 8267,
+    "expected": 11529,
+    "high": 16097
   },
-  "expectedHeadroom": 38,
+  "expectedHeadroom": -44,
   "reductionPercent": {
-    "low": 64.37,
-    "expected": 50.17,
-    "high": 30.28
+    "low": 64.01,
+    "expected": 49.81,
+    "high": 29.92
   },
   "unknowns": [
     "The seven full provider implementations are not written in this research task; their native parsing/evidence/auth code is the largest uncertainty.",
-    "Physical prototype style is denser than donor code: selected machine935physical/1043printer; adoption552/661; nativeGit122/157; Q01 68/77; mixedApple70 extra physical. Printer normalization is diagnostic, not originalsemantic-source/v3.",
+    "Current kernel1024physical/1145printer; Apple545/648 plus70composition. Ordinary formatting must be measured in production. The measured kernel now includes13 HTTP-helper lines; the existing shared-HTTP estimate is conservatively unchanged until production ownership avoids overlap.",
     "Projected package manifests/exports/build/dependency closure carry additional maintained metadata and publication cost. layout.json owns exact metadata; do not claim these are free.",
     "Every actual product or newly maintained upstream implementation line must be charged at cutover. No forecast closes the11485gate."
   ],
@@ -768,7 +768,7 @@
     }
   ],
   "newRequiredUpstreamImplementationLines": 0,
-  "sourceCeilingPolicy": "Keep11485. Expected original-comparable result has little headroom; conditional/new metadata/normalization and native implementation can exhaust it. Re-measure each wave, continue structural work if it misses; no automatic scope cut or threshold waiver.",
+  "sourceCeilingPolicy": "Keep11485. Corrected prerequisite forecast exceeds the ceiling; this is an explicit simplification obligation, not achieved reduction or permission to cut scope. Measure full product and all maintained lanes during production waves.",
   "maintenanceLanes": [
     "product and Action source",
     "generated runtime product inputs including Action YAML",
@@ -791,9 +791,7 @@
       "futureScriptLines": null,
       "authoredProductModuleFiles": 63,
       "generatedRuntimePolicyFiles": 0,
-      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count.",
-      "expectedCodePlusAllPackageJson": 11622,
-      "expectedCodePlusPackageJsonAndTsconfigs": 11698
+      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
     },
     {
       "layout": "T2",
@@ -805,13 +803,11 @@
       "futureScriptLines": null,
       "authoredProductModuleFiles": 63,
       "generatedRuntimePolicyFiles": 0,
-      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count.",
-      "expectedCodePlusAllPackageJson": 11664,
-      "expectedCodePlusPackageJsonAndTsconfigs": 11754
+      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
     },
     {
       "layout": "T3",
-      "publicPackageJsonLines": 304,
+      "publicPackageJsonLines": 299,
       "privatePackageJsonLines": 87,
       "actionYamlLines": 22,
       "tsconfigJsonLines": 174,
@@ -819,9 +815,46 @@
       "futureScriptLines": null,
       "authoredProductModuleFiles": 63,
       "generatedRuntimePolicyFiles": 0,
-      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count.",
-      "expectedCodePlusAllPackageJson": 11838,
-      "expectedCodePlusPackageJsonAndTsconfigs": 12012
+      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
+    },
+    {
+      "layout": "T3c",
+      "publicPackageJsonLines": 272,
+      "privatePackageJsonLines": 83,
+      "actionYamlLines": 22,
+      "tsconfigJsonLines": 160,
+      "futureScriptFiles": 3,
+      "futureScriptLines": null,
+      "authoredProductModuleFiles": 63,
+      "generatedRuntimePolicyFiles": 0,
+      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
+    }
+  ],
+  "densityAdjusted": {
+    "status": "estimate-not-achieved-reduction",
+    "expectedApproximately": 11720,
+    "basis": "Preserved composability refinement ordinary-density estimate; reviewed kernel fixes add further unmeasured production cost. Full source ceiling remains 11485."
+  },
+  "perWaveBudget": {
+    "P0": 0,
+    "W01": 1700,
+    "W02": 3350,
+    "W03": 4500,
+    "W04": 6200,
+    "W05": 7750,
+    "W06": 8100,
+    "W07": 8200,
+    "W08": 9200,
+    "W09": 11000,
+    "W10": 11485
+  },
+  "perWaveBudgetPolicy": "Cumulative new/changed owned product source tripwires during coexistence; unchanged legacy code remains visible separately. W10 additionally requires the complete product count <=11485. These are planning tripwires, never acceptance or deletion credit.",
+  "legacyGeneratedInputs": [
+    {
+      "path": "apps/ts-release-action/action.yml",
+      "sha256": "62ac770a06ee406b055b879715986557999d25275129fc5e015244f09d9cd746",
+      "lines": 24,
+      "basis": "Unchanged current-checkout Action input. Original denominator remains overlay source plus its 55-line Action input."
     }
   ]
 }

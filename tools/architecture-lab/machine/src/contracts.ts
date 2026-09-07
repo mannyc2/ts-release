@@ -1,6 +1,10 @@
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
+import type { MachineConstructor } from "./model.js"
+
+/** Provider contract version spoken by this kernel. A definition built against another contract is rejected at Host verification, whatever the installer resolved. */
+export const PROVIDER_CONTRACT = "lab/provider/1" as const
 
 /** Research-only durable boundary. No published compatibility claim. */
 export class LabError extends Schema.TaggedError<LabError>()("LabError", {
@@ -154,12 +158,20 @@ export interface ProviderContext {
 export class CoreDispatchError extends Schema.Class<CoreDispatchError>("CoreDispatchError")({
   code: Schema.String, message: Schema.String
 }) {}
+/** Bounded, credential-free diagnostic for a committed send whose receipt failed strict decoding. No raw response bytes are retained. */
+export class CoreUndecodableReceipt extends Schema.Class<CoreUndecodableReceipt>("CoreUndecodableReceipt")({
+  code: Schema.Literal("undecodable-receipt"),
+  message: Schema.Literal("Committed response could not be admitted by the installed provider"),
+  receiptSha256: Schema.NullOr(Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/))),
+  receiptBytes: Schema.NullOr(Schema.String.check(Schema.isPattern(/^(0|[1-9][0-9]*)$/), Schema.isMaxLength(20)))
+}) {}
 export interface NativeFailureBoundary {
   readonly version: string
   readonly codec: Schema.Codec<unknown, unknown>
   readonly corresponds: (operation: Operation, request: RequestFacts, evidence: unknown) => boolean
 }
 export interface ProviderDefinition {
+  readonly contract: typeof PROVIDER_CONTRACT
   readonly definitionId: string
   readonly intentVersion: string
   readonly intentCodec: Schema.Codec<unknown, unknown>
@@ -192,10 +204,11 @@ export interface HostShape {
   readonly now: () => number
   readonly uniqueId: () => string
   readonly journal?: JournalContext
+  /** Decision evaluator over validated history. Default: the kernel's history machine (M1). Any implementation satisfying the Machine laws may be supplied by the application. */
+  readonly machine?: MachineConstructor
 }
 export class Host extends Context.Service<Host, HostShape>()("architecture-lab/Host") {}
 
-export type Candidate = "M1" | "M2"
 export type OperationStatus = "Unattempted" | "Satisfied" | "Conflict" | "Pending" | "Inconclusive" | "Rejected" | "Superseded"
 export interface OperationReport {
   readonly operationId: string
@@ -211,7 +224,6 @@ export interface ReleaseReport {
   readonly operations: ReadonlyArray<OperationReport>
 }
 export interface RunOptions {
-  readonly candidate: Candidate
   readonly plan: Plan
   readonly authorize: boolean
   readonly maxDispatches?: number

@@ -1,7 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import {
-  CoreDispatchError, JournalEvent, LabError, Operation, Plan, RequestFacts,
+  CoreDispatchError, CoreUndecodableReceipt, JournalEvent, LabError, Operation, PROVIDER_CONTRACT, Plan, RequestFacts,
   type ObservationRecorded, type ProviderDescriptor,
   type PreparedRequest, type ProviderDefinition, type Scope
 } from "./contracts.js"
@@ -200,12 +200,15 @@ export const verifyEvents = Effect.fn("lab.verifyEvents")(function*(plan: Plan, 
   return events
 })
 
+const CORE_ERROR_VERSIONS = new Set<string>(["core-dispatch-error/1", "core-undecodable-receipt/1"])
+export const isCoreErrorVersion = (version: string): boolean => CORE_ERROR_VERSIONS.has(version)
 export const verifyProviderContracts = (providers: ReadonlyArray<ProviderDefinition>): void => {
   for (const provider of providers) {
+    if (provider.contract !== PROVIDER_CONTRACT) fail("provider-contract", `Provider ${String(provider.definitionId)} speaks ${String(provider.contract)}; this kernel requires ${PROVIDER_CONTRACT}`)
     if (!provider.receiptVersion || !provider.receiptCodec || typeof provider.receiptCorresponds !== "function" || typeof provider.classifyReceipt !== "function" || typeof provider.prepare !== "function") fail("missing-receipt-codec", "Native receipt codec, classification, correspondence and prepare are mandatory")
     if (provider.observe && (!provider.observationVersion || !provider.observationCodec || !provider.classifyObservation)) fail("missing-observation-codec", "Observation requires a native codec and classifier")
     for (const boundary of [provider.dispatchError, provider.rejection]) {
-      if (boundary && (!boundary.version || !boundary.codec || !boundary.corresponds || boundary.version === "core-dispatch-error/1")) fail("failure-codec", "Native failure boundaries require their own complete versioned codec")
+      if (boundary && (!boundary.version || !boundary.codec || !boundary.corresponds || isCoreErrorVersion(boundary.version))) fail("failure-codec", "Native failure boundaries require their own complete versioned codec")
     }
   }
 }
@@ -213,13 +216,32 @@ export const verifyProviderContracts = (providers: ReadonlyArray<ProviderDefinit
 export const decodeObservationEvidence = (provider: ProviderDefinition, body: ObservationRecorded): unknown => {
   if (body.evidenceKind === "DispatchError") {
     if (!body.dispatchId || body.status !== "Inconclusive") fail("dispatch-error-shape", "Dispatch error must be inconclusive and identify its dispatch")
-    const codec = body.evidenceVersion === "core-dispatch-error/1" ? CoreDispatchError : provider.dispatchError?.version === body.evidenceVersion ? provider.dispatchError.codec : undefined
+    const codec = body.evidenceVersion === "core-dispatch-error/1" ? CoreDispatchError : body.evidenceVersion === "core-undecodable-receipt/1" ? CoreUndecodableReceipt : provider.dispatchError?.version === body.evidenceVersion ? provider.dispatchError.codec : undefined
     if (!codec) fail("unknown-error-codec", "Native dispatch error version is unavailable")
     return nativeEvidence(codec, body.evidence)
   }
   if (body.dispatchId !== undefined) fail("observation-shape", "Ordinary observation cannot assert a dispatch identity")
   if (!provider.observationCodec || !provider.classifyObservation || body.evidenceVersion !== provider.observationVersion) fail("unknown-observation-codec", "Native observation version is unavailable")
   return nativeEvidence(provider.observationCodec, body.evidence)
+}
+
+/** A preparation selects one immutable output. Receipt and observation channels
+ * are distinct; their payloads cannot be assumed equivalent across codecs. */
+export const verifyPreparationSelection = (events: ReadonlyArray<JournalEvent>): void => {
+  const selected = new Map<string, string>()
+  const starts = new Map<string, string>()
+  for (const { body } of events) {
+    if (body._tag === "DispatchStarted") starts.set(body.dispatchId, body.operationId)
+    if (body._tag !== "ObservationRecorded" && body._tag !== "ReceiptAccepted" || body.status !== "Satisfied") continue
+    const operationId = body._tag === "ObservationRecorded" ? body.operationId : starts.get(body.dispatchId)
+    if (operationId === undefined) fail("unknown-dispatch", "Preparation output has no matching dispatch")
+    const encoded = body._tag === "ObservationRecorded"
+      ? canonical({ kind: body.evidenceKind, version: body.evidenceVersion, value: body.evidence })
+      : canonical({ kind: "Receipt", version: body.receiptVersion, value: body.receipt })
+    const prior = selected.get(operationId)
+    if (prior !== undefined && prior !== encoded) fail("preparation-selected", "This preparation already selected different satisfied evidence")
+    selected.set(operationId, encoded)
+  }
 }
 
 export const nativeEvidence = (codec: Schema.Codec<unknown, unknown>, input: unknown): unknown => {
@@ -263,7 +285,7 @@ export const verifyNativeEvidence = (plan: Plan, events: ReadonlyArray<JournalEv
       if (body.evidenceKind === "DispatchError") {
         const start = starts.get(body.dispatchId!)
         if (!start || start.operationId !== operation.operationId) fail("error-correspondence", "Dispatch error does not identify a preceding dispatch for this operation")
-        if (body.evidenceVersion !== "core-dispatch-error/1" && !provider.dispatchError!.corresponds(operation, start.request, evidence)) fail("error-correspondence", "Native dispatch error differs from the exact request")
+        if (!isCoreErrorVersion(body.evidenceVersion) && !provider.dispatchError!.corresponds(operation, start.request, evidence)) fail("error-correspondence", "Native dispatch error differs from the exact request")
       } else if (provider.classifyObservation!(operation, evidence, receipts.get(operation.operationId) ?? []) !== body.status) fail("observation-classification", "Stored classification differs from native evidence and associated receipts")
     }
   }

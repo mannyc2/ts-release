@@ -10,9 +10,7 @@ export function amendApple(directory) {
   let source=original.replace('Content, OwnedTree, adoptTree','Content, OwnedFile, OwnedTree, adoptTree')
   source=source.replace('owner: ContentOwner, sourceDir: string, outputDir: string\n)', 'owner: ContentOwner, sourceDir: string, outputDir: string,\n  deliver?: (artifact: Model.StapledApplicationBundle) => Effect.Effect<readonly OwnedFile[],LabError>\n)')
   source=source.replace('const bundle = yield* finalize([adopted])','const delivery = deliver ? yield* deliver(finalArtifact) : []\n  const bundle = yield* finalize([adopted,...delivery])')
-  const rejected='  if (host.journal?.scopes.some(known=>known._tag === "PreparationScope" && known.plan.planId !== scope.plan.planId)) {\n    return yield* new LabError({code:"changed-preparation",message:"A release context admits one exact immutable Apple preparation"})\n  }\n'
-  if(!source.includes(rejected)||source===original)throw Error("Apple amendment anchor changed")
-  source=source.replace(rejected,'  // Core admits the exact preparation set; another fixed preparation is legal.\n')
+  if(source===original)throw Error("Apple delivery amendment anchor changed")
   writeFileSync(file,source)
   const fixture=join(directory,"src/apple/apple-experiment.ts")
   let test=readFileSync(fixture,"utf8")

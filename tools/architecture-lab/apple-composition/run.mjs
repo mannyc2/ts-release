@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -25,6 +25,8 @@ const run=argv=>{const result=Bun.spawnSync(argv,{cwd:consumer,stdout:"pipe",std
 run([process.execPath,join(root,"node_modules/typescript/bin/tsc"),"-p","tsconfig.json"])
 const result=JSON.parse(run([process.execPath,"dist/apple-composition/fixture.js"]))
 const sources=["composition.ts","fixture.ts","amend.mjs","run.mjs"].map(name=>{const source=readFileSync(join(root,"tools/architecture-lab/apple-composition",name));return {path:`tools/architecture-lab/apple-composition/${name}`,sha256:createHash("sha256").update(source).digest("hex"),physicalLines:source.toString().trimEnd().split("\n").length}})
-const receipt={...result,directory,consumer,strictDeclarations:true,amendment,sources,machineTreeSha256:JSON.parse(readFileSync(join(root,"tools/architecture-lab/machine/source-metrics.json"),"utf8")).treeSha256,packages:packages.map(pkg=>({name:pkg.name,version:pkg.version,sha256:pkg.tarball.sha256})),limits:"Real process replacement, SQLite/content/native tar and upstream file/tree finalization. Apple services remain explicit protocol doubles; full app/DMG/pkg native acceptance is not claimed."}
+const machineSources=readdirSync(join(consumer,"src/machine/src")).filter(name=>name.endsWith(".ts")).sort((a,b)=>a.localeCompare(b)).map(path=>({path,sha256:createHash("sha256").update(readFileSync(join(consumer,"src/machine/src",path))).digest("hex")}))
+const machineTreeSha256=createHash("sha256").update(JSON.stringify(machineSources)).digest("hex")
+const receipt={...result,directory,consumer,strictDeclarations:true,amendment,sources,machineSources,machineTreeSha256,packages:packages.map(pkg=>({name:pkg.name,version:pkg.version,sha256:pkg.tarball.sha256})),limits:"Real process replacement, SQLite/content/native tar and upstream file/tree finalization. Apple services remain explicit protocol doubles; full app/DMG/pkg native acceptance is not claimed."}
 writeFileSync(join(root,"tools/architecture-lab/apple-composition/results.json"),JSON.stringify(receipt,null,2)+"\n")
 console.log(JSON.stringify(receipt))

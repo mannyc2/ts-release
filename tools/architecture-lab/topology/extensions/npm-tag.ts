@@ -1,6 +1,5 @@
 import { Effect, Schema } from "effect"
-import { LabError, NoReplay, makeRequest, type ProviderDefinition } from "@lab/kernel"
-import { HttpReceipt, corresponds } from "./http-evidence.js"
+import { LabError, NoReplay, makeRequest, type ProviderDefinition , HttpReceipt, corresponds } from "@lab/kernel"
 
 export class NpmTagIntent extends Schema.Class<NpmTagIntent>("NpmTagIntent")({
   registry: Schema.String, packageName: Schema.String, tag: Schema.String, version: Schema.String

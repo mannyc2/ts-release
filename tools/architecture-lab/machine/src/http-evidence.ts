@@ -1,5 +1,5 @@
 import { Schema } from "effect"
-import type { RequestFacts } from "@lab/kernel"
+import type { RequestFacts } from "./contracts.js"
 
 /** Native response envelope binds the observed acknowledgement to exact send facts. */
 export class HttpReceipt extends Schema.Class<HttpReceipt>("HttpReceipt")({

@@ -1,7 +1,7 @@
 {
   "format": "architecture-handoff-qualification/1",
-  "asOf": "2026-09-05",
-  "purpose": "Supplemental factual qualification and retained acceptance obligations; not a replacement green receipt in the frozen trial schema.",
+  "asOf": "2026-09-06",
+  "purpose": "Current prerequisite evidence and explicitly retained historical experiments; all original native obligations remain. No production or release certification.",
   "scope": {
     "selectedProductOutcomes": 69,
     "normalizedPropositions": 226,
@@ -12,7 +12,7 @@
   "inputBindings": [
     {
       "path": "docs/refactor/architecture-program/inputs/trial-spec.json",
-      "sha256": "a34cf7bc970707d73c5b3381205bde603a193e2174ff245c1ba782714707e9a3"
+      "sha256": "3c0cff83db83ad72dc673c5343f8400b2b266652a3a5a59653e0c51eed4742f4"
     },
     {
       "path": "docs/refactor/architecture-program/inputs/ownership-decisions.json",
@@ -43,38 +43,40 @@
         "tools/architecture-lab/machine/event-sizes.json",
         "tools/architecture-lab/machine/test/git-catalog.test.ts",
         "tools/architecture-lab/machine/test/git-catalog-fixture.ts",
-        "tools/architecture-lab/machine/test/git-catalog-worker.ts"
+        "tools/architecture-lab/machine/test/git-catalog-worker.ts",
+        "tools/architecture-lab/machine/witnesses/executor-laws.test.ts",
+        "tools/architecture-lab/machine/witnesses/undecodable-receipt.test.ts"
       ],
       "commands": [
-        "bun test ./tools/architecture-lab/machine/test",
-        "bunx --no-install tsc -p tools/architecture-lab/machine/tsconfig.json"
+        "bun test ./tools/architecture-lab/machine/test ./tools/architecture-lab/machine/witnesses ./tools/architecture-lab/storage ./tools/architecture-lab/integration ./tools/architecture-lab/git-catalog",
+        "bun node_modules/typescript/bin/tsc -p tools/architecture-lab/tsconfig.json"
       ],
-      "establishes": "61 tests /364 assertions across genuinely separate M1 and M2, real local HTTP/process replacement/SQLite, conditional Git authority table and owned native object reconstruction; shared expected observations do not call candidate transitions. Final admission law rejects two publication scopes before all store/provider effects; two preparations and one publication retain globalCAS revisions0..5.",
+      "establishes": "Combined amended suites:168tests/993assertions. Fresh CAS dispatch/restart, core legality independent of permissive evaluators, immutable evaluator inputs, external M2/cache, terminal preparation selection and bounded fixed diagnostics. Exact command output is retained in verification.json; no fabricated sub-suite counts.",
       "limits": "Concrete local cases, not exhaustive state-space proof, all provider outcomes, or all sixteen frozen exact traces in every topology.",
       "fileBindings": [
         {
           "path": "tools/architecture-lab/machine/test/observable.test.ts",
-          "sha256": "a2e74fe1fd909085bf94791108713ebeefe6df0ef9d5d1acd21989022122c0e7"
+          "sha256": "653882aac1bd8d2663b0436d6cd6c190f0fcaf497ac116ff68f598a45291c9c3"
         },
         {
           "path": "tools/architecture-lab/machine/test/boundaries.test.ts",
-          "sha256": "1340e2a46add2100174826bb75d261ab91a0a2a9d7dd7d2e6e9e821f76b65edd"
+          "sha256": "9a7203278caff7aa45761ddb805f2af39d2c09a66cd25c76a040e1cde90f3798"
         },
         {
           "path": "tools/architecture-lab/machine/test/errors.test.ts",
-          "sha256": "c891fa0811a4e95b833e2b18eb908712c65effc5eee521d201e8dce721b8d015"
+          "sha256": "3ea46724f4de2dea84ff8dbc1d73c716ec41035022c501fc5c8d1007c1e2a41c"
         },
         {
           "path": "tools/architecture-lab/machine/test/process.test.ts",
-          "sha256": "7803d4f66cab861db7d8b0cfb9317d6ab0b3e5c225baea6651326373b1f2ea7e"
+          "sha256": "0274c3e0241c0e88e6b7afc360449fa4ea75d0574cde7605aa8a301465305861"
         },
         {
           "path": "tools/architecture-lab/machine/test/git.test.ts",
-          "sha256": "da3e3fd806672d349f732b1740cd0f21af9a594d559c4ba8cc63ee2e9a060b3c"
+          "sha256": "a575873fddd2f8066fe3856fe55c74e7e891d9f87daf5169251310491de399fd"
         },
         {
           "path": "tools/architecture-lab/machine/event-sizes.json",
-          "sha256": "6b7ebffd9175fede7828439239ef49bda5dabd5d073e39145e3125995d339596"
+          "sha256": "c0d83e732701cf13ae7d89073524ce8ad03fe65b7c1b6da7396690ea83df749f"
         },
         {
           "path": "tools/architecture-lab/machine/test/git-catalog.test.ts",
@@ -82,11 +84,19 @@
         },
         {
           "path": "tools/architecture-lab/machine/test/git-catalog-fixture.ts",
-          "sha256": "14b1b739a59bb67dbeb1bf77c895958173c9e8d9fcfb1eda185320824d9557c2"
+          "sha256": "0cce0a6e5233016907fe0fb400d9a117bd277b3fe44f12aa17599fc8ea36bcc3"
         },
         {
           "path": "tools/architecture-lab/machine/test/git-catalog-worker.ts",
-          "sha256": "880672cd5909b212af44f1453a03e0da08e8afe9d830691380044876c07d8710"
+          "sha256": "8bd06253de257d90bd290a498dc7a4fa27c662ab6b3228d467628064a8f7e13d"
+        },
+        {
+          "path": "tools/architecture-lab/machine/witnesses/executor-laws.test.ts",
+          "sha256": "a5c8448657479ed1849ee904d465592e706209f32eaeb909a50210bd6ad13d14"
+        },
+        {
+          "path": "tools/architecture-lab/machine/witnesses/undecodable-receipt.test.ts",
+          "sha256": "d7a1948e77434c1a285cbcbe9d9db40dff12a48c29b40e216fc2a9dd502649d2"
         }
       ]
     },
@@ -129,16 +139,16 @@
       "commands": [
         "bun test ./tools/architecture-lab/integration"
       ],
-      "establishes": "4 tests /26 assertions: actual localhost create-release native ID41, fresh process loads same Plan/SQLite and uploads using exact declared dependency receipt; changed ID99 rejects without upload.",
+      "establishes": "Six local dependency cases include actual localhost create-release native ID41, fresh-process exact dependency loading, and multiple preparation selection laws. No hosted GitHub acceptance.",
       "limits": "GitHub-shaped protocol proof; no GitHub API, credentials or all native workflow acceptance.",
       "fileBindings": [
         {
           "path": "tools/architecture-lab/integration/dependencies.test.ts",
-          "sha256": "ca7337f87a9c68cdf3f283a587601024c1b9d60b9edca51f7743b50b472e183b"
+          "sha256": "a33167136f282fc25aaf6b4e1e6e084e56b89d389cb7b3c595a1aa37b5f9668c"
         },
         {
           "path": "tools/architecture-lab/integration/dependency-worker.ts",
-          "sha256": "d3637364bacf30cb07df30eca20ac5da8e3e94bf7c50313b989664b7a3219f65"
+          "sha256": "7cb0542a38499a9e360528febc9246037d496bf8deee8c0263ff7cc4a20d0138"
         }
       ]
     },
@@ -147,17 +157,19 @@
         "tools/architecture-lab/topology/results.json",
         "tools/architecture-lab/topology/run.mjs",
         "tools/architecture-lab/topology/consumer.ts",
-        "tools/architecture-lab/topology/owned-consumer.ts"
+        "tools/architecture-lab/topology/owned-consumer.ts",
+        "docs/refactor/architecture-program/handoff/marginal-proof.json",
+        "tools/architecture-lab/topology/p1-source.tar.gz"
       ],
       "commands": [
         "bun tools/architecture-lab/topology/run.mjs"
       ],
-      "establishes": "Final combined source c653f05d28e8e968b79cdd09f6ec79d36f60163b32995303ab61a2de0474244b:60 primary runtime scenarios,6 owned Bundle publication slices,6 full34-check upstream adoption fixtures,6 scoped lifecycle scenarios and6 realnative cancellation/fresh-resume scenarios. Every cancellation records1nativewrite, peerconnectionclosed,1Started/0Receipt and fresh corresponding observationSatisfied/0resends. Actual tarball installs across T1/T2/T3 under Node/Bun.",
+      "establishes": "Fresh original handoff slice plus only helper relocation:60packed scenarios across T1/T2/T3. Source archive and exact receipt scope are bound by marginal-proof.json; amended P3 kernel and full seven-package product are not measured here.",
       "limits": "Local HTTP/npm-registry fixtures; no registry publication, hosted Action, full production CLI/binary flags or complete 69-outcome self-release.",
       "fileBindings": [
         {
           "path": "tools/architecture-lab/topology/results.json",
-          "sha256": "2ab7e1e9b1784fb1820cb1d649d422f233f53cf530a90bedd3915489244de512"
+          "sha256": "89ef39ad7a4a72d096135b701a35dfd0cbf5ee62ccb60eaeba0bc987c2da19b8"
         },
         {
           "path": "tools/architecture-lab/topology/run.mjs",
@@ -170,6 +182,14 @@
         {
           "path": "tools/architecture-lab/topology/owned-consumer.ts",
           "sha256": "c70a2c44e24abb8284e8520b94092e1ce734db57e3267ce411e8c32ceb46186a"
+        },
+        {
+          "path": "docs/refactor/architecture-program/handoff/marginal-proof.json",
+          "sha256": "bbe9b74be3321aab3f516218063e4b53fbb10222aa2bd2e49bd5c240f408fea1"
+        },
+        {
+          "path": "tools/architecture-lab/topology/p1-source.tar.gz",
+          "sha256": "ca7dfa5d970291d81ad52c2a4734503bfe35716ede3ed4ef29b4b57dd9110d0f"
         }
       ]
     },
@@ -184,20 +204,20 @@
         "bun tools/architecture-lab/topology/probes.mjs",
         "bun tools/architecture-lab/topology/metrics.mjs"
       ],
-      "establishes": "Nine integrated before/after changes in each installed topology, with actual consumer behavior, complete source patches and separate metadata/emitted lanes.",
+      "establishes": "Same preserved helper-relocation slice:27integrated extension records (9/layout), TypeScript median37/p9073, metadata median0/p9019. Real zero-code observations retained; unchanged40 target met for this slice only.",
       "limits": "Counterfactual research before variants for P04/P09, not historical product releases. P01 is zero source change; exact old nonzero population is not satisfied. No complete frozen candidate-role metric receipt.",
       "fileBindings": [
         {
           "path": "tools/architecture-lab/topology/extension-results.json",
-          "sha256": "f093b15cd43110ff4902c159f3e5ea63d842c1fe4746f6e678b273cd58373ab6"
+          "sha256": "9fe89291e8ff9748c1ece7ce74f59314d9f769527688095e73ecd030f8405a52"
         },
         {
           "path": "tools/architecture-lab/topology/probes.mjs",
-          "sha256": "5330db4bcc0ee7f7aed5d362532570440234a36f1d7a4deac001374d8549ca8d"
+          "sha256": "9c4258f5591622cea02ad7fa7f94e55f23ed3d5adca5e14605ca111f31496f2a"
         },
         {
           "path": "tools/architecture-lab/topology/metric-results.json",
-          "sha256": "76e00cde85d6d3e8e9ec993a7eed076956fe2a2b64f4f1fb231aba2d40dce695"
+          "sha256": "fd369f2bb73db0b83f89ec840df72d78b48bcfbfbac4a436e53c870cc82d01f8"
         },
         {
           "path": "tools/architecture-lab/topology/metrics.mjs",
@@ -221,7 +241,7 @@
       "fileBindings": [
         {
           "path": "tools/architecture-lab/apple/results.json",
-          "sha256": "9c3b88cb9aee663f8204fabd63539d6472ef63baee28469492fb395f7c03c763"
+          "sha256": "bbec39eb3abb9f7c54cba701306aaa9114dcc08913a8b0e2d89f911e984de50a"
         },
         {
           "path": "tools/architecture-lab/apple/adoption-fixture.ts",
@@ -229,11 +249,11 @@
         },
         {
           "path": "tools/architecture-lab/apple/apple-experiment.ts",
-          "sha256": "f1006f0cde861d9bd013826318dfe11c07101eaa28d6bccd49ab8c88813b6667"
+          "sha256": "07f3569d1c69caf63c67df86e6428ef5378bedf62bbe4e3275dd0c82e3a18b1f"
         },
         {
           "path": "tools/architecture-lab/apple/apple-preparation.ts",
-          "sha256": "7e6601c6648d3fc4191c454b60f957df7e1988711ad99c147642d1983b35d7d4"
+          "sha256": "b966adbfa391bfa2d40df5d9f495674f3a8e07f213786db9a36f1fd132867dbf"
         }
       ]
     },
@@ -290,14 +310,13 @@
     "E08": {
       "paths": [
         "tools/architecture-lab/topology/graph-results.json",
-        "tools/architecture-lab/topology/graphs.mjs",
-        "tools/architecture-lab/topology/results.json"
+        "tools/architecture-lab/topology/graphs.mjs"
       ],
       "commands": [
         "bun tools/architecture-lab/topology/graphs.mjs"
       ],
-      "establishes": "Final source c653f05d28e8e968b79cdd09f6ec79d36f60163b32995303ab61a2de0474244b: allthree owned emitted/declaration DAGs acyclic;12publicsurfaces/layout; strict compiler graphs183/182/183declarationfiles and1101/1100/1102edges; owned normalized declarations equal SHA256969cc583d57a46cf5a34f8746c69528b30c59b976080e8fc45ff834766b3f470; Node runtime1412uniqueedges withconditions. No npm/owned reversebarrel cycle.",
-      "limits": "Finite exact experimental package graph; no exhaustive graph of future production or arbitrary application imports.",
+      "establishes": "Historical graph experiment at preservation commit7da2877: Final source c653f05d28e8e968b79cdd09f6ec79d36f60163b32995303ab61a2de0474244b: allthree owned emitted/declaration DAGs acyclic;12publicsurfaces/layout; strict compiler graphs183/182/183declarationfiles and1101/1100/1102edges; owned normalized declarations equal SHA256969cc583d57a46cf5a34f8746c69528b30c59b976080e8fc45ff834766b3f470; Node runtime1412uniqueedges withconditions. No npm/owned reversebarrel cycle.",
+      "limits": "Finite exact experimental package graph; no exhaustive graph of future production or arbitrary application imports. Current helper-lane receipt is a different source; no fresh P3/full-product graph pass.",
       "fileBindings": [
         {
           "path": "tools/architecture-lab/topology/graph-results.json",
@@ -306,10 +325,6 @@
         {
           "path": "tools/architecture-lab/topology/graphs.mjs",
           "sha256": "2c0caad85efec3b5f433037d80462ec754f7c8b9e472d4ecc16849bd5e9f4cdc"
-        },
-        {
-          "path": "tools/architecture-lab/topology/results.json",
-          "sha256": "2ab7e1e9b1784fb1820cb1d649d422f233f53cf530a90bedd3915489244de512"
         }
       ]
     },
@@ -345,12 +360,12 @@
         "bun test ./tools/architecture-lab/storage/stores.test.ts",
         "bun test ./tools/architecture-lab/storage/s3-model.test.ts"
       ],
-      "establishes": "166 instrumented append attempts: maximum accepted full canonical event968 bytes; deliberately rejected native receipt event4446 bytes at2048-byte test limit preserves durable uncertain attempt without resend. Exact1MiB backend profile separately exercised by E02.",
+      "establishes": "Fresh event-size observations are in machine/event-sizes.json from corrected kernel tests. Counts are fixture samples and include deliberate malformed events; no production-envelope capacity proof.",
       "limits": "These maxima are fixture measurements, not bounds on all selected native provider envelopes. Choosing1MiB is a product policy proposal. Native response body capacity and full encoded event capacity are distinct.",
       "fileBindings": [
         {
           "path": "tools/architecture-lab/machine/event-sizes.json",
-          "sha256": "6b7ebffd9175fede7828439239ef49bda5dabd5d073e39145e3125995d339596"
+          "sha256": "c0d83e732701cf13ae7d89073524ce8ad03fe65b7c1b6da7396690ea83df749f"
         },
         {
           "path": "tools/architecture-lab/storage/protocol.ts",
@@ -358,7 +373,7 @@
         },
         {
           "path": "tools/architecture-lab/machine/test/boundaries.test.ts",
-          "sha256": "1340e2a46add2100174826bb75d261ab91a0a2a9d7dd7d2e6e9e821f76b65edd"
+          "sha256": "9a7203278caff7aa45761ddb805f2af39d2c09a66cd25c76a040e1cde90f3798"
         }
       ]
     },
@@ -372,8 +387,8 @@
       "commands": [
         "bun tools/architecture-lab/machine/validate-extensions.mjs"
       ],
-      "establishes": "Twelve strict-emitted Bun before/after outcomes: delayed native completion and late-fact recovery plus explicit hash-bound one-shot import, both candidate representations.",
-      "limits": "Single-scope experimental importer only; no shipped old-format reader or generic production migration promise.",
+      "establishes": "Historical preservation commit7da2877 before P3: Twelve strict-emitted Bun before/after outcomes: delayed native completion and late-fact recovery plus explicit hash-bound one-shot import, both candidate representations.",
+      "limits": "Single-scope experimental importer only; no shipped old-format reader or generic production migration promise. Old candidate counterfactuals are not rebound to the external evaluator kernel; their command is historical and not part of current verification.",
       "fileBindings": [
         {
           "path": "tools/architecture-lab/machine/extension-results.json",
@@ -440,7 +455,7 @@
         },
         {
           "path": "tools/architecture-lab/apple/results.json",
-          "sha256": "9c3b88cb9aee663f8204fabd63539d6472ef63baee28469492fb395f7c03c763"
+          "sha256": "bbec39eb3abb9f7c54cba701306aaa9114dcc08913a8b0e2d89f911e984de50a"
         }
       ]
     },
@@ -467,7 +482,7 @@
         },
         {
           "path": "tools/architecture-lab/storage/s3-model.test.ts",
-          "sha256": "17b0195bc143cb359432c25b53c39e6d2d5aaa78267556904a5129318dfd6321"
+          "sha256": "8f899ad3fc02ef3fc4c884a16582727f9e2b0f7e8d229d9302d5cb316de2f0b0"
         }
       ]
     },
@@ -626,23 +641,23 @@
       "fileBindings": [
         {
           "path": "tools/architecture-lab/apple-composition/composition.ts",
-          "sha256": "c7a6fa442289125fe6aaa695a11dfaa8732961a77b9619344c1499595ef8e5da"
+          "sha256": "e99fb2a30759ccda883525677d5257fd7e51e0be11c6118cbfd6b4433700e4de"
         },
         {
           "path": "tools/architecture-lab/apple-composition/amend.mjs",
-          "sha256": "6276c1bf3520e14880c34a71a4e90c3e119a50af32b9a3643d7b6226e4396504"
+          "sha256": "82a28501071ba17f6f8787b8af8e02d16dc045dc72ac7594ac839a38c55b0815"
         },
         {
           "path": "tools/architecture-lab/apple-composition/fixture.ts",
-          "sha256": "7a06cb94bcaeb2c0456a063f33eccf63666a6bac20e1a3d524129a48f762012b"
+          "sha256": "20f107ec2f42d3ba37df46b4a7c5502fa2ccf08202bea5d466b171ab7abf5ac1"
         },
         {
           "path": "tools/architecture-lab/apple-composition/run.mjs",
-          "sha256": "b96600cc289cbec62a6f317d0e4def62192564f3f523c225b457244b5f3ebd82"
+          "sha256": "371398791748e397da23f16e75bca607efb60ba5286a37bdfa7d64443908236b"
         },
         {
           "path": "tools/architecture-lab/apple-composition/results.json",
-          "sha256": "940bd7b2f94fb945a8d378febaef525c25ffdb7f28b69c184235ad22c81cff39"
+          "sha256": "6545b107b1d53d948f245e028c18f7b8f2c38541311001b678091344ce36085d"
         },
         {
           "path": "docs/refactor/architecture-program/handoff/apple-api.d.ts",
@@ -673,7 +688,7 @@
         },
         {
           "path": "docs/refactor/architecture-program/handoff/upstream/unpatched-effect-consumer.json",
-          "sha256": "34c732924fb9060892e03d35455c790ab2958c68132f74a2188dd877aeefe639"
+          "sha256": "a80eb091029a743c95a0f6e848d44dd0bd7f2c64b9d1624f1763665d3f795f1d"
         }
       ]
     }
@@ -3731,7 +3746,62 @@
     }
   ],
   "metrics": {
-    "machine": {
+    "wholeProduct": {
+      "currentPhysicalLines": 18276,
+      "overlayCodeLines": 22916,
+      "generatedProductPolicyLines": 55,
+      "referenceDenominator": 22971,
+      "halfTargetFloor": 11485,
+      "achieved": false,
+      "currentCountNote": "18252 legacy TypeScript plus24 unchanged current Action YAML; all production migration remains open."
+    },
+    "forecast": {
+      "unit": "physical source lines",
+      "kind": "engineering planning range, not measured implementation",
+      "commonCore": [
+        900,
+        1200
+      ],
+      "credentialAndTransport": [
+        700,
+        1200
+      ],
+      "storesIncludingRetainedS3": [
+        400,
+        800
+      ],
+      "cliAndActionEntries": [
+        250,
+        500
+      ],
+      "sum": [
+        2250,
+        3700
+      ],
+      "excludes": [
+        "artifact ownership/adoption",
+        "all provider outcomes",
+        "build/formatting/planning application",
+        "tests and independent oracles",
+        "generators/checkers",
+        "fixtures",
+        "research tooling",
+        "documentation"
+      ],
+      "anchors": [
+        "M1 core935 lines including identity/native envelope/interpreter",
+        "current credentials1083 + authority397 + authority model116 =1596 lines of mixed responsibility",
+        "Current topology HTTP43 + application/Action host33 + CLI10 =86 physical lines; anonymous/scoped mechanism proof only, not full authentication/host implementation",
+        "Current local store protocol25 + SQLite48 + Git73 =146 physical lines; four-line test-only barrel is a separate maintained test convenience; S3 excluded",
+        "current CLI607 and Action1136 lines before selected-scope decomposition",
+        "Additional local S3 model145lines plus independent186lineHTTP fixture/tests; noAWSauth/provisioning implementation",
+        "Published0.3.0 actual S3 source3476 lines:1755 AWS host/auth/governance plus1721 old journal semantics. Separate historical donor lane, no baseline credit; optional host translation belongs in final numerator."
+      ],
+      "status": "superseded-partial-range-use-central-forecast",
+      "priorRangeLimitation": "The prior400\u2013800 store band did not include the newly discovered1755-line historical AWS host/auth/governance responsibility anchor. Do not use its sum as a current full optional-AWS estimate.",
+      "authority": "docs/refactor/architecture-program/handoff/forecast.json"
+    },
+    "historicalMachine": {
       "m1CandidatePhysicalLines": 105,
       "m2CandidatePhysicalLines": 154,
       "bothCandidateKernelPhysicalLines": 1089,
@@ -3741,7 +3811,15 @@
       "formalBudgetPassed": false,
       "reason": "Comparison is physical diagnostic only; complete production relocation and original candidate metric protocol are not established."
     },
-    "topologyQuantiles": [
+    "machine": {
+      "selectedM1InclusivePhysicalLines": 1024,
+      "wholeExperimentalKernelPhysicalLines": 1024,
+      "printerNormalizedLines": 1145,
+      "treeSha256": "548a1a5b1a93af37cdef420e519c23640efa537d572f3ccf709292e07f6287ab",
+      "interpretation": "Complete amended prerequisite kernel includes core legality guard, public evaluator seam and relocated HTTP helper; external M2/cache witnesses are separately maintained test/tooling. No production reduction pass.",
+      "formalBudgetPassed": false
+    },
+    "historicalTopologyQuantiles": [
       {
         "layout": "T1",
         "sourceAdditions": {
@@ -3827,71 +3905,62 @@
         "nonzeroPopulation": false
       }
     ],
-    "wholeProduct": {
-      "currentPhysicalLines": 18252,
-      "overlayCodeLines": 22916,
-      "generatedProductPolicyLines": 55,
-      "referenceDenominator": 22971,
-      "halfTargetFloor": 11485,
-      "achieved": false
-    },
-    "forecast": {
-      "unit": "physical source lines",
-      "kind": "engineering planning range, not measured implementation",
-      "commonCore": [
-        900,
-        1200
+    "marginalHelperLane": {
+      "format": "ts-release/prerequisite-marginal-proof/1",
+      "sourceSlice": "Preserved original handoff plus only kernel HTTP-helper relocation, in /tmp/ts-release-p1-lane. This is not the amended P3 kernel or full seven-package product.",
+      "sourceSha256": "fbba7ed792cf5540a51dc9e4da20f18b6c9ebca3de9838e13df3ab4b88a0f3d2",
+      "commands": [
+        "bun tools/architecture-lab/topology/run.ts",
+        "bun tools/architecture-lab/topology/probes.mjs",
+        "bun tools/architecture-lab/topology/metrics.mjs"
       ],
-      "credentialAndTransport": [
-        700,
-        1200
+      "packedScenarios": 60,
+      "extensions": 27,
+      "quantiles": [
+        {
+          "layout": "T1",
+          "typescriptMedian": 37,
+          "typescriptP90": 73,
+          "metadataMedian": 0,
+          "metadataP90": 19,
+          "observations": 9
+        },
+        {
+          "layout": "T2",
+          "typescriptMedian": 37,
+          "typescriptP90": 73,
+          "metadataMedian": 0,
+          "metadataP90": 19,
+          "observations": 9
+        },
+        {
+          "layout": "T3",
+          "typescriptMedian": 37,
+          "typescriptP90": 73,
+          "metadataMedian": 0,
+          "metadataP90": 19,
+          "observations": 9
+        }
       ],
-      "storesIncludingRetainedS3": [
-        400,
-        800
-      ],
-      "cliAndActionEntries": [
-        250,
-        500
-      ],
-      "sum": [
-        2250,
-        3700
-      ],
-      "excludes": [
-        "artifact ownership/adoption",
-        "all provider outcomes",
-        "build/formatting/planning application",
-        "tests and independent oracles",
-        "generators/checkers",
-        "fixtures",
-        "research tooling",
-        "documentation"
-      ],
-      "anchors": [
-        "M1 core935 lines including identity/native envelope/interpreter",
-        "current credentials1083 + authority397 + authority model116 =1596 lines of mixed responsibility",
-        "Current topology HTTP43 + application/Action host33 + CLI10 =86 physical lines; anonymous/scoped mechanism proof only, not full authentication/host implementation",
-        "Current local store protocol25 + SQLite48 + Git73 =146 physical lines; four-line test-only barrel is a separate maintained test convenience; S3 excluded",
-        "current CLI607 and Action1136 lines before selected-scope decomposition",
-        "Additional local S3 model145lines plus independent186lineHTTP fixture/tests; noAWSauth/provisioning implementation",
-        "Published0.3.0 actual S3 source3476 lines:1755 AWS host/auth/governance plus1721 old journal semantics. Separate historical donor lane, no baseline credit; optional host translation belongs in final numerator."
-      ],
-      "status": "superseded-partial-range-use-central-forecast",
-      "priorRangeLimitation": "The prior400\u2013800 store band did not include the newly discovered1755-line historical AWS host/auth/governance responsibility anchor. Do not use its sum as a current full optional-AWS estimate.",
-      "authority": "docs/refactor/architecture-program/handoff/forecast.json"
+      "unchangedTypescriptMedianCeiling": 40,
+      "nativeProductAcceptance": false,
+      "sourceArchive": {
+        "path": "tools/architecture-lab/topology/p1-source.tar.gz",
+        "sha256": "ca7dfa5d970291d81ad52c2a4734503bfe35716ede3ed4ef29b4b57dd9110d0f",
+        "bytes": 719987,
+        "reproduce": "Extract archive into a clean directory, install its exact dependencies with Bun, then execute the three recorded commands. Source slice includes only the reviewed helper relocation."
+      }
     }
   },
   "decisionBoundary": {
     "alreadyAuthorized": [
-      "Concrete local research prototypes and verification",
-      "No known consumers; hard cut of known legacy formats",
-      "Retain all69 selected outcomes and the historical ownership laws"
+      "Explicit 2026-09-06 implementation and publication authorization, subject to passing real gates",
+      "Approved T3c seven-package grouping, including separate OpenAI and kernel-owned bin",
+      "40-line TypeScript marginal median, honest zeroes, metadata reported separately",
+      "Hard cut preserving all69 selected outcomes and native/recovery obligations"
     ],
     "explicitAmendmentsNeeded": [
-      "Use aligned Effect rc.108 for full implementation based on actual packed compatibility, preserving beta83-first-slice historical disposition",
-      "Select proposed1MiB full-event product profile with safe oversize semantics and separately owned large bytes",
-      "Adopt a stated supplemental decision rule or repair/replay frozen trial protocol; no frozen UniqueSelection exists from current results"
+      "Resolve aligned beta instruction against tested rc.108 and published beta compatibility before dependency freeze; no silent override"
     ],
     "deploymentEvidenceNotReplaceableByPreference": [
       "Action hosted journal qualification for the eventual selected default",
@@ -3914,9 +3983,13 @@
     "unpatchedEffect": "E20: actual official unpatched rc.108 passes final selected proposed declarations and published0.6.3 adoption. The old private Param declaration patch is not required by this selected surface and can be omitted in future layout; no current production change."
   },
   "finalSourceBindings": {
-    "machineTreeSha256": "25f02ed605cb054888f5aad37f55f26732d0ad57fad595eafa1483502bebd435",
-    "topologyCombinedSourceSha256": "c653f05d28e8e968b79cdd09f6ec79d36f60163b32995303ab61a2de0474244b",
-    "normalizedOwnedDeclarationSha256": "969cc583d57a46cf5a34f8746c69528b30c59b976080e8fc45ff834766b3f470"
+    "machineTreeSha256": "548a1a5b1a93af37cdef420e519c23640efa537d572f3ccf709292e07f6287ab",
+    "historicalGraphBindings": {
+      "machineTreeSha256": "25f02ed605cb054888f5aad37f55f26732d0ad57fad595eafa1483502bebd435",
+      "topologyCombinedSourceSha256": "c653f05d28e8e968b79cdd09f6ec79d36f60163b32995303ab61a2de0474244b",
+      "normalizedOwnedDeclarationSha256": "969cc583d57a46cf5a34f8746c69528b30c59b976080e8fc45ff834766b3f470"
+    },
+    "helperLane": "fbba7ed792cf5540a51dc9e4da20f18b6c9ebca3de9838e13df3ab4b88a0f3d2"
   },
   "publicHistoryAmendment": {
     "evidence": "E17",

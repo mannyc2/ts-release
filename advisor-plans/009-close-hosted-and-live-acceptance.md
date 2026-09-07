@@ -1,5 +1,10 @@
 # Plan 009: Qualify shipped hosts and close every selected live acceptance row
 
+> Current execution authority: [`docs/refactor/architecture-program/handoff/README.md`](../docs/refactor/architecture-program/handoff/README.md).
+> All lowercase contract filenames below resolve inside that handoff. Design and API changes regenerate the projections; the archived selector is not an active gate.
+> The 2026-09-06 task authorizes the full implementation and qualified publication. Historical per-group permission requirements are superseded by that authorization; exact candidate, destination, account and allowed effects still require a concrete reviewed execution record.
+
+
 > **Executor instructions:** This plan contains remote and potentially
 > irreversible provider work. A plan is not mutation authority. Before each
 > numbered mutation group, obtain same-session authority naming the exact
@@ -134,7 +139,7 @@ into a reviewed authority packet before execution; do not invent them here.
 
 ### Step 1: Build and approve the acceptance/authority matrix
 
-Generate `docs/refactor/evidence/acceptance-matrix.json` from `WAVES.json`, the
+Generate `docs/refactor/evidence/acceptance-matrix.json` from `waves.json`, the
 scorecard, current ledger, and Plan 008B local candidate. For each open facet
 record:
 

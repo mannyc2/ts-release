@@ -1,6 +1,6 @@
 {
   "format": "ts-release/architecture-handoff/1",
-  "status": "reviewable-proposal-with-explicit-maintainer-decisions",
+  "status": "implementation-authorized-prerequisite-evidence-not-release-certification",
   "authority": {
     "design": "docs/refactor/architecture-program/handoff/design.json",
     "layout": "docs/refactor/architecture-program/handoff/layout.json",
@@ -13,8 +13,10 @@
   },
   "authorization": {
     "researchAndPrototypes": true,
-    "productionRefactor": false,
-    "publication": false,
+    "productionRefactor": true,
+    "publication": true,
+    "source": "Explicit 2026-09-06 user implementation and release instruction; execution status in docs/refactor/execution/GOAL.md",
+    "conditions": "Production gates, independent candidate review and real destination authority remain required",
     "compatibility": "Hard cut; user reports no known external consumers."
   },
   "preservation": {
@@ -26,8 +28,8 @@
   "files": [
     {
       "path": "docs/refactor/architecture-program/handoff/README.md",
-      "bytes": 11850,
-      "sha256": "64ba0da452b2142ae5001127ab5aac5d7823f0541c594bff1b736e03d3bec73c"
+      "bytes": 5514,
+      "sha256": "d529a66ad2a80b40f3d58c593e23fba1f11bd261ce3a9bc5a80ec2bce22ab064"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/adoption.d.ts",
@@ -36,8 +38,8 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/apple-preparation.d.ts",
-      "bytes": 10620,
-      "sha256": "505cd760b6ef9b448112237800a905a4b2276f3fb518ed00c83d570dbed223c0"
+      "bytes": 10633,
+      "sha256": "368d15aed6c3bebfdc57ca8fab88687831bb640fa10bddf6f67151e0338c09bd"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/bundle-codec.d.ts",
@@ -52,7 +54,7 @@
     {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/emission.json",
       "bytes": 2669,
-      "sha256": "d80d33281788ad4a7384cf3808b2d3ff003e85e0a37a85d9d7b228c1e12bae36"
+      "sha256": "f72e575bff822b5ac52b8ee7770101279b4f9acac881564dfca773e7ff723b36"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/public-api.d.ts",
@@ -96,8 +98,8 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/design.json",
-      "bytes": 18978,
-      "sha256": "88bc3e060fe020ac58f8f69299b4afd60ad5ee782c61782a84c2dfe5e14e8fed"
+      "bytes": 29973,
+      "sha256": "eb0716306ab3c300b84a210fa892a8c705d40476c7651175e9db76adb52f3cdf"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/durable-vocabulary.json",
@@ -111,13 +113,13 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/forecast.json",
-      "bytes": 28761,
-      "sha256": "27021cb8c800a41e0acd3ea13ba004b5392dd092e172bf2fac241be6d907fa78"
+      "bytes": 30216,
+      "sha256": "80386a5fbc3eb004e0df9de205ba3e0de912f58c019dcf4ef3ea3f8380db130f"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/forecast.md",
-      "bytes": 5818,
-      "sha256": "262a05c745cdf8ad705ccfe9985426b9c76547318c3e0a66218947e038a2b977"
+      "bytes": 5807,
+      "sha256": "2766d8e29946be04655890aa65bd2d7e55cbbdabda408cda0c74d11dbe97122d"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
@@ -130,19 +132,34 @@
       "sha256": "08b5487b1521cbff0ccbe0123778a5e4785db7f76e1f93e52ec8c96600211456"
     },
     {
+      "path": "docs/refactor/architecture-program/handoff/http-api.d.ts",
+      "bytes": 1254,
+      "sha256": "fa50a9a495f28fefa21946669aa92828119e5959823b1b237347d2a2a6af8a4d"
+    },
+    {
       "path": "docs/refactor/architecture-program/handoff/kernel-api.d.ts",
-      "bytes": 15708,
-      "sha256": "a9f9242cb93b3114b9a103bf7d98c461e2c57506930c8a2c504abf8e0c9ebe8a"
+      "bytes": 17958,
+      "sha256": "b3fe44cce205ce93567279da4a2b490b9c66597013d5b0112815393a1f3eddfc"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/layout.json",
-      "bytes": 284454,
-      "sha256": "bb8f703bc9ff29ede255d0b7f1cfa8c2a6cd2fcdc7a7ea6bb97148f6bb3aa347"
+      "bytes": 389851,
+      "sha256": "bda7c04dd3afbaca6550f76c9482e7773c4a471a56b34b9e6a4663918aba642b"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/machine.md",
       "bytes": 17497,
       "sha256": "15ed82128ccdbeb3353e228b42c0ad50298ffbb80228964a265cc08a51982461"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/mainline-donors.json",
+      "bytes": 3586,
+      "sha256": "6c4bec5da5e475b1a8579ba445dd0923efaa7048e4223b4304788aff2616df4d"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/marginal-proof.json",
+      "bytes": 1547,
+      "sha256": "bbe9b74be3321aab3f516218063e4b53fbb10222aa2bd2e49bd5c240f408fea1"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/migration.json",
@@ -156,8 +173,8 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/package-coordinates.json",
-      "bytes": 1616,
-      "sha256": "43061e57a726eceab19c7d0f995b84343c892c328a139b073090e944ef5a2da0"
+      "bytes": 3321,
+      "sha256": "017b4e816cdcc572fe416506b3e7937290309f027e2fa2e6206b79f3a75e8e28"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/provider-api-evidence.json",
@@ -221,18 +238,18 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/public-surface.json",
-      "bytes": 193840,
-      "sha256": "26d28b193edf0ddbee9234feaf0a78c65a29c7b589a84d2f84072fa708d6ec8c"
+      "bytes": 219759,
+      "sha256": "3cf9e560bb7139e4e0c05f3f8cf6a0d6fd15e518653a9c3625da318718d2f7df"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/qualification.json",
-      "bytes": 158012,
-      "sha256": "2683ebf8ab6b2eb79d2fd2c14dd3b5b399f2914105a9ec7029e53d5e4fb05d6e"
+      "bytes": 161597,
+      "sha256": "518842a9cf035f6ed99325ae39684ce1d2ecf3dde2a68b09fc1ac80f5db98f63"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/qualification.md",
-      "bytes": 24373,
-      "sha256": "14d65e94234b44e61c44a1d63360c22bae18c9f183271aaf86fbf613b3ed5ae3"
+      "bytes": 24685,
+      "sha256": "6c075618c417dbd2ef79d5dcbf4bb65437d68d8ba085d8731c61d2725c3decc6"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/reconciliation.json",
@@ -251,8 +268,8 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/topology.md",
-      "bytes": 16909,
-      "sha256": "1d9f81e1bb25cddae6173a52a36fdc4487160204c6d72d781e8366d9ccfb3a99"
+      "bytes": 17221,
+      "sha256": "b1ce2eef8d5f518286f211bab1506012c4856b0e5080999047edb60fd093d5e9"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/upstream.md",
@@ -296,8 +313,8 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/upstream/unpatched-effect-consumer.json",
-      "bytes": 13969,
-      "sha256": "34c732924fb9060892e03d35455c790ab2958c68132f74a2188dd877aeefe639"
+      "bytes": 14139,
+      "sha256": "a80eb091029a743c95a0f6e848d44dd0bd7f2c64b9d1624f1763665d3f795f1d"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/upstream/unpatched-effect-input.json",
@@ -306,18 +323,18 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/verification.json",
-      "bytes": 13562,
-      "sha256": "900f5ba5e874b77f63aa97dfef42c671253d6a3a8e772ea6886012b8ae2c6fbd"
+      "bytes": 22759,
+      "sha256": "ee1d79dee890e20ef214682075f1f99476356ff339012283be54d8cff12b5a8b"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/waves.json",
-      "bytes": 176690,
-      "sha256": "a9f3bc3fc62e11c5df8bfbbeafaea5ff088bccf2f52b8966a73cc13bdade044b"
+      "bytes": 178216,
+      "sha256": "f3ed98ebd587963d0e3ee2d8390c2ab7e04eae17bf11125b96d757cadd129082"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/waves.md",
-      "bytes": 13380,
-      "sha256": "397726383c33060844c816642c4871450bc2bea13015d4145def9bd86ea2cb1e"
+      "bytes": 13692,
+      "sha256": "c9f51de4ba120b7ef9a07a6da8c0c36f3884405c27c4424b4c26e58e1c72d16b"
     },
     {
       "path": "docs/refactor/architecture-program/inputs/baseline.json",
@@ -336,8 +353,8 @@
     },
     {
       "path": "docs/refactor/architecture-program/inputs/trial-spec.json",
-      "bytes": 179353,
-      "sha256": "a34cf7bc970707d73c5b3381205bde603a193e2174ff245c1ba782714707e9a3"
+      "bytes": 179436,
+      "sha256": "3c0cff83db83ad72dc673c5343f8400b2b266652a3a5a59653e0c51eed4742f4"
     },
     {
       "path": "docs/refactor/research/launch-scorecard.md",
@@ -356,28 +373,28 @@
     },
     {
       "path": "tools/architecture-lab/apple-composition/amend.mjs",
-      "bytes": 3047,
-      "sha256": "6276c1bf3520e14880c34a71a4e90c3e119a50af32b9a3643d7b6226e4396504"
+      "bytes": 2629,
+      "sha256": "82a28501071ba17f6f8787b8af8e02d16dc045dc72ac7594ac839a38c55b0815"
     },
     {
       "path": "tools/architecture-lab/apple-composition/composition.ts",
-      "bytes": 5874,
-      "sha256": "c7a6fa442289125fe6aaa695a11dfaa8732961a77b9619344c1499595ef8e5da"
+      "bytes": 5859,
+      "sha256": "e99fb2a30759ccda883525677d5257fd7e51e0be11c6118cbfd6b4433700e4de"
     },
     {
       "path": "tools/architecture-lab/apple-composition/fixture.ts",
-      "bytes": 10332,
-      "sha256": "7a06cb94bcaeb2c0456a063f33eccf63666a6bac20e1a3d524129a48f762012b"
+      "bytes": 10337,
+      "sha256": "20f107ec2f42d3ba37df46b4a7c5502fa2ccf08202bea5d466b171ab7abf5ac1"
     },
     {
       "path": "tools/architecture-lab/apple-composition/results.json",
-      "bytes": 4658,
-      "sha256": "940bd7b2f94fb945a8d378febaef525c25ffdb7f28b69c184235ad22c81cff39"
+      "bytes": 5806,
+      "sha256": "6545b107b1d53d948f245e028c18f7b8f2c38541311001b678091344ce36085d"
     },
     {
       "path": "tools/architecture-lab/apple-composition/run.mjs",
-      "bytes": 3516,
-      "sha256": "b96600cc289cbec62a6f317d0e4def62192564f3f523c225b457244b5f3ebd82"
+      "bytes": 3790,
+      "sha256": "371398791748e397da23f16e75bca607efb60ba5286a37bdfa7d64443908236b"
     },
     {
       "path": "tools/architecture-lab/apple/adoption-fixture.ts",
@@ -396,13 +413,13 @@
     },
     {
       "path": "tools/architecture-lab/apple/apple-experiment.ts",
-      "bytes": 21755,
-      "sha256": "f1006f0cde861d9bd013826318dfe11c07101eaa28d6bccd49ab8c88813b6667"
+      "bytes": 21811,
+      "sha256": "07f3569d1c69caf63c67df86e6428ef5378bedf62bbe4e3275dd0c82e3a18b1f"
     },
     {
       "path": "tools/architecture-lab/apple/apple-preparation.ts",
-      "bytes": 17491,
-      "sha256": "7e6601c6648d3fc4191c454b60f957df7e1988711ad99c147642d1983b35d7d4"
+      "bytes": 16160,
+      "sha256": "b966adbfa391bfa2d40df5d9f495674f3a8e07f213786db9a36f1fd132867dbf"
     },
     {
       "path": "tools/architecture-lab/apple/build-upstream.ts",
@@ -426,8 +443,8 @@
     },
     {
       "path": "tools/architecture-lab/apple/results.json",
-      "bytes": 10946,
-      "sha256": "9c3b88cb9aee663f8204fabd63539d6472ef63baee28469492fb395f7c03c763"
+      "bytes": 10769,
+      "sha256": "bbec39eb3abb9f7c54cba701306aaa9114dcc08913a8b0e2d89f911e984de50a"
     },
     {
       "path": "tools/architecture-lab/apple/run-experiments.ts",
@@ -437,7 +454,7 @@
     {
       "path": "tools/architecture-lab/apple/source-inventory.json",
       "bytes": 2277,
-      "sha256": "a70ad91236189cf1e7cafaf9fb2357b8b78192ad2fc982c5280eef8844459733"
+      "sha256": "422e5add1338f4c0cc0321774da4b01ba3c1b210fd6d7b2ab028bbded2e3e365"
     },
     {
       "path": "tools/architecture-lab/apple/upstream-build.json",
@@ -491,13 +508,13 @@
     },
     {
       "path": "tools/architecture-lab/integration/dependencies.test.ts",
-      "bytes": 2303,
-      "sha256": "ca7337f87a9c68cdf3f283a587601024c1b9d60b9edca51f7743b50b472e183b"
+      "bytes": 2357,
+      "sha256": "a33167136f282fc25aaf6b4e1e6e084e56b89d389cb7b3c595a1aa37b5f9668c"
     },
     {
       "path": "tools/architecture-lab/integration/dependency-worker.ts",
-      "bytes": 4702,
-      "sha256": "d3637364bacf30cb07df30eca20ac5da8e3e94bf7c50313b989664b7a3219f65"
+      "bytes": 4865,
+      "sha256": "7cb0542a38499a9e360528febc9246037d496bf8deee8c0263ff7cc4a20d0138"
     },
     {
       "path": "tools/architecture-lab/inventory.ts",
@@ -506,13 +523,13 @@
     },
     {
       "path": "tools/architecture-lab/machine/emit-proposal.mjs",
-      "bytes": 3407,
-      "sha256": "18c9d1e2a856630667168f7c8d53cc9d1faed726d6d90f14505d182d19dd192a"
+      "bytes": 4050,
+      "sha256": "b26ee051c79bd0019c09fccb2027963dffa3a4234565d83aa34e56546d690d8d"
     },
     {
       "path": "tools/architecture-lab/machine/event-sizes.json",
       "bytes": 1342,
-      "sha256": "6b7ebffd9175fede7828439239ef49bda5dabd5d073e39145e3125995d339596"
+      "sha256": "c0d83e732701cf13ae7d89073524ce8ad03fe65b7c1b6da7396690ea83df749f"
     },
     {
       "path": "tools/architecture-lab/machine/extension-results.json",
@@ -541,18 +558,18 @@
     },
     {
       "path": "tools/architecture-lab/machine/measure.mjs",
-      "bytes": 3342,
-      "sha256": "a496c69aa0797dbce066a96fcd6c57419b29eb14301b93d535b04663f72266f9"
+      "bytes": 3681,
+      "sha256": "ea1b9fc9a3047636c9e3e329b3b98ad013c0def259eef79a5ecaa42bdfe33466"
     },
     {
       "path": "tools/architecture-lab/machine/source-metrics.json",
-      "bytes": 4609,
-      "sha256": "40b88b27d33611293e0ddfbd0c960176c8ad3465efc6d8f87948a4090d2c1c1b"
+      "bytes": 3210,
+      "sha256": "89de71cd10e89502dbed08a58f8ec2193e1ff8b2c50c126f78bdab5738147766"
     },
     {
       "path": "tools/architecture-lab/machine/src/contracts.ts",
-      "bytes": 9068,
-      "sha256": "ffd043b77f764397491834bbde371709a608c7dd6ba2bfebf39db2ea9d9c0b1c"
+      "bytes": 10145,
+      "sha256": "eef0539fb3c2324fa113df538cbf34ea6ce2559c98ed6113925fb1079eb3f18e"
     },
     {
       "path": "tools/architecture-lab/machine/src/core-git.ts",
@@ -560,59 +577,64 @@
       "sha256": "7a58500b527478c640e7a9fb5e19a1212c3c5bf155584ab2e3ea56ef4a43ac26"
     },
     {
+      "path": "tools/architecture-lab/machine/src/http-evidence.ts",
+      "bytes": 696,
+      "sha256": "9897e521b873a556708d041a4439ea3e14775b9ffedfd469efaa757c96b6949b"
+    },
+    {
       "path": "tools/architecture-lab/machine/src/identity.ts",
-      "bytes": 17408,
-      "sha256": "1aed5715192386ae13a110f135f630d34320b74eeb1129eac3c2f3eed0fff871"
+      "bytes": 19192,
+      "sha256": "af043704cdf372c972cfea45fffec85d13fd88a98696516814b3b669f892697d"
     },
     {
       "path": "tools/architecture-lab/machine/src/index.ts",
-      "bytes": 547,
-      "sha256": "f42aa594aeb0814f44d7e885f64a6db9dee51f7dc611deac60c2feae46a4f58e"
+      "bytes": 690,
+      "sha256": "9c5aa0ca0c55702388688fcf5fbe548a87c0f7cf90acf283c8f564c32c07b6d6"
+    },
+    {
+      "path": "tools/architecture-lab/machine/src/laws.ts",
+      "bytes": 7741,
+      "sha256": "2b21b41a5c50d820d5b52453b25c31b7700c7b36794220a0a2b125b5804e4820"
     },
     {
       "path": "tools/architecture-lab/machine/src/m1-history.ts",
-      "bytes": 7926,
-      "sha256": "06b99aeafe591e44763c11bd233ee179d32b1151f6bc229890da29bedb62720c"
-    },
-    {
-      "path": "tools/architecture-lab/machine/src/m2-transition.ts",
-      "bytes": 9547,
-      "sha256": "3ebc61b0d800986d2cfbd1d894793ef1536616009b85e792fb80ac5b828416f0"
+      "bytes": 1685,
+      "sha256": "a9cd364a74a6f2ca11348045efc3919e88f804023d93def8576a4001241955a1"
     },
     {
       "path": "tools/architecture-lab/machine/src/model.ts",
-      "bytes": 1317,
-      "sha256": "e164be3adcc3b8f04a947b5f7f670550bb1c225e5b5b0140cb9715bb91e9c89d"
+      "bytes": 1351,
+      "sha256": "c76ad8f4a89f2c3fb5fd6c38af9a9dcfa36f58b79188e481a8ffbd3aa9fa6001"
     },
     {
       "path": "tools/architecture-lab/machine/src/run.ts",
-      "bytes": 15848,
-      "sha256": "7f4d6ce57fdc3df93530b96255152511cea060c1352d359f98fc98d741bbc7b2"
+      "bytes": 17756,
+      "sha256": "21881bdf3811cf5cdf5ca78d944d8ef1be9ed2805384ab694f1c63220da949fd"
     },
     {
       "path": "tools/architecture-lab/machine/test/boundaries.test.ts",
-      "bytes": 13103,
-      "sha256": "1340e2a46add2100174826bb75d261ab91a0a2a9d7dd7d2e6e9e821f76b65edd"
+      "bytes": 13023,
+      "sha256": "9a7203278caff7aa45761ddb805f2af39d2c09a66cd25c76a040e1cde90f3798"
     },
     {
       "path": "tools/architecture-lab/machine/test/errors.test.ts",
-      "bytes": 6129,
-      "sha256": "c891fa0811a4e95b833e2b18eb908712c65effc5eee521d201e8dce721b8d015"
+      "bytes": 6112,
+      "sha256": "3ea46724f4de2dea84ff8dbc1d73c716ec41035022c501fc5c8d1007c1e2a41c"
     },
     {
       "path": "tools/architecture-lab/machine/test/fixtures.ts",
-      "bytes": 5572,
-      "sha256": "63ba1cbdb0bc5fb010ec8d9d92b3e858cfa89e06c009aba9cf95caef95385392"
+      "bytes": 6279,
+      "sha256": "9dcd7e935c2a602278e184fe7361e230ab6a3b52634360bb808af80f0e41f025"
     },
     {
       "path": "tools/architecture-lab/machine/test/git-catalog-fixture.ts",
-      "bytes": 5034,
-      "sha256": "14b1b739a59bb67dbeb1bf77c895958173c9e8d9fcfb1eda185320824d9557c2"
+      "bytes": 5082,
+      "sha256": "0cce0a6e5233016907fe0fb400d9a117bd277b3fe44f12aa17599fc8ea36bcc3"
     },
     {
       "path": "tools/architecture-lab/machine/test/git-catalog-worker.ts",
-      "bytes": 1182,
-      "sha256": "880672cd5909b212af44f1453a03e0da08e8afe9d830691380044876c07d8710"
+      "bytes": 1165,
+      "sha256": "8bd06253de257d90bd290a498dc7a4fa27c662ab6b3228d467628064a8f7e13d"
     },
     {
       "path": "tools/architecture-lab/machine/test/git-catalog.test.ts",
@@ -621,23 +643,23 @@
     },
     {
       "path": "tools/architecture-lab/machine/test/git.test.ts",
-      "bytes": 4362,
-      "sha256": "da3e3fd806672d349f732b1740cd0f21af9a594d559c4ba8cc63ee2e9a060b3c"
+      "bytes": 4360,
+      "sha256": "a575873fddd2f8066fe3856fe55c74e7e891d9f87daf5169251310491de399fd"
     },
     {
       "path": "tools/architecture-lab/machine/test/observable.test.ts",
-      "bytes": 17333,
-      "sha256": "a2e74fe1fd909085bf94791108713ebeefe6df0ef9d5d1acd21989022122c0e7"
+      "bytes": 17268,
+      "sha256": "653882aac1bd8d2663b0436d6cd6c190f0fcaf497ac116ff68f598a45291c9c3"
     },
     {
       "path": "tools/architecture-lab/machine/test/process-runner.ts",
-      "bytes": 2790,
-      "sha256": "373cca646e57c0149a7ce0c4b02b4f697b52fd9209867b1712b274452a48cb8a"
+      "bytes": 2974,
+      "sha256": "053f0500c403d828a8355fb250e2cfc68b0699047ff48617e3fdbc33375d373c"
     },
     {
       "path": "tools/architecture-lab/machine/test/process.test.ts",
-      "bytes": 3346,
-      "sha256": "7803d4f66cab861db7d8b0cfb9317d6ab0b3e5c225baea6651326373b1f2ea7e"
+      "bytes": 3499,
+      "sha256": "0274c3e0241c0e88e6b7afc360449fa4ea75d0574cde7605aa8a301465305861"
     },
     {
       "path": "tools/architecture-lab/machine/tsconfig.json",
@@ -655,6 +677,61 @@
       "sha256": "57b6f99e3308a3b27e832f0da3565fc1327de8b3b3ca0fceb719072b36ae4cf0"
     },
     {
+      "path": "tools/architecture-lab/machine/witnesses/application-example.ts",
+      "bytes": 3016,
+      "sha256": "846399d5cfa938ee3f16d29a37324b510559c75427cc930e0a7a2e5e4a0cc9eb"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/cache.test.ts",
+      "bytes": 9898,
+      "sha256": "1ba68d6ac3cd9f9de675e0e62f82a22bda23260a12097c50c98cef37745b58c0"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/caching-store.ts",
+      "bytes": 2333,
+      "sha256": "807849a337f24a29bdfdde5a97f565fa05e3edca3a9308e73ecbf73011013975"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/contract.test.ts",
+      "bytes": 2767,
+      "sha256": "fe0ec96731df549f57569da0d26eccf50a91195cdfca7b16c521da853eb7faf4"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/executor-laws.test.ts",
+      "bytes": 5301,
+      "sha256": "a5c8448657479ed1849ee904d465592e706209f32eaeb909a50210bd6ad13d14"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/m2-transition.ts",
+      "bytes": 10105,
+      "sha256": "6df87645f38acca3ebe8f7458bd9e14de5c636b8f2702969ac016bb15b9abadb"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/memoized-machine.ts",
+      "bytes": 724,
+      "sha256": "27f69ac4f9aa01784ecac378168cd516e5827e3f3a219963ece7050fd4e82bb2"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/preparation-selection.test.ts",
+      "bytes": 3161,
+      "sha256": "a148d1820e70c97595fef65b919135a42740cbefd7e9b331efaea4ad8304ae9a"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/store-laws.test.ts",
+      "bytes": 2348,
+      "sha256": "7637f643d77fc94ada2e55b4cd5a6a689a84ffeac74c5180170f579ee2f739c0"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/store-laws.ts",
+      "bytes": 3078,
+      "sha256": "07f6086048d12af16e5a6a2b3722a7d9314eea81ae46656b1ecd4e1482f6139a"
+    },
+    {
+      "path": "tools/architecture-lab/machine/witnesses/undecodable-receipt.test.ts",
+      "bytes": 4391,
+      "sha256": "d7a1948e77434c1a285cbcbe9d9db40dff12a48c29b40e216fc2a9dd502649d2"
+    },
+    {
       "path": "tools/architecture-lab/migration.ts",
       "bytes": 8571,
       "sha256": "81e29f23c49294d194dfdd32e106544b9883fc4252cca6a2cb7141e3b103775e"
@@ -666,8 +743,8 @@
     },
     {
       "path": "tools/architecture-lab/project.ts",
-      "bytes": 31760,
-      "sha256": "bc4948cf9976952c366d4ae641dca68e0171f246d0f46789617b144d4bad8d7e"
+      "bytes": 34664,
+      "sha256": "4018aae2478c8085171d203839e69d82a60777f7a72918dc46d5b3fb725750ac"
     },
     {
       "path": "tools/architecture-lab/proposal/apple.ts",
@@ -727,7 +804,7 @@
     {
       "path": "tools/architecture-lab/storage/s3-model.test.ts",
       "bytes": 13846,
-      "sha256": "17b0195bc143cb359432c25b53c39e6d2d5aaa78267556904a5129318dfd6321"
+      "sha256": "8f899ad3fc02ef3fc4c884a16582727f9e2b0f7e8d229d9302d5cb316de2f0b0"
     },
     {
       "path": "tools/architecture-lab/storage/s3-model.ts",
@@ -786,18 +863,18 @@
     },
     {
       "path": "tools/architecture-lab/topology/extension-results.json",
-      "bytes": 79283,
-      "sha256": "f093b15cd43110ff4902c159f3e5ea63d842c1fe4746f6e678b273cd58373ab6"
+      "bytes": 77827,
+      "sha256": "9fe89291e8ff9748c1ece7ce74f59314d9f769527688095e73ecd030f8405a52"
     },
     {
       "path": "tools/architecture-lab/topology/extension-results.json.gz",
-      "bytes": 9085,
-      "sha256": "0ceab0a9cd3f6277ce146b80629806c4318bd85d0d1966c0c37d7c97babafe45"
+      "bytes": 9018,
+      "sha256": "2a22c8fd3602f7cdd7289d128da1661fa9c695d542c66450940f0b8e23c5321e"
     },
     {
       "path": "tools/architecture-lab/topology/extensions/catalog.ts",
-      "bytes": 2370,
-      "sha256": "90d936c7028690507f8391a73d7004e5709c92c0de4be147c1da709b14787699"
+      "bytes": 2335,
+      "sha256": "7900363eb1f55f7bae24714856e600cceac7131cbfb4d01b2583e1eff2ac9120"
     },
     {
       "path": "tools/architecture-lab/topology/extensions/consumer.ts",
@@ -806,8 +883,8 @@
     },
     {
       "path": "tools/architecture-lab/topology/extensions/npm-tag.ts",
-      "bytes": 2649,
-      "sha256": "b3c5d625e3c7f2dd83b18748fbb9d1a70e21d39d61cd1426d49e2eeee71e5367"
+      "bytes": 2614,
+      "sha256": "8d92380df100cecbe24a941c26fb8b919422e2a7efaf6ae01accf568411fe1a5"
     },
     {
       "path": "tools/architecture-lab/topology/extensions/producer-consumer.ts",
@@ -861,13 +938,13 @@
     },
     {
       "path": "tools/architecture-lab/topology/metric-results.json",
-      "bytes": 27308,
-      "sha256": "76e00cde85d6d3e8e9ec993a7eed076956fe2a2b64f4f1fb231aba2d40dce695"
+      "bytes": 26608,
+      "sha256": "fd369f2bb73db0b83f89ec840df72d78b48bcfbfbac4a436e53c870cc82d01f8"
     },
     {
       "path": "tools/architecture-lab/topology/metric-results.json.gz",
-      "bytes": 38007,
-      "sha256": "4892ef57772a3f427dc05ed3f78e8bbcaaf128ad48094c63da92ce167d1ce8c0"
+      "bytes": 37300,
+      "sha256": "7051cede12f019bca84fc761742f819a84322b3fbf3a2f22756bbb3c22a48f15"
     },
     {
       "path": "tools/architecture-lab/topology/metrics.mjs",
@@ -880,14 +957,19 @@
       "sha256": "c70a2c44e24abb8284e8520b94092e1ce734db57e3267ce411e8c32ceb46186a"
     },
     {
+      "path": "tools/architecture-lab/topology/p1-source.tar.gz",
+      "bytes": 719987,
+      "sha256": "ca7dfa5d970291d81ad52c2a4734503bfe35716ede3ed4ef29b4b57dd9110d0f"
+    },
+    {
       "path": "tools/architecture-lab/topology/pack.mjs",
       "bytes": 6273,
       "sha256": "bad5ea0b51bfbb00507bf63d43fa2bcd86629e84973f1000ce80449040842e29"
     },
     {
       "path": "tools/architecture-lab/topology/probes.mjs",
-      "bytes": 20452,
-      "sha256": "5330db4bcc0ee7f7aed5d362532570440234a36f1d7a4deac001374d8549ca8d"
+      "bytes": 20534,
+      "sha256": "9c4258f5591622cea02ad7fa7f94e55f23ed3d5adca5e14605ca111f31496f2a"
     },
     {
       "path": "tools/architecture-lab/topology/publication-results.json",
@@ -912,12 +994,12 @@
     {
       "path": "tools/architecture-lab/topology/results.json",
       "bytes": 8003,
-      "sha256": "2ab7e1e9b1784fb1820cb1d649d422f233f53cf530a90bedd3915489244de512"
+      "sha256": "89ef39ad7a4a72d096135b701a35dfd0cbf5ee62ccb60eaeba0bc987c2da19b8"
     },
     {
       "path": "tools/architecture-lab/topology/results.json.gz",
-      "bytes": 161056,
-      "sha256": "ae740e12b11de444f440993c8f50b3af1131ceb435d8c98bd77fbbfd6071418c"
+      "bytes": 163993,
+      "sha256": "d5f4fbff9c7f7a1359aa3c9b0228ec27a75b19e7b11bcd0f4ec147a04f98d3c9"
     },
     {
       "path": "tools/architecture-lab/topology/run.mjs",
@@ -936,18 +1018,13 @@
     },
     {
       "path": "tools/architecture-lab/topology/src/external.ts",
-      "bytes": 1372,
-      "sha256": "c6a13a7aadab1a19d991825476061f9ff5304cd462c4e93f6955e2eea64ae6a8"
+      "bytes": 1337,
+      "sha256": "be9058bbd123c3dcb1cf1bc76b7be7b0e5cc637f4c7471e635cc96c530750773"
     },
     {
       "path": "tools/architecture-lab/topology/src/host.ts",
       "bytes": 1741,
       "sha256": "5bde902cd4dce79a85425d6122da3243201a48aa22bb3617c4618ace222afcd2"
-    },
-    {
-      "path": "tools/architecture-lab/topology/src/http-evidence.ts",
-      "bytes": 693,
-      "sha256": "000efcf0eac15ee8186a4fb2fe324061264d6f7c1192c89fe170577d54163a6a"
     },
     {
       "path": "tools/architecture-lab/topology/src/http.ts",
@@ -961,13 +1038,13 @@
     },
     {
       "path": "tools/architecture-lab/topology/src/npm.ts",
-      "bytes": 3882,
-      "sha256": "0ad5818a139c92ed171e468e0604533d7415c3023a9b79ef33614c54437cae22"
+      "bytes": 3847,
+      "sha256": "2a2eb7b463b6e74837925660da1c925a659ddad4eaaaa69477815b41cb15f6c0"
     },
     {
       "path": "tools/architecture-lab/topology/src/python.ts",
-      "bytes": 4359,
-      "sha256": "d2316a91f68957c1683730ad8b1623771c0bba8c2c7398b0565bda599ae8e432"
+      "bytes": 4324,
+      "sha256": "e3090301af5f2cb501b9046275f6b0492275285609885618e72a84a183192848"
     },
     {
       "path": "tools/architecture-lab/topology/trace-loader.mjs",
@@ -976,13 +1053,13 @@
     },
     {
       "path": "tools/architecture-lab/tsconfig.json",
-      "bytes": 371,
-      "sha256": "2e4e130907d1d8d5d7b1a3162410738ddf6bcfa047ceba34509076845e66fe19"
+      "bytes": 414,
+      "sha256": "2dfe2aa9acf0194807d89c8ddd9a5da6dae0691d3de52a073f07a562791c9323"
     },
     {
       "path": "tools/architecture-lab/verify.mjs",
-      "bytes": 8257,
-      "sha256": "6ebcdb17205e0670ce47180c0a6418d608d3ff31e150ca1c0e20ad14decc52d9"
+      "bytes": 8626,
+      "sha256": "9e9d9b20313f7af437d86a0e40ff247ce90a28fd4776d9ac2713c3b23eeb762f"
     }
   ]
 }

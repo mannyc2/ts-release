@@ -3,17 +3,27 @@
   "status": "declaration-projection-not-emitted-production-evidence",
   "selection": {
     "machine": "M1",
-    "topology": null,
-    "marginalPolicy": null
+    "topology": "T3c",
+    "marginalPolicy": {
+      "typescriptMedianAtMost": 40,
+      "typescriptP90AtMost": 100,
+      "typescriptMaximumAtMost": 200,
+      "configurationOnlyObservationsAllowed": true,
+      "metadataLane": {
+        "medianAtMost": 5,
+        "p90AtMost": 25
+      },
+      "basis": "User retains frozen 40-line TypeScript target and honest separate metadata accounting; zero-code observations remain zero."
+    }
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "88bc3e060fe020ac58f8f69299b4afd60ad5ee782c61782a84c2dfe5e14e8fed"
+    "sha256": "eb0716306ab3c300b84a210fa892a8c705d40476c7651175e9db76adb52f3cdf"
   },
   "authorityBindings": {
     "kernel": {
       "path": "docs/refactor/architecture-program/handoff/kernel-api.d.ts",
-      "sha256": "a9f9242cb93b3114b9a103bf7d98c461e2c57506930c8a2c504abf8e0c9ebe8a"
+      "sha256": "b3fe44cce205ce93567279da4a2b490b9c66597013d5b0112815393a1f3eddfc"
     },
     "provider": {
       "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
@@ -42,9 +52,28 @@
     "checksum": {
       "path": "docs/refactor/architecture-program/handoff/checksum-api.d.ts",
       "sha256": "d16afc414edbb1192d7a1b8aaa8b92e4c0666c7f46ca80e33e85e167ce482254"
+    },
+    "http": {
+      "path": "docs/refactor/architecture-program/handoff/http-api.d.ts",
+      "sha256": "fa50a9a495f28fefa21946669aa92828119e5959823b1b237347d2a2a6af8a4d"
     }
   },
   "symbols": [
+    {
+      "id": "kernel:PROVIDER_CONTRACT",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "PROVIDER_CONTRACT",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 15,
+          "sha256": "cc8a8706662020aaa631619dac1056bb1d5914f1b4fbfae128d2a3d0f71b8521"
+        }
+      ]
+    },
     {
       "id": "kernel:ReleaseError",
       "authority": "kernel",
@@ -56,7 +85,7 @@
       ],
       "declarations": [
         {
-          "line": 19,
+          "line": 21,
           "sha256": "25a670f62c8d28671b29a1b94b73793e75572f5d87d6c6c07b8aa7d7d698422d"
         }
       ]
@@ -72,7 +101,7 @@
       ],
       "declarations": [
         {
-          "line": 28,
+          "line": 30,
           "sha256": "a96514042f74c828e5b6dd2f2861f77287d614ec17c3f7a584af50ffc51c06ae"
         }
       ]
@@ -88,7 +117,7 @@
       ],
       "declarations": [
         {
-          "line": 37,
+          "line": 39,
           "sha256": "b8250a8d2158bf611f379e3667084d846f5bcd8ebd9e5de383ee1bdf44d992a0"
         }
       ]
@@ -104,7 +133,7 @@
       ],
       "declarations": [
         {
-          "line": 40,
+          "line": 42,
           "sha256": "7221ba091af7d324205e5e21716bb25f3a49f2cae5e500c50f1c97fff7c69d40"
         }
       ]
@@ -120,7 +149,7 @@
       ],
       "declarations": [
         {
-          "line": 47,
+          "line": 49,
           "sha256": "71eead8c8a09f1fd8f4fa058ec55a17093ad55cbfff23ce25390a44647b77c81"
         }
       ]
@@ -136,11 +165,11 @@
       ],
       "declarations": [
         {
-          "line": 49,
+          "line": 51,
           "sha256": "591da2318f58609ff5b8117ae1d2cd1d5062fcdbf05b96168b35d18fa67a1e22"
         },
         {
-          "line": 50,
+          "line": 52,
           "sha256": "3de3bedfd5c3781b5c9fc6d5ac49459684d44720101a4c4cce5d303b1232ded5"
         }
       ]
@@ -156,7 +185,7 @@
       ],
       "declarations": [
         {
-          "line": 62,
+          "line": 64,
           "sha256": "99051400eccf2ce89e48230a4be71363bba06d75500f631ce1ed83f960b7973f"
         }
       ]
@@ -172,7 +201,7 @@
       ],
       "declarations": [
         {
-          "line": 65,
+          "line": 67,
           "sha256": "c83559378424a7da99a4a12c5d64af515945e5fa1cfda3e134679258f2e8b834"
         }
       ]
@@ -188,7 +217,7 @@
       ],
       "declarations": [
         {
-          "line": 70,
+          "line": 72,
           "sha256": "cc1f1c0f800a395cbe12bc70c66524e0fdb3b103a9b07504bd857f1c7be19b59"
         }
       ]
@@ -204,7 +233,7 @@
       ],
       "declarations": [
         {
-          "line": 75,
+          "line": 77,
           "sha256": "07f6eef8f38529d4793ceafc48c49fe3773f5cd88e02b7b14909c547ab914fcd"
         }
       ]
@@ -220,7 +249,7 @@
       ],
       "declarations": [
         {
-          "line": 80,
+          "line": 82,
           "sha256": "1dd42cecf46cb90f9c9b0761449094a79ee859f788b587e11145ad2cc87657fb"
         }
       ]
@@ -236,11 +265,11 @@
       ],
       "declarations": [
         {
-          "line": 82,
+          "line": 84,
           "sha256": "22487296c29db272a523c0f452bb72b740d9622697a20767df7b99d473dc35c5"
         },
         {
-          "line": 83,
+          "line": 85,
           "sha256": "e59d3b20cfb3677cea53d961361d2de14cf416c316f99a0e2e5382e5659cd53f"
         }
       ]
@@ -256,7 +285,7 @@
       ],
       "declarations": [
         {
-          "line": 92,
+          "line": 94,
           "sha256": "619e6117e160b14fc218860f6663ff4358661902ddc582be7bdbf36e5af9ce99"
         }
       ]
@@ -272,7 +301,7 @@
       ],
       "declarations": [
         {
-          "line": 99,
+          "line": 101,
           "sha256": "8fa146d76571ae825d780732bb538acd906ef67b4db9c244f20e1b00fa000f40"
         }
       ]
@@ -288,7 +317,7 @@
       ],
       "declarations": [
         {
-          "line": 107,
+          "line": 109,
           "sha256": "14b159964339cc7413e8df62dd32d3fae835981021464ba8a99d3adb47fc54f0"
         }
       ]
@@ -304,11 +333,11 @@
       ],
       "declarations": [
         {
-          "line": 109,
+          "line": 111,
           "sha256": "ca2a40afd3b4b769d66b405ce5154a9fa427ae3bc4dbdc626e241ece77f245d0"
         },
         {
-          "line": 110,
+          "line": 112,
           "sha256": "5cdca3209cbe1d50870fe0087d053c4a73d0139ac6dd98f251e2a72f008a6a0d"
         }
       ]
@@ -324,7 +353,7 @@
       ],
       "declarations": [
         {
-          "line": 120,
+          "line": 122,
           "sha256": "76d74f54bb954b40af42d6fec3e1972576ee94593302bb9f6f934b94c467c16f"
         }
       ]
@@ -340,7 +369,7 @@
       ],
       "declarations": [
         {
-          "line": 130,
+          "line": 132,
           "sha256": "01d159d1a2f4c063c34b94ba43196ac16e226304d00a6e0508b3e42b9f73df09"
         }
       ]
@@ -356,7 +385,7 @@
       ],
       "declarations": [
         {
-          "line": 135,
+          "line": 137,
           "sha256": "07f6e016ed751daa9543da28139872333a609fec33b2c6cdce84ee0784209550"
         }
       ]
@@ -372,11 +401,11 @@
       ],
       "declarations": [
         {
-          "line": 137,
+          "line": 139,
           "sha256": "118773b237bd6b37c0f5c44419107761455aeee8ecdded3b33b4747b92977acc"
         },
         {
-          "line": 138,
+          "line": 140,
           "sha256": "24547afaa49bbee9cc55ec4567271e1d4513d2637baeb336647f4ce117ea92be"
         }
       ]
@@ -392,7 +421,7 @@
       ],
       "declarations": [
         {
-          "line": 146,
+          "line": 148,
           "sha256": "95c72c804f52945e83e84217d53afdd239529ac6f217bb29ac574c802319b0a7"
         }
       ]
@@ -407,7 +436,7 @@
       ],
       "declarations": [
         {
-          "line": 148,
+          "line": 150,
           "sha256": "13b1862004679683e6c9ab224c13199ae3607934d51a937651763106a69ea171"
         }
       ]
@@ -422,7 +451,7 @@
       ],
       "declarations": [
         {
-          "line": 152,
+          "line": 154,
           "sha256": "8f6bf1b266843f8341ff3b824d3c235e083fe5628e7a0e17c571d78ba55a1738"
         }
       ]
@@ -437,7 +466,7 @@
       ],
       "declarations": [
         {
-          "line": 164,
+          "line": 166,
           "sha256": "a06d71d28c7ed711f0b8cd780291243570089f96ec92bcf619da8666ef0c0715"
         }
       ]
@@ -452,7 +481,7 @@
       ],
       "declarations": [
         {
-          "line": 169,
+          "line": 171,
           "sha256": "e27cc335c3c835965d0dac588aadea696f121a89baa159d49ec83bda21120b3a"
         }
       ]
@@ -467,7 +496,7 @@
       ],
       "declarations": [
         {
-          "line": 173,
+          "line": 175,
           "sha256": "3ddde140ce6ada31de32cfbe9a947318d31e7f6b44f116320f2d89eadfa2321b"
         }
       ]
@@ -482,7 +511,7 @@
       ],
       "declarations": [
         {
-          "line": 184,
+          "line": 186,
           "sha256": "c5418a4d7b0ab4ced481e32ffbca1c1a135d42048d04f571c7d3b2e99ed1ba21"
         }
       ]
@@ -497,7 +526,7 @@
       ],
       "declarations": [
         {
-          "line": 187,
+          "line": 189,
           "sha256": "82ec23e46814d043ee8eb4c89c0e0884f26e79834b2f565783bbedc49c585a23"
         }
       ]
@@ -512,7 +541,7 @@
       ],
       "declarations": [
         {
-          "line": 191,
+          "line": 193,
           "sha256": "8b1cacb89b0a8e42f7906fd936d88dab8505c8250a015ea5a5e7e7e34ab11b0d"
         }
       ]
@@ -527,7 +556,7 @@
       ],
       "declarations": [
         {
-          "line": 196,
+          "line": 198,
           "sha256": "84bb019678de6e5ca54a1f6264a2abda6a013dff70a631d9adeee759c3fdea3b"
         }
       ]
@@ -543,8 +572,24 @@
       ],
       "declarations": [
         {
-          "line": 204,
+          "line": 206,
           "sha256": "b67ff57f0b26ac173b6d4d9b6487aa9ba6f855ef33b1229d08aed2dd106d5541"
+        }
+      ]
+    },
+    {
+      "id": "kernel:CoreUndecodableReceipt",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "CoreUndecodableReceipt",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 215,
+          "sha256": "58e1d48b6af8faa8fb491233be6ab015cf9a2d726edf6619fd0c92af8a65c51d"
         }
       ]
     },
@@ -558,7 +603,7 @@
       ],
       "declarations": [
         {
-          "line": 206,
+          "line": 217,
           "sha256": "3e46c07aff428ad2e759669b554aaf9bc393908c75ccbe8335fa871d81b16afa"
         }
       ]
@@ -573,8 +618,8 @@
       ],
       "declarations": [
         {
-          "line": 211,
-          "sha256": "833121541d178d637b291546640325fc0d1ae545392d790fa308f5872d65657c"
+          "line": 222,
+          "sha256": "72fccbd1e379ba608db980f8f2d1d9ebba6088426bafb41772203bb4c75034a1"
         }
       ]
     },
@@ -588,7 +633,7 @@
       ],
       "declarations": [
         {
-          "line": 227,
+          "line": 239,
           "sha256": "43e099108382e0b487bf14653093df668b6f23f9e5a968dd83b832165b09b3ee"
         }
       ]
@@ -603,7 +648,7 @@
       ],
       "declarations": [
         {
-          "line": 230,
+          "line": 242,
           "sha256": "74b73f5478ea8c97cc22926ec2abbc121b14842705ff91a4dec7ca02ca682d67"
         }
       ]
@@ -618,7 +663,7 @@
       ],
       "declarations": [
         {
-          "line": 237,
+          "line": 249,
           "sha256": "21d999ec9e11f5b1980b85d2f4c5ed40c673b1c67733b7251b18dfb8facef6aa"
         }
       ]
@@ -633,8 +678,8 @@
       ],
       "declarations": [
         {
-          "line": 241,
-          "sha256": "2cd847c41ab86cf407c83612699564b7bd4e8c65ff423f740e4e93c86e8d8c0a"
+          "line": 253,
+          "sha256": "c693d7a0034df2e730a520c4027326808488405d7fb6c703f398d88e0f5f011e"
         }
       ]
     },
@@ -649,7 +694,7 @@
       ],
       "declarations": [
         {
-          "line": 250,
+          "line": 264,
           "sha256": "08fbd7b7789af392ae7ec382d3640c01990ecd11becdd92a6cb7ad6b64388d02"
         }
       ]
@@ -664,7 +709,7 @@
       ],
       "declarations": [
         {
-          "line": 252,
+          "line": 266,
           "sha256": "ac8be4ba31d90751118bb3d6a4f59fc9e74c8117d5922bdcfd342562a6e4e679"
         }
       ]
@@ -679,7 +724,7 @@
       ],
       "declarations": [
         {
-          "line": 253,
+          "line": 267,
           "sha256": "19540cb36c57afeff12bb9d313743eab35d608000fb144ebc12f13a307b4a4c1"
         }
       ]
@@ -694,7 +739,7 @@
       ],
       "declarations": [
         {
-          "line": 260,
+          "line": 274,
           "sha256": "3ba96f2133f48ba0c7e5f7e2e139d448cdee184bc3327691bfd39d3af85e57da"
         }
       ]
@@ -709,8 +754,113 @@
       ],
       "declarations": [
         {
-          "line": 266,
+          "line": 280,
           "sha256": "2cc29018c66ff7cfa2ffbc065dcd3b0817a90229bb821350b4db5a2401be5666"
+        }
+      ]
+    },
+    {
+      "id": "kernel:CandidateRequest",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "CandidateRequest",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 288,
+          "sha256": "d4cb5446a8eaa659e2a2b836af3f0d634ff5420db912d659fd8b7ae2df0ec7ef"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Next",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Next",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 292,
+          "sha256": "811a60f96123402a3adc776bffe70e86dc96a46e10f3415c66c7c0fbbeb91ad5"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Machine",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Machine",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 303,
+          "sha256": "997aa752468cc102f436a143d62a4657c2d91ad37c58353393789a11af9eae18"
+        }
+      ]
+    },
+    {
+      "id": "kernel:MachineConstructor",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "MachineConstructor",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 308,
+          "sha256": "be2f9c656f7224a1d63192f276479275d9d976930d7747564a15a96a067edb04"
+        }
+      ]
+    },
+    {
+      "id": "kernel:sameProtectedRequest",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "sameProtectedRequest",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 310,
+          "sha256": "cad367d084f98d228bf10099f36ef92214220e4b666f87ce48a0e0a1e89e2235"
+        }
+      ]
+    },
+    {
+      "id": "kernel:sameStrings",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "sameStrings",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 311,
+          "sha256": "487a637d654ba7f8e166818d7243fdd9eb02013b0c8bdfb57d9d6e8a2baf1aa1"
+        }
+      ]
+    },
+    {
+      "id": "kernel:historyMachine",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "historyMachine",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 313,
+          "sha256": "e169ad9fdc8927a189ce2df7144b3fbd98c386f2a5d658be64f432f7d38c3a55"
         }
       ]
     },
@@ -724,7 +874,7 @@
       ],
       "declarations": [
         {
-          "line": 274,
+          "line": 315,
           "sha256": "ae491556188ac1e818c5687956437d14eb08a56c02c06a1f51ddb44d9a05d749"
         }
       ]
@@ -739,7 +889,7 @@
       ],
       "declarations": [
         {
-          "line": 275,
+          "line": 316,
           "sha256": "9e51a41118bc53416aa703688804374d7092fe1c03e3aa7b5eb047f95b16caa3"
         }
       ]
@@ -754,7 +904,7 @@
       ],
       "declarations": [
         {
-          "line": 276,
+          "line": 317,
           "sha256": "603f783a82a9465ae9af6241ff6c41a6ef2afb5a04dc45b154f07a864f0f261b"
         }
       ]
@@ -769,7 +919,7 @@
       ],
       "declarations": [
         {
-          "line": 280,
+          "line": 321,
           "sha256": "96b6ffe9f5d69181834fe9082ea961a21b1bfd0661fccb4362889297b15109a6"
         }
       ]
@@ -784,7 +934,7 @@
       ],
       "declarations": [
         {
-          "line": 281,
+          "line": 322,
           "sha256": "b2441328f3781785d1fa0077d9f6e5252fad746216bab3a9ff041aff1171df4b"
         }
       ]
@@ -800,7 +950,7 @@
       ],
       "declarations": [
         {
-          "line": 293,
+          "line": 334,
           "sha256": "1e35f9deb5737224f12f8e0232ce7641c93e6a2aada4f231fd25fdb2863ca605"
         }
       ]
@@ -815,7 +965,7 @@
       ],
       "declarations": [
         {
-          "line": 295,
+          "line": 336,
           "sha256": "75d136979830759e798d3940040401a4d7def432046f14fe6adf1b4000c858d5"
         }
       ]
@@ -830,7 +980,7 @@
       ],
       "declarations": [
         {
-          "line": 299,
+          "line": 340,
           "sha256": "16de6a795a856b9d8913da3363932127ccadf746c6caf63d1942071fb985eb96"
         }
       ]
@@ -845,11 +995,11 @@
       ],
       "declarations": [
         {
-          "line": 307,
+          "line": 348,
           "sha256": "e4603f58a8171401609c32b3139005062f3e74b550d9bc8154f5ac96ccd236a8"
         },
         {
-          "line": 308,
+          "line": 349,
           "sha256": "146dd9d29e85891c372655f3b73010319a58543ba5327a753f695c4a4a1592f7"
         }
       ]
@@ -864,7 +1014,7 @@
       ],
       "declarations": [
         {
-          "line": 310,
+          "line": 351,
           "sha256": "6f865fe168f00df8eed2774381c2cf2a4f22dc48f2d48853fb88dd81ed82e719"
         }
       ]
@@ -879,7 +1029,7 @@
       ],
       "declarations": [
         {
-          "line": 318,
+          "line": 359,
           "sha256": "d495474d0ffb9ad6d270ed22fa56f13015bb275e536a1b3ddb702908a0f18aac"
         }
       ]
@@ -894,7 +1044,7 @@
       ],
       "declarations": [
         {
-          "line": 327,
+          "line": 368,
           "sha256": "8a34254d650a7f3a5c042751be840602ea5a6cb0ec2b15f517e168a254d9fa91"
         }
       ]
@@ -909,7 +1059,7 @@
       ],
       "declarations": [
         {
-          "line": 333,
+          "line": 374,
           "sha256": "f61aa2fdb520f8cc7366cd99c5ce9a32cedd9cff77d465ad816b254ee632cde7"
         }
       ]
@@ -924,7 +1074,7 @@
       ],
       "declarations": [
         {
-          "line": 343,
+          "line": 384,
           "sha256": "856e103f33a22110768874042c71310947038ecd28bde739a72a60177b207686"
         }
       ]
@@ -4078,6 +4228,37 @@
           "sha256": "555c06a9fe0ed45d7aa7f5bd825c320ef89f78da86d9ebf350ceeddd27d2f997"
         }
       ]
+    },
+    {
+      "id": "http:HttpReceipt",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "HttpReceipt",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 21,
+          "sha256": "2905453a520d26b6c31c426fb9947da2b0172a47526f568d1bf35ce9c8b253f5"
+        }
+      ]
+    },
+    {
+      "id": "http:corresponds",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "corresponds",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 23,
+          "sha256": "619f57b8191fb8041d171cf18ee33a9aa66bfb0b1283e591d7868206ea526455"
+        }
+      ]
     }
   ],
   "logicalSurfaces": [
@@ -4085,6 +4266,11 @@
       "id": "core.root",
       "entry": "kernel.Entry",
       "symbols": [
+        {
+          "declaration": "kernel:PROVIDER_CONTRACT",
+          "name": "PROVIDER_CONTRACT",
+          "module": "kernel.Provider"
+        },
         {
           "declaration": "kernel:ReleaseError",
           "name": "ReleaseError",
@@ -4241,6 +4427,11 @@
           "module": "kernel.Model"
         },
         {
+          "declaration": "kernel:CoreUndecodableReceipt",
+          "name": "CoreUndecodableReceipt",
+          "module": "kernel.Model"
+        },
+        {
           "declaration": "kernel:NativeFailureBoundary",
           "name": "NativeFailureBoundary",
           "module": "kernel.Provider"
@@ -4294,6 +4485,41 @@
           "declaration": "kernel:RunOptions",
           "name": "RunOptions",
           "module": "kernel.Model"
+        },
+        {
+          "declaration": "kernel:CandidateRequest",
+          "name": "CandidateRequest",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:Next",
+          "name": "Next",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:Machine",
+          "name": "Machine",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:MachineConstructor",
+          "name": "MachineConstructor",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:sameProtectedRequest",
+          "name": "sameProtectedRequest",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:sameStrings",
+          "name": "sameStrings",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:historyMachine",
+          "name": "historyMachine",
+          "module": "kernel.Decision"
         },
         {
           "declaration": "kernel:createOperation",
@@ -4649,6 +4875,16 @@
       "id": "core.http",
       "entry": "kernel.Http",
       "symbols": [
+        {
+          "declaration": "http:HttpReceipt",
+          "name": "HttpReceipt",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:corresponds",
+          "name": "corresponds",
+          "module": "kernel.Http"
+        },
         {
           "declaration": "provider:Headers",
           "name": "Headers",
@@ -5525,6 +5761,7 @@
           "runtimeNames": [
             "AcceptedRisk",
             "CoreDispatchError",
+            "CoreUndecodableReceipt",
             "DispatchBasis",
             "DispatchRejectedBeforeCommit",
             "DispatchStarted",
@@ -5539,6 +5776,7 @@
             "ObservationRecorded",
             "ObservationStatus",
             "Operation",
+            "PROVIDER_CONTRACT",
             "Plan",
             "PlanSuperseded",
             "ProtectedReplay",
@@ -5551,20 +5789,25 @@
             "createOperation",
             "createPlan",
             "createPreparationScope",
+            "historyMachine",
             "loadPlan",
             "makeCoreGitTransport",
             "makeRequest",
             "observeRelease",
             "reportRelease",
             "runRelease",
+            "sameProtectedRequest",
+            "sameStrings",
             "supersedePlan"
           ],
           "typeNames": [
             "AcceptedRisk",
             "AppendResult",
             "Author",
+            "CandidateRequest",
             "CoreDispatchError",
             "CoreGitOptions",
+            "CoreUndecodableReceipt",
             "DispatchBasis",
             "DispatchRejectedBeforeCommit",
             "DispatchStarted",
@@ -5579,7 +5822,10 @@
             "JournalEvent",
             "JournalStore",
             "Json",
+            "Machine",
+            "MachineConstructor",
             "NativeFailureBoundary",
+            "Next",
             "NoReplay",
             "NonCommit",
             "Observation",
@@ -5737,7 +5983,10 @@
             "types": "./dist/Http.d.ts",
             "import": "./dist/Http.js"
           },
-          "runtimeNames": [],
+          "runtimeNames": [
+            "HttpReceipt",
+            "corresponds"
+          ],
           "typeNames": [
             "CredentialBinding",
             "CredentialExchange",
@@ -5747,6 +5996,7 @@
             "HttpProviderDefinition",
             "HttpRead",
             "HttpReadRequest",
+            "HttpReceipt",
             "HttpResponse",
             "HttpTransportOptions",
             "OidcTokenRequest",
@@ -6144,7 +6394,7 @@
           ]
         }
       ],
-      "exportsSha256": "c9b2bf3b0b812eab9cfbf775069ece3e905ea48187c1d625aac023fe5b83c261"
+      "exportsSha256": "0d0957f5d2ff469e5e234532772e34b9d1630d4a437b168dafc295cfca67c4cf"
     },
     {
       "id": "T2",
@@ -6163,6 +6413,7 @@
           "runtimeNames": [
             "AcceptedRisk",
             "CoreDispatchError",
+            "CoreUndecodableReceipt",
             "DispatchBasis",
             "DispatchRejectedBeforeCommit",
             "DispatchStarted",
@@ -6177,6 +6428,7 @@
             "ObservationRecorded",
             "ObservationStatus",
             "Operation",
+            "PROVIDER_CONTRACT",
             "Plan",
             "PlanSuperseded",
             "ProtectedReplay",
@@ -6189,20 +6441,25 @@
             "createOperation",
             "createPlan",
             "createPreparationScope",
+            "historyMachine",
             "loadPlan",
             "makeCoreGitTransport",
             "makeRequest",
             "observeRelease",
             "reportRelease",
             "runRelease",
+            "sameProtectedRequest",
+            "sameStrings",
             "supersedePlan"
           ],
           "typeNames": [
             "AcceptedRisk",
             "AppendResult",
             "Author",
+            "CandidateRequest",
             "CoreDispatchError",
             "CoreGitOptions",
+            "CoreUndecodableReceipt",
             "DispatchBasis",
             "DispatchRejectedBeforeCommit",
             "DispatchStarted",
@@ -6217,7 +6474,10 @@
             "JournalEvent",
             "JournalStore",
             "Json",
+            "Machine",
+            "MachineConstructor",
             "NativeFailureBoundary",
+            "Next",
             "NoReplay",
             "NonCommit",
             "Observation",
@@ -6375,7 +6635,10 @@
             "types": "./dist/Http.d.ts",
             "import": "./dist/Http.js"
           },
-          "runtimeNames": [],
+          "runtimeNames": [
+            "HttpReceipt",
+            "corresponds"
+          ],
           "typeNames": [
             "CredentialBinding",
             "CredentialExchange",
@@ -6385,6 +6648,7 @@
             "HttpProviderDefinition",
             "HttpRead",
             "HttpReadRequest",
+            "HttpReceipt",
             "HttpResponse",
             "HttpTransportOptions",
             "OidcTokenRequest",
@@ -6782,7 +7046,7 @@
           ]
         }
       ],
-      "exportsSha256": "6ea226e47b82df0e0e98d885bfd74504e6ec4f6f25b82d81663add09ded09a80"
+      "exportsSha256": "586c83de0883f547a8a1e7ae4afef9f0f6fa9229498c95b98b799434e051273a"
     },
     {
       "id": "T3",
@@ -6801,6 +7065,7 @@
           "runtimeNames": [
             "AcceptedRisk",
             "CoreDispatchError",
+            "CoreUndecodableReceipt",
             "DispatchBasis",
             "DispatchRejectedBeforeCommit",
             "DispatchStarted",
@@ -6815,6 +7080,7 @@
             "ObservationRecorded",
             "ObservationStatus",
             "Operation",
+            "PROVIDER_CONTRACT",
             "Plan",
             "PlanSuperseded",
             "ProtectedReplay",
@@ -6827,20 +7093,25 @@
             "createOperation",
             "createPlan",
             "createPreparationScope",
+            "historyMachine",
             "loadPlan",
             "makeCoreGitTransport",
             "makeRequest",
             "observeRelease",
             "reportRelease",
             "runRelease",
+            "sameProtectedRequest",
+            "sameStrings",
             "supersedePlan"
           ],
           "typeNames": [
             "AcceptedRisk",
             "AppendResult",
             "Author",
+            "CandidateRequest",
             "CoreDispatchError",
             "CoreGitOptions",
+            "CoreUndecodableReceipt",
             "DispatchBasis",
             "DispatchRejectedBeforeCommit",
             "DispatchStarted",
@@ -6855,7 +7126,10 @@
             "JournalEvent",
             "JournalStore",
             "Json",
+            "Machine",
+            "MachineConstructor",
             "NativeFailureBoundary",
+            "Next",
             "NoReplay",
             "NonCommit",
             "Observation",
@@ -7013,7 +7287,10 @@
             "types": "./dist/Http.d.ts",
             "import": "./dist/Http.js"
           },
-          "runtimeNames": [],
+          "runtimeNames": [
+            "HttpReceipt",
+            "corresponds"
+          ],
           "typeNames": [
             "CredentialBinding",
             "CredentialExchange",
@@ -7023,6 +7300,7 @@
             "HttpProviderDefinition",
             "HttpRead",
             "HttpReadRequest",
+            "HttpReceipt",
             "HttpResponse",
             "HttpTransportOptions",
             "OidcTokenRequest",
@@ -7420,7 +7698,659 @@
           ]
         }
       ],
-      "exportsSha256": "23147f1c8b9ba8a0ceba109a525cd27cca5fab739473a04fbbbc0d488464c46b"
+      "exportsSha256": "bf40437959d8895d07ece1c7f638a3a48792d64a74adf7f5f13c1b5f10cf69d7"
+    },
+    {
+      "id": "T3c",
+      "entries": [
+        {
+          "id": "core.root",
+          "package": "@mannyc1/ts-release",
+          "subpath": ".",
+          "specifier": "@mannyc1/ts-release",
+          "entryModule": "kernel.Entry",
+          "source": "packages/ts-release/src/index.ts",
+          "conditions": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+          },
+          "runtimeNames": [
+            "AcceptedRisk",
+            "CoreDispatchError",
+            "CoreUndecodableReceipt",
+            "DispatchBasis",
+            "DispatchRejectedBeforeCommit",
+            "DispatchStarted",
+            "EventBody",
+            "GitCas",
+            "GitReceipt",
+            "Host",
+            "Initial",
+            "JournalEvent",
+            "NoReplay",
+            "NonCommit",
+            "ObservationRecorded",
+            "ObservationStatus",
+            "Operation",
+            "PROVIDER_CONTRACT",
+            "Plan",
+            "PlanSuperseded",
+            "ProtectedReplay",
+            "ReceiptAccepted",
+            "ReleaseError",
+            "ReplayProtection",
+            "RequestFacts",
+            "RiskAccepted",
+            "acceptRisk",
+            "createOperation",
+            "createPlan",
+            "createPreparationScope",
+            "historyMachine",
+            "loadPlan",
+            "makeCoreGitTransport",
+            "makeRequest",
+            "observeRelease",
+            "reportRelease",
+            "runRelease",
+            "sameProtectedRequest",
+            "sameStrings",
+            "supersedePlan"
+          ],
+          "typeNames": [
+            "AcceptedRisk",
+            "AppendResult",
+            "Author",
+            "CandidateRequest",
+            "CoreDispatchError",
+            "CoreGitOptions",
+            "CoreUndecodableReceipt",
+            "DispatchBasis",
+            "DispatchRejectedBeforeCommit",
+            "DispatchStarted",
+            "EventBody",
+            "GitCas",
+            "GitExecution",
+            "GitReceipt",
+            "Host",
+            "HostShape",
+            "Initial",
+            "JournalContext",
+            "JournalEvent",
+            "JournalStore",
+            "Json",
+            "Machine",
+            "MachineConstructor",
+            "NativeFailureBoundary",
+            "Next",
+            "NoReplay",
+            "NonCommit",
+            "Observation",
+            "ObservationRecorded",
+            "ObservationStatus",
+            "Operation",
+            "OperationEvidence",
+            "OperationId",
+            "OperationReport",
+            "OperationStatus",
+            "Plan",
+            "PlanSuperseded",
+            "PreparedRequest",
+            "ProtectedReplay",
+            "ProviderContext",
+            "ProviderDefinition",
+            "ProviderDescriptor",
+            "ReceiptAccepted",
+            "ReleaseError",
+            "ReleaseReport",
+            "ReplayProtection",
+            "RequestFacts",
+            "RiskAccepted",
+            "RunOptions",
+            "Scope",
+            "SendResult",
+            "Snapshot",
+            "Transport"
+          ]
+        },
+        {
+          "id": "core.bundle",
+          "package": "@mannyc1/ts-release",
+          "subpath": "./bundle",
+          "specifier": "@mannyc1/ts-release/bundle",
+          "entryModule": "kernel.Bundle",
+          "source": "packages/ts-release/src/Bundle.ts",
+          "conditions": {
+            "types": "./dist/Bundle.d.ts",
+            "import": "./dist/Bundle.js"
+          },
+          "runtimeNames": [
+            "AdoptionError",
+            "Artifact",
+            "Bundle",
+            "Content",
+            "File",
+            "Tree",
+            "encodeBundle",
+            "finalize",
+            "loadBundle",
+            "renderSha256Sums",
+            "verifySha256Sums"
+          ],
+          "typeNames": [
+            "AdoptionError",
+            "Artifact",
+            "ArtifactAccess",
+            "Bundle",
+            "ChecksumInput",
+            "Content",
+            "ContentOwner",
+            "File",
+            "PutContent",
+            "ReadContent",
+            "Tree"
+          ]
+        },
+        {
+          "id": "core.effect-build",
+          "package": "@mannyc1/ts-release",
+          "subpath": "./effect-build",
+          "specifier": "@mannyc1/ts-release/effect-build",
+          "entryModule": "kernel.EffectBuild",
+          "source": "packages/ts-release/src/EffectBuild.ts",
+          "conditions": {
+            "types": "./dist/EffectBuild.d.ts",
+            "import": "./dist/EffectBuild.js"
+          },
+          "runtimeNames": [
+            "adoptFile",
+            "adoptTree",
+            "restoreTree"
+          ],
+          "typeNames": []
+        },
+        {
+          "id": "core.apple",
+          "package": "@mannyc1/ts-release",
+          "subpath": "./apple",
+          "specifier": "@mannyc1/ts-release/apple",
+          "entryModule": "kernel.Apple",
+          "source": "packages/ts-release/src/Apple.ts",
+          "conditions": {
+            "types": "./dist/Apple.d.ts",
+            "import": "./dist/Apple.js"
+          },
+          "runtimeNames": [
+            "AppPreparation",
+            "AppleEvidence",
+            "ApplePreparation",
+            "ApplePreparations",
+            "ApplicationSignature",
+            "DiskImageSignature",
+            "DmgPreparation",
+            "FinalApp",
+            "FinalArtifact",
+            "FinalDmg",
+            "FinalPkg",
+            "InstallerSignature",
+            "PkgPreparation",
+            "ReadyToPlan",
+            "createApplePreparations",
+            "finishPrepared",
+            "loadApplePreparations",
+            "preparationProvider",
+            "preparationScopes",
+            "reportAppleContext",
+            "restorePreparedSource",
+            "runPreparation",
+            "submitPrepared",
+            "validateApplePublication"
+          ],
+          "typeNames": [
+            "AppPreparation",
+            "AppleEvidence",
+            "ApplePreparation",
+            "ApplePreparationInput",
+            "ApplePreparations",
+            "ApplicationSignature",
+            "DeriveDeliveryFiles",
+            "DiskImageSignature",
+            "DmgPreparation",
+            "FinalApp",
+            "FinalArtifact",
+            "FinalDmg",
+            "FinalNativeArtifact",
+            "FinalPkg",
+            "InstallerSignature",
+            "NativeAppleError",
+            "NativeAppleServices",
+            "PkgPreparation",
+            "ReadyToPlan",
+            "RestoredSource"
+          ]
+        },
+        {
+          "id": "core.http",
+          "package": "@mannyc1/ts-release",
+          "subpath": "./http",
+          "specifier": "@mannyc1/ts-release/http",
+          "entryModule": "kernel.Http",
+          "source": "packages/ts-release/src/Http.ts",
+          "conditions": {
+            "types": "./dist/Http.d.ts",
+            "import": "./dist/Http.js"
+          },
+          "runtimeNames": [
+            "HttpReceipt",
+            "corresponds"
+          ],
+          "typeNames": [
+            "CredentialBinding",
+            "CredentialExchange",
+            "CredentialHeaders",
+            "CredentialRequest",
+            "Headers",
+            "HttpProviderDefinition",
+            "HttpRead",
+            "HttpReadRequest",
+            "HttpReceipt",
+            "HttpResponse",
+            "HttpTransportOptions",
+            "OidcTokenRequest",
+            "OidcTokenSource",
+            "ResolveCredentials",
+            "TrustedPublisherHost"
+          ]
+        },
+        {
+          "id": "core.git",
+          "package": "@mannyc1/ts-release",
+          "subpath": "./git",
+          "specifier": "@mannyc1/ts-release/git",
+          "entryModule": "kernel.Git",
+          "source": "packages/ts-release/src/Git.ts",
+          "conditions": {
+            "types": "./dist/Git.d.ts",
+            "import": "./dist/Git.js"
+          },
+          "runtimeNames": [
+            "CommitInput",
+            "FileEdit",
+            "GitCas",
+            "GitReceipt",
+            "Identity",
+            "Intent",
+            "definition",
+            "makeCoreGitTransport",
+            "prepare",
+            "update"
+          ],
+          "typeNames": [
+            "CommitInput",
+            "CoreGitOptions",
+            "Credentials",
+            "FileEdit",
+            "GitCas",
+            "GitExecution",
+            "GitReceipt",
+            "Identity",
+            "Intent",
+            "NativeHost",
+            "ObjectBuilder",
+            "ObserveRef",
+            "RefCoordinate"
+          ]
+        },
+        {
+          "id": "core.node",
+          "package": "@mannyc1/ts-release",
+          "subpath": "./node",
+          "specifier": "@mannyc1/ts-release/node",
+          "entryModule": "host.Node",
+          "source": "packages/ts-release/src/Node.ts",
+          "conditions": {
+            "types": "./dist/Node.d.ts",
+            "import": "./dist/Node.js"
+          },
+          "runtimeNames": [
+            "fileContentOwner",
+            "makeGitCatalogHost",
+            "makeHttpTransport",
+            "openGitJournal",
+            "runApplication"
+          ],
+          "typeNames": [
+            "Application",
+            "CreateApplication"
+          ]
+        },
+        {
+          "id": "core.bun",
+          "package": "@mannyc1/ts-release",
+          "subpath": "./bun",
+          "specifier": "@mannyc1/ts-release/bun",
+          "entryModule": "host.Bun",
+          "source": "packages/ts-release/src/Bun.ts",
+          "conditions": {
+            "types": "./dist/Bun.d.ts",
+            "import": "./dist/Bun.js"
+          },
+          "runtimeNames": [
+            "fileContentOwner",
+            "makeGitCatalogHost",
+            "makeHttpTransport",
+            "openGitJournal",
+            "openSqliteJournal",
+            "runApplication"
+          ],
+          "typeNames": [
+            "Application",
+            "CreateApplication"
+          ]
+        },
+        {
+          "id": "provider.npm",
+          "package": "@mannyc1/ts-release-npm",
+          "subpath": ".",
+          "specifier": "@mannyc1/ts-release-npm",
+          "entryModule": "provider.npm",
+          "source": "packages/npm/src/index.ts",
+          "conditions": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+          },
+          "runtimeNames": [
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "author",
+            "authorizeToken",
+            "authorizeTrusted",
+            "createProvenance",
+            "definitions",
+            "distTag",
+            "makeSigstoreAttester",
+            "publish"
+          ],
+          "typeNames": [
+            "Attest",
+            "AttestationRequest",
+            "Authorization",
+            "DistTagIntent",
+            "GitHubActionsProvenance",
+            "NoProvenance",
+            "PackageCandidate",
+            "PrivatePackage",
+            "Provenance",
+            "ProvenanceSource",
+            "PublicPackage",
+            "PublishIntent",
+            "TokenAuthorization",
+            "TrustedAuthorization"
+          ]
+        },
+        {
+          "id": "provider.warehouse",
+          "package": "@mannyc1/ts-release-pypi",
+          "subpath": ".",
+          "specifier": "@mannyc1/ts-release-pypi",
+          "entryModule": "provider.warehouse",
+          "source": "packages/pypi/src/index.ts",
+          "conditions": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+          },
+          "runtimeNames": [
+            "Authorization",
+            "Compatible",
+            "Endpoint",
+            "PyPi",
+            "SdistUpload",
+            "TestPyPi",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "UploadIntent",
+            "WheelUpload",
+            "authorizeToken",
+            "authorizeTrusted",
+            "definitions",
+            "upload"
+          ],
+          "typeNames": [
+            "Authorization",
+            "Compatible",
+            "Endpoint",
+            "PyPi",
+            "SdistUpload",
+            "TestPyPi",
+            "TokenAuthorization",
+            "TrustedAuthorization",
+            "UploadIntent",
+            "WheelUpload"
+          ]
+        },
+        {
+          "id": "provider.github",
+          "package": "@mannyc1/ts-release-github",
+          "subpath": ".",
+          "specifier": "@mannyc1/ts-release-github",
+          "entryModule": "provider.github",
+          "source": "packages/github/src/index.ts",
+          "conditions": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+          },
+          "runtimeNames": [
+            "AnnotatedRef",
+            "AnnotatedTag",
+            "AnnotatedTagFacts",
+            "AssetFacts",
+            "AssetIntent",
+            "DraftIntent",
+            "ExistingTag",
+            "LightweightTag",
+            "ManagedTag",
+            "PublishIntent",
+            "RefFacts",
+            "ReleaseFacts",
+            "Repository",
+            "TagSource",
+            "Tagger",
+            "annotatedRef",
+            "annotatedTag",
+            "authorizeToken",
+            "definitions",
+            "draft",
+            "lightweightTag",
+            "publish",
+            "uploadAsset"
+          ],
+          "typeNames": [
+            "AnnotatedRef",
+            "AnnotatedTag",
+            "AnnotatedTagFacts",
+            "AssetFacts",
+            "AssetIntent",
+            "DraftIntent",
+            "ExistingTag",
+            "LightweightTag",
+            "ManagedTag",
+            "PublishIntent",
+            "RefFacts",
+            "ReleaseFacts",
+            "Repository",
+            "TagSource",
+            "Tagger"
+          ]
+        },
+        {
+          "id": "provider.homebrew",
+          "package": "@mannyc1/ts-release-catalog",
+          "subpath": "./homebrew",
+          "specifier": "@mannyc1/ts-release-catalog/homebrew",
+          "entryModule": "provider.homebrew",
+          "source": "packages/catalog/src/homebrew/index.ts",
+          "conditions": {
+            "types": "./dist/homebrew/index.d.ts",
+            "import": "./dist/homebrew/index.js"
+          },
+          "runtimeNames": [
+            "Download",
+            "Formula",
+            "render"
+          ],
+          "typeNames": [
+            "Download",
+            "Formula"
+          ]
+        },
+        {
+          "id": "provider.scoop",
+          "package": "@mannyc1/ts-release-catalog",
+          "subpath": "./scoop",
+          "specifier": "@mannyc1/ts-release-catalog/scoop",
+          "entryModule": "provider.scoop",
+          "source": "packages/catalog/src/scoop/index.ts",
+          "conditions": {
+            "types": "./dist/scoop/index.d.ts",
+            "import": "./dist/scoop/index.js"
+          },
+          "runtimeNames": [
+            "Download",
+            "Manifest",
+            "render"
+          ],
+          "typeNames": [
+            "Download",
+            "Manifest"
+          ]
+        },
+        {
+          "id": "provider.mcp",
+          "package": "@mannyc1/ts-release-mcp",
+          "subpath": ".",
+          "specifier": "@mannyc1/ts-release-mcp",
+          "entryModule": "provider.mcp",
+          "source": "packages/mcp/src/index.ts",
+          "conditions": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+          },
+          "runtimeNames": [
+            "Argument",
+            "Authorization",
+            "Icon",
+            "Input",
+            "Manifest",
+            "McpbPackage",
+            "NamedArgument",
+            "NamedInput",
+            "NpmPackage",
+            "NugetPackage",
+            "OciPackage",
+            "OidcAuthorization",
+            "Package",
+            "PositionalArgument",
+            "PublishIntent",
+            "PyPiPackage",
+            "Remote",
+            "RemoteHttp",
+            "RemoteSse",
+            "Repository",
+            "Sse",
+            "Stdio",
+            "StreamableHttp",
+            "TokenAuthorization",
+            "Transport",
+            "authorizeOidc",
+            "authorizeToken",
+            "definitions",
+            "publish",
+            "render",
+            "schemaUrl",
+            "validate"
+          ],
+          "typeNames": [
+            "Argument",
+            "Authorization",
+            "Icon",
+            "Input",
+            "Manifest",
+            "McpbPackage",
+            "NamedArgument",
+            "NamedInput",
+            "NpmPackage",
+            "NugetPackage",
+            "OciPackage",
+            "OidcAuthorization",
+            "Package",
+            "PositionalArgument",
+            "PublishIntent",
+            "PyPiPackage",
+            "Remote",
+            "RemoteHttp",
+            "RemoteSse",
+            "Repository",
+            "Sse",
+            "Stdio",
+            "StreamableHttp",
+            "TokenAuthorization",
+            "Transport"
+          ]
+        },
+        {
+          "id": "provider.openai",
+          "package": "@mannyc1/ts-release-openai",
+          "subpath": ".",
+          "specifier": "@mannyc1/ts-release-openai",
+          "entryModule": "provider.openai",
+          "source": "packages/openai/src/index.ts",
+          "conditions": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+          },
+          "runtimeNames": [
+            "Attestations",
+            "Listing",
+            "Manifest",
+            "Marketplace",
+            "MarketplaceEntry",
+            "NegativeTest",
+            "PluginInput",
+            "PositiveTest",
+            "Skill",
+            "SkillFile",
+            "Submission",
+            "files",
+            "marketplace",
+            "submission",
+            "validatePackage"
+          ],
+          "typeNames": [
+            "Attestations",
+            "Listing",
+            "Manifest",
+            "Marketplace",
+            "MarketplaceEntry",
+            "NegativeTest",
+            "PluginInput",
+            "PositiveTest",
+            "RenderedFile",
+            "Skill",
+            "SkillFile",
+            "Submission"
+          ]
+        }
+      ],
+      "exportsSha256": "b3f9d60f3d48a0a0b6385b81320e3e27c864373075cdd135b1717284c101c3a3"
     }
   ],
   "intentionallyPrivateAuthorityExports": [

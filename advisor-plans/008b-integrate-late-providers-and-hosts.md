@@ -1,5 +1,10 @@
 # Plan 008B: Integrate late providers and hosts into one local candidate
 
+> Current execution authority: [`docs/refactor/architecture-program/handoff/README.md`](../docs/refactor/architecture-program/handoff/README.md).
+> All lowercase contract filenames below resolve inside that handoff. Design and API changes regenerate the projections; the archived selector is not an active gate.
+> The 2026-09-06 task authorizes the full implementation and qualified publication. Historical per-group permission requirements are superseded by that authorization; exact candidate, destination, account and allowed effects still require a concrete reviewed execution record.
+
+
 > **Executor instructions:** Start from the exact terminal Plan 008 candidate.
 > Execute only the late-provider/host waves assigned by Plan 005. This is the
 > single convergence lane before live acceptance; do not merge independent
@@ -12,7 +17,7 @@
 - **Effort:** L
 - **Risk:** HIGH
 - **Depends on:** Plans 007 and 008 DONE on one sequential ancestry; exact Plan
-  008B entries in `WAVES.json`
+  008B entries in `waves.json`
 - **Category:** integration, providers, hosts, packaging, evidence
 - **Starting coordinate:** terminal Plan 008 candidate
 - **Target branch:** `codex/late-provider-host-integration`
@@ -47,7 +52,7 @@ Out of scope:
 
 ## Step 1: Implement the MCP vertical
 
-Implement the exact MCP owner from `SURFACE.json`. Preserve official manifest
+Implement the exact MCP owner from `public-surface.json`. Preserve official manifest
 schema, package coordinate, auth/transport facts, discovery/read-back, response
 loss, and conservative continuation. Bind D06 facets to stable executable cases
 without promoting local evidence to live acceptance.
@@ -68,10 +73,10 @@ delete all assigned migration peers.
 
 ## Step 3: Wire actual CLI and Action hosts
 
-Implement the exact host/runtime entries from `SURFACE.json`. The CLI and Action
+Implement the exact host/runtime entries from `public-surface.json`. The CLI and Action
 construct journal, clock, artifact storage, transports, and approval; consumer
 Layers cannot shadow them. Use the exact JournalStore deployment selected in
-`SYSTEM.json` and no second history.
+`contract.json` and no second history.
 
 Build and execute the actual bundled Action under its declared Node host and
 the actual CLI under Bun. Prove fresh-runner continuation, hostile host-service
@@ -97,8 +102,8 @@ projections in check-only mode, and run the full non-live gate vector. Emit a
 canonical `local-candidate.json` containing:
 
 - exact source/tree and required/forbidden ancestry;
-- hashes of `SYSTEM.json`, `SURFACE.json`, `MIGRATION.json`, `WAVES.json`, and
-  `GATES.json`;
+- hashes of `contract.json`, `public-surface.json`, `migration.json`, `waves.json`, and
+  `qualification.json`;
 - exact ts-release/effect-build package versions and tarball digests;
 - Action bundle and intended self-release byte digests;
 - executed-case/evidence manifest digests;
@@ -111,7 +116,7 @@ Plan 008B. There is no convergence merge.
 
 ## Verification
 
-Run the exact Plan 008B vector from `GATES.json`, including:
+Run the exact Plan 008B vector from `qualification.json`, including:
 
 - architecture/schema/surface/import/migration/budget checks;
 - MCP and OpenAI protocol/case/evidence suites;

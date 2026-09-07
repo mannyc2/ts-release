@@ -1,3 +1,8 @@
+> Current authority: [README](README.md), [design](design.json), and the matching
+> JSON records include the accepted P0–P3 amendments. The discussion below
+> preserves the earlier investigation; old topology/45-line proposals and
+> research-only authorization are superseded. Native oracles remain required.
+
 # Qualification of the research handoff
 
 The completed lab establishes concrete local design evidence. It does **not**

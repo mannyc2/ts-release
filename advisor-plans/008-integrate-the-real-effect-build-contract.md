@@ -1,5 +1,10 @@
 # Plan 008: Integrate the real effect-build packages and close producer implementation
 
+> Current execution authority: [`docs/refactor/architecture-program/handoff/README.md`](../docs/refactor/architecture-program/handoff/README.md).
+> All lowercase contract filenames below resolve inside that handoff. Design and API changes regenerate the projections; the archived selector is not an active gate.
+> The 2026-09-06 task authorizes the full implementation and qualified publication. Historical per-group permission requirements are superseded by that authorization; exact candidate, destination, account and allowed effects still require a concrete reviewed execution record.
+
+
 > **Executor instructions:** Use only the exact terminal package/contract
 > coordinate accepted by Plan 004. Read Plan 005's effect-build and journal
 > decisions and the final effect-build contract before editing. Keep ts-release
@@ -28,7 +33,7 @@
 - **Depends on:** Plan 004 terminal accepted coordinate; Plans 005-007 DONE
 - **Category:** integration, architecture, tests, migration, release engineering
 - **Starting coordinate:** exact terminal Plan 007 candidate and Plan 008 wave
-  hashes from `WAVES.json`
+  hashes from `waves.json`
 - **Target branch:** `codex/effect-build-integration`
 
 ## Why this matters
@@ -339,7 +344,7 @@ diff gates pass.
 - [ ] All selected producer families execute through real packages and packed fixtures.
 - [ ] Apple preserves the complete native reference and one ts-release journal.
 - [ ] All 26 formerly missing rows have real implementation witnesses.
-- [ ] Every Plan 008 `MIGRATION.json` row is resolved with balanced physical
+- [ ] Every Plan 008 `migration.json` row is resolved with balanced physical
       deletion/relocation accounting and no package/surface drift.
 - [ ] No live facet is falsely closed.
 - [ ] Platform, architecture, core, integration, packed, evidence, type, and diff gates pass.

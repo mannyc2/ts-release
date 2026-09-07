@@ -1,0 +1,50 @@
+{
+  "observedAt": "2026-09-06T21:27:32.017541+00:00",
+  "consumer": "/tmp/ts-release-beta-compat",
+  "packages": [
+    {
+      "name": "effect",
+      "version": "4.0.0-beta.101",
+      "integrity": "sha512-HjowumlIo+orthn4jMlEJPuzIYPBV+uq/XiciHWhiedLsXQpWHdNJHO5d59BVDP5s1LPuvERcktwFqRXnJqnhA=="
+    },
+    {
+      "name": "@effect/platform-node",
+      "version": "4.0.0-beta.101",
+      "integrity": "sha512-pClk7dmMtHgM6Byu7CzGfrPvZ1/4BwmrRlCg2Op+iJozMkwVUxq8v4beK8b9SvxsliJjHZFznjvkVLX7LQjBqw=="
+    },
+    {
+      "name": "@effect/platform-bun",
+      "version": "4.0.0-beta.101",
+      "integrity": "sha512-7cSiwufNCjO1d296KMjHjqFA1oDRVZMZEyYMzdqPvAdIhNQj16U+xZfMdeJuUb6/WouEWWultkhcCK5ysdxIcQ=="
+    },
+    {
+      "name": "@effect/platform-node-shared",
+      "version": "4.0.0-beta.101",
+      "integrity": "sha512-g4L7XiyJSNJLJVhlslyg2zBCQsoKQf1y1gd+Yfd+3wD9ymC+m7ymbd/5FGqnT1aXV6E2AwRr4D/R1eyRUikvWQ=="
+    }
+  ],
+  "typecheckExit": 0,
+  "diagnostic": "",
+  "checks": [
+    {
+      "argv": [
+        "bun",
+        "dist/apple/adoption-fixture.js"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "1 | import { Schema } from \"effect\";\n2 | import { describe as describeSystemTarget, SystemTarget as SystemTargetSchema, } from \"./SystemTarget.js\";\n3 | export class ArtifactInvalid extends Schema.TaggedError()(\"ArtifactInvalid\", {\n                                                ^\nTypeError: Schema.TaggedError is not a function. (In 'Schema.TaggedError()', 'Schema.TaggedError' is undefined)\n      at /tmp/ts-release-beta-compat/node_modules/effect-build/dist/Artifact.js:3:45\n\nBun v1.3.14 (Linux x64)\n"
+    },
+    {
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "--input-type=module",
+        "-e",
+        "import('./dist/apple/adoption-fixture.js').then(m=>m.runAdoptionFixture()).then(r=>console.log(JSON.stringify(r)))"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///tmp/ts-release-beta-compat/node_modules/effect-build/dist/Artifact.js:3\nexport class ArtifactInvalid extends Schema.TaggedError()(\"ArtifactInvalid\", {\n                                            ^\n\nTypeError: Schema.TaggedError is not a function\n    at file:///tmp/ts-release-beta-compat/node_modules/effect-build/dist/Artifact.js:3:45\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)\n\nNode.js v22.22.2\n"
+    }
+  ]
+}

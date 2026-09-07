@@ -1,0 +1,73 @@
+{
+  "format": "ts-release/mainline-donor-amendment/1",
+  "sourceCommit": "a81a1500a8d77fcd704759779aceb61d39f2fb0c",
+  "preservedBaseline": "9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d",
+  "commonAncestor": "1e9efd717ff9d5dc2dbe5e079894cd8e92eb7ed3",
+  "scope": "Concrete regression responsibilities supplement migration.json without adding outcomes or baseline credit. Translate individually; do not import old per-operation journal architecture.",
+  "ancestry": "Main lacks required PR21 ancestry and contains neither forbidden donor commit. Preserve the PR21-descended implementation line at integration.",
+  "publishedCheck": "Independent review compared all89 root package/src/**/*.ts files in retained published0.3.0: identical to fetched main. Existing public-history inventory already covers optional AWS responsibilities.",
+  "review": "Independent read-only review by review_prerequisite_laws, 2026-09-06; not production certification.",
+  "obligations": [
+    {
+      "wave": "W05",
+      "outcomes": [
+        "D03-05"
+      ],
+      "responsibility": "Authenticated recovery of hidden drafts",
+      "donor": "PR31 a66b644; src/publication/github.ts",
+      "requiredRegression": "Enumerate authenticated releases with bounds; require one exact-tag candidate and validate target/metadata; missing by-tag visibility never permits a fresh create.",
+      "status": "open"
+    },
+    {
+      "wave": "W10",
+      "outcomes": [
+        "K03"
+      ],
+      "responsibility": "Transport reference and content identity",
+      "donor": "PR30 9afabda; apps/ts-release-action/src/report-retainer.ts",
+      "requiredRegression": "Retain distinct prepared transport reference and nested content subject; validate their relationship via admitted Bundle metadata; use real emitted reports in regression.",
+      "status": "open"
+    },
+    {
+      "wave": "W10",
+      "outcomes": [
+        "K03"
+      ],
+      "responsibility": "Credential-free report retention",
+      "donor": "PR30 9afabda; apps/ts-release-action/src/report-handoff/bootstrap.cjs; report-retainer.ts",
+      "requiredRegression": "Separate publication credentials from final retention; remove OIDC request authority before dependency loading; bind candidate/run/attempt/producer/artifact/report; preserve failed or missing retention honestly.",
+      "status": "open"
+    },
+    {
+      "wave": "W10",
+      "outcomes": [
+        "K03"
+      ],
+      "responsibility": "Lost artifact-upload acknowledgement",
+      "donor": "PR30 9afabda; apps/ts-release-action/src/report-retainer.ts",
+      "requiredRegression": "One upload followed by exact artifact/file/byte readback; no blind upload retry and no new journal dispatch permission.",
+      "status": "open"
+    },
+    {
+      "wave": "W10",
+      "outcomes": [
+        "K03"
+      ],
+      "responsibility": "Official Actions digest representation",
+      "donor": "PR25 90e0edf; apps/ts-release-action/src/artifact-client.ts",
+      "requiredRegression": "Use native sha256:<hex> download digest, check digestMismatch and returned identity, independently admit owned bytes.",
+      "status": "open"
+    },
+    {
+      "wave": "W02/W10",
+      "outcomes": [
+        "D01-06",
+        "K03"
+      ],
+      "responsibility": "Native OIDC and archive admission",
+      "donor": "PR26-29 c73e39b,e389879,ac532a5,c2c05f3",
+      "requiredRegression": "Validate real emitted npm archive/manifest and exact job_workflow_ref/job_workflow_sha; safe refusal diagnostics; token exchange without upload is no-upload certification only.",
+      "status": "open"
+    }
+  ]
+}

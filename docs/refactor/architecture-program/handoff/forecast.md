@@ -1,8 +1,8 @@
 # Full-scope source and maintenance forecast
 
-The expected replacement is approximately **11,450 physical product lines**,
-with an engineering range of **8,200–16,000**. That is roughly half the preserved
-22,971-line baseline, but offers almost no margin against the **11,485** ceiling.
+The expected replacement is approximately **11,529 physical product lines**,
+with an engineering range of **8,267–16,097**. That is roughly half the preserved
+22,971-line baseline, and exceeds the **11,485** ceiling by **44**.
 All package metadata makes the conservative combined estimate exceed that
 ceiling. This is a credible cost forecast, **not an achieved reduction or a
 source-budget pass**. Keep the original ceiling; measure each implementation
@@ -18,8 +18,8 @@ not statistical confidence intervals or permission to choose the lowest number.
 
 | Responsibility | Expected physical lines | Basis |
 | --- | ---: | --- |
-| Complete M1 kernel and target admission | 1,075 | 935 measured selected source, plus 140 for complete production input/integration laws |
-| Owned artifacts and full Apple preparation/composition | 952 | 622 measured source including mixed release mechanism; 330 remaining native/host/integration estimate |
+| Complete M1 kernel and target admission | 1,164 | 1,024 measured selected source, plus 140 for complete production input/integration laws |
+| Owned artifacts and full Apple preparation/composition | 945 | 615 measured source including mixed release mechanism; 330 remaining native/host/integration estimate |
 | Shared HTTP, credentials and OIDC | 780 | Actual single-send/cancellation prototype and complete donor boundary inventory |
 | SQLite and Git journals | 496 | 146 measured mechanics plus native path/scope/bounded-history completion |
 | CLI, Action and self-release application | 603 | 43 measured loading/bridge lines plus explicit native I/O and complete release wiring |
@@ -52,8 +52,8 @@ check and delivery script paths/contracts are specified in `layout.json`; their
 unimplemented bodies have no fabricated measured line count. They are tooling
 cost, and the final maintenance ledger must include their actual source.
 
-Formatting is another material limit. The selected machine is 935 physical
-versus 1,043 TypeScript-printer lines; original adoption/Apple is 552 versus 661;
+Formatting is another material limit. The selected machine is 1,024 physical
+versus 1,145 TypeScript-printer lines; current adoption/Apple is 545 versus 648;
 native Git construction is 122 versus 157; checksums are 68 versus 77. Conversely,
 the preserved overlay has 22,916 physical versus 18,432 printer lines. These
 diagnostics expose style differences; they do not implement the original

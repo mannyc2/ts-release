@@ -1,7 +1,7 @@
 # Active goal: complete and publish the hard cut
 
-Status: **active**, started 2026-09-06. No goal-management tool is exposed in
-this session; this tracked record is the persistent goal and continuation entry.
+Status: **active**, started 2026-09-06, resumed 2026-09-07. The persistent
+goal tool is now active; this tracked record is its durable continuation entry.
 
 Complete the full ts-release hard-cut refactor into a simple, composable
 apps/packages monorepo with the approved seven-package grouping. Preserve all
@@ -50,15 +50,42 @@ fixtures, generated delivery, docs and research/tooling separately. Keep the
 
 ## Progress and exact next action
 
-- Preservation: isolated clone created; staged tree verified; ignored inputs archived.
-- Independent prerequisite review: running; diagnostic message leak already
-  identified in the proposed P3 patch and must be corrected before adoption.
-- P0–P3: not complete. W01–W10: not started. Plans 009/010: not started.
-- Publication: no versions selected or published; remote history must be checked.
-- Effect pins: installed/tracked rc.108 conflicts with the explicit local beta
-  instruction. Investigate the migration evidence and actual APIs before changes;
-  earlier auditors' characterization is not authorization to disregard the note.
+- Preservation checkpoint: `7da2877`. Original staged tree remains untouched.
+- P0: approved seven-package projection and exact declaration ownership are
+  implemented; full product packages/consumer graph are not yet implemented.
+- P1: retained original slice plus helper relocation passes 60 packed scenarios
+  and 27 extension records, TypeScript medians 37/37/37, metadata separate.
+- P2: concrete integrity/projection/ancestry/budget and launch entrypoints exist.
+  Launch closure rejects all 69 still-open rows; wave-specific production checks
+  remain explicitly unimplemented.
+- P3: safety corrections and public evaluator/cache/store witnesses passed
+  168 tests/993 assertions. Independent prerequisite review found no remaining
+  material safety issue. Apple composition freshly binds executed source hashes:
+  eight processes, two preparations, one publication, zero resume sends. Native
+  Apple services are protocol doubles; production certification is not claimed.
+- Final prerequisite verification now passes, including strict TypeScript,
+  generated declaration checks,168tests/993assertions, integrity, projection,
+  ancestry and budget accounting. Launch closure remains intentionally red.
+- Mainline PR30/31 report-retention and draft-recovery regressions are recorded
+  in handoff/mainline-donors.json. Preserve required PR21 ancestry at integration.
+- Effect beta.107 compatibility is now established for the producer fixture.
+  An exact owned declaration augmentation restores the stripped internal Sentinel
+  type without changing runtime files or weakening strict checks. Both Node/Bun
+  pass34adoption checks. Independent type review passed; packed declaration
+  reachability remains a W01 gate. Earlier observations follow for provenance: Official beta.102/.104/.107 have
+  a broken Sentinel declaration. Beta.101 strictly compiles after adapting local
+  TaggedErrorClass spelling, but published effect-build0.6.3 fails at runtime
+  because it calls Schema.TaggedError. Official rc.108 passes the same actual
+  producer fixture. Current user instructions still require aligned betas.
+- Product source is still 18,276 lines. Corrected conservative forecast is 11,529
+  against the unchanged 11,485 ceiling; simplification remains required.
+- W01–W10 and Plans009/010 are not completed. No new release is published.
+  Registry observation found only kernel0.3.0 and six absent package names;
+  recheck coordinates at release time. Existing protected GitHub environments
+  require the actual human approval when a tested candidate reaches those gates.
 
-Next: verify starting integrity and ancestry; review and implement the seven-
-package projector and peer compatibility policy (P0), then P1–P3 with corrected
-load-bearing patches, fresh witnesses, declaration emission and reviewed seals.
+Next: commit the reviewed prerequisite checkpoint; implement W01 under aligned
+beta.107 with the exact declaration repair; prove packed declaration reachability,
+production kernel laws and local-host process restart, then close the wave’s
+assigned migration rows. Continue independent work while native acceptance gates
+remain open.

@@ -1,7 +1,6 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { NoReplay, makeRequest, type ProviderDefinition } from "@lab/kernel"
-import { HttpReceipt, corresponds } from "./http-evidence.js"
+import { NoReplay, makeRequest, type ProviderDefinition , HttpReceipt, corresponds } from "@lab/kernel"
 
 export class ExternalIntent extends Schema.Class<ExternalIntent>("ExternalIntent")({
   endpoint: Schema.String,

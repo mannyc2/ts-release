@@ -36,9 +36,9 @@
     {
       "name": "apple-preparation",
       "source": "tools/architecture-lab/apple/apple-preparation.ts",
-      "sourceSha256": "7e6601c6648d3fc4191c454b60f957df7e1988711ad99c147642d1983b35d7d4",
-      "emittedSha256": "893a1a9f3cbb78289bdfde51779e2898666bbf5cb9c18679cd4cea555162f057",
-      "proposalSha256": "505cd760b6ef9b448112237800a905a4b2276f3fb518ed00c83d570dbed223c0"
+      "sourceSha256": "b966adbfa391bfa2d40df5d9f495674f3a8e07f213786db9a36f1fd132867dbf",
+      "emittedSha256": "201d6bed0aecd57f9535b3e92f10c1aaaeea46748f03f6f4ba39153b3a7ff945",
+      "proposalSha256": "368d15aed6c3bebfdc57ca8fab88687831bb640fa10bddf6f67151e0338c09bd"
     },
     {
       "name": "public-api",

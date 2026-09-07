@@ -1,6 +1,6 @@
 {
   "format": "mixed-apple-composition/1",
-  "root": "/tmp/ts-release-mixed-apple-K8rsK5",
+  "root": "/tmp/ts-release-mixed-apple-chQiYp",
   "processes": 8,
   "preparations": 2,
   "finalPlans": 1,
@@ -80,12 +80,12 @@
     {
       "phase": "publish",
       "result": {
-        "planId": "3e758ff711f7fe78bc490c7096fb501a8432a62915a2ba8b4aa040867904fc0b",
+        "planId": "7b48c86f86af43fbe33c40eb75fb24372a32ab19c584535853bb49ae291c89ad",
         "revision": 8,
         "superseded": false,
         "operations": [
           {
-            "operationId": "6a5b3e5a416174036586b47715ebbbc0d46dd0372f4bfb7c483a6f6fe093b8a5",
+            "operationId": "a8a9e6ca1ac70dca0dc1cf1a8446a0230d9ea2adb0107a69b907d744d7e5b49e",
             "status": "Satisfied",
             "dispatches": 1,
             "receipts": 1,
@@ -97,12 +97,12 @@
     {
       "phase": "resume",
       "result": {
-        "planId": "3e758ff711f7fe78bc490c7096fb501a8432a62915a2ba8b4aa040867904fc0b",
+        "planId": "7b48c86f86af43fbe33c40eb75fb24372a32ab19c584535853bb49ae291c89ad",
         "revision": 8,
         "superseded": false,
         "operations": [
           {
-            "operationId": "6a5b3e5a416174036586b47715ebbbc0d46dd0372f4bfb7c483a6f6fe093b8a5",
+            "operationId": "a8a9e6ca1ac70dca0dc1cf1a8446a0230d9ea2adb0107a69b907d744d7e5b49e",
             "status": "Satisfied",
             "dispatches": 1,
             "receipts": 1,
@@ -113,38 +113,76 @@
     }
   ],
   "nativeApple": false,
-  "directory": "/tmp/ts-release-apple-composition-ZQ06ko",
-  "consumer": "/tmp/ts-release-apple-composition-ZQ06ko/consumer",
+  "directory": "/tmp/ts-release-apple-composition-lUAMgY",
+  "consumer": "/tmp/ts-release-apple-composition-lUAMgY/consumer",
   "strictDeclarations": true,
   "amendment": {
-    "base": "7e6601c6648d3fc4191c454b60f957df7e1988711ad99c147642d1983b35d7d4",
-    "amended": "d3ff1464016b3c92539deefbf8e4a5a84627c8da4d52ce1c7e7eea2c3c9b3119",
-    "sourceLines": 224,
-    "amendmentScript": "/mnt/models/dev/ts-release/tools/architecture-lab/apple-composition/amend.mjs"
+    "base": "b966adbfa391bfa2d40df5d9f495674f3a8e07f213786db9a36f1fd132867dbf",
+    "amended": "1908f1fbb89499ac699a834160ce4445fa019a4a3065047a29398c0f50d98365",
+    "sourceLines": 219,
+    "amendmentScript": "/tmp/ts-release-implementation/tools/architecture-lab/apple-composition/amend.mjs"
   },
   "sources": [
     {
       "path": "tools/architecture-lab/apple-composition/composition.ts",
-      "sha256": "c7a6fa442289125fe6aaa695a11dfaa8732961a77b9619344c1499595ef8e5da",
+      "sha256": "e99fb2a30759ccda883525677d5257fd7e51e0be11c6118cbfd6b4433700e4de",
       "physicalLines": 70
     },
     {
       "path": "tools/architecture-lab/apple-composition/fixture.ts",
-      "sha256": "7a06cb94bcaeb2c0456a063f33eccf63666a6bac20e1a3d524129a48f762012b",
-      "physicalLines": 101
+      "sha256": "20f107ec2f42d3ba37df46b4a7c5502fa2ccf08202bea5d466b171ab7abf5ac1",
+      "physicalLines": 102
     },
     {
       "path": "tools/architecture-lab/apple-composition/amend.mjs",
-      "sha256": "6276c1bf3520e14880c34a71a4e90c3e119a50af32b9a3643d7b6226e4396504",
-      "physicalLines": 28
+      "sha256": "82a28501071ba17f6f8787b8af8e02d16dc045dc72ac7594ac839a38c55b0815",
+      "physicalLines": 26
     },
     {
       "path": "tools/architecture-lab/apple-composition/run.mjs",
-      "sha256": "b96600cc289cbec62a6f317d0e4def62192564f3f523c225b457244b5f3ebd82",
-      "physicalLines": 30
+      "sha256": "371398791748e397da23f16e75bca607efb60ba5286a37bdfa7d64443908236b",
+      "physicalLines": 32
     }
   ],
-  "machineTreeSha256": "25f02ed605cb054888f5aad37f55f26732d0ad57fad595eafa1483502bebd435",
+  "machineSources": [
+    {
+      "path": "contracts.ts",
+      "sha256": "eef0539fb3c2324fa113df538cbf34ea6ce2559c98ed6113925fb1079eb3f18e"
+    },
+    {
+      "path": "core-git.ts",
+      "sha256": "7a58500b527478c640e7a9fb5e19a1212c3c5bf155584ab2e3ea56ef4a43ac26"
+    },
+    {
+      "path": "http-evidence.ts",
+      "sha256": "9897e521b873a556708d041a4439ea3e14775b9ffedfd469efaa757c96b6949b"
+    },
+    {
+      "path": "identity.ts",
+      "sha256": "af043704cdf372c972cfea45fffec85d13fd88a98696516814b3b669f892697d"
+    },
+    {
+      "path": "index.ts",
+      "sha256": "9c5aa0ca0c55702388688fcf5fbe548a87c0f7cf90acf283c8f564c32c07b6d6"
+    },
+    {
+      "path": "laws.ts",
+      "sha256": "2b21b41a5c50d820d5b52453b25c31b7700c7b36794220a0a2b125b5804e4820"
+    },
+    {
+      "path": "m1-history.ts",
+      "sha256": "a9cd364a74a6f2ca11348045efc3919e88f804023d93def8576a4001241955a1"
+    },
+    {
+      "path": "model.ts",
+      "sha256": "c76ad8f4a89f2c3fb5fd6c38af9a9dcfa36f58b79188e481a8ffbd3aa9fa6001"
+    },
+    {
+      "path": "run.ts",
+      "sha256": "21881bdf3811cf5cdf5ca78d944d8ef1be9ed2805384ab694f1c63220da949fd"
+    }
+  ],
+  "machineTreeSha256": "548a1a5b1a93af37cdef420e519c23640efa537d572f3ccf709292e07f6287ab",
   "packages": [
     {
       "name": "effect-build",

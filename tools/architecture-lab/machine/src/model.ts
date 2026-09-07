@@ -1,4 +1,4 @@
-import type { DispatchBasis, JournalEvent, OperationStatus, Plan, ReleaseReport, RequestFacts } from "./contracts.js"
+import type { DispatchBasis, JournalEvent, OperationStatus, Plan, ReleaseReport, RequestFacts, Scope } from "./contracts.js"
 import { canonical } from "./identity.js"
 
 export interface CandidateRequest { readonly facts: RequestFacts; readonly fingerprint: string }
@@ -12,7 +12,7 @@ export interface Machine {
   readonly report: () => ReleaseReport
   readonly next: (operationId: string, candidate: CandidateRequest | null, now: number) => Next
 }
-export type MachineConstructor = (plan: Plan, events: ReadonlyArray<JournalEvent>) => Machine
+export type MachineConstructor = (plan: Plan, events: ReadonlyArray<JournalEvent>, scopeKind?: Scope["_tag"]) => Machine
 
 /** Protocol law shared by representations, not inferred from provider labels. */
 export const sameProtectedRequest = (recorded: RequestFacts, candidate: RequestFacts): boolean =>

@@ -9,8 +9,8 @@ import * as Assess from "effect-build-apple/Assess"
 import { Content, OwnedTree, adoptTree, finalize, type ContentOwner } from "./adoption.js"
 import { encodeBundle, loadBundle, restoreTree } from "./bundle-codec.js"
 import {
-  Host, JournalEvent, ObservationRecorded, LabError, NoReplay, canonical, createPreparationScope, hashCanonical, makeRequest,
-  runRelease, observeRelease, reportRelease, historyMachine, transitionMachine, type Candidate, type HostShape, type Plan, type ProviderDefinition, type RunOptions
+  Host, LabError, NoReplay, canonical, createPreparationScope, makeRequest,
+  runRelease, observeRelease, reportRelease, PROVIDER_CONTRACT, type HostShape, type Plan, type ProviderDefinition, type RunOptions
 } from "../machine/src/index.js"
 
 const CodesignObservation = Schema.declare<Tool.Observation<"codesign">>(
@@ -62,7 +62,7 @@ export const restoreSource = Effect.fn("lab.restoreAppleSource")(function*(
 })
 
 export const preparationProvider: ProviderDefinition = {
-  definitionId:"effect-build-apple.submit-app",intentVersion:"pr24/1",intentCodec:ApplePreparation,
+  contract: PROVIDER_CONTRACT, definitionId:"effect-build-apple.submit-app",intentVersion:"pr24/1",intentCodec:ApplePreparation,
   receiptVersion:"effect-build-apple/Submission/pr24",receiptCodec:Notary.Submission,
   classifyReceipt:()=>"Pending",
   dispatchError:{version:"effect-build-apple/SubmissionOutcomeUnknown/pr24",codec:Notary.SubmissionOutcomeUnknown,
@@ -139,11 +139,11 @@ export const finishPreparedApp = Effect.fn("lab.finishPreparedApp")(function*(
 export const preparationScope = (input: ApplePreparation) => createPreparationScope(preparationProvider,input,input.journalId)
 
 /** Match the validated global revision to the exact prefix used for selection/CAS. */
-const validatedSnapshot=Effect.fn("lab.validatedAppleSnapshot")(function*(plan:Plan,candidate:Candidate){
+const validatedSnapshot=Effect.fn("lab.validatedAppleSnapshot")(function*(plan:Plan){
   const host=yield* Host
   for(let retry=0;retry<8;retry++){
     const snapshot=yield* host.store.read(plan.journalId)
-    const report=yield* reportRelease({candidate,plan})
+    const report=yield* reportRelease({plan})
     if(report.revision===snapshot.revision)return {snapshot,report}
   }
   return yield* new LabError({code:"context-contention",message:"Could not select an exact validated release prefix"})
@@ -157,11 +157,11 @@ export const runPreparation = Effect.fn("lab.runPreparation")(function*(
   const host = yield* Host
   if(!host.journal||host.journal.journalId!==input.journalId)return yield* new LabError({code:"preparation-context",message:"Apple preparation requires its exact explicit release journal context"})
   const scope = yield* preparationScope(input)
-  if (host.journal?.scopes.some(known=>known._tag === "PreparationScope" && known.plan.planId !== scope.plan.planId)) {
-    return yield* new LabError({code:"changed-preparation",message:"A release context admits one exact immutable Apple preparation"})
+  if (!host.journal.scopes.some(known=>known._tag === "PreparationScope" && known.plan.planId === scope.plan.planId)) {
+    return yield* new LabError({code:"changed-preparation",message:"The exact immutable preparation must be admitted in this release context"})
   }
   yield* runRelease({...options,plan:scope.plan,observe:false})
-  const {snapshot} = yield* validatedSnapshot(scope.plan,options.candidate)
+  const {snapshot} = yield* validatedSnapshot(scope.plan)
   const events = snapshot.events.filter(event=>event.planId===scope.plan.planId)
   const alreadyReady = events.find(event=>event.body._tag === "ObservationRecorded" && typeof event.body.evidence === "object" && event.body.evidence !== null && "_tag" in event.body.evidence && event.body.evidence._tag === "ReadyToPlan")
   if (alreadyReady) return
@@ -169,35 +169,28 @@ export const runPreparation = Effect.fn("lab.runPreparation")(function*(
   if (!receipt || receipt.body._tag !== "ReceiptAccepted") return
   const submission = yield* Schema.decodeUnknownEffect(Notary.Submission)(receipt.body.receipt).pipe(Effect.mapError(asLabError))
   const observation = yield* complete(submission,scope.plan.operations[0]!.operationId)
-  if(typeof observation.evidence === "object" && observation.evidence !== null && "_tag" in observation.evidence && observation.evidence._tag === "ReadyToPlan") {
-    // Local transforms may race. Exactly one final byte identity wins the journal CAS.
-    const ready=yield* Schema.decodeUnknownEffect(ReadyToPlan)(observation.evidence).pipe(Effect.mapError(asLabError))
-    const event=new JournalEvent({format:"architecture-lab/event/1",journalId:input.journalId,planId:scope.plan.planId,eventId:host.uniqueId(),
-      body:new ObservationRecorded({operationId:scope.plan.operations[0]!.operationId,status:"Satisfied",evidenceKind:"Observation",evidenceVersion:"lab/apple-evidence/1",evidence:Schema.encodeSync(ReadyToPlan)(ready),observedAt:host.now()})})
-    for(let retry=0;retry<8;retry++){
-      const {snapshot:current}=yield* validatedSnapshot(scope.plan,options.candidate)
-      const existing=current.events.find(item=>item.planId===scope.plan.planId && item.body._tag==="ObservationRecorded" && typeof item.body.evidence==="object" && item.body.evidence!==null && "_tag" in item.body.evidence && item.body.evidence._tag==="ReadyToPlan")
-      if(existing)return
-      const receipts=current.events.flatMap(item=>item.planId===scope.plan.planId && item.body._tag==="ReceiptAccepted"?[item.body.receipt]:[])
-      if(preparationProvider.classifyObservation!(scope.plan.operations[0]!,ready,receipts)!=="Satisfied") return yield* new LabError({code:"ready-classification",message:"Ready evidence is not satisfied"})
-      yield* Effect.try({try:()=>{
-        const machine=options.candidate==="M1"?historyMachine:transitionMachine
-        machine(scope.plan,current.events.filter(item=>item.planId===scope.plan.planId)).append(event)
-      },catch:asLabError})
-      const result=yield* host.store.append(input.journalId,current.revision,event)
-      if(result._tag==="Appended"||result._tag==="AlreadyRecorded")return
-    }
-    return yield* new LabError({code:"ready-contention",message:"Final byte selection requires another read after contention"})
-  }
+  // Ready and non-Ready native facts take the same ordinary observation path. A competing process may
+  // have selected different final bytes first: the kernel's preparation-selection law refuses this one
+  // at the CAS, which is not a failure of this process.
   const observing: HostShape = {...host,providers:host.providers.map(provider=>provider.definitionId===preparationProvider.definitionId?{...provider,observe:()=>Effect.succeed(observation)}:provider)}
-  yield* observeRelease({candidate:options.candidate,plan:scope.plan}).pipe(Effect.provideService(Host,observing))
+  yield* observeRelease({plan:scope.plan}).pipe(
+    Effect.provideService(Host,observing),
+    Effect.catchIf((error)=>error.code==="preparation-selected",()=>Effect.gen(function*(){
+      // A competing selected output is success only after fresh complete admission.
+      // Invalid already-committed history must still fail on this read.
+      const winner = yield* validatedSnapshot(scope.plan)
+      if (!winner.snapshot.events.some(event=>event.planId===scope.plan.planId&&event.body._tag==="ObservationRecorded"&&event.body.status==="Satisfied")) {
+        return yield* new LabError({code:"preparation-selected",message:"No validated selected preparation output exists"})
+      }
+    }))
+  )
 })
 
 /** The sole final plan binds the first CAS-selected ReadyToPlan bytes in this root. */
 export const validateApplePublication = Effect.fn("lab.validateApplePublication")(function*(input:ApplePreparation,publication:Plan,owner:ContentOwner){
   const host=yield* Host
   const scope=yield* preparationScope(input)
-  const {snapshot}=yield* validatedSnapshot(scope.plan,"M2")
+  const {snapshot}=yield* validatedSnapshot(scope.plan)
   const event=snapshot.events.find(item=>item.planId===scope.plan.planId&&item.body._tag==="ObservationRecorded"&&typeof item.body.evidence==="object"&&item.body.evidence!==null&&"_tag" in item.body.evidence&&item.body.evidence._tag==="ReadyToPlan")
   if(!event||event.body._tag!=="ObservationRecorded")return yield* new LabError({code:"not-ready",message:"No finalized native product is ready to plan"})
   const ready=yield* Schema.decodeUnknownEffect(ReadyToPlan)(event.body.evidence).pipe(Effect.mapError(asLabError))
@@ -214,8 +207,8 @@ export const reportAppleContext = Effect.fn("lab.reportAppleContext")(function*(
   const preparation=yield* preparationScope(input)
   if(publication)yield* validateApplePublication(input,publication,owner)
   for(let retry=0;retry<8;retry++){
-    const {snapshot,report:prepared}=yield* validatedSnapshot(preparation.plan,"M2")
-    const published=publication?yield* reportRelease({candidate:"M2",plan:publication}):undefined
+    const {snapshot,report:prepared}=yield* validatedSnapshot(preparation.plan)
+    const published=publication?yield* reportRelease({plan:publication}):undefined
     if(published&&published.revision!==snapshot.revision)continue
     return {journalId:input.journalId,revision:snapshot.revision,preparation:prepared,...(published?{publication:published}:{}),
       nativeFacts:snapshot.events.filter(event=>event.planId===preparation.plan.planId)}

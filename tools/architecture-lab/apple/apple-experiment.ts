@@ -16,7 +16,7 @@ import { adoptTree } from "./adoption.js"
 import { fileContentOwner } from "./content-owner.js"
 import { ApplePreparation, ApplicationSignature, ReadyToPlan, preparationProvider, preparationScope, submitPreparedApp, finishPreparedApp, runPreparation, reportAppleContext, validateApplePublication } from "./apple-preparation.js"
 import { SqliteJournal } from "../storage/sqlite.js"
-import { Host, JournalEvent, LabError, NoReplay, ObservationRecorded, Plan, PlanSuperseded, canonical, createOperation, createPlan, hashCanonical, makeRequest, reportRelease, runRelease, type HostShape, type ProviderDefinition } from "../machine/src/index.js"
+import { Host, JournalEvent, LabError, NoReplay, ObservationRecorded, Plan, PlanSuperseded, canonical, createOperation, createPlan, hashCanonical, makeRequest, reportRelease, runRelease, type HostShape, PROVIDER_CONTRACT, type ProviderDefinition } from "../machine/src/index.js"
 
 const publicObservation = <N extends string>(name:N): Tool.Observation<N> => ({name,participants:[{
   role:"protocol-double",name,version:"fixture-only",revision:"fixture-only",channel:"fixture-only",
@@ -87,7 +87,8 @@ const protocolLayers = (root:string, mode:string) => {
 
 class PublishIntent extends Schema.Class<PublishIntent>("lab/PublishIntent")({bundleId:Schema.String}) {}
 class PublishReceipt extends Schema.Class<PublishReceipt>("lab/PublishReceipt")({published:Schema.Literal(true),bundleId:Schema.String}) {}
-const publicationProvider:ProviderDefinition={definitionId:"fixture.publish-final-bundle",intentVersion:"1",intentCodec:PublishIntent,
+const publicationProvider:ProviderDefinition={
+  contract: PROVIDER_CONTRACT,definitionId:"fixture.publish-final-bundle",intentVersion:"1",intentCodec:PublishIntent,
   receiptVersion:"fixture-published/1",receiptCodec:PublishReceipt,
   classifyReceipt:()=>"Satisfied",
   receiptCorresponds:(operation,_request,receipt)=>Schema.decodeUnknownSync(PublishReceipt)(receipt).bundleId===Schema.decodeUnknownSync(PublishIntent)(operation.intent).bundleId,
@@ -132,7 +133,7 @@ const worker=async(root:string,mode:string)=>{
     if(mode==="publish") {
       if(!plan) throw new Error("publication plan missing")
       await runWithHost(validateApplePublication(input,plan,owner))
-      return await runWithHost(runRelease({candidate:"M2",plan,authorize:true}))
+      return await runWithHost(runRelease({plan,authorize:true}))
     }
     if(mode==="forged-plan"){
       const forged=await run(createPlan("different-final-bundle",[],input.journalId))
@@ -141,11 +142,11 @@ const worker=async(root:string,mode:string)=>{
     if(mode==="report") return await runWithHost(reportAppleContext(input,owner,plan))
     if(mode==="changed-input") {
       const changed=new ApplePreparation({...input,architecture:"x64"})
-      return await runWithHost(runPreparation(changed,{candidate:"M2",authorize:true},()=>Effect.die("changed input must not complete")))
+      return await runWithHost(runPreparation(changed,{authorize:true},()=>Effect.die("changed input must not complete")))
     }
     if(mode==="missing-context"){
       const {journal:_,...unscoped}=host
-      return await run(runPreparation(input,{candidate:"M2",authorize:true},()=>Effect.die("missing context must not complete")).pipe(Effect.provideService(Host,unscoped)))
+      return await run(runPreparation(input,{authorize:true},()=>Effect.die("missing context must not complete")).pipe(Effect.provideService(Host,unscoped)))
     }
     if(mode==="late-observation") {
       const snapshot=await run(store.read("fixture-release"))
@@ -157,7 +158,7 @@ const worker=async(root:string,mode:string)=>{
         body:new ObservationRecorded({operationId:scope.plan.operations[0]!.operationId,status:"Pending",evidenceKind:"Observation",evidenceVersion:"lab/apple-evidence/1",evidence:Schema.encodeSync(Notary.Observation)(evidence),observedAt:Date.now()})})))
       return await runWithHost(reportAppleContext(input,owner,plan))
     }
-    await runWithHost(runPreparation(input,{candidate:"M2",authorize:true,
+    await runWithHost(runPreparation(input,{authorize:true,
       checkpoint:(stage)=>Effect.sync(()=>{if(mode===stage)process.exit(81)})},(submission,id)=>finishPreparedApp(id,input,submission,owner,
         join(root,`restore-final-${randomUUID()}`),join(root,`final-${randomUUID()}`)).pipe(Effect.provide(protocolLayers(root,mode)),Effect.mapError(caught),Effect.map(observation=>{if(mode==="concurrent-foreign-prefix")injectForeignPrefix=true;return observation}))))
     const snapshot=await run(store.read("fixture-release"))
@@ -220,7 +221,8 @@ export const runAppleExperiment=async()=>{
     checks.push("one-physical-journal-global-cas-through-publication","one-persisted-publication-plan-with-transient-producer-view")
     const late=child(directory,"late-observation")
     assert.equal(late.revision,snapshot.revision+1)
-    assert.equal(late.preparation.operations[0].status,"Pending")
+    assert.equal(late.preparation.operations[0].status,"Satisfied")
+    assert.equal(late.nativeFacts.at(-1).body.status,"Pending")
     assert.equal(late.publication.operations[0].status,"Satisfied")
     assert.equal(late.nativeFacts.length,snapshot.events.filter(event=>event.planId!==JSON.parse(planBefore).planId).length+1)
     assert.equal(readFileSync(join(directory,"publication-plan.json"),"utf8"),planBefore)

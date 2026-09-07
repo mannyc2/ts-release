@@ -8,8 +8,9 @@ import { canonical, createOperation, createPlan, type ReleaseReport } from "../s
 import { providerFor } from "./fixtures.js"
 
 const worker = resolve(import.meta.dir, "process-runner.ts")
-for (const candidate of ["M1", "M2"] as const) for (const fault of ["after-append", "after-send"] as const) {
-  test(`${candidate}: fresh OS process resumes ${fault} from SQLite after deleting original workspace`, async () => {
+import { evaluatorNames } from "./fixtures.js"
+for (const candidate of evaluatorNames) for (const cache of [false, true]) for (const fault of ["after-append", "after-send"] as const) {
+  test(`${candidate}${cache ? "+cache" : ""}: fresh OS process resumes ${fault} from SQLite after deleting original workspace`, async () => {
     const directory = mkdtempSync(join(tmpdir(), "machine-process-"))
     const oldWorkspace = join(directory, "old-workspace")
     const freshWorkspace = join(directory, "fresh-workspace")
@@ -31,7 +32,7 @@ for (const candidate of ["M1", "M2"] as const) for (const fault of ["after-appen
       const operation = await Effect.runPromise(createOperation(providerFor(), { coordinate: "package-1", endpoint: `http://127.0.0.1:${server.port}`, content: "owned exact artifact bytes" }))
       const plan = await Effect.runPromise(createPlan("process-owned-bundle", [operation]))
       writeFileSync(planPath, canonical(plan))
-      const launch = (cwd: string, stage: string, observe: string) => Bun.spawn([process.execPath, worker, planPath, databasePath, candidate, stage, observe], { cwd, stdout: "pipe", stderr: "pipe" })
+      const launch = (cwd: string, stage: string, observe: string) => Bun.spawn([process.execPath, worker, planPath, databasePath, candidate, stage, observe], { cwd, stdout: "pipe", stderr: "pipe", env: { ...process.env, LAB_CACHE: cache ? "1" : "" } })
       const first = launch(oldWorkspace, fault, "false")
       expect(await first.exited).toBe(70)
       expect(await new Response(first.stderr).text()).toBe("")

@@ -1,8 +1,13 @@
 # Plan 006: Implement the selected deterministic release machine as a hard cut
 
+> Current execution authority: [`docs/refactor/architecture-program/handoff/README.md`](../docs/refactor/architecture-program/handoff/README.md).
+> All lowercase contract filenames below resolve inside that handoff. Design and API changes regenerate the projections; the archived selector is not an active gate.
+> The 2026-09-06 task authorizes the full implementation and qualified publication. Historical per-group permission requirements are superseded by that authorization; exact candidate, destination, account and allowed effects still require a concrete reviewed execution record.
+
+
 > **Executor instructions:** Read and verify Plan 005's exact freeze artifacts
-> before editing. Implement `SYSTEM.json`, `SURFACE.json`, `MIGRATION.json`,
-> `WAVES.json`, and `GATES.json`; do not reinterpret them. The preserved overlay
+> before editing. Implement `contract.json`, `public-surface.json`, `migration.json`,
+> `waves.json`, and `qualification.json`; do not reinterpret them. The preserved overlay
 > and PR22 are evidence sources, not ancestors or bulk-copy sources. Stop rather
 > than introducing a compatibility spine, fallback representation, second
 > journal, provider registry, or extra orchestration owner.
@@ -40,15 +45,15 @@ wave as their replacement.
 From a clean worktree:
 
 1. regenerate all Plan 005 freeze artifacts byte-for-byte;
-2. verify their hashes against `SYSTEM.json`;
+2. verify their hashes against `contract.json`;
 3. verify required and forbidden ancestry;
 4. run `bun run check:architecture-program`;
 5. restore Plan 003's PR22/overlay evidence into a separate read-only worktree;
-6. verify the exact `WAVES.json` entries assigned to Plan 006; and
+6. verify the exact `waves.json` entries assigned to Plan 006; and
 7. confirm no Plan 006 migration row is `unresolved` or targets a package/export
-   absent from `SURFACE.json`.
+   absent from `public-surface.json`.
 
-The commands and paths come from `GATES.json` and `SURFACE.json`, not from the
+The commands and paths come from `qualification.json` and `public-surface.json`, not from the
 prototype's script or directory names.
 
 ## Implementation laws
@@ -71,18 +76,18 @@ prototype's script or directory names.
   live clients, credentials, hidden closures, Layers, or mutable registry.
 - Core contains no provider/effect-build switch, allowlist, or import.
 - Runtime exports, declarations, package manifests, bins, and emitted modules
-  are exactly the generated `SURFACE.json` projection.
+  are exactly the generated `public-surface.json` projection.
 
 ## Scope
 
 In scope:
 
-- exact Plan 006 target packages/modules from `SURFACE.json`;
+- exact Plan 006 target packages/modules from `public-surface.json`;
 - exact Plan 006 `retain | move | merge | replace | delete` rows from
-  `MIGRATION.json`;
+  `migration.json`;
 - the canonical models, machine, interpreter, journal law, report projection,
   definitions/composition boundary, and host ownership boundary;
-- one representative provider/transport/host vertical selected by `WAVES.json`;
+- one representative provider/transport/host vertical selected by `waves.json`;
 - all 16 architecture traces, property/race/crash tests, packed consumer tests,
   generated surface/import checks, and compression accounting.
 
@@ -98,7 +103,7 @@ Out of scope:
 
 Generate or create the exact workspace globs, packages, app/host locations,
 manifests, exports, build order, TypeScript references, and import rules from
-`SURFACE.json`. Do not add a package or public subpath for convenience.
+`public-surface.json`. Do not add a package or public subpath for convenience.
 
 Before domain implementation, make these gates executable and red for missing
 source, while already green for graph structure:
@@ -131,7 +136,7 @@ No test may require prototype ancestry or import prototype modules.
 
 ## Step 3: Implement canonical durable values and construction boundaries
 
-Implement the exact schemas and branded IDs in their `SYSTEM.json` owners.
+Implement the exact schemas and branded IDs in their `contract.json` owners.
 Decode/normalize once at ingress; make invalid combinations unconstructable or
 reject them there. Implement explicit storage/transport projections rather than
 peer domain models.
@@ -190,7 +195,7 @@ late facts after supersession.
 Implement the frozen host/application API so the host supplies journal, clock,
 artifact storage, core transports, and execution approval as explicit disjoint
 inputs. Imported applications/providers supply only the capabilities permitted
-by `SYSTEM.json`.
+by `contract.json`.
 
 Hostile type/runtime/packed tests attempt to provide a duplicate journal,
 transport, clock, and approval service. They must be unrepresentable, rejected,
@@ -202,7 +207,7 @@ fake Layer is insufficient.
 ## Step 7: Prove one representative vertical and ordinary composition
 
 Implement the exact representative provider/transport slice selected in
-`WAVES.json`. Its provider-local owner contains Intent/wire/result codecs,
+`waves.json`. Its provider-local owner contains Intent/wire/result codecs,
 operation expansion, preparation/correspondence, native observation,
 dispatch/result mapping, recovery law, and host capabilities. The machine sees
 only the frozen operation grammar.
@@ -218,14 +223,14 @@ Prove:
 
 ## Step 8: Execute the hard-cut/deletion and budget gate
 
-Complete every Plan 006 row in `MIGRATION.json`. Delete all superseded core
+Complete every Plan 006 row in `migration.json`. Delete all superseded core
 orchestration, durable peers, public aliases, readers/writers, test-only old
 reducers, registry paths, and generated mirrors in the same program. There is
 no residual-cleanup wave.
 
 Regenerate the architecture artifacts and run their check-only mode. The freeze
 must remain byte-identical except for result/evidence fields explicitly owned
-by `WAVES.json`; target architecture facts cannot drift.
+by `waves.json`; target architecture facts cannot drift.
 
 Measure semantic, structural, operational, and source results against the
 preserved prototype baseline. Require the selected machine-slice budget,
@@ -234,7 +239,7 @@ and zero unresolved Plan 006 rows.
 
 ## Verification
 
-Run every Plan 006 gate vector from `GATES.json`, including:
+Run every Plan 006 gate vector from `qualification.json`, including:
 
 - Schema/canonical encoding and all 16 machine traces;
 - transition/property/race/crash/hostile ownership tests;
@@ -262,7 +267,7 @@ No successful local gate closes a live scorecard row.
 - [ ] Every assigned migration row is resolved and every superseded peer is
       physically deleted; relocation arithmetic balances.
 - [ ] Runtime/declaration exports, packages, bins, emitted modules, DAG, and
-      Effect versions exactly match `SURFACE.json`.
+      Effect versions exactly match `public-surface.json`.
 - [ ] All assigned architecture/core/packed/budget gates pass with no evidence
       inflation or remote mutation.
 
@@ -282,6 +287,6 @@ No successful local gate closes a live scorecard row.
 ## Maintenance notes
 
 Future architecture changes begin by updating Plan 005 inputs and regenerating
-the freeze. Plans 007-010, including 008B, extend only the exact `WAVES.json`
+the freeze. Plans 007-010, including 008B, extend only the exact `waves.json`
 program; they may
 not create new packages, owners, exports, durable formats, or lifecycle paths.

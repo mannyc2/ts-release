@@ -10,7 +10,7 @@ import * as Notary from "effect-build-apple/Notary";
 import * as Staple from "effect-build-apple/Staple";
 import * as Assess from "effect-build-apple/Assess";
 import { Content, OwnedTree, type ContentOwner } from "./adoption.js";
-import { Host, JournalEvent, ReleaseError, type Plan, type ProviderDefinition, type RunOptions } from "../kernel-api.js";
+import { Host, ReleaseError, type Plan, type ProviderDefinition, type RunOptions } from "../kernel-api.js";
 declare const ApplicationSignature_base: Schema.Class<ApplicationSignature, Schema.Struct<{
     readonly certificateSha1: Schema.String;
     readonly tool: Schema.declare<Tool.Observation<"codesign">, Tool.Observation<"codesign">>;
@@ -144,7 +144,7 @@ export declare const runPreparation: (input: ApplePreparation, options: Omit<Run
 export declare const validateApplePublication: (input: ApplePreparation, publication: Plan, owner: ContentOwner) => Effect.Effect<ReadyToPlan, Schema.SchemaError | import("effect/PlatformError").PlatformError | import("./adoption.js").AdoptionError | ReleaseError, import("effect/Crypto").Crypto | Host>;
 /** A selected publication report alone cannot represent the producer prefix. */
 export declare const reportAppleContext: (input: ApplePreparation, owner: ContentOwner, publication?: Plan | undefined) => Effect.Effect<{
-    nativeFacts: JournalEvent[];
+    nativeFacts: import("../kernel-api.js").JournalEvent[];
     publication?: {
         revision: number;
         planId: string;

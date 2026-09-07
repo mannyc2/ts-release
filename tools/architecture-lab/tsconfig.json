@@ -6,6 +6,6 @@
     "noEmit": true,
     "types": ["bun-types"]
   },
-  "include": ["machine/src/**/*.ts", "machine/test/**/*.ts", "storage/**/*.ts", "integration/**/*.ts", "git-catalog/**/*.ts", "inventory.ts", "migration.ts", "reconcile.ts"],
+  "include": ["machine/src/**/*.ts", "machine/test/**/*.ts", "machine/witnesses/**/*.ts", "storage/**/*.ts", "integration/**/*.ts", "git-catalog/**/*.ts", "inventory.ts", "migration.ts", "reconcile.ts", "project.ts"],
   "exclude": ["**/dist", "**/node_modules"]
 }

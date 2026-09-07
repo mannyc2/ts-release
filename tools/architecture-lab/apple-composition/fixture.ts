@@ -11,11 +11,12 @@ import { fileContentOwner } from "../apple/content-owner.js"
 import { ApplePreparation, ReadyToPlan, finishPreparedApp, preparationProvider, preparationScope, runPreparation, submitPreparedApp } from "../apple/apple-preparation.js"
 import { protocolLayers, run, setup } from "../apple/apple-experiment.js"
 import { SqliteJournal } from "../storage/sqlite.js"
-import { Host, LabError, NoReplay, Plan, canonical, createOperation, createPlan, makeRequest, runRelease, type HostShape, type ProviderDefinition } from "../machine/src/index.js"
+import { Host, LabError, NoReplay, Plan, canonical, createOperation, createPlan, makeRequest, runRelease, type HostShape, PROVIDER_CONTRACT, type ProviderDefinition } from "../machine/src/index.js"
 import { ApplePreparations, createApplePreparations, loadApplePreparations, validateApplePublication } from "./composition.js"
 
 const caught = (error:unknown) => new LabError({code:"mixed-apple-fixture",message:String(error)})
-const publication:ProviderDefinition={definitionId:"fixture.complete-release",intentVersion:"1",intentCodec:Schema.Struct({bundleId:Schema.String}),receiptVersion:"1",receiptCodec:Schema.Struct({bundleId:Schema.String}),receiptCorresponds:(operation,_request,receipt)=>canonical(operation.intent)===canonical(receipt),classifyReceipt:()=>"Satisfied",prepare:operation=>makeRequest({transport:"opaque/1",endpoint:"fixture://complete-release",method:"invoke",headers:[],body:new TextEncoder().encode(canonical(operation.intent)),principal:"fixture",scope:"complete",replay:new NoReplay({})})}
+const publication:ProviderDefinition={
+  contract: PROVIDER_CONTRACT,definitionId:"fixture.complete-release",intentVersion:"1",intentCodec:Schema.Struct({bundleId:Schema.String}),receiptVersion:"1",receiptCodec:Schema.Struct({bundleId:Schema.String}),receiptCorresponds:(operation,_request,receipt)=>canonical(operation.intent)===canonical(receipt),classifyReceipt:()=>"Satisfied",prepare:operation=>makeRequest({transport:"opaque/1",endpoint:"fixture://complete-release",method:"invoke",headers:[],body:new TextEncoder().encode(canonical(operation.intent)),principal:"fixture",scope:"complete",replay:new NoReplay({})})}
 const worker=async(root:string,phase:string)=>{
   const collection=await run(loadApplePreparations(JSON.parse(readFileSync(join(root,"preparations.json"),"utf8")))),inputs=collection.preparations,journalId=collection.journalId
   const scopes=await run(Effect.forEach(inputs,preparationScope)),owner=fileContentOwner(join(root,"objects")),store=new SqliteJournal(join(root,"journal.sqlite"))
@@ -28,10 +29,10 @@ const worker=async(root:string,phase:string)=>{
   }).pipe(Effect.mapError(caught))}}
   const withHost=<A,E,R>(effect:Effect.Effect<A,E,R>)=>run(effect.pipe(Effect.provideService(Host,host)))
   try {
-    if(phase.startsWith("start-")){const i=Number(phase.slice(6));return await withHost(runRelease({candidate:"M1",plan:scopes[i]!.plan,authorize:true,maxDispatches:1}))}
+    if(phase.startsWith("start-")){const i=Number(phase.slice(6));return await withHost(runRelease({plan:scopes[i]!.plan,authorize:true,maxDispatches:1}))}
     if(phase.startsWith("finish-")){
       const input=inputs[Number(phase.slice(7))]!
-      return await withHost(runPreparation(input,{candidate:"M1",authorize:true},(submission,id)=>finishPreparedApp(id,input,submission,owner,join(root,"native",randomUUID()),join(root,"native",randomUUID()),artifact=>Effect.gen(function*(){
+      return await withHost(runPreparation(input,{authorize:true},(submission,id)=>finishPreparedApp(id,input,submission,owner,join(root,"native",randomUUID()),join(root,"native",randomUUID()),artifact=>Effect.gen(function*(){
         const delivery=yield* File.publish({destination:join(root,"native",`${input.bundleName}.tar`),observation:"hashed",provenance:artifact.provenance},candidate=>Effect.try({try:()=>{
           const result=Bun.spawnSync(["tar","-cf",candidate,"-C",artifact.root,"."],{stdout:"pipe",stderr:"pipe"})
           if(result.exitCode!==0)throw new Error(result.stderr.toString())
@@ -73,7 +74,7 @@ const worker=async(root:string,phase:string)=>{
       return {rejected:checks.length,sends:0}
     }
     const ready=await withHost(validateApplePublication(collection,plan,content,owner));assert.equal(ready.length,2)
-    return await withHost(runRelease({candidate:"M1",plan,authorize:true}))
+    return await withHost(runRelease({plan,authorize:true}))
   }finally{store.close()}
 }
 

@@ -1,6 +1,6 @@
 {
   "schema": "apple-adoption-lab-run/1",
-  "consumer": "/tmp/ts-release-packed-adopter-aGHWZI",
+  "consumer": "/tmp/ts-release-packed-adopter-hyMYZd",
   "upstream": [
     {
       "name": "effect-build",
@@ -275,6 +275,5 @@
     "samePhysicalJournal": true,
     "journalEventKinds": 6,
     "persistedPublicationPlans": 1
-  },
-  "finalAppleIncrementalValidation": "Same clean packed consumer; unchanged producer/dependency graph, re-emitted final Apple source after cold-review exact-prefix correction"
+  }
 }

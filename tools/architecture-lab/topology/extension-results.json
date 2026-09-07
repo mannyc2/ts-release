@@ -1,13 +1,13 @@
 {
   "format": "integrated-extensions/1",
-  "work": "/tmp/ts-release-topology-extensions-8A25tJ",
+  "work": "/tmp/ts-release-topology-extensions-j4DtWJ",
   "method": "Each source extension is emitted, packed, freshly installed, and called by a consumer. Baseline absence errors are checked. Configuration-only and preexisting extension seams are reported separately from code additions. Physical and TS6-printer normalized churn are distinct diagnostics.",
   "evidenceArtifact": {
     "file": "extension-results.json.gz",
-    "sha256": "0ceab0a9cd3f6277ce146b80629806c4318bd85d0d1966c0c37d7c97babafe45",
-    "expandedSha256": "8bed8dbfd338889d3c2220e3154877e3f7d832f04ee3898bd8e490e9ab23cc46",
-    "expandedBytes": 62446,
-    "compressedBytes": 9085,
+    "sha256": "2a22c8fd3602f7cdd7289d128da1661fa9c695d542c66450940f0b8e23c5321e",
+    "expandedSha256": "3c23699465dec926f5f28c3504ecebdd4a1c931fb68d0398ebd18c82a2afde76",
+    "expandedBytes": 61692,
+    "compressedBytes": 9018,
     "encoding": "gzip+json-with-content-addressed-sharing"
   },
   "probes": [
@@ -18,7 +18,7 @@
       "before": {
         "configuredInstances": 1,
         "registryEndpoints": [
-          "http://127.0.0.1:38435/registry-0"
+          "http://127.0.0.1:36953/registry-0"
         ],
         "measuredOperations": 1,
         "newSends": 1,
@@ -28,8 +28,8 @@
       "after": {
         "configuredInstances": 2,
         "registryEndpoints": [
-          "http://127.0.0.1:38435/registry-1",
-          "http://127.0.0.1:38435/registry-0"
+          "http://127.0.0.1:36953/registry-1",
+          "http://127.0.0.1:36953/registry-0"
         ],
         "measuredOperations": 2,
         "newSends": 1,
@@ -49,8 +49,8 @@
       "id": "P02",
       "before": {
         "exitCode": 1,
-        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/external' imported from /tmp/ts-release-topology-extensions-8A25tJ/T1/P02-before/[eval1]",
-        "stderrSha256": "69b673e22a33d1136d3f58f78ad535f5d7eae025fd559c53891cace8f45cf831"
+        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/external' imported from /tmp/ts-release-topology-extensions-j4DtWJ/T1/P02-before/[eval1]",
+        "stderrSha256": "adbc22999ba734877239f077eb831e8224e2e2ca597b86b6f91060c796259a02"
       },
       "after": [
         {
@@ -86,39 +86,25 @@
         "changed": [
           {
             "path": "external.ts",
-            "added": 33,
+            "added": 32,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 33
-          },
-          {
-            "path": "http-evidence.ts",
-            "added": 13,
-            "removed": 0,
-            "beforeLines": 0,
-            "afterLines": 13
+            "afterLines": 32
           }
         ],
-        "added": 46,
+        "added": 32,
         "removed": 0,
         "normalized": {
           "changed": [
             {
               "path": "external.ts",
-              "added": 32,
+              "added": 31,
               "removed": 0,
               "beforeLines": 0,
-              "afterLines": 32
-            },
-            {
-              "path": "http-evidence.ts",
-              "added": 13,
-              "removed": 0,
-              "beforeLines": 0,
-              "afterLines": 13
+              "afterLines": 31
             }
           ],
-          "added": 45,
+          "added": 31,
           "removed": 0
         }
       },
@@ -129,8 +115,8 @@
       "id": "P03",
       "before": {
         "exitCode": 1,
-        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './catalog' is not defined by \"exports\" in /tmp/ts-release-topology-0JDsU7/T1/consumer/node_modules/@lab/release/package.json imported from /tmp/ts-release-topology-0JDsU7/T1/consumer/[eval1]",
-        "stderrSha256": "d48ac432462fbba4a4151d24b0698ad7f1475d716a9c3b44869a951abc324101"
+        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './catalog' is not defined by \"exports\" in /tmp/ts-release-topology-qd8Tw0/T1/consumer/node_modules/@lab/release/package.json imported from /tmp/ts-release-topology-qd8Tw0/T1/consumer/[eval1]",
+        "stderrSha256": "95fecbcd2b5cfddff47baaaad97385065970c7fca4a4bf112a63d4c25e7a351a"
       },
       "after": [
         {
@@ -166,25 +152,25 @@
         "changed": [
           {
             "path": "providers/catalog.ts",
-            "added": 38,
+            "added": 37,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 38
+            "afterLines": 37
           }
         ],
-        "added": 38,
+        "added": 37,
         "removed": 0,
         "normalized": {
           "changed": [
             {
               "path": "providers/catalog.ts",
-              "added": 42,
+              "added": 41,
               "removed": 0,
               "beforeLines": 0,
-              "afterLines": 42
+              "afterLines": 41
             }
           ],
-          "added": 42,
+          "added": 41,
           "removed": 0
         }
       },
@@ -196,7 +182,7 @@
       "before": {
         "exitCode": 1,
         "error": "SyntaxError: The requested module '@lab/release/npm' does not provide an export named 'npmTag'",
-        "stderrSha256": "718755ce0285c3f371c2825a04a8c5dcb359478994db85f875b69f97b41934aa"
+        "stderrSha256": "4d366ae52bef829fbe1620f558cd392ed1610d997899f698aaf2dd244cea6ebb"
       },
       "after": [
         {
@@ -234,18 +220,18 @@
             "path": "providers/npm.ts",
             "added": 2,
             "removed": 0,
-            "beforeLines": 90,
-            "afterLines": 92
+            "beforeLines": 89,
+            "afterLines": 91
           },
           {
             "path": "providers/npm-tag.ts",
-            "added": 41,
+            "added": 40,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 41
+            "afterLines": 40
           }
         ],
-        "added": 43,
+        "added": 42,
         "removed": 0,
         "normalized": {
           "changed": [
@@ -253,18 +239,18 @@
               "path": "providers/npm.ts",
               "added": 1,
               "removed": 0,
-              "beforeLines": 96,
-              "afterLines": 97
+              "beforeLines": 95,
+              "afterLines": 96
             },
             {
               "path": "providers/npm-tag.ts",
-              "added": 44,
+              "added": 43,
               "removed": 0,
               "beforeLines": 0,
-              "afterLines": 44
+              "afterLines": 43
             }
           ],
-          "added": 45,
+          "added": 44,
           "removed": 0
         }
       }
@@ -274,8 +260,8 @@
       "id": "P06",
       "before": {
         "exitCode": 1,
-        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './git' is not defined by \"exports\" in /tmp/ts-release-topology-extensions-8A25tJ/T1/P06-before/consumer/node_modules/@lab/host/package.json imported from /tmp/ts-release-topology-extensions-8A25tJ/T1/P06-before/consumer/[eval1]",
-        "stderrSha256": "c6dc60cb725423e40da34798bd2cef15064dcbbb0e29c536adec525c67258dab"
+        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './git' is not defined by \"exports\" in /tmp/ts-release-topology-extensions-j4DtWJ/T1/P06-before/consumer/node_modules/@lab/host/package.json imported from /tmp/ts-release-topology-extensions-j4DtWJ/T1/P06-before/consumer/[eval1]",
+        "stderrSha256": "78ae396e55565598ccb47f39cd143106e430222d6a8fdda9648c092dfa5134b9"
       },
       "after": [
         {
@@ -364,12 +350,12 @@
         {
           "runtime": "node",
           "exitCode": 1,
-          "stderrSha256": "e674cb256af235123b2d871b2c908e8c3c03cad386d58626d6cd6993fcb2c900"
+          "stderrSha256": "c8d2bea7d4545f31e8863abbd5fe05ced9f5e5b31bece3892a3a6cc57b2faecf"
         },
         {
           "runtime": "bun",
           "exitCode": 1,
-          "stderrSha256": "ae022dd676b13a01e1c76751e7a4c6d30fcfa27cf752eb78857dc0cfc8146355"
+          "stderrSha256": "4d7ca176798d5f0ceeed624eb67f20579898b3b6b73eab176943d06cb869d378"
         }
       ],
       "after": [
@@ -432,7 +418,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
-          "stderrSha256": "9b3abdf6637a802df1333d8b955adea83f1d8814b294c0e695a0eedccf0bfb98"
+          "stderrSha256": "a4faf35ca1c4c8a23187fe0cd9855beb970ab60be8a45b42301ece460f25dbf0"
         },
         {
           "runtime": "node",
@@ -440,7 +426,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
-          "stderrSha256": "9b3abdf6637a802df1333d8b955adea83f1d8814b294c0e695a0eedccf0bfb98"
+          "stderrSha256": "a4faf35ca1c4c8a23187fe0cd9855beb970ab60be8a45b42301ece460f25dbf0"
         },
         {
           "runtime": "bun",
@@ -448,7 +434,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
-          "stderrSha256": "4289194547276a5f9dc8bb63828bce5c776b3e213e899dd451583a5b5dab6c41"
+          "stderrSha256": "0426b41fc7347b96bdac24c1277f2d2dea4a9427738f29481382c0a0e7fc0c28"
         },
         {
           "runtime": "bun",
@@ -456,7 +442,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
-          "stderrSha256": "4289194547276a5f9dc8bb63828bce5c776b3e213e899dd451583a5b5dab6c41"
+          "stderrSha256": "0426b41fc7347b96bdac24c1277f2d2dea4a9427738f29481382c0a0e7fc0c28"
         }
       ],
       "after": [
@@ -609,7 +595,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "LabError: Legacy supersession closes the entire history",
-          "stderrSha256": "cfed533abc88a1fc17a55dec8adad038f47014d1dfbeeabba12530bd3b3d3d2d"
+          "stderrSha256": "89741e06dd652b09c4424a9674501e8dab295789accdbf7b36f47e420356bd47"
         },
         {
           "runtime": "node",
@@ -617,7 +603,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
-          "stderrSha256": "ef014d92568e070a5495c2e06f41602dab190e20d8e070d709bd392ee47453a2"
+          "stderrSha256": "11c76743d88413c552b2b8c8ec5b5be3650acae6e5ea3252754b964071548abd"
         },
         {
           "runtime": "node",
@@ -625,7 +611,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "LabError: Legacy supersession closes the entire history",
-          "stderrSha256": "6af87020d395d94195e054dbf8da935cb1e6d010cae1fc21dabaf07364797fde"
+          "stderrSha256": "a04ea5b8e6a1d9f8294c0e49fc9477962dffdcf76325a48cde81b2065e6413b7"
         },
         {
           "runtime": "node",
@@ -633,7 +619,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
-          "stderrSha256": "ef014d92568e070a5495c2e06f41602dab190e20d8e070d709bd392ee47453a2"
+          "stderrSha256": "11c76743d88413c552b2b8c8ec5b5be3650acae6e5ea3252754b964071548abd"
         },
         {
           "runtime": "bun",
@@ -641,7 +627,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "error: Legacy supersession closes the entire history",
-          "stderrSha256": "df4ec6b4f2832237dcf242bb5bdbd2d9d8c08d30ecf902415e9649a3b5038c65"
+          "stderrSha256": "201d89079a5997c39c7fdece92ff22d1bc79ab99e9353f51e035ff4a45ee7993"
         },
         {
           "runtime": "bun",
@@ -649,7 +635,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
-          "stderrSha256": "ea3384b26d3d5cf9c8fba4f58d9d8c745dd1e7c3bd2248ece5eaff2620f9f51d"
+          "stderrSha256": "36180c2bf991b93e52032fd554ab04c2e8bd5d74b27c1350ea1dfc4186b34493"
         },
         {
           "runtime": "bun",
@@ -657,7 +643,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "error: Legacy supersession closes the entire history",
-          "stderrSha256": "793a5febde195e0ddcd1da0165b3fe815f8f2e6a23dfb31fbac0618936316131"
+          "stderrSha256": "17c1fc7ce71d465de641d2aeef17286747cde81240fa1a96a9a0b6a1c6bd9aad"
         },
         {
           "runtime": "bun",
@@ -665,7 +651,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
-          "stderrSha256": "ea3384b26d3d5cf9c8fba4f58d9d8c745dd1e7c3bd2248ece5eaff2620f9f51d"
+          "stderrSha256": "36180c2bf991b93e52032fd554ab04c2e8bd5d74b27c1350ea1dfc4186b34493"
         }
       ],
       "after": [
@@ -803,8 +789,8 @@
             "path": "kernel/index.ts",
             "added": 2,
             "removed": 0,
-            "beforeLines": 10,
-            "afterLines": 12
+            "beforeLines": 11,
+            "afterLines": 13
           },
           {
             "path": "kernel/m1-history.ts",
@@ -850,8 +836,8 @@
               "path": "kernel/index.ts",
               "added": 1,
               "removed": 0,
-              "beforeLines": 6,
-              "afterLines": 7
+              "beforeLines": 7,
+              "afterLines": 8
             },
             {
               "path": "kernel/m1-history.ts",
@@ -895,7 +881,7 @@
       "before": {
         "exitCode": 1,
         "error": "SyntaxError: The requested module '@lab/release' does not provide an export named 'serializePlan'",
-        "stderrSha256": "edc20b91141388ba8af74aca8d388d7968e8f0e07589e45417ab45f89ca807b9"
+        "stderrSha256": "0e2e6759b38298a855ae4200616df37c6379de3e5ae23d2b062a66d917c88561"
       },
       "after": [
         {
@@ -913,8 +899,8 @@
             "path": "kernel/index.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 10,
-            "afterLines": 11
+            "beforeLines": 11,
+            "afterLines": 12
           },
           {
             "path": "kernel/serialize-plan.ts",
@@ -932,8 +918,8 @@
               "path": "kernel/index.ts",
               "added": 1,
               "removed": 0,
-              "beforeLines": 6,
-              "afterLines": 7
+              "beforeLines": 7,
+              "afterLines": 8
             },
             {
               "path": "kernel/serialize-plan.ts",
@@ -955,7 +941,7 @@
       "before": {
         "configuredInstances": 1,
         "registryEndpoints": [
-          "http://127.0.0.1:38435/registry-0"
+          "http://127.0.0.1:36953/registry-0"
         ],
         "measuredOperations": 1,
         "newSends": 1,
@@ -965,8 +951,8 @@
       "after": {
         "configuredInstances": 2,
         "registryEndpoints": [
-          "http://127.0.0.1:38435/registry-1",
-          "http://127.0.0.1:38435/registry-0"
+          "http://127.0.0.1:36953/registry-0",
+          "http://127.0.0.1:36953/registry-1"
         ],
         "measuredOperations": 2,
         "newSends": 1,
@@ -986,8 +972,8 @@
       "id": "P02",
       "before": {
         "exitCode": 1,
-        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/external' imported from /tmp/ts-release-topology-extensions-8A25tJ/T2/P02-before/[eval1]",
-        "stderrSha256": "59ac5ec19bb6a653a5536d2ce9d400c183746e565c9e336f9e4e5edbc4911828"
+        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/external' imported from /tmp/ts-release-topology-extensions-j4DtWJ/T2/P02-before/[eval1]",
+        "stderrSha256": "cbd88184bb6df7316ee5de5cb330dc92e2435cf9f516047cfbb735c10b41c1de"
       },
       "after": [
         {
@@ -1023,39 +1009,25 @@
         "changed": [
           {
             "path": "external.ts",
-            "added": 33,
+            "added": 32,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 33
-          },
-          {
-            "path": "http-evidence.ts",
-            "added": 13,
-            "removed": 0,
-            "beforeLines": 0,
-            "afterLines": 13
+            "afterLines": 32
           }
         ],
-        "added": 46,
+        "added": 32,
         "removed": 0,
         "normalized": {
           "changed": [
             {
               "path": "external.ts",
-              "added": 32,
+              "added": 31,
               "removed": 0,
               "beforeLines": 0,
-              "afterLines": 32
-            },
-            {
-              "path": "http-evidence.ts",
-              "added": 13,
-              "removed": 0,
-              "beforeLines": 0,
-              "afterLines": 13
+              "afterLines": 31
             }
           ],
-          "added": 45,
+          "added": 31,
           "removed": 0
         }
       },
@@ -1066,8 +1038,8 @@
       "id": "P03",
       "before": {
         "exitCode": 1,
-        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './catalog' is not defined by \"exports\" in /tmp/ts-release-topology-0JDsU7/T2/consumer/node_modules/@lab/providers/package.json imported from /tmp/ts-release-topology-0JDsU7/T2/consumer/[eval1]",
-        "stderrSha256": "c1c09d0660b8f9820c29dcce87b30e113817fb14a35c53ae9168b4875e2ef05d"
+        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './catalog' is not defined by \"exports\" in /tmp/ts-release-topology-qd8Tw0/T2/consumer/node_modules/@lab/providers/package.json imported from /tmp/ts-release-topology-qd8Tw0/T2/consumer/[eval1]",
+        "stderrSha256": "1715372ce1be59bb6511519509432ccc7d1197b79cddc33ce0002c7be4e859f1"
       },
       "after": [
         {
@@ -1103,25 +1075,25 @@
         "changed": [
           {
             "path": "catalog.ts",
-            "added": 38,
+            "added": 37,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 38
+            "afterLines": 37
           }
         ],
-        "added": 38,
+        "added": 37,
         "removed": 0,
         "normalized": {
           "changed": [
             {
               "path": "catalog.ts",
-              "added": 42,
+              "added": 41,
               "removed": 0,
               "beforeLines": 0,
-              "afterLines": 42
+              "afterLines": 41
             }
           ],
-          "added": 42,
+          "added": 41,
           "removed": 0
         }
       },
@@ -1133,7 +1105,7 @@
       "before": {
         "exitCode": 1,
         "error": "SyntaxError: The requested module '@lab/providers/npm' does not provide an export named 'npmTag'",
-        "stderrSha256": "40f70aaf88c5450a4f2d478cfda5118d0a09425986fa178e2a0a7abe91b474d0"
+        "stderrSha256": "887968bc2fe0245216507a0265d66cdf03bcc4cc691593b69b0730f3c95c72b3"
       },
       "after": [
         {
@@ -1171,18 +1143,18 @@
             "path": "npm.ts",
             "added": 2,
             "removed": 0,
-            "beforeLines": 90,
-            "afterLines": 92
+            "beforeLines": 89,
+            "afterLines": 91
           },
           {
             "path": "npm-tag.ts",
-            "added": 41,
+            "added": 40,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 41
+            "afterLines": 40
           }
         ],
-        "added": 43,
+        "added": 42,
         "removed": 0,
         "normalized": {
           "changed": [
@@ -1190,18 +1162,18 @@
               "path": "npm.ts",
               "added": 1,
               "removed": 0,
-              "beforeLines": 96,
-              "afterLines": 97
+              "beforeLines": 95,
+              "afterLines": 96
             },
             {
               "path": "npm-tag.ts",
-              "added": 44,
+              "added": 43,
               "removed": 0,
               "beforeLines": 0,
-              "afterLines": 44
+              "afterLines": 43
             }
           ],
-          "added": 45,
+          "added": 44,
           "removed": 0
         }
       }
@@ -1211,8 +1183,8 @@
       "id": "P06",
       "before": {
         "exitCode": 1,
-        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './git' is not defined by \"exports\" in /tmp/ts-release-topology-extensions-8A25tJ/T2/P06-before/consumer/node_modules/@lab/host/package.json imported from /tmp/ts-release-topology-extensions-8A25tJ/T2/P06-before/consumer/[eval1]",
-        "stderrSha256": "a145e3803cdaac2d700d3dc4602dcd751509815dba82ad2eb9688f07056f5145"
+        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './git' is not defined by \"exports\" in /tmp/ts-release-topology-extensions-j4DtWJ/T2/P06-before/consumer/node_modules/@lab/host/package.json imported from /tmp/ts-release-topology-extensions-j4DtWJ/T2/P06-before/consumer/[eval1]",
+        "stderrSha256": "c3fbf288c34e627ba0e14d02bb5a41e2b05ac4c47a6fd94795bb545668f64410"
       },
       "after": [
         {
@@ -1301,12 +1273,12 @@
         {
           "runtime": "node",
           "exitCode": 1,
-          "stderrSha256": "765fca96147f32757dc74f9af62901a217f85db20166b07c6ce3235960965a41"
+          "stderrSha256": "f802e80dcebaa14b349603a7be416f85d705dfd119aae014d8c205a38125b543"
         },
         {
           "runtime": "bun",
           "exitCode": 1,
-          "stderrSha256": "9f4ef9b5a59ca376ddeabd3d02d2ba74aa3fe4d798ef0c449217dc16395f9634"
+          "stderrSha256": "655208d60a9c85be0255244770b08debfe957e6e6e8bbee2c853bc0a0ff69a38"
         }
       ],
       "after": [
@@ -1369,7 +1341,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
-          "stderrSha256": "85df09d8c9c1dc79a86c54569e21b79bdf32913bf2c00446c22b2486cd2eac5c"
+          "stderrSha256": "ae0144de62ded8e23ab120641bfe31a36d5c77de8626d0312a0b58dcc38f1392"
         },
         {
           "runtime": "node",
@@ -1377,7 +1349,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
-          "stderrSha256": "85df09d8c9c1dc79a86c54569e21b79bdf32913bf2c00446c22b2486cd2eac5c"
+          "stderrSha256": "ae0144de62ded8e23ab120641bfe31a36d5c77de8626d0312a0b58dcc38f1392"
         },
         {
           "runtime": "bun",
@@ -1385,7 +1357,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
-          "stderrSha256": "00b21146a6995681f0a7b0e27ecb8ce0aedf519cf3dbacc0577cb51cf45cd50e"
+          "stderrSha256": "dd27de09b901c71945ec7f270a1a343bd5eb6cb05036c61a328b9d70e89fb3e5"
         },
         {
           "runtime": "bun",
@@ -1393,7 +1365,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
-          "stderrSha256": "00b21146a6995681f0a7b0e27ecb8ce0aedf519cf3dbacc0577cb51cf45cd50e"
+          "stderrSha256": "dd27de09b901c71945ec7f270a1a343bd5eb6cb05036c61a328b9d70e89fb3e5"
         }
       ],
       "after": [
@@ -1546,7 +1518,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "LabError: Legacy supersession closes the entire history",
-          "stderrSha256": "bc7189fca30c34007ec4a03bc7496adf377ec2481a0f4c1386e5f978832c4d03"
+          "stderrSha256": "71e7506fef3af18ea9da8a9b78634b9e4b2a3fad66e6b87938f284b75ad8856e"
         },
         {
           "runtime": "node",
@@ -1554,7 +1526,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
-          "stderrSha256": "f91bdb68a2d4fa6f22a0bbc0cb9ab4aaa7829e048d00e66939c5e8750dcaa8bc"
+          "stderrSha256": "40c0d713ee7abe627c15b4b712e60debf216000139e2c00dc22c71bf59b4cd7f"
         },
         {
           "runtime": "node",
@@ -1562,7 +1534,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "LabError: Legacy supersession closes the entire history",
-          "stderrSha256": "edcbd9216522278182196e9a1550696b42ec169ae6e0e20e7e0f8778629a10e6"
+          "stderrSha256": "a940cafba6d62955941101e0f3d8e662006e560eda76339eb8ec5d089fdd574f"
         },
         {
           "runtime": "node",
@@ -1570,7 +1542,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
-          "stderrSha256": "f91bdb68a2d4fa6f22a0bbc0cb9ab4aaa7829e048d00e66939c5e8750dcaa8bc"
+          "stderrSha256": "40c0d713ee7abe627c15b4b712e60debf216000139e2c00dc22c71bf59b4cd7f"
         },
         {
           "runtime": "bun",
@@ -1578,7 +1550,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "error: Legacy supersession closes the entire history",
-          "stderrSha256": "2e5705cbc349dfa5d7e53e487c387497e6c31d468d2b8ce782f614c545c99406"
+          "stderrSha256": "21548f91424e8b7c88feaf4e2b9cb28dec7fb75954c3857d8f09068c11f9fc59"
         },
         {
           "runtime": "bun",
@@ -1586,7 +1558,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
-          "stderrSha256": "67e8d2264326585f66581d0098956f7cd6772312451eb20ee22dc4b801c3e325"
+          "stderrSha256": "90edc1a2b80858a80ae24ff9f3521b1d530788371fd6e7b1479752c28005245e"
         },
         {
           "runtime": "bun",
@@ -1594,7 +1566,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "error: Legacy supersession closes the entire history",
-          "stderrSha256": "43738a03bdec4f6a2182368cab2f9d382a872ef6f0abac25e1c7574fae292472"
+          "stderrSha256": "c33341afb0c2cef2a163997b4913a2e8ea2aa31dab152bc6420bbc1588721d72"
         },
         {
           "runtime": "bun",
@@ -1602,7 +1574,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
-          "stderrSha256": "67e8d2264326585f66581d0098956f7cd6772312451eb20ee22dc4b801c3e325"
+          "stderrSha256": "90edc1a2b80858a80ae24ff9f3521b1d530788371fd6e7b1479752c28005245e"
         }
       ],
       "after": [
@@ -1740,8 +1712,8 @@
             "path": "index.ts",
             "added": 2,
             "removed": 0,
-            "beforeLines": 10,
-            "afterLines": 12
+            "beforeLines": 11,
+            "afterLines": 13
           },
           {
             "path": "m1-history.ts",
@@ -1787,8 +1759,8 @@
               "path": "index.ts",
               "added": 1,
               "removed": 0,
-              "beforeLines": 6,
-              "afterLines": 7
+              "beforeLines": 7,
+              "afterLines": 8
             },
             {
               "path": "m1-history.ts",
@@ -1832,7 +1804,7 @@
       "before": {
         "exitCode": 1,
         "error": "SyntaxError: The requested module '@lab/kernel' does not provide an export named 'serializePlan'",
-        "stderrSha256": "573a5b08ee3fd6f531db6753f1ee4c333a09bf7e4249fbdbe72e001138571975"
+        "stderrSha256": "2e525c9ed058fb5321bbe22ba2602d1c42779dfc6c252b3ca3b959114c6536df"
       },
       "after": [
         {
@@ -1850,8 +1822,8 @@
             "path": "index.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 10,
-            "afterLines": 11
+            "beforeLines": 11,
+            "afterLines": 12
           },
           {
             "path": "serialize-plan.ts",
@@ -1869,8 +1841,8 @@
               "path": "index.ts",
               "added": 1,
               "removed": 0,
-              "beforeLines": 6,
-              "afterLines": 7
+              "beforeLines": 7,
+              "afterLines": 8
             },
             {
               "path": "serialize-plan.ts",
@@ -1892,7 +1864,7 @@
       "before": {
         "configuredInstances": 1,
         "registryEndpoints": [
-          "http://127.0.0.1:38435/registry-0"
+          "http://127.0.0.1:36953/registry-0"
         ],
         "measuredOperations": 1,
         "newSends": 1,
@@ -1902,8 +1874,8 @@
       "after": {
         "configuredInstances": 2,
         "registryEndpoints": [
-          "http://127.0.0.1:38435/registry-1",
-          "http://127.0.0.1:38435/registry-0"
+          "http://127.0.0.1:36953/registry-0",
+          "http://127.0.0.1:36953/registry-1"
         ],
         "measuredOperations": 2,
         "newSends": 1,
@@ -1923,8 +1895,8 @@
       "id": "P02",
       "before": {
         "exitCode": 1,
-        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/external' imported from /tmp/ts-release-topology-extensions-8A25tJ/T3/P02-before/[eval1]",
-        "stderrSha256": "e40803c899e5128704ee5aa148ab23128b5fd085c838e71b48142529c0ecb92a"
+        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/external' imported from /tmp/ts-release-topology-extensions-j4DtWJ/T3/P02-before/[eval1]",
+        "stderrSha256": "1bead57dd6c6cf186949513ad8b1abfd457fdd723ae977a66b35817b07f0cb3c"
       },
       "after": [
         {
@@ -1960,39 +1932,25 @@
         "changed": [
           {
             "path": "external.ts",
-            "added": 33,
+            "added": 32,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 33
-          },
-          {
-            "path": "http-evidence.ts",
-            "added": 13,
-            "removed": 0,
-            "beforeLines": 0,
-            "afterLines": 13
+            "afterLines": 32
           }
         ],
-        "added": 46,
+        "added": 32,
         "removed": 0,
         "normalized": {
           "changed": [
             {
               "path": "external.ts",
-              "added": 32,
+              "added": 31,
               "removed": 0,
               "beforeLines": 0,
-              "afterLines": 32
-            },
-            {
-              "path": "http-evidence.ts",
-              "added": 13,
-              "removed": 0,
-              "beforeLines": 0,
-              "afterLines": 13
+              "afterLines": 31
             }
           ],
-          "added": 45,
+          "added": 31,
           "removed": 0
         }
       },
@@ -2003,8 +1961,8 @@
       "id": "P03",
       "before": {
         "exitCode": 1,
-        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/catalog' imported from /tmp/ts-release-topology-0JDsU7/T3/consumer/[eval1]",
-        "stderrSha256": "8c72d3ed2f3ab750f203394b03f831c0d8d01ab048549eccef5f6c6ca3a97184"
+        "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@lab/catalog' imported from /tmp/ts-release-topology-qd8Tw0/T3/consumer/[eval1]",
+        "stderrSha256": "33151324da2c3298852bea6b0cd633e04909f45262a57d9fc61b31cb810c690f"
       },
       "after": [
         {
@@ -2040,39 +1998,25 @@
         "changed": [
           {
             "path": "index.ts",
-            "added": 38,
+            "added": 37,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 38
-          },
-          {
-            "path": "http-evidence.ts",
-            "added": 13,
-            "removed": 0,
-            "beforeLines": 0,
-            "afterLines": 13
+            "afterLines": 37
           }
         ],
-        "added": 51,
+        "added": 37,
         "removed": 0,
         "normalized": {
           "changed": [
             {
               "path": "index.ts",
-              "added": 42,
+              "added": 41,
               "removed": 0,
               "beforeLines": 0,
-              "afterLines": 42
-            },
-            {
-              "path": "http-evidence.ts",
-              "added": 13,
-              "removed": 0,
-              "beforeLines": 0,
-              "afterLines": 13
+              "afterLines": 41
             }
           ],
-          "added": 55,
+          "added": 41,
           "removed": 0
         }
       },
@@ -2084,7 +2028,7 @@
       "before": {
         "exitCode": 1,
         "error": "SyntaxError: The requested module '@lab/npm' does not provide an export named 'npmTag'",
-        "stderrSha256": "e494575ae100e453e7f47b11c2e0917773b4e90f08047eb6428441176fbc59c1"
+        "stderrSha256": "607ad472d39ad67c371387f8528b73863e6615690a418cd0fe742ae7ca87d8ee"
       },
       "after": [
         {
@@ -2122,18 +2066,18 @@
             "path": "index.ts",
             "added": 2,
             "removed": 0,
-            "beforeLines": 90,
-            "afterLines": 92
+            "beforeLines": 89,
+            "afterLines": 91
           },
           {
             "path": "npm-tag.ts",
-            "added": 41,
+            "added": 40,
             "removed": 0,
             "beforeLines": 0,
-            "afterLines": 41
+            "afterLines": 40
           }
         ],
-        "added": 43,
+        "added": 42,
         "removed": 0,
         "normalized": {
           "changed": [
@@ -2141,18 +2085,18 @@
               "path": "index.ts",
               "added": 1,
               "removed": 0,
-              "beforeLines": 96,
-              "afterLines": 97
+              "beforeLines": 95,
+              "afterLines": 96
             },
             {
               "path": "npm-tag.ts",
-              "added": 44,
+              "added": 43,
               "removed": 0,
               "beforeLines": 0,
-              "afterLines": 44
+              "afterLines": 43
             }
           ],
-          "added": 45,
+          "added": 44,
           "removed": 0
         }
       }
@@ -2162,8 +2106,8 @@
       "id": "P06",
       "before": {
         "exitCode": 1,
-        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './git' is not defined by \"exports\" in /tmp/ts-release-topology-extensions-8A25tJ/T3/P06-before/consumer/node_modules/@lab/host/package.json imported from /tmp/ts-release-topology-extensions-8A25tJ/T3/P06-before/consumer/[eval1]",
-        "stderrSha256": "097d674aad80bb458b7d161a728cee14b97a72101e8b38aa3b629308b98234b8"
+        "error": "Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './git' is not defined by \"exports\" in /tmp/ts-release-topology-extensions-j4DtWJ/T3/P06-before/consumer/node_modules/@lab/host/package.json imported from /tmp/ts-release-topology-extensions-j4DtWJ/T3/P06-before/consumer/[eval1]",
+        "stderrSha256": "5a014749f5688b2dcfbe046554f61e8227ccc56c8a7dc7a87b7dca5c085f5ea0"
       },
       "after": [
         {
@@ -2252,12 +2196,12 @@
         {
           "runtime": "node",
           "exitCode": 1,
-          "stderrSha256": "a661febd7ad43d6dc81101386d3e01784e538288cd29556be9bb8ce4c3fc8488"
+          "stderrSha256": "b099f454b1239dc4358026415868f5b0d9d6f5f9b1875fed74f9fec77486bfac"
         },
         {
           "runtime": "bun",
           "exitCode": 1,
-          "stderrSha256": "1ac878faec1e12ec9fcd42abd8040ea42d5e5d3527f494478bed32f0a37a06e2"
+          "stderrSha256": "eed511880e89a0bde26e5cd53cbf4882cb05fa289242622057fbe2904824a9ca"
         }
       ],
       "after": [
@@ -2320,7 +2264,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
-          "stderrSha256": "fefb5317c8b66c05544d8d739cf503c583fea23640c5de943fffc643ec214a8f"
+          "stderrSha256": "2742c21a21832c701c8d856d15087b5f974136df7697a8554a62c4c6454b1cd8"
         },
         {
           "runtime": "node",
@@ -2328,7 +2272,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: 202 native acceptance must remain Pending until matching completion",
-          "stderrSha256": "fefb5317c8b66c05544d8d739cf503c583fea23640c5de943fffc643ec214a8f"
+          "stderrSha256": "2742c21a21832c701c8d856d15087b5f974136df7697a8554a62c4c6454b1cd8"
         },
         {
           "runtime": "bun",
@@ -2336,7 +2280,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
-          "stderrSha256": "488a471b9e5c22893b09b45e2d0c470515a60502020c6e39f2a65f0e7c480e61"
+          "stderrSha256": "d85bd11ee57cb8b01508b312394fb567cb83b327a9601ce8ab9da5d46ea7141d"
         },
         {
           "runtime": "bun",
@@ -2344,7 +2288,7 @@
           "mode": "P04",
           "exitCode": 1,
           "diagnostic": "90 |         assert.equal(pending.operations[0]?.status, \"Pending\", \"202 native acceptance must remain Pending until matching completion\");",
-          "stderrSha256": "488a471b9e5c22893b09b45e2d0c470515a60502020c6e39f2a65f0e7c480e61"
+          "stderrSha256": "d85bd11ee57cb8b01508b312394fb567cb83b327a9601ce8ab9da5d46ea7141d"
         }
       ],
       "after": [
@@ -2497,7 +2441,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "LabError: Legacy supersession closes the entire history",
-          "stderrSha256": "a0d3928abf82342e273568fd242d8d511eb90d74018bcf87d9a85a77c9624430"
+          "stderrSha256": "e6f6ca865aa5c5cdd53009055ba6d9079ea12e360661949f9688768546a2c44d"
         },
         {
           "runtime": "node",
@@ -2505,7 +2449,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
-          "stderrSha256": "e841c6525ec6c802ddc0f5b1960e77e8a1fd1ece6ae376d9157a1f96b4bd076b"
+          "stderrSha256": "2f59943bd8f3d2169cc3a9fa00c7bf791c1106b1869aa24918138e7596d1005b"
         },
         {
           "runtime": "node",
@@ -2513,7 +2457,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "LabError: Legacy supersession closes the entire history",
-          "stderrSha256": "69dfb64b8c72115c4c0c9e4134ebc474dde576e19780b1e0ae0ba10249847f77"
+          "stderrSha256": "42c061569db81ac248fab423d87cdc40cc858ec43cb7dfaef6e5fcf3c92e3b9b"
         },
         {
           "runtime": "node",
@@ -2521,7 +2465,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "AssertionError [ERR_ASSERTION]: Reviewed one-shot importer is part of this extension",
-          "stderrSha256": "e841c6525ec6c802ddc0f5b1960e77e8a1fd1ece6ae376d9157a1f96b4bd076b"
+          "stderrSha256": "2f59943bd8f3d2169cc3a9fa00c7bf791c1106b1869aa24918138e7596d1005b"
         },
         {
           "runtime": "bun",
@@ -2529,7 +2473,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "error: Legacy supersession closes the entire history",
-          "stderrSha256": "6a4dea2d5d93791861c9766adcd7f2f45dcfd59ebba6b9fb80c45a48afa67e0e"
+          "stderrSha256": "43d72379f3ce745acc012eda8cf5070cb7216ef313ab9f6aa758086dbfdc2654"
         },
         {
           "runtime": "bun",
@@ -2537,7 +2481,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
-          "stderrSha256": "07b4af1bcd278c6342e2172dd9f27efab372f897e5cd032a987fad5f012f944e"
+          "stderrSha256": "72525c2372c7f6c2fd12674bf61031b85cdbc4c67d9ba441094ee6b5eda214b3"
         },
         {
           "runtime": "bun",
@@ -2545,7 +2489,7 @@
           "mode": "P09-live",
           "exitCode": 1,
           "diagnostic": "error: Legacy supersession closes the entire history",
-          "stderrSha256": "81e93ed34deb642e239af7e319365cccd8ec44e655259a8bad43fcf395af2f18"
+          "stderrSha256": "fa74bbb922f3f0f5a8031a74b43357b6b5722fa5a9da5ef37a99c2fcc5189dfa"
         },
         {
           "runtime": "bun",
@@ -2553,7 +2497,7 @@
           "mode": "P09-migrate",
           "exitCode": 1,
           "diagnostic": "116 |         assert.equal(typeof migrate, \"function\", \"Reviewed one-shot importer is part of this extension\");",
-          "stderrSha256": "07b4af1bcd278c6342e2172dd9f27efab372f897e5cd032a987fad5f012f944e"
+          "stderrSha256": "72525c2372c7f6c2fd12674bf61031b85cdbc4c67d9ba441094ee6b5eda214b3"
         }
       ],
       "after": [
@@ -2691,8 +2635,8 @@
             "path": "index.ts",
             "added": 2,
             "removed": 0,
-            "beforeLines": 10,
-            "afterLines": 12
+            "beforeLines": 11,
+            "afterLines": 13
           },
           {
             "path": "m1-history.ts",
@@ -2738,8 +2682,8 @@
               "path": "index.ts",
               "added": 1,
               "removed": 0,
-              "beforeLines": 6,
-              "afterLines": 7
+              "beforeLines": 7,
+              "afterLines": 8
             },
             {
               "path": "m1-history.ts",
@@ -2783,7 +2727,7 @@
       "before": {
         "exitCode": 1,
         "error": "SyntaxError: The requested module '@lab/kernel' does not provide an export named 'serializePlan'",
-        "stderrSha256": "ce2984a76150c9b081ba08cc6f610ecc1703530b43ae00fb5b8ce5ede4b21443"
+        "stderrSha256": "d5464fb68a25e91ec9ea2340501bb108ec81f9ef1e4d28797c6dcf07bbd9d4e1"
       },
       "after": [
         {
@@ -2801,8 +2745,8 @@
             "path": "index.ts",
             "added": 1,
             "removed": 0,
-            "beforeLines": 10,
-            "afterLines": 11
+            "beforeLines": 11,
+            "afterLines": 12
           },
           {
             "path": "serialize-plan.ts",
@@ -2820,8 +2764,8 @@
               "path": "index.ts",
               "added": 1,
               "removed": 0,
-              "beforeLines": 6,
-              "afterLines": 7
+              "beforeLines": 7,
+              "afterLines": 8
             },
             {
               "path": "serialize-plan.ts",

@@ -1,10 +1,11 @@
+// External evaluator witness: M2 built from the kernel's PUBLIC exports only (no kernel-private import).
 import {
-  AcceptedRisk, Initial, NonCommit, ProtectedReplay,
-  type DispatchStarted, type JournalEvent, type ObservationRecorded,
-  type OperationStatus, type Plan, type RiskAccepted
-} from "./contracts.js"
-import { canonical, fail } from "./identity.js"
-import { sameProtectedRequest, sameStrings, type CandidateRequest, type Machine, type Next } from "./model.js"
+  AcceptedRisk, Initial, LabError, NonCommit, ProtectedReplay, canonical, sameProtectedRequest, sameStrings,
+  type CandidateRequest, type DispatchStarted, type JournalEvent, type Machine, type MachineConstructor, type Next,
+  type ObservationRecorded, type OperationStatus, type Plan, type RiskAccepted, type Scope
+} from "../src/index.js"
+
+function fail(code: string, message: string): never { throw new LabError({ code, message }) }
 
 type Attempt =
   | { readonly _tag: "Open"; readonly start: DispatchStarted }
@@ -16,6 +17,7 @@ type Attempts =
 interface OperationState {
   readonly attempts: Attempts
   readonly observation: ObservationRecorded | null
+  readonly selected: boolean
   readonly observationCount: number
   readonly decisions: ReadonlyArray<{ readonly event: RiskAccepted; readonly consumed: boolean }>
 }
@@ -28,7 +30,7 @@ const entries = (state: OperationState): ReadonlyArray<Attempt> => state.attempt
 
 /** M2 materializes a closed state algebra, discarding historical event bodies. */
 class TransitionMachine implements Machine {
-  constructor(readonly plan: Plan, readonly state: State) {}
+  constructor(readonly plan: Plan, readonly state: State, readonly scopeKind: Scope["_tag"] = "PublicationScope") {}
 
   private operation(id: string): OperationState {
     return this.state.operations.get(id) ?? fail("unknown-operation", "Operation is not registered in this plan")
@@ -37,6 +39,7 @@ class TransitionMachine implements Machine {
   private status(id: string): OperationStatus {
     if (this.state.disposition === "Superseded") return "Superseded"
     const operation = this.operation(id)
+    if (this.scopeKind === "PreparationScope" && operation.selected) return "Satisfied"
     const observed = operation.observation?.status
     if (observed === "Satisfied" || observed === "Conflict" || observed === "Pending") return observed
     switch (operation.attempts._tag) {
@@ -98,7 +101,7 @@ class TransitionMachine implements Machine {
       case "ObservationRecorded": {
         const state = this.operation(body.operationId)
         if (!Number.isSafeInteger(body.observedAt) || body.observedAt < 0) fail("observation-time", "Observation time is invalid")
-        operations.set(body.operationId, { ...state, observation: body, observationCount: state.observationCount + 1 })
+        operations.set(body.operationId, { ...state, observation: body, selected: state.selected || body.status === "Satisfied", observationCount: state.observationCount + 1 })
         break
       }
       case "RiskAccepted": {
@@ -135,20 +138,20 @@ class TransitionMachine implements Machine {
           if (attempt._tag !== "Open") fail(attempt._tag === target ? "duplicate-evidence" : "contradictory-evidence", "A terminal attempt cannot transition to another terminal fact")
           return body._tag === "ReceiptAccepted" ? { _tag: "Accepted", start: attempt.start, status: body.status } : { _tag: "NonCommit", start: attempt.start }
         }) as [Attempt, ...Attempt[]]
-        operations.set(id, { ...state, attempts: { _tag: "Attempted", entries: updated } })
+        operations.set(id, { ...state, selected: state.selected || body._tag === "ReceiptAccepted" && body.status === "Satisfied", attempts: { _tag: "Attempted", entries: updated } })
         break
       }
     }
-    return new TransitionMachine(this.plan, { disposition, eventIds, operations })
+    return new TransitionMachine(this.plan, { disposition, eventIds, operations }, this.scopeKind)
   }
 }
 
-export const transitionMachine = (plan: Plan, events: ReadonlyArray<JournalEvent>): Machine => {
+export const transitionMachine: MachineConstructor = (plan, events, scopeKind = "PublicationScope") => {
   const initial = new TransitionMachine(plan, {
     disposition: "Active", eventIds: new Set(),
     operations: new Map(plan.operations.map((operation) => [operation.operationId, {
-      attempts: { _tag: "NeverStarted" }, observation: null, observationCount: 0, decisions: []
+      attempts: { _tag: "NeverStarted" }, observation: null, selected: false, observationCount: 0, decisions: []
     }]))
-  })
+  }, scopeKind)
   return events.reduce<Machine>((machine, event) => machine.append(event), initial)
 }

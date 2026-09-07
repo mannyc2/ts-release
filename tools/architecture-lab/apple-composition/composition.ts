@@ -47,7 +47,7 @@ export const validateApplePublication = Effect.fn("lab.validateMixedApplePublica
   for (let retry = 0; retry < 8; retry++) {
     const before = yield* host.store.read(publication.journalId)
     // Validates every declared scope/native codec before interpreting any Ready.
-    const report = yield* reportRelease({candidate:"M1",plan:publication})
+    const report = yield* reportRelease({plan:publication})
     if (report.revision !== before.revision) continue
     const results: ReadyToPlan[] = []
     for (const scope of scopes) {

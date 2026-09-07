@@ -3,7 +3,7 @@ import { createHash } from "node:crypto"
 import { createServer, request } from "node:http"
 import * as Effect from "effect/Effect"
 import { JournalEvent, PlanSuperseded, runRelease } from "../machine/src/index.js"
-import { makeFixture, runWithHost } from "../machine/test/fixtures.js"
+import { makeFixture, runWithHost , evaluatorNames, evaluators } from "../machine/test/fixtures.js"
 import { EVENT_BYTES, eventBytes } from "./protocol.js"
 import { S3JournalModel, type S3Request, type S3Response } from "./s3-model.js"
 
@@ -158,13 +158,13 @@ test("S3 protocol: native full-event bound is symmetric; forged predecessor hash
   await expect(run(f.store.read("release"))).rejects.toThrow("content hash")
 })
 
-for (const candidate of ["M1", "M2"] as const) test(`S3 protocol/${candidate}: actual machine unknown provider result never resends on new store`, async () => {
+for (const candidate of evaluatorNames) test(`S3 protocol/${candidate}: actual machine unknown provider result never resends on new store`, async () => {
   const f = await fixture(), machine = await makeFixture(); let sends = 0
   f.loseHead() // The same live interpreter reconciles its own append before dispatch.
   const host = { ...machine.host, store: f.store, transport: { send: () => Effect.sync(() => { sends++; return { _tag: "Unknown", reason: "native response loss" } as const }) } }
-  const first = await runWithHost(host, runRelease({ candidate, plan: machine.plan, authorize: true }))
+  const first = await runWithHost(host, runRelease({ plan: machine.plan, authorize: true }))
   expect(first.operations[0]?.status).toBe("Inconclusive")
-  const resumed = await runWithHost({ ...host, store: new S3JournalModel(f.endpoint, f.wire) }, runRelease({ candidate, plan: machine.plan, authorize: true }))
+  const resumed = await runWithHost({ ...host, store: new S3JournalModel(f.endpoint, f.wire) }, runRelease({ plan: machine.plan, authorize: true }))
   expect(resumed.operations[0]?.status).toBe("Inconclusive")
   expect(sends).toBe(1)
 })

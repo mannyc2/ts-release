@@ -1,25 +1,47 @@
 {
   "format": "proposed-package-layout/1",
-  "status": "all-alternatives-projected-selection-pending",
+  "status": "selected-layout-with-retained-alternatives",
   "selection": {
     "machine": "M1",
-    "topology": null,
-    "marginalPolicy": null
+    "topology": "T3c",
+    "marginalPolicy": {
+      "typescriptMedianAtMost": 40,
+      "typescriptP90AtMost": 100,
+      "typescriptMaximumAtMost": 200,
+      "configurationOnlyObservationsAllowed": true,
+      "metadataLane": {
+        "medianAtMost": 5,
+        "p90AtMost": 25
+      },
+      "basis": "User retains frozen 40-line TypeScript target and honest separate metadata accounting; zero-code observations remain zero."
+    }
   },
   "recommendation": {
-    "topology": "T3",
-    "reason": "Retain separate provider installation and ownership boundaries; the measured alternatives are incomparable, not a fabricated Pareto winner.",
+    "topology": "T3c",
+    "reason": "Kernel keeps the @mannyc1/ts-release identity and bin. Group coherent capabilities under subpaths; use separate packages where independent consumption, dependencies or substantial public APIs justify the boundary. The user approved Homebrew and Scoop as catalog subpaths and OpenAI as its own package; npm, pypi, github and mcp remain separate. Shared Git delivery stays in the kernel.",
     "marginalPolicy": {
-      "sourcePlusMetadataMedianAtMost": 45,
-      "p90AtMost": 100,
-      "maximumAtMost": 200,
+      "typescriptMedianAtMost": 40,
+      "typescriptP90AtMost": 100,
+      "typescriptMaximumAtMost": 200,
+      "metadataMedianAtMost": 5,
+      "metadataP90AtMost": 25,
       "configurationOnlyObservationsAllowed": true,
-      "status": "proposed-amendment-not-approved"
+      "measured2026-09-06": {
+        "typescriptMedianAfterKernelHttpRelocation": {
+          "T1": 37,
+          "T2": 37,
+          "T3": 37
+        },
+        "metadataLaneMedian": 0,
+        "metadataLaneP90": 19,
+        "evidence": "docs/refactor/research/composable-handoff-2026-09-06/experiments/helper-relocation"
+      },
+      "status": "adopted-separate-lanes-frozen-typescript-ceiling"
     }
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "88bc3e060fe020ac58f8f69299b4afd60ad5ee782c61782a84c2dfe5e14e8fed"
+    "sha256": "eb0716306ab3c300b84a210fa892a8c705d40476c7651175e9db76adb52f3cdf"
   },
   "migration": {
     "path": "docs/refactor/architecture-program/handoff/migration.json",
@@ -30,7 +52,7 @@
   "authorityBindings": {
     "kernel": {
       "path": "docs/refactor/architecture-program/handoff/kernel-api.d.ts",
-      "sha256": "a9f9242cb93b3114b9a103bf7d98c461e2c57506930c8a2c504abf8e0c9ebe8a"
+      "sha256": "b3fe44cce205ce93567279da4a2b490b9c66597013d5b0112815393a1f3eddfc"
     },
     "provider": {
       "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
@@ -59,16 +81,20 @@
     "checksum": {
       "path": "docs/refactor/architecture-program/handoff/checksum-api.d.ts",
       "sha256": "d16afc414edbb1192d7a1b8aaa8b92e4c0666c7f46ca80e33e85e167ce482254"
+    },
+    "http": {
+      "path": "docs/refactor/architecture-program/handoff/http-api.d.ts",
+      "sha256": "fa50a9a495f28fefa21946669aa92828119e5959823b1b237347d2a2a6af8a4d"
     }
   },
-  "publicSurfaceSha256": "26d28b193edf0ddbee9234feaf0a78c65a29c7b589a84d2f84072fa708d6ec8c",
+  "publicSurfaceSha256": "3cf9e560bb7139e4e0c05f3f8cf6a0d6fd15e518653a9c3625da318718d2f7df",
   "effectPatch": {
     "required": false,
     "donorPath": "patches/effect@4.0.0-rc.108.patch",
     "donorSha256": "08376c53ad8ee9ba6e8e53abb97bde5dcb6f35d69329abbaf48baa9ced6f7fea",
     "proof": {
       "path": "docs/refactor/architecture-program/handoff/upstream/unpatched-effect-consumer.json",
-      "sha256": "34c732924fb9060892e03d35455c790ab2958c68132f74a2188dd877aeefe639"
+      "sha256": "a80eb091029a743c95a0f6e848d44dd0bd7f2c64b9d1624f1763665d3f795f1d"
     },
     "rationale": "Historical donor/research patch only. Official unpatched rc.108 passes the selected API and actual published producer consumer; omit patchedDependencies from the proposed manifest. The negative control confirms the donor-only private Param declaration is absent."
   },
@@ -178,9 +204,9 @@
               "sigstore": "5.0.0"
             },
             "peerDependencies": {
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108",
-              "@effect/platform-bun": "4.0.0-rc.108",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0",
+              "@effect/platform-node": ">=4.0.0-rc.108 <4.1.0-0",
+              "@effect/platform-bun": ">=4.0.0-rc.108 <4.1.0-0",
               "effect-build-apple": "0.6.3"
             },
             "peerDependenciesMeta": {
@@ -217,7 +243,7 @@
               "build:delivery": "bun scripts/build-delivery.ts"
             }
           },
-          "manifestSha256": "f3179066d72dd34183283a6913b7679643248258f72c509c5eb51b5b0410da3b",
+          "manifestSha256": "8c087a8fbece183f3420a0bd117323987e98a047f985a41e0e6950ca80646326",
           "manifestLines": 129
         }
       ],
@@ -465,7 +491,8 @@
           "zone": "neutral",
           "dependencies": [
             "kernel.Model"
-          ]
+          ],
+          "purpose": "Core-owned immutable history laws and default M1 evaluator. External evaluators receive scope kind and copied immutable inputs; their proposals cannot bypass executor admission."
         },
         {
           "id": "kernel.Host",
@@ -858,7 +885,8 @@
             "kernel.Journal",
             "kernel.Host",
             "kernel.GitAuthority",
-            "kernel.Release"
+            "kernel.Release",
+            "kernel.Decision"
           ]
         },
         {
@@ -1186,8 +1214,8 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "dc2d650a252788179ead64d8e093ced6804d53e812d66919ff08b263eaefc680",
-        "packageEdgesSha256": "adaa725af9db6a0960ab3012494086357fd10bc3e1829755c9db88817f064587",
+        "sourceEdgesSha256": "a33fb7df0cf5907ddc6edbd592483ba7d27ec726286f9db53d9cbc691701aea6",
+        "packageEdgesSha256": "532a62dcfa9eb2868c45893b21342d99e8c05f38bc1abecbe67f884fbc9b4820",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -1956,6 +1984,12 @@
             "to": "kernel.Release",
             "loading": "static",
             "specifier": "./Release.js"
+          },
+          {
+            "from": "kernel.Entry",
+            "to": "kernel.Decision",
+            "loading": "static",
+            "specifier": "./internal/Decision.js"
           },
           {
             "from": "app.cli",
@@ -2475,21 +2509,21 @@
           {
             "from": "core",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "core",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": true
           },
           {
             "from": "core",
             "to": "@effect/platform-bun",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": true
           },
@@ -3000,9 +3034,9 @@
               "effect-build": "0.6.3"
             },
             "peerDependencies": {
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108",
-              "@effect/platform-bun": "4.0.0-rc.108",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0",
+              "@effect/platform-node": ">=4.0.0-rc.108 <4.1.0-0",
+              "@effect/platform-bun": ">=4.0.0-rc.108 <4.1.0-0",
               "effect-build-apple": "0.6.3"
             },
             "peerDependenciesMeta": {
@@ -3017,7 +3051,7 @@
               }
             }
           },
-          "manifestSha256": "14e87a4da36f80d374575f0d5282d4c8cc85604172dc7b82c59737727ddb9161",
+          "manifestSha256": "4d20d18b994ec2408c03981a2b1d64bf6bbdaebccbb739a39f9c05293f5a0461",
           "manifestLines": 77
         },
         {
@@ -3074,15 +3108,15 @@
               }
             },
             "dependencies": {
-              "@mannyc1/ts-release": "0.4.0",
               "semver": "7.8.5",
               "sigstore": "5.0.0"
             },
             "peerDependencies": {
-              "effect": "4.0.0-rc.108"
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
             }
           },
-          "manifestSha256": "e600df366d97653183567b9139fabe993c3e1f5f3adb517977819de94aa10101",
+          "manifestSha256": "113a3492a8446f324aac1194030baa3acd6ab02639657524093e2ac0a092316c",
           "manifestLines": 58
         }
       ],
@@ -3392,7 +3426,8 @@
           "zone": "neutral",
           "dependencies": [
             "kernel.Model"
-          ]
+          ],
+          "purpose": "Core-owned immutable history laws and default M1 evaluator. External evaluators receive scope kind and copied immutable inputs; their proposals cannot bypass executor admission."
         },
         {
           "id": "kernel.Host",
@@ -3785,7 +3820,8 @@
             "kernel.Journal",
             "kernel.Host",
             "kernel.GitAuthority",
-            "kernel.Release"
+            "kernel.Release",
+            "kernel.Decision"
           ]
         },
         {
@@ -4113,8 +4149,8 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "0683051880e7a7caab417a8a947ba5193c867baae5b5b1c64503af7ed33048d9",
-        "packageEdgesSha256": "2a0f3b0795cf228cff446af176dda936dd5c8fb24182440de10079f9537b5ee0",
+        "sourceEdgesSha256": "91e8615cf58d6ba9f96bd03385a8999bb9695855ecd1fe6dbbaee6bbf879ceff",
+        "packageEdgesSha256": "e1c400ad216792335df8acafbd95b9eec687acb24ecdb0ad1e6c0618845693c7",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -4883,6 +4919,12 @@
             "to": "kernel.Release",
             "loading": "static",
             "specifier": "./Release.js"
+          },
+          {
+            "from": "kernel.Entry",
+            "to": "kernel.Decision",
+            "loading": "static",
+            "specifier": "./internal/Decision.js"
           },
           {
             "from": "app.cli",
@@ -5388,21 +5430,21 @@
           {
             "from": "core",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "core",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": true
           },
           {
             "from": "core",
             "to": "@effect/platform-bun",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": true
           },
@@ -5412,13 +5454,6 @@
             "version": "0.6.3",
             "kind": "peerDependencies",
             "optional": true
-          },
-          {
-            "from": "providers",
-            "to": "@mannyc1/ts-release",
-            "version": "0.4.0",
-            "kind": "dependencies",
-            "optional": false
           },
           {
             "from": "providers",
@@ -5436,8 +5471,15 @@
           },
           {
             "from": "providers",
+            "to": "@mannyc1/ts-release",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "providers",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -5875,7 +5917,7 @@
     },
     {
       "id": "T3",
-      "status": "recommended-proposal-pending-selection",
+      "status": "retained-alternative",
       "publicPackageCount": 8,
       "workspaceRoot": {
         "manifestPath": "package.json",
@@ -5948,9 +5990,9 @@
               "effect-build": "0.6.3"
             },
             "peerDependencies": {
-              "effect": "4.0.0-rc.108",
-              "@effect/platform-node": "4.0.0-rc.108",
-              "@effect/platform-bun": "4.0.0-rc.108",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0",
+              "@effect/platform-node": ">=4.0.0-rc.108 <4.1.0-0",
+              "@effect/platform-bun": ">=4.0.0-rc.108 <4.1.0-0",
               "effect-build-apple": "0.6.3"
             },
             "peerDependenciesMeta": {
@@ -5965,7 +6007,7 @@
               }
             }
           },
-          "manifestSha256": "14e87a4da36f80d374575f0d5282d4c8cc85604172dc7b82c59737727ddb9161",
+          "manifestSha256": "4d20d18b994ec2408c03981a2b1d64bf6bbdaebccbb739a39f9c05293f5a0461",
           "manifestLines": 77
         },
         {
@@ -5998,15 +6040,15 @@
               }
             },
             "dependencies": {
-              "@mannyc1/ts-release": "0.4.0",
               "semver": "7.8.5",
               "sigstore": "5.0.0"
             },
             "peerDependencies": {
-              "effect": "4.0.0-rc.108"
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
             }
           },
-          "manifestSha256": "d900e391cec5d4619485fc94170859fd9d63ad4f10d2b2aab72e843be186a67f",
+          "manifestSha256": "d594a1814776d248cb4b6fd3159e95deb4d0b0a234efd13aaaac5000c5f396cc",
           "manifestLines": 34
         },
         {
@@ -6038,15 +6080,14 @@
                 "import": "./dist/index.js"
               }
             },
-            "dependencies": {
-              "@mannyc1/ts-release": "0.4.0"
-            },
+            "dependencies": {},
             "peerDependencies": {
-              "effect": "4.0.0-rc.108"
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
             }
           },
-          "manifestSha256": "494bede0603c9aedb7a34853ea105a0a1f080d62293ca53938c1d48cde8c6a43",
-          "manifestLines": 32
+          "manifestSha256": "221ef07137dc32002811e2d5080c5f795ae4bfb219a9845b9fa9cab0a349271e",
+          "manifestLines": 31
         },
         {
           "id": "provider.github",
@@ -6077,15 +6118,14 @@
                 "import": "./dist/index.js"
               }
             },
-            "dependencies": {
-              "@mannyc1/ts-release": "0.4.0"
-            },
+            "dependencies": {},
             "peerDependencies": {
-              "effect": "4.0.0-rc.108"
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
             }
           },
-          "manifestSha256": "39d2e86373ef59891c55375d02cedc73c86a5ed942046edb4251731fb13992e7",
-          "manifestLines": 32
+          "manifestSha256": "a60058e13e34cfbda016aac8071def08c85557715d8351a7c52e71656f32ec45",
+          "manifestLines": 31
         },
         {
           "id": "provider.homebrew",
@@ -6116,15 +6156,14 @@
                 "import": "./dist/index.js"
               }
             },
-            "dependencies": {
-              "@mannyc1/ts-release": "0.4.0"
-            },
+            "dependencies": {},
             "peerDependencies": {
-              "effect": "4.0.0-rc.108"
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
             }
           },
-          "manifestSha256": "e57c1de83777e9ec81eb3cf71b68914657484aa09497e7df268c55156ee6da8c",
-          "manifestLines": 32
+          "manifestSha256": "e2bdc0fecf2272ca5fc57594ee9bd24858d2dfdc823dd6f1313781b7408cb072",
+          "manifestLines": 31
         },
         {
           "id": "provider.scoop",
@@ -6155,15 +6194,14 @@
                 "import": "./dist/index.js"
               }
             },
-            "dependencies": {
-              "@mannyc1/ts-release": "0.4.0"
-            },
+            "dependencies": {},
             "peerDependencies": {
-              "effect": "4.0.0-rc.108"
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
             }
           },
-          "manifestSha256": "c988bf2e198df67b847bf44463021dda9514093f41315275e8970f75f5079d96",
-          "manifestLines": 32
+          "manifestSha256": "3d388552b8fb9f12eb42a87af18c8c28db1fd4199aa3370ffc3e93098b6a7759",
+          "manifestLines": 31
         },
         {
           "id": "provider.mcp",
@@ -6194,15 +6232,14 @@
                 "import": "./dist/index.js"
               }
             },
-            "dependencies": {
-              "@mannyc1/ts-release": "0.4.0"
-            },
+            "dependencies": {},
             "peerDependencies": {
-              "effect": "4.0.0-rc.108"
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
             }
           },
-          "manifestSha256": "8cc9f568c97933090c8cd3e3eb808ce25772dccd7fa1839f472834281b443f44",
-          "manifestLines": 32
+          "manifestSha256": "fef5f6d86b4989d3e09df5b0da5d5e9cba16b3d8151b08c01962b78f71944bc8",
+          "manifestLines": 31
         },
         {
           "id": "provider.openai",
@@ -6234,14 +6271,14 @@
               }
             },
             "dependencies": {
-              "@mannyc1/ts-release": "0.4.0",
               "semver": "7.8.5"
             },
             "peerDependencies": {
-              "effect": "4.0.0-rc.108"
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
             }
           },
-          "manifestSha256": "a651d55f3c881b574645936cef9b6b188536b59c95915145add314f01fff00d7",
+          "manifestSha256": "c860f06ecd94a1b3809d55092d2c3e319bb45ef87c074bf10b91065012ec9fa3",
           "manifestLines": 33
         }
       ],
@@ -6670,7 +6707,8 @@
           "zone": "neutral",
           "dependencies": [
             "kernel.Model"
-          ]
+          ],
+          "purpose": "Core-owned immutable history laws and default M1 evaluator. External evaluators receive scope kind and copied immutable inputs; their proposals cannot bypass executor admission."
         },
         {
           "id": "kernel.Host",
@@ -7063,7 +7101,8 @@
             "kernel.Journal",
             "kernel.Host",
             "kernel.GitAuthority",
-            "kernel.Release"
+            "kernel.Release",
+            "kernel.Decision"
           ]
         },
         {
@@ -7391,8 +7430,8 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "ff39ed3dc199a07e3eea21a90bbf176c35f62b5f3f772b82e65f48b3366d166f",
-        "packageEdgesSha256": "edee2de1ced4fa7be487d63c3589bf74e9f27df591ac4a546b0d873c90cefc8e",
+        "sourceEdgesSha256": "bb07195317a20bcebc31ddc3fbdf5a154b287eb8f527fd563c0d00f93705f975",
+        "packageEdgesSha256": "e3d31fc608b6d9364fe9e0d77f8d9ffe7afdedc3738abe3a3b437bd5ebf2ca92",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -8163,6 +8202,12 @@
             "specifier": "./Release.js"
           },
           {
+            "from": "kernel.Entry",
+            "to": "kernel.Decision",
+            "loading": "static",
+            "specifier": "./internal/Decision.js"
+          },
+          {
             "from": "app.cli",
             "to": "host.Application",
             "loading": "static",
@@ -8666,21 +8711,21 @@
           {
             "from": "core",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "core",
             "to": "@effect/platform-node",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": true
           },
           {
             "from": "core",
             "to": "@effect/platform-bun",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": true
           },
@@ -8690,13 +8735,6 @@
             "version": "0.6.3",
             "kind": "peerDependencies",
             "optional": true
-          },
-          {
-            "from": "provider.npm",
-            "to": "@mannyc1/ts-release",
-            "version": "0.4.0",
-            "kind": "dependencies",
-            "optional": false
           },
           {
             "from": "provider.npm",
@@ -8714,86 +8752,86 @@
           },
           {
             "from": "provider.npm",
+            "to": "@mannyc1/ts-release",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.npm",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "provider.warehouse",
             "to": "@mannyc1/ts-release",
-            "version": "0.4.0",
-            "kind": "dependencies",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "provider.warehouse",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "provider.github",
             "to": "@mannyc1/ts-release",
-            "version": "0.4.0",
-            "kind": "dependencies",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "provider.github",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "provider.homebrew",
             "to": "@mannyc1/ts-release",
-            "version": "0.4.0",
-            "kind": "dependencies",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "provider.homebrew",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "provider.scoop",
             "to": "@mannyc1/ts-release",
-            "version": "0.4.0",
-            "kind": "dependencies",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "provider.scoop",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "provider.mcp",
             "to": "@mannyc1/ts-release",
-            "version": "0.4.0",
-            "kind": "dependencies",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
             "optional": false
           },
           {
             "from": "provider.mcp",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
-            "optional": false
-          },
-          {
-            "from": "provider.openai",
-            "to": "@mannyc1/ts-release",
-            "version": "0.4.0",
-            "kind": "dependencies",
             "optional": false
           },
           {
@@ -8805,8 +8843,15 @@
           },
           {
             "from": "provider.openai",
+            "to": "@mannyc1/ts-release",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.openai",
             "to": "effect",
-            "version": "4.0.0-rc.108",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
             "kind": "peerDependencies",
             "optional": false
           },
@@ -9273,10 +9318,3329 @@
         }
       ],
       "metadata": {
-        "publicPackageJsonLines": 304,
+        "publicPackageJsonLines": 299,
         "privatePackageJsonLines": 87,
         "actionYamlLines": 22,
         "tsconfigJsonLines": 174,
+        "futureScriptFiles": 3,
+        "futureScriptLines": null,
+        "authoredProductModuleFiles": 63,
+        "generatedRuntimePolicyFiles": 0,
+        "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
+      }
+    },
+    {
+      "id": "T3c",
+      "status": "selected-for-implementation",
+      "publicPackageCount": 7,
+      "workspaceRoot": {
+        "manifestPath": "package.json",
+        "private": true,
+        "coreDirectory": "packages/ts-release",
+        "rationale": "T2/T3 give the already independent kernel its own package directory; this relocates paths and development metadata without changing public coordinates or semantic dependency mechanisms."
+      },
+      "packages": [
+        {
+          "id": "core",
+          "directory": "packages/ts-release",
+          "manifestPath": "packages/ts-release/package.json",
+          "manifest": {
+            "version": "0.4.0",
+            "type": "module",
+            "license": "MIT",
+            "sideEffects": false,
+            "files": [
+              "dist",
+              "README.md",
+              "LICENSE"
+            ],
+            "engines": {
+              "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+              "bun": ">=1.3.14"
+            },
+            "publishConfig": {
+              "access": "public",
+              "registry": "https://registry.npmjs.org"
+            },
+            "name": "@mannyc1/ts-release",
+            "bin": {
+              "ts-release": "./dist/bin/ts-release.js"
+            },
+            "exports": {
+              ".": {
+                "types": "./dist/index.d.ts",
+                "import": "./dist/index.js"
+              },
+              "./bundle": {
+                "types": "./dist/Bundle.d.ts",
+                "import": "./dist/Bundle.js"
+              },
+              "./effect-build": {
+                "types": "./dist/EffectBuild.d.ts",
+                "import": "./dist/EffectBuild.js"
+              },
+              "./apple": {
+                "types": "./dist/Apple.d.ts",
+                "import": "./dist/Apple.js"
+              },
+              "./http": {
+                "types": "./dist/Http.d.ts",
+                "import": "./dist/Http.js"
+              },
+              "./git": {
+                "types": "./dist/Git.d.ts",
+                "import": "./dist/Git.js"
+              },
+              "./node": {
+                "types": "./dist/Node.d.ts",
+                "import": "./dist/Node.js"
+              },
+              "./bun": {
+                "types": "./dist/Bun.d.ts",
+                "import": "./dist/Bun.js"
+              }
+            },
+            "dependencies": {
+              "effect-build": "0.6.3"
+            },
+            "peerDependencies": {
+              "effect": ">=4.0.0-rc.108 <4.1.0-0",
+              "@effect/platform-node": ">=4.0.0-rc.108 <4.1.0-0",
+              "@effect/platform-bun": ">=4.0.0-rc.108 <4.1.0-0",
+              "effect-build-apple": "0.6.3"
+            },
+            "peerDependenciesMeta": {
+              "@effect/platform-node": {
+                "optional": true
+              },
+              "@effect/platform-bun": {
+                "optional": true
+              },
+              "effect-build-apple": {
+                "optional": true
+              }
+            }
+          },
+          "manifestSha256": "4d20d18b994ec2408c03981a2b1d64bf6bbdaebccbb739a39f9c05293f5a0461",
+          "manifestLines": 77
+        },
+        {
+          "id": "provider.npm",
+          "directory": "packages/npm",
+          "manifestPath": "packages/npm/package.json",
+          "manifest": {
+            "version": "0.4.0",
+            "type": "module",
+            "license": "MIT",
+            "sideEffects": false,
+            "files": [
+              "dist",
+              "README.md",
+              "LICENSE"
+            ],
+            "engines": {
+              "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+              "bun": ">=1.3.14"
+            },
+            "publishConfig": {
+              "access": "public",
+              "registry": "https://registry.npmjs.org"
+            },
+            "name": "@mannyc1/ts-release-npm",
+            "exports": {
+              ".": {
+                "types": "./dist/index.d.ts",
+                "import": "./dist/index.js"
+              }
+            },
+            "dependencies": {
+              "semver": "7.8.5",
+              "sigstore": "5.0.0"
+            },
+            "peerDependencies": {
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+            }
+          },
+          "manifestSha256": "d594a1814776d248cb4b6fd3159e95deb4d0b0a234efd13aaaac5000c5f396cc",
+          "manifestLines": 34
+        },
+        {
+          "id": "provider.pypi",
+          "directory": "packages/pypi",
+          "manifestPath": "packages/pypi/package.json",
+          "manifest": {
+            "version": "0.4.0",
+            "type": "module",
+            "license": "MIT",
+            "sideEffects": false,
+            "files": [
+              "dist",
+              "README.md",
+              "LICENSE"
+            ],
+            "engines": {
+              "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+              "bun": ">=1.3.14"
+            },
+            "publishConfig": {
+              "access": "public",
+              "registry": "https://registry.npmjs.org"
+            },
+            "name": "@mannyc1/ts-release-pypi",
+            "exports": {
+              ".": {
+                "types": "./dist/index.d.ts",
+                "import": "./dist/index.js"
+              }
+            },
+            "dependencies": {},
+            "peerDependencies": {
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+            }
+          },
+          "manifestSha256": "1fed3bee5b8689cc61375584a73e5e7ebe334551c094a3bc1463fdbff66c588c",
+          "manifestLines": 31
+        },
+        {
+          "id": "provider.github",
+          "directory": "packages/github",
+          "manifestPath": "packages/github/package.json",
+          "manifest": {
+            "version": "0.4.0",
+            "type": "module",
+            "license": "MIT",
+            "sideEffects": false,
+            "files": [
+              "dist",
+              "README.md",
+              "LICENSE"
+            ],
+            "engines": {
+              "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+              "bun": ">=1.3.14"
+            },
+            "publishConfig": {
+              "access": "public",
+              "registry": "https://registry.npmjs.org"
+            },
+            "name": "@mannyc1/ts-release-github",
+            "exports": {
+              ".": {
+                "types": "./dist/index.d.ts",
+                "import": "./dist/index.js"
+              }
+            },
+            "dependencies": {},
+            "peerDependencies": {
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+            }
+          },
+          "manifestSha256": "a60058e13e34cfbda016aac8071def08c85557715d8351a7c52e71656f32ec45",
+          "manifestLines": 31
+        },
+        {
+          "id": "provider.catalog",
+          "directory": "packages/catalog",
+          "manifestPath": "packages/catalog/package.json",
+          "manifest": {
+            "version": "0.4.0",
+            "type": "module",
+            "license": "MIT",
+            "sideEffects": false,
+            "files": [
+              "dist",
+              "README.md",
+              "LICENSE"
+            ],
+            "engines": {
+              "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+              "bun": ">=1.3.14"
+            },
+            "publishConfig": {
+              "access": "public",
+              "registry": "https://registry.npmjs.org"
+            },
+            "name": "@mannyc1/ts-release-catalog",
+            "exports": {
+              "./homebrew": {
+                "types": "./dist/homebrew/index.d.ts",
+                "import": "./dist/homebrew/index.js"
+              },
+              "./scoop": {
+                "types": "./dist/scoop/index.d.ts",
+                "import": "./dist/scoop/index.js"
+              }
+            },
+            "dependencies": {},
+            "peerDependencies": {
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+            }
+          },
+          "manifestSha256": "9aabe0c50d530570391c5accf3f9cb42f12e67784909102342caaef126a5d74d",
+          "manifestLines": 35
+        },
+        {
+          "id": "provider.mcp",
+          "directory": "packages/mcp",
+          "manifestPath": "packages/mcp/package.json",
+          "manifest": {
+            "version": "0.4.0",
+            "type": "module",
+            "license": "MIT",
+            "sideEffects": false,
+            "files": [
+              "dist",
+              "README.md",
+              "LICENSE"
+            ],
+            "engines": {
+              "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+              "bun": ">=1.3.14"
+            },
+            "publishConfig": {
+              "access": "public",
+              "registry": "https://registry.npmjs.org"
+            },
+            "name": "@mannyc1/ts-release-mcp",
+            "exports": {
+              ".": {
+                "types": "./dist/index.d.ts",
+                "import": "./dist/index.js"
+              }
+            },
+            "dependencies": {},
+            "peerDependencies": {
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+            }
+          },
+          "manifestSha256": "fef5f6d86b4989d3e09df5b0da5d5e9cba16b3d8151b08c01962b78f71944bc8",
+          "manifestLines": 31
+        },
+        {
+          "id": "provider.openai",
+          "directory": "packages/openai",
+          "manifestPath": "packages/openai/package.json",
+          "manifest": {
+            "version": "0.4.0",
+            "type": "module",
+            "license": "MIT",
+            "sideEffects": false,
+            "files": [
+              "dist",
+              "README.md",
+              "LICENSE"
+            ],
+            "engines": {
+              "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+              "bun": ">=1.3.14"
+            },
+            "publishConfig": {
+              "access": "public",
+              "registry": "https://registry.npmjs.org"
+            },
+            "name": "@mannyc1/ts-release-openai",
+            "exports": {
+              ".": {
+                "types": "./dist/index.d.ts",
+                "import": "./dist/index.js"
+              }
+            },
+            "dependencies": {
+              "semver": "7.8.5"
+            },
+            "peerDependencies": {
+              "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
+              "effect": ">=4.0.0-rc.108 <4.1.0-0"
+            }
+          },
+          "manifestSha256": "c860f06ecd94a1b3809d55092d2c3e319bb45ef87c074bf10b91065012ec9fa3",
+          "manifestLines": 33
+        }
+      ],
+      "privateWorkspaces": [
+        {
+          "id": "workspace",
+          "directory": ".",
+          "manifestPath": "package.json",
+          "manifest": {
+            "name": "@ts-release-private/workspace",
+            "version": "0.4.0",
+            "private": true,
+            "type": "module",
+            "engines": {
+              "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+              "bun": ">=1.3.14"
+            },
+            "dependencies": {},
+            "packageManager": "bun@1.3.14",
+            "workspaces": [
+              "apps/*",
+              "packages/*"
+            ],
+            "devDependencies": {
+              "effect": "4.0.0-rc.108",
+              "@effect/platform-node": "4.0.0-rc.108",
+              "@effect/platform-bun": "4.0.0-rc.108",
+              "effect-build-apple": "0.6.3",
+              "typescript": "6.0.3",
+              "bun-types": "1.3.14",
+              "@types/semver": "7.7.1"
+            },
+            "overrides": {
+              "@effect/platform-node-shared": "4.0.0-rc.108"
+            },
+            "scripts": {
+              "build": "bun scripts/build.ts",
+              "check": "bun scripts/check.ts",
+              "test": "bun test",
+              "build:delivery": "bun scripts/build-delivery.ts"
+            }
+          },
+          "manifestSha256": "e9730398fbcc842713cc893b998ab36112de317b51fdb74b57a2db14d62ee259",
+          "manifestLines": 34
+        },
+        {
+          "id": "action",
+          "directory": "apps/action",
+          "manifestPath": "apps/action/package.json",
+          "manifest": {
+            "name": "@ts-release-private/action",
+            "private": true,
+            "type": "module",
+            "version": "0.4.0",
+            "engines": {
+              "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+              "bun": ">=1.3.14"
+            },
+            "dependencies": {
+              "@mannyc1/ts-release": "0.4.0",
+              "effect": "4.0.0-rc.108",
+              "@effect/platform-node": "4.0.0-rc.108"
+            }
+          },
+          "manifestSha256": "7a37c14d08588b09d594c17945f31ae28e445c083b0b0e1371087551da48a5e5",
+          "manifestLines": 15,
+          "deliverySource": "apps/action/src/launcher.ts",
+          "artifact": "apps/action/dist/launcher.cjs",
+          "actionYamlPath": "apps/action/action.yml",
+          "actionYaml": "name: ts-release\ndescription: Execute one authored release application against its durable journal.\nauthor: mannyc2\ninputs:\n  application:\n    description: Workspace-contained ESM application exporting createApplication.\n    required: true\n  input:\n    description: JSON input passed to createApplication.\n    required: false\n    default: '{}'\noutputs:\n  plan-id:\n    description: Identity of the application's exact publication plan.\n  journal-revision:\n    description: Durable journal revision reported by the application.\nruns:\n  using: node24\n  main: dist/launcher.cjs\nbranding:\n  icon: package\n  color: blue\n",
+          "actionYamlSha256": "29a0379edd42b2de5fecf0933e30158d751f50d1b97afb7d825f24a18a6f0e00",
+          "actionYamlLines": 22
+        },
+        {
+          "id": "self-release",
+          "directory": "apps/self-release",
+          "manifestPath": "apps/self-release/package.json",
+          "manifest": {
+            "name": "@ts-release-private/self-release",
+            "private": true,
+            "type": "module",
+            "version": "0.4.0",
+            "engines": {
+              "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+              "bun": ">=1.3.14"
+            },
+            "dependencies": {
+              "@mannyc1/ts-release": "0.4.0",
+              "effect": "4.0.0-rc.108",
+              "@effect/platform-node": "4.0.0-rc.108",
+              "effect-build": "0.6.3",
+              "effect-build-apple": "0.6.3",
+              "@mannyc1/ts-release-npm": "0.4.0",
+              "@mannyc1/ts-release-pypi": "0.4.0",
+              "@mannyc1/ts-release-github": "0.4.0",
+              "@mannyc1/ts-release-catalog": "0.4.0",
+              "@mannyc1/ts-release-mcp": "0.4.0",
+              "@mannyc1/ts-release-openai": "0.4.0"
+            }
+          },
+          "manifestSha256": "89d93846216d3011ba5e34f08c50c2506ab84fafafca5e9bd03d74b7a31b2486",
+          "manifestLines": 23,
+          "application": "apps/self-release/src/application.ts"
+        },
+        {
+          "id": "ts-release-agents",
+          "directory": "apps/ts-release-agents",
+          "manifestPath": "apps/ts-release-agents/package.json",
+          "manifest": {
+            "name": "@mannyc1/ts-release-agents",
+            "version": "0.2.2",
+            "private": true,
+            "type": "module",
+            "scripts": {
+              "check": "tsc --noEmit -p tsconfig.json",
+              "build": "bun run src/build.ts",
+              "check:generated": "bun run src/check.ts"
+            }
+          },
+          "manifestSha256": "29a7c54612f712b51f5173f708ec833627223140ea31dee3eeea25399f4655d7",
+          "manifestLines": 11
+        }
+      ],
+      "configs": [
+        {
+          "path": "tsconfig.json",
+          "template": {
+            "compilerOptions": {
+              "target": "ES2022",
+              "lib": [
+                "ES2022",
+                "DOM",
+                "DOM.Iterable",
+                "ESNext.Disposable"
+              ],
+              "module": "NodeNext",
+              "moduleResolution": "NodeNext",
+              "strict": true,
+              "noUncheckedIndexedAccess": true,
+              "exactOptionalPropertyTypes": true,
+              "skipLibCheck": false,
+              "verbatimModuleSyntax": true,
+              "declaration": true,
+              "declarationMap": false,
+              "sourceMap": false,
+              "noEmit": true,
+              "types": [
+                "bun-types"
+              ],
+              "paths": {}
+            },
+            "include": [
+              "packages/**/*.ts",
+              "apps/**/*.ts",
+              "test/**/*.ts",
+              "scripts/**/*.ts"
+            ],
+            "exclude": [
+              "**/dist",
+              "**/node_modules",
+              ".repos",
+              "tools",
+              "docs"
+            ]
+          },
+          "sha256": "a61a250c87753c2eab33a8ef80b938c6a73a2eb622c078784ea91c8841214ac7",
+          "lines": 39
+        },
+        {
+          "path": "packages/ts-release/tsconfig.build.json",
+          "template": {
+            "extends": "../../tsconfig.json",
+            "compilerOptions": {
+              "rootDir": "./src",
+              "outDir": "./dist",
+              "noEmit": false
+            },
+            "include": [
+              "src/**/*.ts"
+            ],
+            "exclude": [
+              "src/**/*.test.ts"
+            ]
+          },
+          "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8",
+          "lines": 14
+        },
+        {
+          "path": "packages/npm/tsconfig.build.json",
+          "template": {
+            "extends": "../../tsconfig.json",
+            "compilerOptions": {
+              "rootDir": "./src",
+              "outDir": "./dist",
+              "noEmit": false
+            },
+            "include": [
+              "src/**/*.ts"
+            ],
+            "exclude": [
+              "src/**/*.test.ts"
+            ]
+          },
+          "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8",
+          "lines": 14
+        },
+        {
+          "path": "packages/pypi/tsconfig.build.json",
+          "template": {
+            "extends": "../../tsconfig.json",
+            "compilerOptions": {
+              "rootDir": "./src",
+              "outDir": "./dist",
+              "noEmit": false
+            },
+            "include": [
+              "src/**/*.ts"
+            ],
+            "exclude": [
+              "src/**/*.test.ts"
+            ]
+          },
+          "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8",
+          "lines": 14
+        },
+        {
+          "path": "packages/github/tsconfig.build.json",
+          "template": {
+            "extends": "../../tsconfig.json",
+            "compilerOptions": {
+              "rootDir": "./src",
+              "outDir": "./dist",
+              "noEmit": false
+            },
+            "include": [
+              "src/**/*.ts"
+            ],
+            "exclude": [
+              "src/**/*.test.ts"
+            ]
+          },
+          "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8",
+          "lines": 14
+        },
+        {
+          "path": "packages/catalog/tsconfig.build.json",
+          "template": {
+            "extends": "../../tsconfig.json",
+            "compilerOptions": {
+              "rootDir": "./src",
+              "outDir": "./dist",
+              "noEmit": false
+            },
+            "include": [
+              "src/**/*.ts"
+            ],
+            "exclude": [
+              "src/**/*.test.ts"
+            ]
+          },
+          "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8",
+          "lines": 14
+        },
+        {
+          "path": "packages/mcp/tsconfig.build.json",
+          "template": {
+            "extends": "../../tsconfig.json",
+            "compilerOptions": {
+              "rootDir": "./src",
+              "outDir": "./dist",
+              "noEmit": false
+            },
+            "include": [
+              "src/**/*.ts"
+            ],
+            "exclude": [
+              "src/**/*.test.ts"
+            ]
+          },
+          "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8",
+          "lines": 14
+        },
+        {
+          "path": "packages/openai/tsconfig.build.json",
+          "template": {
+            "extends": "../../tsconfig.json",
+            "compilerOptions": {
+              "rootDir": "./src",
+              "outDir": "./dist",
+              "noEmit": false
+            },
+            "include": [
+              "src/**/*.ts"
+            ],
+            "exclude": [
+              "src/**/*.test.ts"
+            ]
+          },
+          "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8",
+          "lines": 14
+        },
+        {
+          "path": "apps/action/tsconfig.json",
+          "template": {
+            "extends": "../../tsconfig.json",
+            "include": [
+              "src/**/*.ts"
+            ],
+            "exclude": [
+              "dist"
+            ]
+          },
+          "sha256": "11d65fcec61182077f9676354cf3ad3da40d5c26c20a3e26ace7410524ab99ba",
+          "lines": 9
+        },
+        {
+          "path": "apps/self-release/tsconfig.build.json",
+          "template": {
+            "extends": "../../tsconfig.json",
+            "compilerOptions": {
+              "rootDir": "./src",
+              "outDir": "./dist",
+              "noEmit": false
+            },
+            "include": [
+              "src/**/*.ts"
+            ],
+            "exclude": [
+              "src/**/*.test.ts"
+            ]
+          },
+          "sha256": "275a1bdfa1c3da3e2ded29a06a17591fe5e1434189c37f27609459ae44d9c3f8",
+          "lines": 14
+        }
+      ],
+      "modules": [
+        {
+          "id": "kernel.Error",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/Error.ts",
+          "zone": "neutral",
+          "dependencies": []
+        },
+        {
+          "id": "kernel.Identity",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/Identity.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "kernel.Model",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/ReleaseModel.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "kernel.Provider",
+          "owner": "core",
+          "path": "packages/ts-release/src/Provider.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Model",
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "kernel.Plan",
+          "owner": "core",
+          "path": "packages/ts-release/src/Plan.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Model",
+            "kernel.Provider",
+            "kernel.Identity",
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "kernel.Journal",
+          "owner": "core",
+          "path": "packages/ts-release/src/Journal.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Model",
+            "kernel.Provider",
+            "kernel.Identity",
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "kernel.Decision",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/Decision.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Model"
+          ],
+          "purpose": "Core-owned immutable history laws and default M1 evaluator. External evaluators receive scope kind and copied immutable inputs; their proposals cannot bypass executor admission."
+        },
+        {
+          "id": "kernel.Host",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/Host.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Model",
+            "kernel.Provider",
+            "kernel.Journal"
+          ]
+        },
+        {
+          "id": "kernel.Release",
+          "owner": "core",
+          "path": "packages/ts-release/src/Release.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Model",
+            "kernel.Provider",
+            "kernel.Plan",
+            "kernel.Journal",
+            "kernel.Decision",
+            "kernel.Host",
+            "kernel.GitAuthority",
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "kernel.ArtifactModel",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/ArtifactModel.ts",
+          "zone": "neutral",
+          "dependencies": [],
+          "externalImports": [
+            "effect-build/Artifact"
+          ]
+        },
+        {
+          "id": "kernel.Content",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/Content.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "kernel.BundleCodec",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/BundleCodec.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.Identity"
+          ]
+        },
+        {
+          "id": "kernel.BundleFinalize",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/BundleFinalize.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Identity"
+          ]
+        },
+        {
+          "id": "kernel.Checksums",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/Checksums.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.Error"
+          ],
+          "externalImports": [
+            "effect-build/Artifact"
+          ]
+        },
+        {
+          "id": "kernel.Bundle",
+          "owner": "core",
+          "path": "packages/ts-release/src/Bundle.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.BundleCodec",
+            "kernel.BundleFinalize",
+            "kernel.Checksums"
+          ]
+        },
+        {
+          "id": "kernel.EffectBuild",
+          "owner": "core",
+          "path": "packages/ts-release/src/EffectBuild.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.Identity"
+          ],
+          "externalImports": [
+            "effect-build/Artifact",
+            "effect-build/Author/File",
+            "effect-build/Author/Tree"
+          ]
+        },
+        {
+          "id": "kernel.AppleModel",
+          "owner": "core",
+          "path": "packages/ts-release/src/apple/Model.ts",
+          "zone": "preparation",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.Error"
+          ],
+          "externalImports": [
+            "effect-build/Artifact",
+            "effect-build/Author/Tool",
+            "effect-build-apple/Model",
+            "effect-build-apple/Notary",
+            "effect-build-apple/Assess"
+          ]
+        },
+        {
+          "id": "kernel.AppleNative",
+          "owner": "core",
+          "path": "packages/ts-release/src/apple/Native.ts",
+          "zone": "preparation",
+          "dependencies": [
+            "kernel.AppleModel",
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.BundleCodec",
+            "kernel.BundleFinalize",
+            "kernel.EffectBuild",
+            "kernel.Error"
+          ],
+          "externalImports": [
+            "effect-build/Author/File",
+            "effect-build/Author/Tree",
+            "effect-build-apple/Model",
+            "effect-build-apple/Notary",
+            "effect-build-apple/Staple",
+            "effect-build-apple/Assess"
+          ]
+        },
+        {
+          "id": "kernel.ApplePreparation",
+          "owner": "core",
+          "path": "packages/ts-release/src/apple/Preparation.ts",
+          "zone": "preparation",
+          "dependencies": [
+            "kernel.AppleModel",
+            "kernel.AppleNative",
+            "kernel.Plan",
+            "kernel.Journal",
+            "kernel.Release",
+            "kernel.Host",
+            "kernel.Identity",
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.BundleCodec",
+            "kernel.Error"
+          ],
+          "externalImports": [
+            "effect-build-apple/Notary"
+          ]
+        },
+        {
+          "id": "kernel.Apple",
+          "owner": "core",
+          "path": "packages/ts-release/src/Apple.ts",
+          "zone": "preparation",
+          "dependencies": [
+            "kernel.AppleModel",
+            "kernel.AppleNative",
+            "kernel.ApplePreparation"
+          ]
+        },
+        {
+          "id": "kernel.Http",
+          "owner": "core",
+          "path": "packages/ts-release/src/Http.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Model",
+            "kernel.Provider",
+            "kernel.ArtifactModel",
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "kernel.GitAuthority",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/GitAuthority.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Model",
+            "kernel.Identity",
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "kernel.GitCatalog",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/GitCatalog.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Model",
+            "kernel.Provider",
+            "kernel.Plan",
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "kernel.Git",
+          "owner": "core",
+          "path": "packages/ts-release/src/Git.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Model",
+            "kernel.GitAuthority",
+            "kernel.GitCatalog"
+          ]
+        },
+        {
+          "id": "host.Credentials",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/Credentials.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.Http",
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "host.Http",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/HttpTransport.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.Model",
+            "kernel.Http",
+            "kernel.Error",
+            "host.Credentials"
+          ],
+          "externalImports": [
+            "node:http",
+            "node:https"
+          ]
+        },
+        {
+          "id": "host.StoreCodec",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/StoreCodec.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.Model",
+            "kernel.Journal",
+            "kernel.Identity",
+            "kernel.Error"
+          ]
+        },
+        {
+          "id": "host.GitJournal",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/GitJournal.ts",
+          "zone": "host",
+          "dependencies": [
+            "host.StoreCodec",
+            "host.NativeGit",
+            "kernel.Journal",
+            "kernel.Error"
+          ],
+          "purpose": "Reuses the bounded native Git command/private-environment helper with explicit remote, principal, scope and reacquired credentials; no ambient Git credential authority."
+        },
+        {
+          "id": "host.Sqlite",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/SqliteJournal.ts",
+          "zone": "bun-host",
+          "dependencies": [
+            "host.StoreCodec",
+            "kernel.Journal",
+            "kernel.Error"
+          ],
+          "externalImports": [
+            "bun:sqlite"
+          ]
+        },
+        {
+          "id": "host.Content",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/ContentStore.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Content"
+          ],
+          "externalImports": [
+            "node:fs/promises",
+            "node:crypto"
+          ]
+        },
+        {
+          "id": "host.NativeGit",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/NativeGit.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.GitCatalog",
+            "kernel.GitAuthority",
+            "kernel.ArtifactModel",
+            "kernel.Content",
+            "kernel.Error"
+          ],
+          "externalImports": [
+            "node:child_process",
+            "node:fs/promises"
+          ]
+        },
+        {
+          "id": "host.Application",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/Application.ts",
+          "zone": "host",
+          "dependencies": [
+            "kernel.Host",
+            "kernel.Release",
+            "kernel.Error"
+          ],
+          "externalImports": [
+            "node:path",
+            "node:url"
+          ],
+          "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import."
+        },
+        {
+          "id": "host.Node",
+          "owner": "core",
+          "path": "packages/ts-release/src/Node.ts",
+          "zone": "node-host",
+          "dependencies": [
+            "host.GitJournal",
+            "host.Http",
+            "host.Content",
+            "host.NativeGit",
+            "host.Application"
+          ],
+          "externalImports": [
+            "@effect/platform-node/NodeServices"
+          ]
+        },
+        {
+          "id": "host.Bun",
+          "owner": "core",
+          "path": "packages/ts-release/src/Bun.ts",
+          "zone": "bun-host",
+          "dependencies": [
+            "host.Sqlite",
+            "host.GitJournal",
+            "host.Http",
+            "host.Content",
+            "host.NativeGit",
+            "host.Application"
+          ],
+          "externalImports": [
+            "@effect/platform-bun/BunServices"
+          ]
+        },
+        {
+          "id": "kernel.Entry",
+          "owner": "core",
+          "path": "packages/ts-release/src/index.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.Error",
+            "kernel.Model",
+            "kernel.Provider",
+            "kernel.Plan",
+            "kernel.Journal",
+            "kernel.Host",
+            "kernel.GitAuthority",
+            "kernel.Release",
+            "kernel.Decision"
+          ]
+        },
+        {
+          "id": "app.cli",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/CommandLine.ts",
+          "zone": "cli-host",
+          "dependencies": [
+            "host.Application"
+          ],
+          "externalImports": [
+            "node:fs/promises"
+          ],
+          "purpose": "One argument decoder and application loader used by the root bin and private CLI delivery workspace. The selected application provides its own host layers; CLI never auto-imports Node/Bun platform facades."
+        },
+        {
+          "id": "app.bin",
+          "owner": "core",
+          "path": "packages/ts-release/src/bin/ts-release.ts",
+          "zone": "cli-host",
+          "dependencies": [
+            "app.cli"
+          ]
+        },
+        {
+          "id": "app.action",
+          "owner": "action",
+          "path": "apps/action/src/launcher.ts",
+          "zone": "application",
+          "dependencies": [
+            "host.Node"
+          ],
+          "externalImports": [
+            "node:fs/promises"
+          ]
+        },
+        {
+          "id": "app.application",
+          "owner": "self-release",
+          "path": "apps/self-release/src/application.ts",
+          "zone": "application",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Bundle",
+            "kernel.EffectBuild",
+            "kernel.Apple",
+            "kernel.Git",
+            "host.Node",
+            "provider.npm",
+            "provider.warehouse",
+            "provider.github",
+            "provider.homebrew",
+            "provider.scoop",
+            "provider.mcp",
+            "provider.openai"
+          ]
+        },
+        {
+          "id": "provider.npm.Model",
+          "owner": "provider.npm",
+          "path": "packages/npm/src/Model.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Bundle",
+            "kernel.Http"
+          ]
+        },
+        {
+          "id": "provider.npm.Protocol",
+          "owner": "provider.npm",
+          "path": "packages/npm/src/Protocol.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "kernel.Entry",
+            "kernel.Bundle",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "semver"
+          ]
+        },
+        {
+          "id": "provider.npm.Auth",
+          "owner": "provider.npm",
+          "path": "packages/npm/src/Auth.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "kernel.Entry",
+            "kernel.Bundle",
+            "kernel.Http"
+          ],
+          "externalImports": [
+            "sigstore"
+          ]
+        },
+        {
+          "id": "provider.npm",
+          "owner": "provider.npm",
+          "path": "packages/npm/src/index.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.npm.Model",
+            "provider.npm.Protocol",
+            "provider.npm.Auth"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Model",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/Model.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Bundle",
+            "kernel.Http"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Protocol",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/Protocol.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "kernel.Entry",
+            "kernel.Bundle",
+            "kernel.Http"
+          ]
+        },
+        {
+          "id": "provider.warehouse.Auth",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/Auth.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "kernel.Http"
+          ]
+        },
+        {
+          "id": "provider.warehouse",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/index.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.warehouse.Model",
+            "provider.warehouse.Protocol",
+            "provider.warehouse.Auth"
+          ]
+        },
+        {
+          "id": "provider.github.Model",
+          "owner": "provider.github",
+          "path": "packages/github/src/Model.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.github.Protocol",
+          "owner": "provider.github",
+          "path": "packages/github/src/Protocol.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.github.Model",
+            "kernel.Entry",
+            "kernel.Bundle",
+            "kernel.Http"
+          ]
+        },
+        {
+          "id": "provider.github.Auth",
+          "owner": "provider.github",
+          "path": "packages/github/src/Auth.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.github.Model",
+            "kernel.Http"
+          ]
+        },
+        {
+          "id": "provider.github",
+          "owner": "provider.github",
+          "path": "packages/github/src/index.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.github.Model",
+            "provider.github.Protocol",
+            "provider.github.Auth"
+          ]
+        },
+        {
+          "id": "provider.homebrew.Formula",
+          "owner": "provider.catalog",
+          "path": "packages/catalog/src/homebrew/Formula.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.homebrew",
+          "owner": "provider.catalog",
+          "path": "packages/catalog/src/homebrew/index.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.homebrew.Formula"
+          ]
+        },
+        {
+          "id": "provider.scoop.Manifest",
+          "owner": "provider.catalog",
+          "path": "packages/catalog/src/scoop/Manifest.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.scoop",
+          "owner": "provider.catalog",
+          "path": "packages/catalog/src/scoop/index.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.scoop.Manifest"
+          ]
+        },
+        {
+          "id": "provider.mcp.Model",
+          "owner": "provider.mcp",
+          "path": "packages/mcp/src/Model.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Bundle",
+            "kernel.Http"
+          ]
+        },
+        {
+          "id": "provider.mcp.Protocol",
+          "owner": "provider.mcp",
+          "path": "packages/mcp/src/Protocol.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.mcp.Model",
+            "kernel.Entry",
+            "kernel.Bundle",
+            "kernel.Http"
+          ]
+        },
+        {
+          "id": "provider.mcp.Auth",
+          "owner": "provider.mcp",
+          "path": "packages/mcp/src/Auth.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.mcp.Model",
+            "kernel.Http"
+          ]
+        },
+        {
+          "id": "provider.mcp",
+          "owner": "provider.mcp",
+          "path": "packages/mcp/src/index.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.mcp.Model",
+            "provider.mcp.Protocol",
+            "provider.mcp.Auth"
+          ]
+        },
+        {
+          "id": "provider.openai.Package",
+          "owner": "provider.openai",
+          "path": "packages/openai/src/Package.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Bundle"
+          ],
+          "externalImports": [
+            "semver"
+          ]
+        },
+        {
+          "id": "provider.openai.Marketplace",
+          "owner": "provider.openai",
+          "path": "packages/openai/src/Marketplace.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.openai.Package",
+            "kernel.Entry",
+            "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.openai.Submission",
+          "owner": "provider.openai",
+          "path": "packages/openai/src/Submission.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.openai.Package",
+            "kernel.Entry",
+            "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.openai",
+          "owner": "provider.openai",
+          "path": "packages/openai/src/index.ts",
+          "zone": "provider",
+          "dependencies": [
+            "provider.openai.Package",
+            "provider.openai.Marketplace",
+            "provider.openai.Submission"
+          ]
+        }
+      ],
+      "graph": {
+        "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
+        "sourceEdgesSha256": "25b2399f75f86d257ecfd09a5e07e0f390a9fefab976d579d9816a19fe8590de",
+        "packageEdgesSha256": "c67de10097c385ff98e59d95cafc51aaac3cc1abf8e68df993105c32df75c038",
+        "sourceEdges": [
+          {
+            "from": "kernel.Identity",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Model",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Provider",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./internal/ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Provider",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./internal/Error.js"
+          },
+          {
+            "from": "kernel.Plan",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./internal/ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Plan",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "./Provider.js"
+          },
+          {
+            "from": "kernel.Plan",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./internal/Identity.js"
+          },
+          {
+            "from": "kernel.Plan",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./internal/Error.js"
+          },
+          {
+            "from": "kernel.Journal",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./internal/ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Journal",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "./Provider.js"
+          },
+          {
+            "from": "kernel.Journal",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./internal/Identity.js"
+          },
+          {
+            "from": "kernel.Journal",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./internal/Error.js"
+          },
+          {
+            "from": "kernel.Decision",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Host",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Host",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "../Provider.js"
+          },
+          {
+            "from": "kernel.Host",
+            "to": "kernel.Journal",
+            "loading": "static",
+            "specifier": "../Journal.js"
+          },
+          {
+            "from": "kernel.Release",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./internal/ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Release",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "./Provider.js"
+          },
+          {
+            "from": "kernel.Release",
+            "to": "kernel.Plan",
+            "loading": "static",
+            "specifier": "./Plan.js"
+          },
+          {
+            "from": "kernel.Release",
+            "to": "kernel.Journal",
+            "loading": "static",
+            "specifier": "./Journal.js"
+          },
+          {
+            "from": "kernel.Release",
+            "to": "kernel.Decision",
+            "loading": "static",
+            "specifier": "./internal/Decision.js"
+          },
+          {
+            "from": "kernel.Release",
+            "to": "kernel.Host",
+            "loading": "static",
+            "specifier": "./internal/Host.js"
+          },
+          {
+            "from": "kernel.Release",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "./internal/GitAuthority.js"
+          },
+          {
+            "from": "kernel.Release",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./internal/Error.js"
+          },
+          {
+            "from": "kernel.Content",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.Content",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.BundleCodec",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.BundleCodec",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "./Content.js"
+          },
+          {
+            "from": "kernel.BundleCodec",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.BundleFinalize",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.BundleFinalize",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.Checksums",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.Checksums",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "./Content.js"
+          },
+          {
+            "from": "kernel.Checksums",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Bundle",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./internal/ArtifactModel.js"
+          },
+          {
+            "from": "kernel.Bundle",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "./internal/Content.js"
+          },
+          {
+            "from": "kernel.Bundle",
+            "to": "kernel.BundleCodec",
+            "loading": "static",
+            "specifier": "./internal/BundleCodec.js"
+          },
+          {
+            "from": "kernel.Bundle",
+            "to": "kernel.BundleFinalize",
+            "loading": "static",
+            "specifier": "./internal/BundleFinalize.js"
+          },
+          {
+            "from": "kernel.Bundle",
+            "to": "kernel.Checksums",
+            "loading": "static",
+            "specifier": "./internal/Checksums.js"
+          },
+          {
+            "from": "kernel.EffectBuild",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./internal/ArtifactModel.js"
+          },
+          {
+            "from": "kernel.EffectBuild",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "./internal/Content.js"
+          },
+          {
+            "from": "kernel.EffectBuild",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./internal/Identity.js"
+          },
+          {
+            "from": "kernel.AppleModel",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "../internal/ArtifactModel.js"
+          },
+          {
+            "from": "kernel.AppleModel",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "../internal/Content.js"
+          },
+          {
+            "from": "kernel.AppleModel",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "to": "kernel.AppleModel",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "../internal/ArtifactModel.js"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "../internal/Content.js"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "to": "kernel.BundleCodec",
+            "loading": "static",
+            "specifier": "../internal/BundleCodec.js"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "to": "kernel.BundleFinalize",
+            "loading": "static",
+            "specifier": "../internal/BundleFinalize.js"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "to": "kernel.EffectBuild",
+            "loading": "static",
+            "specifier": "../EffectBuild.js"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "to": "kernel.AppleModel",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "to": "kernel.AppleNative",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "to": "kernel.Plan",
+            "loading": "static",
+            "specifier": "../Plan.js"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "to": "kernel.Journal",
+            "loading": "static",
+            "specifier": "../Journal.js"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "to": "kernel.Release",
+            "loading": "static",
+            "specifier": "../Release.js"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "to": "kernel.Host",
+            "loading": "static",
+            "specifier": "../internal/Host.js"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "../internal/ArtifactModel.js"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "../internal/Content.js"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "to": "kernel.BundleCodec",
+            "loading": "static",
+            "specifier": "../internal/BundleCodec.js"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "kernel.Apple",
+            "to": "kernel.AppleModel",
+            "loading": "static",
+            "specifier": "./apple/Model.js"
+          },
+          {
+            "from": "kernel.Apple",
+            "to": "kernel.AppleNative",
+            "loading": "static",
+            "specifier": "./apple/Native.js"
+          },
+          {
+            "from": "kernel.Apple",
+            "to": "kernel.ApplePreparation",
+            "loading": "static",
+            "specifier": "./apple/Preparation.js"
+          },
+          {
+            "from": "kernel.Http",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./internal/ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Http",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "./Provider.js"
+          },
+          {
+            "from": "kernel.Http",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./internal/ArtifactModel.js"
+          },
+          {
+            "from": "kernel.Http",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./internal/Error.js"
+          },
+          {
+            "from": "kernel.GitAuthority",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./ReleaseModel.js"
+          },
+          {
+            "from": "kernel.GitAuthority",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.GitAuthority",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./ReleaseModel.js"
+          },
+          {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "../Provider.js"
+          },
+          {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.Plan",
+            "loading": "static",
+            "specifier": "../Plan.js"
+          },
+          {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "./Content.js"
+          },
+          {
+            "from": "kernel.GitCatalog",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Git",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./internal/ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Git",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "./internal/GitAuthority.js"
+          },
+          {
+            "from": "kernel.Git",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "./internal/GitCatalog.js"
+          },
+          {
+            "from": "host.Credentials",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "../Http.js"
+          },
+          {
+            "from": "host.Credentials",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.Http",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "../internal/ReleaseModel.js"
+          },
+          {
+            "from": "host.Http",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "../Http.js"
+          },
+          {
+            "from": "host.Http",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.Http",
+            "to": "host.Credentials",
+            "loading": "static",
+            "specifier": "./Credentials.js"
+          },
+          {
+            "from": "host.StoreCodec",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "../internal/ReleaseModel.js"
+          },
+          {
+            "from": "host.StoreCodec",
+            "to": "kernel.Journal",
+            "loading": "static",
+            "specifier": "../Journal.js"
+          },
+          {
+            "from": "host.StoreCodec",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "../internal/Identity.js"
+          },
+          {
+            "from": "host.StoreCodec",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "host.StoreCodec",
+            "loading": "static",
+            "specifier": "./StoreCodec.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "host.NativeGit",
+            "loading": "static",
+            "specifier": "./NativeGit.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.Journal",
+            "loading": "static",
+            "specifier": "../Journal.js"
+          },
+          {
+            "from": "host.GitJournal",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.Sqlite",
+            "to": "host.StoreCodec",
+            "loading": "static",
+            "specifier": "./StoreCodec.js"
+          },
+          {
+            "from": "host.Sqlite",
+            "to": "kernel.Journal",
+            "loading": "static",
+            "specifier": "../Journal.js"
+          },
+          {
+            "from": "host.Sqlite",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.Content",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "../internal/ArtifactModel.js"
+          },
+          {
+            "from": "host.Content",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "../internal/Content.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "kernel.GitCatalog",
+            "loading": "static",
+            "specifier": "../internal/GitCatalog.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "../internal/GitAuthority.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "../internal/ArtifactModel.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "kernel.Content",
+            "loading": "static",
+            "specifier": "../internal/Content.js"
+          },
+          {
+            "from": "host.NativeGit",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.Application",
+            "to": "kernel.Host",
+            "loading": "static",
+            "specifier": "../internal/Host.js"
+          },
+          {
+            "from": "host.Application",
+            "to": "kernel.Release",
+            "loading": "static",
+            "specifier": "../Release.js"
+          },
+          {
+            "from": "host.Application",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "../internal/Error.js"
+          },
+          {
+            "from": "host.Node",
+            "to": "host.GitJournal",
+            "loading": "static",
+            "specifier": "./platform/GitJournal.js"
+          },
+          {
+            "from": "host.Node",
+            "to": "host.Http",
+            "loading": "static",
+            "specifier": "./platform/HttpTransport.js"
+          },
+          {
+            "from": "host.Node",
+            "to": "host.Content",
+            "loading": "static",
+            "specifier": "./platform/ContentStore.js"
+          },
+          {
+            "from": "host.Node",
+            "to": "host.NativeGit",
+            "loading": "static",
+            "specifier": "./platform/NativeGit.js"
+          },
+          {
+            "from": "host.Node",
+            "to": "host.Application",
+            "loading": "static",
+            "specifier": "./platform/Application.js"
+          },
+          {
+            "from": "host.Bun",
+            "to": "host.Sqlite",
+            "loading": "static",
+            "specifier": "./platform/SqliteJournal.js"
+          },
+          {
+            "from": "host.Bun",
+            "to": "host.GitJournal",
+            "loading": "static",
+            "specifier": "./platform/GitJournal.js"
+          },
+          {
+            "from": "host.Bun",
+            "to": "host.Http",
+            "loading": "static",
+            "specifier": "./platform/HttpTransport.js"
+          },
+          {
+            "from": "host.Bun",
+            "to": "host.Content",
+            "loading": "static",
+            "specifier": "./platform/ContentStore.js"
+          },
+          {
+            "from": "host.Bun",
+            "to": "host.NativeGit",
+            "loading": "static",
+            "specifier": "./platform/NativeGit.js"
+          },
+          {
+            "from": "host.Bun",
+            "to": "host.Application",
+            "loading": "static",
+            "specifier": "./platform/Application.js"
+          },
+          {
+            "from": "kernel.Entry",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./internal/Error.js"
+          },
+          {
+            "from": "kernel.Entry",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./internal/ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Entry",
+            "to": "kernel.Provider",
+            "loading": "static",
+            "specifier": "./Provider.js"
+          },
+          {
+            "from": "kernel.Entry",
+            "to": "kernel.Plan",
+            "loading": "static",
+            "specifier": "./Plan.js"
+          },
+          {
+            "from": "kernel.Entry",
+            "to": "kernel.Journal",
+            "loading": "static",
+            "specifier": "./Journal.js"
+          },
+          {
+            "from": "kernel.Entry",
+            "to": "kernel.Host",
+            "loading": "static",
+            "specifier": "./internal/Host.js"
+          },
+          {
+            "from": "kernel.Entry",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "./internal/GitAuthority.js"
+          },
+          {
+            "from": "kernel.Entry",
+            "to": "kernel.Release",
+            "loading": "static",
+            "specifier": "./Release.js"
+          },
+          {
+            "from": "kernel.Entry",
+            "to": "kernel.Decision",
+            "loading": "static",
+            "specifier": "./internal/Decision.js"
+          },
+          {
+            "from": "app.cli",
+            "to": "host.Application",
+            "loading": "static",
+            "specifier": "../platform/Application.js"
+          },
+          {
+            "from": "app.bin",
+            "to": "app.cli",
+            "loading": "static",
+            "specifier": "../internal/CommandLine.js"
+          },
+          {
+            "from": "app.action",
+            "to": "host.Node",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/node"
+          },
+          {
+            "from": "app.application",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "app.application",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "app.application",
+            "to": "kernel.EffectBuild",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/effect-build"
+          },
+          {
+            "from": "app.application",
+            "to": "kernel.Apple",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/apple"
+          },
+          {
+            "from": "app.application",
+            "to": "kernel.Git",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/git"
+          },
+          {
+            "from": "app.application",
+            "to": "host.Node",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/node"
+          },
+          {
+            "from": "app.application",
+            "to": "provider.npm",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release-npm"
+          },
+          {
+            "from": "app.application",
+            "to": "provider.warehouse",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release-pypi"
+          },
+          {
+            "from": "app.application",
+            "to": "provider.github",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release-github"
+          },
+          {
+            "from": "app.application",
+            "to": "provider.homebrew",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release-catalog/homebrew"
+          },
+          {
+            "from": "app.application",
+            "to": "provider.scoop",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release-catalog/scoop"
+          },
+          {
+            "from": "app.application",
+            "to": "provider.mcp",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release-mcp"
+          },
+          {
+            "from": "app.application",
+            "to": "provider.openai",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release-openai"
+          },
+          {
+            "from": "provider.npm.Model",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.npm.Model",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.npm.Model",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.npm.Auth",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm.Auth",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.npm.Auth",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.npm.Auth",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Protocol",
+            "loading": "static",
+            "specifier": "./Protocol.js"
+          },
+          {
+            "from": "provider.npm",
+            "to": "provider.npm.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.warehouse.Model",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.warehouse.Model",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.warehouse.Model",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.warehouse.Protocol",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse.Auth",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse.Auth",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Protocol",
+            "loading": "static",
+            "specifier": "./Protocol.js"
+          },
+          {
+            "from": "provider.warehouse",
+            "to": "provider.warehouse.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.github.Model",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Model",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Protocol",
+            "loading": "static",
+            "specifier": "./Protocol.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.homebrew.Formula",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.homebrew.Formula",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.homebrew",
+            "to": "provider.homebrew.Formula",
+            "loading": "static",
+            "specifier": "./Formula.js"
+          },
+          {
+            "from": "provider.scoop.Manifest",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.scoop.Manifest",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.scoop",
+            "to": "provider.scoop.Manifest",
+            "loading": "static",
+            "specifier": "./Manifest.js"
+          },
+          {
+            "from": "provider.mcp.Model",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.mcp.Model",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.mcp.Model",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.mcp.Protocol",
+            "to": "provider.mcp.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.mcp.Protocol",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.mcp.Protocol",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.mcp.Protocol",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.mcp.Auth",
+            "to": "provider.mcp.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.mcp.Auth",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.mcp",
+            "to": "provider.mcp.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.mcp",
+            "to": "provider.mcp.Protocol",
+            "loading": "static",
+            "specifier": "./Protocol.js"
+          },
+          {
+            "from": "provider.mcp",
+            "to": "provider.mcp.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.openai.Package",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.openai.Package",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.openai.Marketplace",
+            "to": "provider.openai.Package",
+            "loading": "static",
+            "specifier": "./Package.js"
+          },
+          {
+            "from": "provider.openai.Marketplace",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.openai.Marketplace",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.openai.Submission",
+            "to": "provider.openai.Package",
+            "loading": "static",
+            "specifier": "./Package.js"
+          },
+          {
+            "from": "provider.openai.Submission",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.openai.Submission",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.openai",
+            "to": "provider.openai.Package",
+            "loading": "static",
+            "specifier": "./Package.js"
+          },
+          {
+            "from": "provider.openai",
+            "to": "provider.openai.Marketplace",
+            "loading": "static",
+            "specifier": "./Marketplace.js"
+          },
+          {
+            "from": "provider.openai",
+            "to": "provider.openai.Submission",
+            "loading": "static",
+            "specifier": "./Submission.js"
+          }
+        ],
+        "packageEdges": [
+          {
+            "from": "core",
+            "to": "effect-build",
+            "version": "0.6.3",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "core",
+            "to": "effect",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "core",
+            "to": "@effect/platform-node",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "kind": "peerDependencies",
+            "optional": true
+          },
+          {
+            "from": "core",
+            "to": "@effect/platform-bun",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "kind": "peerDependencies",
+            "optional": true
+          },
+          {
+            "from": "core",
+            "to": "effect-build-apple",
+            "version": "0.6.3",
+            "kind": "peerDependencies",
+            "optional": true
+          },
+          {
+            "from": "provider.npm",
+            "to": "semver",
+            "version": "7.8.5",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.npm",
+            "to": "sigstore",
+            "version": "5.0.0",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.npm",
+            "to": "@mannyc1/ts-release",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.npm",
+            "to": "effect",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.pypi",
+            "to": "@mannyc1/ts-release",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.pypi",
+            "to": "effect",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.github",
+            "to": "@mannyc1/ts-release",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.github",
+            "to": "effect",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.catalog",
+            "to": "@mannyc1/ts-release",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.catalog",
+            "to": "effect",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.mcp",
+            "to": "@mannyc1/ts-release",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.mcp",
+            "to": "effect",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.openai",
+            "to": "semver",
+            "version": "7.8.5",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.openai",
+            "to": "@mannyc1/ts-release",
+            "version": ">=0.4.0 <0.5.0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.openai",
+            "to": "effect",
+            "version": ">=4.0.0-rc.108 <4.1.0-0",
+            "kind": "peerDependencies",
+            "optional": false
+          },
+          {
+            "from": "app.workspace",
+            "to": "effect",
+            "version": "4.0.0-rc.108",
+            "kind": "devDependencies",
+            "optional": false
+          },
+          {
+            "from": "app.workspace",
+            "to": "@effect/platform-node",
+            "version": "4.0.0-rc.108",
+            "kind": "devDependencies",
+            "optional": false
+          },
+          {
+            "from": "app.workspace",
+            "to": "@effect/platform-bun",
+            "version": "4.0.0-rc.108",
+            "kind": "devDependencies",
+            "optional": false
+          },
+          {
+            "from": "app.workspace",
+            "to": "effect-build-apple",
+            "version": "0.6.3",
+            "kind": "devDependencies",
+            "optional": false
+          },
+          {
+            "from": "app.workspace",
+            "to": "typescript",
+            "version": "6.0.3",
+            "kind": "devDependencies",
+            "optional": false
+          },
+          {
+            "from": "app.workspace",
+            "to": "bun-types",
+            "version": "1.3.14",
+            "kind": "devDependencies",
+            "optional": false
+          },
+          {
+            "from": "app.workspace",
+            "to": "@types/semver",
+            "version": "7.7.1",
+            "kind": "devDependencies",
+            "optional": false
+          },
+          {
+            "from": "app.action",
+            "to": "@mannyc1/ts-release",
+            "version": "0.4.0",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.action",
+            "to": "effect",
+            "version": "4.0.0-rc.108",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.action",
+            "to": "@effect/platform-node",
+            "version": "4.0.0-rc.108",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.self-release",
+            "to": "@mannyc1/ts-release",
+            "version": "0.4.0",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.self-release",
+            "to": "effect",
+            "version": "4.0.0-rc.108",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.self-release",
+            "to": "@effect/platform-node",
+            "version": "4.0.0-rc.108",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.self-release",
+            "to": "effect-build",
+            "version": "0.6.3",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.self-release",
+            "to": "effect-build-apple",
+            "version": "0.6.3",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.self-release",
+            "to": "@mannyc1/ts-release-npm",
+            "version": "0.4.0",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.self-release",
+            "to": "@mannyc1/ts-release-pypi",
+            "version": "0.4.0",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.self-release",
+            "to": "@mannyc1/ts-release-github",
+            "version": "0.4.0",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.self-release",
+            "to": "@mannyc1/ts-release-catalog",
+            "version": "0.4.0",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.self-release",
+            "to": "@mannyc1/ts-release-mcp",
+            "version": "0.4.0",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "app.self-release",
+            "to": "@mannyc1/ts-release-openai",
+            "version": "0.4.0",
+            "kind": "dependencies",
+            "optional": false
+          }
+        ],
+        "externalImports": [
+          {
+            "from": "kernel.ArtifactModel",
+            "specifier": "effect-build/Artifact"
+          },
+          {
+            "from": "kernel.Checksums",
+            "specifier": "effect-build/Artifact"
+          },
+          {
+            "from": "kernel.EffectBuild",
+            "specifier": "effect-build/Artifact"
+          },
+          {
+            "from": "kernel.EffectBuild",
+            "specifier": "effect-build/Author/File"
+          },
+          {
+            "from": "kernel.EffectBuild",
+            "specifier": "effect-build/Author/Tree"
+          },
+          {
+            "from": "kernel.AppleModel",
+            "specifier": "effect-build/Artifact"
+          },
+          {
+            "from": "kernel.AppleModel",
+            "specifier": "effect-build/Author/Tool"
+          },
+          {
+            "from": "kernel.AppleModel",
+            "specifier": "effect-build-apple/Model"
+          },
+          {
+            "from": "kernel.AppleModel",
+            "specifier": "effect-build-apple/Notary"
+          },
+          {
+            "from": "kernel.AppleModel",
+            "specifier": "effect-build-apple/Assess"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "specifier": "effect-build/Author/File"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "specifier": "effect-build/Author/Tree"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "specifier": "effect-build-apple/Model"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "specifier": "effect-build-apple/Notary"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "specifier": "effect-build-apple/Staple"
+          },
+          {
+            "from": "kernel.AppleNative",
+            "specifier": "effect-build-apple/Assess"
+          },
+          {
+            "from": "kernel.ApplePreparation",
+            "specifier": "effect-build-apple/Notary"
+          },
+          {
+            "from": "host.Http",
+            "specifier": "node:http"
+          },
+          {
+            "from": "host.Http",
+            "specifier": "node:https"
+          },
+          {
+            "from": "host.Sqlite",
+            "specifier": "bun:sqlite"
+          },
+          {
+            "from": "host.Content",
+            "specifier": "node:fs/promises"
+          },
+          {
+            "from": "host.Content",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "host.NativeGit",
+            "specifier": "node:child_process"
+          },
+          {
+            "from": "host.NativeGit",
+            "specifier": "node:fs/promises"
+          },
+          {
+            "from": "host.Application",
+            "specifier": "node:path"
+          },
+          {
+            "from": "host.Application",
+            "specifier": "node:url"
+          },
+          {
+            "from": "host.Node",
+            "specifier": "@effect/platform-node/NodeServices"
+          },
+          {
+            "from": "host.Bun",
+            "specifier": "@effect/platform-bun/BunServices"
+          },
+          {
+            "from": "app.cli",
+            "specifier": "node:fs/promises"
+          },
+          {
+            "from": "app.action",
+            "specifier": "node:fs/promises"
+          },
+          {
+            "from": "provider.npm.Protocol",
+            "specifier": "semver"
+          },
+          {
+            "from": "provider.npm.Auth",
+            "specifier": "sigstore"
+          },
+          {
+            "from": "provider.openai.Package",
+            "specifier": "semver"
+          }
+        ],
+        "universalDependency": {
+          "specifier": "effect",
+          "version": "4.0.0-rc.108",
+          "ownership": "Required peer available to every module; each implementation's exact import list is qualified after emission."
+        },
+        "dynamicApplications": [
+          {
+            "from": "host.Application",
+            "rule": "One explicitly user-selected application URL; Plan data cannot supply an import."
+          }
+        ]
+      },
+      "resolvedSuccessors": [
+        {
+          "id": "app.action",
+          "owner": "action",
+          "path": "apps/action/src/launcher.ts"
+        },
+        {
+          "id": "app.application",
+          "owner": "self-release",
+          "path": "apps/self-release/src/application.ts"
+        },
+        {
+          "id": "app.cli",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/CommandLine.ts"
+        },
+        {
+          "id": "external.effect-build",
+          "external": "effect-build",
+          "version": "0.6.3"
+        },
+        {
+          "id": "external.effect-build-apple",
+          "external": "effect-build-apple",
+          "version": "0.6.3"
+        },
+        {
+          "id": "host.Bun",
+          "owner": "core",
+          "path": "packages/ts-release/src/Bun.ts"
+        },
+        {
+          "id": "host.Content",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/ContentStore.ts"
+        },
+        {
+          "id": "host.Credentials",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/Credentials.ts"
+        },
+        {
+          "id": "host.GitJournal",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/GitJournal.ts"
+        },
+        {
+          "id": "host.Node",
+          "owner": "core",
+          "path": "packages/ts-release/src/Node.ts"
+        },
+        {
+          "id": "host.Sqlite",
+          "owner": "core",
+          "path": "packages/ts-release/src/platform/SqliteJournal.ts"
+        },
+        {
+          "id": "kernel.Apple",
+          "owner": "core",
+          "path": "packages/ts-release/src/Apple.ts"
+        },
+        {
+          "id": "kernel.Bundle",
+          "owner": "core",
+          "path": "packages/ts-release/src/Bundle.ts"
+        },
+        {
+          "id": "kernel.Content",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/Content.ts"
+        },
+        {
+          "id": "kernel.EffectBuild",
+          "owner": "core",
+          "path": "packages/ts-release/src/EffectBuild.ts"
+        },
+        {
+          "id": "kernel.Git",
+          "owner": "core",
+          "path": "packages/ts-release/src/Git.ts"
+        },
+        {
+          "id": "kernel.Http",
+          "owner": "core",
+          "path": "packages/ts-release/src/Http.ts"
+        },
+        {
+          "id": "kernel.Identity",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/Identity.ts"
+        },
+        {
+          "id": "kernel.Journal",
+          "owner": "core",
+          "path": "packages/ts-release/src/Journal.ts"
+        },
+        {
+          "id": "kernel.Plan",
+          "owner": "core",
+          "path": "packages/ts-release/src/Plan.ts"
+        },
+        {
+          "id": "kernel.Provider",
+          "owner": "core",
+          "path": "packages/ts-release/src/Provider.ts"
+        },
+        {
+          "id": "kernel.Release",
+          "owner": "core",
+          "path": "packages/ts-release/src/Release.ts"
+        },
+        {
+          "id": "provider.github",
+          "owner": "provider.github",
+          "path": "packages/github/src/index.ts"
+        },
+        {
+          "id": "provider.homebrew",
+          "owner": "provider.catalog",
+          "path": "packages/catalog/src/homebrew/index.ts"
+        },
+        {
+          "id": "provider.mcp",
+          "owner": "provider.mcp",
+          "path": "packages/mcp/src/index.ts"
+        },
+        {
+          "id": "provider.npm",
+          "owner": "provider.npm",
+          "path": "packages/npm/src/index.ts"
+        },
+        {
+          "id": "provider.openai",
+          "owner": "provider.openai",
+          "path": "packages/openai/src/index.ts"
+        },
+        {
+          "id": "provider.scoop",
+          "owner": "provider.catalog",
+          "path": "packages/catalog/src/scoop/index.ts"
+        },
+        {
+          "id": "provider.warehouse",
+          "owner": "provider.pypi",
+          "path": "packages/pypi/src/index.ts"
+        }
+      ],
+      "metadata": {
+        "publicPackageJsonLines": 272,
+        "privatePackageJsonLines": 83,
+        "actionYamlLines": 22,
+        "tsconfigJsonLines": 160,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
         "authoredProductModuleFiles": 63,
@@ -9319,9 +12683,15 @@
     "GitCatalog.nativeHost is projected as makeGitCatalogHost only on node/bun entries; git remains provider-neutral.",
     "Node never reaches Bun or bun:sqlite. Bun shares common hosts through direct imports, never through the Node facade.",
     "Exports are explicit types/import conditions without wildcard or private-module access.",
-    "Provider package dependencies use the exact core cohort; Effect is one aligned required peer. Optional platform/Apple peers are reached only through explicit entry points.",
+    "Provider packages declare the kernel as a range peer (>=0.4.0 <0.5.0) and carry the kernel provider-contract literal, which the Host verifies before any store or provider effect; Effect-family peers are ranges satisfied by exact dev pins. Optional platform/Apple peers are reached only through explicit entry points.",
+    "The application supplies evaluator, stores, transports, caches and providers through one Host; the kernel ships defaults (history machine, SQLite, Git) and no registry, allowlist or configuration language.",
+    "Every cache or index is derived from the one authoritative journal; a derived value is authoritative only at a revision equal to a fresh read, and no derived state can mint a dispatch permit.",
+    "A preparation scope selects one immutable output: a second Satisfied observation with different canonical evidence is illegal at append and on read; publication operations may be re-observed freely.",
     "Default shipped stores are SQLite and Git. S3 model remains research; no AWS SDK dependency is introduced.",
-    "Production source and full package graphs remain proposed. Measured topology receipts qualified a smaller common fixture, not these full manifests."
+    "Production source and full package graphs remain proposed. Measured topology receipts qualified a smaller common fixture, not these full manifests.",
+    "Preparation selection is terminal while later native observations remain facts. Receipts and observations use distinct selection channels; preparations whose observation establishes final bytes classify submission receipts Pending.",
+    "MachineConstructor receives scope kind explicitly. The core checks all history and proposed append legality independently of the injected evaluator.",
+    "Undecodable committed receipts use fixed core-owned diagnostics. Unencodable receipt identity is null, never an invented digest."
   ],
   "qualification": {
     "stage": "Plan 009",

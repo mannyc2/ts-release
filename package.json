@@ -114,7 +114,12 @@
     "check:action": "bun run --cwd apps/ts-release-action check && bun run check:action-bundle && bun test test/core/action-cutover.test.ts test/action-command.test.ts test/action-launcher.test.ts test/action-artifact-bridge.test.ts",
     "check:portable": "bun run check:core && bun run check:app && bun run check:action",
     "check:release-candidate": "bun run build && bun run check:self-release-context && bun run check:self-release-prepare && bun run check:self-release-reproducibility && bun run check:self-release-readiness && bun run check:self-release-artifacts && bun run check:self-release-correction && bun run check:portable && bun run check:agents",
-    "cli": "bun run apps/release-ts/src/cli/main.ts"
+    "cli": "bun run apps/release-ts/src/cli/main.ts",
+    "check:architecture-program": "bun tools/architecture-lab/verify.mjs && bun tools/architecture-lab/project.ts --check && bun scripts/check-architecture-ancestry.ts && bun scripts/check-architecture-budget.ts",
+    "check:launch-evidence": "bun scripts/check-launch-evidence.ts",
+    "check:launch-closure": "bun scripts/check-launch-evidence.ts --require-closed",
+    "check:packed-action": "bun scripts/check-wave-prerequisite.ts W10",
+    "check:effect-build-integration": "bun scripts/check-wave-prerequisite.ts W08"
   },
   "dependencies": {
     "@effect/platform-node-shared": "4.0.0-rc.108",

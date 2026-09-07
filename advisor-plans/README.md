@@ -1,5 +1,12 @@
 # Advisor implementation plans
 
+The active implementation and release goal is [execution/GOAL.md](../docs/refactor/execution/GOAL.md).
+The current design authority and exact wave/outcome map are the
+[architecture handoff](../docs/refactor/architecture-program/handoff/README.md).
+Plan 005 research is complete; P0–P3 correct its packet before W01. Historical
+freeze-selector status below does not override this authority.
+
+
 Status: the portfolio is in an architecture reset. Plan 003 preserves and
 characterizes the current ts-release overlay; it does not land that overlay as
 the target architecture. Plan 004 independently preserves and qualifies the

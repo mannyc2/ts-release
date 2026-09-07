@@ -124,13 +124,13 @@ try {
     const missingExternal=failImport(withoutExternal,"@lab/external")
     const externalOutcomes=await runProvider(layout.consumer,coordinates,"@lab/external","external",prefix=>({endpoint,instanceId:prefix,value:"external"}),`${layout.layoutId}-p02`)
     assert.equal(layout.cliHashBeforeExternal,layout.built.find(p=>p.name==="@lab/host").tarball.sha256)
-    result.probes.push({layout:layout.layoutId,id:"P02",before:missingExternal,after:externalOutcomes,productPatch:patchSize({}, {"external.ts":source.own["external.ts"],"http-evidence.ts":source.own["http-evidence.ts"]}),coreAndCliUnchanged:true})
+    result.probes.push({layout:layout.layoutId,id:"P02",before:missingExternal,after:externalOutcomes,productPatch:patchSize({}, {"external.ts":source.own["external.ts"],...(source.own["http-evidence.ts"]?{"http-evidence.ts":source.own["http-evidence.ts"]}:{})}),coreAndCliUnchanged:true})
 
     const catalogSource=await readFile(join(here,"extensions/catalog.ts"),"utf8")
     const providerSpec=specs.find(p=>p.name===coordinates.providerPackages[0])
     const catalogPath=layout.layoutId==="T1"?"providers/catalog.ts":"catalog.ts"
     const catalogSpecifier=layout.layoutId==="T1"?"@lab/release/catalog":layout.layoutId==="T2"?"@lab/providers/catalog":"@lab/catalog"
-    const catalogSpec=layout.layoutId==="T3"?{name:"@lab/catalog",sources:{"index.ts":catalogSource,"http-evidence.ts":source.own["http-evidence.ts"]},exports:{".":"index"},dependencies:{effect:"4.0.0-rc.108",[coordinates.kernel]:"1.0.0-lab"}}:{...providerSpec,sources:{...providerSpec.sources,[catalogPath]:catalogSource},exports:{...providerSpec.exports,"./catalog":catalogPath.replace(/\.ts$/,"")}}
+    const catalogSpec=layout.layoutId==="T3"?{name:"@lab/catalog",sources:{"index.ts":catalogSource,...(source.own["http-evidence.ts"]?{"http-evidence.ts":source.own["http-evidence.ts"]}:{})},exports:{".":"index"},dependencies:{effect:"4.0.0-rc.108",[coordinates.kernel]:"1.0.0-lab"}}:{...providerSpec,sources:{...providerSpec.sources,[catalogPath]:catalogSource},exports:{...providerSpec.exports,"./catalog":catalogPath.replace(/\.ts$/,"")}}
     const missingCatalog=failImport(layout.consumer,catalogSpecifier)
     const addedCatalog=await variant(layout,"P03",layout.layoutId==="T3"?undefined:providerSpec,catalogSpec)
     result.probes.push({layout:layout.layoutId,id:"P03",before:missingCatalog,after:await runProvider(addedCatalog.consumer,coordinates,catalogSpecifier,"catalog",prefix=>({endpoint,channel:prefix,digest:"a".repeat(64)}),`${layout.layoutId}-p03`),productPatch:addedCatalog.patch,manifestChanged:addedCatalog.manifestChanged})

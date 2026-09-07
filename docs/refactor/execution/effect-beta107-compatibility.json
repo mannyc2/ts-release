@@ -1,0 +1,55 @@
+{
+  "observedAt": "2026-09-07T01:18:21.764037+00:00",
+  "consumer": "/tmp/ts-release-beta-compat",
+  "packages": [
+    {
+      "name": "effect",
+      "version": "4.0.0-beta.107",
+      "integrity": "sha512-OoBAv8eF+yanc+C6xhgEUnWeXUSHA6ynnscYqpkAY9GSnzZWystsIjBowVqCkLpHGlnRtdIqYT3wHwpOY6JDnQ=="
+    },
+    {
+      "name": "@effect/platform-node",
+      "version": "4.0.0-beta.107",
+      "integrity": "sha512-k+6YNbV4Ck0L6YXtlgkvEnuP5tlxWD8EeWOrpn46PDqbGEwt4ONpRltTwm3tn2cyBXD0i+2P11cUH/6sdFagTA=="
+    },
+    {
+      "name": "@effect/platform-bun",
+      "version": "4.0.0-beta.107",
+      "integrity": "sha512-nDKutCpgr+xHQX7tgN8Cq6JXtj96GqiElKaJ7AwAkZYl2q9f6onc/3aJgl6CyH/DlUoidw6YaxeU+UaTRmMN1g=="
+    },
+    {
+      "name": "@effect/platform-node-shared",
+      "version": "4.0.0-beta.107",
+      "integrity": "sha512-y6BqcRi86BfTJv+tvDrob4ozYVHxxlHYcn/zIQqZjXI9CvKnkgD6ng+38G1o45c4f2ucU+6HRI9POCmFdMoVGA=="
+    }
+  ],
+  "typecheckExit": 0,
+  "diagnostic": "",
+  "checks": [
+    {
+      "argv": [
+        "bun",
+        "dist/apple/adoption-fixture.js"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"schema\": \"adoption-experiment/1\",\n  \"checks\": [\n    \"real-finalizer-file-adoption\",\n    \"ordinary-file-delivery-mode-and-native-provenance-retained\",\n    \"real-tree-finalizer-and-verified-snapshot\",\n    \"root-directory-executable-modes\",\n    \"symlink-preserved-not-followed\",\n    \"shared-content-distinct-entries\",\n    \"exact-upstream-manifest-vector\",\n    \"finalization-severs-caller-array-alias\",\n    \"finalized-artifact-and-container-frozen\",\n    \"path-free-durable-roundtrip\",\n    \"strict-durable-bundle-load-and-real-tree-restore\",\n    \"durable-mode-tamper-rejected\",\n    \"durable-manifest-tamper-rejected\",\n    \"durable-escaping-symlink-rejected\",\n    \"durable-cyclic-symlink-rejected\",\n    \"durable-duplicate-entry-rejected\",\n    \"durable-duplicate-key-rejected\",\n    \"tree-capacity-overflow-rejected-before-filesystem-layer-or-allocation\",\n    \"actual-95971456-byte-selected-product-streaming-adoption-and-load\",\n    \"producer-file-tamper-rejected\",\n    \"producer-mutation-cannot-change-owned-content\",\n    \"reader-mutation-cannot-change-owned-content\",\n    \"duplicate-logical-identity-rejected\",\n    \"case-colliding-logical-identity-rejected\",\n    \"unsafe-logical-name-rejected\",\n    \"false-unbounded-byte-count-rejected\",\n    \"unbounded-decimal-codec-without-number-narrowing\",\n    \"tree-manifest-tamper-rejected\",\n    \"tree-entry-mode-forgery-rejected\",\n    \"tree-duplicate-entry-rejected\",\n    \"escaping-tree-symlink-rejected\",\n    \"producer-tree-tamper-rejected\",\n    \"tampered-growing-tree-read-stops-at-declared-budget\",\n    \"owned-store-tamper-rejected\"\n  ],\n  \"passed\": 34,\n  \"skippedChecks\": [],\n  \"selectedProduct\": {\n    \"available\": true,\n    \"path\": \"/mnt/models/dev/ts-release/.release/pypi-real-NrE6Nc/inputs/linux-x64\",\n    \"bytes\": \"95971456\",\n    \"sha256\": \"57a92b36ea735daf93fbbb4bdc1ab069b0c7ea402d07eb982b4fca99694d08a5\",\n    \"provenance\": \"Existing local .release artifact; this does not independently qualify its compiler or native signing lineage\"\n  },\n  \"nativeAppleAcceptance\": false,\n  \"source\": \"real emitted PR24 effect-build package\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "--input-type=module",
+        "-e",
+        "import('./dist/apple/adoption-fixture.js').then(m=>m.runAdoptionFixture()).then(r=>console.log(JSON.stringify(r)))"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"schema\":\"adoption-experiment/1\",\"checks\":[\"real-finalizer-file-adoption\",\"ordinary-file-delivery-mode-and-native-provenance-retained\",\"real-tree-finalizer-and-verified-snapshot\",\"root-directory-executable-modes\",\"symlink-preserved-not-followed\",\"shared-content-distinct-entries\",\"exact-upstream-manifest-vector\",\"finalization-severs-caller-array-alias\",\"finalized-artifact-and-container-frozen\",\"path-free-durable-roundtrip\",\"strict-durable-bundle-load-and-real-tree-restore\",\"durable-mode-tamper-rejected\",\"durable-manifest-tamper-rejected\",\"durable-escaping-symlink-rejected\",\"durable-cyclic-symlink-rejected\",\"durable-duplicate-entry-rejected\",\"durable-duplicate-key-rejected\",\"tree-capacity-overflow-rejected-before-filesystem-layer-or-allocation\",\"actual-95971456-byte-selected-product-streaming-adoption-and-load\",\"producer-file-tamper-rejected\",\"producer-mutation-cannot-change-owned-content\",\"reader-mutation-cannot-change-owned-content\",\"duplicate-logical-identity-rejected\",\"case-colliding-logical-identity-rejected\",\"unsafe-logical-name-rejected\",\"false-unbounded-byte-count-rejected\",\"unbounded-decimal-codec-without-number-narrowing\",\"tree-manifest-tamper-rejected\",\"tree-entry-mode-forgery-rejected\",\"tree-duplicate-entry-rejected\",\"escaping-tree-symlink-rejected\",\"producer-tree-tamper-rejected\",\"tampered-growing-tree-read-stops-at-declared-budget\",\"owned-store-tamper-rejected\"],\"passed\":34,\"skippedChecks\":[],\"selectedProduct\":{\"available\":true,\"path\":\"/mnt/models/dev/ts-release/.release/pypi-real-NrE6Nc/inputs/linux-x64\",\"bytes\":\"95971456\",\"sha256\":\"57a92b36ea735daf93fbbb4bdc1ab069b0c7ea402d07eb982b4fca99694d08a5\",\"provenance\":\"Existing local .release artifact; this does not independently qualify its compiler or native signing lineage\"},\"nativeAppleAcceptance\":false,\"source\":\"real emitted PR24 effect-build package\"}\n",
+      "stderr": ""
+    }
+  ],
+  "declarationRepair": {
+    "path": "src/effect-types.d.ts",
+    "source": "import \"effect/SchemaAST\"\n\ndeclare module \"effect/SchemaAST\" {\n  interface Sentinel {\n    readonly key: PropertyKey\n    readonly literal: LiteralValue | symbol\n  }\n}\n",
+    "basis": "Official beta.107 src/SchemaAST.ts:2515-2518; identical shape restored from stripInternal omission; no runtime files changed"
+  }
+}

@@ -1,4 +1,4 @@
-import { readdirSync, writeFileSync } from "node:fs"
+import { readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import ts from "typescript"
@@ -19,6 +19,9 @@ const file=ts.createSourceFile("identity.d.ts",outputs.get("identity.d.ts"),ts.S
 const identity=file.statements.filter(statement=>ts.isVariableStatement(statement)&&publicIdentity.has(statement.declarationList.declarations[0].name.getText(file))).map(statement=>statement.getText(file)).join("\n")
 const clean=text=>text.replace(/^import .*\n/gm,"").replace(/^export \{\};\n/gm,"")
 let contracts=outputs.get("contracts.d.ts").replace(/^export type Candidate = .*\n/m,"").replace(/^    readonly candidate: Candidate;\n/gm,"").replace(/    \/\*\* Research fault hook:[\s\S]*?readonly checkpoint\?:[^\n]+\n/m,"").replace('/** Research-only durable boundary. No published compatibility claim. */','/** Implementation must retain Schema.TaggedError and Schema.Class validation. */')
+contracts=contracts.replace(/^import type .*from "\.\/model.js";\n/m, "")
+const model=clean(outputs.get("model.d.ts"))
+const history=clean(outputs.get("m1-history.d.ts"))
 const git=clean(outputs.get("core-git.d.ts")).replace(/^export declare const assertTransportBinding:[^\n]+\n/m,"")
 const run=clean(outputs.get("run.d.ts")).replace(/^    readonly candidate: Candidate;\n/gm,"").replaceAll('import("./contracts.js").OperationReport','OperationReport')
 const header=`/**
@@ -31,6 +34,12 @@ const header=`/**
  * Implementation classes must remain Schema.Class / Schema.TaggedClass / tagged
  * errors, not interface casts. No legacy reader or migration export is proposed.
  */\n`
-const result=(header+contracts+"\n"+identity+"\n"+git+"\n"+run).replaceAll("LabError","ReleaseError").replaceAll("architecture-lab/","ts-release/").replaceAll('(planId: string,','(journalId: string,').replaceAll('(planId: string)', '(journalId: string)')
-writeFileSync(resolve(here,"../../../docs/refactor/architecture-program/handoff/kernel-api.d.ts"),result)
-console.log("Wrote compiler-derived proposed kernel-api.d.ts")
+const result=(header+contracts+"\n"+model+"\n"+history+"\n"+identity+"\n"+git+"\n"+run).replaceAll("LabError","ReleaseError").replaceAll("architecture-lab/","ts-release/").replaceAll("lab/provider/", "ts-release/provider/").replaceAll('(planId: string,','(journalId: string,').replaceAll('(planId: string)', '(journalId: string)')
+const http=header+outputs.get("http-evidence.d.ts").replaceAll("./contracts.js", "./kernel-api.js")
+for (const [name,text] of [["kernel-api.d.ts",result],["http-api.d.ts",http]]) {
+  const path=resolve(here,"../../../docs/refactor/architecture-program/handoff",name)
+  if(process.argv.includes("--check")) {
+    if(readFileSync(path,"utf8")!==text) throw Error(`Compiler-derived ${name} differs`)
+  } else writeFileSync(path,text)
+}
+console.log("Compiler-derived kernel and HTTP declarations "+(process.argv.includes("--check")?"verified":"written"))

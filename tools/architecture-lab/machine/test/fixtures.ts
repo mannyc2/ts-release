@@ -3,10 +3,17 @@ import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import { appendFileSync } from "node:fs"
 import {
-  Host, LabError, NoReplay, createOperation, createPlan, makeRequest, canonical,
-  type AppendResult, type HostShape, type JournalEvent, type JournalStore,
+  Host, LabError, NoReplay, PROVIDER_CONTRACT, createOperation, createPlan, historyMachine, makeRequest, canonical,
+  type AppendResult, type HostShape, type JournalEvent, type JournalStore, type MachineConstructor,
   type Observation, type Plan, type ProviderDefinition, type SendResult
 } from "../src/index.js"
+import { transitionMachine } from "../witnesses/m2-transition.js"
+import { memoizedMachine } from "../witnesses/memoized-machine.js"
+
+/** Evaluators under test: the kernel default (M1) plus two supplied through the public seam without kernel edits. */
+export const evaluators = { M1: historyMachine, M2: transitionMachine, M3: memoizedMachine(historyMachine) } as const satisfies Record<string, MachineConstructor>
+export type EvaluatorName = keyof typeof evaluators
+export const evaluatorNames = Object.keys(evaluators) as ReadonlyArray<EvaluatorName>
 
 export class FixtureIntent extends Schema.Class<FixtureIntent>("FixtureIntent")({
   coordinate: Schema.String, endpoint: Schema.String, content: Schema.String
@@ -56,7 +63,7 @@ export const providerFor = (
   observation?: () => Observation,
   definitionId = "fixture.http"
 ): ProviderDefinition => ({
-  definitionId, intentVersion: "1", intentCodec: FixtureIntent,
+  contract: PROVIDER_CONTRACT, definitionId, intentVersion: "1", intentCodec: FixtureIntent,
   receiptVersion: "http-fixture/1", receiptCodec: FixtureReceipt,
   classifyReceipt: () => "Satisfied",
   receiptCorresponds: (_operation, request, input) => {
@@ -79,14 +86,14 @@ export const providerFor = (
   } : {})
 })
 
-export const makeFixture = async (provider = providerFor()) => {
+export const makeFixture = async (provider = providerFor(), candidate: EvaluatorName = "M1") => {
   const operation = await Effect.runPromise(createOperation(provider, { coordinate: "package-1", endpoint: "https://fixture.invalid", content: "exact artifact bytes" }))
   const plan = await Effect.runPromise(createPlan("fixture-bundle-sha256", [operation]))
   const store = new MemoryJournal()
   const sends: Array<{ readonly eventCount: number; readonly endpoint: string; readonly body: string }> = []
   let serial = 0
   const host: HostShape = {
-    store, providers: [provider], now: () => 1000, uniqueId: () => `event-${++serial}`,
+    store, providers: [provider], now: () => 1000, uniqueId: () => `event-${++serial}`, machine: evaluators[candidate],
     transport: {
       send: (request) => Effect.gen(function*() {
         const before = yield* store.read(plan.journalId)

@@ -2,8 +2,9 @@ import { readFileSync } from "node:fs"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { SqliteJournal } from "../../storage/sqlite.js"
-import { LabError, parseCanonical, runRelease, sha256, type Candidate, type HostShape, type Plan } from "../src/index.js"
-import { FixtureIntent, providerFor, runWithHost, measureStore } from "./fixtures.js"
+import { LabError, parseCanonical, runRelease, sha256, type HostShape, type Plan } from "../src/index.js"
+import { FixtureIntent, evaluators, providerFor, runWithHost, measureStore, type EvaluatorName } from "./fixtures.js"
+import { CachingJournalStore } from "../witnesses/caching-store.js"
 
 const [planPath, databasePath, candidate, fault, observe] = process.argv.slice(2)
 if (!planPath || !databasePath || !candidate) throw new Error("Missing worker arguments")
@@ -25,8 +26,9 @@ const provider = {
   })
 }
 const store = new SqliteJournal(databasePath)
+const measured = measureStore(store, "sqlite-process")
 const host: HostShape = {
-  store: measureStore(store, "sqlite-process"), providers: [provider], now: () => Date.now(), uniqueId: () => crypto.randomUUID(),
+  store: process.env.LAB_CACHE ? new CachingJournalStore(measured) : measured, providers: [provider], now: () => Date.now(), uniqueId: () => crypto.randomUUID(), machine: evaluators[candidate as EvaluatorName],
   transport: {
     send: (request) => Effect.gen(function*() {
       const response = yield* Effect.tryPromise({
@@ -39,7 +41,7 @@ const host: HostShape = {
 }
 try {
   const result = await runWithHost(host, runRelease({
-    candidate: candidate as Candidate, plan, authorize: true, observe: observe === "true",
+    plan, authorize: true, observe: observe === "true",
     checkpoint: (stage) => stage === fault ? Effect.sync(() => process.exit(70)) : Effect.void
   }))
   process.stdout.write(JSON.stringify(result))

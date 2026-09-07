@@ -8,7 +8,7 @@
     "docs/refactor/architecture-program/handoff/layout.json",
     "docs/refactor/architecture-program/handoff/public-surface.json"
   ],
-  "architectureRule": "Consume central selected design/layout/version/marginal-policy fields. Null or unresolved maintainer choices prevent W01 cutover; this file selects no topology or budget waiver.",
+  "architectureRule": "Use selected T3c seven-package topology and unchanged 40-line TypeScript marginal policy in design.json. Dependency pins must satisfy current AGENTS.md and actual compatibility before W01 cutover. This file grants no acceptance or budget waiver.",
   "ancestry": {
     "required": "887a9fe2b35590f3088ffeee84f32722796e03ab",
     "forbidden": [
@@ -70,6 +70,10 @@
     {
       "path": "docs/refactor/architecture-program/handoff/migration.json.gz",
       "sha256": "b682c9046e1be6b693521c3d9d1ee5e07e32e43de2726be24dac06d717b1fb43"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/mainline-donors.json",
+      "sha256": "6c4bec5da5e475b1a8579ba445dd0923efaa7048e4223b4304788aff2616df4d"
     }
   ],
   "waves": [
@@ -93,7 +97,7 @@
         "E11",
         "E14"
       ],
-      "implementation": "Implement the agreed durable schemas/identity, full DAG validation, one M1 command owner and interpreter, host capture, global CAS scopes and report projection. Remove candidate/fault hooks; supply minimum owned-byte fixture for a real first slice. No provider switch or new persisted workflow.",
+      "implementation": "Implement the agreed durable schemas/identity, full DAG validation, one M1 command owner and interpreter, host capture, global CAS scopes and report projection. Remove candidate/fault hooks; supply minimum owned-byte fixture for a real first slice. No provider switch or new persisted workflow. Preserve a public replaceable evaluator with M1 default; core independently admits full history, fresh dispatch and append legality. Pass immutable inputs and preparation scope context. Terminal preparation selection survives later Pending/Absent facts; receipt and observation selections use distinct codec channels. Undecodable committed receipts retain only fixed bounded credential-free diagnostics and nullable canonical identity. External M2/cache/store witnesses remain outside production.",
       "passWitness": "Core-owned stable architecture assertions and exact construction/transition laws pass, including C01/C02 corrections, C08 endpoint-before-observation, all6event families, nativeerrors, request/receipt correspondence, risk, supersession, bounds and OS-process continuation. Actual external-provider/Apple/producer integration witnesses remain registered for W07/W08; generic kernel fixtures never close those outcomes.",
       "productionAcceptanceCommands": [
         [
@@ -406,7 +410,7 @@
         "E01",
         "E05"
       ],
-      "implementation": "Implement distinct Homebrew Formula and Scoop rendering laws over exact immutable downloads, then one Git object-set commit/CAS for1or2paths. No catalog-specific lifecycle owner.",
+      "implementation": "Implement distinct Homebrew Formula and Scoop rendering laws over exact immutable downloads, then one Git object-set commit/CAS for1or2paths. No catalog-specific lifecycle owner. Co-package Homebrew and Scoop in catalog with separate public subpaths; no OpenAI-only semver dependency.",
       "passWitness": "Exact4Homebrew/2Scoopcells render with native consumer selector/hash validation; real bare Git preserves unrelated paths, atomic1/2path commits and lost-ACK continuation. Native hosted install/run acceptance remains Plan009.",
       "productionAcceptanceCommands": [
         [
@@ -571,7 +575,7 @@
         "E19",
         "E20"
       ],
-      "implementation": "Integrate exact admitted effect-build package versions, final file/tree/tool values and owned durable Bundle; execute all selected producer groups and no hidden mutable paths. ApplePreparation/transient view shares journal with one finalPlan; submit/info/staple/assessment precede final adoption.",
+      "implementation": "Integrate exact admitted effect-build package versions, final file/tree/tool values and owned durable Bundle; execute all selected producer groups and no hidden mutable paths. ApplePreparation/transient view shares journal with one finalPlan; submit/info/staple/assessment precede final adoption. Use immutable producer results as explicit application inputs; pin providers and application for unfinished releases. Multiple preparations share one journal and feed the full final Bundle.",
       "passWitness": "All28 selected P/Q rows have exact original tool/native/bytes oracles; packed real packages with no workspace links, capacity/mode/symlink/mutation fixtures and fullsource-to-final binding pass. Native credentialed Apple/Windows and clean-host acceptance remain Plan009.",
       "productionAcceptanceCommands": [
         [
@@ -637,7 +641,7 @@
         "E01",
         "E05"
       ],
-      "implementation": "Implement official MCP manifest/protocol, OpenAI skills-only package, conditional marketplace update and strict public-submission handoff. Final package coordinates are explicit immutable inputs; human submission remains external.",
+      "implementation": "Implement official MCP manifest/protocol, OpenAI skills-only package, conditional marketplace update and strict public-submission handoff. Final package coordinates are explicit immutable inputs; human submission remains external. OpenAI is its own approved package; MCP remains separate. Sharing common Git delivery does not require co-packaging.",
       "passWitness": "Official schema/type/transport matrix, native MCP request/recovery fixtures, installable skills-only package, marketplace exactbytes/CAS, and5positive/3negative submission fixtures pass. No human portal success is inferred; real MCP/marketplace acceptance remains Plan009.",
       "productionAcceptanceCommands": [
         [
@@ -698,7 +702,7 @@
         "E08",
         "E09"
       ],
-      "implementation": "Wire selected CLI/default SQLite and explicitly configured Action sharedjournal, scoped application acquisition, exact public input/output API and intended self-release. Assemble one sequential localcandidate from W01\u2013W09; no provider convergence merge or oldCLIparity reconstruction.",
+      "implementation": "Wire selected CLI/default SQLite and explicitly configured Action sharedjournal, scoped application acquisition, exact public input/output API and intended self-release. Assemble one sequential localcandidate from W01\u2013W09; no provider convergence merge or oldCLIparity reconstruction. Deliver the shared bin from packages/ts-release, with thin apps/action and apps/self-release plus reconciled ts-release-agents ownership. Verify actual seven-package manifests, public imports, optional-peer absence, package-manager skew and kernel-first partial publication recovery.",
       "passWitness": "Actual packed NodeAction/BunCLI/library/external/upstream consumers, success/failure/interruption resource closure, zero-blind-resend process replacement and non-mutating full69-scope self-release intendedbyte plan pass. Candidate binds allsource/packages/graph/surface/cases/budget and remaining live obligations.",
       "productionAcceptanceCommands": [
         [
@@ -4884,5 +4888,6 @@
     "sha256": "dbfe1cb23f0dbc99c41ff8cc6cdc675546e9a57f6f4b5a27ef45e0cc3d898bb0",
     "disposition": "All old published exports/formats hard cut with explicit source/symbol dispositions; no inferred ancestry, consumer, payload or deployment proof."
   },
-  "unpatchedPeerEvidence": "E20: proposed selected surface is strict-consumer compatible with official unpatched Effectrc.108 and actual upstream0.6.3; consume central future coordinate/patch policy, keep current old product untouched."
+  "unpatchedPeerEvidence": "E20: proposed selected surface is strict-consumer compatible with official unpatched Effectrc.108 and actual upstream0.6.3; consume central future coordinate/patch policy, keep current old product untouched.",
+  "mainlineDonors": "docs/refactor/architecture-program/handoff/mainline-donors.json"
 }

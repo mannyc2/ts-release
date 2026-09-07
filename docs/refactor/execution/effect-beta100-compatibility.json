@@ -1,0 +1,29 @@
+{
+  "observedAt": "2026-09-06T21:23:15.519365+00:00",
+  "consumer": "/tmp/ts-release-beta-compat",
+  "packages": [
+    {
+      "name": "effect",
+      "version": "4.0.0-beta.100",
+      "integrity": "sha512-K4ed+BS3HyE+NoAZ8pJss2DpuK41mb856IO7ZlPfnwBXbq8oTtAAurrsVnwe2hzPamIuaZp/Pq4/xp9qORYv8Q=="
+    },
+    {
+      "name": "@effect/platform-node",
+      "version": "4.0.0-beta.100",
+      "integrity": "sha512-nH5xgxOLfPj5Bi0/o4OaDsR98Z59lHKGty+TDqckg7zRz6jry82hGW982NRPduzX0MJloDsGp/3rfeN4Hu7Keg=="
+    },
+    {
+      "name": "@effect/platform-bun",
+      "version": "4.0.0-beta.100",
+      "integrity": "sha512-UyH4bgzlV3aJOXbUr/3Zej3MBPe9TDrdkwStLDpVn9Yc6dKIKOJBd0G/8+OQhunGAuCL9a4SaNvwhkMJajahrg=="
+    },
+    {
+      "name": "@effect/platform-node-shared",
+      "version": "4.0.0-beta.100",
+      "integrity": "sha512-PMsCXQeK2wnlmnqGCc79oqK9CX8ipZvoHxAy/CRojMF+zHIluxh61L3pzWAYEbMb19Be4Bxgqs7gK2hiV8H8Pg=="
+    }
+  ],
+  "typecheckExit": 2,
+  "diagnostic": "src/apple/adoption-fixture.ts(44,41): error TS7006: Parameter 'e' implicitly has an 'any' type.\nsrc/apple/adoption-fixture.ts(45,41): error TS7006: Parameter 'e' implicitly has an 'any' type.\nsrc/apple/adoption-fixture.ts(48,44): error TS7006: Parameter 'e' implicitly has an 'any' type.\nsrc/apple/adoption-fixture.ts(50,39): error TS7006: Parameter 'e' implicitly has an 'any' type.\nsrc/apple/adoption.ts(8,43): error TS2339: Property 'TaggedError' does not exist on type 'typeof import(\"/tmp/ts-release-beta-compat/node_modules/effect/dist/Schema\", { with: { \"resolution-mode\": \"import\" } })'.\nsrc/apple/adoption.ts(68,19): error TS2488: Type 'AdoptionError' must have a '[Symbol.iterator]()' method that returns an iterator.\nsrc/apple/adoption.ts(68,37): error TS2554: Expected 0 arguments, but got 1.\nsrc/apple/adoption.ts(71,45): error TS2488: Type 'AdoptionError' must have a '[Symbol.iterator]()' method that returns an iterator.\nsrc/apple/adoption.ts(71,63): error TS2554: Expected 0 arguments, but got 1.\nsrc/apple/adoption.ts(81,53): error TS2488: Type 'AdoptionError' must have a '[Symbol.iterator]()' method that returns an iterator.\nsrc/apple/adoption.ts(81,71): error TS2554: Expected 0 arguments, but got 1.\nsrc/apple/adoption.ts(83,19): error TS2488: Type 'AdoptionError' must have a '[Symbol.iterator]()' method that returns an iterator.\nsrc/apple/adoption.ts(83,37): error TS2554: Expected 0 arguments, but got 1.\nsrc/apple/adoption.ts(115,58): error TS2488: Type 'AdoptionError' must have a '[Symbol.iterator]()' method that returns an iterator.\nsrc/apple/adoption.ts(115,76): error TS2554: Expected 0 arguments, but got 1.\nsrc/apple/adoption.ts(125,25): error TS2488: Type 'AdoptionError' must have a '[Symbol.iterator]()' method that returns an iterator.\nsrc/apple/adoption.ts(125,43): error TS2554: Expected 0 arguments, but got 1.\nsrc/apple/adoption.ts(140,40): error TS2488: Type 'AdoptionError' must have a '[Symbol.iterator]()' method that returns an iterator.\nsrc/apple/adoption.ts(140,58): error TS2554: Expected 0 arguments, but got 1.\nsrc/apple/bundle-codec.ts(7,63): error TS2554: Expected 0 arguments, but got 1.\nsrc/apple/bundle-codec.ts(8,87): error TS2554: Expected 0 arguments, but got 1.\nsrc/apple/bundle-codec.ts(64,62): error TS2488: Type 'AdoptionError' must have a '[Symbol.iterator]()' method that returns an iterator.\nsrc/apple/bundle-codec.ts(64,80): error TS2554: Expected 0 arguments, but got 1.\nsrc/apple/bundle-codec.ts(85,82): error TS2488: Type 'AdoptionError' must have a '[Symbol.iterator]()' method that returns an iterator.\nsrc/apple/bundle-codec.ts(85,100): error TS2554: Expected 0 arguments, but got 1.\nsrc/apple/content-owner.ts(9,49): error TS2554: Expected 0 arguments, but got 1.\n",
+  "checks": []
+}

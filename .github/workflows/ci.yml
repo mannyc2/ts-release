@@ -22,14 +22,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Admit Plan 184 historical evidence
-        run: |
-          git fetch --no-tags origin '+refs/pull/17/head:refs/codex/evidence/plan184'
-          test "$(git rev-parse refs/codex/evidence/plan184)" = 'f6ead4454ebb58122139fb6d424e1614be1af392'
-          git merge-base --is-ancestor 86d30feba02c904e196288c3e3bd1316ee9050af refs/codex/evidence/plan184
-          git merge-base --is-ancestor 5ee1be5e26ae2145c8e0f28a5ca73ddb7c6b8d6b refs/codex/evidence/plan184
-          git merge-base --is-ancestor 7690da13fc8c41f6fa6bb25442b60221e5a50f91 refs/codex/evidence/plan184
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -40,28 +32,17 @@ jobs:
         with:
           node-version: "22.22.2"
 
-      - name: Verify root isolation before install
-        run: |
-          test ! -e node_modules
-          printf '%s  %s\n' '5640ae3df79d9a378864c7345f7d78ca74056bf44e420756629d28ac15943cf9' 'bun.lock' | sha256sum --check
+      - name: Install
+        run: bun install --frozen-lockfile
 
-      - name: Install architecture program
-        run: bun install --cwd tools/architecture-program --frozen-lockfile
+      - name: Verify lockfile stability
+        run: git diff --exit-code -- bun.lock
 
-      - name: Check architecture schema
-        run: bun run check:architecture-schema
+      - name: Verify current architecture handoff and source tripwire
+        run: bun run check:architecture-program
 
-      - name: Check architecture inputs
-        run: bun run check:architecture-inputs
-
-      - name: Verify architecture program isolation
-        run: |
-          test ! -e node_modules
-          printf '%s  %s\n' '5640ae3df79d9a378864c7345f7d78ca74056bf44e420756629d28ac15943cf9' 'bun.lock' | sha256sum --check
-          test "$(node -p "require('./tools/architecture-program/node_modules/effect/package.json').version")" = '4.0.0-rc.108'
-          test "$(node -p "require('./tools/architecture-program/node_modules/@effect/vitest/package.json').version")" = '4.0.0-rc.108'
-          test "$(node -p "require('./tools/architecture-program/node_modules/vitest/package.json').version")" = '4.1.10'
-          git diff --exit-code -- bun.lock tools/architecture-program/bun.lock
+      - name: Verify exact selected-outcome ledger
+        run: bun run check:launch-evidence
 
   portable:
     name: Portable package checks (${{ matrix.os }})

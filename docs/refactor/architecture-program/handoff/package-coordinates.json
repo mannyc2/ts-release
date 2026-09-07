@@ -1,17 +1,11 @@
 {
   "format": "proposed-package-coordinates/1",
-  "observedAt": "2026-09-05T22:25:06.195Z",
+  "observedAt": "2026-09-06T20:53:57.354Z",
   "results": [
     {
       "name": "@mannyc1/ts-release",
       "status": 200,
       "observedPublicPackage": true,
-      "latest": "0.3.0",
-      "target030Present": true,
-      "repository": {
-        "type": "git",
-        "url": "git+https://github.com/mannyc2/ts-release.git"
-      },
       "versions": [
         "0.0.0",
         "0.0.1",
@@ -22,48 +16,120 @@
         "0.0.7",
         "0.2.2",
         "0.3.0"
-      ]
+      ],
+      "latest": "0.3.0"
     },
     {
       "name": "@mannyc1/ts-release-npm",
       "status": 404,
-      "observedPublicPackage": false
+      "observedPublicPackage": false,
+      "versions": [],
+      "latest": null
     },
     {
-      "name": "@mannyc1/ts-release-warehouse",
+      "name": "@mannyc1/ts-release-pypi",
       "status": 404,
-      "observedPublicPackage": false
+      "observedPublicPackage": false,
+      "versions": [],
+      "latest": null
     },
     {
       "name": "@mannyc1/ts-release-github",
       "status": 404,
-      "observedPublicPackage": false
+      "observedPublicPackage": false,
+      "versions": [],
+      "latest": null
     },
     {
-      "name": "@mannyc1/ts-release-homebrew",
+      "name": "@mannyc1/ts-release-catalog",
       "status": 404,
-      "observedPublicPackage": false
-    },
-    {
-      "name": "@mannyc1/ts-release-scoop",
-      "status": 404,
-      "observedPublicPackage": false
-    },
-    {
-      "name": "@mannyc1/ts-release-mcp",
-      "status": 404,
-      "observedPublicPackage": false
+      "observedPublicPackage": false,
+      "versions": [],
+      "latest": null
     },
     {
       "name": "@mannyc1/ts-release-openai",
       "status": 404,
-      "observedPublicPackage": false
+      "observedPublicPackage": false,
+      "versions": [],
+      "latest": null
     },
     {
-      "name": "@mannyc1/ts-release-providers",
+      "name": "@mannyc1/ts-release-mcp",
       "status": 404,
-      "observedPublicPackage": false
+      "observedPublicPackage": false,
+      "versions": [],
+      "latest": null
     }
   ],
-  "note": "Anonymous metadata GET only.404 is absence of a public package, not ownership or publication authorization."
+  "historicalObservation": {
+    "format": "proposed-package-coordinates/1",
+    "observedAt": "2026-09-05T22:25:06.195Z",
+    "results": [
+      {
+        "name": "@mannyc1/ts-release",
+        "status": 200,
+        "observedPublicPackage": true,
+        "latest": "0.3.0",
+        "target030Present": true,
+        "repository": {
+          "type": "git",
+          "url": "git+https://github.com/mannyc2/ts-release.git"
+        },
+        "versions": [
+          "0.0.0",
+          "0.0.1",
+          "0.0.2",
+          "0.0.3",
+          "0.0.5",
+          "0.0.6",
+          "0.0.7",
+          "0.2.2",
+          "0.3.0"
+        ]
+      },
+      {
+        "name": "@mannyc1/ts-release-npm",
+        "status": 404,
+        "observedPublicPackage": false
+      },
+      {
+        "name": "@mannyc1/ts-release-warehouse",
+        "status": 404,
+        "observedPublicPackage": false
+      },
+      {
+        "name": "@mannyc1/ts-release-github",
+        "status": 404,
+        "observedPublicPackage": false
+      },
+      {
+        "name": "@mannyc1/ts-release-homebrew",
+        "status": 404,
+        "observedPublicPackage": false
+      },
+      {
+        "name": "@mannyc1/ts-release-scoop",
+        "status": 404,
+        "observedPublicPackage": false
+      },
+      {
+        "name": "@mannyc1/ts-release-mcp",
+        "status": 404,
+        "observedPublicPackage": false
+      },
+      {
+        "name": "@mannyc1/ts-release-openai",
+        "status": 404,
+        "observedPublicPackage": false
+      },
+      {
+        "name": "@mannyc1/ts-release-providers",
+        "status": 404,
+        "observedPublicPackage": false
+      }
+    ],
+    "note": "Anonymous metadata GET only.404 is absence of a public package, not ownership or publication authorization."
+  },
+  "note": "Anonymous metadata GET only. A 404 proves public absence at observation time, not ownership. Recheck target version and permissions before any publication."
 }

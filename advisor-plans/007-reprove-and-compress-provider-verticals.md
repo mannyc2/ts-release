@@ -1,7 +1,12 @@
 # Plan 007: Re-prove and compress the pre-producer provider verticals
 
+> Current execution authority: [`docs/refactor/architecture-program/handoff/README.md`](../docs/refactor/architecture-program/handoff/README.md).
+> All lowercase contract filenames below resolve inside that handoff. Design and API changes regenerate the projections; the archived selector is not an active gate.
+> The 2026-09-06 task authorizes the full implementation and qualified publication. Historical per-group permission requirements are superseded by that authorization; exact candidate, destination, account and allowed effects still require a concrete reviewed execution record.
+
+
 > **Executor instructions:** Extend only the exact provider waves in Plan 005's
-> `WAVES.json`. Preserve provider-native protocol and recovery law while making
+> `waves.json`. Preserve provider-native protocol and recovery law while making
 > each admitted outcome traverse the Plan 006 machine. Generalize only a law
 > proved substitutable by at least two providers. Do not change packages,
 > public exports, machine states, durable formats, or migration dispositions.
@@ -32,7 +37,7 @@ MCP/OpenAI/Action and emits one combined local candidate.
 
 ## Target vertical law
 
-Each provider owner named by `SYSTEM.json` includes exactly:
+Each provider owner named by `contract.json` includes exactly:
 
 ```text
 Intent schema/version and definition identity
@@ -52,13 +57,13 @@ distinct Intents and operation IDs. Provider siblings do not import one another.
 
 ## Scope
 
-In scope, using exact `SURFACE.json` and `MIGRATION.json` targets rather than
+In scope, using exact `public-surface.json` and `migration.json` targets rather than
 prototype `src/publication/*` paths:
 
 - npm and Warehouse native publication;
 - GitHub Release and annotated-tag/ref operations;
 - conditional Git/Homebrew/Scoop catalogs;
-- core HTTP/Git transport mechanics only where `SYSTEM.json` assigns them;
+- core HTTP/Git transport mechanics only where `contract.json` assigns them;
 - packed external-provider composition and two-instance continuation;
 - stable executed-case manifests and semantic local-evidence binding;
 - per-wave migration deletion and marginal-cost accounting.
@@ -98,7 +103,7 @@ Prove multiple operations, per-file/asset partial progress, mutable and
 immutable remote facets, core and opaque provider effects, multiple instances,
 and strict native durable values.
 
-Every extracted common law must be present in `SYSTEM.json` with both concrete
+Every extracted common law must be present in `contract.json` with both concrete
 witnesses. Otherwise keep it provider-local.
 
 ## Step 3: Implement npm and Warehouse waves
@@ -157,7 +162,7 @@ closed merely because implementation moved.
 
 ## Step 7: Complete migration and compression accounting
 
-Resolve every Plan 007 `MIGRATION.json` row. Delete duplicated provider
+Resolve every Plan 007 `migration.json` row. Delete duplicated provider
 orchestration, schemas, operation lists, conversions, and helpers in the same
 wave. File splitting, generated tables, and moved Schemas count as relocation
 until a representation/branch/workflow actually disappears.
@@ -169,7 +174,7 @@ import/public-surface freeze.
 
 ## Verification
 
-Run the exact Plan 007 gate vector from `GATES.json`:
+Run the exact Plan 007 gate vector from `qualification.json`:
 
 - architecture/schema/surface/import/migration checks;
 - npm, Warehouse, GitHub, Git/catalog and external-provider protocol suites;

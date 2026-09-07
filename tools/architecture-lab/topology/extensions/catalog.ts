@@ -1,6 +1,5 @@
 import { Effect, Schema } from "effect"
-import { LabError, NoReplay, makeRequest, type ProviderDefinition } from "@lab/kernel"
-import { HttpReceipt, corresponds } from "./http-evidence.js"
+import { LabError, NoReplay, makeRequest, type ProviderDefinition , HttpReceipt, corresponds } from "@lab/kernel"
 
 export class CatalogIntent extends Schema.Class<CatalogIntent>("CatalogIntent")({
   endpoint: Schema.String, channel: Schema.String, digest: Schema.String

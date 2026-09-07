@@ -2,15 +2,15 @@
   "format": "machine-source-measurement/1",
   "method": "Actual source newline counts and TypeScript printer-normalized lines are separate diagnostics; neither is semantic-source/v3. Hash tree is SHA-256 of JSON sorted path/file-hash records. Extension LCS costs include both candidate edits and whole migration module; topologies separately count physical package/export/consumer edits.",
   "typescript": "6.0.3",
-  "treeSha256": "25f02ed605cb054888f5aad37f55f26732d0ad57fad595eafa1483502bebd435",
+  "treeSha256": "548a1a5b1a93af37cdef420e519c23640efa537d572f3ccf709292e07f6287ab",
   "files": [
     {
       "path": "contracts.ts",
-      "sha256": "ffd043b77f764397491834bbde371709a608c7dd6ba2bfebf39db2ea9d9c0b1c",
-      "utf8Bytes": 9068,
-      "physicalLines": 221,
-      "printerNormalizedLines": 248,
-      "astNodes": 1330,
+      "sha256": "eef0539fb3c2324fa113df538cbf34ea6ce2559c98ed6113925fb1079eb3f18e",
+      "utf8Bytes": 10145,
+      "physicalLines": 233,
+      "printerNormalizedLines": 260,
+      "astNodes": 1410,
       "branches": 0
     },
     {
@@ -23,140 +23,74 @@
       "branches": 14
     },
     {
-      "path": "identity.ts",
-      "sha256": "1aed5715192386ae13a110f135f630d34320b74eeb1129eac3c2f3eed0fff871",
-      "utf8Bytes": 17408,
-      "physicalLines": 270,
-      "printerNormalizedLines": 295,
-      "astNodes": 2928,
-      "branches": 59
-    },
-    {
-      "path": "index.ts",
-      "sha256": "f42aa594aeb0814f44d7e885f64a6db9dee51f7dc611deac60c2feae46a4f58e",
-      "utf8Bytes": 547,
-      "physicalLines": 10,
-      "printerNormalizedLines": 6,
-      "astNodes": 65,
+      "path": "http-evidence.ts",
+      "sha256": "9897e521b873a556708d041a4439ea3e14775b9ffedfd469efaa757c96b6949b",
+      "utf8Bytes": 696,
+      "physicalLines": 13,
+      "printerNormalizedLines": 13,
+      "astNodes": 125,
       "branches": 0
     },
     {
-      "path": "m1-history.ts",
-      "sha256": "06b99aeafe591e44763c11bd233ee179d32b1151f6bc229890da29bedb62720c",
-      "utf8Bytes": 7926,
-      "physicalLines": 105,
-      "printerNormalizedLines": 119,
-      "astNodes": 1516,
-      "branches": 40
+      "path": "identity.ts",
+      "sha256": "af043704cdf372c972cfea45fffec85d13fd88a98696516814b3b669f892697d",
+      "utf8Bytes": 19192,
+      "physicalLines": 292,
+      "printerNormalizedLines": 321,
+      "astNodes": 3190,
+      "branches": 67
     },
     {
-      "path": "m2-transition.ts",
-      "sha256": "3ebc61b0d800986d2cfbd1d894793ef1536616009b85e792fb80ac5b828416f0",
-      "utf8Bytes": 9547,
-      "physicalLines": 154,
-      "printerNormalizedLines": 187,
-      "astNodes": 1678,
-      "branches": 38
+      "path": "index.ts",
+      "sha256": "9c5aa0ca0c55702388688fcf5fbe548a87c0f7cf90acf283c8f564c32c07b6d6",
+      "utf8Bytes": 690,
+      "physicalLines": 11,
+      "printerNormalizedLines": 7,
+      "astNodes": 82,
+      "branches": 0
+    },
+    {
+      "path": "laws.ts",
+      "sha256": "2b21b41a5c50d820d5b52453b25c31b7700c7b36794220a0a2b125b5804e4820",
+      "utf8Bytes": 7741,
+      "physicalLines": 87,
+      "printerNormalizedLines": 105,
+      "astNodes": 1440,
+      "branches": 41
+    },
+    {
+      "path": "m1-history.ts",
+      "sha256": "a9cd364a74a6f2ca11348045efc3919e88f804023d93def8576a4001241955a1",
+      "utf8Bytes": 1685,
+      "physicalLines": 30,
+      "printerNormalizedLines": 26,
+      "astNodes": 284,
+      "branches": 0
     },
     {
       "path": "model.ts",
-      "sha256": "e164be3adcc3b8f04a947b5f7f670550bb1c225e5b5b0140cb9715bb91e9c89d",
-      "utf8Bytes": 1317,
+      "sha256": "c76ad8f4a89f2c3fb5fd6c38af9a9dcfa36f58b79188e481a8ffbd3aa9fa6001",
+      "utf8Bytes": 1351,
       "physicalLines": 23,
       "printerNormalizedLines": 27,
-      "astNodes": 214,
+      "astNodes": 224,
       "branches": 0
     },
     {
       "path": "run.ts",
-      "sha256": "7f4d6ce57fdc3df93530b96255152511cea060c1352d359f98fc98d741bbc7b2",
-      "utf8Bytes": 15848,
-      "physicalLines": 235,
-      "printerNormalizedLines": 263,
-      "astNodes": 2807,
-      "branches": 43
+      "sha256": "21881bdf3811cf5cdf5ca78d944d8ef1be9ed2805384ab694f1c63220da949fd",
+      "utf8Bytes": 17756,
+      "physicalLines": 264,
+      "printerNormalizedLines": 301,
+      "astNodes": 3136,
+      "branches": 48
     }
   ],
   "totals": {
-    "physicalLines": 1089,
-    "printerNormalizedLines": 1230,
-    "utf8Bytes": 66422
+    "physicalLines": 1024,
+    "printerNormalizedLines": 1145,
+    "utf8Bytes": 64017
   },
-  "extensions": [
-    {
-      "id": "P04",
-      "beforeTreeSha256": "cab85ab7f7aa86acab3a288ca4897e168cc55bb0cb5487be7e1870d652dc9afc",
-      "afterTreeSha256": "25f02ed605cb054888f5aad37f55f26732d0ad57fad595eafa1483502bebd435",
-      "changedFiles": [
-        {
-          "path": "contracts.ts",
-          "added": 2,
-          "removed": 0
-        },
-        {
-          "path": "identity.ts",
-          "added": 2,
-          "removed": 1
-        },
-        {
-          "path": "m1-history.ts",
-          "added": 2,
-          "removed": 1
-        },
-        {
-          "path": "m2-transition.ts",
-          "added": 4,
-          "removed": 3
-        },
-        {
-          "path": "run.ts",
-          "added": 2,
-          "removed": 1
-        }
-      ],
-      "physicalAdded": 12,
-      "physicalRemoved": 6,
-      "patchSha256": "a353691766491aa69cfc1fa795c16224830e2ef243a35de22b9898e0a5257f02"
-    },
-    {
-      "id": "P09",
-      "beforeTreeSha256": "16789ff91f32ffed1a4900643e116e815b3c671f3cf2d3817ed35c6110740b81",
-      "afterTreeSha256": "20eb4b595c9b99ece7e9100cddd830b5c48f34a50cd0e12fc5fd72884d453258",
-      "changedFiles": [
-        {
-          "path": "contracts.ts",
-          "added": 1,
-          "removed": 1
-        },
-        {
-          "path": "index.ts",
-          "added": 2,
-          "removed": 0
-        },
-        {
-          "path": "m1-history.ts",
-          "added": 0,
-          "removed": 1
-        },
-        {
-          "path": "m2-transition.ts",
-          "added": 0,
-          "removed": 1
-        },
-        {
-          "path": "run.ts",
-          "added": 2,
-          "removed": 2
-        },
-        {
-          "path": "recovery-migration.ts",
-          "added": 42,
-          "removed": 0
-        }
-      ],
-      "physicalAdded": 47,
-      "physicalRemoved": 5,
-      "patchSha256": "99b798dac0777d74b9130f38948fe08ce24cce30e55a8ad8d71d1ad6ea6495af"
-    }
-  ]
+  "extensions": [],
+  "extensionQualification": "Source-only recount after reviewed kernel law amendments. Extension results are measured separately against the preserved original slice plus HTTP helper relocation; no current production extension pass is claimed."
 }

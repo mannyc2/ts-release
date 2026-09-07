@@ -1,0 +1,420 @@
+{
+  "format": "ts-release/launch-evidence/1",
+  "wavesSha256": "f3ed98ebd587963d0e3ee2d8390c2ab7e04eae17bf11125b96d757cadd129082",
+  "outcomes": [
+    {
+      "id": "K01",
+      "oracleSha256": "e4392a2f8e3da607edb7723dc95cabee118f2c93dea707931c752999bd478828",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "K02",
+      "oracleSha256": "3b61e278ef89b65e29c90eef8dd4a0ee324e203f3a882ea566d05a397bd7eeac",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "K03",
+      "oracleSha256": "f0e8023ccada9fd7752689d5321a250e3e3bc53de0c66c74bfe1105b33b6ea20",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D01-01",
+      "oracleSha256": "f689cb627c903387ac51605200cc2add31eacb4494a2b0261f44b53da63b3d38",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D01-02",
+      "oracleSha256": "4838f739af58ce52e6fd9fef4a90cee849d6acfa3eee912bd1ef8e43239fb140",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D01-03",
+      "oracleSha256": "d78464f2d53fd672e41daa65eb6cea741398c4612962b15b798079057b11d728",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D01-04",
+      "oracleSha256": "087b111d4e57bb77cc9dcf75c02ac5e60e416b070e8eb69c0407eb65e1575ad0",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D01-05",
+      "oracleSha256": "3adebacfb3a754e0cac7372f66d6fec0895bbbf5ce850072ecf1c6dc37b90ab5",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D01-06",
+      "oracleSha256": "2ea7721a7faecd00ddb6661f994c152b4e26c3ba7e17e4958b2dfd86ffb9d34a",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D02-01",
+      "oracleSha256": "14ae803cb00b9e7584ce15cb830a7e0a19a40a1b50445632ea5048ce1f58221e",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D02-02",
+      "oracleSha256": "5253fe9a1f1bacd6b22cb22a7fbaed02993cdf2fe997b45416b459fb460855ec",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D02-03",
+      "oracleSha256": "7ecdb9d967e99631d8067d4a898ac8658ea0eac50544d69046f81c9cb00e20eb",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D02-04",
+      "oracleSha256": "6316a6ce49d0a7ad83d404bfdae058a56f58f16791eba7f5d2c9b7e26a8acf03",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D02-05",
+      "oracleSha256": "d76ee9f92ded4fdfafdf4434be9ea6fe6909818f47afe797644578f9877bda3e",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D02-06",
+      "oracleSha256": "3fc93f7a52d453f6c8cee6ce91b9f201cea292e95305e46db36f912be12aac23",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D02-07",
+      "oracleSha256": "e0b49cfd87ec0a436cf722d7d927a7f1298f0bcdf5f99736b60df87bd2e6b17b",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D03-01",
+      "oracleSha256": "65e74904f41d3806f9ab696cee7d51af7e89f94ec9b4e918be3e928f6e7f5036",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D03-02",
+      "oracleSha256": "5de7b88abd5f618d901e9c43e3aa53b7cc00c15762a96512dd606b7a612b2c0d",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D03-03",
+      "oracleSha256": "9f9ca9ba4f18c7f98e88b57ea8836af013b4fb557656501650e582520f8bba33",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D03-04",
+      "oracleSha256": "eea91c2d63d65b99fcb2a8d069c86596cdb8c3e522bcf68530879e5b6e90e390",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D03-05",
+      "oracleSha256": "d54f387a19d22ca4ef545afaabe84460ada857e72cd842146527b9a6c3e87d5f",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D03-06",
+      "oracleSha256": "9b615d767ec935351b77cab64a2d6c0fd319ba36f95fe06176a801ff80477907",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D04-01",
+      "oracleSha256": "d357681e5ebb3680b6849240b47a3677a671324a323a94c0dab2746c0ed5faf0",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D04-02",
+      "oracleSha256": "1418d2fe2ce8f6a441c0ecbffd5bdd0dcfebba48966de66256bc647de4ffbc9b",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D04-03",
+      "oracleSha256": "bc48b0a1f74acb50db6458f63e3d462286ba86d9d20ac619a6e45ab940c1e44b",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D05-01",
+      "oracleSha256": "6dce71003cc4bf82f2c35df8a7506fc36caefedda204f15abce145976f10897b",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D05-02",
+      "oracleSha256": "6aa0381839d177ebc7e6c446da7fdd422e555dd249cc25e576bae36b71eb3d1b",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D05-03",
+      "oracleSha256": "6c0874fb1ddd14c9961b0f7d87835b00848cd4e83e90e708cd3ced2abe0c73b4",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D06-01",
+      "oracleSha256": "57bc2dfeb230df2e13849add3ee58e03dabee02d5dee27c80264970865e7d185",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D06-02",
+      "oracleSha256": "5efec2985d08ce095e514830940a7c59a449602b73e2a590a262b715553e67be",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D06-03",
+      "oracleSha256": "69a89ea78f52b68b4e8236c6175bbbae80791214f6418a1d436818ae8f1e5d20",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D06-04",
+      "oracleSha256": "02b23891ddb7a2c34fa02744f8a95d091f2895ed10d4f7f56ac68c28ddf6773f",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D06-05",
+      "oracleSha256": "513196403ba2f135a8842f7f6792e21fba70b8b7c88d617e5601632134f7ee7c",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D06-06",
+      "oracleSha256": "6482cbdb7ef159b0b905bcb70352e46d7fac633136cb33c90a97c1935597bd5a",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D06-07",
+      "oracleSha256": "c249a23e182d46218ab918897cbe3fcb35cd2535fede9f571d11e0b84a21c086",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D07-01",
+      "oracleSha256": "718a2b23bcfed21c7913e4a11fab01aa124bd159725723b381aa4a3f1cc2a576",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D07-02",
+      "oracleSha256": "deea65c2357ae4d536da393eb7cbe25fde7a1ec7fcc0bf79334aaa36f0c37dd8",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "D07-03",
+      "oracleSha256": "2270fb816925d3409646be9ba5c2f5d9e8228aa73d37b349243020554e4a5318",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P01-01",
+      "oracleSha256": "208501e553644f4a42af8e1d101715f211762fefe273363e82d9fde57679a0b4",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P01-02",
+      "oracleSha256": "cc3f6016f1b7244161b853abb6e9200fbc8bf1e8a3446147169322b7b09db9c8",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P01-03",
+      "oracleSha256": "86a7ed8cecc174975a1bb0c9ef35e5da7af42d39d7d952f9e6cf6399e54e46a8",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P01-04",
+      "oracleSha256": "99906cdd1673b68a52490926d368aed7b1122ec291f56c762b1483e0e8491583",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P02-01",
+      "oracleSha256": "90189d18493464cf43d78c9667d349afbc181178c0f3a30540d9367ba61393cf",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P02-02",
+      "oracleSha256": "c036d50f8cea2dc2a5c516132dce6fe2a58d05c0a1137077c2fbc85f6f5952ab",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P02-03",
+      "oracleSha256": "e7829f389ed463fb4b84c7053dfec39a381c4eb9955d2cdf61e8ecfcf96cdec7",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P03-01",
+      "oracleSha256": "929930ca7a2e9c0bce114abe8e1e79233640631d49bd937f3d4b5347ba235d04",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P03-02",
+      "oracleSha256": "825ad8d40277d020088f92378cd53a4d9162abc2d35d253fecc42f9c47a843cf",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P04-01",
+      "oracleSha256": "22d732c186809c867a5d7323f9d2bc96241724dce8ee00a69b1d93a69000c0af",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P05-01",
+      "oracleSha256": "9f3d6a9177af8f2cb23d13a4c7a17de5a1430d2d10ac22e99805c4d06af694f8",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P05-02",
+      "oracleSha256": "0ad7d49ffbe4fe5f4b2464f5362a23835e2fbdaac0a71935645ed609827ea25e",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P05-03",
+      "oracleSha256": "86bc771f496137273056589596a9fdf749550639a752011b0295b9f885d3b5eb",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P05-05",
+      "oracleSha256": "d13bfd1eba753315a586b5027f71dbb7b6c497a806495fb037df07d7a4c2f0f6",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P05-06",
+      "oracleSha256": "81c129f553881877a74f794c8dd657a0eed7ae667805465078814d9c35fc5662",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P06-01",
+      "oracleSha256": "76f82c55b8483da9e75a8f1576c783305232b330881826ad998bf885f1c7eb88",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P07-01",
+      "oracleSha256": "ac362f6e5009c69bf2023c4fcd866544bf55e77dbd0acaa8d33aafdc02760ffe",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P08-01",
+      "oracleSha256": "2022d67e9c6b2efaee7f125804f382ecc44ac6894fc270f5a0d1e37d24b52a33",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P09-01",
+      "oracleSha256": "714a57d209b3d2773239c67a6eec78c89be2596d27e9fe18c3db492c4631a193",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P09-02",
+      "oracleSha256": "1257da798ce4674228e4d58aa7a2d7caa67031a10315eea1e710748834d0cea0",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P09-03",
+      "oracleSha256": "d27bd76b509c7954faefd167f6da58c99f42c30cd830e9abdea3e18ff7dc99c5",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P10-01",
+      "oracleSha256": "84f1bdf3312f7c3b54960f00e7b30a5da73a478c1182ad45ccb7be190a4c1f9e",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P10-02",
+      "oracleSha256": "ce153ad74cc944fb6de973f226e02c1a11f90b5bee4c9b0a8b6a0765bf90bc71",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P10-03",
+      "oracleSha256": "359b815a983b3e2a6e409c6bda4940ba6dae4634d87e40406fc94e9d1644d903",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "P10-04",
+      "oracleSha256": "e7b9dbeb77ba86d1a9494f5cebe0e1d40df3281ade35c449823c98a3ef83b892",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "Q01",
+      "oracleSha256": "6f77d54ce36cfc1a15214632df939d79e9a186bddce79834708426dcd61ffce4",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "Q02-01",
+      "oracleSha256": "0eac17923f537b1579e42074a216704634a194c3d7bed3e3244283cf7eaa328c",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "Q02-02",
+      "oracleSha256": "f7895d6a79da93a8d06542d9faa9c37fca31be25d74f6bee4b96208877524b23",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "AI01",
+      "oracleSha256": "60011c50a03bd37a4648a01b14eaa76191f1706a2a3a09dd85692d186a443e29",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "AI02",
+      "oracleSha256": "eb0fb1f7b844f00678de7da94e00b502a5381f4733e74f777f5fdca1a6cbbb0c",
+      "status": "open",
+      "records": []
+    },
+    {
+      "id": "AI03",
+      "oracleSha256": "aad6a1c3858ded09734d786168b425a86e9913ff82002b2891e9cbe8d3a86fe2",
+      "status": "open",
+      "records": []
+    }
+  ]
+}

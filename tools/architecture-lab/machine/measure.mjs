@@ -30,11 +30,12 @@ function changes(before,after) {
 }
 const files=Object.entries(sources).map(([path,text])=>metrics(path,text))
 const extensions=[]
-for(const id of ["P04","P09"]) {
+for(const id of process.argv.includes("--source-only") ? [] : ["P04","P09"]) {
   const before=await machineVariant(id,"before",sources),after=await machineVariant(id,"after",sources)
   const patch=changes(before,after)
   extensions.push({id,beforeTreeSha256:treeHash(before),afterTreeSha256:treeHash(after),changedFiles:patch,physicalAdded:patch.reduce((n,file)=>n+file.added,0),physicalRemoved:patch.reduce((n,file)=>n+file.removed,0),patchSha256:sha256(JSON.stringify(patch.map(file=>({...file,before:before[file.path]??null,after:after[file.path]??null}))))})
 }
 const output={format:"machine-source-measurement/1",method:"Actual source newline counts and TypeScript printer-normalized lines are separate diagnostics; neither is semantic-source/v3. Hash tree is SHA-256 of JSON sorted path/file-hash records. Extension LCS costs include both candidate edits and whole migration module; topologies separately count physical package/export/consumer edits.",typescript:ts.version,treeSha256:treeHash(sources),files,totals:{physicalLines:files.reduce((n,file)=>n+file.physicalLines,0),printerNormalizedLines:files.reduce((n,file)=>n+file.printerNormalizedLines,0),utf8Bytes:files.reduce((n,file)=>n+file.utf8Bytes,0)},extensions}
+if (process.argv.includes("--source-only")) output.extensionQualification = "Source-only recount after reviewed kernel law amendments. Extension results are measured separately against the preserved original slice plus HTTP helper relocation; no current production extension pass is claimed."
 await writeFile(join(here,"source-metrics.json"),JSON.stringify(output,null,2)+"\n")
 console.log(JSON.stringify(output,null,2))

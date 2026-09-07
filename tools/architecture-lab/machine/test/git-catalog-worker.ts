@@ -12,6 +12,6 @@ const bindings = plan.operations.map((operation, index) => binding(decodeIntent(
 const store = new SqliteJournal(join(root, "journal.sqlite"))
 try {
   const report = await runWithHost({ store, providers: [catalog], transport: makeCoreGitTransport(bindings), now: Date.now, uniqueId: () => crypto.randomUUID() },
-    runRelease({ candidate: "M1", plan, authorize: true, ...(mode === "lost" ? { maxDispatches: 1 } : {}) }))
+    runRelease({ plan, authorize: true, ...(mode === "lost" ? { maxDispatches: 1 } : {}) }))
   console.log(JSON.stringify(report))
 } finally { store.close() }

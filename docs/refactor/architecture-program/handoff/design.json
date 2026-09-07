@@ -126,7 +126,8 @@
     "contentOwner": "docs/refactor/architecture-program/handoff/adoption-api/content-owner.d.ts",
     "apple": "docs/refactor/architecture-program/handoff/apple-api.d.ts",
     "checksum": "docs/refactor/architecture-program/handoff/checksum-api.d.ts",
-    "http": "docs/refactor/architecture-program/handoff/http-api.d.ts"
+    "http": "docs/refactor/architecture-program/handoff/http-api.d.ts",
+    "application": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts"
   },
   "modules": [
     {
@@ -206,7 +207,8 @@
       "dependencies": [
         "kernel.Model",
         "kernel.Provider",
-        "kernel.Journal"
+        "kernel.Journal",
+        "kernel.GitAuthority"
       ]
     },
     {
@@ -253,7 +255,8 @@
       "dependencies": [
         "kernel.ArtifactModel",
         "kernel.Content",
-        "kernel.Identity"
+        "kernel.Identity",
+        "kernel.BundleFinalize"
       ]
     },
     {
@@ -263,7 +266,8 @@
       "zone": "neutral",
       "dependencies": [
         "kernel.ArtifactModel",
-        "kernel.Identity"
+        "kernel.Identity",
+        "kernel.TreeManifest"
       ]
     },
     {
@@ -535,13 +539,17 @@
       "dependencies": [
         "kernel.Host",
         "kernel.Release",
-        "kernel.Error"
+        "kernel.Error",
+        "kernel.Report",
+        "kernel.ArtifactModel",
+        "kernel.Model"
       ],
       "externalImports": [
         "node:path",
         "node:url"
       ],
-      "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import."
+      "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import.",
+      "purpose": "Trusted scoped application loader admits owned Bundle and immutable Plan before execution and emits the complete derived FinalizedReport. Actual implementation replaces the counts-only proposal."
     },
     {
       "id": "host.Node",
@@ -590,7 +598,8 @@
         "kernel.Host",
         "kernel.GitAuthority",
         "kernel.Release",
-        "kernel.Decision"
+        "kernel.Decision",
+        "kernel.EffectTypes"
       ]
     },
     {
@@ -647,6 +656,45 @@
         "provider.mcp",
         "provider.openai"
       ]
+    },
+    {
+      "id": "kernel.EffectTypes",
+      "owner": "core",
+      "path": "src/internal/EffectTypes.ts",
+      "zone": "neutral",
+      "dependencies": [],
+      "externalImports": [
+        "effect/SchemaAST"
+      ],
+      "purpose": "Owned exact upstream beta declaration repair; erased from runtime."
+    },
+    {
+      "id": "kernel.TreeManifest",
+      "owner": "core",
+      "path": "src/internal/TreeManifest.ts",
+      "zone": "neutral",
+      "dependencies": [
+        "kernel.ArtifactModel",
+        "kernel.Identity"
+      ],
+      "purpose": "One shared native ordered tree identity and filesystem-order graph admission."
+    },
+    {
+      "id": "kernel.Report",
+      "owner": "core",
+      "path": "src/internal/FinalizedReport.ts",
+      "zone": "neutral",
+      "dependencies": [
+        "kernel.ArtifactModel",
+        "kernel.BundleCodec",
+        "kernel.BundleFinalize",
+        "kernel.Host",
+        "kernel.Model",
+        "kernel.Error",
+        "kernel.Identity",
+        "kernel.Plan"
+      ],
+      "purpose": "K01 complete derived report over canonical Bundle, publication/preparation Plans and global Journal; no dispatch authority."
     }
   ],
   "providers": [
@@ -1052,5 +1100,11 @@
     "owner": "packages/ts-release/src/internal/EffectTypes.ts",
     "basis": "Official effect@4.0.0-beta.107 src/SchemaAST.ts:2515-2518: stripInternal removes Sentinel while Schema.d.ts still references it. Restore the identical readonly shape through a type-only export. Runtime packages are unmodified.",
     "consumerGate": "Every shipped public declaration entrypoint must reach the repair in a fresh strict packed consumer; future peer expansion needs duplicate-declaration and runtime checks."
+  },
+  "productionProjection": {
+    "kernelAuthority": "production-api/index.d.ts",
+    "emission": "production-api/emission.json",
+    "generator": "scripts/project-production-api.ts",
+    "scope": "Actual emitted kernel declarations replace the research shape; remaining unimplemented authorities stay proposed. New internal tree/type/report owners correct concrete production admission and K01 gaps, without new packages or public entrypoints."
   }
 }

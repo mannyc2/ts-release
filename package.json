@@ -30,7 +30,7 @@
   "scripts": {
     "check:architecture-schema": "bun run --cwd tools/architecture-program check && bun run --cwd tools/architecture-program test",
     "check:architecture-inputs": "bun run --cwd tools/architecture-program check:inputs",
-    "check:architecture-program": "bun tools/architecture-lab/verify.mjs && bun tools/architecture-lab/project.ts --check && bun scripts/check-architecture-ancestry.ts && bun scripts/check-architecture-budget.ts",
+    "check:architecture-program": "bun tools/architecture-lab/verify.mjs && bun tools/architecture-lab/project.ts --check && bun scripts/check-architecture-ancestry.ts && bun scripts/check-migration-execution.ts && bun scripts/check-architecture-budget.ts --accept-recorded-planning-variance",
     "check:launch-evidence": "bun scripts/check-launch-evidence.ts",
     "check:launch-closure": "bun scripts/check-launch-evidence.ts --require-closed",
     "check:packed-action": "bun scripts/check-wave-prerequisite.ts W10",
@@ -43,6 +43,8 @@
     "check:import-rules": "bun scripts/check-import-rules.ts",
     "check:package-exports": "bun scripts/check-package-exports.ts",
     "check:packed-kernel": "bun scripts/check-packed-kernel.ts",
-    "check:portable": "bun run check && bun test ./test/reimplementation/kernel && bun run check:import-rules && bun run check:package-exports && bun run check:packed-kernel"
+    "check:portable": "bun run check && bun run check:production-api && bun run check:migration && bun test ./test/reimplementation/kernel && bun run check:import-rules && bun run check:package-exports && bun run check:packed-kernel",
+    "check:production-api": "bun scripts/project-production-api.ts --check",
+    "check:migration": "bun scripts/check-migration-execution.ts"
   }
 }

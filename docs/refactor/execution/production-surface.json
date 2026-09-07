@@ -167,29 +167,41 @@
     {
       "specifier": "@mannyc1/ts-release/bun",
       "source": "packages/ts-release/src/Bun.ts",
-      "sourceSha256": "6f4085a42414d5743a11d84ad0168996aff753f194ef65c8fc58cd66127fd83d",
+      "sourceSha256": "9d711fd918def408ca13aa584d3a0768160c31b0157da2fb13fdca9049d73af5",
       "runtimePath": "packages/ts-release/dist/Bun.js",
-      "runtimeSha256": "56c9e943edee0bf32c0f3de99f483e044a219d2a557e8085c7c7b9072cc55fa5",
+      "runtimeSha256": "6f0c9ff53307285ce46eaa3e28b90e1bf4ea009cb163159f61ddbdcc443460ac",
       "declarationsPath": "packages/ts-release/dist/Bun.d.ts",
-      "declarationsSha256": "b9cb848246457bc7503d91c5fa276b599f0741f3b0dbf7eccdbc5abbbe36bb36",
+      "declarationsSha256": "31b0b5afec079fdd8706274c4afce6130be58123c055eedab806b7a1f1c1a5a2",
       "runtimeNames": [
+        "FinalizedReport",
         "fileContentOwner",
-        "openSqliteJournal"
+        "openSqliteJournal",
+        "runApplication"
       ],
-      "typeNames": []
+      "typeNames": [
+        "Application",
+        "CreateApplication",
+        "FinalizedReport"
+      ]
     },
     {
       "specifier": "@mannyc1/ts-release/node",
       "source": "packages/ts-release/src/Node.ts",
-      "sourceSha256": "6365404dc0cca66b3c623b63161b77b740862273e1f3622df9e8524fbb781e23",
+      "sourceSha256": "4d0bf89dbb80e356c289ee164e3630a919e4ca8543c439f2879e0b1926209a23",
       "runtimePath": "packages/ts-release/dist/Node.js",
-      "runtimeSha256": "07252071dd06057c6c12d818dcabec7778b38f745f5afa22bc0c78622ed669d0",
+      "runtimeSha256": "18d0a1a56250812edcb6b901a0a109fa3ccc55e25d2248395ec38d633ec7c323",
       "declarationsPath": "packages/ts-release/dist/Node.d.ts",
-      "declarationsSha256": "ba12734e383be76d055bc9f674c73b14dd280a06000db754e2bb69e4905b026f",
+      "declarationsSha256": "80b0d2a03cb569d9c9df07014fa47202f4390363bf9b513a5fa221618c9cd765",
       "runtimeNames": [
-        "fileContentOwner"
+        "FinalizedReport",
+        "fileContentOwner",
+        "runApplication"
       ],
-      "typeNames": []
+      "typeNames": [
+        "Application",
+        "CreateApplication",
+        "FinalizedReport"
+      ]
     }
   ],
   "missing": [
@@ -213,18 +225,12 @@
     "@mannyc1/ts-release/http:type:OidcTokenSource",
     "@mannyc1/ts-release/http:type:ResolveCredentials",
     "@mannyc1/ts-release/http:type:TrustedPublisherHost",
-    "@mannyc1/ts-release/bun:type:Application",
-    "@mannyc1/ts-release/bun:type:CreateApplication",
     "@mannyc1/ts-release/bun:value:makeGitCatalogHost",
     "@mannyc1/ts-release/bun:value:makeHttpTransport",
     "@mannyc1/ts-release/bun:value:openGitJournal",
-    "@mannyc1/ts-release/bun:value:runApplication",
-    "@mannyc1/ts-release/node:type:Application",
-    "@mannyc1/ts-release/node:type:CreateApplication",
     "@mannyc1/ts-release/node:value:makeGitCatalogHost",
     "@mannyc1/ts-release/node:value:makeHttpTransport",
     "@mannyc1/ts-release/node:value:openGitJournal",
-    "@mannyc1/ts-release/node:value:runApplication",
     "@mannyc1/ts-release:bin",
     "@mannyc1/ts-release-npm",
     "@mannyc1/ts-release-pypi",

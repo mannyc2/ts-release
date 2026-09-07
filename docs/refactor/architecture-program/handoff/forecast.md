@@ -1,8 +1,8 @@
 # Full-scope source and maintenance forecast
 
-The expected replacement is approximately **11,529 physical product lines**,
-with an engineering range of **8,267–16,097**. That is roughly half the preserved
-22,971-line baseline, and exceeds the **11,485** ceiling by **44**.
+The expected replacement is approximately **12,525 physical product lines**,
+with an engineering range of **9,343–16,963**. That is roughly half the preserved
+22,971-line baseline, and exceeds the **11,485** ceiling by **1,040**.
 All package metadata makes the conservative combined estimate exceed that
 ceiling. This is a credible cost forecast, **not an achieved reduction or a
 source-budget pass**. Keep the original ceiling; measure each implementation
@@ -18,7 +18,7 @@ not statistical confidence intervals or permission to choose the lowest number.
 
 | Responsibility | Expected physical lines | Basis |
 | --- | ---: | --- |
-| Complete M1 kernel and target admission | 1,164 | 1,024 measured selected source, plus 140 for complete production input/integration laws |
+| Complete kernel, strict admission and derived report | 2,160 | Measured normally formatted W01 production owners; other rows remain estimates |
 | Owned artifacts and full Apple preparation/composition | 945 | 615 measured source including mixed release mechanism; 330 remaining native/host/integration estimate |
 | Shared HTTP, credentials and OIDC | 780 | Actual single-send/cancellation prototype and complete donor boundary inventory |
 | SQLite and Git journals | 496 | 146 measured mechanics plus native path/scope/bounded-history completion |

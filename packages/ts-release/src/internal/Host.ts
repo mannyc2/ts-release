@@ -26,6 +26,7 @@ import { JournalEvent, Operation, Plan } from "./ReleaseModel.js"
 import { decodeOwned, freeze } from "./Identity.js"
 import { ReleaseError, attempt, fail } from "./Error.js"
 import { loadPlan } from "../Plan.js"
+import { captureTransport } from "./GitAuthority.js"
 
 export interface HostShape {
   readonly store: JournalStore
@@ -38,6 +39,71 @@ export interface HostShape {
   readonly machine?: MachineConstructor
 }
 export class Host extends Context.Service<Host, HostShape>()("ts-release/Host") {}
+/** Capture capabilities before calling user code or storage. Mutable service
+ * state stays behind its functions; callers cannot replace this invocation's
+ * provider table, transport, journal scopes, or clock after admission. */
+export const captureHost = (input: HostShape): HostShape => {
+  verifyProviderContracts(input.providers)
+  return Object.freeze({
+    store: Object.freeze({
+      read: input.store.read.bind(input.store),
+      append: input.store.append.bind(input.store),
+    }),
+    transport: captureTransport(input.transport),
+    providers: Object.freeze(
+      input.providers.map((provider) =>
+        Object.freeze({
+          contract: provider.contract,
+          definitionId: provider.definitionId,
+          intentVersion: provider.intentVersion,
+          intentCodec: provider.intentCodec,
+          receiptVersion: provider.receiptVersion,
+          receiptCodec: provider.receiptCodec,
+          prepare: provider.prepare.bind(provider),
+          receiptCorresponds: provider.receiptCorresponds.bind(provider),
+          classifyReceipt: provider.classifyReceipt.bind(provider),
+          ...(provider.observe && {
+            observe: provider.observe.bind(provider),
+            observationVersion: provider.observationVersion!,
+            observationCodec: provider.observationCodec!,
+            classifyObservation: provider.classifyObservation!.bind(provider),
+          }),
+          ...(provider.rejection && {
+            rejection: Object.freeze({
+              version: provider.rejection.version,
+              codec: provider.rejection.codec,
+              corresponds: provider.rejection.corresponds.bind(provider.rejection),
+            }),
+          }),
+          ...(provider.dispatchError && {
+            dispatchError: Object.freeze({
+              version: provider.dispatchError.version,
+              codec: provider.dispatchError.codec,
+              corresponds: provider.dispatchError.corresponds.bind(provider.dispatchError),
+            }),
+          }),
+        }),
+      ),
+    ),
+    now: input.now.bind(input),
+    uniqueId: input.uniqueId.bind(input),
+    ...(input.machine && { machine: input.machine.bind(input) }),
+    ...(input.journal && {
+      journal: Object.freeze({
+        journalId: input.journal.journalId,
+        scopes: Object.freeze(
+          input.journal.scopes.map((scope) =>
+            Object.freeze({
+              _tag: scope._tag,
+              plan: decodeOwned(Plan, scope.plan),
+            }),
+          ),
+        ),
+      }),
+    }),
+  })
+}
+export const currentHost = Effect.flatMap(Host, (host) => attempt(() => captureHost(host)))
 /** Both inputs were owned and frozen at admission, preserving Schema classes. */
 export const model = (host: HostShape, plan: Plan, events: ReadonlyArray<JournalEvent>) =>
   (host.machine ?? historyMachine)(plan, events, scopeKind(host, plan))

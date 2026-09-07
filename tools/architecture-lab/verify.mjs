@@ -86,11 +86,12 @@ if (process.argv.includes("--execute")) {
     ["bun","tools/architecture-lab/reconcile.ts","--check"],
     ["bun","tools/architecture-lab/project.ts","--check"],
     ["python3","tools/architecture-lab/public-history-inventory.py","--check"],
-    ["bun","tools/architecture-lab/machine/unpatched-effect.mjs"],
-    ["bun","node_modules/typescript/bin/tsc","-p","tools/architecture-lab/tsconfig.json"],
-    ["bun","tools/architecture-lab/proposal/emit.mjs","--check"],
-    ["bun","tools/architecture-lab/machine/emit-proposal.mjs","--check"],
-    ["bun","test","./tools/architecture-lab/machine/test","./tools/architecture-lab/storage","./tools/architecture-lab/integration","./tools/architecture-lab/git-catalog","./tools/architecture-lab/machine/witnesses"]
+    ["bun","run","check"],
+    ["bun","scripts/project-production-api.ts","--check"],
+    ["bun","scripts/check-import-rules.ts"],
+    ["bun","scripts/check-package-exports.ts"],
+    ["bun","scripts/check-migration-execution.ts"],
+    ["bun","test","./test/reimplementation/kernel"]
   ]
   const receipts = []
   for (const argv of commands) {
@@ -100,7 +101,7 @@ if (process.argv.includes("--execute")) {
     console.log(JSON.stringify({argv,exitCode:result.exitCode}))
     if (result.exitCode !== 0) fail(output)
   }
-  writeFileSync(join(root,`${handoff}/verification.json`),JSON.stringify({format:"architecture-local-verification/1",observedAt:new Date().toISOString(),commands:receipts,limits:"Direct local checks. Full packed tournament receipts are separately retained; this command does not rerun them or qualify hosted/native product outcomes."},null,2)+"\n")
+  writeFileSync(join(root,`${handoff}/production-verification.json`),JSON.stringify({format:"architecture-production-verification/1", scope:"W01 partial production; historical P3 receipt remains verification.json",observedAt:new Date().toISOString(),commands:receipts,limits:"Direct local checks. Full packed tournament receipts are separately retained; this command does not rerun them or qualify hosted/native product outcomes."},null,2)+"\n")
 }
 if (process.argv.includes("--seal")) {
   const contract = {

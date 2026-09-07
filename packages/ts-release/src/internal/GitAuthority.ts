@@ -25,6 +25,10 @@ export // Possession follows this core constructor, never a provider's data tag.
 const authorityKey = (principal: string, scope: string): string =>
   JSON.stringify([principal, scope])
 export const mechanisms = new WeakMap<Transport, ReadonlyMap<string, CoreGitOptions>>()
+/** Keep the exact core mechanism identity; ordinary ports retain their state
+ * behind a captured function, never behind a mutable method lookup. */
+export const captureTransport = (transport: Transport): Transport =>
+  mechanisms.has(transport) ? transport : Object.freeze({ send: transport.send.bind(transport) })
 export const assertTransportBinding = (transport: Transport, facts: RequestFacts): void => {
   if (facts.replay._tag !== "GitCas") return
   const bindings = mechanisms.get(transport)
@@ -66,7 +70,8 @@ export function makeCoreGitTransport(
   otherwise?: Transport,
 ): Transport {
   const options = Array.isArray(input) ? input : [input as CoreGitOptions]
-  const fallback = Array.isArray(input) ? otherwise : (input as CoreGitOptions).otherwise
+  const source = Array.isArray(input) ? otherwise : (input as CoreGitOptions).otherwise
+  const fallback = source && captureTransport(source)
   if (options.length === 0)
     fail("git-bindings", "Conditional Git needs at least one authority binding")
   const bindings = new Map<string, CoreGitOptions>()
@@ -79,7 +84,11 @@ export function makeCoreGitTransport(
       )
     bindings.set(
       key,
-      Object.freeze({ principal: option.principal, scope: option.scope, execute: option.execute }),
+      Object.freeze({
+        principal: option.principal,
+        scope: option.scope,
+        execute: option.execute.bind(option),
+      }),
     )
   }
   const transport: Transport = {
@@ -117,5 +126,5 @@ export function makeCoreGitTransport(
     }),
   }
   mechanisms.set(transport, bindings)
-  return transport
+  return Object.freeze(transport)
 }

@@ -97,7 +97,34 @@ const designText = await read(designPath);
 const design: Design = JSON.parse(designText);
 const authorityTexts: Record<string, string> = Object.fromEntries(await Promise.all(Object.entries(design.authorities).map(async ([id, path]) => [id, await read(path)] as const)));
 const declarations = new Map<string, Declaration>();
+// Implemented kernel exports are resolved by the compiler through their real
+// declaration owners. Unimplemented provider/host proposals retain their parser.
+const apiProgram = ts.createProgram([resolve(root, design.authorities.kernel!), resolve(root, design.authorities.application!)], {
+    target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext,
+    moduleResolution: ts.ModuleResolutionKind.NodeNext, types: [],
+});
+const apiChecker = apiProgram.getTypeChecker();
 for (const [authority, text] of Object.entries(authorityTexts)) {
+    if (authority === "kernel" || authority === "application") {
+        const source = apiProgram.getSourceFile(resolve(root, design.authorities[authority]!))!;
+        const module = apiChecker.getSymbolAtLocation(source);
+        assert(module, "Production kernel declaration entry is not a module");
+        for (const exported of apiChecker.getExportsOfModule(module)) {
+            const symbol = exported.flags & ts.SymbolFlags.Alias ? apiChecker.getAliasedSymbol(exported) : exported;
+            const spaces = [
+                ...(symbol.flags & ts.SymbolFlags.Type ? ["type"] : []),
+                ...(symbol.flags & ts.SymbolFlags.Value ? ["value"] : []),
+            ];
+            const id = `${authority}:${exported.name}`;
+            declarations.set(id, { id, authority, namespace: null, sourceName: exported.name, spaces,
+                declarations: (symbol.declarations ?? []).map(node => ({
+                    line: node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line + 1,
+                    sha256: hash(node.getText()),
+                })),
+            });
+        }
+        continue;
+    }
     const source = ts.createSourceFile(design.authorities[authority]!, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
     const visit = (statements: ts.NodeArray<ts.Statement>, namespace: string | null) => {
         for (const statement of statements) {
@@ -129,7 +156,7 @@ const picks = (authority: string, names: string[], module: string, namespace?: s
 const named = (authority: string, namespace: string | null = null) => [...declarations.values()].filter((item) => item.authority === authority && item.namespace === namespace).map((item) => item.sourceName);
 const kernelOwners: Record<string, string[]> = {
     "kernel.Error": ["ReleaseError"],
-    "kernel.Provider": ["PROVIDER_CONTRACT", "ProviderDefinition", "ProviderDescriptor", "NativeFailureBoundary", "ProviderContext", "Observation", "OperationEvidence", "PreparedRequest", "SendResult", "Transport"],
+    "kernel.Provider": ["PROVIDER_CONTRACT", "ProviderDefinition", "ProviderDescriptor", "NativeFailureBoundary", "ProviderContext", "Observation", "OperationEvidence", "PreparedRequest", "SendResult", "Transport", "Author", "Json", "OperationId"],
     "kernel.Decision": ["CandidateRequest", "Next", "Machine", "MachineConstructor", "historyMachine", "sameProtectedRequest", "sameStrings"],
     "kernel.Plan": ["createOperation", "createPlan", "createPreparationScope", "loadPlan", "makeRequest"],
     "kernel.Journal": ["Snapshot", "AppendResult", "JournalStore", "Scope", "JournalContext"],
@@ -138,12 +165,12 @@ const kernelOwners: Record<string, string[]> = {
     "kernel.Release": ["reportRelease", "observeRelease", "runRelease", "supersedePlan", "acceptRisk"]
 };
 const kernel = named("kernel").map((name) => pick("kernel", name, Object.entries(kernelOwners).find(([, names]) => names.includes(name))?.[0] ?? "kernel.Model"));
-const host = picks("host", ["Application", "CreateApplication", "runApplication"], "host.Application");
+const host = [...picks("application", ["Application", "CreateApplication", "runApplication"], "host.Application"), pick("application", "FinalizedReport", "kernel.Report")];
 host.push(...picks("host", ["makeHttpTransport"], "host.Http"), ...picks("host", ["openGitJournal"], "host.GitJournal"), pick("contentOwner", "fileContentOwner", "host.Content"), pick("provider", "nativeHost", "host.NativeGit", "makeGitCatalogHost", "GitCatalog"));
 const appleNative = ["RestoredSource", "FinalNativeArtifact", "NativeAppleError", "NativeAppleServices", "DeriveDeliveryFiles", "restorePreparedSource", "submitPrepared", "finishPrepared"];
 const applePreparation = ["createApplePreparations", "loadApplePreparations", "preparationProvider", "preparationScopes", "runPreparation", "validateApplePublication", "reportAppleContext"];
 const surfaces: Surface[] = [
-    { id: "core.root", entry: "kernel.Entry", symbols: [...kernel, ...picks("provider", ["Author", "Json", "OperationId"], "kernel.Provider")] },
+    { id: "core.root", entry: "kernel.Entry", symbols: kernel },
     { id: "core.bundle", entry: "kernel.Bundle", symbols: [
             ...picks("adoption", ["Content", "AdoptionError"], "kernel.ArtifactModel"),
             ...[["OwnedFile", "File"], ["OwnedTree", "Tree"], ["OwnedArtifact", "Artifact"], ["OwnedBundle", "Bundle"]].map(([name, alias]) => pick("adoption", name!, "kernel.ArtifactModel", alias!)),
@@ -324,7 +351,7 @@ for (const alternative of design.alternatives) {
     physicalSurfaces.push({ id: alternative.id, entries: exportEntries, exportsSha256: hash(json(exportEntries)) });
 }
 const used = new Set(surfaces.flatMap((surface) => surface.symbols.map((symbol) => symbol.declaration)));
-const publicSurface = { format: "proposed-public-surface/1", status: "declaration-projection-not-emitted-production-evidence", selection: design.selection, design: { path: designPath, sha256: hash(designText) }, authorityBindings, symbols: [...declarations.values()].filter((item) => used.has(item.id)), logicalSurfaces: surfaces, alternatives: physicalSurfaces, intentionallyPrivateAuthorityExports: [...declarations.values()].filter((item) => !used.has(item.id)).map((item) => ({ id: item.id, reason: item.id === "host:runAction" ? "Private Action adapter, apps/action/src/launcher.ts; only host loading primitives are public." : "Implementation detail, not included in the explicit proposed public API." })), aliasRules: { GitCatalog_nativeHost: "provider:GitCatalog.nativeHost -> makeGitCatalogHost only on core.node and core.bun", providerNamespaces: "The seven source namespaces are unwrapped into direct named package-root exports (or provider subpaths in T1/T2). Namespace wrappers are provenance only.", adoption: "OwnedFile/OwnedTree/OwnedArtifact/OwnedBundle become File/Tree/Artifact/Bundle on core.bundle." }, qualifications: "Declaration hashes bind exact source signatures and private schema bases through whole authority-file hashes. No generated declaration stand-in or unimplemented JavaScript is represented as a consumer-tested package." };
+const publicSurface = { format: "proposed-public-surface/1", status: "actual-kernel-declarations-with-remaining-proposed-surfaces", selection: design.selection, design: { path: designPath, sha256: hash(designText) }, authorityBindings, symbols: [...declarations.values()].filter((item) => used.has(item.id)), logicalSurfaces: surfaces, alternatives: physicalSurfaces, intentionallyPrivateAuthorityExports: [...declarations.values()].filter((item) => !used.has(item.id)).map((item) => ({ id: item.id, reason: item.id === "host:runAction" ? "Private Action adapter, apps/action/src/launcher.ts; only host loading primitives are public." : "Implementation detail, not included in the explicit proposed public API." })), aliasRules: { GitCatalog_nativeHost: "provider:GitCatalog.nativeHost -> makeGitCatalogHost only on core.node and core.bun", providerNamespaces: "The seven source namespaces are unwrapped into direct named package-root exports (or provider subpaths in T1/T2). Namespace wrappers are provenance only.", adoption: "OwnedFile/OwnedTree/OwnedArtifact/OwnedBundle become File/Tree/Artifact/Bundle on core.bundle." }, qualifications: "Declaration hashes bind exact source signatures and private schema bases through whole authority-file hashes. No generated declaration stand-in or unimplemented JavaScript is represented as a consumer-tested package." };
 const patchText = await read(design.effectPatch.path);
 const patchProofText = await read(design.effectPatch.proof);
 const layout = { format: "proposed-package-layout/1", status: "selected-layout-with-retained-alternatives", selection: design.selection, recommendation: design.recommendation, design: { path: designPath, sha256: hash(designText) }, migration: { path: migrationPath, sha256: hash(await read(migrationPath)), expandedSha256: hash(migrationText), successorCount: successorIds.size }, authorityBindings, publicSurfaceSha256: hash(json(publicSurface)), effectPatch: { required: design.effectPatch.required, donorPath: design.effectPatch.path, donorSha256: hash(patchText), proof: {path: design.effectPatch.proof, sha256: hash(patchProofText)}, rationale: design.effectPatch.scope }, alternatives: projection, delivery: { stage: "Plan 009", sourceCompilation: "TypeScript ESM plus declarations from these physical sources, with explicit exports. Bundle only CLI/Action delivery applications; do not ship handwritten shadow dist.", scriptsAndConfigTemplates: "Per-layout exact tsconfig templates are in alternatives[].configs; root manifest contains exact commands.", scriptContracts: [{ path: "scripts/build.ts", task: "Run TypeScript with each selected public package tsconfig.build.json in core-first package-DAG order, then compile apps/self-release. No source path aliases." }, { path: "scripts/check.ts", task: "Build first, run strict root noEmit check, then verify actual emitted exports/import/package graphs against the selected contract." }, { path: "scripts/build-delivery.ts", task: "Stage the core-owned CLI and bundle apps/action/src/launcher.ts as node24 CommonJS apps/action/dist/launcher.cjs; validate dynamic application loading in fresh installed consumers." }], scriptsAndConfigStatus: "Exact configuration templates and script paths/contracts are proposed. Script implementations remain wave work and have no invented line totals.", actionRuntime: "node24", cliRuntimeSelection: "One shared loader runs the fully provided application Effect inside Scope. Application authors select/provide their host layers; CLI does not automatically import platform facades.", generatedRuntimePolicyFiles: 0 }, measuredEvidence: { path: "tools/architecture-lab/topology/results.json", relation: "Smaller identical real machine/provider/host fixture across T1/T2/T3. Its measured installed/runtime/declaration graphs are not the proposed full production graph or its added semver/sigstore/effect-build dependencies." }, invariants: design.invariants, qualification: design.qualification };

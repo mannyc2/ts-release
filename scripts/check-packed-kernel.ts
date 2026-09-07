@@ -93,11 +93,11 @@ for (const manager of ["bun", "npm"] as const) {
     "./http":
       'import { HttpReceipt, corresponds } from "@mannyc1/ts-release/http"; export { HttpReceipt, corresponds };',
     "./bun":
-      'import { openSqliteJournal } from "@mannyc1/ts-release/bun"; export { openSqliteJournal };',
+      'import { openSqliteJournal, runApplication, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/bun"; export { openSqliteJournal, runApplication, FinalizedReport }; export type { Application, CreateApplication };',
     "./bundle":
       'import { Bundle, finalize, loadBundle } from "@mannyc1/ts-release/bundle"; export { Bundle, finalize, loadBundle };',
     "./node":
-      'import { fileContentOwner } from "@mannyc1/ts-release/node"; export { fileContentOwner };',
+      'import { fileContentOwner, runApplication, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/node"; export { fileContentOwner, runApplication, FinalizedReport }; export type { Application, CreateApplication };',
   }
   for (const [entry, source] of Object.entries(declarations)) {
     await writeFile(join(cwd, "consumer.ts"), source)
@@ -134,7 +134,7 @@ for (const manager of ["bun", "npm"] as const) {
     }
     assert.equal(hash(await readFile(repair)), hash(original))
   }
-  for (const fixture of ["portable.mjs", "bun.mjs"])
+  for (const fixture of ["portable.mjs", "bun.mjs", "application.mjs"])
     await writeFile(
       join(cwd, fixture),
       await readFile(join(root, "test/reimplementation/packed-kernel", fixture)),

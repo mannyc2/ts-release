@@ -2,7 +2,7 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { OwnedBundle } from "./ArtifactModel.js"
 import { encodeBundle } from "./BundleCodec.js"
-import { Host, read } from "./Host.js"
+import { currentHost, read } from "./Host.js"
 import { JournalEvent, Plan } from "./ReleaseModel.js"
 import { ReleaseError, attempt } from "./Error.js"
 import { decodeOwned, sha256 } from "./Identity.js"
@@ -46,7 +46,7 @@ export const reportFinalizedRelease = Effect.fn("ts-release.reportFinalizedRelea
   bundle: OwnedBundle,
   input: Plan,
 ) {
-  const host = yield* Host
+  const host = yield* currentHost
   const admitted = yield* attempt(() => decodeOwned(OwnedBundle, bundle))
   const owned = yield* finalize(admitted.artifacts)
   const plan = yield* loadPlan(input, host.providers)

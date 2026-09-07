@@ -1,6 +1,6 @@
 {
   "format": "proposed-public-surface/1",
-  "status": "declaration-projection-not-emitted-production-evidence",
+  "status": "actual-kernel-declarations-with-remaining-proposed-surfaces",
   "selection": {
     "machine": "M1",
     "topology": "T3c",
@@ -18,12 +18,12 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "d268e1c1464b918c9e10dc07f2dbced64241413f715f4e56aeaac932746b3811"
+    "sha256": "0f45db1525f16bf69d27169206a842a042f833d605d7aaab98d3e909cfbba0d4"
   },
   "authorityBindings": {
     "kernel": {
       "path": "docs/refactor/architecture-program/handoff/kernel-api.d.ts",
-      "sha256": "b3fe44cce205ce93567279da4a2b490b9c66597013d5b0112815393a1f3eddfc"
+      "sha256": "31a066415d0cc60461fd98e7c8b1ceda8713b6350ef19487714c0ba08e24e11d"
     },
     "provider": {
       "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
@@ -31,7 +31,7 @@
     },
     "host": {
       "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
-      "sha256": "9037335c5975787fba2a9452c7ca85a62122caf61905cabd72fafdde2e8d175c"
+      "sha256": "94539eedb7b652e2c148190aafe49ae22d3ee064fa69daa2af3a75914e560278"
     },
     "adoption": {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/adoption.d.ts",
@@ -56,6 +56,10 @@
     "http": {
       "path": "docs/refactor/architecture-program/handoff/http-api.d.ts",
       "sha256": "fa50a9a495f28fefa21946669aa92828119e5959823b1b237347d2a2a6af8a4d"
+    },
+    "application": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
+      "sha256": "ed80182ff1829ce3d16711f794346a816af816766537209a17a56afa4fa78ba3"
     }
   },
   "symbols": [
@@ -69,8 +73,203 @@
       ],
       "declarations": [
         {
-          "line": 15,
-          "sha256": "cc8a8706662020aaa631619dac1056bb1d5914f1b4fbfae128d2a3d0f71b8521"
+          "line": 6,
+          "sha256": "dfdac1e5f302f47b50a7b1ba0597153401e851f62e145a7b199ece769b01fa4e"
+        }
+      ]
+    },
+    {
+      "id": "kernel:PreparedRequest",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "PreparedRequest",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 8,
+          "sha256": "e27cc335c3c835965d0dac588aadea696f121a89baa159d49ec83bda21120b3a"
+        }
+      ]
+    },
+    {
+      "id": "kernel:SendResult",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "SendResult",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 12,
+          "sha256": "3ddde140ce6ada31de32cfbe9a947318d31e7f6b44f116320f2d89eadfa2321b"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Transport",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Transport",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 23,
+          "sha256": "c5418a4d7b0ab4ced481e32ffbca1c1a135d42048d04f571c7d3b2e99ed1ba21"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Observation",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Observation",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 26,
+          "sha256": "82ec23e46814d043ee8eb4c89c0e0884f26e79834b2f565783bbedc49c585a23"
+        }
+      ]
+    },
+    {
+      "id": "kernel:OperationEvidence",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "OperationEvidence",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 30,
+          "sha256": "8b1cacb89b0a8e42f7906fd936d88dab8505c8250a015ea5a5e7e7e34ab11b0d"
+        }
+      ]
+    },
+    {
+      "id": "kernel:ProviderContext",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "ProviderContext",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 35,
+          "sha256": "84bb019678de6e5ca54a1f6264a2abda6a013dff70a631d9adeee759c3fdea3b"
+        }
+      ]
+    },
+    {
+      "id": "kernel:NativeFailureBoundary",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "NativeFailureBoundary",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 39,
+          "sha256": "3e46c07aff428ad2e759669b554aaf9bc393908c75ccbe8335fa871d81b16afa"
+        }
+      ]
+    },
+    {
+      "id": "kernel:ProviderDefinition",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "ProviderDefinition",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 44,
+          "sha256": "72fccbd1e379ba608db980f8f2d1d9ebba6088426bafb41772203bb4c75034a1"
+        }
+      ]
+    },
+    {
+      "id": "kernel:ProviderDescriptor",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "ProviderDescriptor",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 61,
+          "sha256": "43e099108382e0b487bf14653093df668b6f23f9e5a968dd83b832165b09b3ee"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Json",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Json",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 62,
+          "sha256": "a0260d82c11dd5feab3269e83ea6ae8096359401597ac8a923ac81ba4e01420c"
+        }
+      ]
+    },
+    {
+      "id": "kernel:OperationId",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "OperationId",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 63,
+          "sha256": "e6a8a862ab6c565ac412b4bb9a96361e385cb80d273efeb9cb0cb867400985bc"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Author",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Author",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 64,
+          "sha256": "00d604f20de41237a7aed9df219c23b19b89e321e01ae1529c3a45b0cf2555ef"
+        }
+      ]
+    },
+    {
+      "id": "kernel:makeRequest",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "makeRequest",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 66,
+          "sha256": "a202619833f04c641bc5716596060969705647b0e08e05e87fb861fe637f82f5"
         }
       ]
     },
@@ -85,7 +284,7 @@
       ],
       "declarations": [
         {
-          "line": 21,
+          "line": 8,
           "sha256": "25a670f62c8d28671b29a1b94b73793e75572f5d87d6c6c07b8aa7d7d698422d"
         }
       ]
@@ -101,7 +300,7 @@
       ],
       "declarations": [
         {
-          "line": 30,
+          "line": 9,
           "sha256": "a96514042f74c828e5b6dd2f2861f77287d614ec17c3f7a584af50ffc51c06ae"
         }
       ]
@@ -117,7 +316,7 @@
       ],
       "declarations": [
         {
-          "line": 39,
+          "line": 18,
           "sha256": "b8250a8d2158bf611f379e3667084d846f5bcd8ebd9e5de383ee1bdf44d992a0"
         }
       ]
@@ -133,7 +332,7 @@
       ],
       "declarations": [
         {
-          "line": 42,
+          "line": 21,
           "sha256": "7221ba091af7d324205e5e21716bb25f3a49f2cae5e500c50f1c97fff7c69d40"
         }
       ]
@@ -149,7 +348,7 @@
       ],
       "declarations": [
         {
-          "line": 49,
+          "line": 28,
           "sha256": "71eead8c8a09f1fd8f4fa058ec55a17093ad55cbfff23ce25390a44647b77c81"
         }
       ]
@@ -165,11 +364,11 @@
       ],
       "declarations": [
         {
-          "line": 51,
-          "sha256": "591da2318f58609ff5b8117ae1d2cd1d5062fcdbf05b96168b35d18fa67a1e22"
+          "line": 30,
+          "sha256": "4fe0ed75741f1dd0559491f480c7931e3244198114730bb49d8a81537dab71e2"
         },
         {
-          "line": 52,
+          "line": 31,
           "sha256": "3de3bedfd5c3781b5c9fc6d5ac49459684d44720101a4c4cce5d303b1232ded5"
         }
       ]
@@ -185,7 +384,7 @@
       ],
       "declarations": [
         {
-          "line": 64,
+          "line": 43,
           "sha256": "99051400eccf2ce89e48230a4be71363bba06d75500f631ce1ed83f960b7973f"
         }
       ]
@@ -201,7 +400,7 @@
       ],
       "declarations": [
         {
-          "line": 67,
+          "line": 46,
           "sha256": "c83559378424a7da99a4a12c5d64af515945e5fa1cfda3e134679258f2e8b834"
         }
       ]
@@ -217,7 +416,7 @@
       ],
       "declarations": [
         {
-          "line": 72,
+          "line": 51,
           "sha256": "cc1f1c0f800a395cbe12bc70c66524e0fdb3b103a9b07504bd857f1c7be19b59"
         }
       ]
@@ -233,7 +432,7 @@
       ],
       "declarations": [
         {
-          "line": 77,
+          "line": 56,
           "sha256": "07f6eef8f38529d4793ceafc48c49fe3773f5cd88e02b7b14909c547ab914fcd"
         }
       ]
@@ -249,7 +448,7 @@
       ],
       "declarations": [
         {
-          "line": 82,
+          "line": 61,
           "sha256": "1dd42cecf46cb90f9c9b0761449094a79ee859f788b587e11145ad2cc87657fb"
         }
       ]
@@ -265,11 +464,11 @@
       ],
       "declarations": [
         {
-          "line": 84,
-          "sha256": "22487296c29db272a523c0f452bb72b740d9622697a20767df7b99d473dc35c5"
+          "line": 63,
+          "sha256": "d5902e219fe43f355cc5441e1dabe9b7a69ee65deb4530859ce253a15c6e43b1"
         },
         {
-          "line": 85,
+          "line": 64,
           "sha256": "e59d3b20cfb3677cea53d961361d2de14cf416c316f99a0e2e5382e5659cd53f"
         }
       ]
@@ -285,7 +484,7 @@
       ],
       "declarations": [
         {
-          "line": 94,
+          "line": 73,
           "sha256": "619e6117e160b14fc218860f6663ff4358661902ddc582be7bdbf36e5af9ce99"
         }
       ]
@@ -301,7 +500,7 @@
       ],
       "declarations": [
         {
-          "line": 101,
+          "line": 80,
           "sha256": "8fa146d76571ae825d780732bb538acd906ef67b4db9c244f20e1b00fa000f40"
         }
       ]
@@ -317,7 +516,7 @@
       ],
       "declarations": [
         {
-          "line": 109,
+          "line": 88,
           "sha256": "14b159964339cc7413e8df62dd32d3fae835981021464ba8a99d3adb47fc54f0"
         }
       ]
@@ -333,11 +532,11 @@
       ],
       "declarations": [
         {
-          "line": 111,
-          "sha256": "ca2a40afd3b4b769d66b405ce5154a9fa427ae3bc4dbdc626e241ece77f245d0"
+          "line": 90,
+          "sha256": "ecf576835b56e5f0c9cde93b084642af366a78ec21a22879037fd826582c3882"
         },
         {
-          "line": 112,
+          "line": 91,
           "sha256": "5cdca3209cbe1d50870fe0087d053c4a73d0139ac6dd98f251e2a72f008a6a0d"
         }
       ]
@@ -353,7 +552,7 @@
       ],
       "declarations": [
         {
-          "line": 122,
+          "line": 101,
           "sha256": "76d74f54bb954b40af42d6fec3e1972576ee94593302bb9f6f934b94c467c16f"
         }
       ]
@@ -369,7 +568,7 @@
       ],
       "declarations": [
         {
-          "line": 132,
+          "line": 111,
           "sha256": "01d159d1a2f4c063c34b94ba43196ac16e226304d00a6e0508b3e42b9f73df09"
         }
       ]
@@ -385,7 +584,7 @@
       ],
       "declarations": [
         {
-          "line": 137,
+          "line": 116,
           "sha256": "07f6e016ed751daa9543da28139872333a609fec33b2c6cdce84ee0784209550"
         }
       ]
@@ -401,11 +600,11 @@
       ],
       "declarations": [
         {
-          "line": 139,
-          "sha256": "118773b237bd6b37c0f5c44419107761455aeee8ecdded3b33b4747b92977acc"
+          "line": 118,
+          "sha256": "e8528ab454cb81bffe446b6e848fc5a5eb3a56ce0e26b97a6c78ed20a17bd808"
         },
         {
-          "line": 140,
+          "line": 119,
           "sha256": "24547afaa49bbee9cc55ec4567271e1d4513d2637baeb336647f4ce117ea92be"
         }
       ]
@@ -421,143 +620,8 @@
       ],
       "declarations": [
         {
-          "line": 148,
+          "line": 127,
           "sha256": "95c72c804f52945e83e84217d53afdd239529ac6f217bb29ac574c802319b0a7"
-        }
-      ]
-    },
-    {
-      "id": "kernel:Snapshot",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "Snapshot",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 150,
-          "sha256": "13b1862004679683e6c9ab224c13199ae3607934d51a937651763106a69ea171"
-        }
-      ]
-    },
-    {
-      "id": "kernel:AppendResult",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "AppendResult",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 154,
-          "sha256": "8f6bf1b266843f8341ff3b824d3c235e083fe5628e7a0e17c571d78ba55a1738"
-        }
-      ]
-    },
-    {
-      "id": "kernel:JournalStore",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "JournalStore",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 166,
-          "sha256": "a06d71d28c7ed711f0b8cd780291243570089f96ec92bcf619da8666ef0c0715"
-        }
-      ]
-    },
-    {
-      "id": "kernel:PreparedRequest",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "PreparedRequest",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 171,
-          "sha256": "e27cc335c3c835965d0dac588aadea696f121a89baa159d49ec83bda21120b3a"
-        }
-      ]
-    },
-    {
-      "id": "kernel:SendResult",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "SendResult",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 175,
-          "sha256": "3ddde140ce6ada31de32cfbe9a947318d31e7f6b44f116320f2d89eadfa2321b"
-        }
-      ]
-    },
-    {
-      "id": "kernel:Transport",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "Transport",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 186,
-          "sha256": "c5418a4d7b0ab4ced481e32ffbca1c1a135d42048d04f571c7d3b2e99ed1ba21"
-        }
-      ]
-    },
-    {
-      "id": "kernel:Observation",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "Observation",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 189,
-          "sha256": "82ec23e46814d043ee8eb4c89c0e0884f26e79834b2f565783bbedc49c585a23"
-        }
-      ]
-    },
-    {
-      "id": "kernel:OperationEvidence",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "OperationEvidence",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 193,
-          "sha256": "8b1cacb89b0a8e42f7906fd936d88dab8505c8250a015ea5a5e7e7e34ab11b0d"
-        }
-      ]
-    },
-    {
-      "id": "kernel:ProviderContext",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "ProviderContext",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 198,
-          "sha256": "84bb019678de6e5ca54a1f6264a2abda6a013dff70a631d9adeee759c3fdea3b"
         }
       ]
     },
@@ -572,7 +636,7 @@
       ],
       "declarations": [
         {
-          "line": 206,
+          "line": 133,
           "sha256": "b67ff57f0b26ac173b6d4d9b6487aa9ba6f855ef33b1229d08aed2dd106d5541"
         }
       ]
@@ -588,53 +652,113 @@
       ],
       "declarations": [
         {
-          "line": 215,
+          "line": 142,
           "sha256": "58e1d48b6af8faa8fb491233be6ab015cf9a2d726edf6619fd0c92af8a65c51d"
         }
       ]
     },
     {
-      "id": "kernel:NativeFailureBoundary",
+      "id": "kernel:OperationStatus",
       "authority": "kernel",
       "namespace": null,
-      "sourceName": "NativeFailureBoundary",
+      "sourceName": "OperationStatus",
       "spaces": [
         "type"
       ],
       "declarations": [
         {
-          "line": 217,
-          "sha256": "3e46c07aff428ad2e759669b554aaf9bc393908c75ccbe8335fa871d81b16afa"
+          "line": 144,
+          "sha256": "ac8be4ba31d90751118bb3d6a4f59fc9e74c8117d5922bdcfd342562a6e4e679"
         }
       ]
     },
     {
-      "id": "kernel:ProviderDefinition",
+      "id": "kernel:OperationReport",
       "authority": "kernel",
       "namespace": null,
-      "sourceName": "ProviderDefinition",
+      "sourceName": "OperationReport",
       "spaces": [
         "type"
       ],
       "declarations": [
         {
-          "line": 222,
-          "sha256": "72fccbd1e379ba608db980f8f2d1d9ebba6088426bafb41772203bb4c75034a1"
+          "line": 145,
+          "sha256": "19540cb36c57afeff12bb9d313743eab35d608000fb144ebc12f13a307b4a4c1"
         }
       ]
     },
     {
-      "id": "kernel:ProviderDescriptor",
+      "id": "kernel:ReleaseReport",
       "authority": "kernel",
       "namespace": null,
-      "sourceName": "ProviderDescriptor",
+      "sourceName": "ReleaseReport",
       "spaces": [
         "type"
       ],
       "declarations": [
         {
-          "line": 239,
-          "sha256": "43e099108382e0b487bf14653093df668b6f23f9e5a968dd83b832165b09b3ee"
+          "line": 152,
+          "sha256": "3ba96f2133f48ba0c7e5f7e2e139d448cdee184bc3327691bfd39d3af85e57da"
+        }
+      ]
+    },
+    {
+      "id": "kernel:RunOptions",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "RunOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 158,
+          "sha256": "2cc29018c66ff7cfa2ffbc065dcd3b0817a90229bb821350b4db5a2401be5666"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Snapshot",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Snapshot",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 5,
+          "sha256": "13b1862004679683e6c9ab224c13199ae3607934d51a937651763106a69ea171"
+        }
+      ]
+    },
+    {
+      "id": "kernel:AppendResult",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "AppendResult",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 9,
+          "sha256": "8f6bf1b266843f8341ff3b824d3c235e083fe5628e7a0e17c571d78ba55a1738"
+        }
+      ]
+    },
+    {
+      "id": "kernel:JournalStore",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "JournalStore",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 21,
+          "sha256": "a06d71d28c7ed711f0b8cd780291243570089f96ec92bcf619da8666ef0c0715"
         }
       ]
     },
@@ -648,7 +772,7 @@
       ],
       "declarations": [
         {
-          "line": 242,
+          "line": 27,
           "sha256": "74b73f5478ea8c97cc22926ec2abbc121b14842705ff91a4dec7ca02ca682d67"
         }
       ]
@@ -663,7 +787,7 @@
       ],
       "declarations": [
         {
-          "line": 249,
+          "line": 34,
           "sha256": "21d999ec9e11f5b1980b85d2f4c5ed40c673b1c67733b7251b18dfb8facef6aa"
         }
       ]
@@ -678,7 +802,7 @@
       ],
       "declarations": [
         {
-          "line": 253,
+          "line": 8,
           "sha256": "c693d7a0034df2e730a520c4027326808488405d7fb6c703f398d88e0f5f011e"
         }
       ]
@@ -694,68 +818,8 @@
       ],
       "declarations": [
         {
-          "line": 264,
+          "line": 19,
           "sha256": "08fbd7b7789af392ae7ec382d3640c01990ecd11becdd92a6cb7ad6b64388d02"
-        }
-      ]
-    },
-    {
-      "id": "kernel:OperationStatus",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "OperationStatus",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 266,
-          "sha256": "ac8be4ba31d90751118bb3d6a4f59fc9e74c8117d5922bdcfd342562a6e4e679"
-        }
-      ]
-    },
-    {
-      "id": "kernel:OperationReport",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "OperationReport",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 267,
-          "sha256": "19540cb36c57afeff12bb9d313743eab35d608000fb144ebc12f13a307b4a4c1"
-        }
-      ]
-    },
-    {
-      "id": "kernel:ReleaseReport",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "ReleaseReport",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 274,
-          "sha256": "3ba96f2133f48ba0c7e5f7e2e139d448cdee184bc3327691bfd39d3af85e57da"
-        }
-      ]
-    },
-    {
-      "id": "kernel:RunOptions",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "RunOptions",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 280,
-          "sha256": "2cc29018c66ff7cfa2ffbc065dcd3b0817a90229bb821350b4db5a2401be5666"
         }
       ]
     },
@@ -769,7 +833,7 @@
       ],
       "declarations": [
         {
-          "line": 288,
+          "line": 3,
           "sha256": "d4cb5446a8eaa659e2a2b836af3f0d634ff5420db912d659fd8b7ae2df0ec7ef"
         }
       ]
@@ -784,7 +848,7 @@
       ],
       "declarations": [
         {
-          "line": 292,
+          "line": 7,
           "sha256": "811a60f96123402a3adc776bffe70e86dc96a46e10f3415c66c7c0fbbeb91ad5"
         }
       ]
@@ -799,7 +863,7 @@
       ],
       "declarations": [
         {
-          "line": 303,
+          "line": 18,
           "sha256": "997aa752468cc102f436a143d62a4657c2d91ad37c58353393789a11af9eae18"
         }
       ]
@@ -814,7 +878,7 @@
       ],
       "declarations": [
         {
-          "line": 308,
+          "line": 23,
           "sha256": "be2f9c656f7224a1d63192f276479275d9d976930d7747564a15a96a067edb04"
         }
       ]
@@ -829,8 +893,8 @@
       ],
       "declarations": [
         {
-          "line": 310,
-          "sha256": "cad367d084f98d228bf10099f36ef92214220e4b666f87ce48a0e0a1e89e2235"
+          "line": 25,
+          "sha256": "9487f981b04f48212e0cc9627aaf730c25cef74173571181ec40042f25b97b1c"
         }
       ]
     },
@@ -844,8 +908,8 @@
       ],
       "declarations": [
         {
-          "line": 311,
-          "sha256": "487a637d654ba7f8e166818d7243fdd9eb02013b0c8bdfb57d9d6e8a2baf1aa1"
+          "line": 26,
+          "sha256": "45c50e535ff3f32e27ed9a1d28b8e54c441e58c9d3094f313eec3ddb98fba918"
         }
       ]
     },
@@ -859,8 +923,8 @@
       ],
       "declarations": [
         {
-          "line": 313,
-          "sha256": "e169ad9fdc8927a189ce2df7144b3fbd98c386f2a5d658be64f432f7d38c3a55"
+          "line": 51,
+          "sha256": "353a42c2a217a65bf78f0a899dc4af8dcda50734b579c891361962c7453819cf"
         }
       ]
     },
@@ -874,8 +938,8 @@
       ],
       "declarations": [
         {
-          "line": 315,
-          "sha256": "ae491556188ac1e818c5687956437d14eb08a56c02c06a1f51ddb44d9a05d749"
+          "line": 5,
+          "sha256": "9333283edc9a53ff9b3d76c9db2def571d1fb3991a9b0297b5a3a99d73c8b42f"
         }
       ]
     },
@@ -889,8 +953,8 @@
       ],
       "declarations": [
         {
-          "line": 316,
-          "sha256": "9e51a41118bc53416aa703688804374d7092fe1c03e3aa7b5eb047f95b16caa3"
+          "line": 12,
+          "sha256": "0fdee4d3b5a224742f9660d2aa6be1e5018576dd96d57128148a2755d7bcaee6"
         }
       ]
     },
@@ -904,8 +968,8 @@
       ],
       "declarations": [
         {
-          "line": 317,
-          "sha256": "603f783a82a9465ae9af6241ff6c41a6ef2afb5a04dc45b154f07a864f0f261b"
+          "line": 13,
+          "sha256": "9279246fc2901d6372f94e80939614046363e6dd085df1c30e0a909ceccefa63"
         }
       ]
     },
@@ -919,23 +983,8 @@
       ],
       "declarations": [
         {
-          "line": 321,
-          "sha256": "96b6ffe9f5d69181834fe9082ea961a21b1bfd0661fccb4362889297b15109a6"
-        }
-      ]
-    },
-    {
-      "id": "kernel:makeRequest",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "makeRequest",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 322,
-          "sha256": "b2441328f3781785d1fa0077d9f6e5252fad746216bab3a9ff041aff1171df4b"
+          "line": 17,
+          "sha256": "c3cc3a76068130294e6679f847cc46c52d8c9ec2151b8692e267cd05bec7f2a5"
         }
       ]
     },
@@ -950,7 +999,7 @@
       ],
       "declarations": [
         {
-          "line": 334,
+          "line": 12,
           "sha256": "1e35f9deb5737224f12f8e0232ce7641c93e6a2aada4f231fd25fdb2863ca605"
         }
       ]
@@ -965,7 +1014,7 @@
       ],
       "declarations": [
         {
-          "line": 336,
+          "line": 14,
           "sha256": "75d136979830759e798d3940040401a4d7def432046f14fe6adf1b4000c858d5"
         }
       ]
@@ -980,7 +1029,7 @@
       ],
       "declarations": [
         {
-          "line": 340,
+          "line": 18,
           "sha256": "16de6a795a856b9d8913da3363932127ccadf746c6caf63d1942071fb985eb96"
         }
       ]
@@ -995,11 +1044,11 @@
       ],
       "declarations": [
         {
-          "line": 348,
+          "line": 32,
           "sha256": "e4603f58a8171401609c32b3139005062f3e74b550d9bc8154f5ac96ccd236a8"
         },
         {
-          "line": 349,
+          "line": 33,
           "sha256": "146dd9d29e85891c372655f3b73010319a58543ba5327a753f695c4a4a1592f7"
         }
       ]
@@ -1014,8 +1063,8 @@
       ],
       "declarations": [
         {
-          "line": 351,
-          "sha256": "6f865fe168f00df8eed2774381c2cf2a4f22dc48f2d48853fb88dd81ed82e719"
+          "line": 8,
+          "sha256": "f50c47ac291231f780a36d459f9964979ecba9563dbc52c68fa3cfab8c8ec962"
         }
       ]
     },
@@ -1029,8 +1078,8 @@
       ],
       "declarations": [
         {
-          "line": 359,
-          "sha256": "d495474d0ffb9ad6d270ed22fa56f13015bb275e536a1b3ddb702908a0f18aac"
+          "line": 22,
+          "sha256": "c2b3e9102ed1f3b706dbe35a36f9284aa8f0cf8dd64a2eba88deb6e1e28172f6"
         }
       ]
     },
@@ -1044,8 +1093,8 @@
       ],
       "declarations": [
         {
-          "line": 368,
-          "sha256": "8a34254d650a7f3a5c042751be840602ea5a6cb0ec2b15f517e168a254d9fa91"
+          "line": 37,
+          "sha256": "16f43725724a833895f130e35a9ee4c04a189ce6f64c95f9d5f0fbbbd6bc049c"
         }
       ]
     },
@@ -1059,8 +1108,8 @@
       ],
       "declarations": [
         {
-          "line": 374,
-          "sha256": "f61aa2fdb520f8cc7366cd99c5ce9a32cedd9cff77d465ad816b254ee632cde7"
+          "line": 49,
+          "sha256": "5c6c2167c1e429d86c386610a2da015732a0e857d401f96a78d01c1669acb99e"
         }
       ]
     },
@@ -1074,38 +1123,8 @@
       ],
       "declarations": [
         {
-          "line": 384,
-          "sha256": "856e103f33a22110768874042c71310947038ecd28bde739a72a60177b207686"
-        }
-      ]
-    },
-    {
-      "id": "provider:Json",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "Json",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 10,
-          "sha256": "a0260d82c11dd5feab3269e83ea6ae8096359401597ac8a923ac81ba4e01420c"
-        }
-      ]
-    },
-    {
-      "id": "provider:OperationId",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "OperationId",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 11,
-          "sha256": "e6a8a862ab6c565ac412b4bb9a96361e385cb80d273efeb9cb0cb867400985bc"
+          "line": 65,
+          "sha256": "99bd838171fbe021ae9f189135a85985dcc46fd87c1c999b2ffbf520a9a3bfd2"
         }
       ]
     },
@@ -1226,21 +1245,6 @@
         {
           "line": 32,
           "sha256": "af5d82e8a087673f2bfce512e2f701bff02d22aef1ec7ca96cbc25c66ea657f0"
-        }
-      ]
-    },
-    {
-      "id": "provider:Author",
-      "authority": "provider",
-      "namespace": null,
-      "sourceName": "Author",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 38,
-          "sha256": "00d604f20de41237a7aed9df219c23b19b89e321e01ae1529c3a45b0cf2555ef"
         }
       ]
     },
@@ -3354,51 +3358,6 @@
       ]
     },
     {
-      "id": "host:Application",
-      "authority": "host",
-      "namespace": null,
-      "sourceName": "Application",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 7,
-          "sha256": "97774d272c130497f4e2419b687928b3f17f7aeb6c6710adc0f03feb8710bf81"
-        }
-      ]
-    },
-    {
-      "id": "host:CreateApplication",
-      "authority": "host",
-      "namespace": null,
-      "sourceName": "CreateApplication",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 11,
-          "sha256": "c3840d1dfc7a3434ae7dbe49f75cea9dc6b52c0fd4743a304a4f565bc95cd110"
-        }
-      ]
-    },
-    {
-      "id": "host:runApplication",
-      "authority": "host",
-      "namespace": null,
-      "sourceName": "runApplication",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 12,
-          "sha256": "08bf91eff0c965e11105eb7c282b622087083c31200164a543b34ee652618aa0"
-        }
-      ]
-    },
-    {
       "id": "host:CredentialRequest",
       "authority": "host",
       "namespace": null,
@@ -3408,7 +3367,7 @@
       ],
       "declarations": [
         {
-          "line": 18,
+          "line": 15,
           "sha256": "258798d5c3ecf43519c5c269fcba0499f8a1c6a1a841a9cf672d9988e3e03761"
         }
       ]
@@ -3423,7 +3382,7 @@
       ],
       "declarations": [
         {
-          "line": 21,
+          "line": 18,
           "sha256": "40187d2c9de241e84d2acf3bc3a57fcdedb89631b1f6792092c5466a0243209e"
         }
       ]
@@ -3438,7 +3397,7 @@
       ],
       "declarations": [
         {
-          "line": 22,
+          "line": 19,
           "sha256": "5b996127d5bd19be45da6bf283f75b203cad8fdfa8e45e03c0564de12890115b"
         }
       ]
@@ -3453,7 +3412,7 @@
       ],
       "declarations": [
         {
-          "line": 31,
+          "line": 28,
           "sha256": "6a9e7e5857bf8a8e2f3bfff2171c70f23193b6bfb948494a1c300a2310d482e1"
         }
       ]
@@ -3468,7 +3427,7 @@
       ],
       "declarations": [
         {
-          "line": 33,
+          "line": 30,
           "sha256": "660e7f0aea4b6ce283029e5089d822e9fc4b67c02d88aea54d9fac4d008984df"
         }
       ]
@@ -3483,7 +3442,7 @@
       ],
       "declarations": [
         {
-          "line": 35,
+          "line": 32,
           "sha256": "6b891dd48fd2a0b3e7f67e6becc7221aa9dc96d833fae09f8bd5fce8c90136ae"
         }
       ]
@@ -4259,6 +4218,67 @@
           "sha256": "619f57b8191fb8041d171cf18ee33a9aa66bfb0b1283e591d7868206ea526455"
         }
       ]
+    },
+    {
+      "id": "application:FinalizedReport",
+      "authority": "application",
+      "namespace": null,
+      "sourceName": "FinalizedReport",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 27,
+          "sha256": "83a2c256fb19740659e12c89e3f82bad8b7e81db8fa3fab7a397bd7a6946271f"
+        }
+      ]
+    },
+    {
+      "id": "application:Application",
+      "authority": "application",
+      "namespace": null,
+      "sourceName": "Application",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 9,
+          "sha256": "f67cc9909e2b86e14a0b83f90c0fe779939361ba868fefe2889876320c950605"
+        }
+      ]
+    },
+    {
+      "id": "application:CreateApplication",
+      "authority": "application",
+      "namespace": null,
+      "sourceName": "CreateApplication",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 14,
+          "sha256": "026f7705f8a75d54f8edde6d744a4064586290eda10252797aa039220397bc6f"
+        }
+      ]
+    },
+    {
+      "id": "application:runApplication",
+      "authority": "application",
+      "namespace": null,
+      "sourceName": "runApplication",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 17,
+          "sha256": "c9cb124df3aed853bfb95b477dbcc421d68ca9f1d4a14ed2b3450343394fa1fd"
+        }
+      ]
     }
   ],
   "logicalSurfaces": [
@@ -4270,6 +4290,71 @@
           "declaration": "kernel:PROVIDER_CONTRACT",
           "name": "PROVIDER_CONTRACT",
           "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:PreparedRequest",
+          "name": "PreparedRequest",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:SendResult",
+          "name": "SendResult",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:Transport",
+          "name": "Transport",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:Observation",
+          "name": "Observation",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:OperationEvidence",
+          "name": "OperationEvidence",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:ProviderContext",
+          "name": "ProviderContext",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:NativeFailureBoundary",
+          "name": "NativeFailureBoundary",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:ProviderDefinition",
+          "name": "ProviderDefinition",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:ProviderDescriptor",
+          "name": "ProviderDescriptor",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:Json",
+          "name": "Json",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:OperationId",
+          "name": "OperationId",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:Author",
+          "name": "Author",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:makeRequest",
+          "name": "makeRequest",
+          "module": "kernel.Plan"
         },
         {
           "declaration": "kernel:ReleaseError",
@@ -4377,51 +4462,6 @@
           "module": "kernel.Model"
         },
         {
-          "declaration": "kernel:Snapshot",
-          "name": "Snapshot",
-          "module": "kernel.Journal"
-        },
-        {
-          "declaration": "kernel:AppendResult",
-          "name": "AppendResult",
-          "module": "kernel.Journal"
-        },
-        {
-          "declaration": "kernel:JournalStore",
-          "name": "JournalStore",
-          "module": "kernel.Journal"
-        },
-        {
-          "declaration": "kernel:PreparedRequest",
-          "name": "PreparedRequest",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "kernel:SendResult",
-          "name": "SendResult",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "kernel:Transport",
-          "name": "Transport",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "kernel:Observation",
-          "name": "Observation",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "kernel:OperationEvidence",
-          "name": "OperationEvidence",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "kernel:ProviderContext",
-          "name": "ProviderContext",
-          "module": "kernel.Provider"
-        },
-        {
           "declaration": "kernel:CoreDispatchError",
           "name": "CoreDispatchError",
           "module": "kernel.Model"
@@ -4430,41 +4470,6 @@
           "declaration": "kernel:CoreUndecodableReceipt",
           "name": "CoreUndecodableReceipt",
           "module": "kernel.Model"
-        },
-        {
-          "declaration": "kernel:NativeFailureBoundary",
-          "name": "NativeFailureBoundary",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "kernel:ProviderDefinition",
-          "name": "ProviderDefinition",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "kernel:ProviderDescriptor",
-          "name": "ProviderDescriptor",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "kernel:Scope",
-          "name": "Scope",
-          "module": "kernel.Journal"
-        },
-        {
-          "declaration": "kernel:JournalContext",
-          "name": "JournalContext",
-          "module": "kernel.Journal"
-        },
-        {
-          "declaration": "kernel:HostShape",
-          "name": "HostShape",
-          "module": "kernel.Host"
-        },
-        {
-          "declaration": "kernel:Host",
-          "name": "Host",
-          "module": "kernel.Host"
         },
         {
           "declaration": "kernel:OperationStatus",
@@ -4485,6 +4490,41 @@
           "declaration": "kernel:RunOptions",
           "name": "RunOptions",
           "module": "kernel.Model"
+        },
+        {
+          "declaration": "kernel:Snapshot",
+          "name": "Snapshot",
+          "module": "kernel.Journal"
+        },
+        {
+          "declaration": "kernel:AppendResult",
+          "name": "AppendResult",
+          "module": "kernel.Journal"
+        },
+        {
+          "declaration": "kernel:JournalStore",
+          "name": "JournalStore",
+          "module": "kernel.Journal"
+        },
+        {
+          "declaration": "kernel:Scope",
+          "name": "Scope",
+          "module": "kernel.Journal"
+        },
+        {
+          "declaration": "kernel:JournalContext",
+          "name": "JournalContext",
+          "module": "kernel.Journal"
+        },
+        {
+          "declaration": "kernel:HostShape",
+          "name": "HostShape",
+          "module": "kernel.Host"
+        },
+        {
+          "declaration": "kernel:Host",
+          "name": "Host",
+          "module": "kernel.Host"
         },
         {
           "declaration": "kernel:CandidateRequest",
@@ -4542,11 +4582,6 @@
           "module": "kernel.Plan"
         },
         {
-          "declaration": "kernel:makeRequest",
-          "name": "makeRequest",
-          "module": "kernel.Plan"
-        },
-        {
           "declaration": "kernel:GitReceipt",
           "name": "GitReceipt",
           "module": "kernel.GitAuthority"
@@ -4590,21 +4625,6 @@
           "declaration": "kernel:acceptRisk",
           "name": "acceptRisk",
           "module": "kernel.Release"
-        },
-        {
-          "declaration": "provider:Author",
-          "name": "Author",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "provider:Json",
-          "name": "Json",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "provider:OperationId",
-          "name": "OperationId",
-          "module": "kernel.Provider"
         }
       ]
     },
@@ -5053,19 +5073,24 @@
       "entry": "host.Node",
       "symbols": [
         {
-          "declaration": "host:Application",
+          "declaration": "application:Application",
           "name": "Application",
           "module": "host.Application"
         },
         {
-          "declaration": "host:CreateApplication",
+          "declaration": "application:CreateApplication",
           "name": "CreateApplication",
           "module": "host.Application"
         },
         {
-          "declaration": "host:runApplication",
+          "declaration": "application:runApplication",
           "name": "runApplication",
           "module": "host.Application"
+        },
+        {
+          "declaration": "application:FinalizedReport",
+          "name": "FinalizedReport",
+          "module": "kernel.Report"
         },
         {
           "declaration": "host:makeHttpTransport",
@@ -5094,19 +5119,24 @@
       "entry": "host.Bun",
       "symbols": [
         {
-          "declaration": "host:Application",
+          "declaration": "application:Application",
           "name": "Application",
           "module": "host.Application"
         },
         {
-          "declaration": "host:CreateApplication",
+          "declaration": "application:CreateApplication",
           "name": "CreateApplication",
           "module": "host.Application"
         },
         {
-          "declaration": "host:runApplication",
+          "declaration": "application:runApplication",
           "name": "runApplication",
           "module": "host.Application"
+        },
+        {
+          "declaration": "application:FinalizedReport",
+          "name": "FinalizedReport",
+          "module": "kernel.Report"
         },
         {
           "declaration": "host:makeHttpTransport",
@@ -6056,6 +6086,7 @@
             "import": "./dist/Node.js"
           },
           "runtimeNames": [
+            "FinalizedReport",
             "fileContentOwner",
             "makeGitCatalogHost",
             "makeHttpTransport",
@@ -6064,7 +6095,8 @@
           ],
           "typeNames": [
             "Application",
-            "CreateApplication"
+            "CreateApplication",
+            "FinalizedReport"
           ]
         },
         {
@@ -6079,6 +6111,7 @@
             "import": "./dist/Bun.js"
           },
           "runtimeNames": [
+            "FinalizedReport",
             "fileContentOwner",
             "makeGitCatalogHost",
             "makeHttpTransport",
@@ -6088,7 +6121,8 @@
           ],
           "typeNames": [
             "Application",
-            "CreateApplication"
+            "CreateApplication",
+            "FinalizedReport"
           ]
         },
         {
@@ -6394,7 +6428,7 @@
           ]
         }
       ],
-      "exportsSha256": "0d0957f5d2ff469e5e234532772e34b9d1630d4a437b168dafc295cfca67c4cf"
+      "exportsSha256": "4c6e41fc6e9530eeb6b31b23ec5a78e0f336b1f94c1a0772f8b29163e3ad410d"
     },
     {
       "id": "T2",
@@ -6708,6 +6742,7 @@
             "import": "./dist/Node.js"
           },
           "runtimeNames": [
+            "FinalizedReport",
             "fileContentOwner",
             "makeGitCatalogHost",
             "makeHttpTransport",
@@ -6716,7 +6751,8 @@
           ],
           "typeNames": [
             "Application",
-            "CreateApplication"
+            "CreateApplication",
+            "FinalizedReport"
           ]
         },
         {
@@ -6731,6 +6767,7 @@
             "import": "./dist/Bun.js"
           },
           "runtimeNames": [
+            "FinalizedReport",
             "fileContentOwner",
             "makeGitCatalogHost",
             "makeHttpTransport",
@@ -6740,7 +6777,8 @@
           ],
           "typeNames": [
             "Application",
-            "CreateApplication"
+            "CreateApplication",
+            "FinalizedReport"
           ]
         },
         {
@@ -7046,7 +7084,7 @@
           ]
         }
       ],
-      "exportsSha256": "586c83de0883f547a8a1e7ae4afef9f0f6fa9229498c95b98b799434e051273a"
+      "exportsSha256": "438d74742525822555d5e13a20bb32c0a41f1cd1fa2600d1f8ed3cd77b2078b8"
     },
     {
       "id": "T3",
@@ -7360,6 +7398,7 @@
             "import": "./dist/Node.js"
           },
           "runtimeNames": [
+            "FinalizedReport",
             "fileContentOwner",
             "makeGitCatalogHost",
             "makeHttpTransport",
@@ -7368,7 +7407,8 @@
           ],
           "typeNames": [
             "Application",
-            "CreateApplication"
+            "CreateApplication",
+            "FinalizedReport"
           ]
         },
         {
@@ -7383,6 +7423,7 @@
             "import": "./dist/Bun.js"
           },
           "runtimeNames": [
+            "FinalizedReport",
             "fileContentOwner",
             "makeGitCatalogHost",
             "makeHttpTransport",
@@ -7392,7 +7433,8 @@
           ],
           "typeNames": [
             "Application",
-            "CreateApplication"
+            "CreateApplication",
+            "FinalizedReport"
           ]
         },
         {
@@ -7698,7 +7740,7 @@
           ]
         }
       ],
-      "exportsSha256": "bf40437959d8895d07ece1c7f638a3a48792d64a74adf7f5f13c1b5f10cf69d7"
+      "exportsSha256": "8c60e62e7570759a2d72c0265bad2569b7db101244d1b670318385206631d2f0"
     },
     {
       "id": "T3c",
@@ -8012,6 +8054,7 @@
             "import": "./dist/Node.js"
           },
           "runtimeNames": [
+            "FinalizedReport",
             "fileContentOwner",
             "makeGitCatalogHost",
             "makeHttpTransport",
@@ -8020,7 +8063,8 @@
           ],
           "typeNames": [
             "Application",
-            "CreateApplication"
+            "CreateApplication",
+            "FinalizedReport"
           ]
         },
         {
@@ -8035,6 +8079,7 @@
             "import": "./dist/Bun.js"
           },
           "runtimeNames": [
+            "FinalizedReport",
             "fileContentOwner",
             "makeGitCatalogHost",
             "makeHttpTransport",
@@ -8044,7 +8089,8 @@
           ],
           "typeNames": [
             "Application",
-            "CreateApplication"
+            "CreateApplication",
+            "FinalizedReport"
           ]
         },
         {
@@ -8350,10 +8396,22 @@
           ]
         }
       ],
-      "exportsSha256": "b3f9d60f3d48a0a0b6385b81320e3e27c864373075cdd135b1717284c101c3a3"
+      "exportsSha256": "96514ce27ec06925c6aff181f9b119d4387faf1b094c51f74cfbce16f3e2db45"
     }
   ],
   "intentionallyPrivateAuthorityExports": [
+    {
+      "id": "provider:Json",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:OperationId",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "provider:Author",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
     {
       "id": "host:runAction",
       "reason": "Private Action adapter, apps/action/src/launcher.ts; only host loading primitives are public."

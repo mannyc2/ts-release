@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect"
 import {
-  Host,
+  currentHost,
   type HostShape,
   journalIdFor,
   providerContext,
@@ -107,14 +107,14 @@ const recordObservation = Effect.fn("ts-release.recordObservation")(function* (
 export const reportRelease = Effect.fn("ts-release.reportRelease")(function* (options: {
   readonly plan: Plan
 }) {
-  const host = yield* Host
+  const host = yield* currentHost
   const plan = yield* loadPlan(options.plan, host.providers)
   return (yield* read(host, plan)).report()
 })
 export const observeRelease = Effect.fn("ts-release.observeRelease")(function* (options: {
   readonly plan: Plan
 }) {
-  const host = yield* Host
+  const host = yield* currentHost
   const plan = yield* loadPlan(options.plan, host.providers)
   // Validate all history and definitions before the first provider effect.
   yield* read(host, plan)
@@ -127,8 +127,9 @@ export const observeRelease = Effect.fn("ts-release.observeRelease")(function* (
   return (yield* read(host, plan)).report()
 })
 /** One interpreter, no durable permit and no provider-selected mutation retry. */
-export const runRelease = Effect.fn("ts-release.runRelease")(function* (options: RunOptions) {
-  const host = yield* Host
+export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: RunOptions) {
+  const options = { ...input }
+  const host = yield* currentHost
   if (
     typeof options.authorize !== "boolean" ||
     (options.observe !== undefined && typeof options.observe !== "boolean")
@@ -366,7 +367,7 @@ export const supersedePlan = Effect.fn("ts-release.supersedePlan")(function* (op
   readonly authorize: boolean
   readonly reason: string
 }) {
-  const host = yield* Host
+  const host = yield* currentHost
   if (options.authorize !== true)
     return yield* new ReleaseError({
       code: "authority-required",
@@ -385,7 +386,7 @@ export const acceptRisk = Effect.fn("ts-release.acceptRisk")(function* (options:
   readonly authorize: boolean
   readonly decision: RiskAccepted
 }) {
-  const host = yield* Host
+  const host = yield* currentHost
   if (options.authorize !== true)
     return yield* new ReleaseError({
       code: "authority-required",

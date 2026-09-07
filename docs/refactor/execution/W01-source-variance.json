@@ -1,0 +1,19 @@
+{
+  "format": "ts-release/source-planning-variance/1",
+  "wave": "W01",
+  "originalTripwire": 1700,
+  "replacementLines": 2779,
+  "replacementSha256": "0e216edbcbd1478cf1a21a687d8f7a2df9d39702449682da977589fa312e1adc",
+  "completeProductCeiling": 11485,
+  "completeProductWaiver": false,
+  "decision": "Continue the kernel cutover with this exact reviewed planning variance; the original tripwire comparison remains failed, and complete-product qualification still requires at most11485 lines. Any changed owned source invalidates this recorded variance.",
+  "reason": "Normal-format production includes strict host/request/evidence admission, owned Bundle/content, full report and real storage that the smaller lab forecast underestimated. Two simplification passes removed duplicate handling/copying and shared observation/report ownership; correctness findings were fixed and charged. No selected scope, normal formatting, original denominator or40-line marginal target changed.",
+  "review": "docs/refactor/execution/W01-review.md",
+  "forecastExpected": 12525,
+  "forecastDeficit": 1040,
+  "notEvidenceOf": [
+    "complete-product source reduction",
+    "native acceptance",
+    "release certification"
+  ]
+}

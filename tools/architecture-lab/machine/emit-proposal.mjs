@@ -37,9 +37,9 @@ const header=`/**
 const result=(header+contracts+"\n"+model+"\n"+history+"\n"+identity+"\n"+git+"\n"+run).replaceAll("LabError","ReleaseError").replaceAll("architecture-lab/","ts-release/").replaceAll("lab/provider/", "ts-release/provider/").replaceAll('(planId: string,','(journalId: string,').replaceAll('(planId: string)', '(journalId: string)')
 const http=header+outputs.get("http-evidence.d.ts").replaceAll("./contracts.js", "./kernel-api.js")
 for (const [name,text] of [["kernel-api.d.ts",result],["http-api.d.ts",http]]) {
-  const path=resolve(here,"../../../docs/refactor/architecture-program/handoff",name)
+  const path=resolve(here,"../../../docs/refactor/architecture-program/handoff",name === "kernel-api.d.ts" ? `research-api/${name}` : name)
   if(process.argv.includes("--check")) {
     if(readFileSync(path,"utf8")!==text) throw Error(`Compiler-derived ${name} differs`)
   } else writeFileSync(path,text)
 }
-console.log("Compiler-derived kernel and HTTP declarations "+(process.argv.includes("--check")?"verified":"written"))
+console.log("Research-derived kernel snapshot and proposed HTTP declarations "+(process.argv.includes("--check")?"verified":"written"))

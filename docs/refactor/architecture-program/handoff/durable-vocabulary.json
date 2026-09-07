@@ -1,5 +1,5 @@
 {
-  "status": "Proposed documentation projection only; not a runtime registry, generated implementation, or native qualification receipt.",
+  "status": "Actual core wire spellings plus still-proposed provider spellings; documentation only, never a runtime implementation registry.",
   "authority": [
     "provider-api.d.ts",
     "apple-api.d.ts",
@@ -414,7 +414,9 @@
     "body": "UTF8(kernel canonical(Schema.encodeSync(ApplePreparation)(input))) using the complete admitted AppPreparation | DmgPreparation | PkgPreparation union member",
     "principal": "input.principal",
     "scope": "The exact canonical definitionId/coordinate value specified by the Apple.preparationProvider row; kind is app, dmg or pkg according to the input tag",
-    "replay": { "_tag": "None" },
+    "replay": {
+      "_tag": "None"
+    },
     "construction": "Use kernel makeRequest once to derive bodyDigest and canonical decimal byteLength. The body binds the native input, owned source, signature, journal root, public credential selector and producer revision. It is an opaque invocation descriptor, not the native ZIP or notarytool wire payload.",
     "dispatch": "The captured transport strictly decodes the body as ApplePreparation, re-derives all request facts and verifies their correspondence before restoring owned bytes or obtaining the native client. App calls Notary.submitApp({bundle}); DMG/pkg call Notary.submit({kind,artifact}) with their exact restored public native type.",
     "sourceBindings": [
@@ -506,8 +508,16 @@
       "opaque/1"
     ],
     "coreDispatchErrorVersion": "core-dispatch-error/1",
-    "replayProtectionTags": { "NoReplay": "None", "GitCas": "GitCas" },
-    "dispatchBasisTags": ["Initial", "NonCommit", "ProtectedReplay", "AcceptedRisk"],
+    "replayProtectionTags": {
+      "NoReplay": "None",
+      "GitCas": "GitCas"
+    },
+    "dispatchBasisTags": [
+      "Initial",
+      "NonCommit",
+      "ProtectedReplay",
+      "AcceptedRisk"
+    ],
     "transientOnly": [
       "PublicationScope",
       "PreparationScope",
@@ -591,5 +601,37 @@
       "rule": "Keep these external file formats; do not add ts-release format headers."
     }
   ],
-  "qualification": "See provider-api-evidence.json, apple-adoption.md and upstream/published-consumer.json. IDs/version choices in this file are a proposed spelling freeze; no production provider codec implementation or hosted native acceptance is claimed."
+  "qualification": "See provider-api-evidence.json, apple-adoption.md and upstream/published-consumer.json. IDs/version choices in this file are a proposed spelling freeze; no production provider codec implementation or hosted native acceptance is claimed.",
+  "core": [
+    {
+      "value": "ts-release/plan/1",
+      "owner": "packages/ts-release/src/internal/ReleaseModel.ts",
+      "meaning": "Immutable content-bound Plan"
+    },
+    {
+      "value": "ts-release/event/1",
+      "owner": "packages/ts-release/src/internal/ReleaseModel.ts",
+      "meaning": "One canonical JournalEvent envelope"
+    },
+    {
+      "value": "ts-release/bundle/1",
+      "owner": "packages/ts-release/src/internal/ArtifactModel.ts",
+      "meaning": "Owned path-free Bundle metadata"
+    },
+    {
+      "value": "ts-release/report/1",
+      "owner": "packages/ts-release/src/internal/FinalizedReport.ts",
+      "meaning": "Complete derived K01 report; application/public delivery integration remains open"
+    },
+    {
+      "value": "ts-release/sqlite-journal/1",
+      "owner": "packages/ts-release/src/platform/SqliteJournal.ts",
+      "meaning": "Default local storage format; no legacy reader"
+    },
+    {
+      "value": "ts-release/provider/1",
+      "owner": "packages/ts-release/src/Provider.ts",
+      "meaning": "Runtime composition contract; installed-version preflight"
+    }
+  ]
 }

@@ -1,4 +1,6 @@
 import assert from "node:assert/strict"
+import { createHash } from "node:crypto"
+import { fileURLToPath } from "node:url"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -14,7 +16,7 @@ import {
 } from "@mannyc1/ts-release"
 import { HttpReceipt, corresponds } from "@mannyc1/ts-release/http"
 import { File, finalize, encodeBundle, loadBundle } from "@mannyc1/ts-release/bundle"
-import { fileContentOwner } from "@mannyc1/ts-release/node"
+import { fileContentOwner, runApplication, FinalizedReport } from "@mannyc1/ts-release/node"
 
 const contentDirectory = await mkdtemp(join(tmpdir(), "packed-content-"))
 try {
@@ -58,7 +60,10 @@ const provider = {
     }),
 }
 const operation = await Effect.runPromise(createOperation(provider, { coordinate: "example@1" }))
-const plan = await Effect.runPromise(createPlan("consumer-bundle", [operation]))
+const bundle = await Effect.runPromise(finalize([]))
+const plan = await Effect.runPromise(
+  createPlan(createHash("sha256").update(encodeBundle(bundle)).digest("hex"), [operation]),
+)
 const events = []
 let sends = 0
 const host = {
@@ -98,6 +103,22 @@ for (let invocation = 0; invocation < 2; invocation++) {
   )
   assert.equal(report.operations[0].status, "Satisfied")
 }
+const lifecycle = []
+const applicationReport = await runApplication(
+  fileURLToPath(new URL("./application.mjs", import.meta.url)),
+  {
+    application: { bundle, host, options: { plan, authorize: true } },
+    lifecycle,
+  },
+)
+assert.deepEqual(lifecycle, ["acquire", "release"])
+assert.deepEqual(applicationReport.plan, plan)
+assert.deepEqual(applicationReport.bundle, bundle)
+assert.deepEqual(applicationReport.journal.events, events)
+assert.deepEqual(
+  Schema.decodeUnknownSync(FinalizedReport)(JSON.parse(JSON.stringify(applicationReport))),
+  applicationReport,
+)
 assert.equal(sends, 1)
 assert.equal(events.length, 2)
 console.log(

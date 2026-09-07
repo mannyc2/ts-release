@@ -6,6 +6,7 @@ import ts from "typescript"
 const root = resolve(import.meta.dir, "..")
 const graph = new Map<string, string[]>()
 const externals = new Map<string, string[]>()
+let applicationImports = 0
 const edges: Array<{ file: string; specifier: string; typeOnly: boolean }> = []
 const paths: string[] = []
 for (const pattern of [
@@ -75,6 +76,15 @@ for (const path of paths) {
         node.expression.getText(source) === "require")
     ) {
       const specifier = node.arguments[0]
+      if (
+        node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+        path === "packages/ts-release/src/platform/Application.ts" &&
+        specifier &&
+        !ts.isStringLiteral(specifier)
+      ) {
+        applicationImports++
+        return
+      }
       assert.ok(
         specifier && ts.isStringLiteral(specifier),
         `${path}: dynamic code loading requires the explicit application host boundary`,
@@ -88,6 +98,7 @@ for (const path of paths) {
   externals.set(path, outside)
 }
 assert.ok(graph.size > 0)
+assert.ok(applicationImports <= 1, "One explicitly selected application import boundary")
 const core = await Bun.file(join(root, "packages/ts-release/package.json")).json()
 const closures: Record<string, string[]> = {}
 for (const [entry, conditions] of Object.entries(core.exports) as Array<

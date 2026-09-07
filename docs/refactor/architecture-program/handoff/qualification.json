@@ -575,13 +575,18 @@
         },
         {
           "path": "tools/architecture-lab/public-history-inventory.py",
-          "sha256": "bf575045499747cb0b2e4c2397ba3c749bfc1175865e5a8c74e6554784f10d01"
+          "sha256": "64d3dd4dc6c7f18351346a8fdc071ec991cfc0d04243a87086028b4637e2edcc"
         },
         {
           "path": "tools/architecture-lab/public-history-symbols.cjs",
           "sha256": "dc7d8de818c3260eb522147f3b0bc69606ca22705bf8dd398e07b6ae338ab988"
         }
-      ]
+      ],
+      "productionCensusReconciliation": {
+        "priorScriptSha256": "bf575045499747cb0b2e4c2397ba3c749bfc1175865e5a8c74e6554784f10d01",
+        "change": "Compare historical currentPresence/currentSha256 to preserved9b14c6c instead of moving worktree. Published census output remains byte-identical after51 W01 deletions. Actual deletion evidence is separately checked by check-migration-execution.ts.",
+        "validation": "python3 tools/architecture-lab/public-history-inventory.py --check passed after the change;522members/98source units/186export names/113runtime names/3476journal lines."
+      }
     },
     "E18": {
       "paths": [

@@ -86,7 +86,7 @@
         "ts-release"
       ],
       "dependsOn": [],
-      "status": "planned-not-executed",
+      "status": "implemented-local-cutover-with-recorded-planning-variance",
       "productOutcomeIds": [
         "K01"
       ],
@@ -106,7 +106,7 @@
           "./test/reimplementation/kernel"
         ]
       ],
-      "commandAvailability": "These future independent production contract suites must be created and bound before their implementation; current lab paths are supporting design evidence only.",
+      "commandAvailability": "Actual production kernel suite, strict compiler/declarations/exports/imports, migration and packed five-entry subsets implemented. Native later-wave oracles remain open.",
       "commonCommands": [
         [
           "bun",
@@ -134,7 +134,8 @@
           "--check"
         ]
       ],
-      "migrationRule": "Resolve every assigned current-source migration row and delete its replaced reader/writer/declaration in this same wave. Historical rows carry no additional deletion credit. No overlay/PR22 merge or cherry-pick."
+      "migrationRule": "Resolve every assigned current-source migration row and delete its replaced reader/writer/declaration in this same wave. Historical rows carry no additional deletion credit. No overlay/PR22 merge or cherry-pick.",
+      "executionEvidence": "docs/refactor/execution/W01-verification.json"
     },
     {
       "id": "W02",

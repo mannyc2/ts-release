@@ -28,8 +28,8 @@
   "files": [
     {
       "path": "docs/refactor/architecture-program/handoff/README.md",
-      "bytes": 5514,
-      "sha256": "d529a66ad2a80b40f3d58c593e23fba1f11bd261ce3a9bc5a80ec2bce22ab064"
+      "bytes": 6374,
+      "sha256": "6cc41be9d6eb86bc59bf536e4dd53fb2912c640a5facae853ce3d203b7f8b45b"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/adoption.d.ts",
@@ -98,13 +98,13 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/design.json",
-      "bytes": 29973,
-      "sha256": "eb0716306ab3c300b84a210fa892a8c705d40476c7651175e9db76adb52f3cdf"
+      "bytes": 32642,
+      "sha256": "0f45db1525f16bf69d27169206a842a042f833d605d7aaab98d3e909cfbba0d4"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/durable-vocabulary.json",
-      "bytes": 26839,
-      "sha256": "061b1a1c6ca51e3c5306a8b2a2f1431eeaed211d24264872a40a5b9866a20595"
+      "bytes": 28021,
+      "sha256": "0cfbfd631963f0362b9f0119bac7ca57d4f13987db980af492f9a9c76126765b"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/durable-vocabulary.md",
@@ -113,18 +113,18 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/forecast.json",
-      "bytes": 30216,
-      "sha256": "80386a5fbc3eb004e0df9de205ba3e0de912f58c019dcf4ef3ea3f8380db130f"
+      "bytes": 29560,
+      "sha256": "afeb7222677ef11b5223b5a1609800cd0c3d353fea585ee8b35b9bad32db1608"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/forecast.md",
-      "bytes": 5807,
-      "sha256": "2766d8e29946be04655890aa65bd2d7e55cbbdabda408cda0c74d11dbe97122d"
+      "bytes": 5814,
+      "sha256": "24dc3ff276440a92fa1dae6efdae1d7806b54bad98358d89f0360e7ae63583b5"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
-      "bytes": 2685,
-      "sha256": "9037335c5975787fba2a9452c7ca85a62122caf61905cabd72fafdde2e8d175c"
+      "bytes": 2635,
+      "sha256": "94539eedb7b652e2c148190aafe49ae22d3ee064fa69daa2af3a75914e560278"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/hosts.md",
@@ -138,13 +138,13 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/kernel-api.d.ts",
-      "bytes": 17958,
-      "sha256": "b3fe44cce205ce93567279da4a2b490b9c66597013d5b0112815393a1f3eddfc"
+      "bytes": 201,
+      "sha256": "31a066415d0cc60461fd98e7c8b1ceda8713b6350ef19487714c0ba08e24e11d"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/layout.json",
-      "bytes": 389851,
-      "sha256": "bda7c04dd3afbaca6550f76c9482e7773c4a471a56b34b9e6a4663918aba642b"
+      "bytes": 410651,
+      "sha256": "dc226f2c7ee5b1e47e89e32e52e90ef8815f196fa43c8ebdc72f8f78b2a3af9f"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/machine.md",
@@ -175,6 +175,146 @@
       "path": "docs/refactor/architecture-program/handoff/package-coordinates.json",
       "bytes": 3321,
       "sha256": "017b4e816cdcc572fe416506b3e7937290309f027e2fa2e6206b79f3a75e8e28"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Bun.d.ts",
+      "bytes": 297,
+      "sha256": "31b0b5afec079fdd8706274c4afce6130be58123c055eedab806b7a1f1c1a5a2"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Bundle.d.ts",
+      "bytes": 435,
+      "sha256": "0918c0bf32af283678035498b0d87734411d59b6e87353214044e4dfcce37fc1"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Http.d.ts",
+      "bytes": 654,
+      "sha256": "d0803a5382711ddd18887553a552d705cd3ae1490d90b03e250eea876d069c7d"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Journal.d.ts",
+      "bytes": 1960,
+      "sha256": "97653bfdcb014dd772a59b1907adc88e7f7896b7b57380f1cbcad1c81a28b165"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Node.d.ts",
+      "bytes": 232,
+      "sha256": "80b0d2a03cb569d9c9df07014fa47202f4390363bf9b513a5fa221618c9cd765"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Plan.d.ts",
+      "bytes": 1184,
+      "sha256": "b7ea1255df0382a90a927d5519b72da17d257943fe5af9fda43d2842973fb8a2"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Provider.d.ts",
+      "bytes": 4155,
+      "sha256": "8c6b235636c8fc390c3ef8e1ab18d388ff42a963840bfd13c081727bdf603fe6"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/Release.d.ts",
+      "bytes": 2878,
+      "sha256": "ec479421ebe9aa89b2019fabdf61f6a0a6db56e0b7ea84d161c17da6f1bbf1ee"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/emission.json",
+      "bytes": 8218,
+      "sha256": "1121d5a110880f74b8a0f70c457839f2395870e5dcba105c8879b31fb362bc95"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/index.d.ts",
+      "bytes": 1522,
+      "sha256": "0cd65e15e0c65ec12c2ea2af90ed9bba8c5aba8523952b3dd52f7635a29c19b8"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/ArtifactModel.d.ts",
+      "bytes": 3724,
+      "sha256": "d611273978b4ee31d4730ebc664c248b9b09b7022b6d50251d2ade9b5ef3cbb0"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/BundleCodec.d.ts",
+      "bytes": 372,
+      "sha256": "a1597847ffa2cd654944698e757fdc035513a2e897499ea3008e6b82316088a3"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/BundleFinalize.d.ts",
+      "bytes": 453,
+      "sha256": "3f703fe89f67c2e96831489ded770252ea8993f7426012f0393cae02f8682b4f"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/Content.d.ts",
+      "bytes": 1070,
+      "sha256": "6cd39249378d129be28898ef1a8b6390f022ccf1ea4519923b096d5727d208d5"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/Decision.d.ts",
+      "bytes": 2607,
+      "sha256": "f8b34f717c6c0e2fe47b86540122b94c19ce782ffb34ce206f719ba729e8288d"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/EffectTypes.d.ts",
+      "bytes": 164,
+      "sha256": "cbcdad86e951d4a7923985c5ff6fc13006ddfc27ff7c6d6d14d83ff82b4eb4fa"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/Error.d.ts",
+      "bytes": 580,
+      "sha256": "9a43e975a4c32b561450b59236b692b5e234471e9058c0d0575fa16a00079dc5"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/FinalizedReport.d.ts",
+      "bytes": 1656,
+      "sha256": "c96f187878424ae5a7e181726ad123376b268c6cb3e3aade87f4df46f1d84d6a"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/GitAuthority.d.ts",
+      "bytes": 1753,
+      "sha256": "28c3b696fd952cffb8bd99dac3c7e99a452fb3b258fbffd5984dff9b9dbdd38a"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/Host.d.ts",
+      "bytes": 2552,
+      "sha256": "dec2ec5d335770563993ddeb483a0c10c1f27400bf6eed8062f272d698482518"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/Identity.d.ts",
+      "bytes": 1082,
+      "sha256": "61868f22bb0904e2c566cb35cb241271442d1569b10f1e11b092a48e69ee9339"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/ReleaseModel.d.ts",
+      "bytes": 8250,
+      "sha256": "6d16174d0c610a48eb00fe31f86eba2264697f1b6721b8576919d5cd1c39195b"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/internal/TreeManifest.d.ts",
+      "bytes": 206,
+      "sha256": "35af97fdc590cd114e63a31ff7f8dcd3e2247566768ec0301cd1a65112709de4"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
+      "bytes": 926,
+      "sha256": "ed80182ff1829ce3d16711f794346a816af816766537209a17a56afa4fa78ba3"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/platform/ContentStore.d.ts",
+      "bytes": 225,
+      "sha256": "2922d2c1f75cf526c3b9b1a19efeada0b481e8ed397136726f02b81c464ba1e2"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/platform/SqliteJournal.d.ts",
+      "bytes": 308,
+      "sha256": "72e781b3554a37de1ab751517a0f14a0d890d038e97304676f19aaa8715b1e17"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/platform/StoreCodec.d.ts",
+      "bytes": 333,
+      "sha256": "63640e374fc1cb62e722b0f8976d397beb97ab0783ea72907404ea0727fffb6c"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-verification.json",
+      "bytes": 17313,
+      "sha256": "97fe437fb28ba07f098b1653febfe6838e9eceffd83ed5e7c2965ffe59446aff"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/provider-api-evidence.json",
@@ -238,13 +378,13 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/public-surface.json",
-      "bytes": 219759,
-      "sha256": "3cf9e560bb7139e4e0c05f3f8cf6a0d6fd15e518653a9c3625da318718d2f7df"
+      "bytes": 221567,
+      "sha256": "0e24d4cab4b51df52d1700722de548b184ab1f48c4f9ab1874723aa13c2ff66a"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/qualification.json",
-      "bytes": 161597,
-      "sha256": "518842a9cf035f6ed99325ae39684ce1d2ecf3dde2a68b09fc1ac80f5db98f63"
+      "bytes": 162206,
+      "sha256": "e640efe9b4f5f49db710b5e039b2e0cd636de443e2797c242485c6afff554bc1"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/qualification.md",
@@ -255,6 +395,11 @@
       "path": "docs/refactor/architecture-program/handoff/reconciliation.json",
       "bytes": 253053,
       "sha256": "46a6bcf96708cc6fe0509748dde086a64d40937d58a8107c72203906d851a674"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/research-api/kernel-api.d.ts",
+      "bytes": 17958,
+      "sha256": "b3fe44cce205ce93567279da4a2b490b9c66597013d5b0112815393a1f3eddfc"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/research-lineage.md",
@@ -328,8 +473,8 @@
     },
     {
       "path": "docs/refactor/architecture-program/handoff/waves.json",
-      "bytes": 178216,
-      "sha256": "f3ed98ebd587963d0e3ee2d8390c2ab7e04eae17bf11125b96d757cadd129082"
+      "bytes": 178337,
+      "sha256": "9e2a5352b24771a0b28f05fa4c5df3c7ad8f93ec895c4e6a125086a246648e80"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/waves.md",
@@ -523,8 +668,8 @@
     },
     {
       "path": "tools/architecture-lab/machine/emit-proposal.mjs",
-      "bytes": 4050,
-      "sha256": "b26ee051c79bd0019c09fccb2027963dffa3a4234565d83aa34e56546d690d8d"
+      "bytes": 4122,
+      "sha256": "5e9609893c2095cd98ae80e01ec28a33494ecf896b390a1abf523a49dd137aa6"
     },
     {
       "path": "tools/architecture-lab/machine/event-sizes.json",
@@ -743,8 +888,8 @@
     },
     {
       "path": "tools/architecture-lab/project.ts",
-      "bytes": 34664,
-      "sha256": "4018aae2478c8085171d203839e69d82a60777f7a72918dc46d5b3fb725750ac"
+      "bytes": 36309,
+      "sha256": "50050a6472ac0bd9acc0f0b109d3aed2f3299fe87387841e3749e1e95d5c5756"
     },
     {
       "path": "tools/architecture-lab/proposal/apple.ts",
@@ -763,8 +908,8 @@
     },
     {
       "path": "tools/architecture-lab/public-history-inventory.py",
-      "bytes": 12025,
-      "sha256": "bf575045499747cb0b2e4c2397ba3c749bfc1175865e5a8c74e6554784f10d01"
+      "bytes": 12393,
+      "sha256": "64d3dd4dc6c7f18351346a8fdc071ec991cfc0d04243a87086028b4637e2edcc"
     },
     {
       "path": "tools/architecture-lab/public-history-symbols.cjs",
@@ -1058,8 +1203,8 @@
     },
     {
       "path": "tools/architecture-lab/verify.mjs",
-      "bytes": 8626,
-      "sha256": "9e9d9b20313f7af437d86a0e40ff247ce90a28fd4776d9ac2713c3b23eeb762f"
+      "bytes": 8491,
+      "sha256": "01fba8a32203e2050969c1d8e96956392686eafaea77f4e271365d01af4bdb71"
     }
   ]
 }

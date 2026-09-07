@@ -41,7 +41,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "d268e1c1464b918c9e10dc07f2dbced64241413f715f4e56aeaac932746b3811"
+    "sha256": "0f45db1525f16bf69d27169206a842a042f833d605d7aaab98d3e909cfbba0d4"
   },
   "migration": {
     "path": "docs/refactor/architecture-program/handoff/migration.json",
@@ -52,7 +52,7 @@
   "authorityBindings": {
     "kernel": {
       "path": "docs/refactor/architecture-program/handoff/kernel-api.d.ts",
-      "sha256": "b3fe44cce205ce93567279da4a2b490b9c66597013d5b0112815393a1f3eddfc"
+      "sha256": "31a066415d0cc60461fd98e7c8b1ceda8713b6350ef19487714c0ba08e24e11d"
     },
     "provider": {
       "path": "docs/refactor/architecture-program/handoff/provider-api.d.ts",
@@ -60,7 +60,7 @@
     },
     "host": {
       "path": "docs/refactor/architecture-program/handoff/host-api.d.ts",
-      "sha256": "9037335c5975787fba2a9452c7ca85a62122caf61905cabd72fafdde2e8d175c"
+      "sha256": "94539eedb7b652e2c148190aafe49ae22d3ee064fa69daa2af3a75914e560278"
     },
     "adoption": {
       "path": "docs/refactor/architecture-program/handoff/adoption-api/adoption.d.ts",
@@ -85,9 +85,13 @@
     "http": {
       "path": "docs/refactor/architecture-program/handoff/http-api.d.ts",
       "sha256": "fa50a9a495f28fefa21946669aa92828119e5959823b1b237347d2a2a6af8a4d"
+    },
+    "application": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
+      "sha256": "ed80182ff1829ce3d16711f794346a816af816766537209a17a56afa4fa78ba3"
     }
   },
-  "publicSurfaceSha256": "ed557bcd092f246212655fb2cfd2743a87b1a2ca5bb58077e0c3a1a9b922cb2e",
+  "publicSurfaceSha256": "0e24d4cab4b51df52d1700722de548b184ab1f48c4f9ab1874723aa13c2ff66a",
   "effectPatch": {
     "required": false,
     "donorPath": "patches/effect@4.0.0-rc.108.patch",
@@ -502,7 +506,8 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Provider",
-            "kernel.Journal"
+            "kernel.Journal",
+            "kernel.GitAuthority"
           ]
         },
         {
@@ -549,7 +554,8 @@
           "dependencies": [
             "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Identity"
+            "kernel.Identity",
+            "kernel.BundleFinalize"
           ]
         },
         {
@@ -559,7 +565,8 @@
           "zone": "neutral",
           "dependencies": [
             "kernel.ArtifactModel",
-            "kernel.Identity"
+            "kernel.Identity",
+            "kernel.TreeManifest"
           ]
         },
         {
@@ -831,13 +838,17 @@
           "dependencies": [
             "kernel.Host",
             "kernel.Release",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Report",
+            "kernel.ArtifactModel",
+            "kernel.Model"
           ],
           "externalImports": [
             "node:path",
             "node:url"
           ],
-          "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import."
+          "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import.",
+          "purpose": "Trusted scoped application loader admits owned Bundle and immutable Plan before execution and emits the complete derived FinalizedReport. Actual implementation replaces the counts-only proposal."
         },
         {
           "id": "host.Node",
@@ -886,7 +897,8 @@
             "kernel.Host",
             "kernel.GitAuthority",
             "kernel.Release",
-            "kernel.Decision"
+            "kernel.Decision",
+            "kernel.EffectTypes"
           ]
         },
         {
@@ -943,6 +955,45 @@
             "provider.mcp",
             "provider.openai"
           ]
+        },
+        {
+          "id": "kernel.EffectTypes",
+          "owner": "core",
+          "path": "src/internal/EffectTypes.ts",
+          "zone": "neutral",
+          "dependencies": [],
+          "externalImports": [
+            "effect/SchemaAST"
+          ],
+          "purpose": "Owned exact upstream beta declaration repair; erased from runtime."
+        },
+        {
+          "id": "kernel.TreeManifest",
+          "owner": "core",
+          "path": "src/internal/TreeManifest.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Identity"
+          ],
+          "purpose": "One shared native ordered tree identity and filesystem-order graph admission."
+        },
+        {
+          "id": "kernel.Report",
+          "owner": "core",
+          "path": "src/internal/FinalizedReport.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.BundleCodec",
+            "kernel.BundleFinalize",
+            "kernel.Host",
+            "kernel.Model",
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.Plan"
+          ],
+          "purpose": "K01 complete derived report over canonical Bundle, publication/preparation Plans and global Journal; no dispatch authority."
         },
         {
           "id": "provider.npm.Model",
@@ -1214,7 +1265,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "a33fb7df0cf5907ddc6edbd592483ba7d27ec726286f9db53d9cbc691701aea6",
+        "sourceEdgesSha256": "6460d478bcf9aec5754a1b0c1682b8292fc3e403abaecacd9beb7795630642f9",
         "packageEdgesSha256": "4956bd597d16f55c79c94559faf658c1594b16c74bb5e6ba4e672b7c0fd2cf4f",
         "sourceEdges": [
           {
@@ -1314,6 +1365,12 @@
             "specifier": "../Journal.js"
           },
           {
+            "from": "kernel.Host",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "./GitAuthority.js"
+          },
+          {
             "from": "kernel.Release",
             "to": "kernel.Model",
             "loading": "static",
@@ -1392,6 +1449,12 @@
             "specifier": "./Identity.js"
           },
           {
+            "from": "kernel.BundleCodec",
+            "to": "kernel.BundleFinalize",
+            "loading": "static",
+            "specifier": "./BundleFinalize.js"
+          },
+          {
             "from": "kernel.BundleFinalize",
             "to": "kernel.ArtifactModel",
             "loading": "static",
@@ -1402,6 +1465,12 @@
             "to": "kernel.Identity",
             "loading": "static",
             "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.BundleFinalize",
+            "to": "kernel.TreeManifest",
+            "loading": "static",
+            "specifier": "./TreeManifest.js"
           },
           {
             "from": "kernel.Checksums",
@@ -1872,6 +1941,24 @@
             "specifier": "../internal/Error.js"
           },
           {
+            "from": "host.Application",
+            "to": "kernel.Report",
+            "loading": "static",
+            "specifier": "../internal/FinalizedReport.js"
+          },
+          {
+            "from": "host.Application",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "../internal/ArtifactModel.js"
+          },
+          {
+            "from": "host.Application",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "../internal/ReleaseModel.js"
+          },
+          {
             "from": "host.Node",
             "to": "host.GitJournal",
             "loading": "static",
@@ -1992,6 +2079,12 @@
             "specifier": "./internal/Decision.js"
           },
           {
+            "from": "kernel.Entry",
+            "to": "kernel.EffectTypes",
+            "loading": "static",
+            "specifier": "./internal/EffectTypes.js"
+          },
+          {
             "from": "app.cli",
             "to": "host.Application",
             "loading": "static",
@@ -2086,6 +2179,66 @@
             "to": "provider.openai",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/openai"
+          },
+          {
+            "from": "kernel.TreeManifest",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.TreeManifest",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.BundleCodec",
+            "loading": "static",
+            "specifier": "./BundleCodec.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.BundleFinalize",
+            "loading": "static",
+            "specifier": "./BundleFinalize.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Host",
+            "loading": "static",
+            "specifier": "./Host.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Plan",
+            "loading": "static",
+            "specifier": "../Plan.js"
           },
           {
             "from": "provider.npm.Model",
@@ -2776,6 +2929,10 @@
             "specifier": "node:fs/promises"
           },
           {
+            "from": "kernel.EffectTypes",
+            "specifier": "effect/SchemaAST"
+          },
+          {
             "from": "provider.npm.Protocol",
             "specifier": "semver"
           },
@@ -2954,7 +3111,7 @@
         "tsconfigJsonLines": 76,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 63,
+        "authoredProductModuleFiles": 66,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -3437,7 +3594,8 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Provider",
-            "kernel.Journal"
+            "kernel.Journal",
+            "kernel.GitAuthority"
           ]
         },
         {
@@ -3484,7 +3642,8 @@
           "dependencies": [
             "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Identity"
+            "kernel.Identity",
+            "kernel.BundleFinalize"
           ]
         },
         {
@@ -3494,7 +3653,8 @@
           "zone": "neutral",
           "dependencies": [
             "kernel.ArtifactModel",
-            "kernel.Identity"
+            "kernel.Identity",
+            "kernel.TreeManifest"
           ]
         },
         {
@@ -3766,13 +3926,17 @@
           "dependencies": [
             "kernel.Host",
             "kernel.Release",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Report",
+            "kernel.ArtifactModel",
+            "kernel.Model"
           ],
           "externalImports": [
             "node:path",
             "node:url"
           ],
-          "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import."
+          "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import.",
+          "purpose": "Trusted scoped application loader admits owned Bundle and immutable Plan before execution and emits the complete derived FinalizedReport. Actual implementation replaces the counts-only proposal."
         },
         {
           "id": "host.Node",
@@ -3821,7 +3985,8 @@
             "kernel.Host",
             "kernel.GitAuthority",
             "kernel.Release",
-            "kernel.Decision"
+            "kernel.Decision",
+            "kernel.EffectTypes"
           ]
         },
         {
@@ -3878,6 +4043,45 @@
             "provider.mcp",
             "provider.openai"
           ]
+        },
+        {
+          "id": "kernel.EffectTypes",
+          "owner": "core",
+          "path": "packages/kernel/src/internal/EffectTypes.ts",
+          "zone": "neutral",
+          "dependencies": [],
+          "externalImports": [
+            "effect/SchemaAST"
+          ],
+          "purpose": "Owned exact upstream beta declaration repair; erased from runtime."
+        },
+        {
+          "id": "kernel.TreeManifest",
+          "owner": "core",
+          "path": "packages/kernel/src/internal/TreeManifest.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Identity"
+          ],
+          "purpose": "One shared native ordered tree identity and filesystem-order graph admission."
+        },
+        {
+          "id": "kernel.Report",
+          "owner": "core",
+          "path": "packages/kernel/src/internal/FinalizedReport.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.BundleCodec",
+            "kernel.BundleFinalize",
+            "kernel.Host",
+            "kernel.Model",
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.Plan"
+          ],
+          "purpose": "K01 complete derived report over canonical Bundle, publication/preparation Plans and global Journal; no dispatch authority."
         },
         {
           "id": "provider.npm.Model",
@@ -4149,7 +4353,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "91e8615cf58d6ba9f96bd03385a8999bb9695855ecd1fe6dbbaee6bbf879ceff",
+        "sourceEdgesSha256": "e5bab41786bc45e6050b3d40b21b861899069120707497523411b5bbd352663b",
         "packageEdgesSha256": "58b5476249a3db40865745e36e66fc3ec2643bc40ec971c8bd381a885864f0ae",
         "sourceEdges": [
           {
@@ -4249,6 +4453,12 @@
             "specifier": "../Journal.js"
           },
           {
+            "from": "kernel.Host",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "./GitAuthority.js"
+          },
+          {
             "from": "kernel.Release",
             "to": "kernel.Model",
             "loading": "static",
@@ -4327,6 +4537,12 @@
             "specifier": "./Identity.js"
           },
           {
+            "from": "kernel.BundleCodec",
+            "to": "kernel.BundleFinalize",
+            "loading": "static",
+            "specifier": "./BundleFinalize.js"
+          },
+          {
             "from": "kernel.BundleFinalize",
             "to": "kernel.ArtifactModel",
             "loading": "static",
@@ -4337,6 +4553,12 @@
             "to": "kernel.Identity",
             "loading": "static",
             "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.BundleFinalize",
+            "to": "kernel.TreeManifest",
+            "loading": "static",
+            "specifier": "./TreeManifest.js"
           },
           {
             "from": "kernel.Checksums",
@@ -4807,6 +5029,24 @@
             "specifier": "../internal/Error.js"
           },
           {
+            "from": "host.Application",
+            "to": "kernel.Report",
+            "loading": "static",
+            "specifier": "../internal/FinalizedReport.js"
+          },
+          {
+            "from": "host.Application",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "../internal/ArtifactModel.js"
+          },
+          {
+            "from": "host.Application",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "../internal/ReleaseModel.js"
+          },
+          {
             "from": "host.Node",
             "to": "host.GitJournal",
             "loading": "static",
@@ -4927,6 +5167,12 @@
             "specifier": "./internal/Decision.js"
           },
           {
+            "from": "kernel.Entry",
+            "to": "kernel.EffectTypes",
+            "loading": "static",
+            "specifier": "./internal/EffectTypes.js"
+          },
+          {
             "from": "app.cli",
             "to": "host.Application",
             "loading": "static",
@@ -5021,6 +5267,66 @@
             "to": "provider.openai",
             "loading": "static",
             "specifier": "@mannyc1/ts-release-providers/openai"
+          },
+          {
+            "from": "kernel.TreeManifest",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.TreeManifest",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.BundleCodec",
+            "loading": "static",
+            "specifier": "./BundleCodec.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.BundleFinalize",
+            "loading": "static",
+            "specifier": "./BundleFinalize.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Host",
+            "loading": "static",
+            "specifier": "./Host.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Plan",
+            "loading": "static",
+            "specifier": "../Plan.js"
           },
           {
             "from": "provider.npm.Model",
@@ -5732,6 +6038,10 @@
             "specifier": "node:fs/promises"
           },
           {
+            "from": "kernel.EffectTypes",
+            "specifier": "effect/SchemaAST"
+          },
+          {
             "from": "provider.npm.Protocol",
             "specifier": "semver"
           },
@@ -5910,7 +6220,7 @@
         "tsconfigJsonLines": 90,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 63,
+        "authoredProductModuleFiles": 66,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -6718,7 +7028,8 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Provider",
-            "kernel.Journal"
+            "kernel.Journal",
+            "kernel.GitAuthority"
           ]
         },
         {
@@ -6765,7 +7076,8 @@
           "dependencies": [
             "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Identity"
+            "kernel.Identity",
+            "kernel.BundleFinalize"
           ]
         },
         {
@@ -6775,7 +7087,8 @@
           "zone": "neutral",
           "dependencies": [
             "kernel.ArtifactModel",
-            "kernel.Identity"
+            "kernel.Identity",
+            "kernel.TreeManifest"
           ]
         },
         {
@@ -7047,13 +7360,17 @@
           "dependencies": [
             "kernel.Host",
             "kernel.Release",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Report",
+            "kernel.ArtifactModel",
+            "kernel.Model"
           ],
           "externalImports": [
             "node:path",
             "node:url"
           ],
-          "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import."
+          "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import.",
+          "purpose": "Trusted scoped application loader admits owned Bundle and immutable Plan before execution and emits the complete derived FinalizedReport. Actual implementation replaces the counts-only proposal."
         },
         {
           "id": "host.Node",
@@ -7102,7 +7419,8 @@
             "kernel.Host",
             "kernel.GitAuthority",
             "kernel.Release",
-            "kernel.Decision"
+            "kernel.Decision",
+            "kernel.EffectTypes"
           ]
         },
         {
@@ -7159,6 +7477,45 @@
             "provider.mcp",
             "provider.openai"
           ]
+        },
+        {
+          "id": "kernel.EffectTypes",
+          "owner": "core",
+          "path": "packages/kernel/src/internal/EffectTypes.ts",
+          "zone": "neutral",
+          "dependencies": [],
+          "externalImports": [
+            "effect/SchemaAST"
+          ],
+          "purpose": "Owned exact upstream beta declaration repair; erased from runtime."
+        },
+        {
+          "id": "kernel.TreeManifest",
+          "owner": "core",
+          "path": "packages/kernel/src/internal/TreeManifest.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Identity"
+          ],
+          "purpose": "One shared native ordered tree identity and filesystem-order graph admission."
+        },
+        {
+          "id": "kernel.Report",
+          "owner": "core",
+          "path": "packages/kernel/src/internal/FinalizedReport.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.BundleCodec",
+            "kernel.BundleFinalize",
+            "kernel.Host",
+            "kernel.Model",
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.Plan"
+          ],
+          "purpose": "K01 complete derived report over canonical Bundle, publication/preparation Plans and global Journal; no dispatch authority."
         },
         {
           "id": "provider.npm.Model",
@@ -7430,7 +7787,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "bb07195317a20bcebc31ddc3fbdf5a154b287eb8f527fd563c0d00f93705f975",
+        "sourceEdgesSha256": "e444a1ca9689ebe0d0a745efafb4c2498042030565a3af51773333c40e98147d",
         "packageEdgesSha256": "b298428b1bc4fb4d172fb7fe9721f0cdb99994682693474b37014e467fcee1d0",
         "sourceEdges": [
           {
@@ -7530,6 +7887,12 @@
             "specifier": "../Journal.js"
           },
           {
+            "from": "kernel.Host",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "./GitAuthority.js"
+          },
+          {
             "from": "kernel.Release",
             "to": "kernel.Model",
             "loading": "static",
@@ -7608,6 +7971,12 @@
             "specifier": "./Identity.js"
           },
           {
+            "from": "kernel.BundleCodec",
+            "to": "kernel.BundleFinalize",
+            "loading": "static",
+            "specifier": "./BundleFinalize.js"
+          },
+          {
             "from": "kernel.BundleFinalize",
             "to": "kernel.ArtifactModel",
             "loading": "static",
@@ -7618,6 +7987,12 @@
             "to": "kernel.Identity",
             "loading": "static",
             "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.BundleFinalize",
+            "to": "kernel.TreeManifest",
+            "loading": "static",
+            "specifier": "./TreeManifest.js"
           },
           {
             "from": "kernel.Checksums",
@@ -8088,6 +8463,24 @@
             "specifier": "../internal/Error.js"
           },
           {
+            "from": "host.Application",
+            "to": "kernel.Report",
+            "loading": "static",
+            "specifier": "../internal/FinalizedReport.js"
+          },
+          {
+            "from": "host.Application",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "../internal/ArtifactModel.js"
+          },
+          {
+            "from": "host.Application",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "../internal/ReleaseModel.js"
+          },
+          {
             "from": "host.Node",
             "to": "host.GitJournal",
             "loading": "static",
@@ -8208,6 +8601,12 @@
             "specifier": "./internal/Decision.js"
           },
           {
+            "from": "kernel.Entry",
+            "to": "kernel.EffectTypes",
+            "loading": "static",
+            "specifier": "./internal/EffectTypes.js"
+          },
+          {
             "from": "app.cli",
             "to": "host.Application",
             "loading": "static",
@@ -8302,6 +8701,66 @@
             "to": "provider.openai",
             "loading": "static",
             "specifier": "@mannyc1/ts-release-openai"
+          },
+          {
+            "from": "kernel.TreeManifest",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.TreeManifest",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.BundleCodec",
+            "loading": "static",
+            "specifier": "./BundleCodec.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.BundleFinalize",
+            "loading": "static",
+            "specifier": "./BundleFinalize.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Host",
+            "loading": "static",
+            "specifier": "./Host.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Plan",
+            "loading": "static",
+            "specifier": "../Plan.js"
           },
           {
             "from": "provider.npm.Model",
@@ -9146,6 +9605,10 @@
             "specifier": "node:fs/promises"
           },
           {
+            "from": "kernel.EffectTypes",
+            "specifier": "effect/SchemaAST"
+          },
+          {
             "from": "provider.npm.Protocol",
             "specifier": "semver"
           },
@@ -9324,7 +9787,7 @@
         "tsconfigJsonLines": 174,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 63,
+        "authoredProductModuleFiles": 66,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -10072,7 +10535,8 @@
           "dependencies": [
             "kernel.Model",
             "kernel.Provider",
-            "kernel.Journal"
+            "kernel.Journal",
+            "kernel.GitAuthority"
           ]
         },
         {
@@ -10119,7 +10583,8 @@
           "dependencies": [
             "kernel.ArtifactModel",
             "kernel.Content",
-            "kernel.Identity"
+            "kernel.Identity",
+            "kernel.BundleFinalize"
           ]
         },
         {
@@ -10129,7 +10594,8 @@
           "zone": "neutral",
           "dependencies": [
             "kernel.ArtifactModel",
-            "kernel.Identity"
+            "kernel.Identity",
+            "kernel.TreeManifest"
           ]
         },
         {
@@ -10401,13 +10867,17 @@
           "dependencies": [
             "kernel.Host",
             "kernel.Release",
-            "kernel.Error"
+            "kernel.Error",
+            "kernel.Report",
+            "kernel.ArtifactModel",
+            "kernel.Model"
           ],
           "externalImports": [
             "node:path",
             "node:url"
           ],
-          "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import."
+          "dynamicBoundary": "One explicitly user-selected application URL; Plan data cannot supply an import.",
+          "purpose": "Trusted scoped application loader admits owned Bundle and immutable Plan before execution and emits the complete derived FinalizedReport. Actual implementation replaces the counts-only proposal."
         },
         {
           "id": "host.Node",
@@ -10456,7 +10926,8 @@
             "kernel.Host",
             "kernel.GitAuthority",
             "kernel.Release",
-            "kernel.Decision"
+            "kernel.Decision",
+            "kernel.EffectTypes"
           ]
         },
         {
@@ -10513,6 +10984,45 @@
             "provider.mcp",
             "provider.openai"
           ]
+        },
+        {
+          "id": "kernel.EffectTypes",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/EffectTypes.ts",
+          "zone": "neutral",
+          "dependencies": [],
+          "externalImports": [
+            "effect/SchemaAST"
+          ],
+          "purpose": "Owned exact upstream beta declaration repair; erased from runtime."
+        },
+        {
+          "id": "kernel.TreeManifest",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/TreeManifest.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.Identity"
+          ],
+          "purpose": "One shared native ordered tree identity and filesystem-order graph admission."
+        },
+        {
+          "id": "kernel.Report",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/FinalizedReport.ts",
+          "zone": "neutral",
+          "dependencies": [
+            "kernel.ArtifactModel",
+            "kernel.BundleCodec",
+            "kernel.BundleFinalize",
+            "kernel.Host",
+            "kernel.Model",
+            "kernel.Error",
+            "kernel.Identity",
+            "kernel.Plan"
+          ],
+          "purpose": "K01 complete derived report over canonical Bundle, publication/preparation Plans and global Journal; no dispatch authority."
         },
         {
           "id": "provider.npm.Model",
@@ -10784,7 +11294,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "25b2399f75f86d257ecfd09a5e07e0f390a9fefab976d579d9816a19fe8590de",
+        "sourceEdgesSha256": "f24ccd15a92c16b073f536e945d41328ebf6ffb5eda6268f4d711900ac8e17b1",
         "packageEdgesSha256": "bb5683f96928748e1531eac43b252d9edc34daadd5d7c8b0fb3561d5e46bcf3e",
         "sourceEdges": [
           {
@@ -10884,6 +11394,12 @@
             "specifier": "../Journal.js"
           },
           {
+            "from": "kernel.Host",
+            "to": "kernel.GitAuthority",
+            "loading": "static",
+            "specifier": "./GitAuthority.js"
+          },
+          {
             "from": "kernel.Release",
             "to": "kernel.Model",
             "loading": "static",
@@ -10962,6 +11478,12 @@
             "specifier": "./Identity.js"
           },
           {
+            "from": "kernel.BundleCodec",
+            "to": "kernel.BundleFinalize",
+            "loading": "static",
+            "specifier": "./BundleFinalize.js"
+          },
+          {
             "from": "kernel.BundleFinalize",
             "to": "kernel.ArtifactModel",
             "loading": "static",
@@ -10972,6 +11494,12 @@
             "to": "kernel.Identity",
             "loading": "static",
             "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.BundleFinalize",
+            "to": "kernel.TreeManifest",
+            "loading": "static",
+            "specifier": "./TreeManifest.js"
           },
           {
             "from": "kernel.Checksums",
@@ -11442,6 +11970,24 @@
             "specifier": "../internal/Error.js"
           },
           {
+            "from": "host.Application",
+            "to": "kernel.Report",
+            "loading": "static",
+            "specifier": "../internal/FinalizedReport.js"
+          },
+          {
+            "from": "host.Application",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "../internal/ArtifactModel.js"
+          },
+          {
+            "from": "host.Application",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "../internal/ReleaseModel.js"
+          },
+          {
             "from": "host.Node",
             "to": "host.GitJournal",
             "loading": "static",
@@ -11562,6 +12108,12 @@
             "specifier": "./internal/Decision.js"
           },
           {
+            "from": "kernel.Entry",
+            "to": "kernel.EffectTypes",
+            "loading": "static",
+            "specifier": "./internal/EffectTypes.js"
+          },
+          {
             "from": "app.cli",
             "to": "host.Application",
             "loading": "static",
@@ -11656,6 +12208,66 @@
             "to": "provider.openai",
             "loading": "static",
             "specifier": "@mannyc1/ts-release-openai"
+          },
+          {
+            "from": "kernel.TreeManifest",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.TreeManifest",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.ArtifactModel",
+            "loading": "static",
+            "specifier": "./ArtifactModel.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.BundleCodec",
+            "loading": "static",
+            "specifier": "./BundleCodec.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.BundleFinalize",
+            "loading": "static",
+            "specifier": "./BundleFinalize.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Host",
+            "loading": "static",
+            "specifier": "./Host.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Model",
+            "loading": "static",
+            "specifier": "./ReleaseModel.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Error",
+            "loading": "static",
+            "specifier": "./Error.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Identity",
+            "loading": "static",
+            "specifier": "./Identity.js"
+          },
+          {
+            "from": "kernel.Report",
+            "to": "kernel.Plan",
+            "loading": "static",
+            "specifier": "../Plan.js"
           },
           {
             "from": "provider.npm.Model",
@@ -12465,6 +13077,10 @@
             "specifier": "node:fs/promises"
           },
           {
+            "from": "kernel.EffectTypes",
+            "specifier": "effect/SchemaAST"
+          },
+          {
             "from": "provider.npm.Protocol",
             "specifier": "semver"
           },
@@ -12643,7 +13259,7 @@
         "tsconfigJsonLines": 160,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 63,
+        "authoredProductModuleFiles": 66,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }

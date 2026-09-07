@@ -114,3 +114,42 @@ for (const candidate of evaluatorNames)
       }
     })
   }
+
+test("captured Git execution retains class state and resists method replacement", async () => {
+  class Adapter {
+    readonly principal = "publisher"
+    readonly scope = "release"
+    #calls = 0
+    get calls() {
+      return this.#calls
+    }
+    execute(args: ReadonlyArray<string>) {
+      this.#calls++
+      return Effect.succeed({ exitCode: 0, stdout: ` \t${args.at(-1)}\t[up to date]\n` })
+    }
+  }
+  const adapter = new Adapter()
+  const transport = makeCoreGitTransport(adapter)
+  adapter.execute = () => {
+    throw new Error("Replacement must not run")
+  }
+  const request = await Effect.runPromise(
+    makeRequest({
+      transport: "core.git/1",
+      endpoint: "https://fixture.invalid/repo.git",
+      method: "update-ref",
+      headers: [],
+      body: new Uint8Array(),
+      principal: adapter.principal,
+      scope: adapter.scope,
+      replay: new GitCas({
+        ref: "refs/tags/v1",
+        expectedOld: "0".repeat(40),
+        desiredNew: "1".repeat(40),
+      }),
+    }),
+  )
+  expect((await Effect.runPromise(transport.send(request)))._tag).toBe("Accepted")
+  expect(adapter.calls).toBe(1)
+  expect(Object.isFrozen(transport)).toBe(true)
+})

@@ -1,6 +1,6 @@
 {
   "format": "ts-release/production-imports/1",
-  "files": 25,
+  "files": 26,
   "edges": [
     {
       "file": "packages/ts-release/src/Node.ts",
@@ -10,6 +10,11 @@
     {
       "file": "packages/ts-release/src/Node.ts",
       "specifier": "./platform/ContentStore.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Node.ts",
+      "specifier": "./platform/Application.js",
       "typeOnly": false
     },
     {
@@ -140,6 +145,11 @@
     {
       "file": "packages/ts-release/src/Bun.ts",
       "specifier": "./platform/ContentStore.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bun.ts",
+      "specifier": "./platform/Application.js",
       "typeOnly": false
     },
     {
@@ -428,6 +438,11 @@
       "typeOnly": false
     },
     {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "./GitAuthority.js",
+      "typeOnly": false
+    },
+    {
       "file": "packages/ts-release/src/internal/FinalizedReport.ts",
       "specifier": "effect/Effect",
       "typeOnly": false
@@ -666,6 +681,61 @@
       "file": "packages/ts-release/src/platform/StoreCodec.ts",
       "specifier": "../internal/Error.js",
       "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "effect/Layer",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "effect/Scope",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "node:path",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "node:url",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "../internal/Host.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "../internal/ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "../internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "../internal/FinalizedReport.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Application.ts",
+      "specifier": "../Release.js",
+      "typeOnly": false
     }
   ],
   "runtimeClosures": {
@@ -688,22 +758,28 @@
       "bun:sqlite",
       "effect-build/Artifact",
       "effect-build/SystemTarget",
+      "effect/Context",
       "effect/Effect",
+      "effect/Layer",
       "effect/Schema",
       "node:crypto",
       "node:fs",
       "node:fs/promises",
-      "node:path"
+      "node:path",
+      "node:url"
     ],
     "./node": [
       "effect-build/Artifact",
       "effect-build/SystemTarget",
+      "effect/Context",
       "effect/Effect",
+      "effect/Layer",
       "effect/Schema",
       "node:crypto",
       "node:fs",
       "node:fs/promises",
-      "node:path"
+      "node:path",
+      "node:url"
     ]
   }
 }

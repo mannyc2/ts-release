@@ -1,6 +1,6 @@
 {
   "format": "ts-release/architecture-forecast/1",
-  "status": "engineering-estimate-not-achieved-reduction",
+  "status": "mixed-actual-W01-kernel-and-unimplemented-engineering-estimates-not-achieved-reduction",
   "basisCommit": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
   "denominator": {
     "productPhysicalLines": 22916,
@@ -25,42 +25,23 @@
         "kernel.Host",
         "kernel.Release",
         "kernel.GitAuthority",
-        "kernel.Entry"
+        "kernel.Entry",
+        "kernel.EffectTypes",
+        "kernel.Report"
       ],
       "components": [
         {
-          "name": "Measured complete selected M1 source including protected Git",
-          "low": 1024,
-          "expected": 1024,
-          "high": 1024,
-          "basis": "Fresh amended machine/source-metrics.json:1024 physical/1145 printer lines, including13 relocated HTTP lines and76 additional core-law/seam lines versus935. External M2 is a test/tooling witness."
-        },
-        {
-          "name": "Strict target-coordinate and public input admission",
-          "low": 30,
-          "expected": 60,
-          "high": 120,
-          "basis": "Proposed kernel/provider durable refinements beyond finite research fixture coordinates"
-        },
-        {
-          "name": "Complete cross-field construction and optional native-boundary laws",
-          "low": 20,
-          "expected": 45,
-          "high": 90,
-          "basis": "Provider definition and preparation/publication loading must make optional codec groups coherent"
-        },
-        {
-          "name": "Production error/export/domain integration",
-          "low": 10,
-          "expected": 35,
-          "high": 60,
-          "basis": "Remove research candidate/checkpoint machinery; proposed ts-release formats, no legacy reader"
+          "name": "Actual implemented W01 kernel, including strict admission, public entry, exact beta declaration repair and complete derived report",
+          "low": 2160,
+          "expected": 2160,
+          "high": 2160,
+          "basis": "Actual normally formatted W01 production after complete report/application integration and reviewed host capability capture. Exact per-file count is in execution/source-measurement.json; no native or full-product acceptance follows."
         }
       ],
       "fullReplacementPhysicalLines": {
-        "low": 1084,
-        "expected": 1164,
-        "high": 1294
+        "low": 2160,
+        "expected": 2160,
+        "high": 2160
       }
     },
     {
@@ -76,7 +57,8 @@
         "kernel.AppleNative",
         "kernel.ApplePreparation",
         "kernel.Apple",
-        "host.Content"
+        "host.Content",
+        "kernel.TreeManifest"
       ],
       "components": [
         {
@@ -735,19 +717,19 @@
     }
   ],
   "totals": {
-    "low": 8267,
-    "expected": 11529,
-    "high": 16097
+    "low": 9343,
+    "expected": 12525,
+    "high": 16963
   },
-  "expectedHeadroom": -44,
+  "expectedHeadroom": -1040,
   "reductionPercent": {
-    "low": 64.01,
-    "expected": 49.81,
-    "high": 29.92
+    "low": 59.33,
+    "expected": 45.47,
+    "high": 26.15
   },
   "unknowns": [
-    "The seven full provider implementations are not written in this research task; their native parsing/evidence/auth code is the largest uncertainty.",
-    "Current kernel1024physical/1145printer; Apple545/648 plus70composition. Ordinary formatting must be measured in production. The measured kernel now includes13 HTTP-helper lines; the existing shared-HTTP estimate is conservatively unchanged until production ownership avoids overlap.",
+    "The six remaining public provider packages are not implemented yet; their actual native parsing/evidence/authentication cost must be measured.",
+    "The W01 kernel row is measured from ordinary production formatting. Other rows retain their component estimates and must be replaced by actual per-wave counts; the historical compact lab1024physical/1145printer count is not a production forecast.",
     "Projected package manifests/exports/build/dependency closure carry additional maintained metadata and publication cost. layout.json owns exact metadata; do not claim these are free.",
     "Every actual product or newly maintained upstream implementation line must be charged at cutover. No forecast closes the11485gate."
   ],
@@ -768,7 +750,7 @@
     }
   ],
   "newRequiredUpstreamImplementationLines": 0,
-  "sourceCeilingPolicy": "Keep11485. Corrected prerequisite forecast exceeds the ceiling; this is an explicit simplification obligation, not achieved reduction or permission to cut scope. Measure full product and all maintained lanes during production waves.",
+  "sourceCeilingPolicy": "Keep11485. The mixed actual/forecast expected total12525 exceeds the ceiling by1040; continue real simplification and full measured implementation without scope cuts or counting changes.",
   "maintenanceLanes": [
     "product and Action source",
     "generated runtime product inputs including Action YAML",
@@ -831,7 +813,7 @@
     }
   ],
   "densityAdjusted": {
-    "status": "estimate-not-achieved-reduction",
+    "status": "historical-estimate-superseded-by-actual-W01-kernel-accounting",
     "expectedApproximately": 11720,
     "basis": "Preserved composability refinement ordinary-density estimate; reviewed kernel fixes add further unmeasured production cost. Full source ceiling remains 11485."
   },

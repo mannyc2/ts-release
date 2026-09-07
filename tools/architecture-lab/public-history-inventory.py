@@ -22,6 +22,10 @@ symbol_path=inspection/'symbols.json'
 subprocess.run(['bun',str(root/'tools/architecture-lab/public-history-symbols.cjs'),str(inspection/'package'),str(symbol_path)],check=True,stdout=subprocess.PIPE,text=True)
 manifest=json.loads(entries['package/package.json'])
 migration=json.loads(subprocess.check_output(['bun',str(root/'tools/architecture-lab/records.ts'),str(handoff/'migration.json')],text=True))
+# "current" in this historical census means the preserved preparation commit,
+# never the moving production worktree. Current retirement is checked separately.
+baseline='9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d'
+baseline_paths=set(subprocess.check_output(['git','ls-tree','-r','--name-only',baseline],cwd=root,text=True).splitlines())
 unitmap={}
 for row in migration['files']:
  unitmap.setdefault(row['path'],[]).append(row)
@@ -44,7 +48,7 @@ units=[]
 for name,data in sorted(entries.items()):
  if not name.endswith('.ts') or name.endswith('.d.ts'):continue
  p=name.removeprefix('package/');owner,wave,disposition,successors=owner_for(p)
- current=root/p;ch=sha(current.read_bytes()) if current.is_file() else None
+ ch=sha(subprocess.check_output(['git','show',f'{baseline}:{p}'],cwd=root)) if p in baseline_paths else None
  rows=unitmap.get(p,[])
  units.append({'path':name,'bytes':len(data),'sha256':sha(data),'physicalLines':len(data.splitlines()),'lane':'test' if '/test/' in p or p.endswith('.test.ts') else 'example' if p.startswith('examples/') else 'product','currentPath':p,'currentPresence':'absent' if ch is None else 'identical' if ch==sha(data) else 'different','currentSha256':ch,'coveredHistoricalSnapshots':[{'snapshot':r['snapshot'],'sha256':r['sha256'],'sameBytes':r['sha256']==sha(data)} for r in rows],'newToMaintainedMigrationInventory':not rows,'owner':owner,'wave':wave,'disposition':disposition,'successors':successors,'accounting':'historical-published-donor-no-baseline-addition-no-deletion-credit'})
 unit_lookup={u['path']:u for u in units}

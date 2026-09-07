@@ -1,112 +1,64 @@
 # Active goal: complete and publish the hard cut
 
-Status: **active**, started 2026-09-06, resumed 2026-09-07. The persistent
-goal tool is now active; this tracked record is its durable continuation entry.
+Status: **active**. Started2026-09-06, resumed2026-09-07. The persistent goal tool
+is active without a token budget. This is the durable continuation record.
 
-Complete the full ts-release hard-cut refactor into a simple, composable
-apps/packages monorepo with the approved seven-package grouping. Preserve all
-69 selected outcomes and release/recovery guarantees. Complete P0–P3, W01–W10,
-migration/deletion, real host and consumer acceptance, independent candidate
-review, publication through the intended destinations, and fresh installed
-published verification. A plan, prototype, pack, or unpublished candidate does
-not complete this goal. No token budget is assigned.
+Complete the full ts-release hard-cut refactor into the approved simple/composable
+seven-package apps/packages monorepo; preserve all69 selected outcomes and release/
+recovery guarantees; complete P0–P3, W01–W10, migration/deletion, real host/native/
+consumer acceptance, independent release-candidate review, actual publication and
+fresh installed published verification. A prototype, pack or unpublished candidate
+is not completion. The user explicitly authorized implementation, commits, pushes,
+normal integration, tags and publication after concrete gates pass.
 
-The 2026-09-06 user instruction authorizes implementation, commits, pushes,
-normal integration, release tags and publication using existing accounts after
-the gates pass. Historical research-only restrictions are historical. Never
-overwrite immutable releases, fabricate acceptance, or retry an unknown mutation
-blindly. Missing external authority is recorded as a concrete blocker.
+Never overwrite immutable releases, force shared history, fabricate acceptance,
+blindly retry unknown mutations, or expose secrets. Continue independent work when
+an external dependency blocks one step. Keep the goal active until achieved or
+repeatedly blocked under the goal-tool rules.
 
-## Authority and preservation
+## Preserved authority
 
-- Implementation checkout: `/tmp/ts-release-implementation`, branch
-  `codex/complete-hard-cut`; remote `git@github.com:mannyc2/ts-release.git`.
-- Original workspace `/mnt/models/dev/ts-release` and its index remain untouched.
-- Starting HEAD: `9 b14 c6 c14 aec5 c5 a41 b2 cb0 f98 d6 f1 c63 bca4 d3 d`.
-- Starting staged tree reproduced exactly in this clone:
-  `72323 d6191 b11 d69 a77022 f278 bd3 de671 f43 cbe` (190 staged paths, no unstaged changes).
-- Untracked `.effect-build-hard-cut/` and `.effect-build-landing/` remain in the
-  original workspace; neither is imported or staged. `.repos/effect` is read-only.
-- Ignored refinement and audit packets are preserved verbatim under
-  `docs/refactor/research/{composable-handoff,handoff-audit}-2026-09-06/`.
-  Their proposals and historical authorization are evidence, not active plans.
-- Current design authority: `../architecture-program/handoff/design.json` and
-  its generated contracts. This goal records execution status, not a second design.
+- Worktree `/tmp/ts-release-implementation`, branch `codex/complete-hard-cut`.
+- Original `/mnt/models/dev/ts-release`, its index and `.repos/effect` untouched.
+- Original HEAD `9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d`; exact staged tree
+  `72323d6191b11d69a77022f278bd3de671f43cbe` preserved (190 staged paths).
+- Checkpoints `7da2877` (preservation), `65f65b1` (prerequisites), `8fe9891`
+  (tested W01 progress). The branch through8fe9891 is pushed; no integration yet.
+- Ignored refinement/audit promoted verbatim under `../research/` at preservation.
+  Active design authority is `../architecture-program/handoff/design.json`.
+- Required PR21 ancestry remains; no PR22/overlay merge. Mainline PR30/31 native
+  responsibilities are retained in handoff/mainline-donors.json.
 
-## Success measures
+## Current work
 
-One owned Bundle → immutable Plan → one Journal → derived Report; replaceable
-evaluator with M1 default; fresh conditional-append dispatch authority; native
-evidence and safe uncertainty/restart; explicit application composition.
+Prerequisites passed with retained evidence:168 tests/993 assertions, original
+slice/helper marginal medians37/37/37 and separate metadata, concrete integrity/
+projection/ancestry/budget/launch entrypoints. Their local research witnesses are
+not production certification. Effect beta.107 exact type augmentation is established
+with actual effect-build0.6.3 producer fixtures and fresh Bun/npm strict declarations;
+removing the augmentation fails independently. See compatibility records here.
 
-Seven public packages: kernel `@mannyc1/ts-release` with the shared CLI bin,
-npm, pypi, github, catalog (`./homebrew`, `./scoop`), openai, mcp. Three application
-owners: action, self-release, ts-release-agents. No selected product cuts.
+W01 kernel/application cutover is locally verified with an explicit planning variance. Actual Bundle/Plan/Journal/core
+interpreter, captured host, derived public full report, owned content and scoped
+SQLite are implemented. Local native/process tests and partial five-entry packed
+consumers pass. All51 assigned old files are physically retired (10318 lines), with
+mixed native obligations explicitly carried to later waves in W01-migration.json.
+Remaining legacy files are unshipped donors. See W01.md and progress.json for the
+latest test counts, exact pending check and limitations.
 
-Product ceiling 11,485 physical lines against the recorded 22,971 denominator.
-Count moved/replacement/owned generated logic honestly; report metadata, tests,
-fixtures, generated delivery, docs and research/tooling separately. Keep the
-40-line marginal TypeScript target; real zero observations remain real zeros.
+Current physical product10737 =2779 replacement +7958 legacy. Incomplete scope:
+no achieved reduction. Original W01 tripwire1700 is exceeded1079; mixed actual/
+future forecast12525 exceeds the unchanged full-product11485 ceiling by1040.
+Original denominator22971 and marginal40-line target are unchanged. A concrete
+planning variance may permit continued implementation; it cannot qualify the
+complete-product source target or release.
 
-## Progress and exact next action
+All69 launch outcomes remain open. W01 implementation is complete with its recorded
+planning variance and later native duties; Plans009/010 certification is incomplete. No release has been published. Historical registry observation:
+kernel0.3.0, six new names absent. Recheck actual versions/tags before choosing the
+cohort. Existing protected GitHub environments require actual human approval when
+the concrete tested release reaches them; publication authorization is already given.
 
-- Preservation checkpoint: `7 da2877`; reviewed prerequisite checkpoint: `65 f65 b1`.
-  Original staged tree remains untouched.
-- P0: approved seven-package projection and exact declaration ownership are
-  implemented; full product packages/consumer graph are not yet implemented.
-- P1: retained original slice plus helper relocation passes 60 packed scenarios
-  and 27 extension records, TypeScript medians 37/37/37, metadata separate.
-- P2: concrete integrity/projection/ancestry/budget and launch entrypoints exist.
-  Launch closure rejects all 69 still-open rows; wave-specific production checks
-  remain explicitly unimplemented.
-- P3: safety corrections and public evaluator/cache/store witnesses passed
-  168 tests/993 assertions. Independent prerequisite review found no remaining
-  material safety issue. Apple composition freshly binds executed source hashes:
-  eight processes, two preparations, one publication, zero resume sends. Native
-  Apple services are protocol doubles; production certification is not claimed.
-- Final prerequisite verification now passes, including strict TypeScript,
-  generated declaration checks,168 tests/993 assertions, integrity, projection,
-  ancestry and budget accounting. Launch closure remains intentionally red.
-- Mainline PR30/31 report-retention and draft-recovery regressions are recorded
-  in handoff/mainline-donors.json. Preserve required PR21 ancestry at integration.
-- Effect beta.107 compatibility is now established for the producer fixture.
-  An exact owned declaration augmentation restores the stripped internal Sentinel
-  type without changing runtime files or weakening strict checks. Both Node/Bun
-  pass34 adoption checks. Independent type review passed; packed declaration
-  reachability remains a W01 gate. Earlier observations follow for provenance: Official beta.102/.104/.107 have
-  a broken Sentinel declaration. Beta.101 strictly compiles after adapting local
-  TaggedErrorClass spelling, but published effect-build0.6.3 fails at runtime
-  because it calls Schema.TaggedError. Official rc.108 passes the same actual
-  producer fixture. Current user instructions still require aligned betas.
-- W01 now has the actual release kernel, owned Bundle/content, complete internal
-  report projection, and scoped Bun SQLite. Strict build/check and113 production
-  tests/742 assertions pass. Tests include real local HTTP/Git/SQLite, process
-  replacement, exact1 MiB/+1 envelope bounds, special-file rejection and actual
-  effect-build File/Tree finalizers. These are local mechanism witnesses, not
-  native compiler/signing/hosted release acceptance.
-- Bounded independent reviews resolved mutable event/snapshot/request aliases,
-  codec version admission, symlink traversal/order/finalization and FIFO issues,
-  observation routing overrides, and evaluator-fabricated reports. A complete
-  terminal candidate review remains required.
-- Real tarball consumers support the implemented root/bundle/http/bun/node
-  subsets under fresh Bun/npm installs, Node22.22.2/Bun, strict declaration checks
-  and negative controls, with optional platform/Apple peers absent. Full surface
-  projection still reports39 pending requirements and only1 of 7 public packages.
-- Current physical product source: 2,629 replacement +18,276 unchanged
-  legacy =20,905. W01's1,700 planning tripwire remains red. Two simplification
-  passes removed redundant handling/copies and shared observation/projection
-  ownership. Bundle/report obligations were added and charged. No deletion or
-  completed-product reduction is claimed; ceiling11,485 remains unchanged.
-- All51 assigned W01 migration rows (10,318 original physical lines) remain open.
-  Current architecture seals/declaration/vocabulary ownership must be reconciled
-  with actual production before claiming the wave complete. See W01.md.
-- W01–W10 and Plans009/010 are not completed. No new release is published.
-  Registry observation found only kernel0.3.0 and six absent package names;
-  recheck coordinates at release time. Existing protected GitHub environments
-  require the actual human approval when a tested candidate reaches those gates.
-
-Next: preserve this tested W01 progress checkpoint; finish actual-owner handoff,
-vocabulary and declaration projection, the application/report boundary and exact
-C08 before-observation witness; resolve the51 assigned migration rows with physical
-deletion accounting and source tradeoff review. W02 follows the terminal W01
-commit. All69 launch outcomes remain open; full publication certification is ahead.
+Next: commit the verified W01 kernel cutover, then implement W02 npm. Preserve
+all later native duties, full CLI/Action/self-release/agents scope, seven-package
+consumers and independent final candidate review. Continue through verified release.

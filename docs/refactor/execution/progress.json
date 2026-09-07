@@ -1,20 +1,20 @@
 {
   "format": "ts-release/refactor-progress/1",
   "goal": "active",
-  "completedWave": "P0",
+  "completedWave": "W01",
   "prerequisites": {
     "P0": "seven-package projection implemented; beta.107 exact type repair passes actual producer fixture and independent review; real packed production graph follows in waves",
     "P1": "fresh original-slice/helper proof:60packed,27extensions,TS37/37/37; archive retained",
     "P2": "entrypoints and final direct verification pass;69open closure red",
     "P3": "168tests/993assertions; independent prerequisite review passed; fresh Apple/source/declaration receipts"
   },
-  "productionWaves": "W01 in progress: actual beta.107 kernel, owned Bundle/content, full internal report projection and scoped SQLite;113 tests/742 assertions; bounded independent reviews resolved. All51 assigned migration rows remain open; W02\u2013W10 not started.",
-  "acceptance": "113 local production tests pass. Partial five-entry packed consumers pass; whole public surfaces/CLI/Action/seven packages and Plans009/010 remain open. All69 launch outcomes remain open.",
+  "productionWaves": "W01 kernel/application cutover implemented and locally verified with explicit source-planning variance. All51 assigned old files retired; mixed native obligations remain assigned to W02-W10. Full candidate/launch certification is not claimed.",
+  "acceptance": "122 local production tests/792 assertions pass. Fresh Bun/npm installed root/bundle/http/bun/node subsets, Node22.22.2/Bun, application/full-report roundtrip, strict declarations and negative controls pass.1 of7 packages;5 entry subsets;33 pending surface requirements; all69 launch rows still open.",
   "publication": "No release published; registry0.3.0 observation is historical, recheck before choosing final cohort",
-  "nextAction": "Preserve the tested W01 progress checkpoint; finish actual-owner handoff/vocabulary/declaration projection, application/report boundary and exact C08 before-observation witness; resolve all51 W01 migration rows with deletion accounting and source tradeoff review; then enter W02 from the terminal W01 commit",
+  "nextAction": "Commit the verified W01 kernel cutover, then begin W02 npm on that commit: native tarball/packument/tag/private-workspace/auth/provenance/recovery implementation with actual public package and consumers. Preserve W01-migration.json native carry-forward duties.",
   "updatedAt": "2026-09-07",
   "goalTool": "active",
   "activeWave": "W01",
-  "source": "2629 replacement +18276 unchanged legacy =20905 physical product lines; W01 planning tripwire1700 remains red; ceiling11485 unchanged",
-  "checkpoint": "W01 progress checkpoint pending commit; 65f65b1 is the prerequisite checkpoint"
+  "source": "2779 replacement +7958 unchanged legacy =10737 physical product lines after retiring10318; partial product, no achieved reduction. W01 tripwire1700 exceeded1079; ceiling11485 unchanged. Mixed actual/future forecast12525 exceeds ceiling1040.",
+  "checkpoint": "8fe9891: tested W01 progress checkpoint; not wave completion. Prerequisite checkpoint65f65b1."
 }

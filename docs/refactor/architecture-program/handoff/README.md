@@ -3,18 +3,17 @@
 The active objective is the complete refactor and verified published release in
 [GOAL.md](../../execution/GOAL.md). The user authorized implementation and release
 on 2026-09-06. Historical research-only restrictions describe earlier tasks.
-**All 69 selected outcomes and 226 propositions remain required.** W01–W07 have
-local cutover evidence:255tests/2782assertions, five-package consumers and a
-separately built external provider after the kernel/CLI freeze. Four fresh Bun/npm
-× Node/Bun external cells pass796native checks and140CLI processes with zero
-subsequent source edits. Native compatible servers, existing hosted GitHub reads,
-Ruby/Homebrew and PowerShell/Scoop controls, and independent recovery review are
-retained. All58assigned legacy files throughW06 are retired; W07has no retirement
-rows. The cumulative8200planning tripwire fails with9737replacement lines; an
-exact-source variance permits continued implementation. Native hosted mutations,
-Bun Sigstore, remaining platform/app/producer work and full release certification
-remain open. See [W07](../../execution/W07.md) for current evidence and limits.
-Nothing is published.
+**All 69 selected outcomes and 226 propositions remain required.** W01–W07 are
+committed and pushed; W08 implements actual effect-build artifact adoption and
+Apple preparation with independent material and final evidence review closed.
+Final direct verification passes273 tests/2941 assertions; four fresh packed
+producer cells pass780 checks and four Apple recovery cells48 commands/8 SIGKILL.
+W08 is locally verified with reviewed evidence; native platform acceptance remains
+separate. See [W08](../../execution/W08.md) and
+[progress.json](../../execution/progress.json) for exact current evidence and limits.
+Native hosted mutations, direct Bun Sigstore, native Apple/Windows acceptance,
+OpenAI/MCP/agents, Action/self-release and complete release certification remain
+open. Nothing is published.
 
 [design.json](design.json) is the editable architecture authority. The approved
 layout is **T3c: seven public packages**: ts-release, npm, pypi, github, catalog,
@@ -44,8 +43,9 @@ Use the exact [kernel](kernel-api.d.ts), [HTTP](http-api.d.ts),
 [owned-artifact](adoption-api/adoption.d.ts) contracts. The kernel entry resolves the actual production compiler output in
 [production-api](production-api/emission.json); its former research declaration
 is retained in `research-api/kernel-api.d.ts`. npm, PyPI, GitHub, catalog subpaths, shared verified artifact reads and neutral HTTP contracts now
-also resolve actual production declarations, as do Git and Node/Bun hosts. Remaining provider and
-adoption declarations retain their reviewed proposal owners until implemented.
+also resolve actual production declarations, as do Git and Node/Bun hosts. The bundle, effect-build and Apple entries now resolve actual production owners;
+the complete81-file emission manifest also binds private Schema bases. OpenAI/MCP
+declarations retain reviewed proposal owners until implemented.
 
 The [waves](waves.json) prescribe W01–W10 and preserve every original native
 oracle. [migration.json](migration.json) and [public history](public-history.md)
@@ -78,20 +78,21 @@ Fresh prerequisite evidence:
 
 The amended prerequisite kernel is **1,024 physical / 1,145 printer lines**;
 external M2/cache witnesses are separate test/tooling costs. The conservative
-mixed actual/future full-product forecast is **12,728**, already 1,243 above the unchanged **11,485**
+mixed actual/future full-product forecast is **13,483**, already 1,998 above the unchanged **11,485**
 ceiling against **22,971**. [forecast.json](forecast.json) records full component
 costs and per-wave tripwires. Normal formatting and actual production counts
 must establish the reduction; no scope cut, density trick or waiver is permitted.
 
 Run `bun run check:architecture-program` for retained evidence integrity,
-projection, ancestry and source accounting. W07 exceeds its 8,200-line
-planning tripwire with 9,737 replacement lines; the complete-product ceiling is
+projection, ancestry and source accounting. W08 exceeds its 9,200-line
+planning tripwire with 11,131 replacement lines; the complete-product ceiling is
 unchanged. `bun tools/architecture-lab/verify.mjs
 --execute --seal` executes direct checks and refreshes reviewed bindings; it is
 not a readiness certificate. Native/socket fixtures require local socket access.
 `bun run check:launch-evidence` validates the open ledger;
-`bun run check:launch-closure` remains red. Full packed production/Action and
-actual effect-build integration commands remain explicit wave prerequisites.
+`bun run check:launch-closure` remains red. The real `check:effect-build-integration` entrypoint runs source adoption/recovery
+contracts plus four fresh packed producer/Apple consumer cells. Full seven-package
+and Action consumers remain later wave gates.
 
 Accepted refinement and prior audit evidence are archived under
 `docs/refactor/research/{composable-handoff,handoff-audit}-2026-09-06/`. They are

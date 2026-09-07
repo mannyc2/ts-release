@@ -1,0 +1,63 @@
+$ bun scripts/check-effect-build-integration.ts
+
+test/reimplementation/artifacts/adoption.test.ts:
+(pass) public restoration preserves owned modes and links, rejects corrupt reads and unsupported roots before publication [175.14ms]
+(pass) actual finalized files and trees become path-free owned Bundle content before producer deletion [143.64ms]
+(pass) adoption rejects source changes and forged identity while preserving the earlier owned copy [98.74ms]
+(pass) invalid producer metadata, tree graph and capacity reject before destination or filesystem services [404.76ms]
+(pass) source metadata aliases and content-owner mismatches cannot alter adopted identity [30.82ms]
+(pass) verified tree snapshot cleanup retains readable permissions and closes private roots [137.69ms]
+(pass) public artifact subtypes retain core identity while native class extensions remain outside Bundle ownership [288.41ms]
+
+test/reimplementation/artifacts/adoption-races.test.ts:
+(pass) native source/snapshot FIFO and symlink races reject and close: /home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node [357.90ms]
+(pass) native source/snapshot FIFO and symlink races reject and close: /mnt/models/.bun/bin/bun [309.90ms]
+
+test/reimplementation/artifacts/apple.test.ts:
+(pass) Apple collection identity owns six exact native inputs and rejects changed roots or caller identities [316.86ms]
+(pass) readonly nested app directories are removed after submit and final adoption without losing the submission ID [610.89ms]
+(pass) six Apple preparations restore owned sources, persist submission IDs, reopen one SQLite journal and select assessed output Bundles [4270.83ms]
+
+test/reimplementation/artifacts/checksums.test.ts:
+(pass) Bundle-derived checksums match independent GNU bytes, Unicode ordering and strict native verification [17.49ms]
+
+test/reimplementation/artifacts/directory.test.ts:
+(pass) bounded directory enumeration and awaited interruption: /home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node [315.21ms]
+ 9 |     })
+10 |     const stdout = new Response(child.stdout).text(),
+11 |       stderr = new Response(child.stderr).text()
+12 |     const timer = setTimeout(() => child.kill("SIGKILL"), 10_000)
+13 |     try {
+14 |       expect(await child.exited).toBe(0)
+                                      ^
+error: expect(received).toBe(expected)
+
+Expected: 0
+Received: 1
+
+      at <anonymous> (/tmp/ts-release-implementation/test/reimplementation/artifacts/directory.test.ts:14:34)
+(fail) bounded directory enumeration and awaited interruption: /mnt/models/.bun/bin/bun [308.28ms]
+
+test/reimplementation/artifacts/apple-recovery.test.ts:
+(pass) Apple captures dispatch capabilities before asynchronous input admission [303.70ms]
+(pass) a lost Apple submit response stays Inconclusive across SQLite reopen without guessing or resubmitting [359.04ms]
+(pass) publication requires every selected Apple output and accepts additional exact non-Apple files [856.81ms]
+
+ 17 pass
+ 1 fail
+ 157 expect() calls
+Ran 18 tests across 6 files. [9.45s]
+ 6 |     stdout: "pipe",
+ 7 |     stderr: "inherit",
+ 8 |   })
+ 9 |   const [code, output] = await Promise.all([child.exited, new Response(child.stdout).text()])
+10 |   if (code !== 0)
+11 |     throw new Error(`Integration command failed (${code}): ${argv.join(" ")}\n${output}`)
+                   ^
+error: Integration command failed (1): /mnt/models/.bun/bin/bun test ./test/reimplementation/artifacts
+bun test v1.3.14 (0d9b296a)
+
+      at <anonymous> (/tmp/ts-release-implementation/scripts/check-effect-build-integration.ts:11:15)
+
+Bun v1.3.14 (Linux x64)
+error: script "check:effect-build-integration" exited with code 1

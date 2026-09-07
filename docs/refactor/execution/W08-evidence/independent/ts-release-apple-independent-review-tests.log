@@ -1,0 +1,16 @@
+bun test v1.3.14 (0d9b296a)
+
+test/reimplementation/artifacts/apple.test.ts:
+(pass) Apple collection identity owns six exact native inputs and rejects changed roots or caller identities [340.86ms]
+(pass) readonly nested app directories are removed after submit and final adoption without losing the submission ID [626.48ms]
+(pass) six Apple preparations restore owned sources, persist submission IDs, reopen one SQLite journal and select assessed output Bundles [4119.23ms]
+
+test/reimplementation/artifacts/apple-recovery.test.ts:
+(pass) Apple captures dispatch capabilities before asynchronous input admission [300.01ms]
+(pass) a lost Apple submit response stays Inconclusive across SQLite reopen without guessing or resubmitting [348.23ms]
+(pass) publication requires every selected Apple output and accepts additional exact non-Apple files [831.78ms]
+
+ 6 pass
+ 0 fail
+ 52 expect() calls
+Ran 6 tests across 2 files. [6.68s]

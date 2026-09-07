@@ -1,3 +1,6 @@
 * text=auto eol=lf
 
 apps/ts-release-action/dist/index.js text eol=lf
+
+# Native terminal receipts retain exact bytes, including prompts ending in spaces.
+docs/refactor/execution/W08-evidence/**/*.log -text -whitespace

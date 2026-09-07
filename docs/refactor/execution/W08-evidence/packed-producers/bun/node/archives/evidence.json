@@ -1,0 +1,290 @@
+{
+  "format": "ts-release/native-producer-archives/1",
+  "work": "/tmp/ts-release-producer-archives-vpvShA",
+  "runtime": "v22.22.2",
+  "bun": null,
+  "checks": [
+    "zip normalized input order repeat digest",
+    "zip traversal typed rejection and no publication",
+    "zip duplicate typed rejection and no publication",
+    "zip case typed rejection and no publication",
+    "tar.gz normalized input order repeat digest",
+    "tar.gz traversal typed rejection and no publication",
+    "tar.gz duplicate typed rejection and no publication",
+    "tar.gz case typed rejection and no publication",
+    "zip exact tree repeat digest",
+    "tar.gz exact tree repeat digest",
+    "Bundle reload after all producer and Git source deletion",
+    "zip exact binary member list",
+    "zip executable mode",
+    "zip file mode",
+    "zip normalized epoch",
+    "zip extracted native CLI",
+    "tar.gz exact binary member list",
+    "tar.gz executable mode",
+    "tar.gz file mode",
+    "tar.gz normalized epoch",
+    "tar normalized uid/gid",
+    "tar.gz extracted native CLI",
+    "zip exact projected source members",
+    "zip source executable mode",
+    "zip source symlink mode",
+    "zip extracted native source CLI",
+    "zip exact source symlink",
+    "zip LFS remains pointer bytes",
+    "zip PAX path bytes",
+    "zip PAX symlink target",
+    "zip trailing-space path",
+    "zip trailing-space link",
+    "tar.gz exact projected source members",
+    "tar.gz source executable mode",
+    "tar.gz source symlink mode",
+    "tar.gz extracted native source CLI",
+    "tar.gz exact source symlink",
+    "tar.gz LFS remains pointer bytes",
+    "tar.gz PAX path bytes",
+    "tar.gz PAX symlink target",
+    "tar.gz trailing-space path",
+    "tar.gz trailing-space link"
+  ],
+  "records": [
+    {
+      "kind": "binary",
+      "format": "zip",
+      "native": {
+        "path": "/tmp/ts-release-producer-archives-vpvShA/producer/binary-0.zip",
+        "bytes": "324",
+        "provenance": {
+          "_tag": "IntrinsicProvenance",
+          "producer": "effect-build-archives"
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "a91101dc1c128089a2a31a590a41974e8912653c503a374f63f75439a87782ea"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "binary.zip",
+        "content": {
+          "bytes": "324",
+          "sha256": "a91101dc1c128089a2a31a590a41974e8912653c503a374f63f75439a87782ea"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "_tag": "IntrinsicProvenance",
+          "producer": "effect-build-archives"
+        }
+      }
+    },
+    {
+      "kind": "binary",
+      "format": "tar.gz",
+      "native": {
+        "path": "/tmp/ts-release-producer-archives-vpvShA/producer/binary-0.tar.gz",
+        "bytes": "3095",
+        "provenance": {
+          "_tag": "IntrinsicProvenance",
+          "producer": "effect-build-archives"
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "c507ebb7e9034e719923e121779e43ad3e7259037dc517d2bad868436c2b1051"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "binary.tar.gz",
+        "content": {
+          "bytes": "3095",
+          "sha256": "c507ebb7e9034e719923e121779e43ad3e7259037dc517d2bad868436c2b1051"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "_tag": "IntrinsicProvenance",
+          "producer": "effect-build-archives"
+        }
+      }
+    },
+    {
+      "kind": "source",
+      "format": "zip",
+      "tree": "1d291d8678f1c6ddc10537a8c0f144b4cd354ab5",
+      "native": {
+        "path": "/tmp/ts-release-producer-archives-vpvShA/producer/source-0.zip",
+        "bytes": "2401",
+        "provenance": {
+          "name": "git",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "git",
+              "version": "2.43.0",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "4066232",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "2a8c18fbf43da9f692d75474c72bea9dfd796c260b0f3dfe456376abc3bbd668"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "git-exact-tree-archive",
+              "evidence": "git-cat-file-ls-tree-archive"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "e1e2bac871c0e9e13350c9b3ff021b66632dda2e404abe5a899e15d6fe9c956f"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "source.zip",
+        "content": {
+          "bytes": "2401",
+          "sha256": "e1e2bac871c0e9e13350c9b3ff021b66632dda2e404abe5a899e15d6fe9c956f"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "git-cat-file-ls-tree-archive",
+              "id": "git-exact-tree-archive"
+            }
+          ],
+          "name": "git",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "4066232",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "2a8c18fbf43da9f692d75474c72bea9dfd796c260b0f3dfe456376abc3bbd668"
+                }
+              },
+              "name": "git",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.43.0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kind": "source",
+      "format": "tar.gz",
+      "tree": "1d291d8678f1c6ddc10537a8c0f144b4cd354ab5",
+      "native": {
+        "path": "/tmp/ts-release-producer-archives-vpvShA/producer/source-0.tar.gz",
+        "bytes": "12823",
+        "provenance": {
+          "name": "git",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "git",
+              "version": "2.43.0",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "4066232",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "2a8c18fbf43da9f692d75474c72bea9dfd796c260b0f3dfe456376abc3bbd668"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "git-exact-tree-archive",
+              "evidence": "git-cat-file-ls-tree-archive"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "552fd21588e9b95adbd7c50edaf0e67b26ed164fdbfe9a26b5190a4981cee886"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "source.tar.gz",
+        "content": {
+          "bytes": "12823",
+          "sha256": "552fd21588e9b95adbd7c50edaf0e67b26ed164fdbfe9a26b5190a4981cee886"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "git-cat-file-ls-tree-archive",
+              "id": "git-exact-tree-archive"
+            }
+          ],
+          "name": "git",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "4066232",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "2a8c18fbf43da9f692d75474c72bea9dfd796c260b0f3dfe456376abc3bbd668"
+                }
+              },
+              "name": "git",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.43.0"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "producerDeleted": true,
+  "limits": [
+    "Local native source consumer; fresh packed acceptance remains separate."
+  ]
+}

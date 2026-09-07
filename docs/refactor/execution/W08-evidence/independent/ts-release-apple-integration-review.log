@@ -1,0 +1,11 @@
+{
+  "uid": 1000,
+  "log": [
+    "Six mismatched submission/source references reject; accepted-only observation stays Pending",
+    "Two concurrent different completions succeed with one immutable selected output and one initial submission",
+    "Publication accepts the selected candidate, rejects the losing candidate, and reports one common journal revision",
+    "Publication Plan and Content aliases changed after invocation do not replace captured identities",
+    "Six mismatched ReadyToPlan operation/submission/final-assessment bindings reject",
+    "Restart after selection neither resubmits nor invokes completion"
+  ]
+}

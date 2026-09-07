@@ -6,7 +6,7 @@
   "packages": [
     {
       "path": "packages/ts-release/package.json",
-      "sha256": "5e37c90a713042f4a3d6eec625aaeb7b08a473ff6283c2f968f2d5416ab535bd"
+      "sha256": "70e2c4fb1b16239edf9e63178606bad442227348e25941c470fffaec809155a4"
     },
     {
       "path": "packages/npm/package.json",
@@ -29,11 +29,11 @@
     {
       "specifier": "@mannyc1/ts-release",
       "source": "packages/ts-release/src/index.ts",
-      "sourceSha256": "daa1fb4f6c77726a93e03d6925db808886915d6553e452197842f3609db2547a",
+      "sourceSha256": "f1eec1bad25221744fa9a5750671604f05822aeedf5edf430ebe0136244f93eb",
       "runtimePath": "packages/ts-release/dist/index.js",
-      "runtimeSha256": "763394354d3b839edb2f4a4fdd590eaf3aa59e568866d8d3d781804a7c01e371",
+      "runtimeSha256": "bac2cbc32b1e864a9172d6130b35094709ea3711778b24af721cdfed8e04cc7d",
       "declarationsPath": "packages/ts-release/dist/index.d.ts",
-      "declarationsSha256": "0cd65e15e0c65ec12c2ea2af90ed9bba8c5aba8523952b3dd52f7635a29c19b8",
+      "declarationsSha256": "9857ac00a85d33fbc9add72114a656df8e1816c692b0687af8d9f8f2dfa56587",
       "runtimeNames": [
         "AcceptedRisk",
         "CoreDispatchError",
@@ -135,11 +135,11 @@
     {
       "specifier": "@mannyc1/ts-release/bundle",
       "source": "packages/ts-release/src/Bundle.ts",
-      "sourceSha256": "5f4e37afc336a2dc7d8f4118d3a37ba0e56ff2d4d10d26069694739cebd06314",
+      "sourceSha256": "21511731379d4c3f0da8045a67a2be8dd3e73f649af0ed6835f570d366b0b074",
       "runtimePath": "packages/ts-release/dist/Bundle.js",
-      "runtimeSha256": "6d43974900330745ec57eca43008deb54c8a9e865ef7adcb2475a167601a0cc8",
+      "runtimeSha256": "b3d0b7d092f7e8c21d1050629e5bc9ec870f49ad814d35c9edde0fcc9e3c406c",
       "declarationsPath": "packages/ts-release/dist/Bundle.d.ts",
-      "declarationsSha256": "e220f89a09629240873f99ac158474b18918975f558aa5dc6546bdbf04dbd666",
+      "declarationsSha256": "13f533ca16f62dbdd27e6d073ca2f0ce9341053f49bcbc89bac9f13eb28d3e22",
       "runtimeNames": [
         "AdoptionError",
         "Artifact",
@@ -150,13 +150,16 @@
         "encodeBundle",
         "finalize",
         "loadBundle",
-        "verifiedArtifacts"
+        "renderSha256Sums",
+        "verifiedArtifacts",
+        "verifySha256Sums"
       ],
       "typeNames": [
         "AdoptionError",
         "Artifact",
         "ArtifactAccess",
         "Bundle",
+        "ChecksumInput",
         "Content",
         "ContentOwner",
         "File",
@@ -201,6 +204,21 @@
       ]
     },
     {
+      "specifier": "@mannyc1/ts-release/effect-build",
+      "source": "packages/ts-release/src/EffectBuild.ts",
+      "sourceSha256": "f029dae2ec1d4eac75058f17685a68b0a0cb7509ce4d279fae12b5da8ff91909",
+      "runtimePath": "packages/ts-release/dist/EffectBuild.js",
+      "runtimeSha256": "7f745d3596c01a6fb17e68e9f33397bcaaed6554cea2b416828ad121d24609c7",
+      "declarationsPath": "packages/ts-release/dist/EffectBuild.d.ts",
+      "declarationsSha256": "9a89c26bcb2fc69b83b1097a0bbef85a54c8918a78a1edc9ac6ba2bee792ab2e",
+      "runtimeNames": [
+        "adoptFile",
+        "adoptTree",
+        "restoreTree"
+      ],
+      "typeNames": []
+    },
+    {
       "specifier": "@mannyc1/ts-release/git",
       "source": "packages/ts-release/src/Git.ts",
       "sourceSha256": "0d334c07faf1b065b474e6e3cdbc6284a9c76c3cd5b80ded25019e0d10025974",
@@ -239,11 +257,11 @@
     {
       "specifier": "@mannyc1/ts-release/bun",
       "source": "packages/ts-release/src/Bun.ts",
-      "sourceSha256": "d8316f1de07b5d5940f76685956b3bae381fd39e59ddfbcdbfde098837266206",
+      "sourceSha256": "98d65b94c17db6e3dafc42906fc11337b5b6bdb1097801671c7e127ee50f3b66",
       "runtimePath": "packages/ts-release/dist/Bun.js",
-      "runtimeSha256": "281f6b97ee1108b88aef06d0eee7e022878ae506a5869a428f009c5fc1efc4a4",
+      "runtimeSha256": "52c515902b72589df31aa76c3a5614e7a8b5caef3fc3c6146333f70c128e2508",
       "declarationsPath": "packages/ts-release/dist/Bun.d.ts",
-      "declarationsSha256": "c751957811c02883541f365ad272b2b0d2dc90c6822c5d1057ef7035f7fee5f1",
+      "declarationsSha256": "4107e7b1c9d57182a469cf0d7dbd77a56376f263e29f183e8305962807f691cc",
       "runtimeNames": [
         "FinalizedReport",
         "fileContentOwner",
@@ -253,6 +271,7 @@
         "makeGithubTrustedPublisherHost",
         "makeHttpRead",
         "makeHttpTransport",
+        "nodeDirectoryReader",
         "openGitJournal",
         "openSqliteJournal",
         "runApplication"
@@ -269,11 +288,11 @@
     {
       "specifier": "@mannyc1/ts-release/node",
       "source": "packages/ts-release/src/Node.ts",
-      "sourceSha256": "ea52c565bc7e6f9f0840160c13041b07445ce7aebfb9e7c5b03afd8a8bc9bf32",
+      "sourceSha256": "ecc1e673dbb0a059315c6d524ecb2146c17acdcf42acae2a59c086932894d3e7",
       "runtimePath": "packages/ts-release/dist/Node.js",
-      "runtimeSha256": "ceefbb2c1a81cb47724a69d8a35ec2df29cd7a85e386f47e93fa6c20cd43ef1d",
+      "runtimeSha256": "d060a41425be14b1542df6674ae8f0e2330c64fb1e1154a67e09d32028ffd15c",
       "declarationsPath": "packages/ts-release/dist/Node.d.ts",
-      "declarationsSha256": "8e381909ad1f3d68fe5f1014bce6078be8e17b9cad8af211151573c647e51b8a",
+      "declarationsSha256": "fec87d48973920d69edae352729a02e889289049290caff643d8773deb2bac69",
       "runtimeNames": [
         "FinalizedReport",
         "fileContentOwner",
@@ -283,6 +302,7 @@
         "makeGithubTrustedPublisherHost",
         "makeHttpRead",
         "makeHttpTransport",
+        "nodeDirectoryReader",
         "openGitJournal",
         "runApplication"
       ],
@@ -293,6 +313,63 @@
         "GitCatalogHost",
         "GitCatalogHostOptions",
         "GitJournalOptions"
+      ]
+    },
+    {
+      "specifier": "@mannyc1/ts-release/apple",
+      "source": "packages/ts-release/src/Apple.ts",
+      "sourceSha256": "7e195b881bb2bb8a9694d07223cf3d3e59a5826611dc5248ebf74b420e43235f",
+      "runtimePath": "packages/ts-release/dist/Apple.js",
+      "runtimeSha256": "4d1af8ad84e6ae981a55eb19be94e11737d1484bc8ce8abba68324142a020b30",
+      "declarationsPath": "packages/ts-release/dist/Apple.d.ts",
+      "declarationsSha256": "a23af4b8b5737a8673320e10d368fef808cccbc6266212058f4a53a61a590b35",
+      "runtimeNames": [
+        "AppPreparation",
+        "AppleEvidence",
+        "ApplePreparation",
+        "ApplePreparations",
+        "ApplicationSignature",
+        "DiskImageSignature",
+        "DmgPreparation",
+        "FinalApp",
+        "FinalArtifact",
+        "FinalDmg",
+        "FinalPkg",
+        "InstallerSignature",
+        "PkgPreparation",
+        "ReadyToPlan",
+        "createApplePreparations",
+        "finishPrepared",
+        "loadApplePreparations",
+        "preparationProvider",
+        "preparationScopes",
+        "reportAppleContext",
+        "restorePreparedSource",
+        "runPreparation",
+        "submitPrepared",
+        "validateApplePublication"
+      ],
+      "typeNames": [
+        "AppPreparation",
+        "AppleEvidence",
+        "ApplePreparation",
+        "ApplePreparationInput",
+        "ApplePreparations",
+        "ApplicationSignature",
+        "DeriveDeliveryFiles",
+        "DiskImageSignature",
+        "DmgPreparation",
+        "FinalApp",
+        "FinalArtifact",
+        "FinalDmg",
+        "FinalNativeArtifact",
+        "FinalPkg",
+        "InstallerSignature",
+        "NativeAppleError",
+        "NativeAppleServices",
+        "PkgPreparation",
+        "ReadyToPlan",
+        "RestoredSource"
       ]
     },
     {
@@ -479,11 +556,6 @@
     }
   ],
   "missing": [
-    "@mannyc1/ts-release/effect-build",
-    "@mannyc1/ts-release/apple",
-    "@mannyc1/ts-release/bundle:type:ChecksumInput",
-    "@mannyc1/ts-release/bundle:value:renderSha256Sums",
-    "@mannyc1/ts-release/bundle:value:verifySha256Sums",
     "@mannyc1/ts-release-mcp",
     "@mannyc1/ts-release-openai"
   ]

@@ -1,0 +1,51 @@
+{
+  "journalId": "4aa9e124f87579f52d56649268410ea31304e600e36d1553286b1a26fc14ed53",
+  "revision": 1,
+  "preparations": [
+    {
+      "planId": "07ad8b2f4e2d971242abaedc171d853b4086a2b6e30d6c8ad2962e13087d0f77",
+      "revision": 1,
+      "superseded": false,
+      "operations": [
+        {
+          "operationId": "f4739c64c681ab5dfeaa3ff5b12dbf60084c75ff64b21c1f72bf7c5bdc02c58a",
+          "status": "Inconclusive",
+          "dispatches": 1,
+          "receipts": 0,
+          "observations": 0
+        }
+      ]
+    }
+  ],
+  "nativeFacts": [
+    {
+      "format": "ts-release/event/1",
+      "eventId": "7d7a9cfd-2233-40f3-9bfd-0558883ebdc6",
+      "journalId": "4aa9e124f87579f52d56649268410ea31304e600e36d1553286b1a26fc14ed53",
+      "planId": "07ad8b2f4e2d971242abaedc171d853b4086a2b6e30d6c8ad2962e13087d0f77",
+      "body": {
+        "_tag": "DispatchStarted",
+        "operationId": "f4739c64c681ab5dfeaa3ff5b12dbf60084c75ff64b21c1f72bf7c5bdc02c58a",
+        "dispatchId": "7d7a9cfd-2233-40f3-9bfd-0558883ebdc6:dispatch",
+        "request": {
+          "transport": "opaque/1",
+          "endpoint": "effect-build-apple/Notary.submit",
+          "method": "invoke",
+          "headers": [],
+          "bodyDigest": "7cbf3879b5951cbe0007d1411b492463ae8d3ca55f8baeb741dace136c6f3e40",
+          "byteLength": "1248",
+          "principal": "fixture-team",
+          "scope": "fixture-key",
+          "replay": {
+            "_tag": "None"
+          }
+        },
+        "fingerprint": "1e61a68c2eff71c14e045bf0c273c05161460eae8bd1036400093c4382bbb004",
+        "startedAt": 1788787808763,
+        "basis": {
+          "_tag": "Initial"
+        }
+      }
+    }
+  ]
+}

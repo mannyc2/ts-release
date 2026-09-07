@@ -1,0 +1,335 @@
+{
+  "format": "ts-release/native-producer-sbom/1",
+  "work": "/tmp/ts-release-producer-sbom-xlaJU3",
+  "runtime": "v24.3.0",
+  "bun": "1.3.14",
+  "records": [
+    {
+      "name": "directory.spdx.json",
+      "native": {
+        "path": "/tmp/ts-release-producer-sbom-xlaJU3/producer/directory.spdx.json",
+        "bytes": "6559",
+        "provenance": {
+          "name": "syft",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "syft",
+              "version": "1.50.0",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "86212770",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "22f2b95baf524d45ad16b0ad5cdeb200c4b8a816493768cec50e4682b1f24b0e"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "syft-spdx-json-2.3",
+              "evidence": "spdx-json@2.3"
+            },
+            {
+              "_tag": "Present",
+              "id": "syft-cyclonedx-json-1.6",
+              "evidence": "cyclonedx-json@1.6"
+            },
+            {
+              "_tag": "Present",
+              "id": "syft-file-directory-scan",
+              "evidence": "explicit---from"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "98d5bfccde6f3f1a428c9b47a882dc12b32cdf63de7dc64ac0ffa96e2436f7f8"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "directory.spdx.json",
+        "content": {
+          "bytes": "6559",
+          "sha256": "98d5bfccde6f3f1a428c9b47a882dc12b32cdf63de7dc64ac0ffa96e2436f7f8"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "spdx-json@2.3",
+              "id": "syft-spdx-json-2.3"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "cyclonedx-json@1.6",
+              "id": "syft-cyclonedx-json-1.6"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "explicit---from",
+              "id": "syft-file-directory-scan"
+            }
+          ],
+          "name": "syft",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "86212770",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "22f2b95baf524d45ad16b0ad5cdeb200c4b8a816493768cec50e4682b1f24b0e"
+                }
+              },
+              "name": "syft",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "1.50.0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "directory.cdx.json",
+      "native": {
+        "path": "/tmp/ts-release-producer-sbom-xlaJU3/producer/directory.cdx.json",
+        "bytes": "3856",
+        "provenance": {
+          "name": "syft",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "syft",
+              "version": "1.50.0",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "86212770",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "22f2b95baf524d45ad16b0ad5cdeb200c4b8a816493768cec50e4682b1f24b0e"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "syft-spdx-json-2.3",
+              "evidence": "spdx-json@2.3"
+            },
+            {
+              "_tag": "Present",
+              "id": "syft-cyclonedx-json-1.6",
+              "evidence": "cyclonedx-json@1.6"
+            },
+            {
+              "_tag": "Present",
+              "id": "syft-file-directory-scan",
+              "evidence": "explicit---from"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "16a12bab4a565e8f7db6512eaaca77bbc16e97a5409b3f4819ef528e67576025"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "directory.cdx.json",
+        "content": {
+          "bytes": "3856",
+          "sha256": "16a12bab4a565e8f7db6512eaaca77bbc16e97a5409b3f4819ef528e67576025"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "spdx-json@2.3",
+              "id": "syft-spdx-json-2.3"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "cyclonedx-json@1.6",
+              "id": "syft-cyclonedx-json-1.6"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "explicit---from",
+              "id": "syft-file-directory-scan"
+            }
+          ],
+          "name": "syft",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "86212770",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "22f2b95baf524d45ad16b0ad5cdeb200c4b8a816493768cec50e4682b1f24b0e"
+                }
+              },
+              "name": "syft",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "1.50.0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "file.spdx.json",
+      "native": {
+        "path": "/tmp/ts-release-producer-sbom-xlaJU3/producer/file.spdx.json",
+        "bytes": "6602",
+        "provenance": {
+          "name": "syft",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "syft",
+              "version": "1.50.0",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "86212770",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "22f2b95baf524d45ad16b0ad5cdeb200c4b8a816493768cec50e4682b1f24b0e"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "syft-spdx-json-2.3",
+              "evidence": "spdx-json@2.3"
+            },
+            {
+              "_tag": "Present",
+              "id": "syft-cyclonedx-json-1.6",
+              "evidence": "cyclonedx-json@1.6"
+            },
+            {
+              "_tag": "Present",
+              "id": "syft-file-directory-scan",
+              "evidence": "explicit---from"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "c747461f70f50076a3dacf9859b91b896a074185ff582e99ea8a83ff1b225c6e"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "file.spdx.json",
+        "content": {
+          "bytes": "6602",
+          "sha256": "c747461f70f50076a3dacf9859b91b896a074185ff582e99ea8a83ff1b225c6e"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "spdx-json@2.3",
+              "id": "syft-spdx-json-2.3"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "cyclonedx-json@1.6",
+              "id": "syft-cyclonedx-json-1.6"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "explicit---from",
+              "id": "syft-file-directory-scan"
+            }
+          ],
+          "name": "syft",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "86212770",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "22f2b95baf524d45ad16b0ad5cdeb200c4b8a816493768cec50e4682b1f24b0e"
+                }
+              },
+              "name": "syft",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "1.50.0"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "checks": [
+    "directory.spdx.json exact Syft version",
+    "directory.spdx.json native schema version",
+    "directory.spdx.json exact fixture dependency",
+    "directory.spdx.json independent document identity",
+    "directory.cdx.json exact Syft version",
+    "directory.cdx.json native schema version",
+    "directory.cdx.json exact fixture dependency",
+    "directory.cdx.json independent document identity",
+    "file.spdx.json exact Syft version",
+    "file.spdx.json native schema version",
+    "file.spdx.json exact fixture dependency",
+    "file.spdx.json independent document identity",
+    "file subject retains extension-sensitive cataloging",
+    "SBOM files and source tree survive producer deletion",
+    "directory.spdx.json independent native full schema validation",
+    "directory.cdx.json independent native full schema validation",
+    "file.spdx.json independent native full schema validation",
+    "invalid.spdx.json independent negative schema rejection",
+    "invalid.cdx.json independent negative schema rejection"
+  ],
+  "nativeSchemaConsumer": {
+    "image": "debian@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171",
+    "network": "none",
+    "utility": "0.19.2"
+  },
+  "producerDeleted": true,
+  "limits": [
+    "Exact fixture dependency documents; this does not certify the final release SBOM or fresh packed consumers."
+  ]
+}

@@ -1,0 +1,2102 @@
+{
+  "format": "ts-release/native-producer-executables/1",
+  "work": "/tmp/ts-release-producer-executables-8fOaki",
+  "runtime": "v24.3.0",
+  "bun": "1.3.14",
+  "checks": [
+    "bun exact matrix length",
+    "bun/0 matrix identity",
+    "bun/0 exact target",
+    "bun/0 exact runtime",
+    "bun/0 exact owned size",
+    "bun/0 exact owned digest",
+    "bun/0 executable mode",
+    "bun/0 native metadata",
+    "bun/1 matrix identity",
+    "bun/1 exact target",
+    "bun/1 exact runtime",
+    "bun/1 exact owned size",
+    "bun/1 exact owned digest",
+    "bun/1 executable mode",
+    "bun/1 native metadata",
+    "bun/2 matrix identity",
+    "bun/2 exact target",
+    "bun/2 exact runtime",
+    "bun/2 exact owned size",
+    "bun/2 exact owned digest",
+    "bun/2 executable mode",
+    "bun/2 native metadata",
+    "bun/3 matrix identity",
+    "bun/3 exact target",
+    "bun/3 exact runtime",
+    "bun/3 exact owned size",
+    "bun/3 exact owned digest",
+    "bun/3 executable mode",
+    "bun/3 native metadata",
+    "bun/4 matrix identity",
+    "bun/4 exact target",
+    "bun/4 exact runtime",
+    "bun/4 exact owned size",
+    "bun/4 exact owned digest",
+    "bun/4 executable mode",
+    "bun/4 native metadata",
+    "bun/5 matrix identity",
+    "bun/5 exact target",
+    "bun/5 exact runtime",
+    "bun/5 exact owned size",
+    "bun/5 exact owned digest",
+    "bun/5 executable mode",
+    "bun/5 native metadata",
+    "deno exact matrix length",
+    "deno/0 matrix identity",
+    "deno/0 exact target",
+    "deno/0 exact runtime",
+    "deno/0 exact owned size",
+    "deno/0 exact owned digest",
+    "deno/0 executable mode",
+    "deno/0 native metadata",
+    "deno/1 matrix identity",
+    "deno/1 exact target",
+    "deno/1 exact runtime",
+    "deno/1 exact owned size",
+    "deno/1 exact owned digest",
+    "deno/1 executable mode",
+    "deno/1 native metadata",
+    "deno/2 matrix identity",
+    "deno/2 exact target",
+    "deno/2 exact runtime",
+    "deno/2 exact owned size",
+    "deno/2 exact owned digest",
+    "deno/2 executable mode",
+    "deno/2 native metadata",
+    "deno/3 matrix identity",
+    "deno/3 exact target",
+    "deno/3 exact runtime",
+    "deno/3 exact owned size",
+    "deno/3 exact owned digest",
+    "deno/3 executable mode",
+    "deno/3 native metadata",
+    "deno/4 matrix identity",
+    "deno/4 exact target",
+    "deno/4 exact runtime",
+    "deno/4 exact owned size",
+    "deno/4 exact owned digest",
+    "deno/4 executable mode",
+    "deno/4 native metadata",
+    "deno/5 matrix identity",
+    "deno/5 exact target",
+    "deno/5 exact runtime",
+    "deno/5 exact owned size",
+    "deno/5 exact owned digest",
+    "deno/5 executable mode",
+    "deno/5 native metadata",
+    "esbuild exact single in-memory output",
+    "SEA exact runtime",
+    "SEA exact native cell",
+    "all thirteen survive producer deletion",
+    "bun native installed --version",
+    "deno native installed --version",
+    "node-sea native installed --version"
+  ],
+  "records": [
+    {
+      "provider": "bun",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/bun-darwin-x64",
+        "bytes": "69173328",
+        "provenance": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "447cfc02e65fa8fd7512ba64f66cfb52025a43ecb6e75b6b4de4e6eac09ea3ce"
+        },
+        "nativeFormat": "mach-o",
+        "runtime": {
+          "name": "bun",
+          "version": "1.3.14"
+        },
+        "target": "macos-x64",
+        "provider": "bun",
+        "tool": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "bunTarget": "bun-darwin-x64",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedCrossTargetRuntime",
+          "target": "bun-darwin-x64",
+          "evidenceGate": "cold-warm-offline-and-runtime-identity-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "bun-macos-x64",
+        "content": {
+          "bytes": "69173328",
+          "sha256": "447cfc02e65fa8fd7512ba64f66cfb52025a43ecb6e75b6b4de4e6eac09ea3ce"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "mach-o",
+          "runtime": {
+            "name": "bun",
+            "version": "1.3.14"
+          },
+          "target": "macos-x64"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-watch-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-compile-command"
+            }
+          ],
+          "name": "bun",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              },
+              "name": "bun",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "1.3.14"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "bun",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/bun-darwin-arm64",
+        "bytes": "63446114",
+        "provenance": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "6939e111b15091204672fb867f9bc9fabf6528186595d30871115d15ad7ff242"
+        },
+        "nativeFormat": "mach-o",
+        "runtime": {
+          "name": "bun",
+          "version": "1.3.14"
+        },
+        "target": "macos-aarch64",
+        "provider": "bun",
+        "tool": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "bunTarget": "bun-darwin-arm64",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedCrossTargetRuntime",
+          "target": "bun-darwin-arm64",
+          "evidenceGate": "cold-warm-offline-and-runtime-identity-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "bun-macos-aarch64",
+        "content": {
+          "bytes": "63446114",
+          "sha256": "6939e111b15091204672fb867f9bc9fabf6528186595d30871115d15ad7ff242"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "mach-o",
+          "runtime": {
+            "name": "bun",
+            "version": "1.3.14"
+          },
+          "target": "macos-aarch64"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-watch-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-compile-command"
+            }
+          ],
+          "name": "bun",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              },
+              "name": "bun",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "1.3.14"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "bun",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/bun-linux-x64",
+        "bytes": "94582912",
+        "provenance": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "c3639a1895083390358661f3ba43f1dc4ade588818b8a8f057cbfedd9f458efd"
+        },
+        "nativeFormat": "elf",
+        "runtime": {
+          "name": "bun",
+          "version": "1.3.14"
+        },
+        "target": "linux-x64-gnu",
+        "provider": "bun",
+        "tool": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "bunTarget": "bun-linux-x64",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedCrossTargetRuntime",
+          "target": "bun-linux-x64",
+          "evidenceGate": "cold-warm-offline-and-runtime-identity-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "bun-linux-x64-gnu",
+        "content": {
+          "bytes": "94582912",
+          "sha256": "c3639a1895083390358661f3ba43f1dc4ade588818b8a8f057cbfedd9f458efd"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "elf",
+          "runtime": {
+            "name": "bun",
+            "version": "1.3.14"
+          },
+          "target": "linux-x64-gnu"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-watch-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-compile-command"
+            }
+          ],
+          "name": "bun",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              },
+              "name": "bun",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "1.3.14"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "bun",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/bun-linux-x64-musl",
+        "bytes": "91162912",
+        "provenance": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "43ae89aa81f47d69e125493cc12b058ac1083d6efc5618ed76d44084d2d04bc2"
+        },
+        "nativeFormat": "elf",
+        "runtime": {
+          "name": "bun",
+          "version": "1.3.14"
+        },
+        "target": "linux-x64-musl",
+        "provider": "bun",
+        "tool": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "bunTarget": "bun-linux-x64-musl",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedCrossTargetRuntime",
+          "target": "bun-linux-x64-musl",
+          "evidenceGate": "cold-warm-offline-and-runtime-identity-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "bun-linux-x64-musl",
+        "content": {
+          "bytes": "91162912",
+          "sha256": "43ae89aa81f47d69e125493cc12b058ac1083d6efc5618ed76d44084d2d04bc2"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "elf",
+          "runtime": {
+            "name": "bun",
+            "version": "1.3.14"
+          },
+          "target": "linux-x64-musl"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-watch-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-compile-command"
+            }
+          ],
+          "name": "bun",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              },
+              "name": "bun",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "1.3.14"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "bun",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/bun-linux-arm64",
+        "bytes": "93694096",
+        "provenance": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "aec3bfa8ec71d171a3476cb9dd8ffe12cad158d83ae64793004490284ce9386f"
+        },
+        "nativeFormat": "elf",
+        "runtime": {
+          "name": "bun",
+          "version": "1.3.14"
+        },
+        "target": "linux-aarch64-gnu",
+        "provider": "bun",
+        "tool": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "bunTarget": "bun-linux-arm64",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedCrossTargetRuntime",
+          "target": "bun-linux-arm64",
+          "evidenceGate": "cold-warm-offline-and-runtime-identity-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "bun-linux-aarch64-gnu",
+        "content": {
+          "bytes": "93694096",
+          "sha256": "aec3bfa8ec71d171a3476cb9dd8ffe12cad158d83ae64793004490284ce9386f"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "elf",
+          "runtime": {
+            "name": "bun",
+            "version": "1.3.14"
+          },
+          "target": "linux-aarch64-gnu"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-watch-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-compile-command"
+            }
+          ],
+          "name": "bun",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              },
+              "name": "bun",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "1.3.14"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "bun",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/bun-windows-x64.exe",
+        "bytes": "98480216",
+        "provenance": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "ba06998a10a0d5c98b5fce3281d632364c3560e2f9f579db6c2125c49ed9b665"
+        },
+        "nativeFormat": "pe",
+        "runtime": {
+          "name": "bun",
+          "version": "1.3.14"
+        },
+        "target": "windows-x64",
+        "provider": "bun",
+        "tool": {
+          "name": "bun",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "bun",
+              "version": "1.3.14",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "bun-build-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-build-watch-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            },
+            {
+              "_tag": "Present",
+              "id": "bun-compile-command",
+              "evidence": "source-exact:bun-v1.3.14"
+            }
+          ]
+        },
+        "bunTarget": "bun-windows-x64",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedCrossTargetRuntime",
+          "target": "bun-windows-x64",
+          "evidenceGate": "cold-warm-offline-and-runtime-identity-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "bun-windows-x64.exe",
+        "content": {
+          "bytes": "98480216",
+          "sha256": "ba06998a10a0d5c98b5fce3281d632364c3560e2f9f579db6c2125c49ed9b665"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "pe",
+          "runtime": {
+            "name": "bun",
+            "version": "1.3.14"
+          },
+          "target": "windows-x64"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-build-watch-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:bun-v1.3.14",
+              "id": "bun-compile-command"
+            }
+          ],
+          "name": "bun",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "92752752",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+                }
+              },
+              "name": "bun",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "1.3.14"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "deno",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/deno-x86_64-apple-darwin",
+        "bytes": "79341254",
+        "provenance": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "f6ac8e66be51cab8e76564d2b26ccb2a86caca73068ce98ce03415707146dc03"
+        },
+        "nativeFormat": "mach-o",
+        "runtime": {
+          "name": "deno",
+          "version": "2.9.5"
+        },
+        "target": "macos-x64",
+        "provider": "deno",
+        "tool": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "denoTarget": "x86_64-apple-darwin",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedDenort",
+          "denoDir": "/tmp/ts-release-producer-executables-8fOaki/deno-cache",
+          "evidenceGate": "cold-warm-corrupt-offline-target-relation-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "deno-macos-x64",
+        "content": {
+          "bytes": "79341254",
+          "sha256": "f6ac8e66be51cab8e76564d2b26ccb2a86caca73068ce98ce03415707146dc03"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "mach-o",
+          "runtime": {
+            "name": "deno",
+            "version": "2.9.5"
+          },
+          "target": "macos-x64"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-bundle-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-transpile-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-compile-command"
+            }
+          ],
+          "name": "deno",
+          "participants": [
+            {
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              },
+              "name": "deno",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.9.5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "deno",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/deno-aarch64-apple-darwin",
+        "bytes": "67463474",
+        "provenance": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "d599ddfe4579d08cb055d257eb53af3a08480d40f873929ab06bcd6330b1bf8d"
+        },
+        "nativeFormat": "mach-o",
+        "runtime": {
+          "name": "deno",
+          "version": "2.9.5"
+        },
+        "target": "macos-aarch64",
+        "provider": "deno",
+        "tool": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "denoTarget": "aarch64-apple-darwin",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedDenort",
+          "denoDir": "/tmp/ts-release-producer-executables-8fOaki/deno-cache",
+          "evidenceGate": "cold-warm-corrupt-offline-target-relation-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "deno-macos-aarch64",
+        "content": {
+          "bytes": "67463474",
+          "sha256": "d599ddfe4579d08cb055d257eb53af3a08480d40f873929ab06bcd6330b1bf8d"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "mach-o",
+          "runtime": {
+            "name": "deno",
+            "version": "2.9.5"
+          },
+          "target": "macos-aarch64"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-bundle-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-transpile-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-compile-command"
+            }
+          ],
+          "name": "deno",
+          "participants": [
+            {
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              },
+              "name": "deno",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.9.5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "deno",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/deno-x86_64-unknown-linux-gnu",
+        "bytes": "104138448",
+        "provenance": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "7beffbf3e9e4c512d714eb5fd50b7d6c4327750e054ebf381fdbd756b3c0c586"
+        },
+        "nativeFormat": "elf",
+        "runtime": {
+          "name": "deno",
+          "version": "2.9.5"
+        },
+        "target": "linux-x64-gnu",
+        "provider": "deno",
+        "tool": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "denoTarget": "x86_64-unknown-linux-gnu",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedDenort",
+          "denoDir": "/tmp/ts-release-producer-executables-8fOaki/deno-cache",
+          "evidenceGate": "cold-warm-corrupt-offline-target-relation-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "deno-linux-x64-gnu",
+        "content": {
+          "bytes": "104138448",
+          "sha256": "7beffbf3e9e4c512d714eb5fd50b7d6c4327750e054ebf381fdbd756b3c0c586"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "elf",
+          "runtime": {
+            "name": "deno",
+            "version": "2.9.5"
+          },
+          "target": "linux-x64-gnu"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-bundle-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-transpile-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-compile-command"
+            }
+          ],
+          "name": "deno",
+          "participants": [
+            {
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              },
+              "name": "deno",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.9.5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "deno",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/deno-aarch64-unknown-linux-gnu",
+        "bytes": "104748752",
+        "provenance": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "619c84da4a8350460650fde958ffbe6fac8cebff3ce6e16d8b363b2bae630048"
+        },
+        "nativeFormat": "elf",
+        "runtime": {
+          "name": "deno",
+          "version": "2.9.5"
+        },
+        "target": "linux-aarch64-gnu",
+        "provider": "deno",
+        "tool": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "denoTarget": "aarch64-unknown-linux-gnu",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedDenort",
+          "denoDir": "/tmp/ts-release-producer-executables-8fOaki/deno-cache",
+          "evidenceGate": "cold-warm-corrupt-offline-target-relation-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "deno-linux-aarch64-gnu",
+        "content": {
+          "bytes": "104748752",
+          "sha256": "619c84da4a8350460650fde958ffbe6fac8cebff3ce6e16d8b363b2bae630048"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "elf",
+          "runtime": {
+            "name": "deno",
+            "version": "2.9.5"
+          },
+          "target": "linux-aarch64-gnu"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-bundle-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-transpile-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-compile-command"
+            }
+          ],
+          "name": "deno",
+          "participants": [
+            {
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              },
+              "name": "deno",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.9.5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "deno",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/deno-x86_64-pc-windows-msvc.exe",
+        "bytes": "79587707",
+        "provenance": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "adb17a9e20f4c31b8d965a35f889b8bd8a42c13368d1cda6cc6cbb04146fd6ef"
+        },
+        "nativeFormat": "pe",
+        "runtime": {
+          "name": "deno",
+          "version": "2.9.5"
+        },
+        "target": "windows-x64",
+        "provider": "deno",
+        "tool": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "denoTarget": "x86_64-pc-windows-msvc",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedDenort",
+          "denoDir": "/tmp/ts-release-producer-executables-8fOaki/deno-cache",
+          "evidenceGate": "cold-warm-corrupt-offline-target-relation-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "deno-windows-x64.exe",
+        "content": {
+          "bytes": "79587707",
+          "sha256": "adb17a9e20f4c31b8d965a35f889b8bd8a42c13368d1cda6cc6cbb04146fd6ef"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "pe",
+          "runtime": {
+            "name": "deno",
+            "version": "2.9.5"
+          },
+          "target": "windows-x64"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-bundle-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-transpile-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-compile-command"
+            }
+          ],
+          "name": "deno",
+          "participants": [
+            {
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              },
+              "name": "deno",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.9.5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "deno",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/deno-aarch64-pc-windows-msvc.exe",
+        "bytes": "72734588",
+        "provenance": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "a40678b96523ec2590fbceb0c66527e4d39f415775d4db234221f502eecc79ca"
+        },
+        "nativeFormat": "pe",
+        "runtime": {
+          "name": "deno",
+          "version": "2.9.5"
+        },
+        "target": "windows-aarch64",
+        "provider": "deno",
+        "tool": {
+          "name": "deno",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "deno",
+              "version": "2.9.5",
+              "revision": "unreported",
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "deno-bundle-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-transpile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            },
+            {
+              "_tag": "Present",
+              "id": "deno-compile-command",
+              "evidence": "source-exact:deno-v2.9.5"
+            }
+          ]
+        },
+        "denoTarget": "aarch64-pc-windows-msvc",
+        "runtimeAcquisition": {
+          "_tag": "ProviderManagedDenort",
+          "denoDir": "/tmp/ts-release-producer-executables-8fOaki/deno-cache",
+          "evidenceGate": "cold-warm-corrupt-offline-target-relation-open"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "deno-windows-aarch64.exe",
+        "content": {
+          "bytes": "72734588",
+          "sha256": "a40678b96523ec2590fbceb0c66527e4d39f415775d4db234221f502eecc79ca"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "pe",
+          "runtime": {
+            "name": "deno",
+            "version": "2.9.5"
+          },
+          "target": "windows-aarch64"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-bundle-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-transpile-command"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "source-exact:deno-v2.9.5",
+              "id": "deno-compile-command"
+            }
+          ],
+          "name": "deno",
+          "participants": [
+            {
+              "channel": "stable",
+              "content": {
+                "bytes": "95582008",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3"
+                }
+              },
+              "name": "deno",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.9.5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "provider": "node-sea",
+      "native": {
+        "path": "/tmp/ts-release-producer-executables-8fOaki/producer/node-sea",
+        "bytes": "147877060",
+        "provenance": {
+          "name": "node",
+          "participants": [
+            {
+              "role": "builder",
+              "name": "node",
+              "version": "26.7.0",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "147870928",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "ad19784f7e90ba789a099eccba77ede8dc90a778c424f1c10a70fed3ff903fdc"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "node-build-sea",
+              "evidence": "exact-binary-help-probe"
+            },
+            {
+              "_tag": "Present",
+              "id": "node-linux-x64-gnu",
+              "evidence": "exact-binary-runtime-probe"
+            },
+            {
+              "_tag": "Indeterminate",
+              "id": "node-lief",
+              "reason": "proved by each successful direct assembly"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedExecutable",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "d730fee6c1a1f9c0e090e0df1ad2bf140b2c79d6f1ffa190d57b2ba3d26bc675"
+        },
+        "nativeFormat": "elf",
+        "runtime": {
+          "name": "node",
+          "version": "26.7.0"
+        },
+        "target": "linux-x64-gnu"
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "node-linux-x64-gnu",
+        "content": {
+          "bytes": "147877060",
+          "sha256": "d730fee6c1a1f9c0e090e0df1ad2bf140b2c79d6f1ffa190d57b2ba3d26bc675"
+        },
+        "deliveryMode": 493,
+        "executable": {
+          "nativeFormat": "elf",
+          "runtime": {
+            "name": "node",
+            "version": "26.7.0"
+          },
+          "target": "linux-x64-gnu"
+        },
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "exact-binary-help-probe",
+              "id": "node-build-sea"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "exact-binary-runtime-probe",
+              "id": "node-linux-x64-gnu"
+            },
+            {
+              "_tag": "Indeterminate",
+              "id": "node-lief",
+              "reason": "proved by each successful direct assembly"
+            }
+          ],
+          "name": "node",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "147870928",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "ad19784f7e90ba789a099eccba77ede8dc90a778c424f1c10a70fed3ff903fdc"
+                }
+              },
+              "name": "node",
+              "revision": "unreported",
+              "role": "builder",
+              "version": "26.7.0"
+            }
+          ]
+        }
+      },
+      "esbuild": {
+        "version": "0.28.2",
+        "bundledSha256": "339e54d66cd4a3b696fb3fe1d5ca0fb0703ee60ca568a568ab36dcecfe2fc88f"
+      }
+    }
+  ],
+  "executions": [
+    {
+      "provider": "bun",
+      "target": "linux-x64-gnu",
+      "stdout": "ts-release producer fixture 1.0.0\n"
+    },
+    {
+      "provider": "deno",
+      "target": "linux-x64-gnu",
+      "stdout": "ts-release producer fixture 1.0.0\n"
+    },
+    {
+      "provider": "node-sea",
+      "target": "linux-x64-gnu",
+      "stdout": "ts-release producer fixture 1.0.0\n"
+    }
+  ],
+  "producerDeleted": true,
+  "limits": [
+    "Three native Linux x64 GNU executions only; macOS/Windows/arm64/musl clean-host execution remains separate.",
+    "Cross-target runtime acquisition evidence gates in producer artifacts are retained, not silently treated as closed.",
+    "This local source consumer is not yet the required fresh packed consumer."
+  ]
+}

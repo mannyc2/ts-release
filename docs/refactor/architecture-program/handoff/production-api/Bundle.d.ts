@@ -4,3 +4,5 @@ export type { ContentOwner, ReadContent, PutContent, ArtifactAccess } from "./in
 export { finalize } from "./internal/BundleFinalize.js";
 export { encodeBundle, loadBundle } from "./internal/BundleCodec.js";
 export { verifiedArtifacts } from "./internal/ArtifactReader.js";
+export type { ChecksumInput } from "./internal/Checksums.js";
+export { renderSha256Sums, verifySha256Sums } from "./internal/Checksums.js";

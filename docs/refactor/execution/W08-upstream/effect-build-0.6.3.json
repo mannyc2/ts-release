@@ -1,0 +1,121 @@
+{
+  "bugs": {
+    "url": "https://github.com/mannyc2/effect-build/issues"
+  },
+  "dist": {
+    "shasum": "b03aa1e768af62931d25b07b0e07b2693cf71b43",
+    "tarball": "https://registry.npmjs.org/effect-build/-/effect-build-0.6.3.tgz",
+    "fileCount": 47,
+    "integrity": "sha512-Q7tHD0S7SwL6UAFnUbdROzxcb9xcn/d/xyNv784+FeWbl2lKtZ+rBDm9dIR1OTB99a7i6a+yupZbv7cXf+mv0g==",
+    "signatures": [
+      {
+        "sig": "MEYCIQDGUJ4QQtFk98Ip21IX5uiia1Db6IHj11yLAO7f6Mn7YgIhANvyJp5vvwo9KqT+RHevf/p8uI9kUDo7+1wh7xrzc28q",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build@0.6.3",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 250258
+  },
+  "name": "effect-build",
+  "type": "module",
+  "_from": "file:/home/runner/work/_temp/npm-release-candidate/effect-build-0.6.3.tgz",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./Matrix": {
+      "types": "./dist/Matrix.d.ts",
+      "import": "./dist/Matrix.js"
+    },
+    "./Artifact": {
+      "types": "./dist/Artifact.d.ts",
+      "import": "./dist/Artifact.js"
+    },
+    "./Author/File": {
+      "types": "./dist/Author/File.d.ts",
+      "import": "./dist/Author/File.js"
+    },
+    "./Author/Tool": {
+      "types": "./dist/Author/Tool.d.ts",
+      "import": "./dist/Author/Tool.js"
+    },
+    "./Author/Tree": {
+      "types": "./dist/Author/Tree.d.ts",
+      "import": "./dist/Author/Tree.js"
+    },
+    "./SystemTarget": {
+      "types": "./dist/SystemTarget.d.ts",
+      "import": "./dist/SystemTarget.js"
+    },
+    "./Author/Executable": {
+      "types": "./dist/Author/Executable.d.ts",
+      "import": "./dist/Author/Executable.js"
+    },
+    "./Author/BorrowedOutput": {
+      "types": "./dist/Author/BorrowedOutput.d.ts",
+      "import": "./dist/Author/BorrowedOutput.js"
+    }
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -b tsconfig.json --force",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "_npmUser": {
+    "name": "GitHub Actions",
+    "email": "npm-oidc-no-reply@github.com",
+    "trustedPublisher": {
+      "id": "github",
+      "oidcConfigId": "oidc:48a728c5-a42b-45f8-8713-dd52e9b6a16e"
+    }
+  },
+  "homepage": "https://github.com/mannyc2/effect-build#readme",
+  "keywords": [
+    "effect",
+    "bun",
+    "deno",
+    "compiler",
+    "executable"
+  ],
+  "_resolved": "/home/runner/work/_temp/npm-release-candidate/effect-build-0.6.3.tgz",
+  "_integrity": "sha512-Q7tHD0S7SwL6UAFnUbdROzxcb9xcn/d/xyNv784+FeWbl2lKtZ+rBDm9dIR1OTB99a7i6a+yupZbv7cXf+mv0g==",
+  "repository": {
+    "url": "git+https://github.com/mannyc2/effect-build.git",
+    "type": "git",
+    "directory": "packages/effect-build"
+  },
+  "_npmVersion": "11.11.0",
+  "description": "Portable Effect-native artifact, ownership, matrix, and provider-authoring contracts.",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "mannyc1",
+      "email": "c20carroll@gmail.com"
+    }
+  ],
+  "sideEffects": false,
+  "_nodeVersion": "24.14.1",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "_hasShrinkwrap": false,
+  "devDependencies": {
+    "effect": "4.0.0-rc.108"
+  },
+  "peerDependencies": {
+    "effect": ">=4.0.0-beta.104 <4.1.0-0"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/effect-build_0.6.3_1788644724761_0.33060356661310686",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "effect-build@0.6.3",
+  "version": "0.6.3"
+}

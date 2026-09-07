@@ -1,0 +1,42 @@
+{
+  "repository": "https://github.com/mannyc2/effect-build",
+  "revision": "ef29a087baac8bdbcd90a54bb62a2dceb739dd91",
+  "purpose": "Immutable native test fixtures/oracle; not shipped product logic",
+  "files": [
+    {
+      "upstreamPath": "test/integration/fixtures/python/poetry-core/pyproject.toml",
+      "fixturePath": "test/reimplementation/artifacts/fixtures/python/poetry-core/pyproject.toml",
+      "sha256": "0a869646608c97d19159b05cf872f0ed7d1b647fe53105d3f47e74ba2c57e702"
+    },
+    {
+      "upstreamPath": "test/integration/fixtures/python/poetry-core/src/effect_build_poetry_fixture/__init__.py",
+      "fixturePath": "test/reimplementation/artifacts/fixtures/python/poetry-core/src/effect_build_poetry_fixture/__init__.py",
+      "sha256": "64cc926addda8da53627573e0d7b0f52e7c7dce4578bc29589299d86316d784f"
+    },
+    {
+      "upstreamPath": "test/integration/fixtures/python/poetry-core/uv.lock",
+      "fixturePath": "test/reimplementation/artifacts/fixtures/python/poetry-core/uv.lock",
+      "sha256": "4520dfba051f666e0b623df8f4b587002cff9f05efb30fbca32d4a4e385dc741"
+    },
+    {
+      "upstreamPath": "test/integration/fixtures/python/uv-build/pyproject.toml",
+      "fixturePath": "test/reimplementation/artifacts/fixtures/python/uv-build/pyproject.toml",
+      "sha256": "3813b6f05540c9c38227e7546d6048e65c40b45b718b1efd243aefbd493de81e"
+    },
+    {
+      "upstreamPath": "test/integration/fixtures/python/uv-build/src/effect_build_uv_fixture/__init__.py",
+      "fixturePath": "test/reimplementation/artifacts/fixtures/python/uv-build/src/effect_build_uv_fixture/__init__.py",
+      "sha256": "0b644fc8f2a00cf7ad0ff943921d4207d3174a08785d5cab1f16628b9d238af6"
+    },
+    {
+      "upstreamPath": "test/integration/fixtures/python/uv-build/uv.lock",
+      "fixturePath": "test/reimplementation/artifacts/fixtures/python/uv-build/uv.lock",
+      "sha256": "94479dc96613ed7daf36e40e88f82d2399654fbaa7f54f83d013f744d5ed3cd7"
+    },
+    {
+      "upstreamPath": "scripts/acceptance/assert-python-artifacts.py",
+      "fixturePath": "test/reimplementation/artifacts/fixtures/python/assert-python-artifacts.py",
+      "sha256": "171dfe188510fbf4ca8abc1a247123e51e1c987344ba0f0456442fee1e36a36e"
+    }
+  ]
+}

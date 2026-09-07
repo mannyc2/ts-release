@@ -1,0 +1,76 @@
+{
+  "format": "ts-release/wave-verification/1",
+  "wave": "W08",
+  "status": "locally-verified-not-final-certification",
+  "observedAt": "2026-09-07T14:13:50.056089+00:00",
+  "commands": {
+    "direct": 11,
+    "tests": 273,
+    "assertions": 2941,
+    "testFiles": 47,
+    "producerCells": 4,
+    "producerChecks": 780,
+    "producerCommands": 36,
+    "appleCells": 4,
+    "appleCommands": 48,
+    "appleDriverChecks": 120,
+    "appleInstalledChecks": 32,
+    "appleSigkills": 8,
+    "externalCells": 4,
+    "externalChecks": 796,
+    "externalCliProcesses": 140,
+    "externalFrozenBindings": 87,
+    "externalSourceEdits": 0
+  },
+  "kernelArchiveSha256": "eb038cb394139f069a0f937b72578f8f987705fae53e4210b0705ad2b7c723d9",
+  "evidenceFiles": 284,
+  "sealedFiles": 292,
+  "selectedOutcomes": 69,
+  "openOutcomes": 69,
+  "propositions": 226,
+  "replacementLines": 11131,
+  "remainingLegacyLines": 2439,
+  "physicalProductLines": 13570,
+  "ceiling": 11485,
+  "achievedReduction": false,
+  "forecastExpected": 13483,
+  "review": "docs/refactor/execution/W08-review.md",
+  "bindings": [
+    {
+      "path": "docs/refactor/execution/W08-evidence/retention.json",
+      "bytes": 94546,
+      "sha256": "229160987050a08b5caea438e27fbf28bcfa50b4cd71c53f498c2f3704c8421f"
+    },
+    {
+      "path": "docs/refactor/execution/W08-evidence/production-verification.json",
+      "bytes": 38272,
+      "sha256": "77166f8f8eefd5620926a4cab76fe188982bf4829de37024c748d1448a1fc78c"
+    },
+    {
+      "path": "docs/refactor/execution/W08-evidence/integration-final.log",
+      "bytes": 3002,
+      "sha256": "8df9daf075feca4b869905f14928698bd3af6e0f6464f18d85a4afa82c841ebb"
+    },
+    {
+      "path": "docs/refactor/execution/W08-evidence/architecture-final.log",
+      "bytes": 1977,
+      "sha256": "e968cff5f86207a89c439bc436a09e4eaa06ce2ec2d6a7596eaaccc6a8cd55d8"
+    },
+    {
+      "path": "docs/refactor/execution/W08-migration.json",
+      "bytes": 51455,
+      "sha256": "fb45ffd3700e37c07e5cbfba8561df0406351c782828f9c46ab32bf2cb162c20"
+    },
+    {
+      "path": "docs/refactor/execution/W08-outcome-evidence.json",
+      "bytes": 32434,
+      "sha256": "c4d7ddbd6fc66fefe58cbdddbe4adc14bcb4633bace626fa73cf6d49451a4126"
+    },
+    {
+      "path": "docs/refactor/execution/W08-source-variance.json",
+      "bytes": 2084,
+      "sha256": "e96a8587905f1e4a23abbe1f5210f5699965b9dff4b101b3a1500834544a7940"
+    }
+  ],
+  "limits": "Local wave closure with exact source-bound planning variance. Native Apple/Windows, remaining executable targets and clean acquisition, hosted trust/mutations, direct Bun Sigstore, W09/W10 applications and complete candidate qualification remain open. No release published."
+}

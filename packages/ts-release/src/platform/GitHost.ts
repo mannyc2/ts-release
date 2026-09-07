@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect"
 import type * as Scope from "effect/Scope"
-import { type Transport } from "../Provider.js"
+import type { Transport } from "../Provider.js"
 import { type ReadContent, readVerifiedContent } from "../internal/Content.js"
 import { type ReleaseError, attempt } from "../internal/Error.js"
 import { canonical, decodeOwned } from "../internal/Identity.js"

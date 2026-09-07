@@ -1,0 +1,12 @@
+{
+  "uid": 1000,
+  "logs": [
+    "Public restoration preserves file bytes/modes, readonly nested mode0555, and file/directory/chained symlinks after original source deletion",
+    "OwnedTree, provenance, and owner methods remain captured across mutable caller replacements",
+    "Same-size corrupt reader fails before commit and removes candidate",
+    "A fully captured but divergent candidate is rejected by inspection before destination commit",
+    "Failure after readonly chmod leaves no destination or private candidate",
+    "Interruption after readonly chmod awaits cleanup and leaves no destination or private candidate",
+    "Self-consistent unsupported root0555 rejects without committing divergent tree"
+  ]
+}

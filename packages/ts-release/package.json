@@ -33,6 +33,10 @@
       "types": "./dist/Http.d.ts",
       "import": "./dist/Http.js"
     },
+    "./effect-build": {
+      "types": "./dist/EffectBuild.d.ts",
+      "import": "./dist/EffectBuild.js"
+    },
     "./git": {
       "types": "./dist/Git.d.ts",
       "import": "./dist/Git.js"
@@ -44,6 +48,10 @@
     "./node": {
       "types": "./dist/Node.d.ts",
       "import": "./dist/Node.js"
+    },
+    "./apple": {
+      "types": "./dist/Apple.d.ts",
+      "import": "./dist/Apple.js"
     }
   },
   "dependencies": {

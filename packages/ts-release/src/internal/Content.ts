@@ -7,13 +7,28 @@ import { decodeOwned, sha256 } from "./Identity.js"
 export interface ContentOwner {
   /** Copy before retention; return the identity of the stored copy. */
   readonly putOwned: (bytes: Uint8Array) => Effect.Effect<Content, AdoptionError>
-  /** Stream a regular file, checking exact decimal size and SHA-256. */
+  /** Stream an exact regular file with nonblocking/no-follow open and descriptor
+   * validation. This byte-store boundary does not assert producer finalization. */
   readonly putFileOwned: (
-    source: Artifact.HashedFile | Artifact.HashedExecutable,
+    source: Artifact.HashedFileIdentity,
   ) => Effect.Effect<Content, AdoptionError>
+  /** Iterate source names without first materializing the complete directory.
+   * Stop at the first entry beyond the nonnegative bound and close the cursor. */
+  readonly readDirectoryBounded: (
+    directory: string,
+    maximumEntries: number,
+  ) => Effect.Effect<readonly string[], AdoptionError>
   readonly verify: (content: Content) => Effect.Effect<void, AdoptionError>
   readonly read: (content: Content) => Effect.Effect<Uint8Array, AdoptionError>
 }
+export const captureContentOwner = (owner: ContentOwner): ContentOwner =>
+  Object.freeze({
+    putOwned: owner.putOwned.bind(owner),
+    putFileOwned: owner.putFileOwned.bind(owner),
+    readDirectoryBounded: owner.readDirectoryBounded.bind(owner),
+    read: owner.read.bind(owner),
+    verify: owner.verify.bind(owner),
+  })
 export type ReadContent = (content: Content) => Effect.Effect<Uint8Array, ReleaseError>
 export type PutContent = (bytes: Uint8Array) => Effect.Effect<Content, ReleaseError>
 export interface ArtifactAccess {

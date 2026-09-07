@@ -1,0 +1,19 @@
+directory.spdx.json:valid
+directory.cdx.json:valid
+file.spdx.json:valid
+1. {
+        "type": "invalid_type",
+        "field": "packages",
+        "context": "(root).packages",
+        "description": "Invalid type. Expected: array, given: string",
+        "value": "invalid"
+    }
+invalid.spdx.json:rejected-exit-2
+1. {
+        "type": "invalid_type",
+        "field": "version",
+        "context": "(root).version",
+        "description": "Invalid type. Expected: integer, given: string",
+        "value": "invalid"
+    }
+invalid.cdx.json:rejected-exit-2

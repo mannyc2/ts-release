@@ -1,6 +1,6 @@
 {
   "format": "ts-release/production-imports/1",
-  "files": 72,
+  "files": 81,
   "edges": [
     {
       "file": "packages/catalog/src/Shared.ts",
@@ -339,6 +339,11 @@
     },
     {
       "file": "packages/ts-release/src/Node.ts",
+      "specifier": "./platform/Directory.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Node.ts",
       "specifier": "./platform/ContentStore.js",
       "typeOnly": false
     },
@@ -415,6 +420,31 @@
     {
       "file": "packages/ts-release/src/Provider.ts",
       "specifier": "./internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Apple.ts",
+      "specifier": "./internal/EffectTypes.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Apple.ts",
+      "specifier": "./apple/Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Apple.ts",
+      "specifier": "./apple/Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Apple.ts",
+      "specifier": "./apple/Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Apple.ts",
+      "specifier": "./apple/Preparation.js",
       "typeOnly": false
     },
     {
@@ -523,6 +553,16 @@
       "typeOnly": false
     },
     {
+      "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/Checksums.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/Checksums.js",
+      "typeOnly": false
+    },
+    {
       "file": "packages/ts-release/src/Bun.ts",
       "specifier": "./internal/EffectTypes.js",
       "typeOnly": true
@@ -550,6 +590,11 @@
     {
       "file": "packages/ts-release/src/Bun.ts",
       "specifier": "./platform/SqliteJournal.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bun.ts",
+      "specifier": "./platform/Directory.js",
       "typeOnly": false
     },
     {
@@ -615,7 +660,7 @@
     {
       "file": "packages/ts-release/src/index.ts",
       "specifier": "./Journal.js",
-      "typeOnly": false
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/index.ts",
@@ -675,6 +720,51 @@
     {
       "file": "packages/ts-release/src/Plan.ts",
       "specifier": "./Journal.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/EffectBuild.ts",
+      "specifier": "./internal/EffectTypes.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/EffectBuild.ts",
+      "specifier": "effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/EffectBuild.ts",
+      "specifier": "effect-build/Artifact",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/EffectBuild.ts",
+      "specifier": "effect-build/Author/Tree",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/EffectBuild.ts",
+      "specifier": "./internal/ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/EffectBuild.ts",
+      "specifier": "./internal/BundleFinalize.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/EffectBuild.ts",
+      "specifier": "./internal/Content.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/EffectBuild.ts",
+      "specifier": "./internal/BundleCodec.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/EffectBuild.ts",
+      "specifier": "./internal/Identity.js",
       "typeOnly": false
     },
     {
@@ -1004,13 +1094,8 @@
     },
     {
       "file": "packages/ts-release/src/internal/Decision.ts",
-      "specifier": "./Host.js",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/internal/Decision.ts",
       "specifier": "../Journal.js",
-      "typeOnly": false
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/internal/Decision.ts",
@@ -1083,6 +1168,311 @@
       "typeOnly": false
     },
     {
+      "file": "packages/ts-release/src/internal/Checksums.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Checksums.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Checksums.ts",
+      "specifier": "effect-build/Artifact",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Checksums.ts",
+      "specifier": "./ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Checksums.ts",
+      "specifier": "./Content.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/Checksums.ts",
+      "specifier": "./Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Checksums.ts",
+      "specifier": "./Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Provider.ts",
+      "specifier": "effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Provider.ts",
+      "specifier": "effect-build-apple/Notary",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Provider.ts",
+      "specifier": "../Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Provider.ts",
+      "specifier": "../internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Provider.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Provider.ts",
+      "specifier": "../internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Provider.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "effect-build-apple/Notary",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "../Plan.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "../Release.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "../Journal.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "../internal/ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "../internal/BundleCodec.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "../internal/Content.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "../internal/Decision.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "../internal/Host.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "../internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "../internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Model.ts",
+      "specifier": "effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Model.ts",
+      "specifier": "effect-build/Artifact",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Model.ts",
+      "specifier": "effect-build/Author/Tool",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/apple/Model.ts",
+      "specifier": "effect-build-apple/Model",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Model.ts",
+      "specifier": "effect-build-apple/Notary",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Model.ts",
+      "specifier": "effect-build-apple/Assess",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Model.ts",
+      "specifier": "../internal/ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Model.ts",
+      "specifier": "../internal/BundleFinalize.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Model.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Model.ts",
+      "specifier": "../internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "effect-build/Artifact",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "effect-build/Author/File",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "effect-build/Author/Tree",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "effect-build-apple/Model",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "effect-build-apple/Notary",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "effect-build-apple/Staple",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "effect-build-apple/Assess",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "../EffectBuild.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "../internal/ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "../internal/BundleCodec.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "../internal/BundleFinalize.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "../internal/Content.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "../internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "../internal/Identity.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Native.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Directory.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Directory.ts",
+      "specifier": "node:path",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Directory.ts",
+      "specifier": "../internal/ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Directory.ts",
+      "specifier": "../internal/Content.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/Directory.ts",
+      "specifier": "./Process.js",
+      "typeOnly": false
+    },
+    {
       "file": "packages/ts-release/src/platform/GitJournal.ts",
       "specifier": "./GitProcess.js",
       "typeOnly": false
@@ -1110,12 +1500,12 @@
     {
       "file": "packages/ts-release/src/platform/GitJournal.ts",
       "specifier": "../Journal.js",
-      "typeOnly": false
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/platform/GitJournal.ts",
       "specifier": "../internal/ReleaseModel.js",
-      "typeOnly": false
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/platform/GitJournal.ts",
@@ -1165,7 +1555,7 @@
     {
       "file": "packages/ts-release/src/platform/GitHost.ts",
       "specifier": "../Provider.js",
-      "typeOnly": false
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/platform/GitHost.ts",
@@ -1208,6 +1598,16 @@
       "typeOnly": false
     },
     {
+      "file": "packages/ts-release/src/platform/Process.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/Process.ts",
+      "specifier": "node:child_process",
+      "typeOnly": false
+    },
+    {
       "file": "packages/ts-release/src/platform/GitProcess.ts",
       "specifier": "effect/Effect",
       "typeOnly": false
@@ -1224,7 +1624,7 @@
     },
     {
       "file": "packages/ts-release/src/platform/GitProcess.ts",
-      "specifier": "node:child_process",
+      "specifier": "./Process.js",
       "typeOnly": false
     },
     {
@@ -1423,6 +1823,11 @@
       "typeOnly": false
     },
     {
+      "file": "packages/ts-release/src/platform/ContentStore.ts",
+      "specifier": "./Directory.js",
+      "typeOnly": false
+    },
+    {
       "file": "packages/ts-release/src/platform/SqliteJournal.ts",
       "specifier": "bun:sqlite",
       "typeOnly": false
@@ -1575,7 +1980,7 @@
     {
       "file": "packages/ts-release/src/platform/Application.ts",
       "specifier": "../internal/ArtifactModel.js",
-      "typeOnly": false
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/platform/Application.ts",
@@ -1585,7 +1990,7 @@
     {
       "file": "packages/ts-release/src/platform/Application.ts",
       "specifier": "../internal/ReleaseModel.js",
-      "typeOnly": false
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/platform/Application.ts",
@@ -2204,6 +2609,14 @@
       "effect/Effect",
       "effect/Schema"
     ],
+    "./effect-build": [
+      "effect",
+      "effect-build/Artifact",
+      "effect-build/Author/Tree",
+      "effect-build/SystemTarget",
+      "effect/Effect",
+      "effect/Schema"
+    ],
     "./git": [
       "effect-build/Artifact",
       "effect-build/SystemTarget",
@@ -2254,6 +2667,20 @@
       "node:url",
       "undici/lib/core/connect.js",
       "undici/lib/dispatcher/client.js"
+    ],
+    "./apple": [
+      "effect",
+      "effect-build-apple/Assess",
+      "effect-build-apple/Model",
+      "effect-build-apple/Notary",
+      "effect-build-apple/Staple",
+      "effect-build/Artifact",
+      "effect-build/Author/File",
+      "effect-build/Author/Tree",
+      "effect-build/SystemTarget",
+      "effect/Context",
+      "effect/Effect",
+      "effect/Schema"
     ]
   }
 }

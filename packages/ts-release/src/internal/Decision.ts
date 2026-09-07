@@ -10,8 +10,7 @@ import {
   type ReleaseReport,
   RequestFacts,
 } from "./ReleaseModel.js"
-import { scopeKind } from "./Host.js"
-import { type Scope } from "../Journal.js"
+import type { Scope } from "../Journal.js"
 import { canonical } from "./Identity.js"
 import { fail } from "./Error.js"
 

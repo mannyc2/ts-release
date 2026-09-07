@@ -12,6 +12,7 @@ export {
   makeCredentialExchange,
 } from "./platform/HttpTransport.js"
 export { openSqliteJournal } from "./platform/SqliteJournal.js"
+export { nodeDirectoryReader } from "./platform/Directory.js"
 export { fileContentOwner } from "./platform/ContentStore.js"
 export {
   type Application,

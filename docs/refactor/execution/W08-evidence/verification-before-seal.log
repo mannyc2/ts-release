@@ -1,0 +1,23 @@
+{"argv":["bun","tools/architecture-lab/inventory.ts","--check"],"exitCode":0}
+{"argv":["bun","tools/architecture-lab/migration.ts","--check"],"exitCode":0}
+{"argv":["bun","tools/architecture-lab/reconcile.ts","--check"],"exitCode":0}
+{"argv":["bun","tools/architecture-lab/project.ts","--check"],"exitCode":0}
+{"argv":["python3","tools/architecture-lab/public-history-inventory.py","--check"],"exitCode":0}
+{"argv":["bun","run","check"],"exitCode":0}
+{"argv":["bun","scripts/project-production-api.ts","--check"],"exitCode":0}
+{"argv":["bun","scripts/check-import-rules.ts"],"exitCode":0}
+{"argv":["bun","scripts/check-package-exports.ts"],"exitCode":0}
+{"argv":["bun","scripts/check-migration-execution.ts"],"exitCode":0}
+{"argv":["bun","test","./test/reimplementation"],"exitCode":0}
+11 | const handoff = "docs/refactor/architecture-program/handoff"
+12 | const contractPath = `${handoff}/contract.json`
+13 | const read = path => readFileSync(join(root, path))
+14 | const json = path => JSON.parse(read(path))
+15 | const hash = bytes => createHash("sha256").update(bytes).digest("hex")
+16 | const fail = message => { throw new Error(message) }
+                                         ^
+error: Unsealed added/removed evidence file
+      at fail (/tmp/ts-release-implementation/tools/architecture-lab/verify.mjs:16:37)
+      at /tmp/ts-release-implementation/tools/architecture-lab/verify.mjs:118:93
+
+Bun v1.3.14 (Linux x64)

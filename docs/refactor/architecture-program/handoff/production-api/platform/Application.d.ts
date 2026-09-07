@@ -1,9 +1,9 @@
 import * as Effect from "effect/Effect";
 import type * as Scope from "effect/Scope";
 import { type HostShape } from "../internal/Host.js";
-import { type OwnedBundle } from "../internal/ArtifactModel.js";
+import type { OwnedBundle } from "../internal/ArtifactModel.js";
 import { ReleaseError } from "../internal/Error.js";
-import { type RunOptions } from "../internal/ReleaseModel.js";
+import type { RunOptions } from "../internal/ReleaseModel.js";
 import { FinalizedReport } from "../internal/FinalizedReport.js";
 export { FinalizedReport };
 export interface Application {

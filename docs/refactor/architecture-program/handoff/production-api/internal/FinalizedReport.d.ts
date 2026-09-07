@@ -27,5 +27,5 @@ declare const FinalizedReport_base: Schema.Class<FinalizedReport, Schema.Struct<
 export declare class FinalizedReport extends FinalizedReport_base {
 }
 /** No permission is derived from this report, and no report is a journal reader. */
-export declare const reportFinalizedRelease: (bundle: OwnedBundle, input: Plan) => Effect.Effect<FinalizedReport, ReleaseError | import("./ArtifactModel.js").AdoptionError, import("./Host.js").Host>;
+export declare const reportFinalizedRelease: (bundle: OwnedBundle, input: Plan) => Effect.Effect<FinalizedReport, import("./ArtifactModel.js").AdoptionError | ReleaseError, import("./Host.js").Host>;
 export {};

@@ -1,6 +1,6 @@
 {
   "format": "ts-release/architecture-forecast/1",
-  "status": "mixed-actual-W07-and-unimplemented-engineering-estimates-not-achieved-reduction",
+  "status": "mixed-actual-W08-and-unimplemented-engineering-estimates-not-achieved-reduction",
   "basisCommit": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
   "denominator": {
     "productPhysicalLines": 22916,
@@ -33,21 +33,21 @@
       ],
       "components": [
         {
-          "name": "Actual W05 production owners",
-          "low": 2443,
-          "expected": 2443,
-          "high": 2443,
-          "basis": "Exact normally formatted source bindings in actualImplementation; common kernel/evidence and native HTTP/Git remain charged to their owners once."
+          "name": "Actual W08 production owners",
+          "low": 2436,
+          "expected": 2436,
+          "high": 2436,
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "fullReplacementPhysicalLines": {
-        "low": 2443,
-        "expected": 2443,
-        "high": 2443
+        "low": 2436,
+        "expected": 2436,
+        "high": 2436
       },
       "actualImplementation": {
-        "wave": "W05",
-        "lines": 2443,
+        "wave": "W08",
+        "lines": 2436,
         "files": [
           {
             "path": "packages/ts-release/src/internal/Error.ts",
@@ -72,7 +72,7 @@
           {
             "path": "packages/ts-release/src/Plan.ts",
             "lines": 152,
-            "sha256": "feb4aa5d2b33966ca8299471c2dcd134549b3b75121b9457d261865cd6dfac50"
+            "sha256": "949a58c3a96f596e185a2bc299bfa99b8a5a22c5eacbcfb819d89ac1f95ed73a"
           },
           {
             "path": "packages/ts-release/src/Journal.ts",
@@ -81,8 +81,8 @@
           },
           {
             "path": "packages/ts-release/src/internal/Decision.ts",
-            "lines": 330,
-            "sha256": "9431d65013e22246a31585c2cc60858795399e6c74614f47fba817070e9ab4cf"
+            "lines": 329,
+            "sha256": "8af4c34401fbc240c86fa5b1999a8580e57499e6b9681b1dc52a046bff76b737"
           },
           {
             "path": "packages/ts-release/src/internal/Host.ts",
@@ -101,8 +101,8 @@
           },
           {
             "path": "packages/ts-release/src/index.ts",
-            "lines": 71,
-            "sha256": "daa1fb4f6c77726a93e03d6925db808886915d6553e452197842f3609db2547a"
+            "lines": 65,
+            "sha256": "f1eec1bad25221744fa9a5750671604f05822aeedf5edf430ebe0136244f93eb"
           },
           {
             "path": "packages/ts-release/src/internal/EffectTypes.ts",
@@ -125,7 +125,7 @@
             "sha256": "8395ebcdf181e67682fa8080403947b8e0680c1f4199e061f50e4648ac595b31"
           }
         ],
-        "qualification": "Implemented and independently reviewed local source; no hosted native full-product certification"
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -142,53 +142,27 @@
         "kernel.ApplePreparation",
         "kernel.Apple",
         "host.Content",
-        "kernel.TreeManifest"
+        "kernel.TreeManifest",
+        "kernel.AppleProvider",
+        "host.Directory"
       ],
       "components": [
         {
-          "name": "Measured adoption/content/codec/Apple plus mixed release composition",
-          "low": 615,
-          "expected": 615,
-          "high": 615,
-          "basis": "Fresh Apple source-inventory:545physical +70mixed composition; actual source measured, no native Apple acceptance inferred."
-        },
-        {
-          "name": "Content host completion",
-          "low": 60,
-          "expected": 130,
-          "high": 240,
-          "basis": "apple-adoption.md:streaming export, cleanup/filesystem admission, typed errors"
-        },
-        {
-          "name": "Full app/DMG/pkg restoration and native host",
-          "low": 90,
-          "expected": 180,
-          "high": 300,
-          "basis": "apple-adoption.md:two public upstream file branches and signature/service boundary"
-        },
-        {
-          "name": "Remaining Bundle/root/receipt admission and resource integration",
-          "low": 0,
-          "expected": 20,
-          "high": 100,
-          "basis": "Previous40/90/170 reserve explicitly reconciled:70 lines now measured, low floored0; no doublecount. Native3kind production integration remains separately above."
-        },
-        {
-          "name": "W04 shared verified content reader delta",
-          "low": 22,
-          "expected": 22,
-          "high": 22,
-          "basis": "Content.ts grows from 21 to 43 lines; ArtifactReader reduction is in the measured kernel row. The previous 945-line full adoption/Apple estimate remains a hybrid research/future estimate, not 945 implemented lines. Actual partial owners total 408; W08 must replace this projection with complete real implementation."
+          "name": "Actual W08 production owners",
+          "low": 1713,
+          "expected": 1713,
+          "high": 1713,
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "fullReplacementPhysicalLines": {
-        "low": 787,
-        "expected": 967,
-        "high": 1277
+        "low": 1713,
+        "expected": 1713,
+        "high": 1713
       },
       "actualImplementation": {
-        "wave": "W04",
-        "lines": 408,
+        "wave": "W08",
+        "lines": 1713,
         "files": [
           {
             "path": "packages/ts-release/src/internal/ArtifactModel.ts",
@@ -197,8 +171,8 @@
           },
           {
             "path": "packages/ts-release/src/internal/Content.ts",
-            "lines": 43,
-            "sha256": "ea26089099eb3f811299509e57cb964bf9287eabca807b98ec072e063cec21b4"
+            "lines": 58,
+            "sha256": "1f6e7bf018a9368e5ca094cc0a092884028e6f9ca946a0b56c42907b2763b31e"
           },
           {
             "path": "packages/ts-release/src/internal/BundleCodec.ts",
@@ -212,21 +186,56 @@
           },
           {
             "path": "packages/ts-release/src/Bundle.ts",
-            "lines": 13,
-            "sha256": "5f4e37afc336a2dc7d8f4118d3a37ba0e56ff2d4d10d26069694739cebd06314"
+            "lines": 15,
+            "sha256": "21511731379d4c3f0da8045a67a2be8dd3e73f649af0ed6835f570d366b0b074"
+          },
+          {
+            "path": "packages/ts-release/src/EffectBuild.ts",
+            "lines": 275,
+            "sha256": "f029dae2ec1d4eac75058f17685a68b0a0cb7509ce4d279fae12b5da8ff91909"
+          },
+          {
+            "path": "packages/ts-release/src/apple/Model.ts",
+            "lines": 167,
+            "sha256": "6e3f46751e765f743b136bca5a6e090a142ee55304fd7e0414ebbddf226eb395"
+          },
+          {
+            "path": "packages/ts-release/src/apple/Native.ts",
+            "lines": 329,
+            "sha256": "f8fd6d903ecc476aad47489a6654de8462fc7b4ceee11a289bee52c71902092c"
+          },
+          {
+            "path": "packages/ts-release/src/apple/Preparation.ts",
+            "lines": 245,
+            "sha256": "51bdfcddb1392f7530f9612f75d8f06e75e00d676b59a502f4f4b8c43bf6b968"
+          },
+          {
+            "path": "packages/ts-release/src/Apple.ts",
+            "lines": 37,
+            "sha256": "7e195b881bb2bb8a9694d07223cf3d3e59a5826611dc5248ebf74b420e43235f"
           },
           {
             "path": "packages/ts-release/src/platform/ContentStore.ts",
-            "lines": 137,
-            "sha256": "0b70de2d4e95ab73c7678ed1a004fa101601e689e32ec82b53b8db2d83a32182"
+            "lines": 144,
+            "sha256": "ad99025fd40481918b18435999a7da4a5381409dfde002a8fda1b3547d5e21e9"
           },
           {
             "path": "packages/ts-release/src/internal/TreeManifest.ts",
             "lines": 88,
             "sha256": "c3dff093aded6406e0739ba1af21afdbd569c2ca42006589009a305bb0df2373"
+          },
+          {
+            "path": "packages/ts-release/src/apple/Provider.ts",
+            "lines": 163,
+            "sha256": "413ad4c5c901886f939cb4c33e25e1a912d560c7dbbe9bc83a9b0e977a3f10b8"
+          },
+          {
+            "path": "packages/ts-release/src/platform/Directory.ts",
+            "lines": 65,
+            "sha256": "a675093116d4823a59972f265a6384a77ec15189bb3487ed3ada7444288eb08a"
           }
         ],
-        "qualification": "Implemented source, not hosted/native full-product certification"
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -246,11 +255,11 @@
       ],
       "components": [
         {
-          "name": "Actual W04 production owners",
+          "name": "Actual W08 production owners",
           "low": 761,
           "expected": 761,
           "high": 761,
-          "basis": "Exact normally formatted source bindings in actualImplementation; shared native Git process counted only in native-git-additional."
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "fullReplacementPhysicalLines": {
@@ -259,7 +268,7 @@
         "high": 761
       },
       "actualImplementation": {
-        "wave": "W04",
+        "wave": "W08",
         "lines": 761,
         "files": [
           {
@@ -278,7 +287,7 @@
             "sha256": "518fadf4e96862ff49a39733dd56a3efc65688240c659beae3a731573381d2ea"
           }
         ],
-        "qualification": "Implemented source, not hosted/native full-product certification"
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -290,11 +299,11 @@
       ],
       "components": [
         {
-          "name": "Actual W04 production owners",
+          "name": "Actual W08 production owners",
           "low": 342,
           "expected": 342,
           "high": 342,
-          "basis": "Exact normally formatted source bindings in actualImplementation; shared native Git process counted only in native-git-additional."
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "fullReplacementPhysicalLines": {
@@ -303,7 +312,7 @@
         "high": 342
       },
       "actualImplementation": {
-        "wave": "W04",
+        "wave": "W08",
         "lines": 342,
         "files": [
           {
@@ -314,7 +323,7 @@
           {
             "path": "packages/ts-release/src/platform/GitJournal.ts",
             "lines": 209,
-            "sha256": "11de366ed29b8bf554efd64f3fe9f3a4a1cb2b5c050d053f4c2c1f087964cbe1"
+            "sha256": "a636179ef69ff598f6890776cb33e0dfa1b9c9fcb99a3ef979054f795f0304b2"
           },
           {
             "path": "packages/ts-release/src/platform/SqliteJournal.ts",
@@ -322,7 +331,7 @@
             "sha256": "8537597f4e9c692878011ac8cf45b137c9d419e998471532a97a32059d257bfb"
           }
         ],
-        "qualification": "Implemented source, not hosted/native full-product certification"
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -338,11 +347,11 @@
       ],
       "components": [
         {
-          "name": "Actual W07 host entries and shared CLI",
-          "low": 193,
-          "expected": 193,
-          "high": 193,
-          "basis": "Exact normally formatted runtime/application/CLI source. Actual shared-bin native Node/Bun and packed external application witnesses pass; remaining complete Action/self-release and platform qualification remain separate."
+          "name": "Actual W08 production owners",
+          "low": 195,
+          "expected": 195,
+          "high": 195,
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         },
         {
           "name": "Action inputs/outputs and immutable artifact transfer",
@@ -360,28 +369,28 @@
         }
       ],
       "fullReplacementPhysicalLines": {
-        "low": 453,
-        "expected": 613,
-        "high": 853
+        "low": 455,
+        "expected": 615,
+        "high": 855
       },
       "actualImplementation": {
-        "wave": "W07",
-        "lines": 193,
+        "wave": "W08",
+        "lines": 195,
         "files": [
           {
             "path": "packages/ts-release/src/platform/Application.ts",
             "lines": 68,
-            "sha256": "fd8e8da6ef2d50ef76741b54c84b787acd08a92c0c52d9b4a709cc0bf4bcd477"
+            "sha256": "0a0ecbb01f117bd97c6d52b946b3fe6a586a576e10c663f4ea00741778b05466"
           },
           {
             "path": "packages/ts-release/src/Node.ts",
-            "lines": 20,
-            "sha256": "ea52c565bc7e6f9f0840160c13041b07445ce7aebfb9e7c5b03afd8a8bc9bf32"
+            "lines": 21,
+            "sha256": "ecc1e673dbb0a059315c6d524ecb2146c17acdcf42acae2a59c086932894d3e7"
           },
           {
             "path": "packages/ts-release/src/Bun.ts",
-            "lines": 21,
-            "sha256": "d8316f1de07b5d5940f76685956b3bae381fd39e59ddfbcdbfde098837266206"
+            "lines": 22,
+            "sha256": "98d65b94c17db6e3dafc42906fc11337b5b6bdb1097801671c7e127ee50f3b66"
           },
           {
             "path": "packages/ts-release/src/internal/CommandLine.ts",
@@ -394,7 +403,7 @@
             "sha256": "e64ed1d182e45058278676a72520948d2be23ed9ce53de4c8469bdd621ff4504"
           }
         ],
-        "qualification": "Implemented source, not hosted/native full-product certification"
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -436,11 +445,11 @@
       },
       "components": [
         {
-          "name": "Actual W04 production owners",
+          "name": "Actual W08 production owners",
           "low": 1406,
           "expected": 1406,
           "high": 1406,
-          "basis": "Exact normally formatted source bindings in actualImplementation; shared native Git process counted only in native-git-additional."
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "donors": [
@@ -450,7 +459,7 @@
         "src/publication/npm.ts"
       ],
       "actualImplementation": {
-        "wave": "W04",
+        "wave": "W08",
         "lines": 1406,
         "files": [
           {
@@ -489,7 +498,7 @@
             "sha256": "24f761eeafea23755b822b81dcd2f4d408a21d87569915e30ba8c6e578f127dd"
           }
         ],
-        "qualification": "Implemented source, not hosted/native full-product certification"
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -515,11 +524,11 @@
       },
       "components": [
         {
-          "name": "Actual W04 production owners",
+          "name": "Actual W08 production owners",
           "low": 1378,
           "expected": 1378,
           "high": 1378,
-          "basis": "Exact normally formatted source bindings in actualImplementation; shared native Git process counted only in native-git-additional."
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "donors": [
@@ -529,7 +538,7 @@
         "src/publication/warehouse.ts"
       ],
       "actualImplementation": {
-        "wave": "W04",
+        "wave": "W08",
         "lines": 1378,
         "files": [
           {
@@ -588,7 +597,7 @@
             "sha256": "77a8f7ceef823dbac2d599d57bb9a1bb8bb098ca7865010deb78f38c93e440d3"
           }
         ],
-        "qualification": "Implemented source, not hosted/native full-product certification"
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -612,11 +621,11 @@
       },
       "components": [
         {
-          "name": "Actual W05 production owners",
+          "name": "Actual W08 production owners",
           "low": 1502,
           "expected": 1502,
           "high": 1502,
-          "basis": "Exact normally formatted source bindings in actualImplementation; common kernel/evidence and native HTTP/Git remain charged to their owners once."
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "donors": [
@@ -626,7 +635,7 @@
         "src/publication/github.ts"
       ],
       "actualImplementation": {
-        "wave": "W05",
+        "wave": "W08",
         "lines": 1502,
         "files": [
           {
@@ -680,7 +689,7 @@
             "sha256": "c95c932e5f36d553e12254b609f988f47ee908ee03bc12652ecf257dec34337d"
           }
         ],
-        "qualification": "Implemented and independently reviewed local source; no hosted native full-product certification"
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -696,18 +705,18 @@
       },
       "components": [
         {
-          "name": "Actual W06 catalog source",
+          "name": "Actual W08 production owners",
           "low": 69,
           "expected": 69,
           "high": 69,
-          "basis": "Exact source bindings; the package-private shared owner is charged once, and native Git stays in its existing kernel owner."
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "donors": [
         "src/publication/catalogs.ts:62-171"
       ],
       "actualImplementation": {
-        "wave": "W06",
+        "wave": "W08",
         "lines": 69,
         "files": [
           {
@@ -721,7 +730,7 @@
             "sha256": "3f399b30c4d53be10441c0cc5a84fe8ed76b1c1d5dd4bc72dfa6014f323eccd0"
           }
         ],
-        "qualification": "Independent local native format/policy/Git review; hosted native installation remains Plans009/010."
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -737,18 +746,18 @@
       },
       "components": [
         {
-          "name": "Actual W06 catalog source",
+          "name": "Actual W08 production owners",
           "low": 48,
           "expected": 48,
           "high": 48,
-          "basis": "Exact source bindings; the package-private shared owner is charged once, and native Git stays in its existing kernel owner."
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "donors": [
         "src/publication/catalogs.ts:62-98,172-196"
       ],
       "actualImplementation": {
-        "wave": "W06",
+        "wave": "W08",
         "lines": 48,
         "files": [
           {
@@ -762,7 +771,7 @@
             "sha256": "3e18c5813453766bc0d1ab2446258a7192fe8ed15d9a7bed9c75a2221963e737"
           }
         ],
-        "qualification": "Independent local native format/policy/Git review; hosted native installation remains Plans009/010."
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -885,25 +894,26 @@
         "host.NativeGit",
         "host.GitProcess",
         "host.GitObjects",
-        "host.GitRemote"
+        "host.GitRemote",
+        "host.Process"
       ],
       "components": [
         {
-          "name": "Actual W04 production owners",
-          "low": 1110,
-          "expected": 1110,
-          "high": 1110,
-          "basis": "Exact normally formatted source bindings in actualImplementation; shared native Git process counted only in native-git-additional."
+          "name": "Actual W08 production owners",
+          "low": 1130,
+          "expected": 1130,
+          "high": 1130,
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "fullReplacementPhysicalLines": {
-        "low": 1110,
-        "expected": 1110,
-        "high": 1110
+        "low": 1130,
+        "expected": 1130,
+        "high": 1130
       },
       "actualImplementation": {
-        "wave": "W04",
-        "lines": 1110,
+        "wave": "W08",
+        "lines": 1130,
         "files": [
           {
             "path": "packages/ts-release/src/internal/GitCatalog.ts",
@@ -918,12 +928,12 @@
           {
             "path": "packages/ts-release/src/platform/GitHost.ts",
             "lines": 165,
-            "sha256": "3b05c1971e51a0d203cf8ce5065b0318c78ab3e4db3eb90cee63f898e1790902"
+            "sha256": "bf30e48c4ba70950b250be1597208af1fcf1848c8d8f2e3e1a8f1390bd2d537b"
           },
           {
             "path": "packages/ts-release/src/platform/GitProcess.ts",
-            "lines": 297,
-            "sha256": "eb0480d97a7286f7f76de24782d378c0da11d16b1f203b755e8e096907863bdb"
+            "lines": 209,
+            "sha256": "b4318b11019c38d4887dec5bc9bd4c94829f519133ee6a43229344d589881005"
           },
           {
             "path": "packages/ts-release/src/platform/GitObjects.ts",
@@ -934,9 +944,14 @@
             "path": "packages/ts-release/src/platform/GitRemote.ts",
             "lines": 51,
             "sha256": "d3be45369e30eeca0ccae040bbb21497dc7a7f781655a38d89a10ac87d1d58cd"
+          },
+          {
+            "path": "packages/ts-release/src/platform/Process.ts",
+            "lines": 108,
+            "sha256": "0409be3b62c92db3f394eca326e3d874e822a7902535d01c9d0342fa9239b632"
           }
         ],
-        "qualification": "Implemented source, not hosted/native full-product certification"
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -946,24 +961,29 @@
       ],
       "components": [
         {
-          "name": "Measured checksum projection and content verification",
-          "low": 68,
-          "expected": 68,
-          "high": 68,
-          "basis": "tools/architecture-lab/checksums/results.json; actual immutable File/native sha256sum fixture"
-        },
-        {
-          "name": "Target domain/export, explicit input bounds and final shared public-name admission",
-          "low": 5,
-          "expected": 12,
-          "high": 30,
-          "basis": "tools/architecture-lab/checksums/results.json; actual immutable File/native sha256sum fixture"
+          "name": "Actual W08 production owners",
+          "low": 74,
+          "expected": 74,
+          "high": 74,
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "fullReplacementPhysicalLines": {
-        "low": 73,
-        "expected": 80,
-        "high": 98
+        "low": 74,
+        "expected": 74,
+        "high": 74
+      },
+      "actualImplementation": {
+        "wave": "W08",
+        "lines": 74,
+        "files": [
+          {
+            "path": "packages/ts-release/src/internal/Checksums.ts",
+            "lines": 74,
+            "sha256": "003ee845742079309869ad53530c561405598d0b95366f00efe1c1363994e8f6"
+          }
+        ],
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     },
     {
@@ -979,15 +999,15 @@
       },
       "components": [
         {
-          "name": "Actual W06 catalog source",
+          "name": "Actual W08 production owners",
           "low": 77,
           "expected": 77,
           "high": 77,
-          "basis": "Exact source bindings; the package-private shared owner is charged once, and native Git stays in its existing kernel owner."
+          "basis": "Exact source bindings in actualImplementation. Generic Process is counted once with native Git; bounded Directory and Apple Provider are charged to adoption/Apple. No research fixture or native acceptance substitutes for production source."
         }
       ],
       "actualImplementation": {
-        "wave": "W06",
+        "wave": "W08",
         "lines": 77,
         "files": [
           {
@@ -996,26 +1016,26 @@
             "sha256": "eaee3b955220e7fa77cbc7cda3a8587c7d2c6082319ce2d018c275e7f13b09de"
           }
         ],
-        "qualification": "Independent local native format/policy/Git review; hosted native installation remains Plans009/010."
+        "qualification": "Exact current normally formatted source; full selected hosted/native candidate acceptance remains required."
       }
     }
   ],
   "totals": {
-    "low": 11781,
-    "expected": 12728,
-    "high": 13996
+    "low": 12723,
+    "expected": 13483,
+    "high": 14423
   },
-  "expectedHeadroom": -1243,
+  "expectedHeadroom": -1998,
   "reductionPercent": {
-    "low": 48.71,
-    "expected": 44.59,
-    "high": 39.07
+    "low": 44.61,
+    "expected": 41.3,
+    "high": 37.21
   },
   "unknowns": [
-    "Two remaining public provider packages (MCP and OpenAI) are not implemented. Their complete native parsing, evidence, authentication and selected agent-product composition must be measured.",
-    "Kernel and GitHub use actual W05 source; npm, PyPI, HTTP/OIDC, journals and native Git retain exact W04 source bindings. CLI/Action/self-release retains420expected future Action/self-release lines above193actual host-entry/shared-CLI lines; all full native host/delivery qualification remains open. Adoption/Apple retains its prior full responsibility estimate plus the 22-line W04 shared-reader delta, with 408 actual partial lines exposed; W08 must replace this hybrid estimate.",
-    "Native hosted OIDC, Bun Sigstore, all selected platform acceptance and remaining host integration can change source costs. Implemented file counts are not acceptance.",
-    "Exact layout metadata remains separate and in the combined view. All newly maintained owned or upstream logic counts; no forecast closes the 11485 gate."
+    "MCP/OpenAI packages and final Action/self-release/agent composition remain unimplemented. Retained future estimates must be replaced by actual complete source, not treated as limits or qualifications.",
+    "Actual W08 artifact/Apple/native directory/child process/checksum source is fully charged. Core unused Host import removal changes source by one line without a behavior or selection-law change.",
+    "W10 must close all carried native/source/embedded-Python-wheel duties. Hosted OIDC, direct Bun Sigstore, native macOS/Windows and selected producer acquisition qualification remain open and may require source changes.",
+    "Source ceiling remains11485 with original22971denominator. All metadata, generated data and moved/newly maintained external implementation stay separately visible."
   ],
   "conditionalExcluded": [
     {
@@ -1034,7 +1054,7 @@
     }
   ],
   "newRequiredUpstreamImplementationLines": 0,
-  "sourceCeilingPolicy": "Expected12728 exceeds unchanged11485 ceiling by1243. No achieved reduction or complete-product waiver; actual full selected product must pass before release.",
+  "sourceCeilingPolicy": "Expected13483 exceeds unchanged11485 ceiling by1998. No achieved reduction or complete-product waiver. Complete selected product must pass before release.",
   "maintenanceLanes": [
     "product and Action source",
     "generated runtime product inputs including Action YAML",
@@ -1048,16 +1068,16 @@
   ],
   "layoutMetadata": [
     {
-      "layout": "T3c",
       "publicPackageJsonLines": 277,
       "privatePackageJsonLines": 83,
       "actionYamlLines": 22,
       "tsconfigJsonLines": 160,
       "futureScriptFiles": 3,
       "futureScriptLines": null,
-      "authoredProductModuleFiles": 89,
+      "authoredProductModuleFiles": 92,
       "generatedRuntimePolicyFiles": 0,
-      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
+      "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count.",
+      "layout": "T3c"
     }
   ],
   "densityAdjusted": {
@@ -1092,7 +1112,7 @@
     "lines": 789,
     "bytes": 15973,
     "role": "Pinned native SPDX membership data; generated from packaging26.3 with source hash; validation logic remains counted TypeScript",
-    "forecastProductAndDataLines": 13517
+    "forecastProductAndDataLines": 14272
   },
   "historicalLayoutMetadata": {
     "commit": "3b712db",
@@ -1139,10 +1159,10 @@
   "conservativeCombinedViews": {
     "layout": "T3c",
     "projectedMetadataExcludingAlreadyCountedActionYaml": 520,
-    "forecastProductAndProjectedMetadata": 13248,
-    "forecastProductProjectedMetadataAndOwnedData": 14037,
-    "actualProductAndObservedMetadata": 14377,
-    "actualProductObservedMetadataAndOwnedData": 15166,
-    "basis": "Selected template metadata277public+83private+160tsconfig=520; Action22alreadyinproduct. Actual metadata620 is separately measured current manifests/configs, not a complete future metadata guarantee. Rejected historical alternatives excluded."
+    "forecastProductAndProjectedMetadata": 14003,
+    "forecastProductProjectedMetadataAndOwnedData": 14792,
+    "actualProductAndObservedMetadata": 14210,
+    "actualProductObservedMetadataAndOwnedData": 14999,
+    "basis": "Selected template metadata520; Action22alreadyforecastproduct. Actual metadata640 separately measured. Originaldenominator22971/finalceiling11485unchanged."
   }
 }

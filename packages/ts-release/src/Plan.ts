@@ -4,7 +4,7 @@ import { type ProviderDescriptor, verifyDescriptor } from "./Provider.js"
 import { ReleaseError, attempt, fail } from "./internal/Error.js"
 import { canonical, hashCanonical, copyData, decodeOwned, freeze } from "./internal/Identity.js"
 import { Operation, Plan } from "./internal/ReleaseModel.js"
-import { type Scope } from "./Journal.js"
+import type { Scope } from "./Journal.js"
 
 export const createOperation = Effect.fn("ts-release.createOperation")(function* (
   provider: ProviderDescriptor,

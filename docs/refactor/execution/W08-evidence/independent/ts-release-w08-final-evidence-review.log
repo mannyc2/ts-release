@@ -1,0 +1,138 @@
+{
+  "retainedFiles": 275,
+  "unindexedAtReview": [
+    "docs/refactor/execution/W08-evidence/final-packed-external/evidence.json",
+    "docs/refactor/execution/W08-evidence/final-packed-external/provider.tgz",
+    "docs/refactor/execution/W08-evidence/full-tests-final.log",
+    "docs/refactor/execution/W08-evidence/verification-before-seal.log"
+  ],
+  "concreteSourceCopiesVerified": 149,
+  "kernelSha256": "eb038cb394139f069a0f937b72578f8f987705fae53e4210b0705ad2b7c723d9",
+  "coreSourceBindings": 48,
+  "packedFiles": 99,
+  "installedManagersVerified": 2,
+  "upstreamArchives": 11,
+  "producerCommands": 36,
+  "producerCells": [
+    {
+      "manager": "bun",
+      "runtime": "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+      "checks": 195
+    },
+    {
+      "manager": "bun",
+      "runtime": "/mnt/models/.bun/bin/bun",
+      "checks": 195
+    },
+    {
+      "manager": "npm",
+      "runtime": "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+      "checks": 195
+    },
+    {
+      "manager": "npm",
+      "runtime": "/mnt/models/.bun/bin/bun",
+      "checks": 195
+    }
+  ],
+  "producerChecks": 780,
+  "appleCommands": 48,
+  "appleDriverChecks": 120,
+  "sigkillExits": 8,
+  "journals": [
+    {
+      "cell": "bun-0",
+      "type": "retained-receipt",
+      "events": 8,
+      "submissions": 2,
+      "revision": 8,
+      "statuses": [
+        "Satisfied",
+        "Satisfied"
+      ],
+      "exactReportMatch": true
+    },
+    {
+      "cell": "bun-0",
+      "type": "lost-receipt",
+      "events": 1,
+      "submissions": 1,
+      "revision": 1,
+      "statuses": [
+        "Inconclusive"
+      ],
+      "exactReportMatch": true
+    },
+    {
+      "cell": "bun-1",
+      "type": "retained-receipt",
+      "events": 8,
+      "submissions": 2,
+      "revision": 8,
+      "statuses": [
+        "Satisfied",
+        "Satisfied"
+      ],
+      "exactReportMatch": true
+    },
+    {
+      "cell": "bun-1",
+      "type": "lost-receipt",
+      "events": 1,
+      "submissions": 1,
+      "revision": 1,
+      "statuses": [
+        "Inconclusive"
+      ],
+      "exactReportMatch": true
+    },
+    {
+      "cell": "npm-0",
+      "type": "retained-receipt",
+      "events": 8,
+      "submissions": 2,
+      "revision": 8,
+      "statuses": [
+        "Satisfied",
+        "Satisfied"
+      ],
+      "exactReportMatch": true
+    },
+    {
+      "cell": "npm-0",
+      "type": "lost-receipt",
+      "events": 1,
+      "submissions": 1,
+      "revision": 1,
+      "statuses": [
+        "Inconclusive"
+      ],
+      "exactReportMatch": true
+    },
+    {
+      "cell": "npm-1",
+      "type": "retained-receipt",
+      "events": 8,
+      "submissions": 2,
+      "revision": 8,
+      "statuses": [
+        "Satisfied",
+        "Satisfied"
+      ],
+      "exactReportMatch": true
+    },
+    {
+      "cell": "npm-1",
+      "type": "lost-receipt",
+      "events": 1,
+      "submissions": 1,
+      "revision": 1,
+      "statuses": [
+        "Inconclusive"
+      ],
+      "exactReportMatch": true
+    }
+  ],
+  "originalSelectedScopesPreserved": 28,
+  "qualification": "Local W08 implementation evidence; all launch outcomes and native macOS/Windows credentialed acceptance remain open"
+}

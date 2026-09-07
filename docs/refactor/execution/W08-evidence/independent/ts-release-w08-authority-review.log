@@ -1,0 +1,15 @@
+{
+  "virtualChange": "Content_base.bytes: Schema.String -> Schema.Number",
+  "entryAuthorityHashUnchanged": true,
+  "allBundleProjectedDeclarationHashesUnchanged": true,
+  "changedFileOutsideAuthorityBindings": "/tmp/ts-release-implementation/docs/refactor/architecture-program/handoff/production-api/internal/ArtifactModel.d.ts",
+  "contentProjection": {
+    "name": "Content",
+    "declarations": [
+      {
+        "line": 13,
+        "sha256": "dd6bdff9e031502aaf3553cb47e14ce53974c37cb2c4a18e0a40b51ea98216a6"
+      }
+    ]
+  }
+}

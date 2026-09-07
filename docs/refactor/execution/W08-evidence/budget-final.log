@@ -1,0 +1,24 @@
+{
+  "baseline": 22971,
+  "ceiling": 11485,
+  "wave": "W08",
+  "replacementTripwire": 9200,
+  "counts": {
+    "product": 13570,
+    "unchangedLegacy": 2439,
+    "replacement": 11131,
+    "metadata": 640,
+    "productData": 789,
+    "productDataBytes": 15973,
+    "tests": 47438,
+    "fixtureText": 6138,
+    "fixtureBinaryBytes": 727372,
+    "generatedDelivery": 678,
+    "tooling": 45541
+  },
+  "planningTripwirePassed": false,
+  "planningVarianceAccepted": true,
+  "replacementSha256": "56e377c3c469e0652b3aaab919d5c80b343732b1a04e53848cee61e48db17cb2",
+  "achievedReduction": false,
+  "productAndDataLines": 14359
+}

@@ -4,5 +4,6 @@ export { makeGitCatalogHost, type GitCatalogHost, type GitCatalogHostOptions, } 
 export { makeGithubOidcTokenSource, makeGithubTrustedPublisherHost } from "./platform/GithubOidc.js";
 export { makeHttpTransport, makeHttpRead, makeCredentialExchange, } from "./platform/HttpTransport.js";
 export { openSqliteJournal } from "./platform/SqliteJournal.js";
+export { nodeDirectoryReader } from "./platform/Directory.js";
 export { fileContentOwner } from "./platform/ContentStore.js";
 export { type Application, type CreateApplication, FinalizedReport, runApplication, } from "./platform/Application.js";

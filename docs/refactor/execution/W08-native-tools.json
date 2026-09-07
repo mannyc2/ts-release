@@ -1,0 +1,100 @@
+{
+  "format": "ts-release/native-producer-tools/1",
+  "observedAt": "2026-09-07T11:41:45.696Z",
+  "platform": "linux-x64",
+  "policySha256": "121241122c137b63bae477ac3b41101ea3bd8463b6ef5664a35f3fdf71ca1485",
+  "tools": [
+    {
+      "name": "uv",
+      "version": "0.12.0",
+      "url": "https://github.com/astral-sh/uv/releases/download/0.12.0/uv-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "eaf842262aa1c418d8ecc5605f02ee1ebfd369124fa48548e85f9481a47831a9",
+      "member": "uv-x86_64-unknown-linux-gnu/uv",
+      "archive": "tar.gz",
+      "probe": [
+        "--version"
+      ],
+      "executable": "/tmp/ts-release-native-producers/uv",
+      "executableSha256": "b6e3cb5b4858d920c63e1d88e31a7a4d8f567073ee4e5e4a1889f93984dc28ea",
+      "executableBytes": 55110904,
+      "probeOutput": "uv 0.12.0 (x86_64-unknown-linux-gnu)"
+    },
+    {
+      "name": "nfpm",
+      "version": "2.47.0",
+      "url": "https://github.com/goreleaser/nfpm/releases/download/v2.47.0/nfpm_2.47.0_Linux_x86_64.tar.gz",
+      "sha256": "0660ca602b2d2d2ae4781a06c692b3eeb9d437ffea05b831d76e41f4a3188783",
+      "member": "nfpm",
+      "archive": "tar.gz",
+      "probe": [
+        "--version"
+      ],
+      "executable": "/tmp/ts-release-native-producers/nfpm",
+      "executableSha256": "17133a2467ffb7cec851c2d7bae0c6098d09d7ed7d3d101a9605f6a473323936",
+      "executableBytes": 16572578,
+      "probeOutput": "_____ ____  __  __\n _ __ |  ___|  _ \\|  \\/  |\n| '_ \\| |_  | |_) | |\\/| |\n| | | |  _| |  __/| |  | |\n|_| |_|_|   |_|   |_|  |_|\nnfpm: a simple and 0-dependencies apk, arch linux, deb, ipk, msix, and rpm packager written in Go\nhttps://nfpm.goreleaser.com\n\nGitVersion:    2.47.0\nGitCommit:     40c7c8f7376400e9464d04a2a099045cf5598f8e\nGitTreeState:  false\nBuildDate:     2026-06-20T23:17:25Z\nBuiltBy:       goreleaser\nGoVersion:     go1.26.4\nCompiler:      gc\nModuleSum:     h1:0bioJAjWaMPntgDqynP4ze0Wt4zYqYSFJ5/BBy9XIGI=\nPlatform:      linux/amd64"
+    },
+    {
+      "name": "syft",
+      "version": "1.50.0",
+      "url": "https://github.com/anchore/syft/releases/download/v1.50.0/syft_1.50.0_linux_amd64.tar.gz",
+      "sha256": "bf7b29ff57f06da30918266a0e1c2885a8f99784798d1bdb1628886aa015d788",
+      "member": "syft",
+      "archive": "tar.gz",
+      "probe": [
+        "version"
+      ],
+      "executable": "/tmp/ts-release-native-producers/syft",
+      "executableSha256": "22f2b95baf524d45ad16b0ad5cdeb200c4b8a816493768cec50e4682b1f24b0e",
+      "executableBytes": 86212770,
+      "probeOutput": "Application:   syft\nVersion:       1.50.0\nBuildDate:     2026-07-28T17:38:13Z\nGitCommit:     16223e6dd7893fe578787658ceb876257483d404\nGitDescription: v1.50.0\nPlatform:      linux/amd64\nGoVersion:     go1.26.3\nCompiler:      gc\nSchemaVersion: 16.1.10"
+    },
+    {
+      "name": "sbom-utility",
+      "version": "0.19.2",
+      "url": "https://github.com/CycloneDX/sbom-utility/releases/download/v0.19.2/sbom-utility-v0.19.2-linux-amd64.tar.gz",
+      "sha256": "e0cd37e6e67b1d0e44dbb7b38e055a4e2ee66db590bb8e7f89e2d9b650f4490b",
+      "member": "sbom-utility",
+      "archive": "tar.gz",
+      "probe": [
+        "version",
+        "--quiet"
+      ],
+      "executable": "/tmp/ts-release-native-producers/sbom-utility",
+      "executableSha256": "a68cd43f964181d260564e462a15e368edc9c092dd0ca74deec12fe6d624dba6",
+      "executableBytes": 16746485,
+      "probeOutput": "sbom-utility version v0.19.2"
+    },
+    {
+      "name": "deno",
+      "version": "2.9.5",
+      "url": "https://github.com/denoland/deno/releases/download/v2.9.5/deno-x86_64-unknown-linux-gnu.zip",
+      "sha256": "8b010a3b1a4a0188a67cdb8a7a27348b2a501af78aec7fc74f2ace167368d530",
+      "member": "deno",
+      "archive": "zip",
+      "probe": [
+        "--version"
+      ],
+      "executable": "/tmp/ts-release-native-producers/deno",
+      "executableSha256": "dc480c462c8c3582524f3e75c160613d0a975e1f66b5465995d58bae236da7d3",
+      "executableBytes": 95582008,
+      "probeOutput": "deno 2.9.5 (stable, release, x86_64-unknown-linux-gnu)\nv8 15.0.245.2-rusty\ntypescript 6.0.3"
+    },
+    {
+      "name": "node",
+      "version": "26.7.0",
+      "url": "https://nodejs.org/dist/v26.7.0/node-v26.7.0-linux-x64.tar.xz",
+      "sha256": "982aa24dd8be4c889c6a8ab337ddff3b0896645b20f4239356e80552c16277ee",
+      "member": "node-v26.7.0-linux-x64/bin/node",
+      "archive": "tar.xz",
+      "probe": [
+        "--version"
+      ],
+      "executable": "/tmp/ts-release-native-producers/node",
+      "executableSha256": "ad19784f7e90ba789a099eccba77ede8dc90a778c424f1c10a70fed3ff903fdc",
+      "executableBytes": 147870928,
+      "probeOutput": "v26.7.0"
+    }
+  ],
+  "limits": "Exact native Linux tools only. Windows/macOS/hosted acceptance remains separate."
+}

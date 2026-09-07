@@ -1,0 +1,812 @@
+{
+  "journalId": "d3a6ab327105eb213a3f143304559abc62399452cdd31013a2e8baec647713ad",
+  "revision": 8,
+  "preparations": [
+    {
+      "planId": "d0a4b51f7054e13ecca38fd6779d8abc3ff16da16fd977ddac135bdd12ab5821",
+      "revision": 8,
+      "superseded": false,
+      "operations": [
+        {
+          "operationId": "902ffaeee4ab7b9d5919035a0798eb76a527812aefd26aecb9c3e023e03fb0bc",
+          "status": "Satisfied",
+          "dispatches": 1,
+          "receipts": 1,
+          "observations": 2
+        }
+      ]
+    },
+    {
+      "planId": "40e197d7785ac1fd3d070e0e7e96b778e9447bbd08b8ba1b0c6b4ff1b4d2f456",
+      "revision": 8,
+      "superseded": false,
+      "operations": [
+        {
+          "operationId": "5d78328d8556dd940fea69670ae4d83f388d665a57c8d32cb3f058f604b956b8",
+          "status": "Satisfied",
+          "dispatches": 1,
+          "receipts": 1,
+          "observations": 2
+        }
+      ]
+    }
+  ],
+  "nativeFacts": [
+    {
+      "format": "ts-release/event/1",
+      "eventId": "0a1d7df1-6926-448a-a443-984b344fafd3",
+      "journalId": "d3a6ab327105eb213a3f143304559abc62399452cdd31013a2e8baec647713ad",
+      "planId": "d0a4b51f7054e13ecca38fd6779d8abc3ff16da16fd977ddac135bdd12ab5821",
+      "body": {
+        "_tag": "DispatchStarted",
+        "operationId": "902ffaeee4ab7b9d5919035a0798eb76a527812aefd26aecb9c3e023e03fb0bc",
+        "dispatchId": "0a1d7df1-6926-448a-a443-984b344fafd3:dispatch",
+        "request": {
+          "transport": "opaque/1",
+          "endpoint": "effect-build-apple/Notary.submitApp",
+          "method": "invoke",
+          "headers": [],
+          "bodyDigest": "01e4b0b210c2295a85b36845eb7270b917eba3ef618b3bd8539643a3af22428e",
+          "byteLength": "1530",
+          "principal": "fixture-team",
+          "scope": "fixture-key",
+          "replay": {
+            "_tag": "None"
+          }
+        },
+        "fingerprint": "1c105b52e08e9350b5903dea729131f0b015ab76b0955c8361242e0e7d8e3355",
+        "startedAt": 1788789910375,
+        "basis": {
+          "_tag": "Initial"
+        }
+      }
+    },
+    {
+      "format": "ts-release/event/1",
+      "eventId": "fa49ee7d-b240-4e38-a90e-3b508d094033",
+      "journalId": "d3a6ab327105eb213a3f143304559abc62399452cdd31013a2e8baec647713ad",
+      "planId": "d0a4b51f7054e13ecca38fd6779d8abc3ff16da16fd977ddac135bdd12ab5821",
+      "body": {
+        "_tag": "ReceiptAccepted",
+        "dispatchId": "0a1d7df1-6926-448a-a443-984b344fafd3:dispatch",
+        "receiptVersion": "effect-build-apple/Submission/0.6.3",
+        "status": "Pending",
+        "receipt": {
+          "architecture": "arm64",
+          "artifactBytes": "123",
+          "artifactDigest": {
+            "algorithm": "sha256",
+            "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "kind": "zip",
+          "stapleTarget": {
+            "artifactBytes": "34",
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "value": "98d67536f574aa9ec25a932b435bfa8010d9d29daee81019957a59c2a99958da"
+            },
+            "bundleName": "Fixture-arm64.app",
+            "identityKind": "tree-manifest",
+            "kind": "app"
+          },
+          "status": {
+            "_tag": "Pending",
+            "providerStatus": "In Progress"
+          },
+          "submissionId": "24f7f028-7a65-4472-8c3a-337a4afff5ec",
+          "submissionTool": {
+            "capabilities": [],
+            "name": "notarytool",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "notarytool",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          },
+          "tool": {
+            "capabilities": [],
+            "name": "notarytool",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "notarytool",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          },
+          "transportTool": {
+            "capabilities": [],
+            "name": "ditto",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "ditto",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "format": "ts-release/event/1",
+      "eventId": "4c3005fd-ef2c-4415-9df7-08f2c24a7aaf",
+      "journalId": "d3a6ab327105eb213a3f143304559abc62399452cdd31013a2e8baec647713ad",
+      "planId": "d0a4b51f7054e13ecca38fd6779d8abc3ff16da16fd977ddac135bdd12ab5821",
+      "body": {
+        "_tag": "ObservationRecorded",
+        "operationId": "902ffaeee4ab7b9d5919035a0798eb76a527812aefd26aecb9c3e023e03fb0bc",
+        "evidenceKind": "Observation",
+        "status": "Pending",
+        "evidenceVersion": "ts-release/apple-evidence/1",
+        "evidence": {
+          "architecture": "arm64",
+          "artifactBytes": "123",
+          "artifactDigest": {
+            "algorithm": "sha256",
+            "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "kind": "zip",
+          "stapleTarget": {
+            "artifactBytes": "34",
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "value": "98d67536f574aa9ec25a932b435bfa8010d9d29daee81019957a59c2a99958da"
+            },
+            "bundleName": "Fixture-arm64.app",
+            "identityKind": "tree-manifest",
+            "kind": "app"
+          },
+          "status": {
+            "_tag": "Pending",
+            "providerStatus": "In Progress"
+          },
+          "submissionId": "24f7f028-7a65-4472-8c3a-337a4afff5ec",
+          "submissionTool": {
+            "capabilities": [],
+            "name": "notarytool",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "notarytool",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          },
+          "tool": {
+            "capabilities": [],
+            "name": "notarytool",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "notarytool",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          },
+          "transportTool": {
+            "capabilities": [],
+            "name": "ditto",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "ditto",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          }
+        },
+        "observedAt": 1788789910915
+      }
+    },
+    {
+      "format": "ts-release/event/1",
+      "eventId": "581710c0-f3ea-45ce-a864-da0af90ed322",
+      "journalId": "d3a6ab327105eb213a3f143304559abc62399452cdd31013a2e8baec647713ad",
+      "planId": "40e197d7785ac1fd3d070e0e7e96b778e9447bbd08b8ba1b0c6b4ff1b4d2f456",
+      "body": {
+        "_tag": "DispatchStarted",
+        "operationId": "5d78328d8556dd940fea69670ae4d83f388d665a57c8d32cb3f058f604b956b8",
+        "dispatchId": "581710c0-f3ea-45ce-a864-da0af90ed322:dispatch",
+        "request": {
+          "transport": "opaque/1",
+          "endpoint": "effect-build-apple/Notary.submitApp",
+          "method": "invoke",
+          "headers": [],
+          "bodyDigest": "339c8adb8356767dde6bd983380325ad4d188c02bc0fbfcd83dea398cbdc5319",
+          "byteLength": "1522",
+          "principal": "fixture-team",
+          "scope": "fixture-key",
+          "replay": {
+            "_tag": "None"
+          }
+        },
+        "fingerprint": "8f950a4d3fb47a63941615ee97cd44973c1005c7e5bc95e55ef1a794aacbf373",
+        "startedAt": 1788789911140,
+        "basis": {
+          "_tag": "Initial"
+        }
+      }
+    },
+    {
+      "format": "ts-release/event/1",
+      "eventId": "9d793aad-6a03-433b-bd0d-79e7291e05a8",
+      "journalId": "d3a6ab327105eb213a3f143304559abc62399452cdd31013a2e8baec647713ad",
+      "planId": "40e197d7785ac1fd3d070e0e7e96b778e9447bbd08b8ba1b0c6b4ff1b4d2f456",
+      "body": {
+        "_tag": "ReceiptAccepted",
+        "dispatchId": "581710c0-f3ea-45ce-a864-da0af90ed322:dispatch",
+        "receiptVersion": "effect-build-apple/Submission/0.6.3",
+        "status": "Pending",
+        "receipt": {
+          "architecture": "x64",
+          "artifactBytes": "123",
+          "artifactDigest": {
+            "algorithm": "sha256",
+            "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "kind": "zip",
+          "stapleTarget": {
+            "artifactBytes": "34",
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "value": "98d67536f574aa9ec25a932b435bfa8010d9d29daee81019957a59c2a99958da"
+            },
+            "bundleName": "Fixture-x64.app",
+            "identityKind": "tree-manifest",
+            "kind": "app"
+          },
+          "status": {
+            "_tag": "Pending",
+            "providerStatus": "In Progress"
+          },
+          "submissionId": "61fa0072-aa53-4e2d-9444-7f02cc76ce88",
+          "submissionTool": {
+            "capabilities": [],
+            "name": "notarytool",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "notarytool",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          },
+          "tool": {
+            "capabilities": [],
+            "name": "notarytool",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "notarytool",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          },
+          "transportTool": {
+            "capabilities": [],
+            "name": "ditto",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "ditto",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "format": "ts-release/event/1",
+      "eventId": "70b2e4f2-0913-4699-b2f5-c1d615147d01",
+      "journalId": "d3a6ab327105eb213a3f143304559abc62399452cdd31013a2e8baec647713ad",
+      "planId": "40e197d7785ac1fd3d070e0e7e96b778e9447bbd08b8ba1b0c6b4ff1b4d2f456",
+      "body": {
+        "_tag": "ObservationRecorded",
+        "operationId": "5d78328d8556dd940fea69670ae4d83f388d665a57c8d32cb3f058f604b956b8",
+        "evidenceKind": "Observation",
+        "status": "Pending",
+        "evidenceVersion": "ts-release/apple-evidence/1",
+        "evidence": {
+          "architecture": "x64",
+          "artifactBytes": "123",
+          "artifactDigest": {
+            "algorithm": "sha256",
+            "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "kind": "zip",
+          "stapleTarget": {
+            "artifactBytes": "34",
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "value": "98d67536f574aa9ec25a932b435bfa8010d9d29daee81019957a59c2a99958da"
+            },
+            "bundleName": "Fixture-x64.app",
+            "identityKind": "tree-manifest",
+            "kind": "app"
+          },
+          "status": {
+            "_tag": "Pending",
+            "providerStatus": "In Progress"
+          },
+          "submissionId": "61fa0072-aa53-4e2d-9444-7f02cc76ce88",
+          "submissionTool": {
+            "capabilities": [],
+            "name": "notarytool",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "notarytool",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          },
+          "tool": {
+            "capabilities": [],
+            "name": "notarytool",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "notarytool",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          },
+          "transportTool": {
+            "capabilities": [],
+            "name": "ditto",
+            "participants": [
+              {
+                "channel": "fixture-only",
+                "content": {
+                  "bytes": "0",
+                  "digest": {
+                    "algorithm": "sha256",
+                    "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                },
+                "name": "ditto",
+                "revision": "fixture-only",
+                "role": "protocol-double",
+                "version": "fixture-only"
+              }
+            ]
+          }
+        },
+        "observedAt": 1788789911521
+      }
+    },
+    {
+      "format": "ts-release/event/1",
+      "eventId": "143fad95-b1d8-42e0-9aac-d3a2090ada94",
+      "journalId": "d3a6ab327105eb213a3f143304559abc62399452cdd31013a2e8baec647713ad",
+      "planId": "d0a4b51f7054e13ecca38fd6779d8abc3ff16da16fd977ddac135bdd12ab5821",
+      "body": {
+        "_tag": "ObservationRecorded",
+        "operationId": "902ffaeee4ab7b9d5919035a0798eb76a527812aefd26aecb9c3e023e03fb0bc",
+        "evidenceKind": "Observation",
+        "status": "Satisfied",
+        "evidenceVersion": "ts-release/apple-evidence/1",
+        "evidence": {
+          "_tag": "ReadyToPlan",
+          "acceptance": {
+            "architecture": "arm64",
+            "artifactBytes": "123",
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "kind": "zip",
+            "providerStatus": "Accepted",
+            "stapleTarget": {
+              "artifactBytes": "34",
+              "artifactDigest": {
+                "algorithm": "sha256",
+                "value": "98d67536f574aa9ec25a932b435bfa8010d9d29daee81019957a59c2a99958da"
+              },
+              "bundleName": "Fixture-arm64.app",
+              "identityKind": "tree-manifest",
+              "kind": "app"
+            },
+            "submissionId": "24f7f028-7a65-4472-8c3a-337a4afff5ec",
+            "submissionTool": {
+              "capabilities": [],
+              "name": "notarytool",
+              "participants": [
+                {
+                  "channel": "fixture-only",
+                  "content": {
+                    "bytes": "0",
+                    "digest": {
+                      "algorithm": "sha256",
+                      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  "name": "notarytool",
+                  "revision": "fixture-only",
+                  "role": "protocol-double",
+                  "version": "fixture-only"
+                }
+              ]
+            },
+            "tool": {
+              "capabilities": [],
+              "name": "notarytool",
+              "participants": [
+                {
+                  "channel": "fixture-only",
+                  "content": {
+                    "bytes": "0",
+                    "digest": {
+                      "algorithm": "sha256",
+                      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  "name": "notarytool",
+                  "revision": "fixture-only",
+                  "role": "protocol-double",
+                  "version": "fixture-only"
+                }
+              ]
+            },
+            "transportTool": {
+              "capabilities": [],
+              "name": "ditto",
+              "participants": [
+                {
+                  "channel": "fixture-only",
+                  "content": {
+                    "bytes": "0",
+                    "digest": {
+                      "algorithm": "sha256",
+                      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  "name": "ditto",
+                  "revision": "fixture-only",
+                  "role": "protocol-double",
+                  "version": "fixture-only"
+                }
+              ]
+            }
+          },
+          "assessment": {
+            "accepted": true,
+            "architecture": "arm64",
+            "artifactBytes": "49",
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "value": "82f8dc19893dfb5c10ffba43756796bc201494dc410578681cc0a69d3fe8c5a6"
+            },
+            "gatekeeper": {
+              "capabilities": [],
+              "name": "spctl",
+              "participants": [
+                {
+                  "channel": "fixture-only",
+                  "content": {
+                    "bytes": "0",
+                    "digest": {
+                      "algorithm": "sha256",
+                      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  "name": "spctl",
+                  "revision": "fixture-only",
+                  "role": "protocol-double",
+                  "version": "fixture-only"
+                }
+              ]
+            },
+            "identityKind": "tree-manifest",
+            "kind": "app",
+            "structuralVerifier": {
+              "capabilities": [],
+              "name": "codesign",
+              "participants": [
+                {
+                  "channel": "fixture-only",
+                  "content": {
+                    "bytes": "0",
+                    "digest": {
+                      "algorithm": "sha256",
+                      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  "name": "codesign",
+                  "revision": "fixture-only",
+                  "role": "protocol-double",
+                  "version": "fixture-only"
+                }
+              ]
+            }
+          },
+          "finalArtifact": {
+            "_tag": "FinalApp",
+            "artifactBytes": "49",
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "value": "82f8dc19893dfb5c10ffba43756796bc201494dc410578681cc0a69d3fe8c5a6"
+            },
+            "identityKind": "tree-manifest",
+            "kind": "app",
+            "logicalName": "app-arm64"
+          },
+          "outputsBundleContent": {
+            "bytes": "1216",
+            "sha256": "a4f6528cf9f1aa763b8d217859b18c522a94b3e1296685b10f945bb4c42aa1dc"
+          },
+          "preparationId": "902ffaeee4ab7b9d5919035a0798eb76a527812aefd26aecb9c3e023e03fb0bc"
+        },
+        "observedAt": 1788789912627
+      }
+    },
+    {
+      "format": "ts-release/event/1",
+      "eventId": "1dfa6d9b-14b2-4bcf-b4a1-a05bf0bacdd7",
+      "journalId": "d3a6ab327105eb213a3f143304559abc62399452cdd31013a2e8baec647713ad",
+      "planId": "40e197d7785ac1fd3d070e0e7e96b778e9447bbd08b8ba1b0c6b4ff1b4d2f456",
+      "body": {
+        "_tag": "ObservationRecorded",
+        "operationId": "5d78328d8556dd940fea69670ae4d83f388d665a57c8d32cb3f058f604b956b8",
+        "evidenceKind": "Observation",
+        "status": "Satisfied",
+        "evidenceVersion": "ts-release/apple-evidence/1",
+        "evidence": {
+          "_tag": "ReadyToPlan",
+          "acceptance": {
+            "architecture": "x64",
+            "artifactBytes": "123",
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "kind": "zip",
+            "providerStatus": "Accepted",
+            "stapleTarget": {
+              "artifactBytes": "34",
+              "artifactDigest": {
+                "algorithm": "sha256",
+                "value": "98d67536f574aa9ec25a932b435bfa8010d9d29daee81019957a59c2a99958da"
+              },
+              "bundleName": "Fixture-x64.app",
+              "identityKind": "tree-manifest",
+              "kind": "app"
+            },
+            "submissionId": "61fa0072-aa53-4e2d-9444-7f02cc76ce88",
+            "submissionTool": {
+              "capabilities": [],
+              "name": "notarytool",
+              "participants": [
+                {
+                  "channel": "fixture-only",
+                  "content": {
+                    "bytes": "0",
+                    "digest": {
+                      "algorithm": "sha256",
+                      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  "name": "notarytool",
+                  "revision": "fixture-only",
+                  "role": "protocol-double",
+                  "version": "fixture-only"
+                }
+              ]
+            },
+            "tool": {
+              "capabilities": [],
+              "name": "notarytool",
+              "participants": [
+                {
+                  "channel": "fixture-only",
+                  "content": {
+                    "bytes": "0",
+                    "digest": {
+                      "algorithm": "sha256",
+                      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  "name": "notarytool",
+                  "revision": "fixture-only",
+                  "role": "protocol-double",
+                  "version": "fixture-only"
+                }
+              ]
+            },
+            "transportTool": {
+              "capabilities": [],
+              "name": "ditto",
+              "participants": [
+                {
+                  "channel": "fixture-only",
+                  "content": {
+                    "bytes": "0",
+                    "digest": {
+                      "algorithm": "sha256",
+                      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  "name": "ditto",
+                  "revision": "fixture-only",
+                  "role": "protocol-double",
+                  "version": "fixture-only"
+                }
+              ]
+            }
+          },
+          "assessment": {
+            "accepted": true,
+            "architecture": "x64",
+            "artifactBytes": "49",
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "value": "82f8dc19893dfb5c10ffba43756796bc201494dc410578681cc0a69d3fe8c5a6"
+            },
+            "gatekeeper": {
+              "capabilities": [],
+              "name": "spctl",
+              "participants": [
+                {
+                  "channel": "fixture-only",
+                  "content": {
+                    "bytes": "0",
+                    "digest": {
+                      "algorithm": "sha256",
+                      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  "name": "spctl",
+                  "revision": "fixture-only",
+                  "role": "protocol-double",
+                  "version": "fixture-only"
+                }
+              ]
+            },
+            "identityKind": "tree-manifest",
+            "kind": "app",
+            "structuralVerifier": {
+              "capabilities": [],
+              "name": "codesign",
+              "participants": [
+                {
+                  "channel": "fixture-only",
+                  "content": {
+                    "bytes": "0",
+                    "digest": {
+                      "algorithm": "sha256",
+                      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  "name": "codesign",
+                  "revision": "fixture-only",
+                  "role": "protocol-double",
+                  "version": "fixture-only"
+                }
+              ]
+            }
+          },
+          "finalArtifact": {
+            "_tag": "FinalApp",
+            "artifactBytes": "49",
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "value": "82f8dc19893dfb5c10ffba43756796bc201494dc410578681cc0a69d3fe8c5a6"
+            },
+            "identityKind": "tree-manifest",
+            "kind": "app",
+            "logicalName": "app-x64"
+          },
+          "outputsBundleContent": {
+            "bytes": "1212",
+            "sha256": "114cf813c9faed3d01e75e1994d7ecc3b39902862240a405141f76b28b10600f"
+          },
+          "preparationId": "5d78328d8556dd940fea69670ae4d83f388d665a57c8d32cb3f058f604b956b8"
+        },
+        "observedAt": 1788789913587
+      }
+    }
+  ]
+}

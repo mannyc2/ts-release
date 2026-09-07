@@ -1,0 +1,566 @@
+{
+  "format": "ts-release/wave-outcome-evidence/1",
+  "wave": "W08",
+  "meaning": "Exact28 original selected oracles preserved; local implementation evidence does not close Plan009/010 launch outcomes. Final refreshed execution receipts referenced byW08.md.",
+  "rows": [
+    {
+      "id": "P01-01",
+      "outcome": "Adopt a finalized prebuilt file without rebuilding",
+      "exactScope": "one file; logical identity; no private path escape",
+      "inputOutput": "external file>immutable content+logical artifact",
+      "requiredPassWitness": "digest/length during copy and load-boundary decode[B,J]",
+      "fixtureOrDestination": "prebuilt CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 131,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/adoption.test.ts",
+        "test/reimplementation/artifacts/adoption-races.test.ts",
+        "test/reimplementation/artifacts/executables.mjs"
+      ],
+      "localEvidence": "Actual finalized file/tree admission, exact copy/load bytes, source deletion and fresh packed consumers; bounded native race controls.",
+      "remaining": "Final complete release source/application binding and independent candidate certification."
+    },
+    {
+      "id": "P01-02",
+      "outcome": "Build Bun executables for the six cells shipped by pinned effect-build",
+      "exactScope": "macOS x64/arm64; Linux x64 glibc/musl; Linux arm64 glibc; Windows x64",
+      "inputOutput": "TypeScript entrypoint>6 finalized executables",
+      "requiredPassWitness": "effect-build provider result; exact matrix assertion; runnable-target --version[B,C]",
+      "fixtureOrDestination": "portable CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 132,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/executables.mjs"
+      ],
+      "localEvidence": "Actual six Bun/six Deno/one NodeSEA producer results, exact pinned matrices, owned bytes and LinuxGNU executable consumers in four fresh packed cells.",
+      "remaining": "Remaining target-native execution, clean-host acquisition and full release application binding; NodeSEA Linux scope exercised locally."
+    },
+    {
+      "id": "P01-03",
+      "outcome": "Build Deno executables for the six cells shipped by pinned effect-build",
+      "exactScope": "macOS x64/arm64; Linux x64/arm64 glibc; Windows x64/arm64",
+      "inputOutput": "TypeScript entrypoint>6 finalized executables",
+      "requiredPassWitness": "effect-build provider result; exact matrix assertion; runnable-target --version[B,C]",
+      "fixtureOrDestination": "same CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 133,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/executables.mjs"
+      ],
+      "localEvidence": "Actual six Bun/six Deno/one NodeSEA producer results, exact pinned matrices, owned bytes and LinuxGNU executable consumers in four fresh packed cells.",
+      "remaining": "Remaining target-native execution, clean-host acquisition and full release application binding; NodeSEA Linux scope exercised locally."
+    },
+    {
+      "id": "P01-04",
+      "outcome": "Build the Node SEA target shipped by pinned effect-build",
+      "exactScope": "Node 26.7.0; Linux x64 GNU; esbuild 0.28.2 internal bundle stage",
+      "inputOutput": "TypeScript entrypoint>1 finalized executable",
+      "requiredPassWitness": "effect-build provider result; SEA inspection; Linux x64 execution[B,C]",
+      "fixtureOrDestination": "same CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 134,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/executables.mjs"
+      ],
+      "localEvidence": "Actual six Bun/six Deno/one NodeSEA producer results, exact pinned matrices, owned bytes and LinuxGNU executable consumers in four fresh packed cells.",
+      "remaining": "Remaining target-native execution, clean-host acquisition and full release application binding; NodeSEA Linux scope exercised locally."
+    },
+    {
+      "id": "P02-01",
+      "outcome": "Build deterministic ZIP",
+      "exactScope": "ZIP only; normalized order/modes/timestamps",
+      "inputOutput": "artifact handles+layout>.zip",
+      "requiredPassWitness": "independent listing+repeat digest[B,C]",
+      "fixtureOrDestination": "portable CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 135,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/archives.mjs"
+      ],
+      "localEvidence": "Actual ZIP/tar.gz producers, independent native listing/modes/times, repeat digests and negative layouts; exact Git export-ignore/submodule/LFS projection.",
+      "remaining": "Final release source/commit/tree provenance and clean host certification."
+    },
+    {
+      "id": "P02-02",
+      "outcome": "Build deterministic tar.gz",
+      "exactScope": "tar.gz only; normalized order/modes/owner/timestamps",
+      "inputOutput": "artifact handles+layout>.tar.gz",
+      "requiredPassWitness": "independent listing+repeat digest[B,C]",
+      "fixtureOrDestination": "portable CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 136,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/archives.mjs"
+      ],
+      "localEvidence": "Actual ZIP/tar.gz producers, independent native listing/modes/times, repeat digests and negative layouts; exact Git export-ignore/submodule/LFS projection.",
+      "remaining": "Final release source/commit/tree provenance and clean host certification."
+    },
+    {
+      "id": "P02-03",
+      "outcome": "Reject traversal/duplicate/case-collision layouts",
+      "exactScope": "P02-01/P02-02 only",
+      "inputOutput": "candidate layout -> typed rejection",
+      "requiredPassWitness": "negative fixtures[M]",
+      "fixtureOrDestination": "malicious layout",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 137,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/archives.mjs"
+      ],
+      "localEvidence": "Actual ZIP/tar.gz producers, independent native listing/modes/times, repeat digests and negative layouts; exact Git export-ignore/submodule/LFS projection.",
+      "remaining": "Final release source/commit/tree provenance and clean host certification."
+    },
+    {
+      "id": "P03-01",
+      "outcome": "Build a tar.gz source archive from an exact Git tree",
+      "exactScope": "tar.gz; one project-version root prefix; honor export-ignore; preserve Git executable/symlink modes; submodules excluded unless supplied as separate snapshots; LFS pointer bytes remain pointers; exclude .git and build outputs",
+      "inputOutput": "exact tree+version>source.tar.gz",
+      "requiredPassWitness": "independent listing; expected tree projection; repeat digest[B]",
+      "fixtureOrDestination": "repository fixture with symlink, executable, export-ignore, submodule, and LFS pointer",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 138,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/archives.mjs"
+      ],
+      "localEvidence": "Actual ZIP/tar.gz producers, independent native listing/modes/times, repeat digests and negative layouts; exact Git export-ignore/submodule/LFS projection.",
+      "remaining": "Final release source/commit/tree provenance and clean host certification."
+    },
+    {
+      "id": "P03-02",
+      "outcome": "Build a ZIP source archive from the same exact Git tree",
+      "exactScope": "ZIP; same tree/projection laws as P03-01, with ZIP mode encoding asserted explicitly",
+      "inputOutput": "exact tree+version>source.zip",
+      "requiredPassWitness": "independent listing; expected tree projection; repeat digest[B]",
+      "fixtureOrDestination": "same repository fixture",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 139,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/archives.mjs"
+      ],
+      "localEvidence": "Actual ZIP/tar.gz producers, independent native listing/modes/times, repeat digests and negative layouts; exact Git export-ignore/submodule/LFS projection.",
+      "remaining": "Final release source/commit/tree provenance and clean host certification."
+    },
+    {
+      "id": "P04-01",
+      "outcome": "Build a wheel and sdist through one pinned uv frontend",
+      "exactScope": "uv 0.12.0; exact uv_build and poetry-core PEP 517 backend fixtures",
+      "inputOutput": "source snapshot+pyproject+lock>wheel+sdist",
+      "requiredPassWitness": "metadata inspection and clean install/import for both backends[B,C]",
+      "fixtureOrDestination": "two pure-Python backend fixtures",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 140,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/python.mjs"
+      ],
+      "localEvidence": "Pinned uv0.12.0, uv_build0.9.27 and poetry-core2.2.1 actual wheel/sdist, metadata and four clean install/import venvs per packed cell.",
+      "remaining": "Final release source/application binding. Pure-Python fixtures do not prove selected embedded native CLI wheel delivery; that migration duty remainsW10."
+    },
+    {
+      "id": "P05-01",
+      "outcome": "Build deb with nFPM",
+      "exactScope": "nFPM v2.47.0; deb; Linux x64 fixture",
+      "inputOutput": "CLI+explicit package metadata>package",
+      "requiredPassWitness": "dpkg-deb inspection+Debian install/remove/run[B,C]",
+      "fixtureOrDestination": "system-package CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 141,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/packages.mjs"
+      ],
+      "localEvidence": "Actual nFPM2.47.0 five formats with restored real GNU/musl/WindowsPE inputs; Debian/Fedora/Alpine/Arch offline install/run/remove and MSIX ZIP/manifest inspection.",
+      "remaining": "Windows MakeAppx validation and clean install/run forMSIX; final release package/application binding and native host certification for all."
+    },
+    {
+      "id": "P05-02",
+      "outcome": "Build rpm with nFPM",
+      "exactScope": "nFPM v2.47.0; rpm; Linux x64 fixture",
+      "inputOutput": "CLI+explicit package metadata>package",
+      "requiredPassWitness": "rpm inspection+Fedora install/remove/run[B,C]",
+      "fixtureOrDestination": "system-package CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 142,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/packages.mjs"
+      ],
+      "localEvidence": "Actual nFPM2.47.0 five formats with restored real GNU/musl/WindowsPE inputs; Debian/Fedora/Alpine/Arch offline install/run/remove and MSIX ZIP/manifest inspection.",
+      "remaining": "Windows MakeAppx validation and clean install/run forMSIX; final release package/application binding and native host certification for all."
+    },
+    {
+      "id": "P05-03",
+      "outcome": "Build apk with nFPM",
+      "exactScope": "nFPM v2.47.0; apk; Linux x64 fixture",
+      "inputOutput": "CLI+explicit package metadata>package",
+      "requiredPassWitness": "apk inspection+Alpine install/remove/run[B,C]",
+      "fixtureOrDestination": "system-package CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 143,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/packages.mjs"
+      ],
+      "localEvidence": "Actual nFPM2.47.0 five formats with restored real GNU/musl/WindowsPE inputs; Debian/Fedora/Alpine/Arch offline install/run/remove and MSIX ZIP/manifest inspection.",
+      "remaining": "Windows MakeAppx validation and clean install/run forMSIX; final release package/application binding and native host certification for all."
+    },
+    {
+      "id": "P05-05",
+      "outcome": "Build an Arch package with nFPM",
+      "exactScope": "nFPM v2.47.0; Arch; Linux x64 fixture",
+      "inputOutput": "CLI+explicit package metadata>package",
+      "requiredPassWitness": "pacman inspection and clean install/remove/run[B,C]",
+      "fixtureOrDestination": "system-package CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 145,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/packages.mjs"
+      ],
+      "localEvidence": "Actual nFPM2.47.0 five formats with restored real GNU/musl/WindowsPE inputs; Debian/Fedora/Alpine/Arch offline install/run/remove and MSIX ZIP/manifest inspection.",
+      "remaining": "Windows MakeAppx validation and clean install/run forMSIX; final release package/application binding and native host certification for all."
+    },
+    {
+      "id": "P05-06",
+      "outcome": "Build an unsigned Windows x64 MSIX with nFPM",
+      "exactScope": "nFPM v2.47.0; MSIX; Windows x64",
+      "inputOutput": "Windows executable+manifest/assets>.msix",
+      "requiredPassWitness": "nFPM result; MakeAppx unpack/validation; clean install/run[B,C]",
+      "fixtureOrDestination": "Windows CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 146,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/packages.mjs"
+      ],
+      "localEvidence": "Actual nFPM2.47.0 five formats with restored real GNU/musl/WindowsPE inputs; Debian/Fedora/Alpine/Arch offline install/run/remove and MSIX ZIP/manifest inspection.",
+      "remaining": "Windows MakeAppx validation and clean install/run forMSIX; final release package/application binding and native host certification for all."
+    },
+    {
+      "id": "P06-01",
+      "outcome": "Build arm64+x64 .app bundles",
+      "exactScope": "exact two architecture bundles",
+      "inputOutput": "executables+plist/resources>2 unsigned .app directories",
+      "requiredPassWitness": "plutil+launch smoke[B,C]",
+      "fixtureOrDestination": "minimal app",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 148,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/public-contract.ts",
+        "test/reimplementation/artifacts/apple-fixtures.ts",
+        "test/reimplementation/artifacts/apple.test.ts"
+      ],
+      "localEvidence": "Actual published producer public declarations/runtime entries are admitted. Apple protocol fixtures use finalized File/Tree values and actual Schema classes, with simulated tool observations; they do not establish native signing/build execution.",
+      "remaining": "plutil+launch smoke[B,C] Native macOS/Windows tools, required identities and clean platform hosts remain mandatory Plan009 gates."
+    },
+    {
+      "id": "P07-01",
+      "outcome": "Build arm64+x64 UDZO DMGs",
+      "exactScope": "exact two DMGs",
+      "inputOutput": "signed apps+layout>2 .dmg files",
+      "requiredPassWitness": "hdiutil verify/attach/list and clean launch[B,C]",
+      "fixtureOrDestination": "Apple app",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 149,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/public-contract.ts",
+        "test/reimplementation/artifacts/apple-fixtures.ts",
+        "test/reimplementation/artifacts/apple.test.ts"
+      ],
+      "localEvidence": "Actual published producer public declarations/runtime entries are admitted. Apple protocol fixtures use finalized File/Tree values and actual Schema classes, with simulated tool observations; they do not establish native signing/build execution.",
+      "remaining": "hdiutil verify/attach/list and clean launch[B,C] Native macOS/Windows tools, required identities and clean platform hosts remain mandatory Plan009 gates."
+    },
+    {
+      "id": "P08-01",
+      "outcome": "Build unsigned arm64+x64 macOS pkg installers",
+      "exactScope": "pkgbuild/productbuild; exact 2 packages",
+      "inputOutput": "signed apps+installer metadata>2 unsigned pkgs",
+      "requiredPassWitness": "pkgutil payload inspection and clean installer fixture[B,C]",
+      "fixtureOrDestination": "Apple installer",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 150,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/public-contract.ts",
+        "test/reimplementation/artifacts/apple-fixtures.ts",
+        "test/reimplementation/artifacts/apple.test.ts"
+      ],
+      "localEvidence": "Actual published producer public declarations/runtime entries are admitted. Apple protocol fixtures use finalized File/Tree values and actual Schema classes, with simulated tool observations; they do not establish native signing/build execution.",
+      "remaining": "pkgutil payload inspection and clean installer fixture[B,C] Native macOS/Windows tools, required identities and clean platform hosts remain mandatory Plan009 gates."
+    },
+    {
+      "id": "P09-01",
+      "outcome": "Developer ID-sign .app",
+      "exactScope": "Apple app signing",
+      "inputOutput": "unsigned app+identity/entitlements>signed app",
+      "requiredPassWitness": "codesign --verify --deep --strict[B]",
+      "fixtureOrDestination": "Apple fixture",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 151,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/public-contract.ts",
+        "test/reimplementation/artifacts/apple-fixtures.ts",
+        "test/reimplementation/artifacts/apple.test.ts"
+      ],
+      "localEvidence": "Actual published producer public declarations/runtime entries are admitted. Apple protocol fixtures use finalized File/Tree values and actual Schema classes, with simulated tool observations; they do not establish native signing/build execution.",
+      "remaining": "codesign --verify --deep --strict[B] Native macOS/Windows tools, required identities and clean platform hosts remain mandatory Plan009 gates."
+    },
+    {
+      "id": "P09-02",
+      "outcome": "Developer ID-sign .pkg",
+      "exactScope": "Apple installer signing",
+      "inputOutput": "unsigned pkg+identity>signed pkg",
+      "requiredPassWitness": "pkgutil --check-signature[B]",
+      "fixtureOrDestination": "Apple fixture",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 152,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/public-contract.ts",
+        "test/reimplementation/artifacts/apple-fixtures.ts",
+        "test/reimplementation/artifacts/apple.test.ts"
+      ],
+      "localEvidence": "Actual published producer public declarations/runtime entries are admitted. Apple protocol fixtures use finalized File/Tree values and actual Schema classes, with simulated tool observations; they do not establish native signing/build execution.",
+      "remaining": "pkgutil --check-signature[B] Native macOS/Windows tools, required identities and clean platform hosts remain mandatory Plan009 gates."
+    },
+    {
+      "id": "P09-03",
+      "outcome": "Authenticode-sign an MSIX with SignTool",
+      "exactScope": "Windows x64; local PFX/certificate-store backend; SHA-256; RFC 3161 timestamp; test certificate proves mechanics only",
+      "inputOutput": "unsigned MSIX+signing identity>signed MSIX",
+      "requiredPassWitness": "SignTool /pa verification; timestamp assertion; clean install smoke[B,C]",
+      "fixtureOrDestination": "Windows fixture",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 153,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/public-contract.ts",
+        "test/reimplementation/artifacts/apple-fixtures.ts",
+        "test/reimplementation/artifacts/apple.test.ts"
+      ],
+      "localEvidence": "Actual published producer public declarations/runtime entries are admitted. Apple protocol fixtures use finalized File/Tree values and actual Schema classes, with simulated tool observations; they do not establish native signing/build execution.",
+      "remaining": "SignTool /pa verification; timestamp assertion; clean install smoke[B,C] Native macOS/Windows tools, required identities and clean platform hosts remain mandatory Plan009 gates."
+    },
+    {
+      "id": "P10-01",
+      "outcome": "Submit exact Apple bytes and durably retain the returned submission identity",
+      "exactScope": "notarytool; one exact input digest/submission",
+      "inputOutput": "signed artifact+credentials>submission ID or terminal result, then journal event",
+      "requiredPassWitness": "Apple submission ID/status plus durable journal append[A,J]",
+      "fixtureOrDestination": "crash after ID received and before/after append",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 157,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/apple.test.ts",
+        "test/reimplementation/artifacts/apple-recovery.test.ts",
+        "test/reimplementation/artifacts/apple-process.mjs",
+        "test/reimplementation/artifacts/apple-installed.mjs"
+      ],
+      "localEvidence": "Six scopes over SQLite and mixed two-App preparations over real Git across fresh Node/Bun processes; SIGKILL before/after receipt, no ID guessing/resubmit, accepted selection and exact final Bundle membership. Apple submit/info/staple/assessment are protocol doubles.",
+      "remaining": "Apple submission ID/status plus durable journal append[A,J] Actual notarization, second macOS runner, credentials and native stapler/Gatekeeper acceptance remain mandatory."
+    },
+    {
+      "id": "P10-02",
+      "outcome": "Resume Apple status polling by recorded submission ID on runner 2",
+      "exactScope": "second macOS runner; credential reacquisition",
+      "inputOutput": "journaled submission ID+credentials>accepted,rejected,or pending observation",
+      "requiredPassWitness": "notarytool info/log recorded as observation[M,J]",
+      "fixtureOrDestination": "fresh-runner fixture",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 158,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/apple.test.ts",
+        "test/reimplementation/artifacts/apple-recovery.test.ts",
+        "test/reimplementation/artifacts/apple-process.mjs",
+        "test/reimplementation/artifacts/apple-installed.mjs"
+      ],
+      "localEvidence": "Six scopes over SQLite and mixed two-App preparations over real Git across fresh Node/Bun processes; SIGKILL before/after receipt, no ID guessing/resubmit, accepted selection and exact final Bundle membership. Apple submit/info/staple/assessment are protocol doubles.",
+      "remaining": "notarytool info/log recorded as observation[M,J] Actual notarization, second macOS runner, credentials and native stapler/Gatekeeper acceptance remain mandatory."
+    },
+    {
+      "id": "P10-03",
+      "outcome": "Staple accepted ticket; produce final bytes",
+      "exactScope": "app/DMG/pkg types selected above",
+      "inputOutput": "acc result+art -> stapled art",
+      "requiredPassWitness": "stapler validate + final digest[B]",
+      "fixtureOrDestination": "Apple fixture",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 159,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/apple.test.ts",
+        "test/reimplementation/artifacts/apple-recovery.test.ts",
+        "test/reimplementation/artifacts/apple-process.mjs",
+        "test/reimplementation/artifacts/apple-installed.mjs"
+      ],
+      "localEvidence": "Six scopes over SQLite and mixed two-App preparations over real Git across fresh Node/Bun processes; SIGKILL before/after receipt, no ID guessing/resubmit, accepted selection and exact final Bundle membership. Apple submit/info/staple/assessment are protocol doubles.",
+      "remaining": "stapler validate + final digest[B] Actual notarization, second macOS runner, credentials and native stapler/Gatekeeper acceptance remain mandatory."
+    },
+    {
+      "id": "P10-04",
+      "outcome": "Verify Gatekeeper before TR adoption",
+      "exactScope": "cur mac spctl",
+      "inputOutput": "stapled art -> verified final bytes",
+      "requiredPassWitness": "spctl + codesign/pkgutil[B,C]",
+      "fixtureOrDestination": "Apple fixture",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 160,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/apple.test.ts",
+        "test/reimplementation/artifacts/apple-recovery.test.ts",
+        "test/reimplementation/artifacts/apple-process.mjs",
+        "test/reimplementation/artifacts/apple-installed.mjs"
+      ],
+      "localEvidence": "Six scopes over SQLite and mixed two-App preparations over real Git across fresh Node/Bun processes; SIGKILL before/after receipt, no ID guessing/resubmit, accepted selection and exact final Bundle membership. Apple submit/info/staple/assessment are protocol doubles.",
+      "remaining": "spctl + codesign/pkgutil[B,C] Actual notarization, second macOS runner, credentials and native stapler/Gatekeeper acceptance remain mandatory."
+    },
+    {
+      "id": "Q01",
+      "outcome": "Generate and verify SHA256SUMS as a deterministic view of the finalized bundle",
+      "exactScope": "SHA-256 only; sorted public names; no peer digest store",
+      "inputOutput": "finalized artifact set>checksum file",
+      "requiredPassWitness": "sha256sum/shasum verification against bundle bytes[B]",
+      "fixtureOrDestination": "portable release",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 161,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/checksums.test.ts",
+        "test/reimplementation/artifacts/apple-installed.mjs"
+      ],
+      "localEvidence": "Bundle-derived sorted canonical SHA256SUMS, GNU native verification of restored owned bytes, malformed/collision/stdin negatives, mixed final Bundle consumer.",
+      "remaining": "Final release checksums/assets and native published consumer certification."
+    },
+    {
+      "id": "Q02-01",
+      "outcome": "Generate an SPDX JSON SBOM with pinned Syft",
+      "exactScope": "Syft v1.50.0; SPDX JSON; exact scan-subject policy",
+      "inputOutput": "source/final artifact>SPDX JSON",
+      "requiredPassWitness": "schema validation and component assertions[B]",
+      "fixtureOrDestination": "portable CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 162,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/sbom.mjs"
+      ],
+      "localEvidence": "Actual Syft1.50.0 DirectorySubject and FileSubject, exact component assertions, SPDX/CycloneDX native schema plus independent sbom-utility fullschema positive/negative controls.",
+      "remaining": "Final release scan subject/source binding and independent candidate certification."
+    },
+    {
+      "id": "Q02-02",
+      "outcome": "Generate a CycloneDX JSON SBOM with the same pinned Syft integration",
+      "exactScope": "Syft v1.50.0; CycloneDX JSON; same scan-subject policy",
+      "inputOutput": "source/final artifact>CycloneDX JSON",
+      "requiredPassWitness": "schema validation and component assertions[B]",
+      "fixtureOrDestination": "same CLI",
+      "source": {
+        "path": "docs/refactor/research/launch-scorecard.md",
+        "line": 163,
+        "sha256": "ea77afd876f2ce4b309d42ff9d0dab1cd5a9f702b0fb9ec9786f49ae3c7e7636"
+      },
+      "status": "open-final-certification-required",
+      "implementationWitnesses": [
+        "test/reimplementation/artifacts/sbom.mjs"
+      ],
+      "localEvidence": "Actual Syft1.50.0 DirectorySubject and FileSubject, exact component assertions, SPDX/CycloneDX native schema plus independent sbom-utility fullschema positive/negative controls.",
+      "remaining": "Final release scan subject/source binding and independent candidate certification."
+    }
+  ]
+}

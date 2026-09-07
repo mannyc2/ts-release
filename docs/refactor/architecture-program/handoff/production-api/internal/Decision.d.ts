@@ -1,5 +1,5 @@
 import { DispatchBasis, JournalEvent, type OperationStatus, Plan, type ReleaseReport, RequestFacts } from "./ReleaseModel.js";
-import { type Scope } from "../Journal.js";
+import type { Scope } from "../Journal.js";
 export interface CandidateRequest {
     readonly facts: RequestFacts;
     readonly fingerprint: string;

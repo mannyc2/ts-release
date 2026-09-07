@@ -1,0 +1,685 @@
+{
+  "format": "ts-release/native-producer-packages/1",
+  "work": "/tmp/ts-release-producer-packages-4EFjsN",
+  "runtime": "v24.3.0",
+  "bun": "1.3.14",
+  "input": {
+    "executableWork": "/tmp/ts-release-producer-executables-nhMSGg"
+  },
+  "checks": [
+    "gnu exact restored executable bytes",
+    "gnu exact restored executable digest",
+    "musl exact restored executable bytes",
+    "musl exact restored executable digest",
+    "windows exact restored executable bytes",
+    "windows exact restored executable digest",
+    "deb exact nFPM tool",
+    "deb owned bytes",
+    "deb owned digest",
+    "rpm exact nFPM tool",
+    "rpm owned bytes",
+    "rpm owned digest",
+    "apk exact nFPM tool",
+    "apk owned bytes",
+    "apk owned digest",
+    "archlinux exact nFPM tool",
+    "archlinux owned bytes",
+    "archlinux owned digest",
+    "msix exact nFPM tool",
+    "msix owned bytes",
+    "msix owned digest",
+    "five package formats survive producer deletion",
+    "deb offline native metadata/install/version/remove",
+    "rpm offline native metadata/install/version/remove",
+    "apk offline native metadata/install/version/remove",
+    "archlinux offline native metadata/install/version/remove",
+    "MSIX real executable and native manifest entries",
+    "MSIX exact application/version/architecture"
+  ],
+  "records": [
+    {
+      "format": "deb",
+      "native": {
+        "path": "/tmp/ts-release-producer-packages-4EFjsN/producer/fixture.deb",
+        "bytes": "36967314",
+        "provenance": {
+          "name": "nfpm",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "nfpm",
+              "version": "2.47.0",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "16572578",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "17133a2467ffb7cec851c2d7bae0c6098d09d7ed7d3d101a9605f6a473323936"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-deb",
+              "evidence": "nfpm-package-deb"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-rpm",
+              "evidence": "nfpm-package-rpm"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-apk",
+              "evidence": "nfpm-package-apk"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-archlinux",
+              "evidence": "nfpm-package-archlinux"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-msix",
+              "evidence": "nfpm-package-msix"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "23385851bf0d32ad39f8d35a4f1e419450517959d2f3ff1613f0d37693a1e561"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "fixture.deb",
+        "content": {
+          "bytes": "36967314",
+          "sha256": "23385851bf0d32ad39f8d35a4f1e419450517959d2f3ff1613f0d37693a1e561"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-deb",
+              "id": "nfpm-package-deb"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-rpm",
+              "id": "nfpm-package-rpm"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-apk",
+              "id": "nfpm-package-apk"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-archlinux",
+              "id": "nfpm-package-archlinux"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-msix",
+              "id": "nfpm-package-msix"
+            }
+          ],
+          "name": "nfpm",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "16572578",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "17133a2467ffb7cec851c2d7bae0c6098d09d7ed7d3d101a9605f6a473323936"
+                }
+              },
+              "name": "nfpm",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.47.0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "format": "rpm",
+      "native": {
+        "path": "/tmp/ts-release-producer-packages-4EFjsN/producer/fixture.rpm",
+        "bytes": "36740311",
+        "provenance": {
+          "name": "nfpm",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "nfpm",
+              "version": "2.47.0",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "16572578",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "17133a2467ffb7cec851c2d7bae0c6098d09d7ed7d3d101a9605f6a473323936"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-deb",
+              "evidence": "nfpm-package-deb"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-rpm",
+              "evidence": "nfpm-package-rpm"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-apk",
+              "evidence": "nfpm-package-apk"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-archlinux",
+              "evidence": "nfpm-package-archlinux"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-msix",
+              "evidence": "nfpm-package-msix"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "ff1235ab560cbbabe3ff9884e96c2707d9e6d85cc878a3ce06b94ecae8fb27d9"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "fixture.rpm",
+        "content": {
+          "bytes": "36740311",
+          "sha256": "ff1235ab560cbbabe3ff9884e96c2707d9e6d85cc878a3ce06b94ecae8fb27d9"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-deb",
+              "id": "nfpm-package-deb"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-rpm",
+              "id": "nfpm-package-rpm"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-apk",
+              "id": "nfpm-package-apk"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-archlinux",
+              "id": "nfpm-package-archlinux"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-msix",
+              "id": "nfpm-package-msix"
+            }
+          ],
+          "name": "nfpm",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "16572578",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "17133a2467ffb7cec851c2d7bae0c6098d09d7ed7d3d101a9605f6a473323936"
+                }
+              },
+              "name": "nfpm",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.47.0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "format": "apk",
+      "native": {
+        "path": "/tmp/ts-release-producer-packages-4EFjsN/producer/fixture.apk",
+        "bytes": "36645886",
+        "provenance": {
+          "name": "nfpm",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "nfpm",
+              "version": "2.47.0",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "16572578",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "17133a2467ffb7cec851c2d7bae0c6098d09d7ed7d3d101a9605f6a473323936"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-deb",
+              "evidence": "nfpm-package-deb"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-rpm",
+              "evidence": "nfpm-package-rpm"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-apk",
+              "evidence": "nfpm-package-apk"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-archlinux",
+              "evidence": "nfpm-package-archlinux"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-msix",
+              "evidence": "nfpm-package-msix"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "072be1c9433a6a276ee4ee9919ecb4f3b15e2cc1c5beaa6977a40b7bdf4d4830"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "fixture.apk",
+        "content": {
+          "bytes": "36645886",
+          "sha256": "072be1c9433a6a276ee4ee9919ecb4f3b15e2cc1c5beaa6977a40b7bdf4d4830"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-deb",
+              "id": "nfpm-package-deb"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-rpm",
+              "id": "nfpm-package-rpm"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-apk",
+              "id": "nfpm-package-apk"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-archlinux",
+              "id": "nfpm-package-archlinux"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-msix",
+              "id": "nfpm-package-msix"
+            }
+          ],
+          "name": "nfpm",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "16572578",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "17133a2467ffb7cec851c2d7bae0c6098d09d7ed7d3d101a9605f6a473323936"
+                }
+              },
+              "name": "nfpm",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.47.0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "format": "archlinux",
+      "native": {
+        "path": "/tmp/ts-release-producer-packages-4EFjsN/producer/fixture.pkg.tar.zst",
+        "bytes": "34778425",
+        "provenance": {
+          "name": "nfpm",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "nfpm",
+              "version": "2.47.0",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "16572578",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "17133a2467ffb7cec851c2d7bae0c6098d09d7ed7d3d101a9605f6a473323936"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-deb",
+              "evidence": "nfpm-package-deb"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-rpm",
+              "evidence": "nfpm-package-rpm"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-apk",
+              "evidence": "nfpm-package-apk"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-archlinux",
+              "evidence": "nfpm-package-archlinux"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-msix",
+              "evidence": "nfpm-package-msix"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "86aff4e4751bdc5ad6fe76e51ae3e4196836abe0c10ce0b4405ef4f1af001d7f"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "fixture.pkg.tar.zst",
+        "content": {
+          "bytes": "34778425",
+          "sha256": "86aff4e4751bdc5ad6fe76e51ae3e4196836abe0c10ce0b4405ef4f1af001d7f"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-deb",
+              "id": "nfpm-package-deb"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-rpm",
+              "id": "nfpm-package-rpm"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-apk",
+              "id": "nfpm-package-apk"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-archlinux",
+              "id": "nfpm-package-archlinux"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-msix",
+              "id": "nfpm-package-msix"
+            }
+          ],
+          "name": "nfpm",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "16572578",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "17133a2467ffb7cec851c2d7bae0c6098d09d7ed7d3d101a9605f6a473323936"
+                }
+              },
+              "name": "nfpm",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.47.0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "format": "msix",
+      "native": {
+        "path": "/tmp/ts-release-producer-packages-4EFjsN/producer/fixture.msix",
+        "bytes": "40953005",
+        "provenance": {
+          "name": "nfpm",
+          "participants": [
+            {
+              "role": "selected-command",
+              "name": "nfpm",
+              "version": "2.47.0",
+              "revision": "unreported",
+              "channel": "release",
+              "content": {
+                "bytes": "16572578",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "17133a2467ffb7cec851c2d7bae0c6098d09d7ed7d3d101a9605f6a473323936"
+                }
+              }
+            }
+          ],
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-deb",
+              "evidence": "nfpm-package-deb"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-rpm",
+              "evidence": "nfpm-package-rpm"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-apk",
+              "evidence": "nfpm-package-apk"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-archlinux",
+              "evidence": "nfpm-package-archlinux"
+            },
+            {
+              "_tag": "Present",
+              "id": "nfpm-package-msix",
+              "evidence": "nfpm-package-msix"
+            }
+          ]
+        },
+        "publication": {
+          "scope": "file",
+          "commit": "same-parent-no-replace-link",
+          "committed": true
+        },
+        "_tag": "HashedFile",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "c463bd437328b160a385476479f175d0417abe28e419529c54bf7084bdaa3055"
+        }
+      },
+      "file": {
+        "_tag": "OwnedFile",
+        "logicalName": "fixture.msix",
+        "content": {
+          "bytes": "40953005",
+          "sha256": "c463bd437328b160a385476479f175d0417abe28e419529c54bf7084bdaa3055"
+        },
+        "deliveryMode": 420,
+        "executable": null,
+        "provenance": {
+          "capabilities": [
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-deb",
+              "id": "nfpm-package-deb"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-rpm",
+              "id": "nfpm-package-rpm"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-apk",
+              "id": "nfpm-package-apk"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-archlinux",
+              "id": "nfpm-package-archlinux"
+            },
+            {
+              "_tag": "Present",
+              "evidence": "nfpm-package-msix",
+              "id": "nfpm-package-msix"
+            }
+          ],
+          "name": "nfpm",
+          "participants": [
+            {
+              "channel": "release",
+              "content": {
+                "bytes": "16572578",
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "17133a2467ffb7cec851c2d7bae0c6098d09d7ed7d3d101a9605f6a473323936"
+                }
+              },
+              "name": "nfpm",
+              "revision": "unreported",
+              "role": "selected-command",
+              "version": "2.47.0"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "libgcc-14.2.0-r6.apk",
+      "bytes": 81560,
+      "sha256": "04f3467bc967e705221a843fe4d3de5850db826e571686e0c0ed453d38cb5c59"
+    },
+    {
+      "name": "libstdc++-14.2.0-r6.apk",
+      "bytes": 942558,
+      "sha256": "939f7c99898f3e8154207a17f4acbe8bc40437e1bb1b43f5525620ca9e452a2e"
+    },
+    {
+      "name": "musl-1.2.5-r12.apk",
+      "bytes": 412252,
+      "sha256": "4990a5e0ba312e478f94cfe431a70efef1538004eb361c8ae424516848be45bb"
+    }
+  ],
+  "consumers": [
+    {
+      "format": "deb",
+      "image": "debian@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171",
+      "network": "none",
+      "log": "deb-consumer.log"
+    },
+    {
+      "format": "rpm",
+      "image": "fedora@sha256:7c63468daf71fdc5bda3699cd483b169bb995b5137265d5ffe8f04e2ce87fbb8",
+      "network": "none",
+      "log": "rpm-consumer.log"
+    },
+    {
+      "format": "apk",
+      "image": "alpine@sha256:eafc1edb577d2e9b458664a15f23ea1c370214193226069eb22921169fc7e43f",
+      "network": "none",
+      "log": "apk-consumer.log"
+    },
+    {
+      "format": "archlinux",
+      "image": "archlinux@sha256:c9dc8b5d1b06d8d50ace6d42b2c93fbb1e34c9e1332d1a2102936e497d3187ae",
+      "network": "none",
+      "log": "archlinux-consumer.log"
+    }
+  ],
+  "producerDeleted": true,
+  "limits": [
+    "Four native Linux x64 installs; MSIX construction only, Windows SDK/signing/install remains open.",
+    "Alpine declares libstdc++; exact dependency archives are installed offline before the product package.",
+    "Local source consumer; fresh packed acceptance is separate."
+  ]
+}

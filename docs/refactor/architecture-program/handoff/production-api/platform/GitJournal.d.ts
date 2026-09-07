@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect";
 import type * as Scope from "effect/Scope";
-import { type JournalStore } from "../Journal.js";
+import type { JournalStore } from "../Journal.js";
 import { type ReleaseError } from "../internal/Error.js";
 import { type Credentials, type RefCoordinate } from "../internal/GitCatalog.js";
 export interface GitJournalOptions {

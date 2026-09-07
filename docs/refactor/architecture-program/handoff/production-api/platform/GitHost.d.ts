@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect";
 import type * as Scope from "effect/Scope";
-import { type Transport } from "../Provider.js";
+import type { Transport } from "../Provider.js";
 import { type ReadContent } from "../internal/Content.js";
 import { type ReleaseError } from "../internal/Error.js";
 import { type Credentials, type Intent, type ObjectBuilder, type ObserveRef, type RefCoordinate } from "../internal/GitCatalog.js";

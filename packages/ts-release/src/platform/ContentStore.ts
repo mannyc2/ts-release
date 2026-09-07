@@ -6,6 +6,7 @@ import { join } from "node:path"
 import { AdoptionError, Content } from "../internal/ArtifactModel.js"
 import type { ContentOwner } from "../internal/Content.js"
 import { decodeOwned } from "../internal/Identity.js"
+import { nodeDirectoryReader } from "./Directory.js"
 
 const READ_CAPACITY = 512n * 1024n * 1024n
 const io = <A>(body: () => Promise<A>) =>
@@ -44,7 +45,12 @@ const scan = async (
 }
 
 /** Immutable content names, exclusive temporary files and exact read-back on EEXIST. */
-export const fileContentOwner = (directory: string): ContentOwner => {
+export const fileContentOwner = (
+  directory: string,
+  readDirectoryBounded: ContentOwner["readDirectoryBounded"] = nodeDirectoryReader(
+    process.execPath,
+  ),
+): ContentOwner => {
   const withOwned = async <A>(
     content: Content,
     use: (input: FileHandle) => Promise<A>,
@@ -93,6 +99,7 @@ export const fileContentOwner = (directory: string): ContentOwner => {
     }
   }
   return {
+    readDirectoryBounded,
     putOwned: (input) => {
       const bytes = new Uint8Array(input)
       return io(() => persist(identify(bytes), (output) => output.writeFile(bytes)))

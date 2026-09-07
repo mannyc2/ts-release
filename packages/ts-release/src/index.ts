@@ -44,13 +44,7 @@ export {
   type ReleaseReport,
   type RunOptions,
 } from "./internal/ReleaseModel.js"
-export {
-  type Snapshot,
-  type AppendResult,
-  type JournalStore,
-  type Scope,
-  type JournalContext,
-} from "./Journal.js"
+export type { Snapshot, AppendResult, JournalStore, Scope, JournalContext } from "./Journal.js"
 export { type HostShape, Host } from "./internal/Host.js"
 export {
   type CandidateRequest,

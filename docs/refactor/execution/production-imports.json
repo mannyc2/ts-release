@@ -1,6 +1,6 @@
 {
   "format": "ts-release/production-imports/1",
-  "files": 55,
+  "files": 65,
   "edges": [
     {
       "file": "packages/npm/src/Evidence.ts",
@@ -1505,6 +1505,346 @@
     {
       "file": "packages/ts-release/src/platform/Application.ts",
       "specifier": "../Release.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Binding.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Binding.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Binding.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Binding.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Binding.ts",
+      "specifier": "./Graph.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Binding.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Evidence.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Evidence.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Evidence.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Evidence.ts",
+      "specifier": "./Graph.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Evidence.ts",
+      "specifier": "./Binding.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Evidence.ts",
+      "specifier": "./Wire.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Evidence.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "node:crypto",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "./Graph.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "./Binding.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "./Wire.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "./Evidence.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "./Graph.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "./Binding.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "./Wire.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "./Evidence.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "./Observe.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Wire.ts",
+      "specifier": "node:crypto",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Wire.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Wire.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Wire.ts",
+      "specifier": "./Graph.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Wire.ts",
+      "specifier": "./Binding.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Wire.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Auth.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Auth.ts",
+      "specifier": "effect/Redacted",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Auth.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/github/src/Auth.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Auth.ts",
+      "specifier": "./Graph.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Auth.ts",
+      "specifier": "./Binding.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Auth.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Auth.ts",
+      "specifier": "./Wire.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Auth.ts",
+      "specifier": "./Observe.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Model.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Model.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/index.ts",
+      "specifier": "./Graph.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/index.ts",
+      "specifier": "./Protocol.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/index.ts",
+      "specifier": "./Auth.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Graph.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Graph.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Graph.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Graph.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Graph.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/github/src/Graph.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/github/src/Native.ts",
+      "specifier": "effect/Effect",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Native.ts",
+      "specifier": "effect/Schema",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Native.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Native.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Native.ts",
+      "specifier": "./Model.js",
       "typeOnly": false
     },
     {

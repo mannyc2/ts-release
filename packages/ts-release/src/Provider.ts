@@ -6,10 +6,12 @@ import {
   ObservationRecorded,
   ObservationStatus,
   Operation,
+  type JournalEvent,
+  type Plan,
   RequestFacts,
 } from "./internal/ReleaseModel.js"
 import { ReleaseError, attempt, fail } from "./internal/Error.js"
-import { canonical, decodeOwned, hashCanonical, sha256 } from "./internal/Identity.js"
+import { canonical, decodeOwned, freeze, hashCanonical, sha256 } from "./internal/Identity.js"
 
 /** Provider contract version spoken by this kernel. A definition built against another contract is rejected at Host verification, whatever the installer resolved. */
 export const PROVIDER_CONTRACT = "ts-release/provider/1" as const
@@ -61,6 +63,14 @@ export interface ProviderDefinition {
   readonly definitionId: string
   readonly intentVersion: string
   readonly intentCodec: Schema.Codec<unknown, unknown>
+  /** Pure complete-graph admission, before storage, reads, credentials or sends. */
+  readonly validatePlan?: (operations: ReadonlyArray<Operation>) => void
+  /** Pure binding to already-validated declared dependency evidence. No dispatch permission. */
+  readonly requestCorresponds?: (
+    operation: Operation,
+    request: RequestFacts,
+    context: ProviderContext,
+  ) => boolean
   readonly receiptVersion: string
   readonly receiptCodec: Schema.Codec<unknown, unknown>
   readonly receiptCorresponds: (
@@ -81,6 +91,7 @@ export interface ProviderDefinition {
     operation: Operation,
     evidence: unknown,
     acceptedReceipts: ReadonlyArray<unknown>,
+    context: ProviderContext,
   ) => ObservationStatus
   readonly prepare: (
     operation: Operation,
@@ -93,8 +104,44 @@ export interface ProviderDefinition {
 }
 export type ProviderDescriptor = Pick<
   ProviderDefinition,
-  "definitionId" | "intentVersion" | "intentCodec"
+  "definitionId" | "intentVersion" | "intentCodec" | "validatePlan"
 >
+/** A projection of a validated prefix only; later events cannot justify earlier requests. */
+export const evidenceContext = (
+  plan: Plan,
+  operation: Operation,
+  history: ReadonlyArray<JournalEvent>,
+): ProviderContext => {
+  const events = history.filter((event) => event.planId === plan.planId)
+  const evidenceFor = (operation: Operation): OperationEvidence => {
+    const starts = new Set(
+      events.flatMap(({ body }) =>
+        body._tag === "DispatchStarted" && body.operationId === operation.operationId
+          ? [body.dispatchId]
+          : [],
+      ),
+    )
+    return {
+      operation,
+      receipts: events.flatMap(({ body }) =>
+        body._tag === "ReceiptAccepted" && starts.has(body.dispatchId) ? [body.receipt] : [],
+      ),
+      observations: events.flatMap(({ body }) =>
+        body._tag === "ObservationRecorded" && body.operationId === operation.operationId
+          ? [{ status: body.status, evidence: body.evidence }]
+          : [],
+      ),
+    }
+  }
+  return freeze({
+    own: evidenceFor(operation),
+    dependencies: operation.dependsOn.map((id) => {
+      const dependency = plan.operations.find((item) => item.operationId === id)
+      if (!dependency) fail("missing-dependency", "Evidence dependency is not in this plan")
+      return evidenceFor(dependency)
+    }),
+  })
+}
 export type Json = Schema.Json
 export type OperationId = string
 export type Author<A> = (
@@ -177,7 +224,8 @@ export const verifyDescriptor = (provider: ProviderDescriptor): void => {
     !provider.definitionId ||
     typeof provider.intentVersion !== "string" ||
     !provider.intentVersion ||
-    !Schema.isSchema(provider.intentCodec)
+    !Schema.isSchema(provider.intentCodec) ||
+    (provider.validatePlan !== undefined && typeof provider.validatePlan !== "function")
   )
     fail("intent-codec", "Provider identity and intent codec are required")
   canonical([provider.definitionId, provider.intentVersion])
@@ -194,7 +242,9 @@ export const verifyProviderContracts = (providers: ReadonlyArray<ProviderDefinit
       !Schema.isSchema(provider.receiptCodec) ||
       typeof provider.receiptCorresponds !== "function" ||
       typeof provider.classifyReceipt !== "function" ||
-      typeof provider.prepare !== "function"
+      typeof provider.prepare !== "function" ||
+      (provider.requestCorresponds !== undefined &&
+        typeof provider.requestCorresponds !== "function")
     )
       fail(
         "missing-receipt-codec",

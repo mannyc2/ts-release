@@ -6,6 +6,7 @@ import { canonical, decodeOwned, freeze } from "./internal/Identity.js"
 import {
   type ProviderDefinition,
   decodeObservationEvidence,
+  evidenceContext,
   isCoreErrorVersion,
   nativeEvidence,
   requestFingerprint,
@@ -127,8 +128,26 @@ export const verifyNativeEvidence = (
     >
   >()
   const receipts = new Map<string, unknown[]>()
-  for (const { body } of events) {
-    if (body._tag === "DispatchStarted") starts.set(body.dispatchId, body)
+  for (let index = 0; index < events.length; index++) {
+    const { body } = events[index]!
+    if (body._tag === "DispatchStarted") {
+      const operation = plan.operations.find((item) => item.operationId === body.operationId)
+      if (!operation) fail("unknown-operation", "Dispatch references an unknown operation")
+      const provider = providers.find((item) => item.definitionId === operation.definitionId)!
+      if (
+        provider.requestCorresponds &&
+        provider.requestCorresponds(
+          operation,
+          body.request,
+          evidenceContext(plan, operation, events.slice(0, index)),
+        ) !== true
+      )
+        fail(
+          "request-correspondence",
+          "Historical request differs from preceding dependency evidence",
+        )
+      starts.set(body.dispatchId, body)
+    }
     if (body._tag === "ReceiptAccepted") {
       const start = starts.get(body.dispatchId)
       const operation = plan.operations.find((item) => item.operationId === start?.operationId)
@@ -185,6 +204,7 @@ export const verifyNativeEvidence = (
           operation,
           evidence,
           receipts.get(operation.operationId) ?? [],
+          evidenceContext(plan, operation, events.slice(0, index)),
         ) !== body.status
       )
         fail(

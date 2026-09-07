@@ -1,174 +1,174 @@
 {
-  "wave": "W04",
+  "wave": "W05",
   "counts": {
-    "product": 13747,
-    "unchangedLegacy": 5856,
-    "replacement": 7891,
-    "metadata": 527,
+    "product": 14355,
+    "unchangedLegacy": 4902,
+    "replacement": 9453,
+    "metadata": 569,
     "productData": 789,
     "productDataBytes": 15973,
-    "tests": 39457,
-    "fixtureText": 5272,
+    "tests": 41450,
+    "fixtureText": 5756,
     "fixtureBinaryBytes": 727372,
     "generatedDelivery": 678,
-    "tooling": 44599
+    "tooling": 44627
   },
   "files": [
     {
-      "path": "packages/ts-release/src/Git.ts",
-      "lines": 22,
-      "lane": "product",
-      "sha256": "0d334c07faf1b065b474e6e3cdbc6284a9c76c3cd5b80ded25019e0d10025974"
+      "path": "packages/github/package.json",
+      "lines": 31,
+      "lane": "metadata",
+      "sha256": "506ede69beeadff24aaa3471e0b7d6b02335865c686825b5e241338fe743ed78"
     },
     {
-      "path": "packages/ts-release/src/internal/GitCatalog.ts",
-      "lines": 277,
+      "path": "packages/github/src/Auth.ts",
+      "lines": 67,
       "lane": "product",
-      "sha256": "c088751f4ec59801ce09363d7c4bd2ab265b7038598fedcb87abf3b014c2c24d"
+      "sha256": "705603ddd33d0e6e494a145f80b0779ae7c2ee0a903a23673c648ba136d60d93"
     },
     {
-      "path": "packages/ts-release/src/platform/GitHost.ts",
-      "lines": 165,
+      "path": "packages/github/src/Binding.ts",
+      "lines": 133,
       "lane": "product",
-      "sha256": "3b05c1971e51a0d203cf8ce5065b0318c78ab3e4db3eb90cee63f898e1790902"
+      "sha256": "352ae9032e02332c43e60f2894073768884c5395ea0cc76a2e1c8dc4615ddc67"
     },
     {
-      "path": "packages/ts-release/src/platform/GitJournal.ts",
-      "lines": 209,
-      "lane": "product",
-      "sha256": "11de366ed29b8bf554efd64f3fe9f3a4a1cb2b5c050d053f4c2c1f087964cbe1"
-    },
-    {
-      "path": "packages/ts-release/src/platform/GitObjects.ts",
-      "lines": 298,
-      "lane": "product",
-      "sha256": "f60414c0d71b3ca875e7170cd6aac417c3a77837635d80092b3211f9e370db93"
-    },
-    {
-      "path": "packages/ts-release/src/platform/GitProcess.ts",
-      "lines": 297,
-      "lane": "product",
-      "sha256": "eb0480d97a7286f7f76de24782d378c0da11d16b1f203b755e8e096907863bdb"
-    },
-    {
-      "path": "packages/ts-release/src/platform/GitRemote.ts",
-      "lines": 51,
-      "lane": "product",
-      "sha256": "d3be45369e30eeca0ccae040bbb21497dc7a7f781655a38d89a10ac87d1d58cd"
-    },
-    {
-      "path": "packages/ts-release/src/platform/GithubOidc.ts",
+      "path": "packages/github/src/Evidence.ts",
       "lines": 258,
       "lane": "product",
-      "sha256": "5efd81101154791f99413941e7934a4d3d4b778be29550d17141152f5f2c5aa9"
+      "sha256": "540528646d689c28664c7ddbe6365702e19e8d68582dcd8285e5c3a1032d1be1"
     },
     {
-      "path": "packages/ts-release/src/platform/HttpTransport.ts",
-      "lines": 371,
+      "path": "packages/github/src/Graph.ts",
+      "lines": 132,
       "lane": "product",
-      "sha256": "518fadf4e96862ff49a39733dd56a3efc65688240c659beae3a731573381d2ea"
+      "sha256": "ace2c13cca09ddf715890ef2c435bc3515ec5a2fc9f167f04c73a3a2edb4e91b"
     },
     {
-      "path": "test/reimplementation/transports/credentials.test.ts",
-      "lines": 230,
-      "lane": "tests",
-      "sha256": "f74bff81f2383a32a7155e19b68513a61f17423ddbcfb6164d9569059096a44f"
+      "path": "packages/github/src/Model.ts",
+      "lines": 128,
+      "lane": "product",
+      "sha256": "6303a537c0157b5b6e39569fbac6f67683a1d855a48343d64b260c3c32c565a2"
     },
     {
-      "path": "test/reimplementation/transports/git-fixture.ts",
-      "lines": 81,
-      "lane": "tests",
-      "sha256": "dab833a1f480a1f8a51ecd3b2e775ac7c5e6fa2ac7fdd8359b4f00f2ee008d86"
+      "path": "packages/github/src/Native.ts",
+      "lines": 176,
+      "lane": "product",
+      "sha256": "18c622e380bd4743d6377313a85dd9f0b0f1d6bcad7d9e02d23193f123218b2d"
     },
     {
-      "path": "test/reimplementation/transports/git-host.test.ts",
-      "lines": 250,
-      "lane": "tests",
-      "sha256": "3236f9843a3039c64971797008b07d799b720725796be1ad2b9816c4c30e4388"
+      "path": "packages/github/src/Observe.ts",
+      "lines": 347,
+      "lane": "product",
+      "sha256": "5864e31cc45409720bd40579524e7db0181c59e8c1cb8a742977f87ddfddd97c"
     },
     {
-      "path": "test/reimplementation/transports/git-journal.test.ts",
-      "lines": 245,
-      "lane": "tests",
-      "sha256": "ba5e682375f2f8494eacbcacb0e92b21c9b8f244791b6d287a5bb2650698bb8e"
+      "path": "packages/github/src/Protocol.ts",
+      "lines": 116,
+      "lane": "product",
+      "sha256": "605055d8dc5dd10a6c85dbc7637f4eb1dfffb33ce27be2c0a32eb41a3583b9b3"
     },
     {
-      "path": "test/reimplementation/transports/git-native-consumer.mjs",
-      "lines": 170,
-      "lane": "tests",
-      "sha256": "918c52d050995da3da77b6b8337d4fcc36ea4dbce11d50b7b04d8a492923ffec"
+      "path": "packages/github/src/Wire.ts",
+      "lines": 125,
+      "lane": "product",
+      "sha256": "762bdaa87a3b796aa16caae25a6f317098229d311bef095e1fee5ee25c118b57"
     },
     {
-      "path": "test/reimplementation/transports/git-objects.test.ts",
-      "lines": 286,
-      "lane": "tests",
-      "sha256": "e3e37ef33e0813af4ca69e85dd23234ed0c8f3bff41cbc1a7611512612252b54"
+      "path": "packages/github/src/index.ts",
+      "lines": 20,
+      "lane": "product",
+      "sha256": "c95c932e5f36d553e12254b609f988f47ee908ee03bc12652ecf257dec34337d"
     },
     {
-      "path": "test/reimplementation/transports/git-process-consumer.mjs",
-      "lines": 93,
-      "lane": "tests",
-      "sha256": "bd4e77c1d7d74e2f99bf5c56dfb72168b5f7b94ea9d5e88371aab85fd2dd39cc"
+      "path": "packages/github/tsconfig.build.json",
+      "lines": 10,
+      "lane": "metadata",
+      "sha256": "a9a7b2d4b4378c789df8fc80cafa1a805a13d58fed9812f7b06d706068a0f694"
     },
     {
-      "path": "test/reimplementation/transports/git-process.test.ts",
-      "lines": 134,
+      "path": "test/reimplementation/github/authority.test.ts",
+      "lines": 166,
       "lane": "tests",
-      "sha256": "d23030a684ad346e3fdfd90f759ca55904457bbb6288aba35310a60bbcc9a685"
+      "sha256": "c500a7bce2e35340cee88a9557a2d3123c4be13ff75eb3533249797c99db2952"
     },
     {
-      "path": "test/reimplementation/transports/git-runtime.test.ts",
-      "lines": 102,
+      "path": "test/reimplementation/github/fixtures.ts",
+      "lines": 280,
       "lane": "tests",
-      "sha256": "b5bdd29323c783b7f994d7b2a69d45ac2a0c82508cce556cf1edb08e80494915"
+      "sha256": "88c2d4dd08e9f68e76b454a64baef7c68a60d83fdc96bc2a7c418515b89d7852"
     },
     {
-      "path": "test/reimplementation/transports/http-peer.mjs",
-      "lines": 24,
-      "lane": "tests",
-      "sha256": "bbb81ae90e3a7c17b9211c24ce12660832539ff18c97bfd4609da9df5e462817"
+      "path": "test/reimplementation/github/fixtures/provenance.json",
+      "lines": 35,
+      "lane": "fixtureText",
+      "sha256": "75b396c845b964e602ad2b48813c869028e4bdcd4e6039a02faf0e9d15a4e847"
     },
     {
-      "path": "test/reimplementation/transports/http-pending-tls-consumer.mjs",
-      "lines": 63,
-      "lane": "tests",
-      "sha256": "5e49c641402bfa3426f118c3b22acc8c9f2242854fdcfcd97ac1674db1f87bc8"
+      "path": "test/reimplementation/github/fixtures/v030-ref.json",
+      "lines": 10,
+      "lane": "fixtureText",
+      "sha256": "3c9ee5379cb18770977ad0866827bd6563775cec9c926df1eca1fe7b2e2140a7"
     },
     {
-      "path": "test/reimplementation/transports/http-pending-tls-peer.mjs",
-      "lines": 16,
-      "lane": "tests",
-      "sha256": "044b93c351a305725b93a89762fa7dd81ca04e16abae8f8640ea30ba6ac6fc33"
+      "path": "test/reimplementation/github/fixtures/v030-release.json",
+      "lines": 439,
+      "lane": "fixtureText",
+      "sha256": "59991eb566b32d203053dd79af53572a2f567169d0a0ba76075e225a6ce8db4f"
     },
     {
-      "path": "test/reimplementation/transports/http-tls-consumer.mjs",
-      "lines": 164,
+      "path": "test/reimplementation/github/graph.test.ts",
+      "lines": 154,
       "lane": "tests",
-      "sha256": "e22af792bced9c0b7d2b2e12235dcffe88dede6dfd6ab072f232a92e505a19fd"
+      "sha256": "725ec26c0174e6add7b70b3d8f435129e686d3d0704efb30d7751b83a56833b9"
     },
     {
-      "path": "test/reimplementation/transports/http-wire-consumer.mjs",
-      "lines": 82,
+      "path": "test/reimplementation/github/live-read-consumer.mjs",
+      "lines": 167,
       "lane": "tests",
-      "sha256": "482cc187391b86b6ece6d8df109c248a73163e6ac160f221419ae95813e58669"
+      "sha256": "bd77a454b5f5803b4ac66fcabf110cb2cf2979eb56601bf9350b58def6697de4"
     },
     {
-      "path": "test/reimplementation/transports/http.test.ts",
-      "lines": 465,
+      "path": "test/reimplementation/github/native.test.ts",
+      "lines": 60,
       "lane": "tests",
-      "sha256": "0ec80323912dddde6f42353c9b629e194e3956b3a1991ec0e3d13d32c2b08d98"
+      "sha256": "ccfa9ae98c1b3a1467a106594c2c51cd4d21a85cbe7b56161314e5b25cc63091"
     },
     {
-      "path": "test/reimplementation/transports/native-provider.test.ts",
-      "lines": 70,
+      "path": "test/reimplementation/github/packed-consumer.mjs",
+      "lines": 158,
       "lane": "tests",
-      "sha256": "5fb6da91cff9c33a3522acef6c9d9764a6831b601e9af359b9837e79192e4ef4"
+      "sha256": "4a51582abd314a9bb2c658ac5fcd716d8bdd43a85a409d7d023003008f132b6b"
     },
     {
-      "path": "test/reimplementation/transports/warehouse-native-host-worker.mjs",
-      "lines": 124,
+      "path": "test/reimplementation/github/process-worker.mjs",
+      "lines": 133,
       "lane": "tests",
-      "sha256": "75c686e28dad495d1d9aa553299c40c991c68ec215ded9aac81d635c6c824842"
+      "sha256": "d0b4ce2f7792740a3ef0e68f6f970ebfbc6fd04821a1b5bce8ffb606fbe5fab9"
+    },
+    {
+      "path": "test/reimplementation/github/process.test.ts",
+      "lines": 156,
+      "lane": "tests",
+      "sha256": "4b87902a08e9dd83f174bac9b24db4e71dd172e1dca4efee24c544cb972e1d99"
+    },
+    {
+      "path": "test/reimplementation/github/protocol.test.ts",
+      "lines": 238,
+      "lane": "tests",
+      "sha256": "cf60c94b847c1d8ca6961b3bc330a8b4b295bb4cbfddfd28e3f776e6820d26b7"
+    },
+    {
+      "path": "test/reimplementation/github/wire.test.ts",
+      "lines": 178,
+      "lane": "tests",
+      "sha256": "34d67bfeae5a92460acd140c775eb45cddb0c16a5d542051b6879b83927645a2"
+    },
+    {
+      "path": "test/reimplementation/kernel/dependencies.test.ts",
+      "lines": 297,
+      "lane": "tests",
+      "sha256": "ed75d19d76846c7c9d4cde9b1857653f0d0868e6cd017a24f83fb8cd04814d72"
     },
     {
       "path": "apps/release-ts/package.json",
@@ -406,9 +406,9 @@
     },
     {
       "path": "package.json",
-      "lines": 57,
+      "lines": 58,
       "lane": "metadata",
-      "sha256": "4c40c1b1e38e2dc3c9f7ba1dba969238179554328a48e9aac903bc1384c94037"
+      "sha256": "feefdaef61e461e87547446e14fb350055de463f068ac24169ccdae0d8d29965"
     },
     {
       "path": "packages/npm/package.json",
@@ -567,6 +567,12 @@
       "sha256": "5f4e37afc336a2dc7d8f4118d3a37ba0e56ff2d4d10d26069694739cebd06314"
     },
     {
+      "path": "packages/ts-release/src/Git.ts",
+      "lines": 22,
+      "lane": "product",
+      "sha256": "0d334c07faf1b065b474e6e3cdbc6284a9c76c3cd5b80ded25019e0d10025974"
+    },
+    {
       "path": "packages/ts-release/src/Http.ts",
       "lines": 132,
       "lane": "product",
@@ -574,9 +580,9 @@
     },
     {
       "path": "packages/ts-release/src/Journal.ts",
-      "lines": 196,
+      "lines": 216,
       "lane": "product",
-      "sha256": "dbb68ac207d43eb4bbd598a16bb165b77397a57c3c4f0a1dd2faafc45bfc3be4"
+      "sha256": "f19f7cb5a7125002bae4818bb5c846efd566123f881098b6b0dfba1d6b489c76"
     },
     {
       "path": "packages/ts-release/src/Node.ts",
@@ -586,21 +592,21 @@
     },
     {
       "path": "packages/ts-release/src/Plan.ts",
-      "lines": 134,
+      "lines": 152,
       "lane": "product",
-      "sha256": "ca99ed5271366fd9da4789b45bbe2c3a00063fe478b33bf55059805ed9cac6f7"
+      "sha256": "feb4aa5d2b33966ca8299471c2dcd134549b3b75121b9457d261865cd6dfac50"
     },
     {
       "path": "packages/ts-release/src/Provider.ts",
-      "lines": 275,
+      "lines": 325,
       "lane": "product",
-      "sha256": "3bb6343e1a856e36e617bfd0554dd4855a60252db3c7018199f143c94c6e3d36"
+      "sha256": "2e7035411f8403b6cb302947d5f5e584a88c30d6babfffd7fe28404a3934667b"
     },
     {
       "path": "packages/ts-release/src/Release.ts",
-      "lines": 408,
+      "lines": 418,
       "lane": "product",
-      "sha256": "7b5533f12dfaf716a2b9a9319780f0639f8325cd95dadb1ccd64a74f597adec9"
+      "sha256": "bec44c7dde4da63cabbb15651995291ed9aa0fb1ea656098e35bd20b0e352e7f"
     },
     {
       "path": "packages/ts-release/src/index.ts",
@@ -669,10 +675,16 @@
       "sha256": "e70278b88272da65dd9626593b218485727e674e61653a9b9362829d8956365d"
     },
     {
-      "path": "packages/ts-release/src/internal/Host.ts",
-      "lines": 262,
+      "path": "packages/ts-release/src/internal/GitCatalog.ts",
+      "lines": 277,
       "lane": "product",
-      "sha256": "c0e94663e49b1910800a8d7d58cb6ab3c74a0bf8e75f85f26d3fb58748fa14ad"
+      "sha256": "c088751f4ec59801ce09363d7c4bd2ab265b7038598fedcb87abf3b014c2c24d"
+    },
+    {
+      "path": "packages/ts-release/src/internal/Host.ts",
+      "lines": 224,
+      "lane": "product",
+      "sha256": "ccb32b7cf3deaf72bae62cf42a0657660885070eb060b64bb50751599a1b1414"
     },
     {
       "path": "packages/ts-release/src/internal/Identity.ts",
@@ -709,6 +721,48 @@
       "lines": 137,
       "lane": "product",
       "sha256": "0b70de2d4e95ab73c7678ed1a004fa101601e689e32ec82b53b8db2d83a32182"
+    },
+    {
+      "path": "packages/ts-release/src/platform/GitHost.ts",
+      "lines": 165,
+      "lane": "product",
+      "sha256": "3b05c1971e51a0d203cf8ce5065b0318c78ab3e4db3eb90cee63f898e1790902"
+    },
+    {
+      "path": "packages/ts-release/src/platform/GitJournal.ts",
+      "lines": 209,
+      "lane": "product",
+      "sha256": "11de366ed29b8bf554efd64f3fe9f3a4a1cb2b5c050d053f4c2c1f087964cbe1"
+    },
+    {
+      "path": "packages/ts-release/src/platform/GitObjects.ts",
+      "lines": 298,
+      "lane": "product",
+      "sha256": "f60414c0d71b3ca875e7170cd6aac417c3a77837635d80092b3211f9e370db93"
+    },
+    {
+      "path": "packages/ts-release/src/platform/GitProcess.ts",
+      "lines": 297,
+      "lane": "product",
+      "sha256": "eb0480d97a7286f7f76de24782d378c0da11d16b1f203b755e8e096907863bdb"
+    },
+    {
+      "path": "packages/ts-release/src/platform/GitRemote.ts",
+      "lines": 51,
+      "lane": "product",
+      "sha256": "d3be45369e30eeca0ccae040bbb21497dc7a7f781655a38d89a10ac87d1d58cd"
+    },
+    {
+      "path": "packages/ts-release/src/platform/GithubOidc.ts",
+      "lines": 258,
+      "lane": "product",
+      "sha256": "5efd81101154791f99413941e7934a4d3d4b778be29550d17141152f5f2c5aa9"
+    },
+    {
+      "path": "packages/ts-release/src/platform/HttpTransport.ts",
+      "lines": 371,
+      "lane": "product",
+      "sha256": "518fadf4e96862ff49a39733dd56a3efc65688240c659beae3a731573381d2ea"
     },
     {
       "path": "packages/ts-release/src/platform/SqliteJournal.ts",
@@ -1396,9 +1450,9 @@
     },
     {
       "path": "scripts/check-packed-npm.ts",
-      "lines": 258,
+      "lines": 285,
       "lane": "tooling",
-      "sha256": "bdcf46f1adf02fbb2d9831d46be2fc13508916dc6a2a04b62f5e5faf0d3007c9"
+      "sha256": "a585370cc3285904e4228309493866d334cac9910a7558867d59c380f3f45aa0"
     },
     {
       "path": "scripts/check-readme.ts",
@@ -1552,9 +1606,9 @@
     },
     {
       "path": "scripts/project-production-api.ts",
-      "lines": 59,
+      "lines": 60,
       "lane": "tooling",
-      "sha256": "4213b3b3acea367177825d4be42de23b3ccd6032138a82266321fdcfaca98210"
+      "sha256": "259e731b02ff2320b2cfd089d6bf19a57d80a2897aa0118edbd6e743eb9717d8"
     },
     {
       "path": "scripts/replay-provider-reads.ts",
@@ -1711,12 +1765,6 @@
       "lines": 661,
       "lane": "product",
       "sha256": "b1462508fc5584a4225346e9f6b1e7451640c36ee318afd4f12c4c1ffb93d7cd"
-    },
-    {
-      "path": "src/publication/github.ts",
-      "lines": 954,
-      "lane": "product",
-      "sha256": "c7ea69ce971258343c7882f7415e3ece31231feefb0bec02fb598d7133bef4ce"
     },
     {
       "path": "test/action-artifact-bridge.test.ts",
@@ -2506,9 +2554,9 @@
     },
     {
       "path": "test/reimplementation/npm/protocol.test.ts",
-      "lines": 357,
+      "lines": 360,
       "lane": "tests",
-      "sha256": "58bf7746f6da36b9935402e1ff338603ea0a6802aeb23d171effb33fc5bfc6b7"
+      "sha256": "b39efd137248b4a36fe8c207388b4fb74487598a97d292594a79ba5dcf5fba83"
     },
     {
       "path": "test/reimplementation/packed-kernel/application.mjs",
@@ -2527,6 +2575,108 @@
       "lines": 126,
       "lane": "tests",
       "sha256": "73efdffa7322464b0ec45c16e35f06170fdd3d06eadd2974fbb24a8eeb8a6f41"
+    },
+    {
+      "path": "test/reimplementation/transports/credentials.test.ts",
+      "lines": 230,
+      "lane": "tests",
+      "sha256": "f74bff81f2383a32a7155e19b68513a61f17423ddbcfb6164d9569059096a44f"
+    },
+    {
+      "path": "test/reimplementation/transports/git-fixture.ts",
+      "lines": 81,
+      "lane": "tests",
+      "sha256": "dab833a1f480a1f8a51ecd3b2e775ac7c5e6fa2ac7fdd8359b4f00f2ee008d86"
+    },
+    {
+      "path": "test/reimplementation/transports/git-host.test.ts",
+      "lines": 250,
+      "lane": "tests",
+      "sha256": "3236f9843a3039c64971797008b07d799b720725796be1ad2b9816c4c30e4388"
+    },
+    {
+      "path": "test/reimplementation/transports/git-journal.test.ts",
+      "lines": 245,
+      "lane": "tests",
+      "sha256": "ba5e682375f2f8494eacbcacb0e92b21c9b8f244791b6d287a5bb2650698bb8e"
+    },
+    {
+      "path": "test/reimplementation/transports/git-native-consumer.mjs",
+      "lines": 170,
+      "lane": "tests",
+      "sha256": "918c52d050995da3da77b6b8337d4fcc36ea4dbce11d50b7b04d8a492923ffec"
+    },
+    {
+      "path": "test/reimplementation/transports/git-objects.test.ts",
+      "lines": 286,
+      "lane": "tests",
+      "sha256": "e3e37ef33e0813af4ca69e85dd23234ed0c8f3bff41cbc1a7611512612252b54"
+    },
+    {
+      "path": "test/reimplementation/transports/git-process-consumer.mjs",
+      "lines": 93,
+      "lane": "tests",
+      "sha256": "bd4e77c1d7d74e2f99bf5c56dfb72168b5f7b94ea9d5e88371aab85fd2dd39cc"
+    },
+    {
+      "path": "test/reimplementation/transports/git-process.test.ts",
+      "lines": 134,
+      "lane": "tests",
+      "sha256": "d23030a684ad346e3fdfd90f759ca55904457bbb6288aba35310a60bbcc9a685"
+    },
+    {
+      "path": "test/reimplementation/transports/git-runtime.test.ts",
+      "lines": 102,
+      "lane": "tests",
+      "sha256": "b5bdd29323c783b7f994d7b2a69d45ac2a0c82508cce556cf1edb08e80494915"
+    },
+    {
+      "path": "test/reimplementation/transports/http-peer.mjs",
+      "lines": 24,
+      "lane": "tests",
+      "sha256": "bbb81ae90e3a7c17b9211c24ce12660832539ff18c97bfd4609da9df5e462817"
+    },
+    {
+      "path": "test/reimplementation/transports/http-pending-tls-consumer.mjs",
+      "lines": 63,
+      "lane": "tests",
+      "sha256": "5e49c641402bfa3426f118c3b22acc8c9f2242854fdcfcd97ac1674db1f87bc8"
+    },
+    {
+      "path": "test/reimplementation/transports/http-pending-tls-peer.mjs",
+      "lines": 16,
+      "lane": "tests",
+      "sha256": "044b93c351a305725b93a89762fa7dd81ca04e16abae8f8640ea30ba6ac6fc33"
+    },
+    {
+      "path": "test/reimplementation/transports/http-tls-consumer.mjs",
+      "lines": 164,
+      "lane": "tests",
+      "sha256": "e22af792bced9c0b7d2b2e12235dcffe88dede6dfd6ab072f232a92e505a19fd"
+    },
+    {
+      "path": "test/reimplementation/transports/http-wire-consumer.mjs",
+      "lines": 82,
+      "lane": "tests",
+      "sha256": "482cc187391b86b6ece6d8df109c248a73163e6ac160f221419ae95813e58669"
+    },
+    {
+      "path": "test/reimplementation/transports/http.test.ts",
+      "lines": 465,
+      "lane": "tests",
+      "sha256": "0ec80323912dddde6f42353c9b629e194e3956b3a1991ec0e3d13d32c2b08d98"
+    },
+    {
+      "path": "test/reimplementation/transports/native-provider.test.ts",
+      "lines": 70,
+      "lane": "tests",
+      "sha256": "5fb6da91cff9c33a3522acef6c9d9764a6831b601e9af359b9837e79192e4ef4"
+    },
+    {
+      "path": "test/reimplementation/transports/warehouse-native-host-worker.mjs",
+      "lines": 124,
+      "lane": "tests",
+      "sha256": "75c686e28dad495d1d9aa553299c40c991c68ec215ded9aac81d635c6c824842"
     },
     {
       "path": "test/reimplementation/warehouse/build-fixtures.ts",
@@ -2662,9 +2812,9 @@
     },
     {
       "path": "test/reimplementation/warehouse/protocol.test.ts",
-      "lines": 263,
+      "lines": 266,
       "lane": "tests",
-      "sha256": "d2bbd75c7b0b726e91dd9790a754535adb2014f45deb2718491d8b4d8bc1a5d5"
+      "sha256": "995c3cd38c53ddf93bc14890024450e6432e91df07ee076bde63d0ff02437697"
     },
     {
       "path": "test/reimplementation/warehouse/requirements.txt",
@@ -3120,7 +3270,7 @@
       "path": "tools/architecture-lab/project.ts",
       "lines": 372,
       "lane": "tooling",
-      "sha256": "574d1b9a57c8169048220030611722e9eb7fc2a834240ae2e10b79ff6fa79e18"
+      "sha256": "bf452463265ca4bc9da535d0ad7eef72581b7ba969c6f17e31c8d3cfa8107da9"
     },
     {
       "path": "tools/architecture-lab/proposal/apple.ts",

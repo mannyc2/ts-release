@@ -1,9 +1,9 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
-import { type JournalContext, type JournalStore, type Snapshot } from "../Journal.js";
-import { type ProviderContext, type ProviderDefinition, type Transport } from "../Provider.js";
+import { type JournalContext, type JournalStore } from "../Journal.js";
+import { type ProviderDefinition, type Transport } from "../Provider.js";
 import { type MachineConstructor } from "./Decision.js";
-import { JournalEvent, Operation, Plan } from "./ReleaseModel.js";
+import { JournalEvent, Plan } from "./ReleaseModel.js";
 import { ReleaseError } from "./Error.js";
 export interface HostShape {
     readonly store: JournalStore;
@@ -25,7 +25,6 @@ export declare const captureHost: (input: HostShape) => HostShape;
 export declare const currentHost: Effect.Effect<HostShape, ReleaseError, Host>;
 /** Both inputs were owned and frozen at admission, preserving Schema classes. */
 export declare const model: (host: HostShape, plan: Plan, events: ReadonlyArray<JournalEvent>) => import("./Decision.js").Machine;
-export declare const providerContext: (host: HostShape, plan: Plan, operation: Operation, snapshot: Snapshot) => ProviderContext;
 export declare const journalIdFor: (host: HostShape, plan: Plan) => string;
 export declare const scopeKind: (host: HostShape, plan: Plan) => "PublicationScope" | "PreparationScope";
 export declare const read: (host: HostShape, plan: Plan) => Effect.Effect<{

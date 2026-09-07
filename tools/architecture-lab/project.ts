@@ -100,7 +100,7 @@ const authorityTexts: Record<string, string> = Object.fromEntries(await Promise.
 const declarations = new Map<string, Declaration>();
 // Implemented kernel exports are resolved by the compiler through their real
 // declaration owners. Unimplemented provider/host proposals retain their parser.
-const implementedAuthorities = ["kernel", "application", "npm", "pypi", "artifactReader", "http", "git", "nodeHost", "bunHost"];
+const implementedAuthorities = ["kernel", "application", "npm", "pypi", "github", "artifactReader", "http", "git", "nodeHost", "bunHost"];
 const apiProgram = ts.createProgram(implementedAuthorities.map(key => resolve(root, design.authorities[key]!)), {
     target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext,
     moduleResolution: ts.ModuleResolutionKind.NodeNext, types: [],
@@ -117,8 +117,8 @@ for (const [authority, text] of Object.entries(authorityTexts)) {
                 ...(symbol.flags & ts.SymbolFlags.Type ? ["type"] : []),
                 ...(symbol.flags & ts.SymbolFlags.Value ? ["value"] : []),
             ];
-            const owner = ["npm", "pypi"].includes(authority) ? "provider" : authority;
-            const namespace = authority === "npm" ? "Npm" : authority === "pypi" ? "Warehouse" : null;
+            const owner = ["npm", "pypi", "github"].includes(authority) ? "provider" : authority;
+            const namespace = authority === "npm" ? "Npm" : authority === "pypi" ? "Warehouse" : authority === "github" ? "GitHub" : null;
             const id = `${owner}:${namespace ? `${namespace}.` : ""}${exported.name}`;
             declarations.set(id, { id, authority: owner, namespace, sourceName: exported.name, spaces,
                 declarations: (symbol.declarations ?? []).map(node => ({

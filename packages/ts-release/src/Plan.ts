@@ -96,19 +96,31 @@ export const loadPlan = Effect.fn("ts-release.loadPlan")(function* (
   input: unknown,
   providers: ReadonlyArray<ProviderDescriptor>,
 ) {
-  const plan = yield* attempt(() => decodeOwned(Plan, input))
-  const definitions = new Map<string, ProviderDescriptor>()
-  yield* attempt(() => {
+  const { plan, definitions } = yield* attempt(() => {
+    const definitions = new Map<string, ProviderDescriptor>()
     for (const provider of providers) {
-      if (definitions.has(provider.definitionId))
+      const validatePlan = provider.validatePlan
+      const captured: ProviderDescriptor = Object.freeze({
+        definitionId: provider.definitionId,
+        intentVersion: provider.intentVersion,
+        intentCodec: provider.intentCodec,
+        ...(validatePlan !== undefined && {
+          validatePlan:
+            typeof validatePlan === "function" ? validatePlan.bind(provider) : validatePlan,
+        }),
+      })
+      verifyDescriptor(captured)
+      if (definitions.has(captured.definitionId))
         fail("duplicate-provider", "Provider definition IDs must be unique")
-      definitions.set(provider.definitionId, provider)
+      definitions.set(captured.definitionId, captured)
     }
+    const plan = decodeOwned(Plan, input)
     validateDag(plan.operations)
     if (
       canonical(plan.operations) !== canonical(planValue(plan.bundleId, plan.operations).operations)
     )
       fail("operation-order", "Operations must be sorted")
+    return { plan, definitions }
   })
   for (const operation of plan.operations) {
     const provider = definitions.get(operation.definitionId)
@@ -130,5 +142,11 @@ export const loadPlan = Effect.fn("ts-release.loadPlan")(function* (
   const rebuilt = yield* createPlan(plan.bundleId, plan.operations, plan.journalId)
   if (rebuilt.planId !== plan.planId)
     return yield* new ReleaseError({ code: "plan-identity", message: "Plan ID mismatch" })
+  yield* attempt(() => {
+    for (const provider of definitions.values()) {
+      if (provider.validatePlan?.(rebuilt.operations) !== undefined)
+        fail("plan-validation", "Complete-plan admission must finish synchronously")
+    }
+  })
   return freeze(plan)
 })

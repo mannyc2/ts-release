@@ -15,6 +15,10 @@
     {
       "path": "packages/pypi/package.json",
       "sha256": "fd12e9c096d0004ab912a47fb8477674d1ef889f251b1e8053b05389416d5635"
+    },
+    {
+      "path": "packages/github/package.json",
+      "sha256": "506ede69beeadff24aaa3471e0b7d6b02335865c686825b5e241338fe743ed78"
     }
   ],
   "entries": [
@@ -381,6 +385,57 @@
         "UploadIntent",
         "WheelUpload"
       ]
+    },
+    {
+      "specifier": "@mannyc1/ts-release-github",
+      "source": "packages/github/src/index.ts",
+      "sourceSha256": "c95c932e5f36d553e12254b609f988f47ee908ee03bc12652ecf257dec34337d",
+      "runtimePath": "packages/github/dist/index.js",
+      "runtimeSha256": "7ccbff55c8c509a0aa1837eb83184a647ed52a39584de25ee62586f850ce254f",
+      "declarationsPath": "packages/github/dist/index.d.ts",
+      "declarationsSha256": "7ccbff55c8c509a0aa1837eb83184a647ed52a39584de25ee62586f850ce254f",
+      "runtimeNames": [
+        "AnnotatedRef",
+        "AnnotatedTag",
+        "AnnotatedTagFacts",
+        "AssetFacts",
+        "AssetIntent",
+        "DraftIntent",
+        "ExistingTag",
+        "LightweightTag",
+        "ManagedTag",
+        "PublishIntent",
+        "RefFacts",
+        "ReleaseFacts",
+        "Repository",
+        "TagSource",
+        "Tagger",
+        "annotatedRef",
+        "annotatedTag",
+        "authorizeToken",
+        "definitions",
+        "draft",
+        "lightweightTag",
+        "publish",
+        "uploadAsset"
+      ],
+      "typeNames": [
+        "AnnotatedRef",
+        "AnnotatedTag",
+        "AnnotatedTagFacts",
+        "AssetFacts",
+        "AssetIntent",
+        "DraftIntent",
+        "ExistingTag",
+        "LightweightTag",
+        "ManagedTag",
+        "PublishIntent",
+        "RefFacts",
+        "ReleaseFacts",
+        "Repository",
+        "TagSource",
+        "Tagger"
+      ]
     }
   ],
   "missing": [
@@ -390,7 +445,6 @@
     "@mannyc1/ts-release/bundle:value:renderSha256Sums",
     "@mannyc1/ts-release/bundle:value:verifySha256Sums",
     "@mannyc1/ts-release:bin",
-    "@mannyc1/ts-release-github",
     "@mannyc1/ts-release-catalog",
     "@mannyc1/ts-release-mcp",
     "@mannyc1/ts-release-openai"

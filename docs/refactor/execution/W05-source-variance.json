@@ -1,0 +1,18 @@
+{
+  "format": "ts-release/source-planning-variance/1",
+  "wave": "W05",
+  "originalTripwire": 7750,
+  "replacementLines": 9453,
+  "replacementSha256": "553b2056fec2462de4e95c05de485e92b263185df2d3fed70d6ffc41d7ec458f",
+  "completeProductCeiling": 11485,
+  "completeProductWaiver": false,
+  "decision": "Continue implementation with this exact planning variance; no complete-product source pass or release waiver.",
+  "reason": "W05 adds1562replacement lines against1550allocated:12new excess plus1691inherited. GitHub is1502lines against1520expected; the shared complete-graph and declared-history evidence seam adds60net kernel lines. The reviewed native pagination, exact parent/asset preconditions, framing ownership and no-replay laws are selected guarantees, not optional complexity.",
+  "review": "docs/refactor/execution/W05-review.md",
+  "forecastExpected": 12904,
+  "forecastDeficit": 1419,
+  "accounting": "14355physical product=9453replacement+4902legacy after assigned954line/56declaration GitHub donor retirement.65actual source files and88proposed modules each have one forecast owner. Owned generated SPDX data789lines15973bytes remains separate; actual product+data15144. Original22971denominator,11485ceiling and40line marginal target unchanged.",
+  "simplificationPerformed": "Six provider operations use the existing common executor, HTTP host and one journal; no legacy GitHub-specific release engine or new dispatch permission. One evidenceContext projection serves runtime and journal validation. Parent requests derive from declared validated history, and one native enumeration/asset checker serves observation and preflight. The954line legacy lifecycle is physically retired. No density manipulation, fixture shrinkage, hidden replacement or product scope cut.",
+  "nextSimplification": "W06 catalog must use the native Git owner; W08/W10 must replace hybrid estimates with actual producer and app integration. Complete a measured full-product simplification pass against the1419line expected deficit before release. Even the remaining forecast low11807 exceeds the ceiling322; no estimate is an achieved saving.",
+  "notEvidenceOf": ["complete-product source reduction", "all native or hosted outcomes", "release certification"]
+}

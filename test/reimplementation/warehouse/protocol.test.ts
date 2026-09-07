@@ -52,9 +52,12 @@ const prepared = async () => {
     const value = await Effect.runPromise(
       providers[0]!.observe!(operation, { ...context, own: { ...context.own, receipts } }),
     )
-    expect(providers[0]!.classifyObservation!(operation, value.evidence, receipts)).toBe(
-      value.status,
-    )
+    expect(
+      providers[0]!.classifyObservation!(operation, value.evidence, receipts, {
+        ...context,
+        own: { ...context.own, receipts },
+      }),
+    ).toBe(value.status)
     return value
   }
   return {

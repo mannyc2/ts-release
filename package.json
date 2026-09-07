@@ -46,12 +46,13 @@
     "check:import-rules": "bun scripts/check-import-rules.ts",
     "check:package-exports": "bun scripts/check-package-exports.ts",
     "check:packed-kernel": "bun scripts/check-packed-kernel.ts",
-    "check:portable": "bun run check && bun run check:production-api && bun run test && bun run check:migration && bun run check:import-rules && bun run check:package-exports && bun run check:packed-pypi",
+    "check:portable": "bun run check && bun run check:production-api && bun run test && bun run check:migration && bun run check:import-rules && bun run check:package-exports && bun run check:packed-github",
     "check:production-api": "bun scripts/project-production-api.ts --check",
     "check:migration": "bun scripts/check-migration-execution.ts",
     "check:packed-npm": "bun scripts/check-packed-npm.ts",
     "check:native-npm-sigstore": "bun scripts/check-native-npm-sigstore.ts",
     "check:packed-pypi": "bun scripts/check-packed-npm.ts --pypi",
-    "setup:native-python": "bun scripts/setup-native-python.ts"
+    "setup:native-python": "bun scripts/setup-native-python.ts",
+    "check:packed-github": "bun scripts/check-packed-npm.ts --github --transports"
   }
 }

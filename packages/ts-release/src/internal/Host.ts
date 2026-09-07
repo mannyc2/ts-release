@@ -9,20 +9,14 @@ import {
   verifyNativeEvidence,
   verifyPreparationSelection,
 } from "../Journal.js"
-import {
-  type OperationEvidence,
-  type ProviderContext,
-  type ProviderDefinition,
-  type Transport,
-  verifyProviderContracts,
-} from "../Provider.js"
+import { type ProviderDefinition, type Transport, verifyProviderContracts } from "../Provider.js"
 import {
   type MachineConstructor,
   assertJournalAppend,
   historyMachine,
   projectReport,
 } from "./Decision.js"
-import { JournalEvent, Operation, Plan } from "./ReleaseModel.js"
+import { JournalEvent, Plan } from "./ReleaseModel.js"
 import { decodeOwned, freeze } from "./Identity.js"
 import { ReleaseError, attempt, fail } from "./Error.js"
 import { loadPlan } from "../Plan.js"
@@ -57,6 +51,10 @@ export const captureHost = (input: HostShape): HostShape => {
           definitionId: provider.definitionId,
           intentVersion: provider.intentVersion,
           intentCodec: provider.intentCodec,
+          ...(provider.validatePlan && { validatePlan: provider.validatePlan.bind(provider) }),
+          ...(provider.requestCorresponds && {
+            requestCorresponds: provider.requestCorresponds.bind(provider),
+          }),
           receiptVersion: provider.receiptVersion,
           receiptCodec: provider.receiptCodec,
           prepare: provider.prepare.bind(provider),
@@ -107,42 +105,6 @@ export const currentHost = Effect.flatMap(Host, (host) => attempt(() => captureH
 /** Both inputs were owned and frozen at admission, preserving Schema classes. */
 export const model = (host: HostShape, plan: Plan, events: ReadonlyArray<JournalEvent>) =>
   (host.machine ?? historyMachine)(plan, events, scopeKind(host, plan))
-export const providerContext = (
-  host: HostShape,
-  plan: Plan,
-  operation: Operation,
-  snapshot: Snapshot,
-): ProviderContext => {
-  const evidenceFor = (operation: Operation): OperationEvidence => {
-    const events = snapshot.events.filter((event) => event.planId === plan.planId)
-    const starts = new Set(
-      events.flatMap(({ body }) =>
-        body._tag === "DispatchStarted" && body.operationId === operation.operationId
-          ? [body.dispatchId]
-          : [],
-      ),
-    )
-    return {
-      operation,
-      receipts: events.flatMap(({ body }) =>
-        body._tag === "ReceiptAccepted" && starts.has(body.dispatchId) ? [body.receipt] : [],
-      ),
-      observations: events.flatMap(({ body }) =>
-        body._tag === "ObservationRecorded" && body.operationId === operation.operationId
-          ? [{ status: body.status, evidence: body.evidence }]
-          : [],
-      ),
-    }
-  }
-  const context: ProviderContext = {
-    own: evidenceFor(operation),
-    dependencies: operation.dependsOn.map((id) =>
-      evidenceFor(plan.operations.find((item) => item.operationId === id)!),
-    ),
-  }
-  // Every referenced fact was owned at admission; only these projection arrays are new.
-  return freeze(context)
-}
 export const journalIdFor = (host: HostShape, plan: Plan) =>
   host.journal?.journalId ?? plan.journalId
 export const scopeKind = (host: HostShape, plan: Plan) =>

@@ -1,12 +1,5 @@
 import * as Effect from "effect/Effect"
-import {
-  currentHost,
-  type HostShape,
-  journalIdFor,
-  providerContext,
-  read,
-  scopeKind,
-} from "./internal/Host.js"
+import { currentHost, type HostShape, journalIdFor, read, scopeKind } from "./internal/Host.js"
 import {
   CoreDispatchError,
   CoreUndecodableReceipt,
@@ -23,12 +16,13 @@ import {
   type RunOptions,
 } from "./internal/ReleaseModel.js"
 import { canonical, decodeOwned, freeze, sha256 } from "./internal/Identity.js"
-import { ReleaseError, attempt } from "./internal/Error.js"
+import { ReleaseError, attempt, fail } from "./internal/Error.js"
 import { type Snapshot, verifyNativeEvidence, verifyPreparationSelection } from "./Journal.js"
 import { assertJournalAppend } from "./internal/Decision.js"
 import { loadPlan } from "./Plan.js"
 import {
   type ProviderDefinition,
+  evidenceContext,
   nativeEvidence,
   requestFingerprint,
   verifyRequest,
@@ -85,7 +79,7 @@ const recordObservation = Effect.fn("ts-release.recordObservation")(function* (
 ) {
   const observation = yield* provider.observe!(
     operation,
-    yield* attempt(() => providerContext(host, plan, operation, snapshot)),
+    yield* attempt(() => evidenceContext(plan, operation, snapshot.events)),
   )
   yield* appendFact(
     host,
@@ -179,9 +173,20 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
       const request = yield* verifyRequest(
         yield* provider.prepare(
           operation,
-          yield* attempt(() => providerContext(host, plan, operation, current.snapshot)),
+          yield* attempt(() => evidenceContext(plan, operation, current.snapshot.events)),
         ),
       )
+      yield* attempt(() => {
+        if (
+          provider.requestCorresponds &&
+          provider.requestCorresponds(
+            operation,
+            request.facts,
+            evidenceContext(plan, operation, current.snapshot.events),
+          ) !== true
+        )
+          fail("request-correspondence", "Request differs from declared dependency evidence")
+      })
       yield* attempt(() => assertTransportBinding(host.transport, request.facts))
       const send = host.transport.prepare
         ? yield* host.transport.prepare(yield* verifyRequest(request))
@@ -223,6 +228,11 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
         }),
       )
       yield* attempt(() => {
+        verifyNativeEvidence(
+          plan,
+          [...current.snapshot.events.filter((item) => item.planId === plan.planId), event],
+          host.providers,
+        )
         assertJournalAppend(
           plan,
           current.snapshot.events.filter((item) => item.planId === plan.planId),

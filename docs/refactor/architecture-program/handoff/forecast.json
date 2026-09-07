@@ -1,6 +1,6 @@
 {
   "format": "ts-release/architecture-forecast/1",
-  "status": "mixed-actual-W04-and-unimplemented-engineering-estimates-not-achieved-reduction",
+  "status": "mixed-actual-W05-and-unimplemented-engineering-estimates-not-achieved-reduction",
   "basisCommit": "2ef7a9a61fe40608d053569cbcd71e40fca5c181",
   "denominator": {
     "productPhysicalLines": 22916,
@@ -33,21 +33,21 @@
       ],
       "components": [
         {
-          "name": "Actual W04 production owners",
-          "low": 2383,
-          "expected": 2383,
-          "high": 2383,
-          "basis": "Exact normally formatted source bindings in actualImplementation; shared native Git process counted only in native-git-additional."
+          "name": "Actual W05 production owners",
+          "low": 2443,
+          "expected": 2443,
+          "high": 2443,
+          "basis": "Exact normally formatted source bindings in actualImplementation; common kernel/evidence and native HTTP/Git remain charged to their owners once."
         }
       ],
       "fullReplacementPhysicalLines": {
-        "low": 2383,
-        "expected": 2383,
-        "high": 2383
+        "low": 2443,
+        "expected": 2443,
+        "high": 2443
       },
       "actualImplementation": {
-        "wave": "W04",
-        "lines": 2383,
+        "wave": "W05",
+        "lines": 2443,
         "files": [
           {
             "path": "packages/ts-release/src/internal/Error.ts",
@@ -66,18 +66,18 @@
           },
           {
             "path": "packages/ts-release/src/Provider.ts",
-            "lines": 275,
-            "sha256": "3bb6343e1a856e36e617bfd0554dd4855a60252db3c7018199f143c94c6e3d36"
+            "lines": 325,
+            "sha256": "2e7035411f8403b6cb302947d5f5e584a88c30d6babfffd7fe28404a3934667b"
           },
           {
             "path": "packages/ts-release/src/Plan.ts",
-            "lines": 134,
-            "sha256": "ca99ed5271366fd9da4789b45bbe2c3a00063fe478b33bf55059805ed9cac6f7"
+            "lines": 152,
+            "sha256": "feb4aa5d2b33966ca8299471c2dcd134549b3b75121b9457d261865cd6dfac50"
           },
           {
             "path": "packages/ts-release/src/Journal.ts",
-            "lines": 196,
-            "sha256": "dbb68ac207d43eb4bbd598a16bb165b77397a57c3c4f0a1dd2faafc45bfc3be4"
+            "lines": 216,
+            "sha256": "f19f7cb5a7125002bae4818bb5c846efd566123f881098b6b0dfba1d6b489c76"
           },
           {
             "path": "packages/ts-release/src/internal/Decision.ts",
@@ -86,13 +86,13 @@
           },
           {
             "path": "packages/ts-release/src/internal/Host.ts",
-            "lines": 262,
-            "sha256": "c0e94663e49b1910800a8d7d58cb6ab3c74a0bf8e75f85f26d3fb58748fa14ad"
+            "lines": 224,
+            "sha256": "ccb32b7cf3deaf72bae62cf42a0657660885070eb060b64bb50751599a1b1414"
           },
           {
             "path": "packages/ts-release/src/Release.ts",
-            "lines": 408,
-            "sha256": "7b5533f12dfaf716a2b9a9319780f0639f8325cd95dadb1ccd64a74f597adec9"
+            "lines": 418,
+            "sha256": "bec44c7dde4da63cabbb15651995291ed9aa0fb1ea656098e35bd20b0e352e7f"
           },
           {
             "path": "packages/ts-release/src/internal/GitAuthority.ts",
@@ -125,7 +125,7 @@
             "sha256": "8395ebcdf181e67682fa8080403947b8e0680c1f4199e061f50e4648ac595b31"
           }
         ],
-        "qualification": "Implemented source, not hosted/native full-product certification"
+        "qualification": "Implemented and independently reviewed local source; no hosted native full-product certification"
       }
     },
     {
@@ -591,65 +591,29 @@
     {
       "owner": "provider-github",
       "modules": [
-        "provider.github.Model",
-        "provider.github.Protocol",
         "provider.github.Auth",
+        "provider.github.Binding",
+        "provider.github.Evidence",
+        "provider.github.Graph",
+        "provider.github.Model",
+        "provider.github.Native",
+        "provider.github.Observe",
+        "provider.github.Protocol",
+        "provider.github.Wire",
         "provider.github"
       ],
       "fullReplacementPhysicalLines": {
-        "low": 1020,
-        "expected": 1520,
-        "high": 2180
+        "low": 1502,
+        "expected": 1502,
+        "high": 1502
       },
       "components": [
         {
-          "name": "Schemas and six operation identities",
-          "low": 220,
-          "expected": 310,
-          "high": 420,
-          "basis": "github-native.ts:70-303; preserve native IDs and typed parent references"
-        },
-        {
-          "name": "Tag object and reference native requests",
-          "low": 100,
-          "expected": 160,
-          "high": 220,
-          "basis": "github-native.ts:459-590, tag/repository portions"
-        },
-        {
-          "name": "Release and asset native requests",
-          "low": 150,
-          "expected": 220,
-          "high": 330,
-          "basis": "github-native.ts:459-590,939-1170; bind parent upload template and exact content"
-        },
-        {
-          "name": "Native receipts, paginated observations and tag peeling",
-          "low": 330,
-          "expected": 480,
-          "high": 700,
-          "basis": "github-native.ts:590-939,1170-2201; no deletion of native equality/visibility facets"
-        },
-        {
-          "name": "Parent binding and mandatory operation graph",
-          "low": 120,
-          "expected": 200,
-          "high": 300,
-          "basis": "github-application.ts:1-830; generic graph runtime removed, provider graph construction retained"
-        },
-        {
-          "name": "Provider-specific auth",
-          "low": 70,
-          "expected": 100,
-          "high": 140,
-          "basis": "github-live.ts:1-106; common host mechanics excluded"
-        },
-        {
-          "name": "Exports and thin wrappers",
-          "low": 30,
-          "expected": 50,
-          "high": 70,
-          "basis": "github.ts and explicit definition construction"
+          "name": "Actual W05 production owners",
+          "low": 1502,
+          "expected": 1502,
+          "high": 1502,
+          "basis": "Exact normally formatted source bindings in actualImplementation; common kernel/evidence and native HTTP/Git remain charged to their owners once."
         }
       ],
       "donors": [
@@ -657,7 +621,64 @@
         "src/publication/github-application.ts",
         "src/publication/github-live.ts",
         "src/publication/github.ts"
-      ]
+      ],
+      "actualImplementation": {
+        "wave": "W05",
+        "lines": 1502,
+        "files": [
+          {
+            "path": "packages/github/src/Auth.ts",
+            "lines": 67,
+            "sha256": "705603ddd33d0e6e494a145f80b0779ae7c2ee0a903a23673c648ba136d60d93"
+          },
+          {
+            "path": "packages/github/src/Binding.ts",
+            "lines": 133,
+            "sha256": "352ae9032e02332c43e60f2894073768884c5395ea0cc76a2e1c8dc4615ddc67"
+          },
+          {
+            "path": "packages/github/src/Evidence.ts",
+            "lines": 258,
+            "sha256": "540528646d689c28664c7ddbe6365702e19e8d68582dcd8285e5c3a1032d1be1"
+          },
+          {
+            "path": "packages/github/src/Graph.ts",
+            "lines": 132,
+            "sha256": "ace2c13cca09ddf715890ef2c435bc3515ec5a2fc9f167f04c73a3a2edb4e91b"
+          },
+          {
+            "path": "packages/github/src/Model.ts",
+            "lines": 128,
+            "sha256": "6303a537c0157b5b6e39569fbac6f67683a1d855a48343d64b260c3c32c565a2"
+          },
+          {
+            "path": "packages/github/src/Native.ts",
+            "lines": 176,
+            "sha256": "18c622e380bd4743d6377313a85dd9f0b0f1d6bcad7d9e02d23193f123218b2d"
+          },
+          {
+            "path": "packages/github/src/Observe.ts",
+            "lines": 347,
+            "sha256": "5864e31cc45409720bd40579524e7db0181c59e8c1cb8a742977f87ddfddd97c"
+          },
+          {
+            "path": "packages/github/src/Protocol.ts",
+            "lines": 116,
+            "sha256": "605055d8dc5dd10a6c85dbc7637f4eb1dfffb33ce27be2c0a32eb41a3583b9b3"
+          },
+          {
+            "path": "packages/github/src/Wire.ts",
+            "lines": 125,
+            "sha256": "762bdaa87a3b796aa16caae25a6f317098229d311bef095e1fee5ee25c118b57"
+          },
+          {
+            "path": "packages/github/src/index.ts",
+            "lines": 20,
+            "sha256": "c95c932e5f36d553e12254b609f988f47ee908ee03bc12652ecf257dec34337d"
+          }
+        ],
+        "qualification": "Implemented and independently reviewed local source; no hosted native full-product certification"
+      }
     },
     {
       "owner": "provider-homebrew",
@@ -924,19 +945,19 @@
     }
   ],
   "totals": {
-    "low": 11265,
-    "expected": 12862,
-    "high": 15010
+    "low": 11807,
+    "expected": 12904,
+    "high": 14392
   },
-  "expectedHeadroom": -1377,
+  "expectedHeadroom": -1419,
   "reductionPercent": {
-    "low": 50.96,
-    "expected": 44.01,
-    "high": 34.66
+    "low": 48.6,
+    "expected": 43.82,
+    "high": 37.35
   },
   "unknowns": [
-    "Four remaining public provider packages are not implemented. Their complete native parsing, evidence, authentication and selected agent-product composition must be measured.",
-    "Kernel, npm, PyPI, HTTP/OIDC, journals and native Git use actual W04 source. CLI/Action/self-release retains 560 expected future lines above 103 actual host-entry lines. Adoption/Apple retains its prior full responsibility estimate plus the 22-line W04 shared-reader delta, with 408 actual partial lines exposed; W08 must replace this hybrid estimate.",
+    "Three remaining public provider packages (catalog, MCP and OpenAI) are not implemented. Their complete native parsing, evidence, authentication and selected agent-product composition must be measured.",
+    "Kernel and GitHub use actual W05 source; npm, PyPI, HTTP/OIDC, journals and native Git retain exact W04 source bindings. CLI/Action/self-release retains 560 expected future lines above 103 actual host-entry lines. Adoption/Apple retains its prior full responsibility estimate plus the 22-line W04 shared-reader delta, with 408 actual partial lines exposed; W08 must replace this hybrid estimate.",
     "Native hosted OIDC, Bun Sigstore, all selected platform acceptance and remaining host integration can change source costs. Implemented file counts are not acceptance.",
     "Exact layout metadata remains separate and in the combined view. All newly maintained owned or upstream logic counts; no forecast closes the 11485 gate."
   ],
@@ -957,7 +978,7 @@
     }
   ],
   "newRequiredUpstreamImplementationLines": 0,
-  "sourceCeilingPolicy": "Expected12862 exceeds unchanged11485 ceiling by1377. No achieved reduction or complete-product waiver; actual full selected product must pass before release.",
+  "sourceCeilingPolicy": "Expected12904 exceeds unchanged11485 ceiling by1419. No achieved reduction or complete-product waiver; actual full selected product must pass before release.",
   "maintenanceLanes": [
     "product and Action source",
     "generated runtime product inputs including Action YAML",
@@ -978,7 +999,7 @@
       "tsconfigJsonLines": 76,
       "futureScriptFiles": 3,
       "futureScriptLines": null,
-      "authoredProductModuleFiles": 82,
+      "authoredProductModuleFiles": 88,
       "generatedRuntimePolicyFiles": 0,
       "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
     },
@@ -990,7 +1011,7 @@
       "tsconfigJsonLines": 90,
       "futureScriptFiles": 3,
       "futureScriptLines": null,
-      "authoredProductModuleFiles": 82,
+      "authoredProductModuleFiles": 88,
       "generatedRuntimePolicyFiles": 0,
       "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
     },
@@ -1002,7 +1023,7 @@
       "tsconfigJsonLines": 174,
       "futureScriptFiles": 3,
       "futureScriptLines": null,
-      "authoredProductModuleFiles": 82,
+      "authoredProductModuleFiles": 88,
       "generatedRuntimePolicyFiles": 0,
       "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
     },
@@ -1014,7 +1035,7 @@
       "tsconfigJsonLines": 160,
       "futureScriptFiles": 3,
       "futureScriptLines": null,
-      "authoredProductModuleFiles": 82,
+      "authoredProductModuleFiles": 88,
       "generatedRuntimePolicyFiles": 0,
       "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
     }
@@ -1051,6 +1072,6 @@
     "lines": 789,
     "bytes": 15973,
     "role": "Pinned native SPDX membership data; generated from packaging26.3 with source hash; validation logic remains counted TypeScript",
-    "forecastProductAndDataLines": 13651
+    "forecastProductAndDataLines": 13693
   }
 }

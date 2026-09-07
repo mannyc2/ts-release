@@ -41,7 +41,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "a4bed27d51dec682f937edac089c8bdb8028ef9c1efba7e85735ecfddc7d8e8f"
+    "sha256": "4254c55386d977c4d33919087cfba612b3e4558ab7361db823f7fa1ecfc596ad"
   },
   "migration": {
     "path": "docs/refactor/architecture-program/handoff/migration.json",
@@ -113,9 +113,13 @@
     "bunHost": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Bun.d.ts",
       "sha256": "c751957811c02883541f365ad272b2b0d2dc90c6822c5d1057ef7035f7fee5f1"
+    },
+    "github": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/github/index.d.ts",
+      "sha256": "7ccbff55c8c509a0aa1837eb83184a647ed52a39584de25ee62586f850ce254f"
     }
   },
-  "publicSurfaceSha256": "6d4825b83691d33b7e1a2aa777d04b08aca5606b75ebd0011aab1bf33c7c42d6",
+  "publicSurfaceSha256": "6a8c588a7764c5cbd312cd05f82e4e7ee09cb566d19f400234442cb645c9c8de",
   "effectPatch": {
     "required": false,
     "donorPath": "patches/effect@4.0.0-rc.108.patch",
@@ -1359,13 +1363,95 @@
           ]
         },
         {
+          "id": "provider.github.Auth",
+          "owner": "core",
+          "path": "src/providers/github/Auth.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
+            "provider.github.Wire"
+          ]
+        },
+        {
+          "id": "provider.github.Binding",
+          "owner": "core",
+          "path": "src/providers/github/Binding.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native"
+          ]
+        },
+        {
+          "id": "provider.github.Evidence",
+          "owner": "core",
+          "path": "src/providers/github/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "provider.github.Binding",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Wire"
+          ]
+        },
+        {
+          "id": "provider.github.Graph",
+          "owner": "core",
+          "path": "src/providers/github/Graph.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "provider.github.Model",
+            "provider.github.Native"
+          ]
+        },
+        {
           "id": "provider.github.Model",
           "owner": "core",
           "path": "src/providers/github/Model.ts",
           "zone": "provider",
           "dependencies": [
-            "kernel.Entry",
             "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.github.Native",
+          "owner": "core",
+          "path": "src/providers/github/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Model"
+          ]
+        },
+        {
+          "id": "provider.github.Observe",
+          "owner": "core",
+          "path": "src/providers/github/Observe.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Wire"
+          ],
+          "externalImports": [
+            "node:crypto"
           ]
         },
         {
@@ -1374,20 +1460,32 @@
           "path": "src/providers/github/Protocol.ts",
           "zone": "provider",
           "dependencies": [
-            "provider.github.Model",
-            "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
+            "provider.github.Wire"
           ]
         },
         {
-          "id": "provider.github.Auth",
+          "id": "provider.github.Wire",
           "owner": "core",
-          "path": "src/providers/github/Auth.ts",
+          "path": "src/providers/github/Wire.ts",
           "zone": "provider",
           "dependencies": [
+            "kernel.Entry",
+            "provider.github.Binding",
+            "provider.github.Graph",
             "provider.github.Model",
-            "kernel.Http"
+            "provider.github.Native"
+          ],
+          "externalImports": [
+            "node:crypto"
           ]
         },
         {
@@ -1396,9 +1494,15 @@
           "path": "src/providers/github/index.ts",
           "zone": "provider",
           "dependencies": [
+            "provider.github.Auth",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
             "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
             "provider.github.Protocol",
-            "provider.github.Auth"
+            "provider.github.Wire"
           ]
         },
         {
@@ -1532,7 +1636,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "b2f4cdbec54479745ead482e89465e26c606a7981fd086c6a001d636d60583b0",
+        "sourceEdgesSha256": "0a03197b3e676e0a23e0c52f0fe1c8fca4d0e92101bb9c95ce14be3d3fdd04d9",
         "packageEdgesSha256": "3e31051ad7c19b6115f61fd818bc1e8d65608f7ad2e36b08ba4f795f5fda82b8",
         "sourceEdges": [
           {
@@ -3174,40 +3278,22 @@
             "specifier": "./SpdxCatalog.json"
           },
           {
-            "from": "provider.github.Model",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "../../index.js"
-          },
-          {
-            "from": "provider.github.Model",
-            "to": "kernel.Bundle",
-            "loading": "static",
-            "specifier": "../../Bundle.js"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "provider.github.Model",
-            "loading": "static",
-            "specifier": "./Model.js"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "../../index.js"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "kernel.Bundle",
-            "loading": "static",
-            "specifier": "../../Bundle.js"
-          },
-          {
-            "from": "provider.github.Protocol",
+            "from": "provider.github.Auth",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "../../Http.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
           },
           {
             "from": "provider.github.Auth",
@@ -3217,15 +3303,309 @@
           },
           {
             "from": "provider.github.Auth",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.github.Binding",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "../../Http.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Model",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "../../Bundle.js"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "../../Http.js"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "../../Http.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "../../Bundle.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "../../Http.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "../../index.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
           },
           {
             "from": "provider.github",
             "to": "provider.github.Model",
             "loading": "static",
             "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
           },
           {
             "from": "provider.github",
@@ -3235,9 +3615,9 @@
           },
           {
             "from": "provider.github",
-            "to": "provider.github.Auth",
+            "to": "provider.github.Wire",
             "loading": "static",
-            "specifier": "./Auth.js"
+            "specifier": "./Wire.js"
           },
           {
             "from": "provider.homebrew.Formula",
@@ -3786,6 +4166,14 @@
             "specifier": "@renovatebot/pep440"
           },
           {
+            "from": "provider.github.Observe",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "provider.github.Wire",
+            "specifier": "node:crypto"
+          },
+          {
             "from": "provider.openai.Package",
             "specifier": "semver"
           }
@@ -3956,7 +4344,7 @@
         "tsconfigJsonLines": 76,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 82,
+        "authoredProductModuleFiles": 88,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -5268,13 +5656,95 @@
           ]
         },
         {
+          "id": "provider.github.Auth",
+          "owner": "providers",
+          "path": "packages/providers/src/github/Auth.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
+            "provider.github.Wire"
+          ]
+        },
+        {
+          "id": "provider.github.Binding",
+          "owner": "providers",
+          "path": "packages/providers/src/github/Binding.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native"
+          ]
+        },
+        {
+          "id": "provider.github.Evidence",
+          "owner": "providers",
+          "path": "packages/providers/src/github/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "provider.github.Binding",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Wire"
+          ]
+        },
+        {
+          "id": "provider.github.Graph",
+          "owner": "providers",
+          "path": "packages/providers/src/github/Graph.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "provider.github.Model",
+            "provider.github.Native"
+          ]
+        },
+        {
           "id": "provider.github.Model",
           "owner": "providers",
           "path": "packages/providers/src/github/Model.ts",
           "zone": "provider",
           "dependencies": [
-            "kernel.Entry",
             "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.github.Native",
+          "owner": "providers",
+          "path": "packages/providers/src/github/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Model"
+          ]
+        },
+        {
+          "id": "provider.github.Observe",
+          "owner": "providers",
+          "path": "packages/providers/src/github/Observe.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Wire"
+          ],
+          "externalImports": [
+            "node:crypto"
           ]
         },
         {
@@ -5283,20 +5753,32 @@
           "path": "packages/providers/src/github/Protocol.ts",
           "zone": "provider",
           "dependencies": [
-            "provider.github.Model",
-            "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
+            "provider.github.Wire"
           ]
         },
         {
-          "id": "provider.github.Auth",
+          "id": "provider.github.Wire",
           "owner": "providers",
-          "path": "packages/providers/src/github/Auth.ts",
+          "path": "packages/providers/src/github/Wire.ts",
           "zone": "provider",
           "dependencies": [
+            "kernel.Entry",
+            "provider.github.Binding",
+            "provider.github.Graph",
             "provider.github.Model",
-            "kernel.Http"
+            "provider.github.Native"
+          ],
+          "externalImports": [
+            "node:crypto"
           ]
         },
         {
@@ -5305,9 +5787,15 @@
           "path": "packages/providers/src/github/index.ts",
           "zone": "provider",
           "dependencies": [
+            "provider.github.Auth",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
             "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
             "provider.github.Protocol",
-            "provider.github.Auth"
+            "provider.github.Wire"
           ]
         },
         {
@@ -5441,7 +5929,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "22c9fcab000aeff24dc677123bc5ce953c6ba60c29da523a9559da8b6ee6dd77",
+        "sourceEdgesSha256": "bc91bb43bb834712f583580fc7307e3eb09fab9aa57a885cbbbe3e423f92c390",
         "packageEdgesSha256": "3c44e3216c38ab22c9297546ab222193538978fc7c97036d99fb3198cc5959b1",
         "sourceEdges": [
           {
@@ -7083,40 +7571,22 @@
             "specifier": "./SpdxCatalog.json"
           },
           {
-            "from": "provider.github.Model",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release"
-          },
-          {
-            "from": "provider.github.Model",
-            "to": "kernel.Bundle",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release/bundle"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "provider.github.Model",
-            "loading": "static",
-            "specifier": "./Model.js"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "kernel.Bundle",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release/bundle"
-          },
-          {
-            "from": "provider.github.Protocol",
+            "from": "provider.github.Auth",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
           },
           {
             "from": "provider.github.Auth",
@@ -7126,15 +7596,309 @@
           },
           {
             "from": "provider.github.Auth",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Binding",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Model",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
           },
           {
             "from": "provider.github",
             "to": "provider.github.Model",
             "loading": "static",
             "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
           },
           {
             "from": "provider.github",
@@ -7144,9 +7908,9 @@
           },
           {
             "from": "provider.github",
-            "to": "provider.github.Auth",
+            "to": "provider.github.Wire",
             "loading": "static",
-            "specifier": "./Auth.js"
+            "specifier": "./Wire.js"
           },
           {
             "from": "provider.homebrew.Formula",
@@ -7716,6 +8480,14 @@
             "specifier": "@renovatebot/pep440"
           },
           {
+            "from": "provider.github.Observe",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "provider.github.Wire",
+            "specifier": "node:crypto"
+          },
+          {
             "from": "provider.openai.Package",
             "specifier": "semver"
           }
@@ -7886,7 +8658,7 @@
         "tsconfigJsonLines": 90,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 82,
+        "authoredProductModuleFiles": 88,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -9524,13 +10296,95 @@
           ]
         },
         {
+          "id": "provider.github.Auth",
+          "owner": "provider.github",
+          "path": "packages/github/src/Auth.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
+            "provider.github.Wire"
+          ]
+        },
+        {
+          "id": "provider.github.Binding",
+          "owner": "provider.github",
+          "path": "packages/github/src/Binding.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native"
+          ]
+        },
+        {
+          "id": "provider.github.Evidence",
+          "owner": "provider.github",
+          "path": "packages/github/src/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "provider.github.Binding",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Wire"
+          ]
+        },
+        {
+          "id": "provider.github.Graph",
+          "owner": "provider.github",
+          "path": "packages/github/src/Graph.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "provider.github.Model",
+            "provider.github.Native"
+          ]
+        },
+        {
           "id": "provider.github.Model",
           "owner": "provider.github",
           "path": "packages/github/src/Model.ts",
           "zone": "provider",
           "dependencies": [
-            "kernel.Entry",
             "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.github.Native",
+          "owner": "provider.github",
+          "path": "packages/github/src/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Model"
+          ]
+        },
+        {
+          "id": "provider.github.Observe",
+          "owner": "provider.github",
+          "path": "packages/github/src/Observe.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Wire"
+          ],
+          "externalImports": [
+            "node:crypto"
           ]
         },
         {
@@ -9539,20 +10393,32 @@
           "path": "packages/github/src/Protocol.ts",
           "zone": "provider",
           "dependencies": [
-            "provider.github.Model",
-            "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
+            "provider.github.Wire"
           ]
         },
         {
-          "id": "provider.github.Auth",
+          "id": "provider.github.Wire",
           "owner": "provider.github",
-          "path": "packages/github/src/Auth.ts",
+          "path": "packages/github/src/Wire.ts",
           "zone": "provider",
           "dependencies": [
+            "kernel.Entry",
+            "provider.github.Binding",
+            "provider.github.Graph",
             "provider.github.Model",
-            "kernel.Http"
+            "provider.github.Native"
+          ],
+          "externalImports": [
+            "node:crypto"
           ]
         },
         {
@@ -9561,9 +10427,15 @@
           "path": "packages/github/src/index.ts",
           "zone": "provider",
           "dependencies": [
+            "provider.github.Auth",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
             "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
             "provider.github.Protocol",
-            "provider.github.Auth"
+            "provider.github.Wire"
           ]
         },
         {
@@ -9697,7 +10569,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "89e4837e6dd6060e3f44a88a420ad3b63626d88f59e21b07edd09967317fb325",
+        "sourceEdgesSha256": "642cf08eb9bacede470d843d77b42d8c868d8f75c97c5937ab2d170c3fd84bc7",
         "packageEdgesSha256": "d401467496589dd5e98b4275d321ea18ff570cc127a1d1b42cb8197accb821b0",
         "sourceEdges": [
           {
@@ -11339,40 +12211,22 @@
             "specifier": "./SpdxCatalog.json"
           },
           {
-            "from": "provider.github.Model",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release"
-          },
-          {
-            "from": "provider.github.Model",
-            "to": "kernel.Bundle",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release/bundle"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "provider.github.Model",
-            "loading": "static",
-            "specifier": "./Model.js"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "kernel.Bundle",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release/bundle"
-          },
-          {
-            "from": "provider.github.Protocol",
+            "from": "provider.github.Auth",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
           },
           {
             "from": "provider.github.Auth",
@@ -11382,15 +12236,309 @@
           },
           {
             "from": "provider.github.Auth",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Binding",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Model",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
           },
           {
             "from": "provider.github",
             "to": "provider.github.Model",
             "loading": "static",
             "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
           },
           {
             "from": "provider.github",
@@ -11400,9 +12548,9 @@
           },
           {
             "from": "provider.github",
-            "to": "provider.github.Auth",
+            "to": "provider.github.Wire",
             "loading": "static",
-            "specifier": "./Auth.js"
+            "specifier": "./Wire.js"
           },
           {
             "from": "provider.homebrew.Formula",
@@ -12105,6 +13253,14 @@
             "specifier": "@renovatebot/pep440"
           },
           {
+            "from": "provider.github.Observe",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "provider.github.Wire",
+            "specifier": "node:crypto"
+          },
+          {
             "from": "provider.openai.Package",
             "specifier": "semver"
           }
@@ -12275,7 +13431,7 @@
         "tsconfigJsonLines": 174,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 82,
+        "authoredProductModuleFiles": 88,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }
@@ -13853,13 +15009,95 @@
           ]
         },
         {
+          "id": "provider.github.Auth",
+          "owner": "provider.github",
+          "path": "packages/github/src/Auth.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
+            "provider.github.Wire"
+          ]
+        },
+        {
+          "id": "provider.github.Binding",
+          "owner": "provider.github",
+          "path": "packages/github/src/Binding.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native"
+          ]
+        },
+        {
+          "id": "provider.github.Evidence",
+          "owner": "provider.github",
+          "path": "packages/github/src/Evidence.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "provider.github.Binding",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Wire"
+          ]
+        },
+        {
+          "id": "provider.github.Graph",
+          "owner": "provider.github",
+          "path": "packages/github/src/Graph.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "provider.github.Model",
+            "provider.github.Native"
+          ]
+        },
+        {
           "id": "provider.github.Model",
           "owner": "provider.github",
           "path": "packages/github/src/Model.ts",
           "zone": "provider",
           "dependencies": [
-            "kernel.Entry",
             "kernel.Bundle"
+          ]
+        },
+        {
+          "id": "provider.github.Native",
+          "owner": "provider.github",
+          "path": "packages/github/src/Native.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Model"
+          ]
+        },
+        {
+          "id": "provider.github.Observe",
+          "owner": "provider.github",
+          "path": "packages/github/src/Observe.ts",
+          "zone": "provider",
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Wire"
+          ],
+          "externalImports": [
+            "node:crypto"
           ]
         },
         {
@@ -13868,20 +15106,32 @@
           "path": "packages/github/src/Protocol.ts",
           "zone": "provider",
           "dependencies": [
-            "provider.github.Model",
-            "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
+            "provider.github.Wire"
           ]
         },
         {
-          "id": "provider.github.Auth",
+          "id": "provider.github.Wire",
           "owner": "provider.github",
-          "path": "packages/github/src/Auth.ts",
+          "path": "packages/github/src/Wire.ts",
           "zone": "provider",
           "dependencies": [
+            "kernel.Entry",
+            "provider.github.Binding",
+            "provider.github.Graph",
             "provider.github.Model",
-            "kernel.Http"
+            "provider.github.Native"
+          ],
+          "externalImports": [
+            "node:crypto"
           ]
         },
         {
@@ -13890,9 +15140,15 @@
           "path": "packages/github/src/index.ts",
           "zone": "provider",
           "dependencies": [
+            "provider.github.Auth",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
             "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
             "provider.github.Protocol",
-            "provider.github.Auth"
+            "provider.github.Wire"
           ]
         },
         {
@@ -14026,7 +15282,7 @@
       ],
       "graph": {
         "edgeMeaning": "Exact proposed direct module dependencies, covering value and type imports; implementation does not exist. Actual runtime/type edge classification and transitive installed-package closure must be measured in Plan 009.",
-        "sourceEdgesSha256": "c7552ae38f07d3582d8dbdc833eb0aeacd6a4a33a8736a646fa8255bb9d92ef5",
+        "sourceEdgesSha256": "f161bed0387205b44245507db5632400e4d490ae62c991c5466eb83b002048f9",
         "packageEdgesSha256": "e6e153576fe35b9b77916a2cdd382dc95dffcbf221af4f07e5c3a4591f6112df",
         "sourceEdges": [
           {
@@ -15668,40 +16924,22 @@
             "specifier": "./SpdxCatalog.json"
           },
           {
-            "from": "provider.github.Model",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release"
-          },
-          {
-            "from": "provider.github.Model",
-            "to": "kernel.Bundle",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release/bundle"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "provider.github.Model",
-            "loading": "static",
-            "specifier": "./Model.js"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "kernel.Entry",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release"
-          },
-          {
-            "from": "provider.github.Protocol",
-            "to": "kernel.Bundle",
-            "loading": "static",
-            "specifier": "@mannyc1/ts-release/bundle"
-          },
-          {
-            "from": "provider.github.Protocol",
+            "from": "provider.github.Auth",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
           },
           {
             "from": "provider.github.Auth",
@@ -15711,15 +16949,309 @@
           },
           {
             "from": "provider.github.Auth",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
+          },
+          {
+            "from": "provider.github.Auth",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Binding",
             "to": "kernel.Http",
             "loading": "static",
             "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Binding",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Evidence",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Graph",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Model",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Native",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Observe",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Bundle",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/bundle"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "kernel.Http",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release/http"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
+          },
+          {
+            "from": "provider.github.Protocol",
+            "to": "provider.github.Wire",
+            "loading": "static",
+            "specifier": "./Wire.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "kernel.Entry",
+            "loading": "static",
+            "specifier": "@mannyc1/ts-release"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Model",
+            "loading": "static",
+            "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github.Wire",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Auth",
+            "loading": "static",
+            "specifier": "./Auth.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Binding",
+            "loading": "static",
+            "specifier": "./Binding.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Evidence",
+            "loading": "static",
+            "specifier": "./Evidence.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Graph",
+            "loading": "static",
+            "specifier": "./Graph.js"
           },
           {
             "from": "provider.github",
             "to": "provider.github.Model",
             "loading": "static",
             "specifier": "./Model.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Native",
+            "loading": "static",
+            "specifier": "./Native.js"
+          },
+          {
+            "from": "provider.github",
+            "to": "provider.github.Observe",
+            "loading": "static",
+            "specifier": "./Observe.js"
           },
           {
             "from": "provider.github",
@@ -15729,9 +17261,9 @@
           },
           {
             "from": "provider.github",
-            "to": "provider.github.Auth",
+            "to": "provider.github.Wire",
             "loading": "static",
-            "specifier": "./Auth.js"
+            "specifier": "./Wire.js"
           },
           {
             "from": "provider.homebrew.Formula",
@@ -16399,6 +17931,14 @@
             "specifier": "@renovatebot/pep440"
           },
           {
+            "from": "provider.github.Observe",
+            "specifier": "node:crypto"
+          },
+          {
+            "from": "provider.github.Wire",
+            "specifier": "node:crypto"
+          },
+          {
             "from": "provider.openai.Package",
             "specifier": "semver"
           }
@@ -16569,7 +18109,7 @@
         "tsconfigJsonLines": 160,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 82,
+        "authoredProductModuleFiles": 88,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }

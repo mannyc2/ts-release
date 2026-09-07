@@ -152,7 +152,9 @@ test("version and tag facets classify independently with strict bounded native e
   const observe = async (body: unknown, status = 200) => {
     f.set(response(status, body))
     const value = await Effect.runPromise(f.providers[0]!.observe!(f.operation, f.context))
-    expect(f.providers[0]!.classifyObservation!(f.operation, value.evidence, [])).toBe(value.status)
+    expect(f.providers[0]!.classifyObservation!(f.operation, value.evidence, [], f.context)).toBe(
+      value.status,
+    )
     return value
   }
   expect((await observe(f.metadata())).status).toBe("Satisfied")
@@ -292,7 +294,7 @@ test("native digest intent mismatch rejects before reads; observations cannot in
   const observed = await Effect.runPromise(provider.observe!(f.operation, f.context))
   const evidence = JSON.parse(JSON.stringify(observed.evidence))
   expect(() =>
-    provider.classifyObservation!(f.operation, { ...evidence, status: 404 }, []),
+    provider.classifyObservation!(f.operation, { ...evidence, status: 404 }, [], f.context),
   ).toThrow("status")
   expect(() =>
     provider.classifyObservation!(
@@ -309,10 +311,11 @@ test("native digest intent mismatch rejects before reads; observations cannot in
         },
       },
       [],
+      f.context,
     ),
   ).toThrow()
   const altered = { ...evidence, version: { ...evidence.version, shasum: "0".repeat(40) } }
-  expect(provider.classifyObservation!(f.operation, altered, [])).toBe("Conflict")
+  expect(provider.classifyObservation!(f.operation, altered, [], f.context)).toBe("Conflict")
 })
 
 test("a new dist-tag operation can move an existing tag; later drift cannot resend it", async () => {

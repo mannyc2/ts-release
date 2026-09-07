@@ -692,7 +692,15 @@
         "src/platform/credentials.ts"
       ],
       "responsibility": "Replace githubUploadAudienceAllows with provider-owned exact GitHub asset URL/release/repository/parent binding. Application credentials explicitly bind both API and upload request coordinates; no shared-host GitHub special case or token downscope claim.",
-      "status": "open"
+      "status": "verified",
+      "evidence": [
+        "docs/refactor/execution/W05.md",
+        "docs/refactor/execution/W05-review.md",
+        "docs/refactor/execution/W05-native-reads.json",
+        "test/reimplementation/github",
+        "docs/refactor/execution/current-packed-github.json"
+      ],
+      "qualification": "W05 complete provider graph, exact native mutation/upload endpoint/parent binding, local protocol/process and hosted existing-release read/download. New hosted publication and app composition remain W10/Plans009/010."
     },
     {
       "wave": "W10",

@@ -1,20 +1,20 @@
 {
   "format": "ts-release/refactor-progress/1",
   "goal": "active",
-  "completedWave": "W04",
+  "completedWave": "W05",
   "prerequisites": {
     "P0": "seven-package projection implemented; beta.107 exact type repair passes actual producer fixture and independent review; real packed production graph follows in waves",
     "P1": "fresh original-slice/helper proof:60packed,27extensions,TS37/37/37; archive retained",
     "P2": "entrypoints and final direct verification pass;69open closure red",
     "P3": "168tests/993assertions; independent prerequisite review passed; fresh Apple/source/declaration receipts"
   },
-  "productionWaves": "W01-W03 committed/pushed; W04 implemented and locally verified with planning variance, commit/push pending; W05-W10 remain.",
-  "acceptance": "194tests/1761assertions across29files pass. Independent HTTP/Git findings closed. Actual Node/Bun native HTTP/Git and pypiserver/devpi cross-runtime SIGKILL recovery pass; fresh3package Bun/npm strict/exact archives/optional-peer-absent consumers pass32runtime checks. All69outcomes open; hosted OIDC/direct Bun Sigstore/final candidate unqualified.",
+  "productionWaves": "W01-W04 committed and pushed; W05 verified locally and ready to commit. W06-W10 remain.",
+  "acceptance": "W05 independent kernel/provider/accounting reviews closed. Full231tests2323assertions; GitHub29tests526assertions includes real Git-journal/HTTP-protocol SIGKILL plus Node/Bun restart. Hosted existing-v0.3.0 read/checksum302\u2192200 pass; fouractualBun/npm package consumers40runtimechecks/strictdeclarations pass. All69outcomes open; no release.",
   "publication": "No release published; registry0.3.0 observation is historical, recheck before choosing final cohort",
-  "nextAction": "Commit and push the qualified local W04 cutover, then activate W05 GitHub provider implementation. Full release gates and the source ceiling remain open.",
-  "updatedAt": "2026-09-07T08:18:44.065Z",
+  "nextAction": "Commit/push the verified W05 cutover, then implement W06 Homebrew/Scoop renderers and native Git catalog acceptance. Continue W07-W10 and all final release gates.",
+  "updatedAt": "2026-09-07T09:49:36.750331+00:00",
   "goalTool": "active",
-  "activeWave": "W04",
-  "source": "W04 13747product=7891replacement+5856legacy;6200tripwire exceeded1691. W04 adds2090 against1700allocated. Exact recorded planning variance has no complete-product waiver. Forecast12862 deficit1377; catalog789lines/15973bytes separate; all69scope still required.",
-  "checkpoint": "W04 local cutover complete: independent material and accounting review,194tests/1761assertions,266sealed files,32packed runtime checks,1083line donor retirement and exact planning variance. Commit/push pending; no publication."
+  "activeWave": "W05",
+  "source": "W05 14355product=9453replacement+4902legacy;7750tripwire exceeds1703, with explicit exact-source planning variance and no finalwaiver. W05 adds1562 vs1550allocated. Forecast12904 deficit1419; low11807 also exceeds11485. Catalog789lines15973bytes separate. No achieved reduction.",
+  "checkpoint": "W05 direct verification passes 276 sealed files, 231 tests/2323 assertions; four-package fresh consumers pass 40 runtime checks. Independent reviews and exact donor retirement complete. Commit/push next; no publication."
 }

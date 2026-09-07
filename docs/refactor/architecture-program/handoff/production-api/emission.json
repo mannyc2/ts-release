@@ -3,7 +3,8 @@
   "owners": [
     "packages/ts-release",
     "packages/npm",
-    "packages/pypi"
+    "packages/pypi",
+    "packages/github"
   ],
   "compiler": "typescript@6.0.3",
   "effect": "4.0.0-beta.107",
@@ -27,6 +28,66 @@
       "declarationSha256": "3c04cd3e8a4ccf18759ecd95cacac9a5d52d86cc3cf7678dbb5b7d17af856334",
       "source": "packages/ts-release/src/Git.ts",
       "sourceSha256": "0d334c07faf1b065b474e6e3cdbc6284a9c76c3cd5b80ded25019e0d10025974"
+    },
+    {
+      "declaration": "github/Auth.d.ts",
+      "declarationSha256": "595032f9480b59136f986ef2e15b787c3325d555ce4c50250e68d86f52098c24",
+      "source": "packages/github/src/Auth.ts",
+      "sourceSha256": "705603ddd33d0e6e494a145f80b0779ae7c2ee0a903a23673c648ba136d60d93"
+    },
+    {
+      "declaration": "github/Binding.d.ts",
+      "declarationSha256": "beaae769c096a6b442a72b6fcf927f3209f133b6b19e0c433d488f23b6eda012",
+      "source": "packages/github/src/Binding.ts",
+      "sourceSha256": "352ae9032e02332c43e60f2894073768884c5395ea0cc76a2e1c8dc4615ddc67"
+    },
+    {
+      "declaration": "github/Evidence.d.ts",
+      "declarationSha256": "47ee3ea2972f36270e8193179b3d0403b2f34a389e5e9dfa6b9a6048866ffb04",
+      "source": "packages/github/src/Evidence.ts",
+      "sourceSha256": "540528646d689c28664c7ddbe6365702e19e8d68582dcd8285e5c3a1032d1be1"
+    },
+    {
+      "declaration": "github/Graph.d.ts",
+      "declarationSha256": "f5773840739b6304afc4ecd6f36d5afe750e5b2851e5f38993944d7924fd96e9",
+      "source": "packages/github/src/Graph.ts",
+      "sourceSha256": "ace2c13cca09ddf715890ef2c435bc3515ec5a2fc9f167f04c73a3a2edb4e91b"
+    },
+    {
+      "declaration": "github/index.d.ts",
+      "declarationSha256": "7ccbff55c8c509a0aa1837eb83184a647ed52a39584de25ee62586f850ce254f",
+      "source": "packages/github/src/index.ts",
+      "sourceSha256": "c95c932e5f36d553e12254b609f988f47ee908ee03bc12652ecf257dec34337d"
+    },
+    {
+      "declaration": "github/Model.d.ts",
+      "declarationSha256": "589249096e5d090980504b7e142bdeed0fc48fdc0148d7e6e1928dbb975ffdbf",
+      "source": "packages/github/src/Model.ts",
+      "sourceSha256": "6303a537c0157b5b6e39569fbac6f67683a1d855a48343d64b260c3c32c565a2"
+    },
+    {
+      "declaration": "github/Native.d.ts",
+      "declarationSha256": "a211dbe0ff430782bf96b108b3b214b8306603864d78cb3cfc1fa4fcd3c330d5",
+      "source": "packages/github/src/Native.ts",
+      "sourceSha256": "18c622e380bd4743d6377313a85dd9f0b0f1d6bcad7d9e02d23193f123218b2d"
+    },
+    {
+      "declaration": "github/Observe.d.ts",
+      "declarationSha256": "39d85241f75fd5009d47fc714c8f8a5fbe34d3c429923f06a24b9194ff1b34ac",
+      "source": "packages/github/src/Observe.ts",
+      "sourceSha256": "5864e31cc45409720bd40579524e7db0181c59e8c1cb8a742977f87ddfddd97c"
+    },
+    {
+      "declaration": "github/Protocol.d.ts",
+      "declarationSha256": "f4984824d968088929c217a4cdd6587d622508bf7638f302b37aaa26e579c7a5",
+      "source": "packages/github/src/Protocol.ts",
+      "sourceSha256": "605055d8dc5dd10a6c85dbc7637f4eb1dfffb33ce27be2c0a32eb41a3583b9b3"
+    },
+    {
+      "declaration": "github/Wire.d.ts",
+      "declarationSha256": "9632498deb45a29ffb3912adb382ed2cd8e4511b85a9c7033fac9f7526185c31",
+      "source": "packages/github/src/Wire.ts",
+      "sourceSha256": "762bdaa87a3b796aa16caae25a6f317098229d311bef095e1fee5ee25c118b57"
     },
     {
       "declaration": "Http.d.ts",
@@ -108,9 +169,9 @@
     },
     {
       "declaration": "internal/Host.d.ts",
-      "declarationSha256": "dec2ec5d335770563993ddeb483a0c10c1f27400bf6eed8062f272d698482518",
+      "declarationSha256": "23b46d20e4bb6260bf045476a0ffbdb49f970b16ac8ea880bc9711a622d4986b",
       "source": "packages/ts-release/src/internal/Host.ts",
-      "sourceSha256": "c0e94663e49b1910800a8d7d58cb6ab3c74a0bf8e75f85f26d3fb58748fa14ad"
+      "sourceSha256": "ccb32b7cf3deaf72bae62cf42a0657660885070eb060b64bb50751599a1b1414"
     },
     {
       "declaration": "internal/Identity.d.ts",
@@ -140,7 +201,7 @@
       "declaration": "Journal.d.ts",
       "declarationSha256": "97653bfdcb014dd772a59b1907adc88e7f7896b7b57380f1cbcad1c81a28b165",
       "source": "packages/ts-release/src/Journal.ts",
-      "sourceSha256": "dbb68ac207d43eb4bbd598a16bb165b77397a57c3c4f0a1dd2faafc45bfc3be4"
+      "sourceSha256": "f19f7cb5a7125002bae4818bb5c846efd566123f881098b6b0dfba1d6b489c76"
     },
     {
       "declaration": "Node.d.ts",
@@ -194,7 +255,7 @@
       "declaration": "Plan.d.ts",
       "declarationSha256": "b7ea1255df0382a90a927d5519b72da17d257943fe5af9fda43d2842973fb8a2",
       "source": "packages/ts-release/src/Plan.ts",
-      "sourceSha256": "ca99ed5271366fd9da4789b45bbe2c3a00063fe478b33bf55059805ed9cac6f7"
+      "sourceSha256": "feb4aa5d2b33966ca8299471c2dcd134549b3b75121b9457d261865cd6dfac50"
     },
     {
       "declaration": "platform/Application.d.ts",
@@ -264,9 +325,9 @@
     },
     {
       "declaration": "Provider.d.ts",
-      "declarationSha256": "23039e0e166534afb2dda75d64c223832b86e51315b3e68c3831b452f1b455b2",
+      "declarationSha256": "59301feef0803fee4a8a2d48c1dbcdeec356cf8f40aa42c9193a69415bc2c4ee",
       "source": "packages/ts-release/src/Provider.ts",
-      "sourceSha256": "3bb6343e1a856e36e617bfd0554dd4855a60252db3c7018199f143c94c6e3d36"
+      "sourceSha256": "2e7035411f8403b6cb302947d5f5e584a88c30d6babfffd7fe28404a3934667b"
     },
     {
       "declaration": "pypi/Archive.d.ts",
@@ -338,7 +399,7 @@
       "declaration": "Release.d.ts",
       "declarationSha256": "ec479421ebe9aa89b2019fabdf61f6a0a6db56e0b7ea84d161c17da6f1bbf1ee",
       "source": "packages/ts-release/src/Release.ts",
-      "sourceSha256": "7b5533f12dfaf716a2b9a9319780f0639f8325cd95dadb1ccd64a74f597adec9"
+      "sourceSha256": "bec44c7dde4da63cabbb15651995291ed9aa0fb1ea656098e35bd20b0e352e7f"
     }
   ]
 }

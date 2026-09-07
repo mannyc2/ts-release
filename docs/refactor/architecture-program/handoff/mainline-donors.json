@@ -16,7 +16,13 @@
       "responsibility": "Authenticated recovery of hidden drafts",
       "donor": "PR31 a66b644; src/publication/github.ts",
       "requiredRegression": "Enumerate authenticated releases with bounds; require one exact-tag candidate and validate target/metadata; missing by-tag visibility never permits a fresh create.",
-      "status": "open"
+      "status": "verified-local",
+      "evidence": [
+        "test/reimplementation/github/protocol.test.ts",
+        "test/reimplementation/github/process.test.ts",
+        "docs/refactor/execution/W05-review.md"
+      ],
+      "qualification": "Complete authenticated enumeration, target/metadata checks, hidden-draft response loss and no second create. Actual hosted hidden-draft mutation acceptance remains W10/Plans009/010."
     },
     {
       "wave": "W10",

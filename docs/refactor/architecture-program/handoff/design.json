@@ -134,7 +134,8 @@
     "artifactReader": "docs/refactor/architecture-program/handoff/production-api/internal/ArtifactReader.d.ts",
     "git": "docs/refactor/architecture-program/handoff/production-api/Git.d.ts",
     "nodeHost": "docs/refactor/architecture-program/handoff/production-api/Node.d.ts",
-    "bunHost": "docs/refactor/architecture-program/handoff/production-api/Bun.d.ts"
+    "bunHost": "docs/refactor/architecture-program/handoff/production-api/Bun.d.ts",
+    "github": "docs/refactor/architecture-program/handoff/production-api/github/index.d.ts"
   },
   "modules": [
     {
@@ -1055,6 +1056,60 @@
       "dependencies": {},
       "files": [
         {
+          "name": "Auth",
+          "symbols": [
+            "authorizeToken"
+          ],
+          "dependencies": [
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
+            "provider.github.Wire"
+          ]
+        },
+        {
+          "name": "Binding",
+          "symbols": [],
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native"
+          ]
+        },
+        {
+          "name": "Evidence",
+          "symbols": [],
+          "dependencies": [
+            "kernel.Entry",
+            "provider.github.Binding",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Wire"
+          ]
+        },
+        {
+          "name": "Graph",
+          "symbols": [
+            "lightweightTag",
+            "annotatedTag",
+            "annotatedRef",
+            "draft",
+            "uploadAsset",
+            "publish"
+          ],
+          "dependencies": [
+            "kernel.Entry",
+            "provider.github.Model",
+            "provider.github.Native"
+          ]
+        },
+        {
           "name": "Model",
           "symbols": [
             "Repository",
@@ -1074,36 +1129,65 @@
             "AssetFacts"
           ],
           "dependencies": [
-            "kernel.Entry",
             "kernel.Bundle"
+          ]
+        },
+        {
+          "name": "Native",
+          "symbols": [],
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Model"
+          ]
+        },
+        {
+          "name": "Observe",
+          "symbols": [],
+          "dependencies": [
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Wire"
+          ],
+          "externalImports": [
+            "node:crypto"
           ]
         },
         {
           "name": "Protocol",
           "symbols": [
-            "lightweightTag",
-            "annotatedTag",
-            "annotatedRef",
-            "draft",
-            "uploadAsset",
-            "publish",
             "definitions"
           ],
           "dependencies": [
-            "provider.github.Model",
-            "kernel.Entry",
             "kernel.Bundle",
-            "kernel.Http"
+            "kernel.Entry",
+            "kernel.Http",
+            "provider.github.Binding",
+            "provider.github.Evidence",
+            "provider.github.Graph",
+            "provider.github.Model",
+            "provider.github.Native",
+            "provider.github.Observe",
+            "provider.github.Wire"
           ]
         },
         {
-          "name": "Auth",
-          "symbols": [
-            "authorizeToken"
-          ],
+          "name": "Wire",
+          "symbols": [],
           "dependencies": [
+            "kernel.Entry",
+            "provider.github.Binding",
+            "provider.github.Graph",
             "provider.github.Model",
-            "kernel.Http"
+            "provider.github.Native"
+          ],
+          "externalImports": [
+            "node:crypto"
           ]
         }
       ]
@@ -1332,6 +1416,6 @@
     "kernelAuthority": "production-api/index.d.ts",
     "emission": "production-api/emission.json",
     "generator": "scripts/project-production-api.ts",
-    "scope": "Actual emitted kernel declarations replace the research shape; remaining unimplemented authorities stay proposed. New internal tree/type/report owners correct concrete production admission and K01 gaps, without new packages or public entrypoints."
+    "scope": "Actual emitted kernel/npm/PyPI/GitHub and native host declarations replace their research shapes. Remaining unimplemented authorities retain proposals; no full-product package qualification is claimed."
   }
 }

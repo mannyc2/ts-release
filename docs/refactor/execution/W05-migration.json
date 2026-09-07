@@ -1,0 +1,508 @@
+{
+  "format": "ts-release/migration-execution/1",
+  "wave": "W05",
+  "status": "native-github-local-cutover",
+  "sourceCommit": "9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d",
+  "preservationCommit": "25de8c0d8a7593f0f311d21ae810f13b015e032e",
+  "physicalDeletedLines": 954,
+  "rows": [
+    {
+      "path": "src/publication/github.ts",
+      "sha256": "c7ea69ce971258343c7882f7415e3ece31231feefb0bec02fb598d7133bef4ce",
+      "owner": "github",
+      "wave": "W05",
+      "disposition": "delete-replaced-legacy-github-lifecycle",
+      "successors": [
+        "provider.github"
+      ],
+      "lines": 954,
+      "retiredDeclarations": [
+        {
+          "name": "githubApiVersion",
+          "kind": "VariableDeclaration",
+          "line": 59,
+          "sha256": "f4d1a75d8f7f869c30220fc0d2405967335a17566eed8b43052407f1c5d7e0fa",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "githubJsonHeaders",
+          "kind": "VariableDeclaration",
+          "line": 60,
+          "sha256": "868ee6febce4a9c74eb7719c12ae391f2d47aab0f3b4128add3e57ec0589e030",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "gitObjectSha",
+          "kind": "VariableDeclaration",
+          "line": 64,
+          "sha256": "9f0421f2ec11cc76118ff7b984565957623bacede77fd20a0c4cc794ac6db042",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "maximumTagDepth",
+          "kind": "VariableDeclaration",
+          "line": 65,
+          "sha256": "15276c70fb3228b1579ce89caf496cdd49c948c4887e38cab5059c35d2762a32",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "maximumAssetPages",
+          "kind": "VariableDeclaration",
+          "line": 66,
+          "sha256": "6cbbac859651c560c21dca9aea7434a7688099187243223478d4c85a5db8240a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "githubRecoveryCapabilityProfile",
+          "kind": "VariableDeclaration",
+          "line": 72,
+          "sha256": "470afc57068858c8afdbd9cad1e0cd990c1e24b67a37c02fd8423c9c68cacad7",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "RepositoryFacts",
+          "kind": "InterfaceDeclaration",
+          "line": 96,
+          "sha256": "c1e5efff6c86c98df11b2cdf3e48494bd90124eafc8428a0ca89f7a5d70d8580",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "GitObjectFacts",
+          "kind": "InterfaceDeclaration",
+          "line": 100,
+          "sha256": "0e81bb4be593e4a8b2f75360dc71e2e464a17788c01da4e7e0d1b539eef5b320",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "ReleaseFacts",
+          "kind": "InterfaceDeclaration",
+          "line": 105,
+          "sha256": "dbc24976cbf7cf99929581ca29caaf945e74c500484dd757df2e29ab69946933",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "ReleaseAssetFacts",
+          "kind": "InterfaceDeclaration",
+          "line": 115,
+          "sha256": "3eb03a9339bd838483a7ff2d6958302fc134d7038d954826c89a31da32bb6010",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "GithubMutationPlan",
+          "kind": "TypeAliasDeclaration",
+          "line": 127,
+          "sha256": "6f714bc87e6827a71ca685eb6d2bbef858a861c4ef09d3bc459bd20dc79ecb14",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "PageResult",
+          "kind": "TypeAliasDeclaration",
+          "line": 139,
+          "sha256": "d9a2f73466515d72dcb5dbb3da95b9897f8519a3c439c17e9c6388acc792c3c4",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "asObject",
+          "kind": "VariableDeclaration",
+          "line": 143,
+          "sha256": "f3058a8b355a3d04ae2f4269a6625b542cdb021d505c83e0aaf93957145f656b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "asString",
+          "kind": "VariableDeclaration",
+          "line": 148,
+          "sha256": "44bb6160a12855eb092f03ba1fe67ff8be0ec9613843cf6de2c01fa9b2e0a551",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "asNonEmptyString",
+          "kind": "VariableDeclaration",
+          "line": 151,
+          "sha256": "1584194e456141e784399e607d98264532dee0ffc2166498ca9c4a25872e18de",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "asBoolean",
+          "kind": "VariableDeclaration",
+          "line": 154,
+          "sha256": "551a1e5b1cfe8f3dc3df9260bf5172ef716c62a6b41bb04b9d40db4f7f051ba7",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "asNonNegativeSize",
+          "kind": "VariableDeclaration",
+          "line": 157,
+          "sha256": "177d4ef894521d1ed1f206174ee6f42890cef8789506c8a16f6f1dd731969340",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "asPositiveId",
+          "kind": "VariableDeclaration",
+          "line": 160,
+          "sha256": "680224747c6ce6cd3f7d017df4845fc874a6352d764c4d7e11f0e0d43ebeba6e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "parseJson",
+          "kind": "VariableDeclaration",
+          "line": 163,
+          "sha256": "786184df21f0e206ec71d007ba3862eab84816cffc0a79a978279bde23af4d59",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "responseHeader",
+          "kind": "VariableDeclaration",
+          "line": 174,
+          "sha256": "1c0267c760359ed1fc23e19b64a884598b02c355ffc9d84ae088f3c352a33451",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "repositoryFacts",
+          "kind": "VariableDeclaration",
+          "line": 179,
+          "sha256": "8617c1f5b069f413573353fbfd315f30987036840d9e86bc542a1eb024aec7b8",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "gitObjectFacts",
+          "kind": "VariableDeclaration",
+          "line": 185,
+          "sha256": "a98ad0116007713fc6229c10b21bd67a0a9e1739ae57af865408c6ed4152c465",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "parseRef",
+          "kind": "VariableDeclaration",
+          "line": 194,
+          "sha256": "a8c88e12e88dedba5c0e155823d0e2e2d56bdfbcf7aa6baa884b0658dac4aaa3",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "parseTagObject",
+          "kind": "VariableDeclaration",
+          "line": 202,
+          "sha256": "214619d8f30dad5a266ae02fbe0772c13fdf387bed48d0eaa586ab76659d0495",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "releaseFacts",
+          "kind": "VariableDeclaration",
+          "line": 210,
+          "sha256": "d891fcdc9ebcf53936a09b62b62030ec85e2b526c85395562b15235b04b16115",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "releaseAssetApiUrl",
+          "kind": "VariableDeclaration",
+          "line": 225,
+          "sha256": "46c322aab819672f1d7ba335bccf38798c8d1e60693428279ffc4117d654e00e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "releaseAssetDigest",
+          "kind": "VariableDeclaration",
+          "line": 235,
+          "sha256": "cae7f54b44d1b95700da22be01a7129c5c495579da226c2e05b62e13b680ae6d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "releaseAssetFacts",
+          "kind": "VariableDeclaration",
+          "line": 246,
+          "sha256": "ff906bf3277af74bc88e0a1e0a9d4b252778f6c7764d12e8f5520ec567bd7e32",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "observationRequests",
+          "kind": "VariableDeclaration",
+          "line": 268,
+          "sha256": "aac044f6b60c0e60ce6f560f89ad85223d5dd0dec3c347a83d0bcea5f20946ec",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "mutationRequest",
+          "kind": "VariableDeclaration",
+          "line": 282,
+          "sha256": "d855f5fd73abdc76d0a6191cec4c27202d41ffd61509c581fb2cdc8290377ea8",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "valueFingerprint",
+          "kind": "VariableDeclaration",
+          "line": 291,
+          "sha256": "2e96f39985a808cc937452335263e6e87bab7cbc64e25bdf6ed5102da6f9bb22",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "textDifference",
+          "kind": "VariableDeclaration",
+          "line": 296,
+          "sha256": "674506469d124c51602993d246c0b6a4dd7f8b829b77b2f2f1105e3e500d4b60",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "scalarDifference",
+          "kind": "VariableDeclaration",
+          "line": 306,
+          "sha256": "070ef8392a70d83d632c231a4ec37e37d907b33c896abfe7ebb40e866f674f3b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "inconclusive",
+          "kind": "VariableDeclaration",
+          "line": 316,
+          "sha256": "36fe503097329a8646de2e290cfd30ee6f479758292e979c95c10534b8f1e23c",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "pending",
+          "kind": "VariableDeclaration",
+          "line": 324,
+          "sha256": "b5817dee252922a26bd8198d6a34a2d5155cd49c6f22e3c5de5eb6705dc9e124",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "absent",
+          "kind": "VariableDeclaration",
+          "line": 336,
+          "sha256": "caa8b3737c47d946ddb738f0039cad6065c876edd72fb7b6f2fed982257ad38a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "observationFailure",
+          "kind": "VariableDeclaration",
+          "line": 348,
+          "sha256": "3c6c26f6ae44b9c4cec8f1dc36e355294e4615859eab1cf1d5c9487d06864ceb",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "mapObservationError",
+          "kind": "VariableDeclaration",
+          "line": 359,
+          "sha256": "4e6825421bb9ed5a678a09ac4a4f96a5b3d4ef1c1e58dc25c13a02a9403f5d10",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "get",
+          "kind": "VariableDeclaration",
+          "line": 368,
+          "sha256": "69b72819cdcd227bf111217a9108a0215e702d7ed5aeb549e30412d3786295c4",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "releaseUrl",
+          "kind": "VariableDeclaration",
+          "line": 381,
+          "sha256": "585bd0117cd6f8eafd2a2abc3ae430fcef7258056112552986f9858fca56efc0",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "refUrl",
+          "kind": "VariableDeclaration",
+          "line": 384,
+          "sha256": "a37c2ac2d27739fe0e0ddc2dce88b0c728b0f971cec1d18b2c72e7cef3ea4981",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "tagObjectUrl",
+          "kind": "VariableDeclaration",
+          "line": 387,
+          "sha256": "e8ab1f6ce03c23a7916a793aca1ea500efecc580072368ee470c38a941a21692",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "assetsPageUrl",
+          "kind": "VariableDeclaration",
+          "line": 390,
+          "sha256": "f95e385c5f49cd962260f1ed1e0eb281fff8fac707966dd55178e2424621ffff",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "linkNextUrl",
+          "kind": "VariableDeclaration",
+          "line": 396,
+          "sha256": "bb2293a35e6942221ac606896ed0f99cb4d05d726697ba29982db877915a10d8",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "listAllAssets",
+          "kind": "VariableDeclaration",
+          "line": 404,
+          "sha256": "d69747d34416b5b56657d7d1e7d25351e93096fb0e511bc02a771c4e8537cce6",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "compareReleaseMetadata",
+          "kind": "VariableDeclaration",
+          "line": 452,
+          "sha256": "26513367be3181b0d345910fb43ded4c99026027a4cfa3da14447a5a0f3cdcaa",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "validateUploadUrl",
+          "kind": "VariableDeclaration",
+          "line": 474,
+          "sha256": "75083fc3f677de04ce97be8933213a059018bee1f388ff61c07aaf2c830dd571",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "presentDifferent",
+          "kind": "VariableDeclaration",
+          "line": 481,
+          "sha256": "c089ed4832a4c6ee76babf5765930a9985c0bf32ff21ddae55a3e7dd82969eb1",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "decideFor",
+          "kind": "VariableDeclaration",
+          "line": 489,
+          "sha256": "e5a19d9d2d20a0388971f6ba52233ccf34ab2079cdd909653ae2af00642819b1",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "mutationFailure",
+          "kind": "VariableDeclaration",
+          "line": 537,
+          "sha256": "75bd2d746a072ac06beae08386a49babfbd64bf1b63c4420d393bb5f4b0f5337",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "unknownAttempt",
+          "kind": "VariableDeclaration",
+          "line": 548,
+          "sha256": "dadbe12d64172a089372b05daa551816f3075457732094bcfb4363a00d9eb16e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "appliedAttempt",
+          "kind": "VariableDeclaration",
+          "line": 556,
+          "sha256": "afb9aa520d1aa502c7c1561ba36448a1f9f39fccd90066137867869ed09db5f5",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "MutationExchange",
+          "kind": "TypeAliasDeclaration",
+          "line": 564,
+          "sha256": "bfb9399ab4118a0a5f925f300555f3d69420d32535d5b376f6af9e8e239d4dee",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "executeMutation",
+          "kind": "VariableDeclaration",
+          "line": 571,
+          "sha256": "253443d4977ab46d81c83df772c15355c28520396da85121d25e05a02d994e8e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "uploadRequest",
+          "kind": "VariableDeclaration",
+          "line": 581,
+          "sha256": "471e738200db7cb5e0ade1cf2713dc01c07aea6c0f959c456ea85aa9e3d5b478",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        },
+        {
+          "name": "makeGithubSubjects",
+          "kind": "VariableDeclaration",
+          "line": 608,
+          "sha256": "97dabe185be4da24c0b765c1d964e1431cc1402b360dfe07bb70261edf6e1d4d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "github"
+        }
+      ],
+      "successorPaths": [
+        "packages/github/src/Model.ts",
+        "packages/github/src/Graph.ts",
+        "packages/github/src/Binding.ts",
+        "packages/github/src/Protocol.ts",
+        "packages/github/src/Wire.ts",
+        "packages/github/src/Evidence.ts",
+        "packages/github/src/Observe.ts",
+        "packages/github/src/Auth.ts",
+        "packages/ts-release/src/Release.ts"
+      ],
+      "nativeCarryForwardWaves": [
+        "W10"
+      ]
+    }
+  ],
+  "nativeCarryForward": [
+    {
+      "wave": "W10",
+      "files": [
+        "src/publication/github.ts"
+      ],
+      "responsibility": "Compose actual CLI/Action/self-release GitHub declarations and credentials, bounded read-convergence policy and native hosted tag/draft/asset/publication acceptance through real release surfaces. Retain partial publication facts; no blind retries or fabricated server locks. AllD03outcomes remain launch-open until Plans009/010 native certification.",
+      "status": "open"
+    }
+  ],
+  "evidence": [
+    "docs/refactor/execution/W05.md",
+    "docs/refactor/execution/W05-review.md",
+    "docs/refactor/execution/W05-native-reads.json",
+    "test/reimplementation/github",
+    "docs/refactor/execution/W05-packed-providers.json"
+  ],
+  "limits": [
+    "Hosted existing-release GET and checksum download pass; new hosted mutations remain final native acceptance",
+    "Local HTTP protocol bridge plus real Git journal and Node/Bun SIGKILL restart; not the real GitHub server or native HTTP mutation transport",
+    "All69selected launch outcomes remain open",
+    "No additional baseline credit from PR21/PR22/overlay donors"
+  ]
+}

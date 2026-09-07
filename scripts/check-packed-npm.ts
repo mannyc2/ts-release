@@ -5,9 +5,15 @@ import { tmpdir } from "node:os"
 import { createHash } from "node:crypto"
 const root = resolve(import.meta.dir, ".."),
   work = await mkdtemp(join(tmpdir(), "ts-release-packed-npm-"))
-const includePyPi = process.argv.includes("--pypi")
+const includeGithub = process.argv.includes("--github")
+const includePyPi = process.argv.includes("--pypi") || includeGithub
 const includeTransports = process.argv.includes("--transports")
-const owners = includePyPi ? ["ts-release", "npm", "pypi"] : ["ts-release", "npm"]
+const owners = [
+  "ts-release",
+  "npm",
+  ...(includePyPi ? ["pypi"] : []),
+  ...(includeGithub ? ["github"] : []),
+]
 const node = process.env.TS_RELEASE_ACCEPTANCE_NODE ?? "node"
 const commands: unknown[] = []
 async function run(cwd: string, argv: string[], environment: Record<string, string> = {}) {
@@ -93,6 +99,7 @@ for (const manager of ["bun", "npm"]) {
         "@mannyc1/ts-release": `file:${archives[0]!.archive}`,
         "@mannyc1/ts-release-npm": `file:${archives[1]!.archive}`,
         ...(includePyPi ? { "@mannyc1/ts-release-pypi": `file:${archives[2]!.archive}` } : {}),
+        ...(includeGithub ? { "@mannyc1/ts-release-github": `file:${archives[3]!.archive}` } : {}),
         effect: "4.0.0-beta.107",
         typescript: "6.0.3",
       },
@@ -159,6 +166,23 @@ for (const manager of ["bun", "npm"]) {
         `import * as PyPi from "@mannyc1/ts-release-pypi";\nconst pythonProviders: readonly HttpProviderDefinition[] = PyPi.definitions(null as never);\nconst pythonIntent: PyPi.UploadIntent = null as never;\nvoid [pythonProviders, pythonIntent, PyPi.inspectDistribution, PyPi.author, PyPi.upload, PyPi.authorizeToken, PyPi.authorizeTrusted];\n`,
     )
   }
+  if (includeGithub) {
+    await writeFile(
+      join(cwd, "github-consumer.mjs"),
+      await readFile(join(root, "test/reimplementation/github/packed-consumer.mjs")),
+    )
+    await writeFile(
+      join(cwd, "consumer.ts"),
+      (await readFile(join(cwd, "consumer.ts"), "utf8")) +
+        `
+import * as GitHub from "@mannyc1/ts-release-github";
+const githubProviders: readonly HttpProviderDefinition[] = GitHub.definitions(null as never);
+const asset: GitHub.AssetIntent = null as never;
+const tagSource: GitHub.TagSource = new GitHub.ExistingTag({ commit: "a".repeat(40) });
+void [githubProviders, asset, tagSource, GitHub.Repository, GitHub.Tagger, GitHub.LightweightTag, GitHub.AnnotatedTag, GitHub.AnnotatedRef, GitHub.ManagedTag, GitHub.DraftIntent, GitHub.PublishIntent, GitHub.AnnotatedTagFacts, GitHub.RefFacts, GitHub.ReleaseFacts, GitHub.AssetFacts, GitHub.lightweightTag, GitHub.annotatedTag, GitHub.annotatedRef, GitHub.draft, GitHub.uploadAsset, GitHub.publish, GitHub.authorizeToken];
+`,
+    )
+  }
   if (includeTransports) {
     for (const name of [
       "git-native-consumer.mjs",
@@ -207,6 +231,9 @@ void [gitHost, gitOptions, journalOptions, readHttp, exchange, Git.prepare, Git.
           ]),
         ),
       )
+  if (includeGithub)
+    for (const runtime of [node, process.execPath])
+      runtimes.push(JSON.parse(await run(cwd, [runtime, "github-consumer.mjs"])))
   if (includeTransports)
     for (const runtime of [node, process.execPath]) {
       runtimes.push(
@@ -251,7 +278,7 @@ const receipt = {
 await writeFile(
   join(
     root,
-    `docs/refactor/execution/${includeTransports ? "current-packed-transports" : includePyPi ? "current-packed-providers" : "current-packed-npm"}.json`,
+    `docs/refactor/execution/${includeGithub ? "current-packed-github" : includeTransports ? "current-packed-transports" : includePyPi ? "current-packed-providers" : "current-packed-npm"}.json`,
   ),
   JSON.stringify(receipt, null, 2) + "\n",
 )

@@ -18,7 +18,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "a4bed27d51dec682f937edac089c8bdb8028ef9c1efba7e85735ecfddc7d8e8f"
+    "sha256": "4254c55386d977c4d33919087cfba612b3e4558ab7361db823f7fa1ecfc596ad"
   },
   "authorityBindings": {
     "kernel": {
@@ -84,6 +84,10 @@
     "bunHost": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Bun.d.ts",
       "sha256": "c751957811c02883541f365ad272b2b0d2dc90c6822c5d1057ef7035f7fee5f1"
+    },
+    "github": {
+      "path": "docs/refactor/architecture-program/handoff/production-api/github/index.d.ts",
+      "sha256": "7ccbff55c8c509a0aa1837eb83184a647ed52a39584de25ee62586f850ce254f"
     }
   },
   "symbols": [
@@ -218,7 +222,7 @@
       "declarations": [
         {
           "line": 47,
-          "sha256": "72fccbd1e379ba608db980f8f2d1d9ebba6088426bafb41772203bb4c75034a1"
+          "sha256": "b88eaa5c51ea5e5e62598e106b552be985dfb881eeb9bb49b736f9df17a5b725"
         }
       ]
     },
@@ -232,8 +236,8 @@
       ],
       "declarations": [
         {
-          "line": 64,
-          "sha256": "43e099108382e0b487bf14653093df668b6f23f9e5a968dd83b832165b09b3ee"
+          "line": 68,
+          "sha256": "592a90e5871844531ded98fde6f7be11478e3e1fa20fd714f297401463e7dcba"
         }
       ]
     },
@@ -247,7 +251,7 @@
       ],
       "declarations": [
         {
-          "line": 65,
+          "line": 71,
           "sha256": "a0260d82c11dd5feab3269e83ea6ae8096359401597ac8a923ac81ba4e01420c"
         }
       ]
@@ -262,7 +266,7 @@
       ],
       "declarations": [
         {
-          "line": 66,
+          "line": 72,
           "sha256": "e6a8a862ab6c565ac412b4bb9a96361e385cb80d273efeb9cb0cb867400985bc"
         }
       ]
@@ -277,7 +281,7 @@
       ],
       "declarations": [
         {
-          "line": 67,
+          "line": 73,
           "sha256": "00d604f20de41237a7aed9df219c23b19b89e321e01ae1529c3a45b0cf2555ef"
         }
       ]
@@ -292,7 +296,7 @@
       ],
       "declarations": [
         {
-          "line": 69,
+          "line": 75,
           "sha256": "a202619833f04c641bc5716596060969705647b0e08e05e87fb861fe637f82f5"
         }
       ]
@@ -1208,8 +1212,8 @@
       ],
       "declarations": [
         {
-          "line": 78,
-          "sha256": "f9b342cd11c0a4c284b3569f9418f5fd1e16863b22dcc73f3b5d185f1b590659"
+          "line": 12,
+          "sha256": "2830c04e000047b79e1412f52a951bec71c84d35bce5f5914eb6a8ee37dbf981"
         }
       ]
     },
@@ -1224,8 +1228,8 @@
       ],
       "declarations": [
         {
-          "line": 85,
-          "sha256": "f338db16f6c5ced215fd29e43a8e7176b1286f01df56229aa8285a6e603389bc"
+          "line": 19,
+          "sha256": "491e438dc0d4bfa94fb4fbf4a83a9b76c07490a927e60c34b25b717e3e85ce28"
         }
       ]
     },
@@ -1240,8 +1244,8 @@
       ],
       "declarations": [
         {
-          "line": 93,
-          "sha256": "154fdbc7194c3f2543a946fe0a1f8356aaa8dca763cad937c3c00549d2f5a7a3"
+          "line": 27,
+          "sha256": "d824f87e91b9536132c3d2f238cc7408bb749de5c2b16c0f3f548720985a38d2"
         }
       ]
     },
@@ -1256,8 +1260,8 @@
       ],
       "declarations": [
         {
-          "line": 103,
-          "sha256": "60dcde972f67b460891ae11346f2d8c3dadfd88c646cebff605fa735eeb74830"
+          "line": 37,
+          "sha256": "0914334bacab746621bcc0b3066829fa76d07291d1c5d357348c556301b4104d"
         }
       ]
     },
@@ -1272,8 +1276,8 @@
       ],
       "declarations": [
         {
-          "line": 111,
-          "sha256": "e2330f93b2c4743f25736779a7ee93719ac521c54ecafbd40739b5024ad80f10"
+          "line": 45,
+          "sha256": "3dc8f1cfee0e26ceac7b50bc90fa78c134cd02b74e18a9a72f743374a1e5f572"
         }
       ]
     },
@@ -1288,8 +1292,8 @@
       ],
       "declarations": [
         {
-          "line": 116,
-          "sha256": "ce6570e4109b7907d6a9e1438ceb290f8799078b78a52c5fc0a56fb11117ecc3"
+          "line": 50,
+          "sha256": "d78a888e64a3905df03a237d6411e2637cd2250ecf03a2fe35f01de2473832bc"
         }
       ]
     },
@@ -1304,8 +1308,8 @@
       ],
       "declarations": [
         {
-          "line": 121,
-          "sha256": "4c75dc2166f350c8c1c3ed3b99abcef4411f4aa5b15f4e174e5b8f17de9e5b57"
+          "line": 55,
+          "sha256": "77b4cd39dfddd7490339d7c71d10fc58553fa915739d3e2e5452adb844cedf82"
         }
       ]
     },
@@ -1320,11 +1324,11 @@
       ],
       "declarations": [
         {
-          "line": 123,
-          "sha256": "391e265edadcc994341ebcabbe77c8d22e605a5ad2c2108c85794b0be5c976dd"
+          "line": 57,
+          "sha256": "6238cb3e079404e2865d412321b5a8273265c2c0a95a2ce2c315951cf3da50b3"
         },
         {
-          "line": 124,
+          "line": 58,
           "sha256": "3de4ae3c95f2ecdf3268955253b66e7d5c9c69ff06d9273c6d8695e108f98967"
         }
       ]
@@ -1340,8 +1344,8 @@
       ],
       "declarations": [
         {
-          "line": 134,
-          "sha256": "ef2b7ef0f2cb3bc6737a923af86e4295917367763fd75950dc4e111623feeb6a"
+          "line": 68,
+          "sha256": "be350139a8e5c244cbbb7c4c678064f8770ce7940c5adb6f2132050adeeeb448"
         }
       ]
     },
@@ -1356,8 +1360,8 @@
       ],
       "declarations": [
         {
-          "line": 144,
-          "sha256": "34ae4478b768025bd262db487bbf48f04906939b8536340f755d6de060bfed6b"
+          "line": 78,
+          "sha256": "07d1f2edbac1d704221a83e9394b45f15723ded844395dccf014a9408012c536"
         }
       ]
     },
@@ -1372,8 +1376,8 @@
       ],
       "declarations": [
         {
-          "line": 152,
-          "sha256": "08682622e3d3dc43fe52d5bc4883004b3340ee2a584bb190d21c883c07905883"
+          "line": 86,
+          "sha256": "1ebf111b8ab832ee3115ae245ea6101bd3a8be506ae14b22a47b992ac3a1eb94"
         }
       ]
     },
@@ -1388,8 +1392,8 @@
       ],
       "declarations": [
         {
-          "line": 162,
-          "sha256": "afe9075f128b69459988ded1fda9a68acb09a359dc6801a6e76f61ce035d7003"
+          "line": 96,
+          "sha256": "3217c61dcb847ddb4687715ea9ad73325ccf6c66b61e45efe918d8e0c5c59cd5"
         }
       ]
     },
@@ -1404,8 +1408,8 @@
       ],
       "declarations": [
         {
-          "line": 169,
-          "sha256": "1612b5dbab7410368dd2e3530fe36c0e881a7f0bbd3f9b4d131b7ab6e62e57f2"
+          "line": 103,
+          "sha256": "0f4b678a5e5d050ba8ef6063a1e7d6815f070c2ddcc14d923926a4afcb31e681"
         }
       ]
     },
@@ -1420,8 +1424,8 @@
       ],
       "declarations": [
         {
-          "line": 177,
-          "sha256": "e817bf43d065c3d5d0b8bead053035d28d50bded2c00d7a61171f3c5d725b532"
+          "line": 114,
+          "sha256": "bded0addb2190c87a1ee89df8602b27f4843746200d0569e3f9ab6a92101f7ee"
         }
       ]
     },
@@ -1436,8 +1440,8 @@
       ],
       "declarations": [
         {
-          "line": 189,
-          "sha256": "bbc3320e25b1792e418e2cbf4fdeed4c6e4d7b6fb022c4ca0ac3a2ac7febc40e"
+          "line": 126,
+          "sha256": "66109a726c91c5823e371598b7687ff52353e96c85522b2a19cde49199bafd43"
         }
       ]
     },
@@ -1451,8 +1455,8 @@
       ],
       "declarations": [
         {
-          "line": 191,
-          "sha256": "d154e5fffaec87aaea03973d97cf28e1581880fbf220b24fa7a84f2c775ef680"
+          "line": 40,
+          "sha256": "b3706d27cd2adf56454d4da8fbe344abd1fd0e0a117b49318890e6db16f877aa"
         }
       ]
     },
@@ -1466,8 +1470,8 @@
       ],
       "declarations": [
         {
-          "line": 192,
-          "sha256": "800f9312f7ca3520bd2ea0a9b449e795f1450d22bbb91bd99a96b0ed0267c31e"
+          "line": 41,
+          "sha256": "0545b3ccfdc066d0e36b0bf3e5a4268b92dfb2660b644364071fbc39c212c94b"
         }
       ]
     },
@@ -1481,8 +1485,8 @@
       ],
       "declarations": [
         {
-          "line": 194,
-          "sha256": "1e3a1668e23171ef4a59102c0f516f31c8fff602f7c99e156b4786d09d862a57"
+          "line": 42,
+          "sha256": "de2b15fc33e20496636f1ddbf1e188ade08563f53adf7ac40cac8da7f0bdb428"
         }
       ]
     },
@@ -1496,8 +1500,8 @@
       ],
       "declarations": [
         {
-          "line": 195,
-          "sha256": "d164c307c5f46012e15e77f437c4e23d4649a69564d8f9518bd88bd7b80d538b"
+          "line": 43,
+          "sha256": "0221bd9a52350126a8b2c6925339e1c1634688947b6b7e5cd3e85ddef5ec6d1d"
         }
       ]
     },
@@ -1511,8 +1515,8 @@
       ],
       "declarations": [
         {
-          "line": 196,
-          "sha256": "096cc8d6a63e6fa3a5b72a93d589c536f260fb744b27c991289d8e0ae2617191"
+          "line": 44,
+          "sha256": "6d98cc9fa87427b0c6aaab6cd36016c743e665d82b5aa3eed160ca64d10e3db7"
         }
       ]
     },
@@ -1526,8 +1530,8 @@
       ],
       "declarations": [
         {
-          "line": 197,
-          "sha256": "f429402a7d0e5aef56e009a9047de5206715d4048c468f9aa0df75f4b3bd9060"
+          "line": 45,
+          "sha256": "39ced47718891518d7aed7e306bff7addcd42117760ef12bc5538ed6b53a31cf"
         }
       ]
     },
@@ -1541,8 +1545,8 @@
       ],
       "declarations": [
         {
-          "line": 198,
-          "sha256": "6c66dd1311bde3a2deedb9768e7b8355452257c152d4f3365742b0d62180b639"
+          "line": 3,
+          "sha256": "d6650aec051d8bd4afdf2ec4e69108e5a7516ce0def88f0cfbfeaa53da57e6a8"
         }
       ]
     },
@@ -1556,8 +1560,8 @@
       ],
       "declarations": [
         {
-          "line": 201,
-          "sha256": "559bcaa90286d87a38d9d9f79996b6b3ef982087bbd89172d2374b56b881572b"
+          "line": 7,
+          "sha256": "b1d75afec6f81263b5c32d1605827cdaa2f709fed7dfb5d26cfbf5d883bb6b44"
         }
       ]
     },
@@ -6170,6 +6174,41 @@
       "entry": "provider.github",
       "symbols": [
         {
+          "declaration": "provider:GitHub.authorizeToken",
+          "name": "authorizeToken",
+          "module": "provider.github.Auth"
+        },
+        {
+          "declaration": "provider:GitHub.lightweightTag",
+          "name": "lightweightTag",
+          "module": "provider.github.Graph"
+        },
+        {
+          "declaration": "provider:GitHub.annotatedTag",
+          "name": "annotatedTag",
+          "module": "provider.github.Graph"
+        },
+        {
+          "declaration": "provider:GitHub.annotatedRef",
+          "name": "annotatedRef",
+          "module": "provider.github.Graph"
+        },
+        {
+          "declaration": "provider:GitHub.draft",
+          "name": "draft",
+          "module": "provider.github.Graph"
+        },
+        {
+          "declaration": "provider:GitHub.uploadAsset",
+          "name": "uploadAsset",
+          "module": "provider.github.Graph"
+        },
+        {
+          "declaration": "provider:GitHub.publish",
+          "name": "publish",
+          "module": "provider.github.Graph"
+        },
+        {
           "declaration": "provider:GitHub.Repository",
           "name": "Repository",
           "module": "provider.github.Model"
@@ -6245,44 +6284,9 @@
           "module": "provider.github.Model"
         },
         {
-          "declaration": "provider:GitHub.lightweightTag",
-          "name": "lightweightTag",
-          "module": "provider.github.Protocol"
-        },
-        {
-          "declaration": "provider:GitHub.annotatedTag",
-          "name": "annotatedTag",
-          "module": "provider.github.Protocol"
-        },
-        {
-          "declaration": "provider:GitHub.annotatedRef",
-          "name": "annotatedRef",
-          "module": "provider.github.Protocol"
-        },
-        {
-          "declaration": "provider:GitHub.draft",
-          "name": "draft",
-          "module": "provider.github.Protocol"
-        },
-        {
-          "declaration": "provider:GitHub.uploadAsset",
-          "name": "uploadAsset",
-          "module": "provider.github.Protocol"
-        },
-        {
-          "declaration": "provider:GitHub.publish",
-          "name": "publish",
-          "module": "provider.github.Protocol"
-        },
-        {
           "declaration": "provider:GitHub.definitions",
           "name": "definitions",
           "module": "provider.github.Protocol"
-        },
-        {
-          "declaration": "provider:GitHub.authorizeToken",
-          "name": "authorizeToken",
-          "module": "provider.github.Auth"
         }
       ]
     },

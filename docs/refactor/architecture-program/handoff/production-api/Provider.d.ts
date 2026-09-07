@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { ObservationRecorded, ObservationStatus, Operation, RequestFacts } from "./internal/ReleaseModel.js";
+import { ObservationRecorded, ObservationStatus, Operation, type JournalEvent, type Plan, RequestFacts } from "./internal/ReleaseModel.js";
 import { ReleaseError } from "./internal/Error.js";
 /** Provider contract version spoken by this kernel. A definition built against another contract is rejected at Host verification, whatever the installer resolved. */
 export declare const PROVIDER_CONTRACT: "ts-release/provider/1";
@@ -49,6 +49,10 @@ export interface ProviderDefinition {
     readonly definitionId: string;
     readonly intentVersion: string;
     readonly intentCodec: Schema.Codec<unknown, unknown>;
+    /** Pure complete-graph admission, before storage, reads, credentials or sends. */
+    readonly validatePlan?: (operations: ReadonlyArray<Operation>) => void;
+    /** Pure binding to already-validated declared dependency evidence. No dispatch permission. */
+    readonly requestCorresponds?: (operation: Operation, request: RequestFacts, context: ProviderContext) => boolean;
     readonly receiptVersion: string;
     readonly receiptCodec: Schema.Codec<unknown, unknown>;
     readonly receiptCorresponds: (operation: Operation, request: RequestFacts, receipt: unknown) => boolean;
@@ -57,11 +61,13 @@ export interface ProviderDefinition {
     readonly rejection?: NativeFailureBoundary;
     readonly observationVersion?: string;
     readonly observationCodec?: Schema.Codec<unknown, unknown>;
-    readonly classifyObservation?: (operation: Operation, evidence: unknown, acceptedReceipts: ReadonlyArray<unknown>) => ObservationStatus;
+    readonly classifyObservation?: (operation: Operation, evidence: unknown, acceptedReceipts: ReadonlyArray<unknown>, context: ProviderContext) => ObservationStatus;
     readonly prepare: (operation: Operation, context: ProviderContext) => Effect.Effect<PreparedRequest, ReleaseError>;
     readonly observe?: (operation: Operation, context: ProviderContext) => Effect.Effect<Observation, ReleaseError>;
 }
-export type ProviderDescriptor = Pick<ProviderDefinition, "definitionId" | "intentVersion" | "intentCodec">;
+export type ProviderDescriptor = Pick<ProviderDefinition, "definitionId" | "intentVersion" | "intentCodec" | "validatePlan">;
+/** A projection of a validated prefix only; later events cannot justify earlier requests. */
+export declare const evidenceContext: (plan: Plan, operation: Operation, history: ReadonlyArray<JournalEvent>) => ProviderContext;
 export type Json = Schema.Json;
 export type OperationId = string;
 export type Author<A> = (input: A, dependsOn?: readonly OperationId[]) => Effect.Effect<Operation, ReleaseError>;

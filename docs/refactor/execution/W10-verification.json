@@ -2,14 +2,14 @@
   "format": "ts-release/wave-verification/1",
   "wave": "W10",
   "status": "locally-qualified-candidate-not-hosted-or-final-certification",
-  "observedAt": "2026-09-08T08:27:04.603Z",
+  "observedAt": "2026-09-08T15:20:21.735Z",
   "commands": {
     "direct": 11,
     "tests": 287,
-    "assertions": 3036,
+    "assertions": 3040,
     "testFiles": 51,
     "focusedTests": 5,
-    "focusedAssertions": 54,
+    "focusedAssertions": 58,
     "focusedTestFiles": 2,
     "producerCells": 4,
     "producerChecks": 780,
@@ -32,13 +32,13 @@
     "packedPackageRuntimeOutcomes": 60,
     "catalogCommands": 74
   },
-  "kernelArchiveSha256": "2636c823d7e976791818263349525fdf67de2f86aca61a899477d9eac9640320",
-  "actionLauncherSha256": "0d4d4fa28f3e22da95cee72fc9f31502456654d653f9d2d4938c167e45ff84b1",
+  "kernelArchiveSha256": "a8b8d9dafe4efe2df0ff13f642cb0cdfdf8da40b0e7a1b2bfe48e1ba0947ca32",
+  "actionLauncherSha256": "937cab71641211ecd1fa3a027b7f8c7a14f10bc367370e8bd09b2fa0332fe719",
   "architectureFiles": 301,
   "productionSourceFiles": 93,
   "productionDeclarationOwners": 90,
   "productionImportFiles": 92,
-  "productionImportEdges": 619,
+  "productionImportEdges": 618,
   "logicalModules": 93,
   "publicSymbols": 336,
   "implementedPackages": 7,
@@ -46,13 +46,13 @@
   "selectedOutcomes": 69,
   "openOutcomes": 69,
   "propositions": 226,
-  "replacementLines": 11485,
+  "replacementLines": 11484,
   "remainingLegacyLines": 0,
-  "physicalProductLines": 11485,
+  "physicalProductLines": 11484,
   "metadataLines": 694,
   "productDataLines": 789,
   "productDataBytes": 15973,
-  "generatedDeliveryLines": 20263,
+  "generatedDeliveryLines": 20229,
   "mcpModelDeclarationLines": 1655,
   "mcpModelDeclarationBytes": 90532,
   "ceiling": 11485,
@@ -76,17 +76,17 @@
     {
       "path": "docs/refactor/execution/W10-source-result.json",
       "bytes": 1573,
-      "sha256": "8356d3f650eef0c0e263b64bc6c2df547d32286a3a7db7379a949a3ad81a9f0b"
+      "sha256": "cecf888cab30b9c3053dbf756bde0dd52ecbbd86e01fe1caf2b3917215312844"
     },
     {
       "path": "docs/refactor/execution/source-measurement.json",
       "bytes": 126537,
-      "sha256": "100f5aca9ba80c40ad41c5a1178b18851601e4ee23ac96dc7935e53d4f8de884"
+      "sha256": "cbf9a10e9e43afe660a6949f41c3b6f67494109ddd21967c665460419f34305b"
     },
     {
       "path": "docs/refactor/execution/W10-review.md",
-      "bytes": 4730,
-      "sha256": "9a48634d311166b48cf9aed3a7846dfcab3190183b753a1e0b6f7da7c5d5ed7f"
+      "bytes": 5558,
+      "sha256": "251328d0db2a7abe06d4d06127ff41ef9201a26bfed881f8463f680e3b325932"
     },
     {
       "path": "docs/refactor/execution/progress.json",
@@ -95,13 +95,13 @@
     },
     {
       "path": "docs/refactor/execution/current-packed-external.json",
-      "bytes": 28813,
-      "sha256": "be8acdafbc41620ef6e484c1b5a4268da84c587ec175d5e70089270b12e5dab4"
+      "bytes": 29351,
+      "sha256": "50ddd675489c7413095040871f0d671f2e5e009b4a5a9a5bedad4257e723c8dd"
     },
     {
       "path": "docs/refactor/execution/current-packed-action.json",
       "bytes": 3920,
-      "sha256": "6a71c411d9f1863019d7a0c2e69a3e703365a87bac688b3a1b09f3dc4903b064"
+      "sha256": "c3b0dfc492dc4ee024b6c864f2d8aa7173a8cb398d9a5cd1708b8887ec505ddf"
     },
     {
       "path": "docs/refactor/execution/current-packed-catalog.json",
@@ -110,18 +110,18 @@
     },
     {
       "path": "docs/refactor/execution/W10-evidence/packed-artifacts.json",
-      "bytes": 34254,
-      "sha256": "d67c3dcd4329c4d5dd338fe992c7db9be2ed00fac7743e1231233a330f02beb8"
+      "bytes": 34251,
+      "sha256": "8811ae7ea2e928d4bd94832eba246fd2a73eb93c466eb75bb2183c62a38e2be8"
     },
     {
       "path": "docs/refactor/execution/W10-evidence/packed-apple.json",
       "bytes": 225028,
-      "sha256": "fb0b37ac6814d8afd633d8c86c230c417f26f2e323ba6dc09386a4ef3201569f"
+      "sha256": "a74c1635987f6d787c75a2c17b6b4a660898a5a0cf8901713bc4a7d6bf3022de"
     },
     {
       "path": "docs/refactor/execution/W10-evidence/kernel.tgz",
-      "bytes": 72308,
-      "sha256": "2636c823d7e976791818263349525fdf67de2f86aca61a899477d9eac9640320"
+      "bytes": 72290,
+      "sha256": "a8b8d9dafe4efe2df0ff13f642cb0cdfdf8da40b0e7a1b2bfe48e1ba0947ca32"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/production-verification.json",
@@ -131,22 +131,22 @@
     {
       "path": "docs/refactor/architecture-program/handoff/contract.json",
       "bytes": 60337,
-      "sha256": "07fd8c6e6391e9622e161bb3930bb301cd22268f7c5073d8f8b75ff58e001c57"
+      "sha256": "478a5a7d81b64911685c9ea7f98c4ec3f007c2cb3060be694ca64318035b4290"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/layout.json",
       "bytes": 170638,
-      "sha256": "c0d317d09201c1fd2461f1268ddb53334b3f05285aba43d52d15085578de28a5"
+      "sha256": "a8346581d7e80a43b7f83b19acd3c9ee68ac53d6b11b74b9e236e092ea36ebf7"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/public-surface.json",
       "bytes": 206544,
-      "sha256": "ea22ca6812b51d87a39b19c5bcdf6cd27038cec7275b70be77bbeaf21f5d87d9"
+      "sha256": "961dd09797be31ba5bbbe62c0fef12bd942217427b695fc7a2101f56c5c15989"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/production-api/emission.json",
       "bytes": 27237,
-      "sha256": "77655e8f9288e7e2cb9378af147bb795ad404947f1b9882e47e0c4864402df69"
+      "sha256": "497fd1be3c4f995d984ed2343ef21004fe90c9f09fab41fa11c154020fccc722"
     }
   ],
   "limits": "Implementer-reviewed local W10 candidate with exact source, migration, direct and retained packed evidence. Hosted node24 and destinations, credentialed trust, native Apple/Windows, direct Bun Sigstore/TUF, complete Plan009 launch evidence, independent Plan010 certification and publication remain open. All 69 selected outcomes are open; no remote mutation or release occurred."

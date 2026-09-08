@@ -2,7 +2,6 @@ var __create = Object.create;
 var __getProtoOf = Object.getPrototypeOf;
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 function __accessProp(key) {
   return this[key];
@@ -29,23 +28,6 @@ var __toESM = (mod, isNodeMode, target) => {
     cache.set(mod, to);
   return to;
 };
-var __toCommonJS = (from) => {
-  var entry = (__moduleCache ??= new WeakMap).get(from), desc;
-  if (entry)
-    return entry;
-  entry = __defProp({}, "__esModule", { value: true });
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (var key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(entry, key))
-        __defProp(entry, key, {
-          get: __accessProp.bind(from, key),
-          enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
-        });
-  }
-  __moduleCache.set(from, entry);
-  return entry;
-};
-var __moduleCache;
 var __returnValue = (v) => v;
 function __exportSetter(name, newValue) {
   this[name] = __returnValue.bind(null, newValue);
@@ -61,12 +43,6 @@ var __export = (target, all) => {
 };
 
 // apps/action/src/launcher.ts
-var exports_launcher = {};
-__export(exports_launcher, {
-  runActionEnvironment: () => runActionEnvironment,
-  runAction: () => runAction
-});
-module.exports = __toCommonJS(exports_launcher);
 var import_promises = require("node:fs/promises");
 var import_node_path2 = require("node:path");
 
@@ -126,7 +102,7 @@ __export(exports_Effect, {
   suspend: () => suspend2,
   succeedSome: () => succeedSome2,
   succeedNone: () => succeedNone2,
-  succeed: () => succeed6,
+  succeed: () => succeed5,
   spanLinks: () => spanLinks2,
   spanAnnotations: () => spanAnnotations2,
   sleep: () => sleep2,
@@ -5332,12 +5308,6 @@ class CurrentMemoMap extends (/* @__PURE__ */ Service()("effect/Layer/CurrentMem
 }
 var buildWithMemoMap = /* @__PURE__ */ dual(3, (self, memoMap, scope2) => provideService(map5(self.build(memoMap, scope2), add(CurrentMemoMap, memoMap)), CurrentMemoMap, memoMap));
 var buildWithScope = /* @__PURE__ */ dual(2, (self, scope2) => withFiber((fiber2) => buildWithMemoMap(self, CurrentMemoMap.forkOrCreate(fiber2.context), scope2)));
-var succeed5 = function() {
-  if (arguments.length === 1) {
-    return (resource) => succeedContext(make5(arguments[0], resource));
-  }
-  return succeedContext(make5(arguments[0], arguments[1]));
-};
 var succeedContext = (context2) => fromBuildUnsafe(constant(succeed3(context2)));
 var mergeAllEffect = (layers, memoMap, scope2) => {
   const parentScope = forkUnsafe2(scope2, "parallel");
@@ -6600,7 +6570,7 @@ var forEach2 = forEach;
 var whileLoop2 = whileLoop;
 var promise2 = promise;
 var tryPromise2 = tryPromise;
-var succeed6 = succeed3;
+var succeed5 = succeed3;
 var succeedNone2 = succeedNone;
 var succeedSome2 = succeedSome;
 var suspend2 = suspend;
@@ -6927,7 +6897,7 @@ var effectify = (fn3, onError3, onSyncError) => (...args2) => callback2((resume)
       if (err) {
         resume(fail5(onError3 ? onError3(err, args2) : err));
       } else {
-        resume(succeed6(result3));
+        resume(succeed5(result3));
       }
     });
   } catch (err) {
@@ -8675,11 +8645,11 @@ var annotationExcludedKeys = /* @__PURE__ */ new Set([SENTINELS_ANNOTATION_KEY, 
 
 // node_modules/effect/dist/internal/schema/parser.js
 var missing = /* @__PURE__ */ Symbol();
-var succeed7 = succeed4;
-var missingExit = /* @__PURE__ */ succeed7(missing);
-var sameExit = /* @__PURE__ */ succeed7(missing);
+var succeed6 = succeed4;
+var missingExit = /* @__PURE__ */ succeed6(missing);
+var sameExit = /* @__PURE__ */ succeed6(missing);
 var toOption = (value3) => value3 === missing ? none2() : some2(value3);
-var fromOptionExit = (option3) => option3._tag === "None" ? missingExit : succeed7(option3.value);
+var fromOptionExit = (option3) => option3._tag === "None" ? missingExit : succeed6(option3.value);
 
 // node_modules/effect/dist/SchemaIssue.js
 var TypeId16 = "~effect/SchemaIssue/Issue";
@@ -9033,7 +9003,7 @@ function forbidden(message) {
     return isSome2(oe) ? new Forbidden(annotations, oe.value, options) : new Forbidden(annotations);
   });
 }
-var passthrough_ = /* @__PURE__ */ new Getter(succeed6);
+var passthrough_ = /* @__PURE__ */ new Getter(succeed5);
 function isPassthrough(getter) {
   return getter.run === passthrough_.run;
 }
@@ -9050,7 +9020,7 @@ function transformOrFail(f) {
   return onSome((e, options) => f(e, options).pipe(mapEager2(some2)));
 }
 function transformOptional(f) {
-  return new Getter((oe) => succeed6(f(oe)));
+  return new Getter((oe) => succeed5(f(oe)));
 }
 function omit() {
   return new Getter(() => succeedNone2);
@@ -9058,7 +9028,7 @@ function omit() {
 function withDefault(defaultValue) {
   return new Getter((o) => {
     const filtered = filter(o, isNotUndefined);
-    return isSome2(filtered) ? succeed6(filtered) : mapEager2(defaultValue, some2);
+    return isSome2(filtered) ? succeed5(filtered) : mapEager2(defaultValue, some2);
   });
 }
 function String3() {
@@ -9117,7 +9087,7 @@ function decodeBase64String2() {
     onFailure: () => fail5(new InvalidValue({
       expected: "a valid Base64 string"
     }, input, options)),
-    onSuccess: succeed6
+    onSuccess: succeed5
   }));
 }
 function decodeBase64Url2() {
@@ -9125,7 +9095,7 @@ function decodeBase64Url2() {
     onFailure: () => fail5(new InvalidValue({
       expected: "a valid Base64Url string"
     }, input, options)),
-    onSuccess: succeed6
+    onSuccess: succeed5
   }));
 }
 function decodeBase64UrlString2() {
@@ -9133,7 +9103,7 @@ function decodeBase64UrlString2() {
     onFailure: () => fail5(new InvalidValue({
       expected: "a valid Base64Url string"
     }, input, options)),
-    onSuccess: succeed6
+    onSuccess: succeed5
   }));
 }
 function decodeHex2() {
@@ -9141,7 +9111,7 @@ function decodeHex2() {
     onFailure: () => fail5(new InvalidValue({
       expected: "a valid hexadecimal string"
     }, input, options)),
-    onSuccess: succeed6
+    onSuccess: succeed5
   }));
 }
 function decodeHexString2() {
@@ -9149,7 +9119,7 @@ function decodeHexString2() {
     onFailure: () => fail5(new InvalidValue({
       expected: "a valid hexadecimal string"
     }, input, options)),
-    onSuccess: succeed6
+    onSuccess: succeed5
   }));
 }
 function encodeUriComponent() {
@@ -9158,7 +9128,7 @@ function encodeUriComponent() {
 function decodeUriComponent() {
   return transformOrFail((input, options) => {
     try {
-      return succeed6(globalThis.decodeURIComponent(input));
+      return succeed5(globalThis.decodeURIComponent(input));
     } catch {
       return fail5(new InvalidValue({
         expected: "a valid URI component"
@@ -9172,7 +9142,7 @@ function dateTimeUtcFromInput() {
       onNone: () => fail5(new InvalidValue({
         message: "Invalid DateTime input"
       }, input, options)),
-      onSome: (dt) => succeed6(toUtc2(dt))
+      onSome: (dt) => succeed5(toUtc2(dt))
     });
   });
 }
@@ -9354,17 +9324,17 @@ var durationFromString = /* @__PURE__ */ transformOrFail2({
     onNone: () => fail5(new InvalidValue({
       expected: "a valid Duration string"
     }, s, options)),
-    onSome: succeed6
+    onSome: succeed5
   }),
-  encode: (duration) => succeed6(globalThis.String(duration))
+  encode: (duration) => succeed5(globalThis.String(duration))
 });
 var durationFromNanos = /* @__PURE__ */ transformOrFail2({
-  decode: (i) => succeed6(nanos(i)),
+  decode: (i) => succeed5(nanos(i)),
   encode: (a, options) => match(toNanos(a), {
     onNone: () => fail5(new InvalidValue({
       expected: "a Duration representable as a bigint"
     }, a, options)),
-    onSome: (nanos2) => succeed6(nanos2)
+    onSome: (nanos2) => succeed5(nanos2)
   })
 });
 var durationFromMillis = /* @__PURE__ */ transform2({
@@ -9460,19 +9430,19 @@ function optionFromOptional() {
   });
 }
 var urlFromString = /* @__PURE__ */ transformOrFail2({
-  decode: (s, options) => URL.canParse(s) ? succeed6(new URL(s)) : fail5(new InvalidValue({
+  decode: (s, options) => URL.canParse(s) ? succeed5(new URL(s)) : fail5(new InvalidValue({
     expected: "a valid URL string"
   }, s, options)),
-  encode: (url) => succeed6(url.href)
+  encode: (url) => succeed5(url.href)
 });
 var bigDecimalFromString = /* @__PURE__ */ transformOrFail2({
   decode: (s, options) => {
     const result3 = fromString(s);
     return isNone2(result3) ? fail5(new InvalidValue({
       expected: "a valid BigDecimal string"
-    }, s, options)) : succeed6(result3.value);
+    }, s, options)) : succeed5(result3.value);
   },
-  encode: (bd) => succeed6(format2(bd))
+  encode: (bd) => succeed5(format2(bd))
 });
 var uint8ArrayFromBase64String = /* @__PURE__ */ new Transformation(/* @__PURE__ */ decodeBase642(), /* @__PURE__ */ encodeBase642());
 var stringFromBase64String = /* @__PURE__ */ new Transformation(/* @__PURE__ */ decodeBase64String2(), /* @__PURE__ */ encodeBase642());
@@ -9494,10 +9464,10 @@ var timeZoneNamedFromString = /* @__PURE__ */ transformOrFail2({
       onNone: () => fail5(new InvalidValue({
         expected: "a valid IANA time zone"
       }, s, options)),
-      onSome: succeed6
+      onSome: succeed5
     });
   },
-  encode: (tz) => succeed6(tz.id)
+  encode: (tz) => succeed5(tz.id)
 });
 var timeZoneFromString = /* @__PURE__ */ transformOrFail2({
   decode: (s, options) => {
@@ -9505,10 +9475,10 @@ var timeZoneFromString = /* @__PURE__ */ transformOrFail2({
       onNone: () => fail5(new InvalidValue({
         expected: "a valid time zone"
       }, s, options)),
-      onSome: succeed6
+      onSome: succeed5
     });
   },
-  encode: (tz) => succeed6(zoneToString2(tz))
+  encode: (tz) => succeed5(zoneToString2(tz))
 });
 var dateTimeUtcFromString = /* @__PURE__ */ transformOrFail2({
   decode: (s, options) => {
@@ -9516,10 +9486,10 @@ var dateTimeUtcFromString = /* @__PURE__ */ transformOrFail2({
       onNone: () => fail5(new InvalidValue({
         expected: "a valid UTC DateTime string"
       }, s, options)),
-      onSome: (result3) => succeed6(toUtc2(result3))
+      onSome: (result3) => succeed5(toUtc2(result3))
     });
   },
-  encode: (utc) => succeed6(formatIso2(utc))
+  encode: (utc) => succeed5(formatIso2(utc))
 });
 var dateTimeZonedFromString = /* @__PURE__ */ transformOrFail2({
   decode: (s, options) => {
@@ -9527,10 +9497,10 @@ var dateTimeZonedFromString = /* @__PURE__ */ transformOrFail2({
       onNone: () => fail5(new InvalidValue({
         expected: "a valid Zoned DateTime string"
       }, s, options)),
-      onSome: succeed6
+      onSome: succeed5
     });
   },
-  encode: (zoned) => succeed6(formatIsoZoned2(zoned))
+  encode: (zoned) => succeed5(formatIsoZoned2(zoned))
 });
 
 // node_modules/effect/dist/SchemaAST.js
@@ -9653,8 +9623,8 @@ var undefined_3 = /* @__PURE__ */ new Undefined;
 class Void extends Base2 {
   _tag = "Void";
   getParser() {
-    const succeed8 = succeed7(undefined);
-    return (input) => input === missing ? missingExit : succeed8;
+    const succeed7 = succeed6(undefined);
+    return (input) => input === missing ? missingExit : succeed7;
   }
   toCodecJson() {
     return replaceEncoding(this, [undefinedToNull]);
@@ -9801,7 +9771,7 @@ class TemplateLiteral extends Base2 {
     return decodeTo(string2, tuple, new Transformation(transformOrFail((s, options) => {
       const segments = segmentTemplateLiteralParts(this, s, options);
       if (segments)
-        return succeed6(segments);
+        return succeed5(segments);
       return fail5(new InvalidValue({
         expected: "a string matching template literal parts"
       }, s, options));
@@ -10717,7 +10687,7 @@ class Union extends Base2 {
       }
       return flatMapEager2(eff, (_) => {
         if (state.out === sameExit)
-          return succeed6(input);
+          return succeed5(input);
         if (state.out)
           return state.out;
         return fail5(new AnyOf(ast, state.issues ?? [], input, options));
@@ -11197,12 +11167,12 @@ function containsUndefined(ast) {
   }
 }
 function fromConst(ast, value3) {
-  const succeed8 = succeed7(value3);
+  const succeed7 = succeed6(value3);
   return (input, options) => {
     if (input === missing)
       return missingExit;
     if (input === value3)
-      return succeed8;
+      return succeed7;
     return fail5(new InvalidType(ast, input, options));
   };
 }
@@ -11349,7 +11319,7 @@ var symbolString = /* @__PURE__ */ appendChecks(string2, [/* @__PURE__ */ isStri
 var symbolToString = /* @__PURE__ */ new Link(symbolString, /* @__PURE__ */ new Transformation(/* @__PURE__ */ transform((description) => globalThis.Symbol.for(isStringSymbolRegExp.exec(description)[1])), /* @__PURE__ */ transformOrFail((sym, options) => {
   const key = globalThis.Symbol.keyFor(sym);
   if (key !== undefined) {
-    return succeed6(globalThis.String(sym));
+    return succeed5(globalThis.String(sym));
   }
   return fail5(new Forbidden({
     message: "cannot serialize to string, Symbol is not registered"
@@ -11612,7 +11582,7 @@ var getValue = (value3) => {
   if (value3 === missing) {
     return fail5(new InvalidValue);
   }
-  return succeed6(value3);
+  return succeed5(value3);
 };
 function run(ast) {
   return runWithCompiler(normalCompiler, ast);
@@ -11622,7 +11592,7 @@ function runWithCompiler(compiler, ast) {
   return (input, options) => {
     const result3 = (parser ??= compiler(ast))(input, options ?? defaultParseOptions);
     if (result3 === sameExit) {
-      return succeed6(input);
+      return succeed5(input);
     }
     if (!effectIsExit(result3)) {
       return flatMapEager2(result3, getValue);
@@ -11677,7 +11647,7 @@ function applyTransformation(result3, current, transformation, options) {
   let transformed;
   if (effectIsExit(result3) && result3._tag === "Success") {
     const optional2 = toOption(result3 === sameExit ? current : result3[args]);
-    transformed = transformation._tag === "Transformation" ? transformation.decode.run(optional2, options) : transformation.decode(succeed7(optional2), options);
+    transformed = transformation._tag === "Transformation" ? transformation.decode.run(optional2, options) : transformation.decode(succeed6(optional2), options);
   } else if (transformation._tag === "Transformation") {
     transformed = flatMapEager2(result3, (value3) => transformation.decode.run(toOption(value3), options));
   } else {
@@ -11731,7 +11701,7 @@ function makeParser(ast, compile, compileConstructorDefault2, constructorDefault
               return fail5(new Composite(ast, issues, input, options));
             }
           }
-          return succeed6(value3);
+          return succeed5(value3);
         });
       }
     }
@@ -11754,7 +11724,7 @@ function makeParser(ast, compile, compileConstructorDefault2, constructorDefault
               return fail5(new Composite(ast, issues, value3, options));
             }
           }
-          return succeed6(value3);
+          return succeed5(value3);
         });
       }
     }
@@ -11780,7 +11750,7 @@ function makeParser(ast, compile, compileConstructorDefault2, constructorDefault
         } else {
           result3 = flatMapEager2(result3, (value3) => {
             const nextResult = next(value3, options);
-            return nextResult === sameExit ? succeed7(value3) : nextResult;
+            return nextResult === sameExit ? succeed6(value3) : nextResult;
           });
         }
       }
@@ -11793,7 +11763,7 @@ function makeParser(ast, compile, compileConstructorDefault2, constructorDefault
     result3 = catchCause2(result3, (cause) => failCauseSync2(() => map6(cause, (issue) => new Encoding(ast, issue, input, options))));
     return flatMapEager2(result3, (value3) => {
       const local = parseLocal(value3, options);
-      return local === sameExit ? succeed7(value3) : local;
+      return local === sameExit ? succeed6(value3) : local;
     });
   };
 }
@@ -14303,7 +14273,7 @@ function declareConstructor() {
   };
 }
 function declare(is2, annotations) {
-  return declareConstructor()([], () => (input, ast, options) => is2(input) ? succeed6(input) : fail5(new InvalidType(ast, input, options)), annotations);
+  return declareConstructor()([], () => (input, ast, options) => is2(input) ? succeed5(input) : fail5(new InvalidType(ast, input, options)), annotations);
 }
 function revealBottom(bottom) {
   return bottom;
@@ -14878,10 +14848,10 @@ function withDecodingDefaultType(defaultValue, options) {
   };
 }
 function tag(literal) {
-  return Literal2(literal).pipe(withConstructorDefault2(succeed6(literal)));
+  return Literal2(literal).pipe(withConstructorDefault2(succeed5(literal)));
 }
 function tagDefaultOmit(literal) {
-  return tag(literal).pipe(withDecodingDefaultKey(succeed6(literal), {
+  return tag(literal).pipe(withDecodingDefaultKey(succeed5(literal), {
     encodingStrategy: "omit"
   }));
 }
@@ -16579,7 +16549,7 @@ function CauseReason(error, defect) {
           onFailure: (issue) => makeCompositeAtKey(ast, "defect", issue, input, options)
         });
       case "Interrupt":
-        return succeed6(input);
+        return succeed5(input);
     }
   }, {
     representation: {
@@ -17208,7 +17178,7 @@ var RegExp3 = /* @__PURE__ */ instanceOf(globalThis.RegExp, {
         expected: "valid RegExp source and flags"
       }, e, options)
     }),
-    encode: (regExp) => succeed6({
+    encode: (regExp) => succeed5({
       source: regExp.source,
       flags: regExp.flags
     })
@@ -17461,7 +17431,7 @@ var File = /* @__PURE__ */ instanceOf(globalThis.File, {
       }, e.data, options)),
       onSuccess: (bytes) => {
         const buffer = new globalThis.Uint8Array(bytes);
-        return succeed6(new globalThis.File([buffer], e.name, {
+        return succeed5(new globalThis.File([buffer], e.name, {
           type: e.type,
           lastModified: e.lastModified
         }));
@@ -17506,10 +17476,10 @@ var FormData2 = /* @__PURE__ */ instanceOf(globalThis.FormData, {
       for (const [key, entry] of e) {
         out.append(key, entry.value);
       }
-      return succeed6(out);
+      return succeed5(out);
     },
     encode: (formData) => {
-      return succeed6(globalThis.Array.from(formData.entries()).map(([key, value3]) => {
+      return succeed5(globalThis.Array.from(formData.entries()).map(([key, value3]) => {
         if (typeof value3 === "string") {
           return [key, {
             _tag: "String",
@@ -17836,7 +17806,7 @@ function getClassSchemaFactory(from, identifier2, annotations) {
     const isClassValue = (input) => input instanceof self || hasProperty(input, ClassTypeId);
     const transformation = getClassTransformation(self);
     const to = make18(new Declaration([from.ast], () => (input, ast, options) => {
-      return isClassValue(input) ? succeed6(input) : fail5(new InvalidType(ast, input, options));
+      return isClassValue(input) ? succeed5(input) : fail5(new InvalidType(ast, input, options));
     }, {
       identifier: identifier2,
       [CONSTRUCTOR_ANNOTATION_KEY]: ([from2]) => ({
@@ -19997,13 +19967,13 @@ var runRelease = fn2("ts-release.runRelease")(function* (input) {
       if (!owned)
         continue;
       const verified = yield* verifyRequest(request3);
-      const result3 = yield* send(verified).pipe(catch_2((error) => succeed6({ _tag: "CoreError", error })));
+      const result3 = yield* send(verified).pipe(catch_2((error) => succeed5({ _tag: "CoreError", error })));
       dispatches++;
       if (result3._tag === "Accepted") {
         const decoded = yield* attempt(() => ({
           _tag: "Decoded",
           status: provider.classifyReceipt(operation, request3.facts, nativeEvidence(provider.receiptCodec, result3.receipt))
-        })).pipe(catch_2((error) => succeed6({ _tag: "Undecodable", error })));
+        })).pipe(catch_2((error) => succeed5({ _tag: "Undecodable", error })));
         if (decoded._tag === "Decoded") {
           yield* appendBody(host, plan, new ReceiptAccepted({
             dispatchId,
@@ -20120,11 +20090,10 @@ var runApplication = (applicationPath, input, signal) => runPromise2(scoped2(gen
     const admitted = yield* reportFinalizedRelease(app.bundle, options.plan);
     yield* runRelease({ ...options, plan: admitted.plan });
     return yield* reportFinalizedRelease(admitted.bundle, admitted.plan);
-  }).pipe(provide4(succeed5(Host, host)));
+  }).pipe(provideService2(Host, host));
 })).pipe(provideService2(LogToStderr2, true)), { signal });
 
 // apps/action/src/launcher.ts
-var runAction = async (input) => runApplication(input.application, input.input, input.signal);
 var required2 = (environment, name) => {
   const value3 = environment[name]?.trim();
   if (!value3)
@@ -20142,12 +20111,12 @@ var applicationPath = async (workspace, input) => {
     throw new Error("Action application is outside GITHUB_WORKSPACE");
   return actual;
 };
-var runActionEnvironment = async (environment = process.env) => runInterruptibleProcess(async (signal, exitCode) => {
+var runActionEnvironment = (environment = process.env) => runInterruptibleProcess(async (signal, exitCode) => {
   try {
     const workspace = await import_promises.realpath(required2(environment, "GITHUB_WORKSPACE"));
     const application = await applicationPath(workspace, required2(environment, "INPUT_APPLICATION"));
     const input = JSON.parse(environment.INPUT_INPUT ?? "{}");
-    const report = await runAction({ application, input, signal });
+    const report = await runApplication(application, input, signal);
     const revision = String(report.journal.revision);
     if (!/^[a-f0-9]{64}$/u.test(report.plan.planId) || !/^\d+$/u.test(revision))
       throw new Error("Action report contains invalid output identities");
@@ -20156,19 +20125,16 @@ journal-revision=${revision}
 `, { encoding: "utf8" });
     process.stdout.write(`${JSON.stringify(report)}
 `);
-    return exitCode() || (report.operations.every((operation) => operation.status === "Satisfied") ? 0 : 2);
+    const complete = report.operations.every((operation) => operation.status === "Satisfied");
+    return exitCode() || (complete ? 0 : 2);
   } catch (cause) {
     if (exitCode())
       return exitCode();
     throw cause;
   }
 });
-if (process.env.GITHUB_ACTIONS === "true") {
-  runActionEnvironment().then((code) => {
-    process.exitCode = code;
-  }, () => {
-    process.stderr.write(`ts-release Action failed; inspect the configured durable journal before resuming.
+runActionEnvironment().then((code) => process.exitCode = code, () => {
+  process.stderr.write(`ts-release Action failed; inspect the configured durable journal before resuming.
 `);
-    process.exitCode = 1;
-  });
-}
+  process.exitCode = 1;
+});

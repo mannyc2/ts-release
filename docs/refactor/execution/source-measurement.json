@@ -1,16 +1,16 @@
 {
   "wave": "W10",
   "counts": {
-    "product": 11485,
+    "product": 11484,
     "unchangedLegacy": 0,
-    "replacement": 11485,
+    "replacement": 11484,
     "metadata": 694,
     "productData": 789,
     "productDataBytes": 15973,
-    "tests": 32429,
+    "tests": 32453,
     "fixtureText": 4932,
     "fixtureBinaryBytes": 727372,
-    "generatedDelivery": 20263,
+    "generatedDelivery": 20229,
     "tooling": 40657
   },
   "files": [
@@ -22,9 +22,9 @@
     },
     {
       "path": "apps/action/dist/launcher.cjs",
-      "lines": 20174,
+      "lines": 20140,
       "lane": "generatedDelivery",
-      "sha256": "0d4d4fa28f3e22da95cee72fc9f31502456654d653f9d2d4938c167e45ff84b1"
+      "sha256": "937cab71641211ecd1fa3a027b7f8c7a14f10bc367370e8bd09b2fa0332fe719"
     },
     {
       "path": "apps/action/package.json",
@@ -34,9 +34,9 @@
     },
     {
       "path": "apps/action/src/launcher.ts",
-      "lines": 72,
+      "lines": 58,
       "lane": "product",
-      "sha256": "ce9853278cdcfa92ca9362441b160b4851bd5c24d068028398268fed26f6dee4"
+      "sha256": "417f243984f3de0e69dd5192e97cf5dd666d8994fd283a14bfaed3b74c84713e"
     },
     {
       "path": "apps/action/tsconfig.json",
@@ -52,57 +52,15 @@
     },
     {
       "path": "apps/self-release/src/application.ts",
-      "lines": 224,
+      "lines": 238,
       "lane": "product",
-      "sha256": "6d476c5ee7368553e7fdcc36ee06b7f303756537cf981da4b66e5b9e6373fd6c"
+      "sha256": "2abd41f1ac674254bd53b07f9234886a0bf20bbae892e2240e259214ce8c5e5d"
     },
     {
       "path": "apps/self-release/tsconfig.build.json",
       "lines": 10,
       "lane": "metadata",
       "sha256": "a9a7b2d4b4378c789df8fc80cafa1a805a13d58fed9812f7b06d706068a0f694"
-    },
-    {
-      "path": "packages/ts-release/src/internal/Tar.ts",
-      "lines": 114,
-      "lane": "product",
-      "sha256": "3418ddd333d36401775a476c854e5991df2ca5ecf139c19698d755592d4ca9a2"
-    },
-    {
-      "path": "scripts/build-delivery.ts",
-      "lines": 35,
-      "lane": "tooling",
-      "sha256": "2d657086c4933587656257a80d794093dfaf4b0ea5452d5421484a427a6337a1"
-    },
-    {
-      "path": "scripts/check-packed-action.ts",
-      "lines": 152,
-      "lane": "tooling",
-      "sha256": "c6433a3d4d97fd8fb4383cbf1af67da61e11c1ae3f65930289f4cc7f7b20a85a"
-    },
-    {
-      "path": "test/reimplementation/hosts/action-application.mjs",
-      "lines": 126,
-      "lane": "tests",
-      "sha256": "d9c5f324be406eadda9b0818c0d6e071018389a4ea877e9538625156439eb5a7"
-    },
-    {
-      "path": "test/reimplementation/hosts/action.test.ts",
-      "lines": 156,
-      "lane": "tests",
-      "sha256": "c3b9f923b4ac6a1554bbf712fc3da37e2fa11e25e63904f1d450486dcb6ba0dd"
-    },
-    {
-      "path": "test/reimplementation/self-release/self-release.test.ts",
-      "lines": 578,
-      "lane": "tests",
-      "sha256": "595b8484242cbe31b4349a203b450a17d81b9aff21e403cabf8cec46ba9f1c10"
-    },
-    {
-      "path": "test/reimplementation/self-release/wheel.ts",
-      "lines": 152,
-      "lane": "tests",
-      "sha256": "da2cb6bbc263f7698e0c58e67985aca803c2875debf04ab03bc155fb1b9ac285"
     },
     {
       "path": "apps/ts-release-agents/package.json",
@@ -729,6 +687,12 @@
       "sha256": "032370728de608e91c9494dc9559e5f3221b61e2b2b68d3cc46728bb99bad981"
     },
     {
+      "path": "packages/ts-release/src/internal/Tar.ts",
+      "lines": 114,
+      "lane": "product",
+      "sha256": "3418ddd333d36401775a476c854e5991df2ca5ecf139c19698d755592d4ca9a2"
+    },
+    {
       "path": "packages/ts-release/src/internal/TreeManifest.ts",
       "lines": 84,
       "lane": "product",
@@ -736,9 +700,9 @@
     },
     {
       "path": "packages/ts-release/src/platform/Application.ts",
-      "lines": 84,
+      "lines": 83,
       "lane": "product",
-      "sha256": "d7fd8e579a998ec9384cecea7bfc10a24841b5bb5563f43ce222dd48920a61b8"
+      "sha256": "82d38591de32ba664187694f000f120185f4e6e79c0ad5ee567f009c831333c4"
     },
     {
       "path": "packages/ts-release/src/platform/ContentStore.ts",
@@ -1371,6 +1335,12 @@
       "sha256": "8be4e7b0d02fccaea7b7e5ea83e811d84a0810e420446aadbe382a199b61774c"
     },
     {
+      "path": "scripts/build-delivery.ts",
+      "lines": 35,
+      "lane": "tooling",
+      "sha256": "2d657086c4933587656257a80d794093dfaf4b0ea5452d5421484a427a6337a1"
+    },
+    {
       "path": "scripts/build.ts",
       "lines": 28,
       "lane": "tooling",
@@ -1423,6 +1393,12 @@
       "lines": 135,
       "lane": "tooling",
       "sha256": "da1fae050add15e9f6ae903fbe2066c3159114396145182cc60007fa1096a324"
+    },
+    {
+      "path": "scripts/check-packed-action.ts",
+      "lines": 152,
+      "lane": "tooling",
+      "sha256": "c6433a3d4d97fd8fb4383cbf1af67da61e11c1ae3f65930289f4cc7f7b20a85a"
     },
     {
       "path": "scripts/check-packed-apple.ts",
@@ -1863,6 +1839,18 @@
       "sha256": "34d67bfeae5a92460acd140c775eb45cddb0c16a5d542051b6879b83927645a2"
     },
     {
+      "path": "test/reimplementation/hosts/action-application.mjs",
+      "lines": 126,
+      "lane": "tests",
+      "sha256": "d9c5f324be406eadda9b0818c0d6e071018389a4ea877e9538625156439eb5a7"
+    },
+    {
+      "path": "test/reimplementation/hosts/action.test.ts",
+      "lines": 156,
+      "lane": "tests",
+      "sha256": "c3b9f923b4ac6a1554bbf712fc3da37e2fa11e25e63904f1d450486dcb6ba0dd"
+    },
+    {
       "path": "test/reimplementation/kernel/admission.test.ts",
       "lines": 387,
       "lane": "tests",
@@ -2113,6 +2101,18 @@
       "lines": 126,
       "lane": "tests",
       "sha256": "73efdffa7322464b0ec45c16e35f06170fdd3d06eadd2974fbb24a8eeb8a6f41"
+    },
+    {
+      "path": "test/reimplementation/self-release/self-release.test.ts",
+      "lines": 602,
+      "lane": "tests",
+      "sha256": "c4f75246380e10dd625568964592dbd823695df7fa61756957213ed0f7528146"
+    },
+    {
+      "path": "test/reimplementation/self-release/wheel.ts",
+      "lines": 152,
+      "lane": "tests",
+      "sha256": "da2cb6bbc263f7698e0c58e67985aca803c2875debf04ab03bc155fb1b9ac285"
     },
     {
       "path": "test/reimplementation/transports/credentials.test.ts",

@@ -2,12 +2,6 @@ import { appendFile, realpath } from "node:fs/promises"
 import { isAbsolute, relative, resolve, sep } from "node:path"
 import { runApplication, runInterruptibleProcess } from "@mannyc1/ts-release/node"
 
-export const runAction = async (input: {
-  readonly application: string
-  readonly input: unknown
-  readonly signal?: AbortSignal
-}) => runApplication(input.application, input.input, input.signal)
-
 const required = (environment: NodeJS.ProcessEnv, name: string): string => {
   const value = environment[name]?.trim()
   if (!value) throw new Error(`GitHub Action requires ${name}`)
@@ -26,9 +20,7 @@ const applicationPath = async (workspace: string, input: string): Promise<string
   return actual
 }
 
-export const runActionEnvironment = async (
-  environment: NodeJS.ProcessEnv = process.env,
-): Promise<number> =>
+const runActionEnvironment = (environment: NodeJS.ProcessEnv = process.env) =>
   runInterruptibleProcess(async (signal, exitCode) => {
     try {
       const workspace = await realpath(required(environment, "GITHUB_WORKSPACE"))
@@ -37,7 +29,7 @@ export const runActionEnvironment = async (
         required(environment, "INPUT_APPLICATION"),
       )
       const input = JSON.parse(environment.INPUT_INPUT ?? "{}") as unknown
-      const report = await runAction({ application, input, signal })
+      const report = await runApplication(application, input, signal)
       const revision = String(report.journal.revision)
       if (!/^[a-f0-9]{64}$/u.test(report.plan.planId) || !/^\d+$/u.test(revision))
         throw new Error("Action report contains invalid output identities")
@@ -47,26 +39,20 @@ export const runActionEnvironment = async (
         { encoding: "utf8" },
       )
       process.stdout.write(`${JSON.stringify(report)}\n`)
-      return (
-        exitCode() ||
-        (report.operations.every((operation) => operation.status === "Satisfied") ? 0 : 2)
-      )
+      const complete = report.operations.every((operation) => operation.status === "Satisfied")
+      return exitCode() || (complete ? 0 : 2)
     } catch (cause) {
       if (exitCode()) return exitCode()
       throw cause
     }
   })
 
-if (process.env.GITHUB_ACTIONS === "true") {
-  void runActionEnvironment().then(
-    (code) => {
-      process.exitCode = code
-    },
-    () => {
-      process.stderr.write(
-        "ts-release Action failed; inspect the configured durable journal before resuming.\n",
-      )
-      process.exitCode = 1
-    },
-  )
-}
+void runActionEnvironment().then(
+  (code) => (process.exitCode = code),
+  () => {
+    process.stderr.write(
+      "ts-release Action failed; inspect the configured durable journal before resuming.\n",
+    )
+    process.exitCode = 1
+  },
+)

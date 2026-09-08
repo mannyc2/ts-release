@@ -1,8 +1,8 @@
 {
   "format": "ts-release/packed-artifact-consumers/1",
-  "work": "/tmp/ts-release-packed-artifacts-H3sOI5",
-  "archive": "/tmp/ts-release-packed-artifacts-H3sOI5/kernel.tgz",
-  "kernelSha256": "2636c823d7e976791818263349525fdf67de2f86aca61a899477d9eac9640320",
+  "work": "/tmp/ts-release-packed-artifacts-KQaxvt",
+  "archive": "/tmp/ts-release-packed-artifacts-KQaxvt/kernel.tgz",
+  "kernelSha256": "a8b8d9dafe4efe2df0ff13f642cb0cdfdf8da40b0e7a1b2bfe48e1ba0947ca32",
   "sourceBindings": [
     {
       "path": "Apple.ts",
@@ -142,7 +142,7 @@
     },
     {
       "path": "platform/Application.ts",
-      "sha256": "d7fd8e579a998ec9384cecea7bfc10a24841b5bb5563f43ce222dd48920a61b8"
+      "sha256": "82d38591de32ba664187694f000f120185f4e6e79c0ad5ee567f009c831333c4"
     },
     {
       "path": "platform/ContentStore.ts",
@@ -352,31 +352,31 @@
       "runtime": "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
       "evidence": {
         "executables": {
-          "work": "/tmp/ts-release-producer-executables-aExJfF",
+          "work": "/tmp/ts-release-producer-executables-eNZf2t",
           "checks": 93,
           "artifacts": 13,
           "executions": 3
         },
         "archives": {
-          "work": "/tmp/ts-release-producer-archives-hvyHIJ",
+          "work": "/tmp/ts-release-producer-archives-ZggeWi",
           "checks": 42,
           "artifacts": 4
         },
         "python": {
-          "work": "/tmp/ts-release-producer-python-D9AMJY",
+          "work": "/tmp/ts-release-producer-python-o4wPL2",
           "checks": 13,
           "artifacts": 4,
           "sourceTrees": 2,
           "consumers": 4
         },
         "packages": {
-          "work": "/tmp/ts-release-producer-packages-MxmTUr",
+          "work": "/tmp/ts-release-producer-packages-ldDSyy",
           "checks": 28,
           "artifacts": 5,
           "nativeInstalls": 4
         },
         "sbom": {
-          "work": "/tmp/ts-release-producer-sbom-8Nt6OP",
+          "work": "/tmp/ts-release-producer-sbom-t4R1Y6",
           "checks": 19,
           "documents": 3,
           "nativeSchemaChecks": 5
@@ -388,31 +388,31 @@
       "runtime": "/mnt/models/.bun/bin/bun",
       "evidence": {
         "executables": {
-          "work": "/tmp/ts-release-producer-executables-jnhdoI",
+          "work": "/tmp/ts-release-producer-executables-03gzGW",
           "checks": 93,
           "artifacts": 13,
           "executions": 3
         },
         "archives": {
-          "work": "/tmp/ts-release-producer-archives-j2IKKZ",
+          "work": "/tmp/ts-release-producer-archives-L2VimR",
           "checks": 42,
           "artifacts": 4
         },
         "python": {
-          "work": "/tmp/ts-release-producer-python-WUi1cQ",
+          "work": "/tmp/ts-release-producer-python-zeROLm",
           "checks": 13,
           "artifacts": 4,
           "sourceTrees": 2,
           "consumers": 4
         },
         "packages": {
-          "work": "/tmp/ts-release-producer-packages-HF8V0l",
+          "work": "/tmp/ts-release-producer-packages-yqgpfL",
           "checks": 28,
           "artifacts": 5,
           "nativeInstalls": 4
         },
         "sbom": {
-          "work": "/tmp/ts-release-producer-sbom-aTFdNS",
+          "work": "/tmp/ts-release-producer-sbom-lVjnbS",
           "checks": 19,
           "documents": 3,
           "nativeSchemaChecks": 5
@@ -424,31 +424,31 @@
       "runtime": "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
       "evidence": {
         "executables": {
-          "work": "/tmp/ts-release-producer-executables-uJz3v2",
+          "work": "/tmp/ts-release-producer-executables-yIGA4H",
           "checks": 93,
           "artifacts": 13,
           "executions": 3
         },
         "archives": {
-          "work": "/tmp/ts-release-producer-archives-LUbk4R",
+          "work": "/tmp/ts-release-producer-archives-whTSnd",
           "checks": 42,
           "artifacts": 4
         },
         "python": {
-          "work": "/tmp/ts-release-producer-python-pUavfC",
+          "work": "/tmp/ts-release-producer-python-sNbuc1",
           "checks": 13,
           "artifacts": 4,
           "sourceTrees": 2,
           "consumers": 4
         },
         "packages": {
-          "work": "/tmp/ts-release-producer-packages-831Qyk",
+          "work": "/tmp/ts-release-producer-packages-DGGw89",
           "checks": 28,
           "artifacts": 5,
           "nativeInstalls": 4
         },
         "sbom": {
-          "work": "/tmp/ts-release-producer-sbom-KvzOtU",
+          "work": "/tmp/ts-release-producer-sbom-h8Tfcj",
           "checks": 19,
           "documents": 3,
           "nativeSchemaChecks": 5
@@ -460,31 +460,31 @@
       "runtime": "/mnt/models/.bun/bin/bun",
       "evidence": {
         "executables": {
-          "work": "/tmp/ts-release-producer-executables-4LMSGj",
+          "work": "/tmp/ts-release-producer-executables-3h3I2T",
           "checks": 93,
           "artifacts": 13,
           "executions": 3
         },
         "archives": {
-          "work": "/tmp/ts-release-producer-archives-xiZR03",
+          "work": "/tmp/ts-release-producer-archives-lKOiOX",
           "checks": 42,
           "artifacts": 4
         },
         "python": {
-          "work": "/tmp/ts-release-producer-python-EFD0yi",
+          "work": "/tmp/ts-release-producer-python-lUR7S3",
           "checks": 13,
           "artifacts": 4,
           "sourceTrees": 2,
           "consumers": 4
         },
         "packages": {
-          "work": "/tmp/ts-release-producer-packages-HVVmWU",
+          "work": "/tmp/ts-release-producer-packages-Tj1Ktv",
           "checks": 28,
           "artifacts": 5,
           "nativeInstalls": 4
         },
         "sbom": {
-          "work": "/tmp/ts-release-producer-sbom-ZmE34O",
+          "work": "/tmp/ts-release-producer-sbom-OR3sti",
           "checks": 19,
           "documents": 3,
           "nativeSchemaChecks": 5
@@ -511,25 +511,25 @@
         "pack",
         "--ignore-scripts",
         "--filename",
-        "/tmp/ts-release-packed-artifacts-H3sOI5/kernel.tgz"
+        "/tmp/ts-release-packed-artifacts-KQaxvt/kernel.tgz"
       ],
       "exitCode": 0,
-      "output": "bun pack v1.3.14 (0d9b296a)\n\npacked 1.73KB package.json\npacked 1.1KB LICENSE\npacked 1.27KB README.md\npacked 217B dist/Apple.d.ts\npacked 168B dist/Apple.js\npacked 92B dist/Bun.d.ts\npacked 92B dist/Bun.js\npacked 0.88KB dist/Bundle.d.ts\npacked 0.65KB dist/Bundle.js\npacked 1.49KB dist/EffectBuild.d.ts\npacked 10.55KB dist/EffectBuild.js\npacked 0.64KB dist/Git.d.ts\npacked 288B dist/Git.js\npacked 5.76KB dist/Http.d.ts\npacked 5.54KB dist/Http.js\npacked 1.72KB dist/Journal.d.ts\npacked 5.69KB dist/Journal.js\npacked 405B dist/Node.d.ts\npacked 356B dist/Node.js\npacked 1.24KB dist/Plan.d.ts\npacked 5.65KB dist/Plan.js\npacked 5.62KB dist/Provider.d.ts\npacked 9.86KB dist/Provider.js\npacked 3.1KB dist/Release.d.ts\npacked 14.47KB dist/Release.js\npacked 7.57KB dist/apple/Model.d.ts\npacked 6.00KB dist/apple/Model.js\npacked 5.19KB dist/apple/Native.d.ts\npacked 11.85KB dist/apple/Native.js\npacked 2.43KB dist/apple/Preparation.d.ts\npacked 8.57KB dist/apple/Preparation.js\npacked 507B dist/apple/Provider.d.ts\npacked 6.36KB dist/apple/Provider.js\npacked 31B dist/bin/ts-release.d.ts\npacked 394B dist/bin/ts-release.js\npacked 1.21KB dist/index.d.ts\npacked 0.58KB dist/index.js\npacked 3.72KB dist/internal/ArtifactModel.d.ts\npacked 2.23KB dist/internal/ArtifactModel.js\npacked 0.58KB dist/internal/ArtifactReader.d.ts\npacked 1.70KB dist/internal/ArtifactReader.js\npacked 364B dist/internal/BundleCodec.d.ts\npacked 1.21KB dist/internal/BundleCodec.js\npacked 453B dist/internal/BundleFinalize.d.ts\npacked 1.60KB dist/internal/BundleFinalize.js\npacked 0.91KB dist/internal/Checksums.d.ts\npacked 3.0KB dist/internal/Checksums.js\npacked 233B dist/internal/CommandLine.d.ts\npacked 2.38KB dist/internal/CommandLine.js\npacked 1.79KB dist/internal/Content.d.ts\npacked 1.30KB dist/internal/Content.js\npacked 2.70KB dist/internal/Decision.d.ts\npacked 10.0KB dist/internal/Decision.js\npacked 164B dist/internal/EffectTypes.d.ts\npacked 11B dist/internal/EffectTypes.js\npacked 0.72KB dist/internal/Error.d.ts\npacked 0.70KB dist/internal/Error.js\npacked 1.59KB dist/internal/FinalizedReport.d.ts\npacked 2.45KB dist/internal/FinalizedReport.js\npacked 2.29KB dist/internal/GitAuthority.d.ts\npacked 8.0KB dist/internal/GitAuthority.js\npacked 3.55KB dist/internal/GitCatalog.d.ts\npacked 8.40KB dist/internal/GitCatalog.js\npacked 2.14KB dist/internal/Host.d.ts\npacked 6.26KB dist/internal/Host.js\npacked 1.20KB dist/internal/Identity.d.ts\npacked 4.79KB dist/internal/Identity.js\npacked 234B dist/internal/NativeJson.d.ts\npacked 2.58KB dist/internal/NativeJson.js\npacked 8.25KB dist/internal/ReleaseModel.d.ts\npacked 4.78KB dist/internal/ReleaseModel.js\npacked 501B dist/internal/Tar.d.ts\npacked 4.23KB dist/internal/Tar.js\npacked 206B dist/internal/TreeManifest.d.ts\npacked 3.63KB dist/internal/TreeManifest.js\npacked 1.18KB dist/platform/Application.d.ts\npacked 2.98KB dist/platform/Application.js\npacked 286B dist/platform/ContentStore.d.ts\npacked 4.95KB dist/platform/ContentStore.js\npacked 407B dist/platform/Directory.d.ts\npacked 2.22KB dist/platform/Directory.js\npacked 1.21KB dist/platform/GitHost.d.ts\npacked 5.43KB dist/platform/GitHost.js\npacked 1.0KB dist/platform/GitJournal.d.ts\npacked 7.46KB dist/platform/GitJournal.js\npacked 1.31KB dist/platform/GitObjects.d.ts\npacked 11.0KB dist/platform/GitObjects.js\npacked 2.0KB dist/platform/GitProcess.d.ts\npacked 6.56KB dist/platform/GitProcess.js\npacked 0.55KB dist/platform/GitRemote.d.ts\npacked 1.52KB dist/platform/GitRemote.js\npacked 0.96KB dist/platform/GithubOidc.d.ts\npacked 9.56KB dist/platform/GithubOidc.js\npacked 0.80KB dist/platform/HttpTransport.d.ts\npacked 13.68KB dist/platform/HttpTransport.js\npacked 0.53KB dist/platform/Process.d.ts\npacked 2.90KB dist/platform/Process.js\npacked 308B dist/platform/SqliteJournal.d.ts\npacked 4.72KB dist/platform/SqliteJournal.js\npacked 333B dist/platform/StoreCodec.d.ts\npacked 0.91KB dist/platform/StoreCodec.js\n\n/tmp/ts-release-packed-artifacts-H3sOI5/kernel.tgz\n\nTotal files: 101\nShasum: 4c4fbf8bb999e3dcce185b1d3637cb413f2c4375\nIntegrity: sha512-qFoUntpfjU6tW[...]UJ/bvFW46hlAg==\nUnpacked size: 0.31MB\nPacked size: 72.31KB\n"
+      "output": "bun pack v1.3.14 (0d9b296a)\n\npacked 1.73KB package.json\npacked 1.1KB LICENSE\npacked 1.27KB README.md\npacked 217B dist/Apple.d.ts\npacked 168B dist/Apple.js\npacked 92B dist/Bun.d.ts\npacked 92B dist/Bun.js\npacked 0.88KB dist/Bundle.d.ts\npacked 0.65KB dist/Bundle.js\npacked 1.49KB dist/EffectBuild.d.ts\npacked 10.55KB dist/EffectBuild.js\npacked 0.64KB dist/Git.d.ts\npacked 288B dist/Git.js\npacked 5.76KB dist/Http.d.ts\npacked 5.54KB dist/Http.js\npacked 1.72KB dist/Journal.d.ts\npacked 5.69KB dist/Journal.js\npacked 405B dist/Node.d.ts\npacked 356B dist/Node.js\npacked 1.24KB dist/Plan.d.ts\npacked 5.65KB dist/Plan.js\npacked 5.62KB dist/Provider.d.ts\npacked 9.86KB dist/Provider.js\npacked 3.1KB dist/Release.d.ts\npacked 14.47KB dist/Release.js\npacked 7.57KB dist/apple/Model.d.ts\npacked 6.00KB dist/apple/Model.js\npacked 5.19KB dist/apple/Native.d.ts\npacked 11.85KB dist/apple/Native.js\npacked 2.43KB dist/apple/Preparation.d.ts\npacked 8.57KB dist/apple/Preparation.js\npacked 507B dist/apple/Provider.d.ts\npacked 6.36KB dist/apple/Provider.js\npacked 31B dist/bin/ts-release.d.ts\npacked 394B dist/bin/ts-release.js\npacked 1.21KB dist/index.d.ts\npacked 0.58KB dist/index.js\npacked 3.72KB dist/internal/ArtifactModel.d.ts\npacked 2.23KB dist/internal/ArtifactModel.js\npacked 0.58KB dist/internal/ArtifactReader.d.ts\npacked 1.70KB dist/internal/ArtifactReader.js\npacked 364B dist/internal/BundleCodec.d.ts\npacked 1.21KB dist/internal/BundleCodec.js\npacked 453B dist/internal/BundleFinalize.d.ts\npacked 1.60KB dist/internal/BundleFinalize.js\npacked 0.91KB dist/internal/Checksums.d.ts\npacked 3.0KB dist/internal/Checksums.js\npacked 233B dist/internal/CommandLine.d.ts\npacked 2.38KB dist/internal/CommandLine.js\npacked 1.79KB dist/internal/Content.d.ts\npacked 1.30KB dist/internal/Content.js\npacked 2.70KB dist/internal/Decision.d.ts\npacked 10.0KB dist/internal/Decision.js\npacked 164B dist/internal/EffectTypes.d.ts\npacked 11B dist/internal/EffectTypes.js\npacked 0.72KB dist/internal/Error.d.ts\npacked 0.70KB dist/internal/Error.js\npacked 1.59KB dist/internal/FinalizedReport.d.ts\npacked 2.45KB dist/internal/FinalizedReport.js\npacked 2.29KB dist/internal/GitAuthority.d.ts\npacked 8.0KB dist/internal/GitAuthority.js\npacked 3.55KB dist/internal/GitCatalog.d.ts\npacked 8.40KB dist/internal/GitCatalog.js\npacked 2.14KB dist/internal/Host.d.ts\npacked 6.26KB dist/internal/Host.js\npacked 1.20KB dist/internal/Identity.d.ts\npacked 4.79KB dist/internal/Identity.js\npacked 234B dist/internal/NativeJson.d.ts\npacked 2.58KB dist/internal/NativeJson.js\npacked 8.25KB dist/internal/ReleaseModel.d.ts\npacked 4.78KB dist/internal/ReleaseModel.js\npacked 501B dist/internal/Tar.d.ts\npacked 4.23KB dist/internal/Tar.js\npacked 206B dist/internal/TreeManifest.d.ts\npacked 3.63KB dist/internal/TreeManifest.js\npacked 1.18KB dist/platform/Application.d.ts\npacked 2.93KB dist/platform/Application.js\npacked 286B dist/platform/ContentStore.d.ts\npacked 4.95KB dist/platform/ContentStore.js\npacked 407B dist/platform/Directory.d.ts\npacked 2.22KB dist/platform/Directory.js\npacked 1.21KB dist/platform/GitHost.d.ts\npacked 5.43KB dist/platform/GitHost.js\npacked 1.0KB dist/platform/GitJournal.d.ts\npacked 7.46KB dist/platform/GitJournal.js\npacked 1.31KB dist/platform/GitObjects.d.ts\npacked 11.0KB dist/platform/GitObjects.js\npacked 2.0KB dist/platform/GitProcess.d.ts\npacked 6.56KB dist/platform/GitProcess.js\npacked 0.55KB dist/platform/GitRemote.d.ts\npacked 1.52KB dist/platform/GitRemote.js\npacked 0.96KB dist/platform/GithubOidc.d.ts\npacked 9.56KB dist/platform/GithubOidc.js\npacked 0.80KB dist/platform/HttpTransport.d.ts\npacked 13.68KB dist/platform/HttpTransport.js\npacked 0.53KB dist/platform/Process.d.ts\npacked 2.90KB dist/platform/Process.js\npacked 308B dist/platform/SqliteJournal.d.ts\npacked 4.72KB dist/platform/SqliteJournal.js\npacked 333B dist/platform/StoreCodec.d.ts\npacked 0.91KB dist/platform/StoreCodec.js\n\n/tmp/ts-release-packed-artifacts-KQaxvt/kernel.tgz\n\nTotal files: 101\nShasum: 5ce448d1a7ad569864f9677c708a0f868bf5aea3\nIntegrity: sha512-EmHEKxtsILidh[...]CtR16VBlEbGIw==\nUnpacked size: 0.31MB\nPacked size: 72.29KB\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "install",
         "--ignore-scripts",
         "--cache-dir",
-        "/tmp/ts-release-packed-artifacts-H3sOI5/bun-cache"
+        "/tmp/ts-release-packed-artifacts-KQaxvt/bun-cache"
       ],
       "exitCode": 0,
-      "output": "bun install v1.3.14 (0d9b296a)\n\n+ @mannyc1/ts-release@/tmp/ts-release-packed-artifacts-H3sOI5/kernel.tgz\n+ effect@4.0.0-beta.107\n+ typescript@6.0.3 (v7.0.2 available)\n\n15 packages installed [438.00ms]\nResolving dependencies\nResolved, downloaded and extracted [65]\nSaved lockfile\n"
+      "output": "bun install v1.3.14 (0d9b296a)\n\n+ @mannyc1/ts-release@/tmp/ts-release-packed-artifacts-KQaxvt/kernel.tgz\n+ effect@4.0.0-beta.107\n+ typescript@6.0.3 (v7.0.2 available)\n\n15 packages installed [949.00ms]\nResolving dependencies\nResolved, downloaded and extracted [65]\nSaved lockfile\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "portable.mjs"
@@ -538,7 +538,7 @@
       "output": "portable-without-optional-peers\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "portable.mjs"
@@ -547,19 +547,19 @@
       "output": "portable-without-optional-peers\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "install",
         "--ignore-scripts",
         "--cache-dir",
-        "/tmp/ts-release-packed-artifacts-H3sOI5/bun-cache"
+        "/tmp/ts-release-packed-artifacts-KQaxvt/bun-cache"
       ],
       "exitCode": 0,
-      "output": "bun install v1.3.14 (0d9b296a)\n\n+ @effect/platform-bun@4.0.0-beta.107\n+ @effect/platform-node@4.0.0-beta.107\n+ @mannyc1/ts-release@/tmp/ts-release-packed-artifacts-H3sOI5/kernel.tgz\n+ effect-build@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-0.6.3.tgz\n+ effect-build-apple@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-apple-0.6.3.tgz\n+ effect-build-archives@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-archives-0.6.3.tgz\n+ effect-build-bun@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-bun-0.6.3.tgz\n+ effect-build-deno@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-deno-0.6.3.tgz\n+ effect-build-esbuild@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-esbuild-0.6.3.tgz\n+ effect-build-nfpm@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-nfpm-0.6.3.tgz\n+ effect-build-node-sea@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-node-sea-0.6.3.tgz\n+ effect-build-python@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-python-0.6.3.tgz\n+ effect-build-sbom@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-sbom-0.6.3.tgz\n+ effect-build-windows@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-windows-0.6.3.tgz\n\n33 packages installed [431.00ms]\nResolving dependencies\nResolved, downloaded and extracted [140]\nSaved lockfile\n"
+      "output": "bun install v1.3.14 (0d9b296a)\n\n+ @effect/platform-bun@4.0.0-beta.107\n+ @effect/platform-node@4.0.0-beta.107\n+ @mannyc1/ts-release@/tmp/ts-release-packed-artifacts-KQaxvt/kernel.tgz\n+ effect-build@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-0.6.3.tgz\n+ effect-build-apple@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-apple-0.6.3.tgz\n+ effect-build-archives@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-archives-0.6.3.tgz\n+ effect-build-bun@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-bun-0.6.3.tgz\n+ effect-build-deno@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-deno-0.6.3.tgz\n+ effect-build-esbuild@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-esbuild-0.6.3.tgz\n+ effect-build-nfpm@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-nfpm-0.6.3.tgz\n+ effect-build-node-sea@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-node-sea-0.6.3.tgz\n+ effect-build-python@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-python-0.6.3.tgz\n+ effect-build-sbom@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-sbom-0.6.3.tgz\n+ effect-build-windows@/tmp/ts-release-complete-hard-cut/docs/refactor/execution/W08-upstream/packs/effect-build-windows-0.6.3.tgz\n\n33 packages installed [690.00ms]\nResolving dependencies\nResolved, downloaded and extracted [140]\nSaved lockfile\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "node_modules/typescript/bin/tsc",
@@ -570,7 +570,7 @@
       "output": ""
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "types-consumer/public-contract.js"
@@ -579,52 +579,52 @@
       "output": ""
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "executables.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-executables-aExJfF\",\"checks\":93,\"artifacts\":13,\"executions\":3}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-executables-eNZf2t\",\"checks\":93,\"artifacts\":13,\"executions\":3}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "archives.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-archives-hvyHIJ\",\"checks\":42,\"artifacts\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-archives-ZggeWi\",\"checks\":42,\"artifacts\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "python.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-python-D9AMJY\",\"checks\":13,\"artifacts\":4,\"sourceTrees\":2,\"consumers\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-python-o4wPL2\",\"checks\":13,\"artifacts\":4,\"sourceTrees\":2,\"consumers\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "packages.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-packages-MxmTUr\",\"checks\":28,\"artifacts\":5,\"nativeInstalls\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-packages-ldDSyy\",\"checks\":28,\"artifacts\":5,\"nativeInstalls\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "sbom.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-sbom-8Nt6OP\",\"checks\":19,\"documents\":3,\"nativeSchemaChecks\":5}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-sbom-t4R1Y6\",\"checks\":19,\"documents\":3,\"nativeSchemaChecks\":5}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "types-consumer/public-contract.js"
@@ -633,62 +633,62 @@
       "output": ""
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "executables.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-executables-jnhdoI\",\"checks\":93,\"artifacts\":13,\"executions\":3}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-executables-03gzGW\",\"checks\":93,\"artifacts\":13,\"executions\":3}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "archives.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-archives-j2IKKZ\",\"checks\":42,\"artifacts\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-archives-L2VimR\",\"checks\":42,\"artifacts\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "python.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-python-WUi1cQ\",\"checks\":13,\"artifacts\":4,\"sourceTrees\":2,\"consumers\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-python-zeROLm\",\"checks\":13,\"artifacts\":4,\"sourceTrees\":2,\"consumers\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "packages.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-packages-HF8V0l\",\"checks\":28,\"artifacts\":5,\"nativeInstalls\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-packages-yqgpfL\",\"checks\":28,\"artifacts\":5,\"nativeInstalls\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/bun",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/bun",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "sbom.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-sbom-aTFdNS\",\"checks\":19,\"documents\":3,\"nativeSchemaChecks\":5}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-sbom-lVjnbS\",\"checks\":19,\"documents\":3,\"nativeSchemaChecks\":5}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "npm",
         "install",
         "--ignore-scripts"
       ],
       "exitCode": 0,
-      "output": "\nadded 15 packages, and audited 16 packages in 891ms\n\n3 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n"
+      "output": "\nadded 15 packages, and audited 16 packages in 3s\n\n3 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "portable.mjs"
@@ -697,7 +697,7 @@
       "output": "portable-without-optional-peers\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "portable.mjs"
@@ -706,17 +706,17 @@
       "output": "portable-without-optional-peers\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "npm",
         "install",
         "--ignore-scripts"
       ],
       "exitCode": 0,
-      "output": "\nadded 30 packages, and audited 46 packages in 2s\n\n5 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n"
+      "output": "\nadded 30 packages, and audited 46 packages in 1s\n\n5 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "node_modules/typescript/bin/tsc",
@@ -727,7 +727,7 @@
       "output": ""
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "types-consumer/public-contract.js"
@@ -736,52 +736,52 @@
       "output": ""
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "executables.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-executables-uJz3v2\",\"checks\":93,\"artifacts\":13,\"executions\":3}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-executables-yIGA4H\",\"checks\":93,\"artifacts\":13,\"executions\":3}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "archives.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-archives-LUbk4R\",\"checks\":42,\"artifacts\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-archives-whTSnd\",\"checks\":42,\"artifacts\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "python.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-python-pUavfC\",\"checks\":13,\"artifacts\":4,\"sourceTrees\":2,\"consumers\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-python-sNbuc1\",\"checks\":13,\"artifacts\":4,\"sourceTrees\":2,\"consumers\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "packages.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-packages-831Qyk\",\"checks\":28,\"artifacts\":5,\"nativeInstalls\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-packages-DGGw89\",\"checks\":28,\"artifacts\":5,\"nativeInstalls\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
         "sbom.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-sbom-KvzOtU\",\"checks\":19,\"documents\":3,\"nativeSchemaChecks\":5}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-sbom-h8Tfcj\",\"checks\":19,\"documents\":3,\"nativeSchemaChecks\":5}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "types-consumer/public-contract.js"
@@ -790,49 +790,49 @@
       "output": ""
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "executables.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-executables-4LMSGj\",\"checks\":93,\"artifacts\":13,\"executions\":3}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-executables-3h3I2T\",\"checks\":93,\"artifacts\":13,\"executions\":3}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "archives.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-archives-xiZR03\",\"checks\":42,\"artifacts\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-archives-lKOiOX\",\"checks\":42,\"artifacts\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "python.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-python-EFD0yi\",\"checks\":13,\"artifacts\":4,\"sourceTrees\":2,\"consumers\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-python-lUR7S3\",\"checks\":13,\"artifacts\":4,\"sourceTrees\":2,\"consumers\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "packages.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-packages-HVVmWU\",\"checks\":28,\"artifacts\":5,\"nativeInstalls\":4}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-packages-Tj1Ktv\",\"checks\":28,\"artifacts\":5,\"nativeInstalls\":4}\n"
     },
     {
-      "cwd": "/tmp/ts-release-packed-artifacts-H3sOI5/npm",
+      "cwd": "/tmp/ts-release-packed-artifacts-KQaxvt/npm",
       "argv": [
         "/mnt/models/.bun/bin/bun",
         "sbom.mjs"
       ],
       "exitCode": 0,
-      "output": "{\"work\":\"/tmp/ts-release-producer-sbom-ZmE34O\",\"checks\":19,\"documents\":3,\"nativeSchemaChecks\":5}\n"
+      "output": "{\"work\":\"/tmp/ts-release-producer-sbom-OR3sti\",\"checks\":19,\"documents\":3,\"nativeSchemaChecks\":5}\n"
     }
   ],
   "limits": [

@@ -402,7 +402,7 @@
       "declaration": "platform/Application.d.ts",
       "declarationSha256": "f6c013a4de94cf26b63dc130bf23109aa5d76e1571cdef993daad75a6758c9b0",
       "source": "packages/ts-release/src/platform/Application.ts",
-      "sourceSha256": "d7fd8e579a998ec9384cecea7bfc10a24841b5bb5563f43ce222dd48920a61b8"
+      "sourceSha256": "82d38591de32ba664187694f000f120185f4e6e79c0ad5ee567f009c831333c4"
     },
     {
       "declaration": "platform/ContentStore.d.ts",

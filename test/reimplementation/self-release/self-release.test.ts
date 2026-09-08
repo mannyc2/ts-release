@@ -10,7 +10,7 @@ import * as Artifact from "effect-build/Artifact"
 import * as ProducerFile from "effect-build/Author/File"
 import * as ProducerTree from "effect-build/Author/Tree"
 import type * as Producer from "effect-build/Artifact"
-import { ReleaseError, type Operation } from "@mannyc1/ts-release"
+import { ReleaseError, createPlan, type Operation } from "@mannyc1/ts-release"
 import * as Git from "@mannyc1/ts-release/git"
 import {
   Bundle,
@@ -526,12 +526,23 @@ test("real producers assemble one non-mutating seven-package self-release plan",
       maximumOutputBytes: 8 * 1024 * 1024,
     },
   }
-  const run = async (runtime: string, cache: string, change: Record<string, unknown> = {}) => {
+  const run = async (
+    runtime: string,
+    cache: string,
+    change: Record<string, unknown> = {},
+    selectedPlan = prepared.plan,
+  ) => {
     const inputFile = join(work, `input-${crypto.randomUUID()}.json`)
+    const selectedPlanFile =
+      selectedPlan === prepared.plan ? planFile : join(work, `plan-${crypto.randomUUID()}.json`)
+    if (selectedPlan !== prepared.plan)
+      await writeFile(selectedPlanFile, `${JSON.stringify(selectedPlan)}\n`)
     await writeFile(
       inputFile,
       JSON.stringify({
         ...baseInput,
+        planFile: selectedPlanFile,
+        planId: selectedPlan.planId,
         ...change,
         journal: { ...baseInput.journal, cacheDirectory: cache },
       }),
@@ -561,9 +572,22 @@ test("real producers assemble one non-mutating seven-package self-release plan",
   expect(JSON.parse(second.stdout)).toEqual(report)
   expect(native(journalRemote, ["for-each-ref", "--format=%(refname)"]).toString()).toBe("")
 
+  const wrongCatalog = await gitUpdate("wrong-homebrew", baseInput.catalog.homebrewFile, action)
+  const wrongPlan = await Effect.runPromise(
+    createPlan(
+      prepared.plan.bundleId,
+      operations.map((operation) =>
+        operation.operationId === git[0]!.operationId ? wrongCatalog : operation,
+      ),
+    ),
+  )
+  const wrongOutput = await run(node, join(work, "rejected-wrong-output"), {}, wrongPlan)
+  expect({ exit: wrongOutput.exit, stdout: wrongOutput.stdout }).toEqual({ exit: 1, stdout: "" })
+
   for (const change of [
     { sourceTree: "0".repeat(40) },
     { planId: "0".repeat(64) },
+    { catalog: { ...baseInput.catalog, scoopFile: baseInput.catalog.homebrewFile } },
     { authorize: true },
   ]) {
     const rejected = await run(node, join(work, `rejected-${crypto.randomUUID()}`), change)

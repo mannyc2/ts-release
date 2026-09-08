@@ -2259,11 +2259,6 @@
     },
     {
       "file": "packages/ts-release/src/platform/Application.ts",
-      "specifier": "effect/Layer",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/platform/Application.ts",
       "specifier": "effect/Logger",
       "typeOnly": false
     },
@@ -3139,7 +3134,6 @@
       "effect/Cause",
       "effect/Context",
       "effect/Effect",
-      "effect/Layer",
       "effect/Logger",
       "effect/Redacted",
       "effect/Schema",
@@ -3160,7 +3154,6 @@
       "effect/Cause",
       "effect/Context",
       "effect/Effect",
-      "effect/Layer",
       "effect/Logger",
       "effect/Redacted",
       "effect/Schema",

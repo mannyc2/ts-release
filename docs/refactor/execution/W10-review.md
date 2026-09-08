@@ -37,6 +37,17 @@ network destination or dispatch, and the run options forbid authorization,
 observation and dispatch. This establishes a complete non-mutating intention;
 it does not simulate publication success.
 
+A follow-up review closed an identity gap inside that boundary: a structurally
+valid Git plan could previously pair an expected path with content from another
+intended output because path, rendered bytes and `FileEdit.content` were checked
+independently. The application now constructs the exact expected path-to-content
+map, admits only the complete three-edit Git cohort plus one MCP operation,
+and binds every edit to both the intended owned `Content` identity and rendered
+bytes. A regression rebuilds an otherwise valid plan with Action bytes in the
+Homebrew edit and proves rejection before output or journal access. Source Git
+object IDs are also restricted to exact 40- or 64-digit hexadecimal values, and
+the intended OpenAI marketplace is rendered through its validating constructor.
+
 Package review rebuilt declarations and fresh archives before consumer checks.
 One issue found during this pass was an exported inferred `Sigstore.Bundle`
 return type in npm's declaration, which pulled development-only Sigstore
@@ -59,11 +70,11 @@ Action bridge are not retained behind compatibility exports. `.repos/effect`
 and the user's original worktree remain outside the implementation.
 
 Source review recomputed every maintained file after the final declaration
-fix. Product is exactly 11,485 lines, all replacement, with no forecast or
-variance used as a pass. The generated Action bundle, metadata, owned data,
-tests, fixtures and tooling are counted separately and remain visible. The
-forecast's actual source bindings and production declaration projection were
-also refreshed before sealing.
+fix. Product is 11,484 lines, all replacement and one line below the unchanged
+ceiling, with no forecast or variance used as a pass. The generated Action
+bundle, metadata, owned data, tests, fixtures and tooling are counted separately
+and remain visible. The forecast's actual source bindings and production
+declaration projection were also refreshed before sealing.
 
 The direct and packed matrices cover local deterministic behavior, fresh
 installation, package-manager skew, runtime skew, process replacement, real Git

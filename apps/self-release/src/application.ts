@@ -19,7 +19,7 @@ import * as Mcp from "@mannyc1/ts-release-mcp"
 import * as OpenAi from "@mannyc1/ts-release-openai"
 
 const Sha256 = Schema.String.check(Schema.isPattern(/^[a-f0-9]{64}$/u))
-const GitOid = Schema.String.check(Schema.isPattern(/^[a-f0-9]{40,64}$/u))
+const GitOid = Schema.String.check(Schema.isPattern(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u))
 const PositiveInt = Schema.Int.check(Schema.makeFilter((value) => value > 0))
 const SourceIdentity = Schema.Struct({ commit: GitOid, repository: Schema.String, tree: GitOid })
 class JournalInput extends Schema.Class<JournalInput>("SelfRelease.JournalInput")({
@@ -61,9 +61,7 @@ const read = (path: string, subject: string) =>
 const unavailable = (code: string, message: string) => () =>
   Effect.fail(failure(`self-release-${code}`, message))
 const unavailableRead: HttpRead = unavailable("network", "Rehearsal cannot perform network reads")
-const noMutation: Transport = {
-  send: unavailable("mutation", "Self-release rehearsal cannot dispatch"),
-}
+const noMutation: Transport = { send: unavailable("mutation", "Rehearsal cannot dispatch") }
 const intents = <A, I>(
   operations: readonly Operation[],
   definitionId: string,
@@ -144,7 +142,6 @@ export const createApplication = Effect.fn("selfRelease.createApplication")(func
   const files = verifiedArtifacts(access, 32 * 1024 * 1024)
   if (!files.has(input.openAiPlugin))
     return yield* failure("self-release-openai", "OpenAI plugin is not an exact Bundle member")
-  yield* OpenAi.validatePackage(input.openAiPlugin, readContent)
   const source = artifacts.get(input.sourceFile)
   if (source?._tag !== "OwnedFile")
     return yield* failure("self-release-source", "Source identity is not a Bundle member")
@@ -192,25 +189,42 @@ export const createApplication = Effect.fn("selfRelease.createApplication")(func
     githubTags[0]!.commit !== input.sourceCommit
   )
     return yield* failure("self-release-github", "GitHub tag differs from the source release")
-  const gitPaths = intents(plan.operations, "git.catalog.update", GitIntent).flatMap((intent) =>
-    intent.files.map((file) => file.path),
+  const marketplace = yield* OpenAi.marketplace(
+    {
+      plugin: input.openAiPlugin,
+      existing: null,
+      marketplaceName: "ts-release",
+      displayName: "ts-release",
+      sourcePath: "./plugins/ts-release",
+      category: "Developer Tools",
+    },
+    readContent,
   )
-  if (
-    ![
-      input.catalog.homebrewFile,
-      input.catalog.scoopFile,
-      ".agents/plugins/marketplace.json",
-    ].every((path) => gitPaths.includes(path)) ||
-    intents(plan.operations, "mcp.publish", Mcp.PublishIntent).length !== 1
-  )
-    return yield* failure("self-release-plan", "Catalog, marketplace or MCP operation is missing")
-  for (const [name, rendered] of [
+  const outputs = new Map<string, Uint8Array>([
     [input.catalog.homebrewFile, yield* Homebrew.render(input.catalog.homebrew, bundle)],
     [input.catalog.scoopFile, yield* Scoop.render(input.catalog.scoop, bundle)],
-  ] as const) {
-    const file = artifacts.get(name)
-    if (file?._tag !== "OwnedFile" || !sameBytes(yield* files.read(file), rendered))
-      return yield* failure("self-release-catalog", "Catalog bytes differ from the intended Bundle")
+    [marketplace.path, marketplace.bytes],
+  ])
+  const gitUpdates = intents(plan.operations, "git.catalog.update", GitIntent),
+    gitFiles = gitUpdates.flatMap((intent) => intent.files)
+  if (
+    outputs.size !== 3 ||
+    gitUpdates.length !== outputs.size ||
+    gitFiles.length !== outputs.size ||
+    intents(plan.operations, "mcp.publish", Mcp.PublishIntent).length !== 1
+  )
+    return yield* failure("self-release-plan", "Catalog, marketplace or MCP operation differs")
+  for (const edit of gitFiles) {
+    const expected = outputs.get(edit.path),
+      artifact = artifacts.get(edit.path)
+    if (
+      !expected ||
+      artifact?._tag !== "OwnedFile" ||
+      !sameData(edit.content, artifact.content) ||
+      !sameBytes(yield* files.read(artifact), expected)
+    )
+      return yield* failure("self-release-output", "Planned output differs from its Bundle file")
+    outputs.delete(edit.path)
   }
   const store = yield* openGitJournal({
     ...input.journal,

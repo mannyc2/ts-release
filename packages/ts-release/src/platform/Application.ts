@@ -1,5 +1,4 @@
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import * as Logger from "effect/Logger"
 import type * as Scope from "effect/Scope"
 import { resolve } from "node:path"
@@ -77,7 +76,7 @@ export const runApplication = (
           const admitted = yield* reportFinalizedRelease(app.bundle, options.plan)
           yield* runRelease({ ...options, plan: admitted.plan })
           return yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
-        }).pipe(Effect.provide(Layer.succeed(Host, host)))
+        }).pipe(Effect.provideService(Host, host))
       }),
     ).pipe(Effect.provideService(Logger.LogToStderr, true)),
     { signal },

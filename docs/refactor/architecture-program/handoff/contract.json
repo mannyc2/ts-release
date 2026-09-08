@@ -144,7 +144,7 @@
     {
       "path": "docs/refactor/architecture-program/handoff/layout.json",
       "bytes": 170638,
-      "sha256": "c0d317d09201c1fd2461f1268ddb53334b3f05285aba43d52d15085578de28a5"
+      "sha256": "a8346581d7e80a43b7f83b19acd3c9ee68ac53d6b11b74b9e236e092ea36ebf7"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/machine.md",
@@ -284,7 +284,7 @@
     {
       "path": "docs/refactor/architecture-program/handoff/production-api/emission.json",
       "bytes": 27237,
-      "sha256": "77655e8f9288e7e2cb9378af147bb795ad404947f1b9882e47e0c4864402df69"
+      "sha256": "497fd1be3c4f995d984ed2343ef21004fe90c9f09fab41fa11c154020fccc722"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/production-api/github/Auth.d.ts",
@@ -699,7 +699,7 @@
     {
       "path": "docs/refactor/architecture-program/handoff/public-surface.json",
       "bytes": 206544,
-      "sha256": "ea22ca6812b51d87a39b19c5bcdf6cd27038cec7275b70be77bbeaf21f5d87d9"
+      "sha256": "961dd09797be31ba5bbbe62c0fef12bd942217427b695fc7a2101f56c5c15989"
     },
     {
       "path": "docs/refactor/architecture-program/handoff/qualification.json",

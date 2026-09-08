@@ -561,7 +561,11 @@
         "src/publication/catalog-git.ts"
       ],
       "responsibility": "Compose actual CLI/Action/self-release catalog declarations, exact source/tag/download lineage, managed target/state pair and forward-version correction constraints into new immutable plans using native expected-old Git CAS. No legacy correction envelope or mutable operation reader survives. Preserve unrelated paths/modes and full intended pair bytes. Complete hosted scratch tap/bucket receipt/ref/tree and clean Homebrew/Scoop native install/run outcomes through Plans009/010; local format/Git controls do not close those outcomes.",
-      "status": "open"
+      "status": "verified",
+      "verification": {
+        "record": "W10-verification.json",
+        "scope": "The self-release application binds exact rendered Homebrew, Scoop and marketplace bytes into native conditional-Git operations; hosted mutation and clean native installs remain Plans009/010"
+      }
     }
   ]
 }

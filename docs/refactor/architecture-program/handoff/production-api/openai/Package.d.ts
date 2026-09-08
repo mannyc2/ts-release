@@ -1,7 +1,9 @@
-import * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
-import { ReleaseError } from "@mannyc1/ts-release";
+import { Effect, Schema } from "effect";
 import { Content, Tree, type ReadContent } from "@mannyc1/ts-release/bundle";
+import { canonical, compareText as compare } from "@mannyc1/ts-release/http";
+export { canonical, compare };
+export declare const name: (value: string) => boolean;
+export declare const safePath: (value: string) => boolean;
 declare const SkillFile_base: Schema.Class<SkillFile, Schema.Struct<{
     readonly path: Schema.String;
     readonly content: typeof Content;
@@ -31,30 +33,21 @@ declare const PluginInput_base: Schema.Class<PluginInput, Schema.Struct<{
 }>, {}>;
 export declare class PluginInput extends PluginInput_base {
 }
-export interface RenderedFile {
-    readonly path: string;
-    readonly bytes: Uint8Array;
-    readonly mode: 0o644 | 0o755;
-}
-export declare const containsSecret: (value: string | Uint8Array) => boolean;
-export declare const publicText: (value: string, maximum?: number) => boolean;
-export declare const name: (value: string) => boolean;
-export declare const safePath: (value: string) => boolean;
-export declare const compare: (left: string, right: string) => number;
-export declare const canonical: (input: unknown) => string;
-export declare const freeze: <A>(value: A) => A;
-export declare const own: <A, I>(codec: Schema.Codec<A, I>, input: unknown) => A;
-export declare const attempt: <A>(code: string, body: () => A) => Effect.Effect<A, ReleaseError>;
+export type RenderedFile = Readonly<{
+    path: string;
+    bytes: Uint8Array;
+    mode: 0o644 | 0o755;
+}>;
+export declare const failure: (code: string, message: string) => import("@mannyc1/ts-release").ReleaseError, reject: (code: string, message: string) => Effect.Effect<never, import("@mannyc1/ts-release").ReleaseError>, attempt: <A>(code: string, body: () => A) => Effect.Effect<A, import("@mannyc1/ts-release").ReleaseError, never>, own: <A, I>(codec: Schema.Codec<A, I>, input: unknown) => A;
 export declare const files: (input: PluginInput, readContent: ReadContent) => Effect.Effect<readonly Readonly<{
     bytes: Uint8Array<ArrayBuffer>;
     path: string;
     mode: 420 | 493;
-}>[], ReleaseError, never>;
+}>[], import("@mannyc1/ts-release").ReleaseError, never>;
 export declare const inspectPackage: (input: Tree, readContent: ReadContent) => Effect.Effect<Readonly<{
     tree: Tree;
     manifest: Manifest;
     skillName: string;
     contents: Map<string, Uint8Array<ArrayBufferLike>>;
-}>, ReleaseError, never>;
-export declare const validatePackage: (tree: Tree, readContent: ReadContent) => Effect.Effect<Tree, ReleaseError, never>;
-export {};
+}>, import("@mannyc1/ts-release").ReleaseError, never>;
+export declare const validatePackage: (tree: Tree, read: ReadContent) => Effect.Effect<Tree, import("@mannyc1/ts-release").ReleaseError, never>;

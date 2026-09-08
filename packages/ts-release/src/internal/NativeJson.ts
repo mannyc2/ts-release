@@ -2,25 +2,17 @@ import { fail } from "./Error.js"
 const invalid = (code: string): never => fail(code, "Native JSON could not be admitted")
 /** Match the retained native policy: no duplicate keys, unsafe integers, or
  * ambiguous strings. JSON.parse builds the value only after lexical admission. */
-export const decodeJson = (bytes: Uint8Array): unknown => {
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+export const decodeJson = (input: string | Uint8Array): unknown => {
+  const text =
+    typeof input === "string" ? input : new TextDecoder("utf-8", { fatal: true }).decode(input)
   const lexer =
-    /[\t\n\r ]+|"(?:[^"\\\u0000-\u001f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"|true|false|null|-?(?:0|[1-9][0-9]*)|[{}\[\]:,]/uy
-  let token = "",
-    offset = 0
-  const next = () => {
-    do {
-      if (offset === text.length) {
-        token = ""
-        return
-      }
-      lexer.lastIndex = offset
-      const match = lexer.exec(text)
-      if (!match) return invalid("json-token")
-      token = match[0]
-      offset = lexer.lastIndex
-    } while (/^[\t\n\r ]/u.test(token))
-  }
+    /[\t\n\r ]+|"(?:[^"\\\u0000-\u001f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"|true|false|null|-?(?:0|[1-9][0-9]*)|[{}\[\]:,]/gu
+  const raw = text.match(lexer) ?? []
+  if (raw.join("") !== text) invalid("json-token")
+  const tokens = raw.filter((value) => !/^[\t\n\r ]/u.test(value))
+  let at = 0,
+    token = tokens[0] ?? ""
+  const next = () => (token = tokens[++at] ?? "")
   const string = () => {
     if (!token.startsWith('"')) return invalid("json-string")
     const value = JSON.parse(token) as string
@@ -34,7 +26,7 @@ export const decodeJson = (bytes: Uint8Array): unknown => {
   const value = (depth: number): void => {
     if (depth > 128) invalid("json-depth")
     if (["{", "["].includes(token)) {
-      const record = ["{"].includes(token),
+      const record = token === "{",
         end = record ? "}" : "]",
         keys = new Set<string>()
       next()
@@ -67,7 +59,6 @@ export const decodeJson = (bytes: Uint8Array): unknown => {
     }
     next()
   }
-  next()
   value(0)
   if (token !== "") invalid("json-trailing-input")
   return JSON.parse(text)

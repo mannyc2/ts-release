@@ -1,49 +1,26 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
-import {
-  CoreDispatchError,
-  CoreUndecodableReceipt,
-  ObservationRecorded,
-  ObservationStatus,
-  Operation,
-  type JournalEvent,
-  type Plan,
-  RequestFacts,
-} from "./internal/ReleaseModel.js"
-import { ReleaseError, attempt, fail } from "./internal/Error.js"
-import { canonical, decodeOwned, freeze, hashCanonical, sha256 } from "./internal/Identity.js"
+import { Effect, Schema } from "effect"
+import { CoreDispatchError, CoreUndecodableReceipt } from "./internal/ReleaseModel.js"
+import { ObservationRecorded, Operation, RequestFacts } from "./internal/ReleaseModel.js"
+import type { JournalEvent, ObservationStatus, Plan } from "./internal/ReleaseModel.js"
+import { ReleaseError, attempt, fail, reject } from "./internal/Error.js"
+import { canonical, copyData, decodeOwned, freeze } from "./internal/Identity.js"
+import { hashCanonical, sha256 } from "./internal/Identity.js"
 
 /** Provider contract version spoken by this kernel. A definition built against another contract is rejected at Host verification, whatever the installer resolved. */
 export const PROVIDER_CONTRACT = "ts-release/provider/1" as const
 /** Transport owns actual sends; prepare and durable values contain no callback. */
-export interface PreparedRequest {
-  readonly facts: RequestFacts
-  readonly body: Uint8Array
-}
+export type PreparedRequest = Readonly<{ facts: RequestFacts; body: Uint8Array }>
 export type SendResult =
-  | {
-      readonly _tag: "Accepted"
-      readonly receipt: unknown
-    }
-  | {
-      readonly _tag: "RejectedBeforeCommit"
-      readonly proof: unknown
-    }
-  | {
-      readonly _tag: "Unknown"
-      readonly reason: string
-      readonly nativeError?: unknown
-    }
+  | { readonly _tag: "Accepted"; readonly receipt: unknown }
+  | { readonly _tag: "RejectedBeforeCommit"; readonly proof: unknown }
+  | { readonly _tag: "Unknown"; readonly reason: string; readonly nativeError?: unknown }
 export interface Transport {
   readonly send: (request: PreparedRequest) => Effect.Effect<SendResult, ReleaseError>
   /** Resolve ephemeral credentials before the journal uncertainty boundary.
    * The returned send has no dispatch permission; only fresh core CAS grants it. */
   readonly prepare?: (request: PreparedRequest) => Effect.Effect<Transport["send"], ReleaseError>
 }
-export interface Observation {
-  readonly status: ObservationStatus
-  readonly evidence: unknown
-}
+export type Observation = Readonly<{ status: ObservationStatus; evidence: unknown }>
 export interface OperationEvidence {
   readonly operation: Operation
   readonly receipts: ReadonlyArray<unknown>
@@ -106,6 +83,10 @@ export type ProviderDescriptor = Pick<
   ProviderDefinition,
   "definitionId" | "intentVersion" | "intentCodec" | "validatePlan"
 >
+export const defineProvider = <Id extends string, A, I>(
+  definitionId: Id,
+  intentCodec: Schema.Codec<A, I>,
+) => ({ definitionId, intentVersion: "1" as const, intentCodec })
 /** A projection of a validated prefix only; later events cannot justify earlier requests. */
 export const evidenceContext = (
   plan: Plan,
@@ -142,6 +123,21 @@ export const evidenceContext = (
     }),
   })
 }
+export const assertRequestCorresponds = (
+  provider: ProviderDefinition,
+  operation: Operation,
+  request: RequestFacts,
+  context: ProviderContext,
+): void => {
+  if (
+    provider.requestCorresponds &&
+    provider.requestCorresponds(operation, request, context) !== true
+  )
+    fail(
+      "request-correspondence",
+      "Request's preceding dependency differs from declared dependency",
+    )
+}
 export type Json = Schema.Json
 export type OperationId = string
 export type Author<A> = (
@@ -156,24 +152,12 @@ export const makeRequest = Effect.fn("ts-release.makeRequest")(function* (
   },
 ) {
   const { body, fields } = yield* attempt(() => {
-    const body = new Uint8Array(input.body)
     const { body: _, ...fields } = input
-    return {
-      body,
-      fields: decodeOwned(RequestFacts, {
-        ...fields,
-        bodyDigest: "",
-        byteLength: String(body.byteLength),
-      }),
-    }
+    return { body: new Uint8Array(input.body), fields: copyData(fields) as typeof fields }
   })
   const bodyDigest = yield* sha256(body)
   const facts = yield* attempt(() =>
-    decodeOwned(RequestFacts, {
-      ...fields,
-      bodyDigest,
-      byteLength: String(body.byteLength),
-    }),
+    decodeOwned(RequestFacts, { ...fields, bodyDigest, byteLength: String(body.byteLength) }),
   )
   return { facts, body } satisfies PreparedRequest
 })
@@ -185,23 +169,17 @@ export const verifyRequest = Effect.fn("ts-release.verifyRequest")(function* (
     body: new Uint8Array(request.body),
   }))
   if (facts.byteLength !== String(body.byteLength) || facts.bodyDigest !== (yield* sha256(body)))
-    return yield* new ReleaseError({
-      code: "request-bytes",
-      message: "Prepared bytes do not match recorded facts",
-    })
+    return yield* reject("request-bytes", "Prepared bytes do not match recorded facts")
   yield* attempt(() => {
     canonical(facts)
-    for (const [name] of facts.headers) {
-      if (
+    if (
+      facts.headers.some(([name]) =>
         /^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-auth-token)$/iu.test(
           name,
-        )
+        ),
       )
-        fail(
-          "secret-header",
-          "Authentication header bytes must remain in the host transport closure",
-        )
-    }
+    )
+      fail("secret-header", "Authentication header bytes must remain in the host transport closure")
     if (
       facts.replay._tag === "GitCas" &&
       (facts.transport !== "core.git/1" || facts.method !== "update-ref")
@@ -218,33 +196,61 @@ export const CORE_ERROR_VERSIONS = new Set<string>([
   "core-undecodable-receipt/1",
 ])
 export const isCoreErrorVersion = (version: string): boolean => CORE_ERROR_VERSIONS.has(version)
+const isVersion = (value: unknown): value is string => typeof value === "string" && value.length > 0
+const isFunction = (value: unknown): value is (...args: never[]) => unknown =>
+  typeof value === "function"
+const captureBoundary = (boundary: NativeFailureBoundary | undefined) => {
+  if (!boundary) return
+  if (
+    !isVersion(boundary.version) ||
+    !Schema.isSchema(boundary.codec) ||
+    !isFunction(boundary.corresponds) ||
+    isCoreErrorVersion(boundary.version)
+  )
+    fail("failure-codec", "Native failure boundaries require a complete versioned codec")
+  canonical(boundary.version)
+  return Object.freeze({
+    version: boundary.version,
+    codec: boundary.codec,
+    corresponds: boundary.corresponds.bind(boundary),
+  })
+}
 export const verifyDescriptor = (provider: ProviderDescriptor): void => {
   if (
-    typeof provider.definitionId !== "string" ||
-    !provider.definitionId ||
-    typeof provider.intentVersion !== "string" ||
-    !provider.intentVersion ||
+    ![provider.definitionId, provider.intentVersion].every(isVersion) ||
     !Schema.isSchema(provider.intentCodec) ||
-    (provider.validatePlan !== undefined && typeof provider.validatePlan !== "function")
+    (provider.validatePlan !== undefined && !isFunction(provider.validatePlan))
   )
     fail("intent-codec", "Provider identity and intent codec are required")
   canonical([provider.definitionId, provider.intentVersion])
 }
+export const captureDescriptor = (provider: ProviderDescriptor): ProviderDescriptor => {
+  verifyDescriptor(provider)
+  return Object.freeze({
+    definitionId: provider.definitionId,
+    intentVersion: provider.intentVersion,
+    intentCodec: provider.intentCodec,
+    ...(provider.validatePlan && { validatePlan: provider.validatePlan.bind(provider) }),
+  })
+}
 
-export const verifyProviderContracts = (providers: ReadonlyArray<ProviderDefinition>): void => {
+export const verifyProviderContracts = (
+  providers: ReadonlyArray<ProviderDefinition>,
+): ReadonlyArray<ProviderDefinition> => {
+  const captured: ProviderDefinition[] = []
   for (const provider of providers) {
+    const dispatchError = captureBoundary(provider.dispatchError),
+      rejection = captureBoundary(provider.rejection)
     if (provider.contract !== PROVIDER_CONTRACT)
       fail("provider-contract", "Provider and kernel contract versions differ")
-    verifyDescriptor(provider)
+    const descriptor = captureDescriptor(provider)
     if (
-      typeof provider.receiptVersion !== "string" ||
-      !provider.receiptVersion ||
+      !isVersion(provider.receiptVersion) ||
       !Schema.isSchema(provider.receiptCodec) ||
-      typeof provider.receiptCorresponds !== "function" ||
-      typeof provider.classifyReceipt !== "function" ||
-      typeof provider.prepare !== "function" ||
-      (provider.requestCorresponds !== undefined &&
-        typeof provider.requestCorresponds !== "function")
+      ![provider.receiptCorresponds, provider.classifyReceipt, provider.prepare].every(
+        isFunction,
+      ) ||
+      (provider.requestCorresponds !== undefined && !isFunction(provider.requestCorresponds))
     )
       fail(
         "missing-receipt-codec",
@@ -259,34 +265,40 @@ export const verifyProviderContracts = (providers: ReadonlyArray<ProviderDefinit
     ]
     if (
       observation.some((value) => value !== undefined) &&
-      (typeof provider.observe !== "function" ||
-        typeof provider.observationVersion !== "string" ||
-        !provider.observationVersion ||
-        !Schema.isSchema(provider.observationCodec) ||
-        typeof provider.classifyObservation !== "function")
+      (!isFunction(provider.observe) ||
+        !isFunction(provider.classifyObservation) ||
+        !isVersion(provider.observationVersion) ||
+        !Schema.isSchema(provider.observationCodec))
     )
       fail(
         "missing-observation-codec",
         "Observation requires a complete callable operation, native codec and classifier",
       )
     if (provider.observationVersion !== undefined) canonical(provider.observationVersion)
-    for (const boundary of [provider.dispatchError, provider.rejection]) {
-      if (
-        boundary !== undefined &&
-        (!boundary ||
-          typeof boundary.version !== "string" ||
-          !boundary.version ||
-          !Schema.isSchema(boundary.codec) ||
-          typeof boundary.corresponds !== "function" ||
-          isCoreErrorVersion(boundary.version))
-      )
-        fail(
-          "failure-codec",
-          "Native failure boundaries require their own complete versioned codec",
-        )
-      if (boundary !== undefined) canonical(boundary.version)
-    }
+    captured.push(
+      Object.freeze({
+        contract: provider.contract,
+        ...descriptor,
+        ...(provider.requestCorresponds && {
+          requestCorresponds: provider.requestCorresponds.bind(provider),
+        }),
+        receiptVersion: provider.receiptVersion,
+        receiptCodec: provider.receiptCodec,
+        receiptCorresponds: provider.receiptCorresponds.bind(provider),
+        classifyReceipt: provider.classifyReceipt.bind(provider),
+        prepare: provider.prepare.bind(provider),
+        ...(provider.observe && {
+          observationVersion: provider.observationVersion!,
+          observationCodec: provider.observationCodec!,
+          classifyObservation: provider.classifyObservation!.bind(provider),
+          observe: provider.observe.bind(provider),
+        }),
+        ...(rejection && { rejection }),
+        ...(dispatchError && { dispatchError }),
+      }),
+    )
   }
+  return Object.freeze(captured)
 }
 export const decodeObservationEvidence = (
   provider: ProviderDefinition,

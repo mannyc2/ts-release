@@ -1,6 +1,6 @@
 {
   "format": "ts-release/production-imports/1",
-  "files": 89,
+  "files": 92,
   "edges": [
     {
       "file": "packages/mcp/src/Protocol.ts",
@@ -9,12 +9,7 @@
     },
     {
       "file": "packages/mcp/src/Protocol.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/mcp/src/Protocol.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -29,32 +24,17 @@
     },
     {
       "file": "packages/mcp/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/mcp/src/Protocol.ts",
       "specifier": "./Model.js",
       "typeOnly": false
     },
     {
       "file": "packages/mcp/src/Auth.ts",
-      "specifier": "effect/Clock",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/mcp/src/Auth.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/mcp/src/Auth.ts",
-      "specifier": "effect/Redacted",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/mcp/src/Auth.ts",
-      "specifier": "effect/Schema",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/mcp/src/Auth.ts",
-      "specifier": "@mannyc1/ts-release",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -74,17 +54,17 @@
     },
     {
       "file": "packages/mcp/src/Model.ts",
-      "specifier": "effect/Effect",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
       "file": "packages/mcp/src/Model.ts",
-      "specifier": "effect/Schema",
+      "specifier": "@mannyc1/ts-release/http",
       "typeOnly": false
     },
     {
       "file": "packages/mcp/src/Model.ts",
-      "specifier": "@mannyc1/ts-release",
+      "specifier": "@mannyc1/ts-release/http",
       "typeOnly": false
     },
     {
@@ -104,6 +84,26 @@
     },
     {
       "file": "packages/mcp/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/mcp/src/index.ts",
       "specifier": "./Protocol.js",
       "typeOnly": false
     },
@@ -114,12 +114,7 @@
     },
     {
       "file": "packages/catalog/src/Shared.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/catalog/src/Shared.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -133,13 +128,13 @@
       "typeOnly": false
     },
     {
-      "file": "packages/catalog/src/scoop/Manifest.ts",
-      "specifier": "effect/Effect",
+      "file": "packages/catalog/src/Shared.ts",
+      "specifier": "@mannyc1/ts-release/http",
       "typeOnly": false
     },
     {
       "file": "packages/catalog/src/scoop/Manifest.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -159,12 +154,7 @@
     },
     {
       "file": "packages/catalog/src/homebrew/Formula.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/catalog/src/homebrew/Formula.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -184,23 +174,18 @@
     },
     {
       "file": "packages/openai/src/Submission.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/openai/src/Submission.ts",
-      "specifier": "effect/Schema",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/openai/src/Submission.ts",
-      "specifier": "@mannyc1/ts-release",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
       "file": "packages/openai/src/Submission.ts",
       "specifier": "@mannyc1/ts-release/bundle",
       "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Submission.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": true
     },
     {
       "file": "packages/openai/src/Submission.ts",
@@ -213,18 +198,13 @@
       "typeOnly": false
     },
     {
-      "file": "packages/openai/src/Marketplace.ts",
-      "specifier": "effect/Effect",
+      "file": "packages/openai/src/Submission.ts",
+      "specifier": "@mannyc1/ts-release/http",
       "typeOnly": false
     },
     {
       "file": "packages/openai/src/Marketplace.ts",
-      "specifier": "effect/Schema",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/openai/src/Marketplace.ts",
-      "specifier": "@mannyc1/ts-release",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -234,17 +214,17 @@
     },
     {
       "file": "packages/openai/src/Marketplace.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Marketplace.ts",
       "specifier": "./Package.js",
       "typeOnly": false
     },
     {
       "file": "packages/openai/src/Package.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/openai/src/Package.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -254,12 +234,17 @@
     },
     {
       "file": "packages/openai/src/Package.ts",
-      "specifier": "@mannyc1/ts-release",
+      "specifier": "@mannyc1/ts-release/bundle",
       "typeOnly": false
     },
     {
       "file": "packages/openai/src/Package.ts",
-      "specifier": "@mannyc1/ts-release/bundle",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/Package.ts",
+      "specifier": "@mannyc1/ts-release/http",
       "typeOnly": false
     },
     {
@@ -279,7 +264,17 @@
     },
     {
       "file": "packages/openai/src/index.ts",
+      "specifier": "./Package.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/openai/src/index.ts",
       "specifier": "./Marketplace.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/openai/src/index.ts",
+      "specifier": "./Submission.js",
       "typeOnly": false
     },
     {
@@ -299,6 +294,11 @@
     },
     {
       "file": "packages/npm/src/Evidence.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/npm/src/Evidence.ts",
       "specifier": "@mannyc1/ts-release/http",
       "typeOnly": false
     },
@@ -314,17 +314,17 @@
     },
     {
       "file": "packages/npm/src/Evidence.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Evidence.ts",
       "specifier": "./Wire.js",
       "typeOnly": false
     },
     {
       "file": "packages/npm/src/Protocol.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/npm/src/Protocol.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -389,32 +389,17 @@
     },
     {
       "file": "packages/npm/src/Auth.ts",
-      "specifier": "effect/Effect",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
       "file": "packages/npm/src/Auth.ts",
-      "specifier": "effect/Clock",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/npm/src/Auth.ts",
-      "specifier": "effect/Redacted",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/npm/src/Auth.ts",
-      "specifier": "effect/Schema",
+      "specifier": "@sigstore/bundle",
       "typeOnly": false
     },
     {
       "file": "packages/npm/src/Auth.ts",
       "specifier": "sigstore",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/npm/src/Auth.ts",
-      "specifier": "@mannyc1/ts-release",
       "typeOnly": false
     },
     {
@@ -425,7 +410,7 @@
     {
       "file": "packages/npm/src/Auth.ts",
       "specifier": "@mannyc1/ts-release/http",
-      "typeOnly": true
+      "typeOnly": false
     },
     {
       "file": "packages/npm/src/Auth.ts",
@@ -454,6 +439,11 @@
     },
     {
       "file": "packages/npm/src/Model.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/Model.ts",
       "specifier": "@mannyc1/ts-release",
       "typeOnly": true
     },
@@ -474,6 +464,26 @@
     },
     {
       "file": "packages/npm/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/npm/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/npm/src/index.ts",
       "specifier": "./Protocol.js",
       "typeOnly": false
     },
@@ -483,8 +493,8 @@
       "typeOnly": false
     },
     {
-      "file": "packages/npm/src/Native.ts",
-      "specifier": "effect/Effect",
+      "file": "packages/npm/src/index.ts",
+      "specifier": "./Auth.js",
       "typeOnly": false
     },
     {
@@ -505,11 +515,6 @@
     {
       "file": "packages/npm/src/Native.ts",
       "specifier": "node:zlib",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/npm/src/Native.ts",
-      "specifier": "@mannyc1/ts-release",
       "typeOnly": false
     },
     {
@@ -579,18 +584,13 @@
     },
     {
       "file": "packages/ts-release/src/Http.ts",
-      "specifier": "effect/Schema",
+      "specifier": "./internal/Identity.js",
       "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/Http.ts",
-      "specifier": "effect/Effect",
+      "specifier": "effect",
       "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/Http.ts",
-      "specifier": "effect/Redacted",
-      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/Http.ts",
@@ -614,12 +614,7 @@
     },
     {
       "file": "packages/ts-release/src/Provider.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/Provider.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -629,7 +624,22 @@
     },
     {
       "file": "packages/ts-release/src/Provider.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Provider.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Provider.ts",
       "specifier": "./internal/Error.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Provider.ts",
+      "specifier": "./internal/Identity.js",
       "typeOnly": false
     },
     {
@@ -679,6 +689,11 @@
     },
     {
       "file": "packages/ts-release/src/Git.ts",
+      "specifier": "./internal/GitAuthority.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Git.ts",
       "specifier": "./platform/GitHost.js",
       "typeOnly": true
     },
@@ -686,6 +701,21 @@
       "file": "packages/ts-release/src/Git.ts",
       "specifier": "./internal/GitCatalog.js",
       "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Git.ts",
+      "specifier": "./internal/GitCatalog.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Git.ts",
+      "specifier": "./internal/GitCatalog.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Git.ts",
+      "specifier": "./internal/GitCatalog.js",
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/Release.ts",
@@ -701,6 +731,26 @@
       "file": "packages/ts-release/src/Release.ts",
       "specifier": "./internal/ReleaseModel.js",
       "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./internal/ReleaseModel.js",
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/Release.ts",
@@ -734,6 +784,16 @@
     },
     {
       "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Release.ts",
       "specifier": "./internal/GitAuthority.js",
       "typeOnly": false
     },
@@ -749,8 +809,23 @@
     },
     {
       "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Bundle.ts",
       "specifier": "./internal/Content.js",
       "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/Content.js",
+      "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/Bundle.ts",
@@ -778,28 +853,13 @@
       "typeOnly": false
     },
     {
-      "file": "packages/ts-release/src/Bun.ts",
-      "specifier": "./internal/EffectTypes.js",
-      "typeOnly": true
-    },
-    {
-      "file": "packages/ts-release/src/Bun.ts",
-      "specifier": "./platform/GitJournal.js",
+      "file": "packages/ts-release/src/Bundle.ts",
+      "specifier": "./internal/Tar.js",
       "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/Bun.ts",
-      "specifier": "./platform/GitHost.js",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/Bun.ts",
-      "specifier": "./platform/GithubOidc.js",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/Bun.ts",
-      "specifier": "./platform/HttpTransport.js",
+      "specifier": "./Node.js",
       "typeOnly": false
     },
     {
@@ -808,29 +868,9 @@
       "typeOnly": false
     },
     {
-      "file": "packages/ts-release/src/Bun.ts",
-      "specifier": "./platform/Directory.js",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/Bun.ts",
-      "specifier": "./platform/ContentStore.js",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/Bun.ts",
-      "specifier": "./platform/Application.js",
-      "typeOnly": false
-    },
-    {
       "file": "packages/ts-release/src/Journal.ts",
       "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/Journal.ts",
-      "specifier": "effect/Schema",
-      "typeOnly": false
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/Journal.ts",
@@ -853,6 +893,16 @@
       "typeOnly": false
     },
     {
+      "file": "packages/ts-release/src/Journal.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/Journal.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": false
+    },
+    {
       "file": "packages/ts-release/src/index.ts",
       "specifier": "./internal/EffectTypes.js",
       "typeOnly": true
@@ -861,6 +911,21 @@
       "file": "packages/ts-release/src/index.ts",
       "specifier": "./Provider.js",
       "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
+      "specifier": "./Provider.js",
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/index.ts",
@@ -889,6 +954,11 @@
     },
     {
       "file": "packages/ts-release/src/index.ts",
+      "specifier": "./internal/Decision.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
       "specifier": "./Plan.js",
       "typeOnly": false
     },
@@ -899,17 +969,17 @@
     },
     {
       "file": "packages/ts-release/src/index.ts",
+      "specifier": "./internal/GitAuthority.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/index.ts",
       "specifier": "./Release.js",
       "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/Plan.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/Plan.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -964,6 +1034,11 @@
     },
     {
       "file": "packages/ts-release/src/EffectBuild.ts",
+      "specifier": "./internal/ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/EffectBuild.ts",
       "specifier": "./internal/BundleFinalize.js",
       "typeOnly": false
     },
@@ -984,12 +1059,7 @@
     },
     {
       "file": "packages/ts-release/src/internal/Identity.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/internal/Identity.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -1014,12 +1084,7 @@
     },
     {
       "file": "packages/ts-release/src/internal/Error.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/internal/Error.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -1049,12 +1114,7 @@
     },
     {
       "file": "packages/ts-release/src/internal/GitCatalog.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/internal/GitCatalog.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -1103,8 +1163,8 @@
       "typeOnly": false
     },
     {
-      "file": "packages/ts-release/src/internal/ReleaseModel.ts",
-      "specifier": "effect/Effect",
+      "file": "packages/ts-release/src/internal/GitCatalog.ts",
+      "specifier": "../Http.js",
       "typeOnly": false
     },
     {
@@ -1113,18 +1173,8 @@
       "typeOnly": false
     },
     {
-      "file": "packages/ts-release/src/internal/ReleaseModel.ts",
-      "specifier": "./Error.js",
-      "typeOnly": false
-    },
-    {
       "file": "packages/ts-release/src/internal/GitAuthority.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/internal/GitAuthority.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -1179,12 +1229,7 @@
     },
     {
       "file": "packages/ts-release/src/internal/Host.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/internal/Host.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -1194,13 +1239,28 @@
     },
     {
       "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "../Journal.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
       "specifier": "../Provider.js",
       "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "../Provider.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
       "specifier": "./Decision.js",
       "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Host.ts",
+      "specifier": "./Decision.js",
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/internal/Host.ts",
@@ -1229,12 +1289,7 @@
     },
     {
       "file": "packages/ts-release/src/internal/FinalizedReport.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/internal/FinalizedReport.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -1309,6 +1364,16 @@
     },
     {
       "file": "packages/ts-release/src/internal/Decision.ts",
+      "specifier": "./ReleaseModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/Decision.ts",
+      "specifier": "./ReleaseModel.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/internal/Decision.ts",
       "specifier": "../Journal.js",
       "typeOnly": true
     },
@@ -1329,17 +1394,17 @@
     },
     {
       "file": "packages/ts-release/src/internal/TreeManifest.ts",
+      "specifier": "./ArtifactModel.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/internal/TreeManifest.ts",
       "specifier": "./Identity.js",
       "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/internal/BundleCodec.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/internal/BundleCodec.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -1384,12 +1449,7 @@
     },
     {
       "file": "packages/ts-release/src/internal/Checksums.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/internal/Checksums.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -1521,6 +1581,11 @@
       "file": "packages/ts-release/src/apple/Preparation.ts",
       "specifier": "./Model.js",
       "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/apple/Preparation.ts",
+      "specifier": "./Model.js",
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/apple/Preparation.ts",
@@ -1744,6 +1809,11 @@
     },
     {
       "file": "packages/ts-release/src/platform/GitJournal.ts",
+      "specifier": "../internal/GitCatalog.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitJournal.ts",
       "specifier": "./GitProcess.js",
       "typeOnly": false
     },
@@ -1794,12 +1864,42 @@
     },
     {
       "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "../internal/GitAuthority.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
       "specifier": "../internal/GitCatalog.js",
       "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "../internal/GitCatalog.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "../internal/GitCatalog.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "../internal/GitCatalog.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
       "specifier": "./GitProcess.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "./GitProcess.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitHost.ts",
+      "specifier": "./GitObjects.js",
       "typeOnly": false
     },
     {
@@ -1869,33 +1969,18 @@
     },
     {
       "file": "packages/ts-release/src/platform/GithubOidc.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/platform/GithubOidc.ts",
-      "specifier": "effect/Config",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/platform/GithubOidc.ts",
-      "specifier": "effect/Clock",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/platform/GithubOidc.ts",
-      "specifier": "effect/Redacted",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/platform/GithubOidc.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
       "file": "packages/ts-release/src/platform/GithubOidc.ts",
       "specifier": "node:crypto",
       "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GithubOidc.ts",
+      "specifier": "../Http.js",
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/platform/GithubOidc.ts",
@@ -1991,6 +2076,16 @@
       "file": "packages/ts-release/src/platform/HttpTransport.ts",
       "specifier": "../Provider.js",
       "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "../Http.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/HttpTransport.ts",
+      "specifier": "../Http.js",
+      "typeOnly": true
     },
     {
       "file": "packages/ts-release/src/platform/HttpTransport.ts",
@@ -2099,12 +2194,7 @@
     },
     {
       "file": "packages/ts-release/src/platform/GitObjects.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/ts-release/src/platform/GitObjects.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
@@ -2125,6 +2215,11 @@
     {
       "file": "packages/ts-release/src/platform/GitObjects.ts",
       "specifier": "../internal/Content.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/ts-release/src/platform/GitObjects.ts",
+      "specifier": "../internal/GitCatalog.js",
       "typeOnly": false
     },
     {
@@ -2264,6 +2359,16 @@
     },
     {
       "file": "packages/github/src/Evidence.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/github/src/Evidence.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Evidence.ts",
       "specifier": "./Model.js",
       "typeOnly": false
     },
@@ -2279,7 +2384,17 @@
     },
     {
       "file": "packages/github/src/Evidence.ts",
+      "specifier": "./Binding.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Evidence.ts",
       "specifier": "./Wire.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Evidence.ts",
+      "specifier": "./Native.js",
       "typeOnly": false
     },
     {
@@ -2309,6 +2424,11 @@
     },
     {
       "file": "packages/github/src/Observe.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
       "specifier": "./Model.js",
       "typeOnly": false
     },
@@ -2329,7 +2449,22 @@
     },
     {
       "file": "packages/github/src/Observe.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
       "specifier": "./Wire.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Observe.ts",
+      "specifier": "./Evidence.js",
       "typeOnly": false
     },
     {
@@ -2344,18 +2479,18 @@
     },
     {
       "file": "packages/github/src/Protocol.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/github/src/Protocol.ts",
-      "specifier": "effect/Schema",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
       "file": "packages/github/src/Protocol.ts",
       "specifier": "@mannyc1/ts-release",
       "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": true
     },
     {
       "file": "packages/github/src/Protocol.ts",
@@ -2399,6 +2534,11 @@
     },
     {
       "file": "packages/github/src/Protocol.ts",
+      "specifier": "./Evidence.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Protocol.ts",
       "specifier": "./Observe.js",
       "typeOnly": false
     },
@@ -2411,6 +2551,11 @@
       "file": "packages/github/src/Wire.ts",
       "specifier": "@mannyc1/ts-release",
       "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Wire.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": true
     },
     {
       "file": "packages/github/src/Wire.ts",
@@ -2445,6 +2590,11 @@
     {
       "file": "packages/github/src/Auth.ts",
       "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Auth.ts",
+      "specifier": "@mannyc1/ts-release/http",
       "typeOnly": true
     },
     {
@@ -2494,6 +2644,16 @@
     },
     {
       "file": "packages/github/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/index.ts",
       "specifier": "./Graph.js",
       "typeOnly": false
     },
@@ -2519,6 +2679,11 @@
     },
     {
       "file": "packages/github/src/Graph.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/github/src/Graph.ts",
       "specifier": "./Model.js",
       "typeOnly": false
     },
@@ -2536,21 +2701,6 @@
       "file": "packages/github/src/Graph.ts",
       "specifier": "effect/Schema",
       "typeOnly": true
-    },
-    {
-      "file": "packages/github/src/Native.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/github/src/Native.ts",
-      "specifier": "effect/Schema",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/github/src/Native.ts",
-      "specifier": "@mannyc1/ts-release",
-      "typeOnly": false
     },
     {
       "file": "packages/github/src/Native.ts",
@@ -2629,12 +2779,12 @@
     },
     {
       "file": "packages/pypi/src/Protocol.ts",
-      "specifier": "effect/Effect",
+      "specifier": "effect",
       "typeOnly": false
     },
     {
       "file": "packages/pypi/src/Protocol.ts",
-      "specifier": "effect/Schema",
+      "specifier": "@mannyc1/ts-release",
       "typeOnly": false
     },
     {
@@ -2678,8 +2828,23 @@
       "typeOnly": false
     },
     {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "./Evidence.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Protocol.ts",
+      "specifier": "./Evidence.js",
+      "typeOnly": false
+    },
+    {
       "file": "packages/pypi/src/Wire.ts",
       "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Wire.ts",
+      "specifier": "@mannyc1/ts-release/http",
       "typeOnly": false
     },
     {
@@ -2739,6 +2904,11 @@
     },
     {
       "file": "packages/pypi/src/Auth.ts",
+      "specifier": "./Model.js",
+      "typeOnly": true
+    },
+    {
+      "file": "packages/pypi/src/Auth.ts",
       "specifier": "./Native.js",
       "typeOnly": false
     },
@@ -2750,6 +2920,26 @@
     {
       "file": "packages/pypi/src/Model.ts",
       "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Model.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/index.ts",
+      "specifier": "./Model.js",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/index.ts",
+      "specifier": "./Model.js",
       "typeOnly": false
     },
     {
@@ -2769,22 +2959,7 @@
     },
     {
       "file": "packages/pypi/src/Native.ts",
-      "specifier": "effect/Effect",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/pypi/src/Native.ts",
-      "specifier": "effect/Schema",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/pypi/src/Native.ts",
       "specifier": "node:crypto",
-      "typeOnly": false
-    },
-    {
-      "file": "packages/pypi/src/Native.ts",
-      "specifier": "@mannyc1/ts-release",
       "typeOnly": false
     },
     {
@@ -2804,24 +2979,141 @@
     },
     {
       "file": "packages/pypi/src/Archive.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "packages/pypi/src/Archive.ts",
       "specifier": "./Native.js",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/action/src/launcher.ts",
+      "specifier": "node:fs/promises",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/action/src/launcher.ts",
+      "specifier": "node:path",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/action/src/launcher.ts",
+      "specifier": "@mannyc1/ts-release/node",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "node:crypto",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "node:fs/promises",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "effect",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "effect-build/Artifact",
+      "typeOnly": true
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release",
+      "typeOnly": true
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release/bundle",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release/effect-build",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release/git",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release/http",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release/node",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release-npm",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release-pypi",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release-github",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release-catalog/homebrew",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release-catalog/scoop",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release-mcp",
+      "typeOnly": false
+    },
+    {
+      "file": "apps/self-release/src/application.ts",
+      "specifier": "@mannyc1/ts-release-openai",
       "typeOnly": false
     }
   ],
   "runtimeClosures": {
     ".": [
+      "effect",
       "effect/Context",
       "effect/Effect",
       "effect/Schema"
     ],
     "./bundle": [
+      "effect",
       "effect-build/Artifact",
       "effect-build/SystemTarget",
       "effect/Effect",
       "effect/Schema"
     ],
     "./http": [
-      "effect/Effect",
+      "effect",
       "effect/Schema"
     ],
     "./effect-build": [
@@ -2833,6 +3125,7 @@
       "effect/Schema"
     ],
     "./git": [
+      "effect",
       "effect-build/Artifact",
       "effect-build/SystemTarget",
       "effect/Effect",
@@ -2840,11 +3133,10 @@
     ],
     "./bun": [
       "bun:sqlite",
+      "effect",
       "effect-build/Artifact",
       "effect-build/SystemTarget",
       "effect/Cause",
-      "effect/Clock",
-      "effect/Config",
       "effect/Context",
       "effect/Effect",
       "effect/Layer",
@@ -2862,11 +3154,10 @@
       "undici/lib/dispatcher/client.js"
     ],
     "./node": [
+      "effect",
       "effect-build/Artifact",
       "effect-build/SystemTarget",
       "effect/Cause",
-      "effect/Clock",
-      "effect/Config",
       "effect/Context",
       "effect/Effect",
       "effect/Layer",

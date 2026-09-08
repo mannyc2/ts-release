@@ -1,7 +1,6 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
-import { type ProviderDescriptor, verifyDescriptor } from "./Provider.js"
-import { ReleaseError, attempt, fail } from "./internal/Error.js"
+import { Effect, Schema } from "effect"
+import { captureDescriptor, type ProviderDescriptor, verifyDescriptor } from "./Provider.js"
+import { attempt, fail, reject } from "./internal/Error.js"
 import { canonical, hashCanonical, copyData, decodeOwned, freeze } from "./internal/Identity.js"
 import { Operation, Plan } from "./internal/ReleaseModel.js"
 import type { Scope } from "./Journal.js"
@@ -70,10 +69,7 @@ export const createPlan = Effect.fn("ts-release.createPlan")(function* (
       intent: operation.intent,
     })
     if (expected !== operation.operationId)
-      return yield* new ReleaseError({
-        code: "operation-identity",
-        message: "Operation does not match its canonical intent",
-      })
+      return yield* reject("operation-identity", "Operation does not match its canonical intent")
   }
   const content = planValue(bundleId, operations)
   const value = {
@@ -99,17 +95,7 @@ export const loadPlan = Effect.fn("ts-release.loadPlan")(function* (
   const { plan, definitions } = yield* attempt(() => {
     const definitions = new Map<string, ProviderDescriptor>()
     for (const provider of providers) {
-      const validatePlan = provider.validatePlan
-      const captured: ProviderDescriptor = Object.freeze({
-        definitionId: provider.definitionId,
-        intentVersion: provider.intentVersion,
-        intentCodec: provider.intentCodec,
-        ...(validatePlan !== undefined && {
-          validatePlan:
-            typeof validatePlan === "function" ? validatePlan.bind(provider) : validatePlan,
-        }),
-      })
-      verifyDescriptor(captured)
+      const captured = captureDescriptor(provider)
       if (definitions.has(captured.definitionId))
         fail("duplicate-provider", "Provider definition IDs must be unique")
       definitions.set(captured.definitionId, captured)
@@ -125,23 +111,13 @@ export const loadPlan = Effect.fn("ts-release.loadPlan")(function* (
   for (const operation of plan.operations) {
     const provider = definitions.get(operation.definitionId)
     if (!provider || provider.intentVersion !== operation.intentVersion)
-      return yield* new ReleaseError({
-        code: "unknown-provider-codec",
-        message: "Provider or intent version is unavailable",
-      })
+      return yield* reject("unknown-provider-codec", "Provider or intent version is unavailable")
     const rebuilt = yield* createOperation(provider, operation.intent, operation.dependsOn)
-    if (
-      rebuilt.operationId !== operation.operationId ||
-      canonical(rebuilt.intent) !== canonical(operation.intent)
-    )
-      return yield* new ReleaseError({
-        code: "operation-identity",
-        message: "Operation does not match its canonical intent",
-      })
+    if (rebuilt.operationId !== operation.operationId)
+      return yield* reject("operation-identity", "Operation does not match its canonical intent")
   }
   const rebuilt = yield* createPlan(plan.bundleId, plan.operations, plan.journalId)
-  if (rebuilt.planId !== plan.planId)
-    return yield* new ReleaseError({ code: "plan-identity", message: "Plan ID mismatch" })
+  if (rebuilt.planId !== plan.planId) return yield* reject("plan-identity", "Plan ID mismatch")
   yield* attempt(() => {
     for (const provider of definitions.values()) {
       if (provider.validatePlan?.(rebuilt.operations) !== undefined)

@@ -1,12 +1,6 @@
-import * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
-import { ReleaseError } from "@mannyc1/ts-release";
 import { type HttpResponse } from "@mannyc1/ts-release/http";
 import * as Model from "./Model.js";
-export declare const invalid: (code: string) => never;
-export declare const attempt: <A>(run: () => A) => Effect.Effect<A, ReleaseError, never>;
-export declare const own: <A, I>(schema: Schema.Codec<A, I>, value: unknown) => A;
-export declare const object: (input: unknown) => Record<string, unknown>;
+export declare const invalid: (code: string) => never, attempt: <A>(body: () => A) => import("effect/Effect").Effect<A, import("@mannyc1/ts-release").ReleaseError, never>, matches: (body: () => boolean) => boolean, object: (value: unknown) => Record<string, unknown>, own: <A, I>(codec: import("effect/Schema").Codec<A, I>, input: unknown) => A, ownOperation: <A, I>(codec: import("effect/Schema").Codec<A, I>, descriptor: Pick<import("@mannyc1/ts-release").ProviderDescriptor, "definitionId" | "intentVersion">, operation: import("@mannyc1/ts-release").Operation) => A, ownRequest: (request: import("@mannyc1/ts-release").PreparedRequest) => import("@mannyc1/ts-release").PreparedRequest;
 export declare const api: (repository: Model.Repository) => string;
 export declare const uploadTemplate: (repository: Model.Repository, id: string) => string;
 /** GitHub repository coordinates are case-insensitive; native resource suffixes are exact. */

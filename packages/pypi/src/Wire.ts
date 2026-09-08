@@ -1,7 +1,8 @@
 import { RequestFacts, type PreparedRequest } from "@mannyc1/ts-release"
+import { sameData } from "@mannyc1/ts-release/http"
 import type { UploadIntent } from "./Model.js"
 import { inspect } from "./Metadata.js"
-import { digest, invalid, own, readScope, scopeFor, MAX_BYTES } from "./Native.js"
+import { digest, invalid, matches, own, readScope, scopeFor, MAX_BYTES } from "./Native.js"
 
 export const multipart = (intent: UploadIntent, bytes: Uint8Array) => {
   if (
@@ -74,7 +75,7 @@ export const ownsFacts = (facts: RequestFacts) => {
   )
 }
 export const ownsRequest = (request: PreparedRequest) => {
-  try {
+  return matches(() => {
     const facts = own(RequestFacts, request.facts),
       bytes = new Uint8Array(request.body)
     if (
@@ -91,13 +92,8 @@ export const ownsRequest = (request: PreparedRequest) => {
     if (start < 0 || !Buffer.from(bytes.subarray(bytes.length - end.length)).equals(end))
       return false
     const expected = multipart(intent, bytes.subarray(start, bytes.length - end.length))
-    return (
-      Buffer.from(expected.body).equals(bytes) &&
-      JSON.stringify(expected.headers) === JSON.stringify(facts.headers)
-    )
-  } catch {
-    return false
-  }
+    return Buffer.from(expected.body).equals(bytes) && sameData(expected.headers, facts.headers)
+  })
 }
 export const requestMatches = (intent: UploadIntent, facts: RequestFacts) =>
   ownsFacts(facts) && facts.scope === scopeFor(intent)

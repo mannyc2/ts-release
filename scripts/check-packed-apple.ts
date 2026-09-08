@@ -11,7 +11,9 @@ assert(
   packed?.startsWith("/") && node?.startsWith("/"),
   "Choose completed packed artifact evidence and native Node",
 )
-const baseline = JSON.parse(await readFile(join(packed, "evidence.json"), "utf8"))
+const packedRoot = packed as string
+const nodeExecutable = node as string
+const baseline = JSON.parse(await readFile(join(packedRoot, "evidence.json"), "utf8"))
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex")
 assert.equal(hash(await readFile(baseline.archive)), baseline.kernelSha256)
 const work = await mkdtemp("/tmp/ts-release-packed-apple-")
@@ -32,8 +34,8 @@ const run = async (
     cwd,
     env: {
       ...process.env,
-      PATH: `${dirname(node)}${delimiter}${process.env.PATH}`,
-      TS_RELEASE_HTTP_PEER_NODE: node,
+      PATH: `${dirname(nodeExecutable)}${delimiter}${process.env.PATH}`,
+      TS_RELEASE_HTTP_PEER_NODE: nodeExecutable,
       ...env,
     },
     stdout: "pipe",
@@ -74,7 +76,7 @@ const fixtureJavascript = ts.transpileModule(fixture, {
   },
 }).outputText
 for (const manager of ["bun", "npm"]) {
-  const cwd = join(packed, manager)
+  const cwd = join(packedRoot, manager)
   await writeFile(join(cwd, "apple-fixtures.js"), fixtureJavascript)
   await cp(
     join(root, "test/reimplementation/artifacts/apple-process.mjs"),
@@ -84,8 +86,8 @@ for (const manager of ["bun", "npm"]) {
     join(root, "test/reimplementation/artifacts/apple-installed.mjs"),
     join(cwd, "apple-installed.mjs"),
   )
-  for (const [index, runtime] of [node, process.execPath].entries()) {
-    const next = runtime === node ? process.execPath : node
+  for (const [index, runtime] of [nodeExecutable, process.execPath].entries()) {
+    const next = runtime === nodeExecutable ? process.execPath : nodeExecutable
     const executable = baseline.outcomes.find(
       (cell: { manager: string; runtime: string }) =>
         cell.manager === manager && cell.runtime === runtime,
@@ -202,7 +204,7 @@ await writeFile(
     {
       format: "ts-release/packed-apple-process/1",
       work,
-      packed,
+      packed: packedRoot,
       kernelSha256: baseline.kernelSha256,
       fixtureAdaptation:
         "Exact local protocol fixture transpiled with TypeScript6.0.3; source imports replaced by public exports and NodeServices boundary for both supported runtimes.",

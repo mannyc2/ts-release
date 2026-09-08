@@ -24,6 +24,7 @@
     }
   },
   "dependencies": {
+    "@sigstore/bundle": "5.0.0",
     "semver": "7.8.5",
     "sigstore": "5.0.0"
   },

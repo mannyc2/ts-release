@@ -1,19 +1,6 @@
 export type {} from "@mannyc1/ts-release"
-export {
-  SkillFile,
-  Skill,
-  Manifest,
-  PluginInput,
-  type RenderedFile,
-  files,
-  validatePackage,
-} from "./Package.js"
+export { Manifest, PluginInput, Skill, SkillFile, files, validatePackage } from "./Package.js"
+export type { RenderedFile } from "./Package.js"
 export { MarketplaceEntry, Marketplace, marketplace } from "./Marketplace.js"
-export {
-  Listing,
-  PositiveTest,
-  NegativeTest,
-  Attestations,
-  Submission,
-  submission,
-} from "./Submission.js"
+export { Attestations, Listing, NegativeTest } from "./Submission.js"
+export { PositiveTest, Submission, submission } from "./Submission.js"

@@ -1,5 +1,4 @@
-import * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
+import { Effect, Schema } from "effect";
 import { ReleaseError } from "@mannyc1/ts-release";
 import { Bundle, File } from "@mannyc1/ts-release/bundle";
 export declare const Text: Schema.String;

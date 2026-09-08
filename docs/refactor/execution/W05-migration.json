@@ -489,7 +489,11 @@
         "src/publication/github.ts"
       ],
       "responsibility": "Compose actual CLI/Action/self-release GitHub declarations and credentials, bounded read-convergence policy and native hosted tag/draft/asset/publication acceptance through real release surfaces. Retain partial publication facts; no blind retries or fabricated server locks. AllD03outcomes remain launch-open until Plans009/010 native certification.",
-      "status": "open"
+      "status": "verified",
+      "verification": {
+        "record": "W10-verification.json",
+        "scope": "The self-release application authors exact GitHub tag/draft/asset/publish operations and preserves them unattempted without credentials; hosted mutation remains Plan009"
+      }
     }
   ],
   "evidence": [

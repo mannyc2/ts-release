@@ -7,7 +7,7 @@ import * as Staple from "effect-build-apple/Staple";
 import * as Assess from "effect-build-apple/Assess";
 import { AdoptionError, type OwnedFile } from "../internal/ArtifactModel.js";
 import { type ContentOwner } from "../internal/Content.js";
-import { ReleaseError } from "../internal/Error.js";
+import { type ReleaseError } from "../internal/Error.js";
 import { ReadyToPlan } from "./Model.js";
 export type RestoredSource = {
     readonly kind: "app";
@@ -19,17 +19,16 @@ export type RestoredSource = {
     readonly kind: "pkg";
     readonly artifact: Model.DeveloperIdInstallerPackage;
 };
-export type FinalNativeArtifact = {
+export type FinalNativeArtifact = ({
     readonly kind: "app";
     readonly artifact: Model.StapledApplicationBundle;
-    readonly assessment: Assess.GatekeeperAccepted;
 } | {
     readonly kind: "dmg";
     readonly artifact: Model.StapledDiskImage;
-    readonly assessment: Assess.GatekeeperAccepted;
 } | {
     readonly kind: "pkg";
     readonly artifact: Model.StapledInstallerPackage;
+}) & {
     readonly assessment: Assess.GatekeeperAccepted;
 };
 export type NativeAppleError = ReleaseError | AdoptionError | Schema.SchemaError | PlatformError.PlatformError | File.PublicationFailure | File.FileVerificationFailed | Tree.PublicationFailure | Tree.TreeVerificationFailed | Model.ProductStateInvalid | Notary.SubmitAppError | Notary.ObserveError | Notary.ResultNotAccepted | Notary.ResultHasNoStapleTarget | Staple.StapleError | Assess.AssessError;

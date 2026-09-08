@@ -1,22 +1,22 @@
 {
   "format": "ts-release/refactor-progress/1",
-  "goal": "active",
-  "executionStatus": "in-progress",
-  "resumeRequires": "none-user-resumed-W09-W10",
-  "completedWave": "W09",
+  "goal": "branch-completion-achieved-long-term-release-goal-active",
+  "executionStatus": "W10-locally-qualified-candidate",
+  "resumeRequires": "separate-Plan009-live-authority-and-Plan010-independent-certification",
+  "completedWave": "W10",
   "prerequisites": {
     "P0": "seven-package projection implemented; beta.107 exact type repair passes actual producer fixture and independent review; real packed production graph follows in waves",
     "P1": "fresh original-slice/helper proof:60packed,27extensions,TS37/37/37; archive retained",
     "P2": "entrypoints and final direct verification pass;69open closure red",
     "P3": "168tests/993assertions; independent prerequisite review passed; fresh Apple/source/declaration receipts"
   },
-  "productionWaves": "W01-W08 locally verified, committed and pushed through e393dd098090761d4157d4ea5af1c5676e4dc485 on origin/codex/complete-hard-cut. W09 is locally verified and awaits its checkpoint commit; W10 is next. Native/final certification remains open.",
-  "acceptance": "W09 focused9tests41assertions; full282tests2982assertions49files. Fresh external4cells796checks140CLIprocesses97bindings0sourceedits, same eb038cb corearchive. MCP/OpenAI exact protocol/package/handoff and3file348line49declaration retirement pass. This is implementer-reviewed local evidence; all69outcomesopen and no publication.",
+  "productionWaves": "W01-W10 are locally implemented and qualified on one sequential PR21-descended branch. W09 is pushed through 24ea51d9201fe3718344f37ebe07d66b5487d773; the W10 candidate follows it. Hosted/final certification remains open.",
+  "acceptance": "Focused host/self-release passes5tests54assertions; complete direct verification passes287tests3036assertions across51files. Fresh packed provider/external/producer/Apple/Action matrices pass, including all7 public archives/30 runtime outcomes per manager,796 external checks/140processes/100 frozen bindings,780 producer checks,120 Apple driver checks/48processes/32 installed checks/8SIGKILL boundaries and one Action send per Bun/npm fresh-runner pair. This is implementer local evidence; all69outcomes remain launch-open and no publication occurred.",
   "publication": "No release published; registry0.3.0 observation is historical, recheck before choosing final cohort",
-  "nextAction": "Commit and push W09, then complete W10 application convergence and local-candidate qualification. Do not publish or infer hosted acceptance.",
-  "updatedAt": "2026-09-07T22:40:00.000Z",
+  "nextAction": "After this branch-completion candidate, separately execute exact Plan009 hosted/native evidence and commission Plan010 independent certification before any concrete publication. Re-observe all destination versions and authority first.",
+  "updatedAt": "2026-09-08T08:22:00.000Z",
   "goalTool": "active",
-  "activeWave": "W09",
-  "source": "W09 14874product=12783replacement+2091legacy;11000tripwireexcess1783 with exactplanningvariance/no finalwaiver.3retiredfiles348lines49declarations. Forecast13225deficit1740; low13065fails11485. Metadata732; ownedSPDX789lines15973bytes separate.",
-  "checkpoint": "W09 is locally verified on top of pushed W08 e393dd098090761d4157d4ea5af1c5676e4dc485. Exact protocol, package, packed-consumer, migration and source receipts are recorded in W09-verification.json. No independent final review, hosted acceptance or publication is claimed; all69outcomes remain open."
+  "activeWave": null,
+  "source": "W10 actual11485product=11485replacement+0legacy exactly meets the unchanged final ceiling with no variance or waiver.18 assigned TypeScript files2067lines152declarations plus old24line Action metadata are retired; selected22line Action metadata remains charged. Metadata694; ownedSPDX789lines15973bytes separate.",
+  "checkpoint": "W10 is a locally qualified unpublished candidate with exact source, migration, declaration and retained packed evidence. The review is implementer material review only. No independent Plan010 review, hosted acceptance or publication is claimed; all69 outcomes remain open."
 }

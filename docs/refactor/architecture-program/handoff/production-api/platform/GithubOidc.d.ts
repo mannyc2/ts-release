@@ -1,4 +1,5 @@
-import type { HttpExchangeOptions, OidcTokenRequest, OidcTokenSource, TrustedPublisherHost } from "../Http.js";
+import type { HttpExchangeOptions, OidcTokenRequest } from "../Http.js";
+import type { OidcTokenSource, TrustedPublisherHost } from "../Http.js";
 /** RS256 verification against issuer-owned JWKS, exact claims and native time.
  * Exposed only inside the host module for native cryptographic conformance. */
 export declare const verifyGithubToken: (token: string, jwks: unknown, input: OidcTokenRequest, now: number) => void;

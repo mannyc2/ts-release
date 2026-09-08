@@ -16,15 +16,24 @@ import { Effect } from "effect"
 import * as Npm from "@mannyc1/ts-release-npm"
 
 // file is an owned File; artifacts is the application's ArtifactAccess.
-const authorPublication = (file, artifacts) => Effect.gen(function* () {
-  const { name, version, integrity, shasum } = yield* Npm.inspectTarball(file, artifacts)
-  return yield* Npm.publish(new Npm.PublishIntent({
-    registry: "https://registry.npmjs.org/", name, version, tarball: file,
-    integrity, shasum, initialTag: "latest", access: "public",
-    authorization: new Npm.TokenAuthorization({ principal: "npm-publisher" }),
-    provenance: new Npm.NoProvenance({}),
-  }))
-})
+const authorPublication = (file, artifacts) =>
+  Effect.gen(function* () {
+    const { name, version, integrity, shasum } = yield* Npm.inspectTarball(file, artifacts)
+    return yield* Npm.publish(
+      new Npm.PublishIntent({
+        registry: "https://registry.npmjs.org/",
+        name,
+        version,
+        tarball: file,
+        integrity,
+        shasum,
+        initialTag: "latest",
+        access: "public",
+        authorization: new Npm.TokenAuthorization({ principal: "npm-publisher" }),
+        provenance: new Npm.NoProvenance({}),
+      }),
+    )
+  })
 ```
 
 Install `definitions({ ...artifacts, read })` in the application's Host. The

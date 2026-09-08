@@ -1,50 +1,34 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
-import { ReleaseError } from "@mannyc1/ts-release"
+import { Effect, Schema } from "effect"
 import type { Tree, ReadContent } from "@mannyc1/ts-release/bundle"
-import {
-  attempt,
-  canonical,
-  compare,
-  inspectPackage,
-  name,
-  own,
-  publicText,
-  safePath,
-} from "./Package.js"
+import { isPublicText as publicText, PublicText } from "@mannyc1/ts-release/http"
+import { attempt, canonical, compare, inspectPackage, name, own, safePath } from "./Package.js"
 
+export const sourcePath = (value: string): boolean =>
+  value.startsWith("./") && value.length > 2 && safePath(value.slice(2))
+const Public = PublicText
 export class MarketplaceEntry extends Schema.Class<MarketplaceEntry>("OpenAi.MarketplaceEntry")({
-  name: Schema.String,
-  source: Schema.Struct({ source: Schema.Literal("local"), path: Schema.String }),
+  name: Schema.String.check(Schema.makeFilter(name)),
+  source: Schema.Struct({
+    source: Schema.Literal("local"),
+    path: Schema.String.check(Schema.makeFilter(sourcePath)),
+  }),
   policy: Schema.Struct({
     installation: Schema.Literals(["AVAILABLE", "INSTALLED_BY_DEFAULT", "NOT_AVAILABLE"]),
     authentication: Schema.Literals(["ON_INSTALL", "ON_FIRST_USE"]),
   }),
-  category: Schema.String,
+  category: Public(64),
 }) {}
 export class Marketplace extends Schema.Class<Marketplace>("OpenAi.Marketplace")({
-  name: Schema.String,
-  interface: Schema.Struct({ displayName: Schema.String }),
+  name: Public(128),
+  interface: Schema.Struct({ displayName: Public(128) }),
   plugins: Schema.Array(MarketplaceEntry),
 }) {}
-
-export const sourcePath = (value: string): boolean =>
-  value.startsWith("./") && value.length > 2 && safePath(value.slice(2))
-const validateEntry = (value: MarketplaceEntry): void => {
-  if (!name(value.name) || !sourcePath(value.source.path) || !publicText(value.category, 64))
-    throw new Error("OpenAI marketplace entry is invalid")
-}
-export const marketplaceDocument = (input: unknown): Marketplace => {
-  const value = own(Marketplace, input), names = new Set<string>()
-  if (!publicText(value.name, 128) || !publicText(value.interface.displayName, 128))
-    throw new Error("OpenAI marketplace identity is invalid")
-  for (const entry of value.plugins) {
-    validateEntry(entry)
-    if (names.has(entry.name)) throw new Error("OpenAI marketplace repeats a plugin")
-    names.add(entry.name)
-  }
-  return value
-}
+const MarketplaceCodec = Marketplace.check(
+  Schema.makeFilter(
+    (value) => new Set(value.plugins.map((entry) => entry.name)).size === value.plugins.length,
+  ),
+)
+export const marketplaceDocument = (input: unknown): Marketplace => own(MarketplaceCodec, input)
 
 export const marketplace = Effect.fn("openai.marketplace")(function* (
   input: {
@@ -66,11 +50,12 @@ export const marketplace = Effect.fn("openai.marketplace")(function* (
       !publicText(input.category, 64)
     )
       throw new Error("OpenAI marketplace input is invalid")
-    const entries = new Map<string, MarketplaceEntry>()
-    for (const entry of input.existing === null ? [] : marketplaceDocument(input.existing).plugins) {
-      if (entries.has(entry.name)) throw new Error("OpenAI marketplace repeats a plugin")
-      entries.set(entry.name, entry)
-    }
+    const entries = new Map(
+      (input.existing === null ? [] : marketplaceDocument(input.existing).plugins).map((entry) => [
+        entry.name,
+        entry,
+      ]),
+    )
     entries.set(
       plugin.manifest.name,
       new MarketplaceEntry({

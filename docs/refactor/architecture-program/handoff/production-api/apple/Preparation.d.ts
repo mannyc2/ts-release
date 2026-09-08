@@ -5,7 +5,8 @@ import { type ContentOwner } from "../internal/Content.js";
 import { Host } from "../internal/Host.js";
 import { ReleaseError } from "../internal/Error.js";
 import { Plan, type JournalEvent, type RunOptions } from "../internal/ReleaseModel.js";
-import { ApplePreparations, type AppleEvidence, ReadyToPlan } from "./Model.js";
+import { ApplePreparations, ReadyToPlan } from "./Model.js";
+import type { AppleEvidence } from "./Model.js";
 export declare const preparationScopes: (input: ApplePreparations) => Effect.Effect<{
     readonly _tag: "PreparationScope";
     readonly plan: Plan;

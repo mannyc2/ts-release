@@ -1,6 +1,5 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
-import { ReleaseError, attempt, fail } from "./Error.js"
+import { Effect, Schema } from "effect"
+import { ReleaseError, attempt, fail, reject } from "./Error.js"
 import { verifyRequest, type Transport } from "../Provider.js"
 import { RequestFacts } from "./ReleaseModel.js"
 import { canonical } from "./Identity.js"
@@ -11,10 +10,13 @@ export class GitReceipt extends Schema.Class<GitReceipt>("ReleaseGitReceipt")({
   desiredNew: Schema.String,
   porcelain: Schema.String,
 }) {}
-export interface GitExecution {
-  readonly exitCode: number
-  readonly stdout: string
-}
+export const validRef = (ref: string): boolean =>
+  /^refs\/(?:heads|tags)\/[A-Za-z0-9][A-Za-z0-9/_.-]*$/u.test(ref) &&
+  !ref.includes("..") &&
+  !ref
+    .split("/")
+    .some((part) => !part || part.startsWith(".") || part.endsWith(".") || part.endsWith(".lock"))
+export type GitExecution = Readonly<{ exitCode: number; stdout: string }>
 export interface CoreGitOptions {
   readonly principal: string
   readonly scope: string
@@ -72,14 +74,7 @@ export const assertTransportBinding = (transport: Transport, facts: RequestFacts
   )
     fail("git-request", "Git updates have only native ref arguments and no HTTP payload")
   const { ref, expectedOld, desiredNew } = facts.replay
-  if (
-    !/^refs\/(?:heads|tags)\/[A-Za-z0-9][A-Za-z0-9/_.-]*$/u.test(ref) ||
-    ref.includes("..") ||
-    ref
-      .split("/")
-      .some((part) => !part || part.startsWith(".") || part.endsWith(".") || part.endsWith(".lock"))
-  )
-    fail("git-ref", "Conditional Git request has an invalid ref")
+  if (!validRef(ref)) fail("git-ref", "Conditional Git request has an invalid ref")
   if (
     !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(expectedOld) ||
     !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(desiredNew) ||
@@ -171,15 +166,11 @@ export function makeCoreGitTransport(
         const args = conditionalArguments(selected.facts.endpoint, ref, expectedOld, desiredNew)
         const execute = owned.prepare ? yield* owned.prepare(args) : owned.execute
         if (typeof execute !== "function")
-          return yield* attempt(() =>
-            fail("git-bindings", "Prepared Git execution must be callable"),
-          )
+          return yield* reject("git-bindings", "Prepared Git execution must be callable")
         return Effect.fn("ts-release.coreConditionalGit")(function* (actual) {
           const checked = yield* verifyRequest(actual)
           if (canonical(checked.facts) !== canonical(selected.facts))
-            return yield* attempt(() =>
-              fail("git-request", "Prepared Git request changed before execution"),
-            )
+            return yield* reject("git-request", "Prepared Git request changed before execution")
           const porcelain = pushWitness(yield* execute(args), ref, expectedOld, desiredNew)
           return porcelain === undefined
             ? {
@@ -193,19 +184,13 @@ export function makeCoreGitTransport(
         }) as Transport["send"]
       }
       if (!fallback)
-        return yield* new ReleaseError({
-          code: "unsupported-transport",
-          message: "No ordinary transport was installed",
-        })
+        return yield* reject("unsupported-transport", "No ordinary transport was installed")
       return fallback.prepare ? yield* fallback.prepare(request) : fallback.send
     }),
     send: Effect.fn("ts-release.coreConditionalGit")(function* (request) {
       if (request.facts.replay._tag !== "GitCas") {
         if (fallback) return yield* fallback.send(request)
-        return yield* new ReleaseError({
-          code: "unsupported-transport",
-          message: "No ordinary transport was installed",
-        })
+        return yield* reject("unsupported-transport", "No ordinary transport was installed")
       }
       return yield* (yield* transport.prepare!(request))(request)
     }),

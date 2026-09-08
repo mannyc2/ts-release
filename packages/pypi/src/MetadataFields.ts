@@ -135,12 +135,7 @@ export const uploadFields = (input: Map<string, string[]>, metadataVersion: stri
           licenseExpression(value)
           break
         case "license-file":
-          if (
-            !value ||
-            value.includes("..") ||
-            /[\\*]/u.test(value) ||
-            /^(?:\/|[a-z]:\/)/iu.test(value)
-          )
+          if (!value || value.includes("..") || /[\\*]|^(?:\/|[a-z]:\/)/iu.test(value))
             invalid("metadata-license-path")
           break
         case "project-url": {

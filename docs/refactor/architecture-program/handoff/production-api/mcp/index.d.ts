@@ -1,4 +1,8 @@
 export type {} from "@mannyc1/ts-release";
-export { schemaUrl, Input, NamedInput, PositionalArgument, NamedArgument, Argument, Stdio, StreamableHttp, Sse, Transport, RemoteHttp, RemoteSse, Remote, NpmPackage, PyPiPackage, NugetPackage, OciPackage, McpbPackage, Package, Repository, Icon, Manifest, TokenAuthorization, OidcAuthorization, Authorization, PublishIntent, validate, render, } from "./Model.js";
+export { Argument, Input, NamedArgument, NamedInput, PositionalArgument } from "./Model.js";
+export { Remote, RemoteHttp, RemoteSse, Sse, Stdio, StreamableHttp, Transport } from "./Model.js";
+export { McpbPackage, NpmPackage, NugetPackage, OciPackage, Package, PyPiPackage } from "./Model.js";
+export { Authorization, OidcAuthorization, TokenAuthorization } from "./Model.js";
+export { Icon, Manifest, PublishIntent, Repository, render, schemaUrl, validate } from "./Model.js";
 export { publish, definitions } from "./Protocol.js";
 export { authorizeToken, authorizeOidc } from "./Auth.js";

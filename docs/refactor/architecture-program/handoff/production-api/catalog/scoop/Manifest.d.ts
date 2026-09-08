@@ -1,5 +1,4 @@
-import * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
+import { Effect, Schema } from "effect";
 import { File, type Bundle } from "@mannyc1/ts-release/bundle";
 declare const Download_base: Schema.Class<Download, Schema.Struct<{
     readonly url: Schema.String;

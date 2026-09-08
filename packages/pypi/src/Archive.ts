@@ -1,25 +1,10 @@
 import { gunzipSync, inflateRawSync, crc32 } from "node:zlib"
+import { readTarBytes, registerArchivePath } from "@mannyc1/ts-release/bundle"
 import { invalid, MAX_BYTES } from "./Native.js"
 
 const text = (bytes: Uint8Array) => new TextDecoder("utf-8", { fatal: true }).decode(bytes)
-const path = (name: string) => {
-  const clean = name.endsWith("/") ? name.slice(0, -1) : name
-  if (
-    !clean ||
-    clean.length > 1024 ||
-    /[\\\u0000-\u001f]/u.test(clean) ||
-    clean !== clean.normalize("NFC") ||
-    clean.split("/").some((part) => !part || part === "." || part === "..") ||
-    clean.includes(":")
-  )
-    invalid("archive-path")
-  return clean
-}
 const register = (seen: Set<string>, name: string) => {
-  const key = path(name).toLowerCase()
-  if (seen.has(key)) invalid("archive-duplicate")
-  seen.add(key)
-  if (seen.size > 100_000) invalid("archive-entry-bound")
+  registerArchivePath(seen, name, name.endsWith("/"), () => invalid("archive-path"))
 }
 /** No extraction to a filesystem. Bound decompression and validate complete
  * ZIP32 headers, central/local correspondence, CRC and non-overlapping data. */
@@ -98,83 +83,12 @@ export const readZip = (input: Uint8Array) => {
   if (cursor !== end) invalid("zip-directory-size")
   return files
 }
-const cstring = (bytes: Uint8Array) =>
-  text(bytes.subarray(0, bytes.indexOf(0) < 0 ? bytes.length : bytes.indexOf(0)))
-const octal = (bytes: Uint8Array) => {
-  const value = cstring(bytes).trim()
-  if (!/^[0-7]+$/u.test(value)) return invalid("tar-number")
-  const number = parseInt(value, 8)
-  if (!Number.isSafeInteger(number)) invalid("tar-number")
-  return number
-}
-export const readTar = (input: Uint8Array) => {
-  const bytes = gunzipSync(input, { maxOutputLength: MAX_BYTES }),
-    files = new Map<string, Uint8Array>(),
-    seen = new Set<string>()
-  let offset = 0,
-    override: string | undefined
-  while (offset + 512 <= bytes.length) {
-    const header = bytes.subarray(offset, offset + 512)
-    if (header.every((byte) => byte === 0)) {
-      if (
-        override !== undefined ||
-        bytes.length - offset < 1024 ||
-        !bytes.subarray(offset).every((byte) => byte === 0)
-      )
-        invalid("tar-end")
-      return files
-    }
-    if (
-      header.reduce((sum, byte, index) => sum + (index >= 148 && index < 156 ? 32 : byte), 0) !==
-      octal(header.subarray(148, 156))
-    )
-      invalid("tar-checksum")
-    const size = octal(header.subarray(124, 136)),
-      type = header[156],
-      start = offset + 512
-    offset = start + Math.ceil(size / 512) * 512
-    if (offset > bytes.length) invalid("tar-truncated")
-    const body = bytes.subarray(start, start + size)
-    if (type === 120 || type === 76) {
-      if (override !== undefined || size > 65536) invalid("tar-extension")
-      if (type === 76) override = cstring(body)
-      else {
-        let cursor = 0
-        while (cursor < body.length) {
-          const space = body.indexOf(32, cursor),
-            raw = text(body.subarray(cursor, space))
-          if (space < cursor || !/^[1-9][0-9]*$/u.test(raw)) invalid("tar-pax")
-          const length = Number(raw),
-            line = text(body.subarray(space + 1, cursor + length))
-          if (
-            !Number.isSafeInteger(length) ||
-            length <= space - cursor + 1 ||
-            cursor + length > body.length ||
-            !line.endsWith("\n")
-          )
-            invalid("tar-pax")
-          const equals = line.indexOf("="),
-            key = line.slice(0, equals),
-            value = line.slice(equals + 1, -1)
-          if (key === "path") {
-            if (override !== undefined) invalid("tar-pax-path")
-            override = value
-          } else if (
-            !["mtime", "atime", "ctime"].includes(key) ||
-            !/^-?[0-9]+(?:\.[0-9]+)?$/u.test(value)
-          )
-            invalid("tar-pax-field")
-          cursor += length
-        }
-      }
-      continue
-    }
-    const prefix = cstring(header.subarray(345, 500)),
-      name = override ?? `${prefix ? prefix + "/" : ""}${cstring(header.subarray(0, 100))}`
-    override = undefined
-    register(seen, name)
-    if (type === 0 || type === 48) files.set(name, body)
-    else if (type !== 53 || size !== 0) invalid("tar-entry-kind")
-  }
-  return invalid("tar-end")
-}
+export const readTar = (input: Uint8Array) =>
+  new Map(
+    readTarBytes(
+      gunzipSync(input, { maxOutputLength: MAX_BYTES }),
+      MAX_BYTES,
+      new Set(["mtime", "atime", "ctime"]),
+      (reason) => invalid(`tar-${reason}`),
+    ).flatMap((entry) => (entry.kind === "file" ? [[entry.path, entry.body] as const] : [])),
+  )

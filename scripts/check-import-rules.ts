@@ -45,13 +45,20 @@ for (const path of paths) {
         : specifier.split("/")[0]!
       assert.ok(declared[name], `${path}: undeclared package ${name}`)
       if (name.startsWith("@mannyc1/ts-release")) {
-        assert.equal(name, "@mannyc1/ts-release", `${path}: provider-to-provider dependency`)
-        const core = JSON.parse(ts.sys.readFile(join(root, "packages/ts-release/package.json"))!)
-        const subpath = specifier.slice(name.length) || "."
-        assert.ok(
-          core.exports[subpath === "." ? "." : `.${subpath}`],
-          `${path}: private or absent public import ${specifier}`,
-        )
+        if (name !== "@mannyc1/ts-release")
+          assert.equal(
+            owner,
+            "apps/self-release",
+            `${path}: provider dependency outside the composition app`,
+          )
+        if (name === "@mannyc1/ts-release") {
+          const core = JSON.parse(ts.sys.readFile(join(root, "packages/ts-release/package.json"))!)
+          const subpath = specifier.slice(name.length) || "."
+          assert.ok(
+            core.exports[subpath === "." ? "." : `.${subpath}`],
+            `${path}: private or absent public import ${specifier}`,
+          )
+        }
       }
       if (!typeOnly) outside.push(specifier)
     }

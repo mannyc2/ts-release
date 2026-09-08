@@ -1,0 +1,1616 @@
+{
+  "format": "ts-release/migration-execution/1",
+  "wave": "W10",
+  "status": "application-local-cutover",
+  "sourceCommit": "9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d",
+  "preservationCommit": "24ea51d9201fe3718344f37ebe07d66b5487d773",
+  "physicalDeletedLines": 2067,
+  "rows": [
+    {
+      "path": "apps/release-ts/src/cli/command.ts",
+      "sha256": "25b9e9e8acb5e927cb5448878e05996bb8c04e051ed3b6a3aef3d2d637827ff9",
+      "owner": "cli",
+      "wave": "W10",
+      "disposition": "retire-legacy-cli-orchestrator",
+      "successors": [
+        "app.cli"
+      ],
+      "lines": 164,
+      "retiredDeclarations": [
+        {
+          "name": "text",
+          "kind": "VariableDeclaration",
+          "line": 29,
+          "sha256": "e7260cb5b1bc569974cfa04d1b9a2d9b88c3eed3701e6b205f3dcf02c3c4918e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "optionalText",
+          "kind": "VariableDeclaration",
+          "line": 33,
+          "sha256": "93da90e32fedfdbb116454972af541118e316d943584deeb682400e6c5e7f18d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "optionalArgument",
+          "kind": "VariableDeclaration",
+          "line": 34,
+          "sha256": "a566060952a1be58f2a37e427a8293d88be730a33f1f99872188941df4be762c",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "at",
+          "kind": "VariableDeclaration",
+          "line": 36,
+          "sha256": "db849452af5bbfb644d4ac6b6c7ac9e52852d85132d84d2dc58d2bf3cdd0068c",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "promise",
+          "kind": "VariableDeclaration",
+          "line": 39,
+          "sha256": "5f21028af7f8d47d23074514fcd9f13b4582cf408a8635b25cfe5dc1db7b273b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "makeCli",
+          "kind": "VariableDeclaration",
+          "line": 44,
+          "sha256": "dbd1031b5f8645a9532b29b46b0993c055af4e8c8ec9e630538498aab8ea8625",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        }
+      ],
+      "successorPaths": [
+        "packages/ts-release/src/bin/ts-release.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "apps/self-release/src/application.ts",
+        "test/reimplementation/self-release/self-release.test.ts"
+      ],
+      "responsibility": "The shared public bin now loads one explicit scoped application and JSON input, emits one derived report and maps terminal state to exit status. The legacy command/config/prepared-reference workflow and second orchestration engine are not retained.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/release-ts/src/cli/commands.ts",
+      "sha256": "6bdbc7ab34b329b02522f29a53071652ac23812626b0571b88cc83bbc032786e",
+      "owner": "cli",
+      "wave": "W10",
+      "disposition": "retire-legacy-cli-orchestrator",
+      "successors": [
+        "app.cli"
+      ],
+      "lines": 351,
+      "retiredDeclarations": [
+        {
+          "name": "commandNames",
+          "kind": "VariableDeclaration",
+          "line": 18,
+          "sha256": "373e4f3242519db267d4c327178ba35537610b8fef0c610cc8ac2e178f11346a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "CliIo",
+          "kind": "InterfaceDeclaration",
+          "line": 28,
+          "sha256": "9c62ce459e23ec94c8c5dcd800d96d372500d44718f9fe3dce0dcf5a6a556eb2",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "CliApi",
+          "kind": "TypeAliasDeclaration",
+          "line": 34,
+          "sha256": "b70c67cbea91f58544de1e8491b5574c3d09135dfe98253fd760d05a6b14f8cc",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "DisposableCliApi",
+          "kind": "TypeAliasDeclaration",
+          "line": 39,
+          "sha256": "a5aca52828682e464c84012eba70804036b72b446946932e9e6af719e5f45426",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "CliApiFactory",
+          "kind": "TypeAliasDeclaration",
+          "line": 40,
+          "sha256": "fbb9b37bb46f780a03421b9782adf8e3941785e100e85aeb9d6544004d3342db",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "HostedPreparedReferenceUnsupported",
+          "kind": "ClassDeclaration",
+          "line": 42,
+          "sha256": "a2f4016918420ee4d7d3c5c1233a0e39b459d2ce5d55af1cbf482f7f654e965a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "json",
+          "kind": "VariableDeclaration",
+          "line": 51,
+          "sha256": "818d32d1afb4044db5649e793df8db90b52db9a6ccf755d00c6659e420596e21",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "pathFrom",
+          "kind": "VariableDeclaration",
+          "line": 54,
+          "sha256": "2c34a3c7af8df4daebb9cdc79184338fcedebe65cfe11c855d7fd06135d422a9",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "workspaceFor",
+          "kind": "VariableDeclaration",
+          "line": 57,
+          "sha256": "cfa02bbf349c7fc2926176ff6d8dddd1a593038ee3f49c7a0c8d188debac8098",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "defaultStoreDirectory",
+          "kind": "VariableDeclaration",
+          "line": 64,
+          "sha256": "ff381dbf305a2b540d015c4375b80617eeb6162b98be39833582b308516680b8",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "resolveStoreDirectory",
+          "kind": "VariableDeclaration",
+          "line": 67,
+          "sha256": "69604f187faebc1442787e940b298f7164ef6cf80c7b3e3be5a8256dbc74031e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "requireLocalPreparedReference",
+          "kind": "VariableDeclaration",
+          "line": 70,
+          "sha256": "bb37aad6a8c6f5f9566b7a3ba1f4819e75cca8670f8f9e9e40143471e1df9c79",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "decodeLocalPreparedReference",
+          "kind": "VariableDeclaration",
+          "line": 83,
+          "sha256": "de2512e2564cb95d70ea90295707d9ab62832bb6f5e334be2334e2e91cb4434f",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "InitPreset",
+          "kind": "TypeAliasDeclaration",
+          "line": 89,
+          "sha256": "560e5f6994bd85c1284b7c33f12469e93ee2046d704a91a5b0e92ea5ad877eee",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "InitOptions",
+          "kind": "InterfaceDeclaration",
+          "line": 91,
+          "sha256": "5b5bb4c7266e765b025f28cad38d4c0c435a79397bb0cb520fed958290b2652b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "InspectOptions",
+          "kind": "InterfaceDeclaration",
+          "line": 100,
+          "sha256": "1a998f57247df1fa8a9f033a6e46815e39e4718ac8ffff397b7a132db48ae028",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "PrepareOptions",
+          "kind": "InterfaceDeclaration",
+          "line": 106,
+          "sha256": "b46f2f547cd418d1977cc8c6e48c63228b38c9458ff61487fc842a149e6a45b5",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "ObserveOptions",
+          "kind": "InterfaceDeclaration",
+          "line": 111,
+          "sha256": "b9862693bbe4e0d11fa6a3339f8b645ab618e0be1cfd44bab365519f34ab46ca",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "PublishOptions",
+          "kind": "InterfaceDeclaration",
+          "line": 115,
+          "sha256": "00e0ceaa8929a2f0efac879a7306038fef1eef1f02bfe63f1e74a6d6b7169eaa",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "ReleaseOptions",
+          "kind": "InterfaceDeclaration",
+          "line": 119,
+          "sha256": "ac2b259fe897b376b88a3f1a4ea6620a365c1280b227ffaca51134b1af45a9b9",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "CorrectOptions",
+          "kind": "InterfaceDeclaration",
+          "line": 124,
+          "sha256": "e547dc5347492d945ca4230b889a854d925c560d52a8b8e0e4633fba7dabf97b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "repositoryFromInspection",
+          "kind": "VariableDeclaration",
+          "line": 129,
+          "sha256": "a9b368f7c854f483019778060e951c669cb912521ce5dee5e8fa734b407acaf6",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "printJson",
+          "kind": "VariableDeclaration",
+          "line": 139,
+          "sha256": "0f4c54b78ac71df97a069e8c14d3dd1f1e78d4280b1afa12201ebec5d2d0c89c",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "scopeWarning",
+          "kind": "VariableDeclaration",
+          "line": 148,
+          "sha256": "91e72d4eb17c98f4b5985856f5d94f83bc53013007bbb42ffd24efc1224a854d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "unknownStateWarning",
+          "kind": "VariableDeclaration",
+          "line": 152,
+          "sha256": "cf6463c33ce422dd9e04484ff768fef61e8b26050f31628f1525ee6953fc9222",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "resumeLine",
+          "kind": "VariableDeclaration",
+          "line": 156,
+          "sha256": "43424d6e04263552da53cff16286cd40e6d7ebf5681f766f807298ed78b4a76a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "oneLine",
+          "kind": "VariableDeclaration",
+          "line": 159,
+          "sha256": "9ce443ad0610592b77355ab107fb252267eb1f6dd41496cd2d61fb20db770e0f",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "printIncomplete",
+          "kind": "VariableDeclaration",
+          "line": 161,
+          "sha256": "021b419167945c35114dac686d8f192d79bf062922807e49a7605db98d7f2a28",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "printCaughtFailure",
+          "kind": "VariableDeclaration",
+          "line": 175,
+          "sha256": "e4785476b0881e114ab730c432a50d988c7ff6815b2dbec7d1f32c9deb3140aa",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "runInit",
+          "kind": "VariableDeclaration",
+          "line": 189,
+          "sha256": "4ba67b3351bb051d6a4d0f009b2623c9313d11d7dc1e21d1becdd41b694599ee",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "runInspect",
+          "kind": "VariableDeclaration",
+          "line": 255,
+          "sha256": "248079cc4e50a34ac44b3c2ac1220c707f44506d66d8b7e7b9c9aed818a56dd4",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "runPrepare",
+          "kind": "VariableDeclaration",
+          "line": 277,
+          "sha256": "417096d3f1ed148c09e4531501341bf8c7903ad00270954b957ed6c70e2f5eac",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "runObserve",
+          "kind": "VariableDeclaration",
+          "line": 290,
+          "sha256": "b308bf6dd1f0485ba64939edde9e775d802c68944ab54925337ec75bc2b02257",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "runPublish",
+          "kind": "VariableDeclaration",
+          "line": 299,
+          "sha256": "b717d43fbe3348fe1cd5aed6a6d0565264ebb09354d3d46bbb2df21783465afb",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "runRelease",
+          "kind": "VariableDeclaration",
+          "line": 317,
+          "sha256": "158936455e8bb1a1ff6446fea844a688d6c9e8b75c32d7e09434899aa566acfb",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "runCorrect",
+          "kind": "VariableDeclaration",
+          "line": 342,
+          "sha256": "e52a18f58f2a9a76a3d3139c655dc9cf63036cd5b1b3c4266e42a23fabb524a3",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        }
+      ],
+      "successorPaths": [
+        "packages/ts-release/src/bin/ts-release.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "apps/self-release/src/application.ts",
+        "test/reimplementation/self-release/self-release.test.ts"
+      ],
+      "responsibility": "The shared public bin now loads one explicit scoped application and JSON input, emits one derived report and maps terminal state to exit status. The legacy command/config/prepared-reference workflow and second orchestration engine are not retained.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/release-ts/src/cli/main.ts",
+      "sha256": "62f03d987b7c5a58ce83fa499a8851f5414f6c547d66573dc714dde5db1e4e2f",
+      "owner": "cli",
+      "wave": "W10",
+      "disposition": "retire-legacy-cli-orchestrator",
+      "successors": [
+        "app.cli"
+      ],
+      "lines": 43,
+      "retiredDeclarations": [
+        {
+          "name": "hostRefusal",
+          "kind": "VariableDeclaration",
+          "line": 22,
+          "sha256": "e367d22eb024c1778ff38e3a9aeec77a230db030951745ee4c93a3f10a45b83d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "cli",
+          "kind": "VariableDeclaration",
+          "line": 28,
+          "sha256": "5d7bd101ab97db5100cf20d213e7e0dd42891b30c084fb68907ab36322b14e66",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        }
+      ],
+      "successorPaths": [
+        "packages/ts-release/src/bin/ts-release.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "apps/self-release/src/application.ts",
+        "test/reimplementation/self-release/self-release.test.ts"
+      ],
+      "responsibility": "The shared public bin now loads one explicit scoped application and JSON input, emits one derived report and maps terminal state to exit status. The legacy command/config/prepared-reference workflow and second orchestration engine are not retained.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/release-ts/src/cli/node-main.ts",
+      "sha256": "74ccdcdd9c6dfbc8e194f355068d1e06c33d3e507e8a3818575401eda765a64d",
+      "owner": "cli",
+      "wave": "W10",
+      "disposition": "retire-legacy-cli-orchestrator",
+      "successors": [
+        "app.cli"
+      ],
+      "lines": 49,
+      "retiredDeclarations": [
+        {
+          "name": "__TS_RELEASE_VERSION__",
+          "kind": "VariableDeclaration",
+          "line": 25,
+          "sha256": "b5308f6586cd754fbd52e995f93ec9c6159d89826ead83f538795b0cb49b9cc8",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "version",
+          "kind": "VariableDeclaration",
+          "line": 26,
+          "sha256": "18b7fc23ad47a3fa1cd546ea449e17f6e440a51797c92e29e8b2cdecc852aab4",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "hostRefusal",
+          "kind": "VariableDeclaration",
+          "line": 28,
+          "sha256": "e367d22eb024c1778ff38e3a9aeec77a230db030951745ee4c93a3f10a45b83d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        },
+        {
+          "name": "cli",
+          "kind": "VariableDeclaration",
+          "line": 34,
+          "sha256": "28aca6724ca0bdeb9ab3cb7500977d6ebbd23f4084bccd90b1592347bb09e449",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "cli"
+        }
+      ],
+      "successorPaths": [
+        "packages/ts-release/src/bin/ts-release.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "apps/self-release/src/application.ts",
+        "test/reimplementation/self-release/self-release.test.ts"
+      ],
+      "responsibility": "The shared public bin now loads one explicit scoped application and JSON input, emits one derived report and maps terminal state to exit status. The legacy command/config/prepared-reference workflow and second orchestration engine are not retained.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/ts-release-action/src/artifact-bridge-main.ts",
+      "sha256": "6a23305c38118c574d100797f60cfe4c1917922446f7bdc85f207e55e53f3add",
+      "owner": "action",
+      "wave": "W10",
+      "disposition": "retire-legacy-action-adapter",
+      "successors": [
+        "app.action"
+      ],
+      "lines": 34,
+      "retiredDeclarations": [
+        {
+          "name": "requestPath",
+          "kind": "VariableDeclaration",
+          "line": 9,
+          "sha256": "3728ded714801f9f0b3d93a6741f4570661051eae1ff9cceb507d4b9e0124a51",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "responsePath",
+          "kind": "VariableDeclaration",
+          "line": 10,
+          "sha256": "f13a461f167805f5eca71b74caa56d51c0021dd2facc29cb138020cb2cd4a30b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "write",
+          "kind": "VariableDeclaration",
+          "line": 12,
+          "sha256": "02bfd90d7fb1649df38f1803901861e30ef6754c2f9bc64bd4de593020ff7c90",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "main",
+          "kind": "VariableDeclaration",
+          "line": 17,
+          "sha256": "fab428548f987552ef4623a58a7854c173951efd8f59f8f2300b3bfae9b48d51",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        }
+      ],
+      "successorPaths": [
+        "apps/action/src/launcher.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "The node24 Action is one workspace-contained launcher for the same public application boundary. It rejects hostile paths and ambient authority, reports only exact plan/revision outputs, and awaits scoped cleanup on success, failure, SIGINT and SIGTERM; no artifact bridge, prepared cache or alternate command engine survives.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/ts-release-action/src/artifact-bridge.ts",
+      "sha256": "8607244ec1adf0a36d408320f1507ff140e515ccaf82d945ca9cd7f59a68612b",
+      "owner": "action",
+      "wave": "W10",
+      "disposition": "retire-legacy-action-adapter",
+      "successors": [
+        "app.action"
+      ],
+      "lines": 204,
+      "retiredDeclarations": [
+        {
+          "name": "BridgeFindBy",
+          "kind": "TypeAliasDeclaration",
+          "line": 10,
+          "sha256": "0236580ecbd88fb18124f5f449d732d81b3b2865493fa26b42bb8887b8378b63",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ArtifactBridgeRequest",
+          "kind": "TypeAliasDeclaration",
+          "line": 12,
+          "sha256": "04922424bd309141c5583886a8d55aa839d2029129e8d4f2788bc34acc55e9e5",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ArtifactBridgeOutput",
+          "kind": "InterfaceDeclaration",
+          "line": 24,
+          "sha256": "c551dd3d672317a438dfbf1be85bbcabaeaa3f152ffb7de95215afe6fc8bb79e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ArtifactBridgeResponse",
+          "kind": "TypeAliasDeclaration",
+          "line": 31,
+          "sha256": "9d598b42809b5e287772f7c622d91970180b6b8bea9fa5e6fe8d5efaac15ed58",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ArtifactBridgeEnvironment",
+          "kind": "TypeAliasDeclaration",
+          "line": 39,
+          "sha256": "003fb02b05b573252af1ef774bc5e648ef6cfc3898ed8c7a374c87ebd8de580c",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ArtifactBridgeSpawnInput",
+          "kind": "InterfaceDeclaration",
+          "line": 41,
+          "sha256": "734de16636346064bd14d67eb216703ee215b88c84dde8e9268d64c0280af93a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ArtifactBridgeSpawn",
+          "kind": "TypeAliasDeclaration",
+          "line": 47,
+          "sha256": "ed18873c9d5a3ab7afabf5d38baf1f1343e75f8d06f26bc2b192060829ef9e3d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "defaultSpawn",
+          "kind": "VariableDeclaration",
+          "line": 49,
+          "sha256": "e5770288dccd5da168df02bfce60e8ac1b694667886a710bc8b12f3da7efc730",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "object",
+          "kind": "VariableDeclaration",
+          "line": 58,
+          "sha256": "bb90c7a7d506daf3a1fd2a3aa8384ee1bd56bce0da0f5000d09e301d73bcf55e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "text",
+          "kind": "VariableDeclaration",
+          "line": 65,
+          "sha256": "81f00498f2e7542561ef974045ff20f97d6627b09230d4091f69ba32227b3ea7",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "exactKeys",
+          "kind": "VariableDeclaration",
+          "line": 70,
+          "sha256": "ad2a68a231799236455810c763380efe2b813c5a97866f43801a9801f5381230",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "decodeArtifactBridgeRequest",
+          "kind": "VariableDeclaration",
+          "line": 76,
+          "sha256": "3811fd80a7ed847d4cc24d699ca934783f03e1156a78733dcaef20d60679787d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "executeArtifactBridgeRequest",
+          "kind": "VariableDeclaration",
+          "line": 115,
+          "sha256": "7042392a8d3263b131e0538c132f6a58fa685a1e5ae0f08220de8aa3927e6223",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "decodeResponse",
+          "kind": "VariableDeclaration",
+          "line": 134,
+          "sha256": "3c6d2c9aea0bbfaf12e6ba3f05434339aa1356e74b9bd10f8253179bddabd33a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "makeNodeArtifactBridgeTransport",
+          "kind": "VariableDeclaration",
+          "line": 154,
+          "sha256": "ae2642eb288045bb890afd635e070b9c840dc3b48f1465997427203d4c25ce26",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        }
+      ],
+      "successorPaths": [
+        "apps/action/src/launcher.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "The node24 Action is one workspace-contained launcher for the same public application boundary. It rejects hostile paths and ambient authority, reports only exact plan/revision outputs, and awaits scoped cleanup on success, failure, SIGINT and SIGTERM; no artifact bridge, prepared cache or alternate command engine survives.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/ts-release-action/src/artifact-client.ts",
+      "sha256": "42cfb9e3d72bc437e8dbe6f679882dd2a2d2d7004f4087c0c57d01ba3051bde9",
+      "owner": "action",
+      "wave": "W10",
+      "disposition": "retire-legacy-action-adapter",
+      "successors": [
+        "app.action"
+      ],
+      "lines": 71,
+      "retiredDeclarations": [
+        {
+          "name": "artifactLookupDigestPattern",
+          "kind": "VariableDeclaration",
+          "line": 3,
+          "sha256": "9bf903bd022d7159dd88e0fa4226818ef8c55fcda77207c4d23f2e956d59aaaf",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "positiveDecimalPattern",
+          "kind": "VariableDeclaration",
+          "line": 4,
+          "sha256": "4a259aa72737ea5cb636127668e9a7e1e95e65a3ffaf7e5ae0cc410315947130",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ActionArtifactFindBy",
+          "kind": "InterfaceDeclaration",
+          "line": 6,
+          "sha256": "b8964588b0c6d59db6a8e0d239b788ffbac9d0e3857ecab28290312c29680f41",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ActionArtifactTransport",
+          "kind": "InterfaceDeclaration",
+          "line": 13,
+          "sha256": "1dc83418a7cbf2ce48c4a76d8bb36a3155f26983d072f947487a11143b79bd99",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "positiveSafeInteger",
+          "kind": "VariableDeclaration",
+          "line": 26,
+          "sha256": "571ebff189d469ec415d3f17f66df8a55af2077325681889d07d47124b5b6e74",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "makeActionsArtifactTransport",
+          "kind": "VariableDeclaration",
+          "line": 35,
+          "sha256": "932d33d4343c305547a5903e421d98462193e0b9f131f6396530c4a880479c80",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        }
+      ],
+      "successorPaths": [
+        "apps/action/src/launcher.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "The node24 Action is one workspace-contained launcher for the same public application boundary. It rejects hostile paths and ambient authority, reports only exact plan/revision outputs, and awaits scoped cleanup on success, failure, SIGINT and SIGTERM; no artifact bridge, prepared cache or alternate command engine survives.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/ts-release-action/src/commands.ts",
+      "sha256": "8fef01eef4b945e6cb7ef0f60b1cde3a6925db7cef6c70a3d5df4ca18f90f301",
+      "owner": "action",
+      "wave": "W10",
+      "disposition": "retire-legacy-action-adapter",
+      "successors": [
+        "app.action"
+      ],
+      "lines": 212,
+      "retiredDeclarations": [
+        {
+          "name": "actionCommands",
+          "kind": "VariableDeclaration",
+          "line": 11,
+          "sha256": "c3039859ac2643fe4527cf5330d55f8647e59e2bdbb24534ef7cc916775bdc3b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "actionInputs",
+          "kind": "VariableDeclaration",
+          "line": 12,
+          "sha256": "3aef2cada2b141131e096aa27dd921055686fde816b8d595ebcbe3637483fd41",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "actionOutputs",
+          "kind": "VariableDeclaration",
+          "line": 13,
+          "sha256": "19ea03b70570ad27c0c28971e06d600fea0c4dd801e64d97c2b761394e63e7f6",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ActionCommand",
+          "kind": "TypeAliasDeclaration",
+          "line": 14,
+          "sha256": "e88a9eb130050d65f0a0600632b67e18a8b53161875b0f07e1649ac35bbfaa79",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ActionOutput",
+          "kind": "TypeAliasDeclaration",
+          "line": 15,
+          "sha256": "734d235ffb6fd6987dd5de37c1a7c4deba6ddbe2854ed8b94a1588d632cc0dad",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "PreparedReferenceChannel",
+          "kind": "InterfaceDeclaration",
+          "line": 17,
+          "sha256": "d51bd465fce0864c39b1ff1fbccead0571d584b78e0f39b48e3614c7a4014362",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "workflowRecoveryGuidance",
+          "kind": "VariableDeclaration",
+          "line": 22,
+          "sha256": "b70de1f9218e01f4238dfafcb3073b06a24f475252477008344be8ab73e56b30",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "makePreparedReferenceChannel",
+          "kind": "VariableDeclaration",
+          "line": 28,
+          "sha256": "a201d714415356caae57edc28afba39425d307597e942644fe31ee8024942d62",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ActionRuntime",
+          "kind": "InterfaceDeclaration",
+          "line": 43,
+          "sha256": "1153eda2159d7f421392f7cb4431e4314307de786cbb7e3a77b276ea6aed7f4d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "reportRelativePath",
+          "kind": "VariableDeclaration",
+          "line": 53,
+          "sha256": "2259052116006d308bd547db379be1b366d6f9a82377f11161c8287dee78f7e4",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "inside",
+          "kind": "VariableDeclaration",
+          "line": 55,
+          "sha256": "6eae46a30ced10dd1f1ce1b3a021888483ba547b510021507ef43ab572e7050f",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "pathInWorkspace",
+          "kind": "VariableDeclaration",
+          "line": 63,
+          "sha256": "6d30d211bcd9bb536b8580a2f28cbc187e558d00374ceafd42cb6a6d9679baf2",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "present",
+          "kind": "VariableDeclaration",
+          "line": 69,
+          "sha256": "8c5397282f6a922a176d550786fbcda4047c4155e17a181948f7326bd47ad0a4",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "fail",
+          "kind": "VariableDeclaration",
+          "line": 70,
+          "sha256": "21c2f9893b94d9ba76b322f910de8539aacf8f9073b9bf80c1ea22ab721530ab",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "command",
+          "kind": "VariableDeclaration",
+          "line": 71,
+          "sha256": "e5a3e0638b9235a741143228d367e72e0c88f4702e3e22e6a8901b1949681c86",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "configJson",
+          "kind": "VariableDeclaration",
+          "line": 75,
+          "sha256": "831007283a9b09c8987384c60b238927f20a85868eff1a200fa1e0c2153b8ae2",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "redact",
+          "kind": "VariableDeclaration",
+          "line": 80,
+          "sha256": "c54a73042995bf10de55a30216a87231791f2ea3de91415c3c8ae0a604c2979d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "nonEmptyString",
+          "kind": "VariableDeclaration",
+          "line": 84,
+          "sha256": "63312bdc6cfa4ff19276d9700d6612dd35ed15bd3a5aee554cc3f9f693dcde16",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "actionErrorMessage",
+          "kind": "VariableDeclaration",
+          "line": 90,
+          "sha256": "bf2b17184f81d8ab6616664c719d8d748dada53986c0ab35c82aaf80cd47f844",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "printable",
+          "kind": "VariableDeclaration",
+          "line": 101,
+          "sha256": "63ac85187f95d22f8e5d8274c63f65ea42db27aed1e3815b8733a67fd6cccbe3",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "reportPath",
+          "kind": "VariableDeclaration",
+          "line": 113,
+          "sha256": "19154b392b1f8fd035cb46f6bba39621f3c17e002c7f76fc1c13c4edafddf102",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "writeReport",
+          "kind": "VariableDeclaration",
+          "line": 114,
+          "sha256": "d0d814ecf271694c4104bb8f245b851053078d514058c8298c28e91efcc32dee",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "rejectExtra",
+          "kind": "VariableDeclaration",
+          "line": 119,
+          "sha256": "8f640f99c3c37ca875bb90f4620880275ef2dce7f33422622b01813bbf75a1bc",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ReportedActionError",
+          "kind": "ClassDeclaration",
+          "line": 127,
+          "sha256": "4c1c2609f28bd209947a96e2564a37e03976a25304d525ac5f372b49ba8a477a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "recoveryGuidance",
+          "kind": "VariableDeclaration",
+          "line": 129,
+          "sha256": "7b0548d1c01c54344b705d298fcf8e08b76015c4510bf9083edf01aa661e41ac",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "decodePrepared",
+          "kind": "VariableDeclaration",
+          "line": 131,
+          "sha256": "79312bce3c585b192bffd5c718f78e3ecbe0c91e5186edc0097f87c85111ba1a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "confirmedPrepared",
+          "kind": "VariableDeclaration",
+          "line": 134,
+          "sha256": "3fc057618bdc4476d0be495a3290eeb39d6ab351dc0cd945e0f7c1f55202f2b7",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "runAction",
+          "kind": "VariableDeclaration",
+          "line": 146,
+          "sha256": "9a56fffd10f5ed0e6c527ba1d6a2be482cd2e90701314605ce2ef9911f066b52",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        }
+      ],
+      "successorPaths": [
+        "apps/action/src/launcher.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "The node24 Action is one workspace-contained launcher for the same public application boundary. It rejects hostile paths and ambient authority, reports only exact plan/revision outputs, and awaits scoped cleanup on success, failure, SIGINT and SIGTERM; no artifact bridge, prepared cache or alternate command engine survives.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/ts-release-action/src/index.ts",
+      "sha256": "05642f7d2be6930061068e065ea0f0de7984930726bf1060c5130d2b911f4652",
+      "owner": "action",
+      "wave": "W10",
+      "disposition": "retire-legacy-action-adapter",
+      "successors": [
+        "app.action"
+      ],
+      "lines": 71,
+      "retiredDeclarations": [
+        {
+          "name": "summarize",
+          "kind": "VariableDeclaration",
+          "line": 22,
+          "sha256": "9e31e5a8834189bd06782199bd2e0f9f749f5f9ff608ca0f77899d9eaf315aef",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "api",
+          "kind": "VariableDeclaration",
+          "line": 26,
+          "sha256": "3c56b4bdcb836be1a4423d5157eed6e630c80e9bd36b54d0e10c7e8fb8d739cb",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        }
+      ],
+      "successorPaths": [
+        "apps/action/src/launcher.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "The node24 Action is one workspace-contained launcher for the same public application boundary. It rejects hostile paths and ambient authority, reports only exact plan/revision outputs, and awaits scoped cleanup on success, failure, SIGINT and SIGTERM; no artifact bridge, prepared cache or alternate command engine survives.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/ts-release-action/src/launcher-main.ts",
+      "sha256": "a11d0e1d3b4049e776976b77a7248d845627fc1961a2756a89b77a6e5e7a736e",
+      "owner": "action",
+      "wave": "W10",
+      "disposition": "retire-legacy-action-adapter",
+      "successors": [
+        "app.action"
+      ],
+      "lines": 13,
+      "retiredDeclarations": [],
+      "successorPaths": [
+        "apps/action/src/launcher.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "The node24 Action is one workspace-contained launcher for the same public application boundary. It rejects hostile paths and ambient authority, reports only exact plan/revision outputs, and awaits scoped cleanup on success, failure, SIGINT and SIGTERM; no artifact bridge, prepared cache or alternate command engine survives.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/ts-release-action/src/launcher.ts",
+      "sha256": "83195cc1d3b732387ca49005443245fb3a5d158e73a7cc8a77128f980cea6248",
+      "owner": "action",
+      "wave": "W10",
+      "disposition": "retire-legacy-action-adapter",
+      "successors": [
+        "app.action"
+      ],
+      "lines": 73,
+      "retiredDeclarations": [
+        {
+          "name": "ActionLauncherEnvironment",
+          "kind": "TypeAliasDeclaration",
+          "line": 4,
+          "sha256": "78360ff24a998f6529a620173f97b656857194c344a36efa8bb833c35d5e073f",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ActionLauncherSpawnInput",
+          "kind": "InterfaceDeclaration",
+          "line": 6,
+          "sha256": "989e1dd722f1fde5f916feae10f5fa0e82ca38adf8e586e2bb90b9986d7dde2a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ActionLauncherSpawn",
+          "kind": "TypeAliasDeclaration",
+          "line": 12,
+          "sha256": "147c055762527c415e15df919c48b65b49742302c3c2aca67bf18798be53801c",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "defaultSpawn",
+          "kind": "VariableDeclaration",
+          "line": 14,
+          "sha256": "0bfeab4570b185de8b2fb9b6ff1e4c28f14cdd874e16d067e87a5244eae8cf60",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "required",
+          "kind": "VariableDeclaration",
+          "line": 23,
+          "sha256": "2716ed0acfaa53e31ffca2d135da534dcd4172bf16b89448f9c4cc86966f9c57",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "runActionLauncher",
+          "kind": "VariableDeclaration",
+          "line": 31,
+          "sha256": "3557794ac68125220498dabb57580a287ff8a87a263e1c8094e268e9a2678600",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        }
+      ],
+      "successorPaths": [
+        "apps/action/src/launcher.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "The node24 Action is one workspace-contained launcher for the same public application boundary. It rejects hostile paths and ambient authority, reports only exact plan/revision outputs, and awaits scoped cleanup on success, failure, SIGINT and SIGTERM; no artifact bridge, prepared cache or alternate command engine survives.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "apps/ts-release-action/src/prepared-store.ts",
+      "sha256": "6ca8a21c780900170c29d006721ed7832757744ea6d9ccf9608964198315fadd",
+      "owner": "action",
+      "wave": "W10",
+      "disposition": "retire-legacy-action-adapter",
+      "successors": [
+        "app.action"
+      ],
+      "lines": 458,
+      "retiredDeclarations": [
+        {
+          "name": "artifactUploadDigestPattern",
+          "kind": "VariableDeclaration",
+          "line": 22,
+          "sha256": "2b14a886e0dabd3807607f8a564eecf16d59c6b67caa3820b7e6c3c954d83027",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "gitObjectIdPattern",
+          "kind": "VariableDeclaration",
+          "line": 23,
+          "sha256": "d002ce51050eae57f151305070f927318031392074920f4b059da33fe88301ee",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "positiveDecimalPattern",
+          "kind": "VariableDeclaration",
+          "line": 24,
+          "sha256": "4a259aa72737ea5cb636127668e9a7e1e95e65a3ffaf7e5ae0cc410315947130",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "workflowFilePattern",
+          "kind": "VariableDeclaration",
+          "line": 25,
+          "sha256": "204f6f8b36b6521de1a63382bb82bacc9f4688a7265b0c8a94875941fb08b87d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ActionProducerContext",
+          "kind": "InterfaceDeclaration",
+          "line": 27,
+          "sha256": "65c67b23a0fd2ee1a13bb024f4300d5a501cca004b222e026d02565c439f0a2f",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ActionEnvironment",
+          "kind": "TypeAliasDeclaration",
+          "line": 36,
+          "sha256": "f73dfeaaa1cb4101ff49088195ada1254149911cac8d5569cd11d1fdeb817c78",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "GitHubActionsPreparedReleaseRef",
+          "kind": "TypeAliasDeclaration",
+          "line": 38,
+          "sha256": "bcc34b83f9553ba570badd0ac672bb45480d8f731c4a99e866731b294d8c9f11",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ActionRunAttemptEvidence",
+          "kind": "InterfaceDeclaration",
+          "line": 40,
+          "sha256": "7b3bd4472b7d19977179d3e00f649951eeb4b454288d599e66c1967b1ea320bb",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "GitHubRunAttemptResponse",
+          "kind": "InterfaceDeclaration",
+          "line": 48,
+          "sha256": "b5263ea1e53fb4bde4eec0930db1c1a22289f2c1ddbcaf06ab2e2acb8a47bbbd",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "GitHubRunAttemptRequest",
+          "kind": "TypeAliasDeclaration",
+          "line": 58,
+          "sha256": "2635978c5c642f2b7a35805c3c8390cb891215e019b94e58738add75891162b7",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ActionRunAttemptAuthenticator",
+          "kind": "InterfaceDeclaration",
+          "line": 66,
+          "sha256": "2139dff3b05a0c3b5df81f5a119525f932b96c55d300d9f7aa5aa96085684bd6",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "requiredEnvironment",
+          "kind": "VariableDeclaration",
+          "line": 74,
+          "sha256": "53ccf362ba45fc0fe9d76d8d597a4d21984bef670aea84c288ac995de774d42a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "actionProducerContextFromEnvironment",
+          "kind": "VariableDeclaration",
+          "line": 83,
+          "sha256": "f7bdde918a46aa6cac3cfff7d2ce30500401443ff76632f996643d80aa560fd1",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "positiveSafeInteger",
+          "kind": "VariableDeclaration",
+          "line": 105,
+          "sha256": "bc47225c804ebb6c4a70f0e3c6ecc3c37d8e7c8f485dca6b859b4edf355e2efa",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "ProducerRecord",
+          "kind": "InterfaceDeclaration",
+          "line": 116,
+          "sha256": "e2268e63485e22bcc4b1d3a22c97dc7007a0c68bf3080cf15e92d7225b2c127b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "producerBytes",
+          "kind": "VariableDeclaration",
+          "line": 122,
+          "sha256": "e9983498164139e40e2d881c5500ca2719fa68caf4e271577f01d4cbabf8afb0",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "decodeProducer",
+          "kind": "VariableDeclaration",
+          "line": 134,
+          "sha256": "1cf160024530262df14c2fa52747b6b46120eb00a877690022ed903cf13482b7",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "allFiles",
+          "kind": "VariableDeclaration",
+          "line": 155,
+          "sha256": "1b496d9764fa35ab89827896082bc3f71e208400de421bba87e85059f627470d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "splitRepository",
+          "kind": "VariableDeclaration",
+          "line": 169,
+          "sha256": "ff5684b126c5435e7cc132ebd1b89fd2cb9ff70d64a62d5b6518313b380c912e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "CanonicalWorkflowIdentity",
+          "kind": "InterfaceDeclaration",
+          "line": 175,
+          "sha256": "7e69e4a4e7cf5602d77229e6cd219d4b1937a491c1739434465fb0405534268a",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "canonicalWorkflowIdentity",
+          "kind": "VariableDeclaration",
+          "line": 181,
+          "sha256": "b62b4bda78678f9e07efe039b34d3ced4717e837884ee5eb57005a571715f9f9",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "canonicalApiWorkflowPath",
+          "kind": "VariableDeclaration",
+          "line": 190,
+          "sha256": "a8fc1b02786b604ecb4026b5f8c06ed6c14ab2f51d2da9e94fab92a56352ea71",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "exactWorkflowRefFromApiPath",
+          "kind": "VariableDeclaration",
+          "line": 208,
+          "sha256": "9c18bf1635c1f6a3819b5a7856c12294bbb61f9df5852ca503b8cb477e7b40d5",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "makeGitHubRunAttemptAuthenticator",
+          "kind": "VariableDeclaration",
+          "line": 220,
+          "sha256": "489b2cc6381ea69936fc384fa7cb2bcc552b3b1d837d87cf0e0e093ac2b2ffc2",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "verifyReferenceContext",
+          "kind": "VariableDeclaration",
+          "line": 265,
+          "sha256": "a51d8e34e615b0e65b87c6661ddaebfa76690d0add5323a77d34686881073852",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        },
+        {
+          "name": "makeActionPreparedReleaseStore",
+          "kind": "VariableDeclaration",
+          "line": 281,
+          "sha256": "f9c2b982fd1167676afcaec7972222d7aa4d1e488112c0e21a83962857694b76",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "action"
+        }
+      ],
+      "successorPaths": [
+        "apps/action/src/launcher.ts",
+        "packages/ts-release/src/platform/Application.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "The node24 Action is one workspace-contained launcher for the same public application boundary. It rejects hostile paths and ambient authority, reports only exact plan/revision outputs, and awaits scoped cleanup on success, failure, SIGINT and SIGTERM; no artifact bridge, prepared cache or alternate command engine survives.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "src/host.ts",
+      "sha256": "f69400dc8d67fcd7578da963cbdd5acbee1efbfb5a85fd3ab7b0cefbd4284957",
+      "owner": "host",
+      "wave": "W10",
+      "disposition": "retire-legacy-root-host",
+      "successors": [
+        "app.application",
+        "host.Node",
+        "host.Bun"
+      ],
+      "lines": 140,
+      "retiredDeclarations": [
+        {
+          "name": "CustomReleaseLayerInput",
+          "kind": "InterfaceDeclaration",
+          "line": 110,
+          "sha256": "e73a4140dfe8acff4dbc7498f75bb3fbbbe220c76c1c91ada140e0aea5e4fa6d",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        },
+        {
+          "name": "makeCustomReleaseLayer",
+          "kind": "VariableDeclaration",
+          "line": 127,
+          "sha256": "88e1e7be0b14d089f0272ac1ff1d9ee426ee52f50b5d6976e82ab255c388f287",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        }
+      ],
+      "successorPaths": [
+        "packages/ts-release/src/platform/Application.ts",
+        "packages/ts-release/src/Node.ts",
+        "packages/ts-release/src/Bun.ts",
+        "packages/ts-release/src/internal/Host.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "Public Node and Bun host Layers plus the application runner own platform services, bounded native process/HTTP/Git resources, exact credentials and one journal. The old root host/runtime service graph is not retained as a compatibility facade.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "src/platform/bun.ts",
+      "sha256": "4af6876a1ac01c62f92fb4174b923a2938b4c7c5f605c22bb13205ab587bd2d2",
+      "owner": "host",
+      "wave": "W10",
+      "disposition": "retire-legacy-root-host",
+      "successors": [
+        "app.application",
+        "host.Node",
+        "host.Bun"
+      ],
+      "lines": 38,
+      "retiredDeclarations": [
+        {
+          "name": "bunHost",
+          "kind": "VariableDeclaration",
+          "line": 16,
+          "sha256": "c455a81d81284fc02a77b8a62f520316482d354b047ea59e367ec72998b0e161",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        },
+        {
+          "name": "makeBunReleaseLayer",
+          "kind": "VariableDeclaration",
+          "line": 26,
+          "sha256": "2e71c737b6cfdb0f95d8bd931c87160106496b734c33fa1022eddd8b2e535185",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        },
+        {
+          "name": "defaultBunStore",
+          "kind": "VariableDeclaration",
+          "line": 31,
+          "sha256": "0037aebe16aa16964148ff7f94a6b076038e93554e0610613d33a71ca99608b3",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        },
+        {
+          "name": "BunReleaseLayer",
+          "kind": "VariableDeclaration",
+          "line": 38,
+          "sha256": "13d26517c2a3b86597f22f524d1b9c658352707fcf0a383e640f7db1b0de7f9c",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        }
+      ],
+      "successorPaths": [
+        "packages/ts-release/src/platform/Application.ts",
+        "packages/ts-release/src/Node.ts",
+        "packages/ts-release/src/Bun.ts",
+        "packages/ts-release/src/internal/Host.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "Public Node and Bun host Layers plus the application runner own platform services, bounded native process/HTTP/Git resources, exact credentials and one journal. The old root host/runtime service graph is not retained as a compatibility facade.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "src/platform/host-support.ts",
+      "sha256": "7313fe71034bd132bf453a9761d632b78925ffce86166488a03b0f4b80dc40bf",
+      "owner": "host",
+      "wave": "W10",
+      "disposition": "retire-legacy-root-host",
+      "successors": [
+        "app.application",
+        "host.Node",
+        "host.Bun"
+      ],
+      "lines": 4,
+      "retiredDeclarations": [
+        {
+          "name": "unsupportedExecutionHost",
+          "kind": "VariableDeclaration",
+          "line": 1,
+          "sha256": "a6beac2cf99c4314006143d1dd22511175cfee7a37fd2a06be9f4cd5e75d0a15",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        }
+      ],
+      "successorPaths": [
+        "packages/ts-release/src/platform/Application.ts",
+        "packages/ts-release/src/Node.ts",
+        "packages/ts-release/src/Bun.ts",
+        "packages/ts-release/src/internal/Host.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "Public Node and Bun host Layers plus the application runner own platform services, bounded native process/HTTP/Git resources, exact credentials and one journal. The old root host/runtime service graph is not retained as a compatibility facade.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "src/platform/node.ts",
+      "sha256": "fd1b2518ebe49115c7764848efadea9d550562b399954285da579ff22f08103b",
+      "owner": "host",
+      "wave": "W10",
+      "disposition": "retire-legacy-root-host",
+      "successors": [
+        "app.application",
+        "host.Node",
+        "host.Bun"
+      ],
+      "lines": 38,
+      "retiredDeclarations": [
+        {
+          "name": "nodeHost",
+          "kind": "VariableDeclaration",
+          "line": 16,
+          "sha256": "3ae1d34253be481d83548c0f89b7edfcb4e3268991629827a214dde7d6f36758",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        },
+        {
+          "name": "makeNodeReleaseLayer",
+          "kind": "VariableDeclaration",
+          "line": 26,
+          "sha256": "cb58fadbf234537a6ac62db567802c3fa9bf8cfcea871702683eb8c1c40f860f",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        },
+        {
+          "name": "defaultNodeStore",
+          "kind": "VariableDeclaration",
+          "line": 31,
+          "sha256": "d0377c41d8a1c8850c1b91257a7c0342fbb92d8359cde2a3876a1bdb60fab42e",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        },
+        {
+          "name": "NodeReleaseLayer",
+          "kind": "VariableDeclaration",
+          "line": 38,
+          "sha256": "2512a4a168ea521d0022f0862acd2f13c5b35f40e556e03db9d63e8098f6c7f7",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        }
+      ],
+      "successorPaths": [
+        "packages/ts-release/src/platform/Application.ts",
+        "packages/ts-release/src/Node.ts",
+        "packages/ts-release/src/Bun.ts",
+        "packages/ts-release/src/internal/Host.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "Public Node and Bun host Layers plus the application runner own platform services, bounded native process/HTTP/Git resources, exact credentials and one journal. The old root host/runtime service graph is not retained as a compatibility facade.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "src/platform/release-runtime.ts",
+      "sha256": "428845afd74d72d9387d8147203fb24d02709412444971ef0cc7dd2a98ba8b05",
+      "owner": "host",
+      "wave": "W10",
+      "disposition": "retire-legacy-root-host",
+      "successors": [
+        "app.application",
+        "host.Node",
+        "host.Bun"
+      ],
+      "lines": 47,
+      "retiredDeclarations": [
+        {
+          "name": "makeWireRequest",
+          "kind": "VariableDeclaration",
+          "line": 12,
+          "sha256": "88de9c66f5bd058541b76b4c7db367deff92ebce14bc3f056821efcba35e93b9",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        },
+        {
+          "name": "makePublicationHttp",
+          "kind": "VariableDeclaration",
+          "line": 21,
+          "sha256": "601fb6f75b447afe30652b92a5d77032bde8736d4ca503758472a879a012ec5b",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        },
+        {
+          "name": "ReleaseRuntimeLive",
+          "kind": "VariableDeclaration",
+          "line": 37,
+          "sha256": "f76d4569f400d43ac544ecbf015faab1fc867d3db965f4cfbc49368ff17fdfa9",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        },
+        {
+          "name": "makeReleaseRuntimeLive",
+          "kind": "VariableDeclaration",
+          "line": 47,
+          "sha256": "45f8004bbe5d2a78cd1cd5e7fd4edfff906ccd83c201d5fbecfbe69658718275",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        }
+      ],
+      "successorPaths": [
+        "packages/ts-release/src/platform/Application.ts",
+        "packages/ts-release/src/Node.ts",
+        "packages/ts-release/src/Bun.ts",
+        "packages/ts-release/src/internal/Host.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "Public Node and Bun host Layers plus the application runner own platform services, bounded native process/HTTP/Git resources, exact credentials and one journal. The old root host/runtime service graph is not retained as a compatibility facade.",
+      "nativeCarryForwardWaves": []
+    },
+    {
+      "path": "src/platform/services.ts",
+      "sha256": "bcb9de4074cc2b218f787a9188dd0a423e6f7f09cc77c3b969aa850066a31ce4",
+      "owner": "host",
+      "wave": "W10",
+      "disposition": "retire-legacy-root-host",
+      "successors": [
+        "app.application",
+        "host.Node",
+        "host.Bun"
+      ],
+      "lines": 57,
+      "retiredDeclarations": [
+        {
+          "name": "ReleaseServicesLayer",
+          "kind": "TypeAliasDeclaration",
+          "line": 25,
+          "sha256": "cf955f102141a214c6ec8e1dfde69f2d328a96dd5cbc72f755b46a68834a3ece",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        },
+        {
+          "name": "makeReleaseServicesLive",
+          "kind": "VariableDeclaration",
+          "line": 36,
+          "sha256": "ad1f751d64c040d766ab7e114d8bf52889c2e5aeddc05eeec8e737deb83f8956",
+          "disposition": "retire-old-declaration",
+          "successorOwner": "host"
+        }
+      ],
+      "successorPaths": [
+        "packages/ts-release/src/platform/Application.ts",
+        "packages/ts-release/src/Node.ts",
+        "packages/ts-release/src/Bun.ts",
+        "packages/ts-release/src/internal/Host.ts",
+        "test/reimplementation/hosts/action.test.ts"
+      ],
+      "responsibility": "Public Node and Bun host Layers plus the application runner own platform services, bounded native process/HTTP/Git resources, exact credentials and one journal. The old root host/runtime service graph is not retained as a compatibility facade.",
+      "nativeCarryForwardWaves": []
+    }
+  ],
+  "nativeCarryForward": [],
+  "accounting": "Eighteen exact assigned TypeScript files and 2067 physical lines are retired after the shared CLI, Action and self-release owners pass. The old 24-line Action metadata is separately retired; its selected 22-line replacement remains charged, closing all 2091 inherited product lines without historical deletion credit.",
+  "limits": "Local Action and non-mutating self-release qualification does not claim hosted node24, credentialed destinations, native Apple/Windows, direct Bun Sigstore, independent Plan010 certification or publication."
+}

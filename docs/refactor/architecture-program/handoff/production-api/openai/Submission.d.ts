@@ -1,7 +1,6 @@
-import * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
-import { ReleaseError } from "@mannyc1/ts-release";
-import { File, Tree, type ArtifactAccess } from "@mannyc1/ts-release/bundle";
+import { Effect, Schema } from "effect";
+import { File, Tree } from "@mannyc1/ts-release/bundle";
+import type { ArtifactAccess } from "@mannyc1/ts-release/bundle";
 import { Marketplace } from "./Marketplace.js";
 declare const Listing_base: Schema.Class<Listing, Schema.Struct<{
     readonly displayName: Schema.String;
@@ -59,5 +58,5 @@ export declare class Submission extends Submission_base {
 export declare const submission: (input: Submission, access: ArtifactAccess) => Effect.Effect<Readonly<{
     status: "validated-handoff-human-submission-required";
     bytes: Uint8Array<ArrayBuffer>;
-}>, ReleaseError, never>;
+}>, import("@mannyc1/ts-release").ReleaseError, never>;
 export {};

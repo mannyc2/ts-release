@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema"
 import { parse, type DefaultTreeAdapterTypes as Tree } from "parse5"
 import { RequestFacts, type Operation, type ObservationStatus } from "@mannyc1/ts-release"
-import { decodeJson, type HttpResponse } from "@mannyc1/ts-release/http"
+import { decodeJson, sameData, type HttpResponse } from "@mannyc1/ts-release/http"
 import { requestMatches } from "./Wire.js"
 import { invalid, object, own, readScope } from "./Native.js"
 import * as Model from "./Model.js"
@@ -36,24 +36,19 @@ export class NativeFailure extends Schema.Class<NativeFailure>("PyPiNativeFailur
   status,
   kind: Schema.Literal("unclassified-response"),
 }) {}
-export const receiptCorresponds = (operation: Operation, request: RequestFacts, input: unknown) => {
-  const receipt = own(UploadReceipt, input),
-    intent = own(Model.UploadIntent, operation.intent)
-  return (
-    operation.definitionId === "pypi.upload" &&
-    requestMatches(intent, request) &&
-    JSON.stringify(receipt.request) === JSON.stringify(own(RequestFacts, request))
-  )
-}
-export const failureCorresponds = (operation: Operation, request: RequestFacts, input: unknown) => {
-  const failure = own(NativeFailure, input),
-    intent = own(Model.UploadIntent, operation.intent)
-  return (
-    operation.definitionId === "pypi.upload" &&
-    requestMatches(intent, request) &&
-    JSON.stringify(failure.request) === JSON.stringify(own(RequestFacts, request))
-  )
-}
+const correspondence =
+  <A extends { readonly request: RequestFacts }, I>(codec: Schema.Codec<A, I>) =>
+  (operation: Operation, request: RequestFacts, input: unknown) => {
+    const evidence = own(codec, input),
+      intent = own(Model.UploadIntent, operation.intent)
+    return (
+      operation.definitionId === "pypi.upload" &&
+      requestMatches(intent, request) &&
+      sameData(evidence.request, own(RequestFacts, request))
+    )
+  }
+export const receiptCorresponds = correspondence(UploadReceipt)
+export const failureCorresponds = correspondence(NativeFailure)
 export const classifyObservation = (
   operation: Operation,
   input: unknown,

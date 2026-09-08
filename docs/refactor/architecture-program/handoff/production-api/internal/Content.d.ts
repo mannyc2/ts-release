@@ -15,11 +15,11 @@ export interface ContentOwner {
     readonly read: (content: Content) => Effect.Effect<Uint8Array, AdoptionError>;
 }
 export declare const captureContentOwner: (owner: ContentOwner) => ContentOwner;
-export type ReadContent = (content: Content) => Effect.Effect<Uint8Array, ReleaseError>;
+export type ReadContent<E = ReleaseError> = (content: Content) => Effect.Effect<Uint8Array, E>;
 export type PutContent = (bytes: Uint8Array) => Effect.Effect<Content, ReleaseError>;
 export interface ArtifactAccess {
     readonly bundle: OwnedBundle;
     readonly readContent: ReadContent;
 }
 /** Verify owned content before an adapter uses its bytes; never grants dispatch. */
-export declare const readVerifiedContent: (read: ReadContent, input: Content, maximumBytes: number) => Effect.Effect<Uint8Array<ArrayBuffer>, ReleaseError, never>;
+export declare const readVerifiedContent: <E>(read: ReadContent<E>, input: Content, maximumBytes: number) => Effect.Effect<Uint8Array<ArrayBuffer>, ReleaseError | E, never>;

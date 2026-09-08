@@ -1,5 +1,4 @@
-import * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
+import { Effect, Schema } from "effect";
 import type * as Redacted from "effect/Redacted";
 import { Content } from "./ArtifactModel.js";
 import { type ReadContent, type PutContent } from "./Content.js";

@@ -1,75 +1,42 @@
 import { createHash } from "node:crypto"
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
-import {
-  NoReplay,
-  PROVIDER_CONTRACT,
-  ReleaseError,
-  RequestFacts,
-  createOperation,
-  makeRequest,
-  type Author,
-  type ObservationStatus,
-  type Operation,
-  type PreparedRequest,
-} from "@mannyc1/ts-release"
-import { decodeJson, type HttpProviderDefinition, type HttpRead } from "@mannyc1/ts-release/http"
-import {
-  ManifestCodec,
-  PublishIntent,
-  PublishIntentCodec,
-  attempt,
-  canonical,
-  intent,
-  manifest,
-  render,
-} from "./Model.js"
+import { Effect, Schema } from "effect"
+import * as Core from "@mannyc1/ts-release"
+import { decodeJson, sameBytes, sameData } from "@mannyc1/ts-release/http"
+import type { HttpProviderDefinition, HttpRead } from "@mannyc1/ts-release/http"
+import * as Model from "./Model.js"
 
-const descriptor = {
-  definitionId: "mcp.publish",
-  intentVersion: "1",
-  intentCodec: PublishIntentCodec,
-} as const
+const descriptor = Core.defineProvider("mcp.publish", Model.PublishIntentCodec)
 
-export const publish: Author<PublishIntent> = (input, dependsOn = []) =>
-  createOperation(descriptor, input, dependsOn)
+export const publish: Core.Author<Model.PublishIntent> = (input, dependsOn = []) =>
+  Core.createOperation(descriptor, input, dependsOn)
 
 const Scope = Schema.Struct({
   definitionId: Schema.Literal("mcp.publish"),
   intentVersion: Schema.Literal("1"),
-  intent: PublishIntentCodec,
+  intent: Model.PublishIntentCodec,
 })
-const scopeFor = (value: PublishIntent): string =>
-  canonical({ definitionId: descriptor.definitionId, intentVersion: "1", intent: value })
-export const readScope = (value: string): PublishIntent => {
-  const parsed = Schema.decodeUnknownSync(Scope, { onExcessProperty: "error" })(
-    decodeJson(new TextEncoder().encode(value)),
-  )
-  return intent(parsed.intent)
+const scopeFor = (value: Model.PublishIntent): string =>
+  Model.canonical({ definitionId: descriptor.definitionId, intentVersion: "1", intent: value })
+export const readScope = (value: string): Model.PublishIntent => {
+  const parsed = Model.own(Scope, decodeJson(value))
+  return Model.intent(parsed.intent)
 }
-export const publishUrl = (value: PublishIntent) => `${value.registry}/v0.1/publish`
-export const observationUrl = (value: PublishIntent) =>
+export const publishUrl = (value: Model.PublishIntent) => `${value.registry}/v0.1/publish`
+export const observationUrl = (value: Model.PublishIntent) =>
   `${value.registry}/v0.1/servers/${encodeURIComponent(value.manifest.name)}` +
   `/versions/${encodeURIComponent(value.manifest.version)}`
-const bodyFor = (value: PublishIntent): Uint8Array =>
+const bodyFor = (value: Model.PublishIntent): Uint8Array =>
   new TextEncoder().encode(
-    `${canonical(Schema.encodeSync(ManifestCodec)(manifest(value.manifest)))}\n`,
+    `${Model.canonical(Schema.encodeSync(Model.ManifestCodec)(Model.manifest(value.manifest)))}\n`,
   )
-const equalBytes = (left: Uint8Array, right: Uint8Array): boolean =>
-  left.length === right.length && left.every((byte, index) => byte === right[index])
 const sha256 = (value: Uint8Array): string => createHash("sha256").update(value).digest("hex")
-const equal = (left: unknown, right: unknown): boolean => canonical(left) === canonical(right)
+const unknown = (reason: string) => ({ _tag: "Unknown" as const, reason })
 
-const prepare = Effect.fn("mcp.prepare")(function* (operation: Operation) {
-  const selected = yield* attempt("mcp-operation", () => {
-    if (
-      operation.definitionId !== descriptor.definitionId ||
-      operation.intentVersion !== descriptor.intentVersion
-    )
-      throw new Error("MCP operation uses another definition")
-    return intent(operation.intent)
-  })
-  return yield* makeRequest({
+const prepare = Effect.fn("mcp.prepare")(function* (operation: Core.Operation) {
+  const selected = yield* Model.attempt("mcp-operation", () =>
+    Model.ownOperation(Model.PublishIntentCodec, descriptor, operation),
+  )
+  return yield* Core.makeRequest({
     transport: "core.http/1",
     endpoint: publishUrl(selected),
     method: "POST",
@@ -77,25 +44,23 @@ const prepare = Effect.fn("mcp.prepare")(function* (operation: Operation) {
       ["accept", "application/json"],
       ["content-type", "application/json"],
     ],
-    body: yield* render(selected.manifest),
+    body: yield* Model.render(selected.manifest),
     principal: selected.authorization.principal,
     scope: scopeFor(selected),
-    replay: new NoReplay({}),
+    replay: new Core.NoReplay({}),
   })
 })
 
-const ownsRequest = (request: PreparedRequest): boolean => {
-  try {
-    const facts = Schema.decodeUnknownSync(RequestFacts, { onExcessProperty: "error" })(
-        request.facts,
-      ),
+const ownsRequest = (request: Core.PreparedRequest): boolean =>
+  Model.matches(() => {
+    const { facts, body: requestBody } = Model.ownRequest(request),
       selected = readScope(facts.scope),
       body = bodyFor(selected)
     return (
       facts.transport === "core.http/1" &&
       facts.endpoint === publishUrl(selected) &&
       facts.method === "POST" &&
-      equal(facts.headers, [
+      sameData(facts.headers, [
         ["accept", "application/json"],
         ["content-type", "application/json"],
       ]) &&
@@ -103,19 +68,15 @@ const ownsRequest = (request: PreparedRequest): boolean => {
       facts.replay._tag === "None" &&
       facts.byteLength === String(body.length) &&
       facts.bodyDigest === sha256(body) &&
-      equalBytes(new Uint8Array(request.body), body)
+      sameBytes(requestBody, body)
     )
-  } catch {
-    return false
-  }
-}
+  })
 
 const timestamp = Schema.String.check(
   Schema.makeFilter(
     (value) =>
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/u.test(
-        value,
-      ) && !Number.isNaN(Date.parse(value)),
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/u.test(value) &&
+      !Number.isNaN(Date.parse(value)),
   ),
 )
 const Official = Schema.Struct({
@@ -127,89 +88,91 @@ const Official = Schema.Struct({
   isLatest: Schema.Boolean,
 })
 const Response = Schema.Struct({
-  server: ManifestCodec,
+  server: Model.ManifestCodec,
   _meta: Schema.Struct({ "io.modelcontextprotocol.registry/official": Official }),
 })
 type Response = typeof Response.Type
-const response = (body: Uint8Array): Response =>
-  Schema.decodeUnknownSync(Response, { onExcessProperty: "error" })(decodeJson(body))
+const response = (body: Uint8Array): Response => Model.own(Response, decodeJson(body))
 const official = (value: Response) => value._meta["io.modelcontextprotocol.registry/official"]
 
 class Receipt extends Schema.Class<Receipt>("Mcp.PublishReceipt")({
-  request: RequestFacts,
+  request: Core.RequestFacts,
   status: Schema.Literal(200),
-  server: ManifestCodec,
+  server: Model.ManifestCodec,
   registryStatus: Schema.Literal("active"),
   isLatest: Schema.Boolean,
 }) {}
 class Exact extends Schema.TaggedClass<Exact>()("Exact", {
-  request: RequestFacts,
-  server: ManifestCodec,
+  request: Core.RequestFacts,
+  server: Model.ManifestCodec,
   registryStatus: Schema.Literals(["active", "deprecated", "deleted"]),
 }) {}
 class Conflict extends Schema.TaggedClass<Conflict>()("Conflict", {
-  request: RequestFacts,
-  observed: ManifestCodec,
+  request: Core.RequestFacts,
+  observed: Model.ManifestCodec,
 }) {}
 class Pending extends Schema.TaggedClass<Pending>()("Pending", {
-  request: RequestFacts,
+  request: Core.RequestFacts,
   status: Schema.Literal(404),
 }) {}
 class Inconclusive extends Schema.TaggedClass<Inconclusive>()("Inconclusive", {
-  request: RequestFacts,
+  request: Core.RequestFacts,
   status: Schema.Int,
   reason: Schema.Literals(["http-status", "malformed-response", "coordinate-mismatch"]),
 }) {}
 const Observation = Schema.Union([Exact, Conflict, Pending, Inconclusive])
+const inconclusive = (request: Core.RequestFacts, status: number, reason: Inconclusive["reason"]) =>
+  new Inconclusive({ request, status, reason })
 
-const operationMatches = (operation: Operation, facts: RequestFacts): boolean => {
-  try {
-    const selected = intent(operation.intent), scoped = readScope(facts.scope)
+const operationMatches = (operation: Core.Operation, facts: Core.RequestFacts): boolean =>
+  Model.matches(() => {
+    const selected = Model.intent(operation.intent),
+      scoped = readScope(facts.scope)
     return (
       operation.definitionId === descriptor.definitionId &&
       operation.intentVersion === descriptor.intentVersion &&
-      equal(selected, scoped) &&
+      sameData(selected, scoped) &&
       facts.endpoint === publishUrl(selected) &&
       facts.principal === selected.authorization.principal
     )
-  } catch {
-    return false
-  }
-}
-const receiptCorresponds = (operation: Operation, request: RequestFacts, value: unknown) => {
-  try {
-    const selected = Schema.decodeUnknownSync(Receipt, { onExcessProperty: "error" })(value),
-      expected = intent(operation.intent)
+  })
+const receiptCorresponds = (
+  operation: Core.Operation,
+  request: Core.RequestFacts,
+  value: unknown,
+) =>
+  Model.matches(() => {
+    const selected = Model.own(Receipt, value),
+      expected = Model.intent(operation.intent)
     return (
       operationMatches(operation, request) &&
-      equal(selected.request, request) &&
-      equal(selected.server, expected.manifest) &&
+      sameData(selected.request, request) &&
+      sameData(selected.server, expected.manifest) &&
       selected.registryStatus === "active"
     )
-  } catch {
-    return false
-  }
-}
+  })
 const classifyObservation = (
-  operation: Operation,
+  operation: Core.Operation,
   value: unknown,
   _receipts: ReadonlyArray<unknown>,
-): ObservationStatus => {
-  const selected = Schema.decodeUnknownSync(Observation, { onExcessProperty: "error" })(value)
+): Core.ObservationStatus => {
+  const selected = Model.own(Observation, value)
   if (!operationMatches(operation, selected.request))
-    throw new ReleaseError({ code: "mcp-observation", message: "Observation is not for this operation" })
+    throw Model.failure("mcp-observation", "Observation is not for this operation")
   if (selected._tag === "Pending") return "Pending"
   if (selected._tag === "Inconclusive") return "Inconclusive"
   if (selected._tag === "Conflict") return "Conflict"
   return selected.registryStatus === "active" ? "Satisfied" : "Conflict"
 }
 
-export const definitions = (dependencies: { readonly read: HttpRead }): readonly HttpProviderDefinition[] => {
+export const definitions = (dependencies: {
+  readonly read: HttpRead
+}): readonly HttpProviderDefinition[] => {
   const read = dependencies.read.bind(dependencies)
   return [
     {
       ...descriptor,
-      contract: PROVIDER_CONTRACT,
+      contract: Core.PROVIDER_CONTRACT,
       prepare,
       ownsRequest,
       receiptVersion: "mcp-publish-receipt/1",
@@ -221,16 +184,14 @@ export const definitions = (dependencies: { readonly read: HttpRead }): readonly
       classifyObservation,
       decodeResponse: Effect.fn("mcp.decodeResponse")(function* (request, result) {
         if (!ownsRequest(request))
-          return yield* new ReleaseError({
-            code: "mcp-response-binding",
-            message: "MCP response request could not be admitted",
-          })
-        if (result.status !== 200)
-          return { _tag: "Unknown", reason: "MCP Registry did not acknowledge publication" }
+          return yield* Model.reject("mcp-response-binding", "MCP response request is invalid")
+        if (result.status !== 200) return unknown("MCP Registry did not acknowledge publication")
         try {
-          const value = response(result.body), selected = readScope(request.facts.scope), metadata = official(value)
-          if (metadata.status !== "active" || !equal(value.server, selected.manifest))
-            return { _tag: "Unknown" as const, reason: "MCP Registry returned different publication facts" }
+          const value = response(result.body),
+            selected = readScope(request.facts.scope),
+            metadata = official(value)
+          if (metadata.status !== "active" || !sameData(value.server, selected.manifest))
+            return unknown("MCP Registry returned different publication facts")
           return {
             _tag: "Accepted" as const,
             receipt: new Receipt({
@@ -242,11 +203,12 @@ export const definitions = (dependencies: { readonly read: HttpRead }): readonly
             }),
           }
         } catch {
-          return { _tag: "Unknown", reason: "MCP Registry returned an unreadable publication response" }
+          return unknown("MCP Registry returned an unreadable publication response")
         }
       }),
       observe: Effect.fn("mcp.observe")(function* (operation) {
-        const request = yield* prepare(operation), selected = readScope(request.facts.scope)
+        const request = yield* prepare(operation),
+          selected = readScope(request.facts.scope)
         const result = yield* read({
           method: "GET",
           url: observationUrl(selected),
@@ -257,24 +219,17 @@ export const definitions = (dependencies: { readonly read: HttpRead }): readonly
         let evidence: typeof Observation.Type
         if (result.status === 404) evidence = new Pending({ request: request.facts, status: 404 })
         else if (result.status !== 200)
-          evidence = new Inconclusive({
-            request: request.facts,
-            status: result.status,
-            reason: "http-status",
-          })
+          evidence = inconclusive(request.facts, result.status, "http-status")
         else {
           try {
-            const value = response(result.body), metadata = official(value)
+            const value = response(result.body),
+              metadata = official(value)
             if (
               value.server.name !== selected.manifest.name ||
               value.server.version !== selected.manifest.version
             )
-              evidence = new Inconclusive({
-                request: request.facts,
-                status: 200,
-                reason: "coordinate-mismatch",
-              })
-            else if (!equal(value.server, selected.manifest))
+              evidence = inconclusive(request.facts, 200, "coordinate-mismatch")
+            else if (!sameData(value.server, selected.manifest))
               evidence = new Conflict({ request: request.facts, observed: value.server })
             else
               evidence = new Exact({
@@ -283,11 +238,7 @@ export const definitions = (dependencies: { readonly read: HttpRead }): readonly
                 registryStatus: metadata.status,
               })
           } catch {
-            evidence = new Inconclusive({
-              request: request.facts,
-              status: 200,
-              reason: "malformed-response",
-            })
+            evidence = inconclusive(request.facts, 200, "malformed-response")
           }
         }
         return { evidence, status: classifyObservation(operation, evidence, []) }

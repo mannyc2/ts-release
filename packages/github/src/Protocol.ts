@@ -1,27 +1,15 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
-import {
-  makeRequest,
-  PROVIDER_CONTRACT,
-  type Operation,
-  type ProviderContext,
-} from "@mannyc1/ts-release"
+import { Effect, Schema } from "effect"
+import { PROVIDER_CONTRACT, makeRequest, type Operation } from "@mannyc1/ts-release"
+import type { ProviderContext } from "@mannyc1/ts-release"
 import { verifiedArtifacts, type ArtifactAccess } from "@mannyc1/ts-release/bundle"
 import type { HttpProviderDefinition, HttpRead } from "@mannyc1/ts-release/http"
 import * as Model from "./Model.js"
 import { descriptors, intentOf, kindOf, validatePlan, type Intent } from "./Graph.js"
 import { bindScope, readScope } from "./Binding.js"
-import { attempt, invalid, responseObject } from "./Native.js"
+import { attempt, invalid, matches, ownOperation, responseObject } from "./Native.js"
 import { nativeRequest, ownsRequest, requestCorresponds } from "./Wire.js"
-import {
-  Receipt,
-  NativeFailure,
-  Observation,
-  decodeFacts,
-  receiptCorresponds,
-  failureCorresponds,
-  classifyObservation,
-} from "./Evidence.js"
+import { NativeFailure, Observation, Receipt, decodeFacts } from "./Evidence.js"
+import { classifyObservation, failureCorresponds, receiptCorresponds } from "./Evidence.js"
 import { observations } from "./Observe.js"
 
 export const definitions = (
@@ -36,14 +24,12 @@ export const definitions = (
       ),
     )
     const owns: HttpProviderDefinition["ownsRequest"] = (request) => {
-      try {
+      return matches(() => {
         return (
           readScope(request.facts.scope).operation.definitionId === descriptor.definitionId &&
           ownsRequest(request)
         )
-      } catch {
-        return false
-      }
+      })
     }
     return {
       ...descriptor,
@@ -55,8 +41,7 @@ export const definitions = (
         context: ProviderContext,
       ) {
         const scope = yield* attempt(() => {
-            if (operation.definitionId !== descriptor.definitionId) invalid("definition")
-            Schema.decodeUnknownSync(intentCodec, { onExcessProperty: "error" })(operation.intent)
+            ownOperation(intentCodec, descriptor, operation)
             return bindScope(operation, context)
           }),
           intent = intentOf(operation)

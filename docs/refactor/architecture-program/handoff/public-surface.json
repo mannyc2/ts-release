@@ -18,7 +18,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "a4347d2e6379434262c90630efed973370472c838047214cd47d39e50351e366"
+    "sha256": "2e4e704aed4981d5869e58959f47f6dbc89343cf033869dab697555298b40888"
   },
   "authorityBindings": {
     "kernel": {
@@ -47,47 +47,47 @@
     },
     "apple": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Apple.d.ts",
-      "sha256": "a23af4b8b5737a8673320e10d368fef808cccbc6266212058f4a53a61a590b35"
+      "sha256": "4a7520c7b4724fd01e9cd5de1eaf639fc80fb7e303f57998baa702baabe4b210"
     },
     "checksum": {
       "path": "docs/refactor/architecture-program/handoff/production-api/internal/Checksums.d.ts",
-      "sha256": "feec4d4da4bbabc7a371a5da76df53c0a3d4038147e11a0be37b2241c0af0ec3"
+      "sha256": "b725318dbfc52b5564cdef0bf9acdc0974c1ddae2abf890d7bd2434e8e5ce3e7"
     },
     "http": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Http.d.ts",
-      "sha256": "0e318562851edda401c8ee201b79a91ce7d9a6fb74eab3fedf96bc0b6235a44e"
+      "sha256": "33a032f708ed8d351a5c50fe59e93320e85d5fd0632d1b58ff828ea7e8fe0f70"
     },
     "application": {
       "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
-      "sha256": "707c1ceb6f170bc83e8454415805c881940afc2b980599cf6c50b11cb27fb99c"
+      "sha256": "f6c013a4de94cf26b63dc130bf23109aa5d76e1571cdef993daad75a6758c9b0"
     },
     "npm": {
       "path": "docs/refactor/architecture-program/handoff/production-api/npm/index.d.ts",
-      "sha256": "fa0447e6bc92155425681adf3f5929065271d1523716bad2cdb9001c29dc7423"
+      "sha256": "a1296bd253a1104284135846d5706cc741ba72d64fb562a47ea1b2a64d2f151b"
     },
     "pypi": {
       "path": "docs/refactor/architecture-program/handoff/production-api/pypi/index.d.ts",
-      "sha256": "b70b66212c0e9e0e7512db57653ad9d5dea16158a455f355078652db424e9917"
+      "sha256": "2ca527b4fe607cc28a4766afb205160f00b28a0c25f54f74d7d4faa7a96cb923"
     },
     "artifactReader": {
       "path": "docs/refactor/architecture-program/handoff/production-api/internal/ArtifactReader.d.ts",
-      "sha256": "fc61eec68de6dbb61ea353893873bd178b9871845fcc2b29eeafbb0ca001728e"
+      "sha256": "eb2f10e0b7337be433365eece2cc6970dea7c2e92870cfd048ccb07a29810335"
     },
     "git": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Git.d.ts",
-      "sha256": "3c04cd3e8a4ccf18759ecd95cacac9a5d52d86cc3cf7678dbb5b7d17af856334"
+      "sha256": "e215ad03413d06c62d9f462722cac0be6621647e9a82d67a57be3f69d3006c75"
     },
     "nodeHost": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Node.d.ts",
-      "sha256": "fec87d48973920d69edae352729a02e889289049290caff643d8773deb2bac69"
+      "sha256": "b5d4a8803273ba4fe2310f90d7b2258471ae1e5c5f1a42b99a8e0da456bb78c3"
     },
     "bunHost": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Bun.d.ts",
-      "sha256": "4107e7b1c9d57182a469cf0d7dbd77a56376f263e29f183e8305962807f691cc"
+      "sha256": "8de62d1b69d48bdaa2176e5ce3054bc923181d3f7338522fc6c8dfb04595dc17"
     },
     "github": {
       "path": "docs/refactor/architecture-program/handoff/production-api/github/index.d.ts",
-      "sha256": "7ccbff55c8c509a0aa1837eb83184a647ed52a39584de25ee62586f850ce254f"
+      "sha256": "a9aec0f5f1fff83deaa45ae9fb95a81e405391592f989e6e94abcd5cacf64c78"
     },
     "homebrew": {
       "path": "docs/refactor/architecture-program/handoff/production-api/catalog/homebrew/index.d.ts",
@@ -99,25 +99,25 @@
     },
     "bundle": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Bundle.d.ts",
-      "sha256": "13f533ca16f62dbdd27e6d073ca2f0ce9341053f49bcbc89bac9f13eb28d3e22"
+      "sha256": "7c9985e1e59cb7ab6b2ffa3d1b36e10e7d71ae233721c2eb9ff6e6041d4ce73d"
     },
     "effectBuild": {
       "path": "docs/refactor/architecture-program/handoff/production-api/EffectBuild.d.ts",
-      "sha256": "9a89c26bcb2fc69b83b1097a0bbef85a54c8918a78a1edc9ac6ba2bee792ab2e"
+      "sha256": "cdaab0a2cc2f94abd5710126d967fa4b692b1b79a202bcd07584a037885ad2fc"
     },
     "mcp": {
       "path": "docs/refactor/architecture-program/handoff/production-api/mcp/index.d.ts",
-      "sha256": "6cd1b33947dfb64e4e8e2d29bd40e04eb14dae558556676849eb628d5e5a7ffc"
+      "sha256": "16b49c4982ebab62fbcb18e3b53fab7dacf5ea72e8b6c118b5441afb64679b69"
     },
     "openai": {
       "path": "docs/refactor/architecture-program/handoff/production-api/openai/index.d.ts",
-      "sha256": "a9b5a6f42fdd1f0997f752303b39b1ebde5afc08c9b9b7a7876062f32a43ea85"
+      "sha256": "170b4f2cbcf2a8dcae3f8947fb82cbd8cde12f8b026118336709621040dcd83c"
     }
   },
   "productionDeclarations": {
     "path": "docs/refactor/architecture-program/handoff/production-api/emission.json",
-    "sha256": "30b6009de7ecb57ebdb7701ac74b84697719db305bd7899369a0d22814ab98a5",
-    "files": 89,
+    "sha256": "77655e8f9288e7e2cb9378af147bb795ad404947f1b9882e47e0c4864402df69",
+    "files": 90,
     "meaning": "Complete actual declaration-owner files, including private Schema bases, and exact source hashes; regenerated by scripts/project-production-api.ts."
   },
   "symbols": [
@@ -137,47 +137,62 @@
       ]
     },
     {
-      "id": "kernel:PreparedRequest",
+      "id": "kernel:defineProvider",
       "authority": "kernel",
       "namespace": null,
-      "sourceName": "PreparedRequest",
+      "sourceName": "defineProvider",
       "spaces": [
-        "type"
+        "value"
       ],
       "declarations": [
         {
-          "line": 8,
-          "sha256": "e27cc335c3c835965d0dac588aadea696f121a89baa159d49ec83bda21120b3a"
+          "line": 69,
+          "sha256": "8f8cd2ca53fc79c84d57f53e9a7ada41b41668944f8dd9cbb27151f9b56be2cd"
         }
       ]
     },
     {
-      "id": "kernel:SendResult",
+      "id": "kernel:makeRequest",
       "authority": "kernel",
       "namespace": null,
-      "sourceName": "SendResult",
+      "sourceName": "makeRequest",
       "spaces": [
-        "type"
+        "value"
       ],
       "declarations": [
         {
-          "line": 12,
-          "sha256": "3ddde140ce6ada31de32cfbe9a947318d31e7f6b44f116320f2d89eadfa2321b"
+          "line": 81,
+          "sha256": "a202619833f04c641bc5716596060969705647b0e08e05e87fb861fe637f82f5"
         }
       ]
     },
     {
-      "id": "kernel:Transport",
+      "id": "kernel:Author",
       "authority": "kernel",
       "namespace": null,
-      "sourceName": "Transport",
+      "sourceName": "Author",
       "spaces": [
         "type"
       ],
       "declarations": [
         {
-          "line": 23,
-          "sha256": "26fad1c8837c9f7708999a251d2417367dd1649f6716a671ba92fdc06e49313d"
+          "line": 79,
+          "sha256": "00d604f20de41237a7aed9df219c23b19b89e321e01ae1529c3a45b0cf2555ef"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Json",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Json",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 77,
+          "sha256": "a0260d82c11dd5feab3269e83ea6ae8096359401597ac8a923ac81ba4e01420c"
         }
       ]
     },
@@ -192,7 +207,52 @@
       "declarations": [
         {
           "line": 29,
-          "sha256": "82ec23e46814d043ee8eb4c89c0e0884f26e79834b2f565783bbedc49c585a23"
+          "sha256": "a7c465aab950a777c683ff404053120cccb8bb7b932312d493da3a27e77edc8f"
+        }
+      ]
+    },
+    {
+      "id": "kernel:OperationId",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "OperationId",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 78,
+          "sha256": "e6a8a862ab6c565ac412b4bb9a96361e385cb80d273efeb9cb0cb867400985bc"
+        }
+      ]
+    },
+    {
+      "id": "kernel:PreparedRequest",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "PreparedRequest",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 8,
+          "sha256": "9dd21deac5b4d2135f2bc2d454bfe06232d987b249b97633a40682cb0bba6352"
+        }
+      ]
+    },
+    {
+      "id": "kernel:NativeFailureBoundary",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "NativeFailureBoundary",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 42,
+          "sha256": "3e46c07aff428ad2e759669b554aaf9bc393908c75ccbe8335fa871d81b16afa"
         }
       ]
     },
@@ -227,21 +287,6 @@
       ]
     },
     {
-      "id": "kernel:NativeFailureBoundary",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "NativeFailureBoundary",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 42,
-          "sha256": "3e46c07aff428ad2e759669b554aaf9bc393908c75ccbe8335fa871d81b16afa"
-        }
-      ]
-    },
-    {
       "id": "kernel:ProviderDefinition",
       "authority": "kernel",
       "namespace": null,
@@ -272,62 +317,32 @@
       ]
     },
     {
-      "id": "kernel:Json",
+      "id": "kernel:SendResult",
       "authority": "kernel",
       "namespace": null,
-      "sourceName": "Json",
+      "sourceName": "SendResult",
       "spaces": [
         "type"
       ],
       "declarations": [
         {
-          "line": 71,
-          "sha256": "a0260d82c11dd5feab3269e83ea6ae8096359401597ac8a923ac81ba4e01420c"
+          "line": 12,
+          "sha256": "3ddde140ce6ada31de32cfbe9a947318d31e7f6b44f116320f2d89eadfa2321b"
         }
       ]
     },
     {
-      "id": "kernel:OperationId",
+      "id": "kernel:Transport",
       "authority": "kernel",
       "namespace": null,
-      "sourceName": "OperationId",
+      "sourceName": "Transport",
       "spaces": [
         "type"
       ],
       "declarations": [
         {
-          "line": 72,
-          "sha256": "e6a8a862ab6c565ac412b4bb9a96361e385cb80d273efeb9cb0cb867400985bc"
-        }
-      ]
-    },
-    {
-      "id": "kernel:Author",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "Author",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 73,
-          "sha256": "00d604f20de41237a7aed9df219c23b19b89e321e01ae1529c3a45b0cf2555ef"
-        }
-      ]
-    },
-    {
-      "id": "kernel:makeRequest",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "makeRequest",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 75,
-          "sha256": "a202619833f04c641bc5716596060969705647b0e08e05e87fb861fe637f82f5"
+          "line": 23,
+          "sha256": "26fad1c8837c9f7708999a251d2417367dd1649f6716a671ba92fdc06e49313d"
         }
       ]
     },
@@ -342,8 +357,419 @@
       ],
       "declarations": [
         {
-          "line": 8,
+          "line": 7,
           "sha256": "25a670f62c8d28671b29a1b94b73793e75572f5d87d6c6c07b8aa7d7d698422d"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Snapshot",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Snapshot",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 5,
+          "sha256": "ef3a2f8fc454ee20781bd6e6867006933ed4a52632a7469d0d0f0e0ac8b1a96d"
+        }
+      ]
+    },
+    {
+      "id": "kernel:AppendResult",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "AppendResult",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 10,
+          "sha256": "767c63cc2641685cee7ed38853457196477f6dbd98aa1a7621abd241f3765cfb"
+        }
+      ]
+    },
+    {
+      "id": "kernel:JournalStore",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "JournalStore",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 16,
+          "sha256": "a06d71d28c7ed711f0b8cd780291243570089f96ec92bcf619da8666ef0c0715"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Scope",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Scope",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 22,
+          "sha256": "74b73f5478ea8c97cc22926ec2abbc121b14842705ff91a4dec7ca02ca682d67"
+        }
+      ]
+    },
+    {
+      "id": "kernel:JournalContext",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "JournalContext",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 29,
+          "sha256": "9b977747ff01da0c9d851bdb6d926eb239e8366fe4bd9e621550bf3e9459d0ad"
+        }
+      ]
+    },
+    {
+      "id": "kernel:HostShape",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "HostShape",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 7,
+          "sha256": "c693d7a0034df2e730a520c4027326808488405d7fb6c703f398d88e0f5f011e"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Host",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Host",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 18,
+          "sha256": "08fbd7b7789af392ae7ec382d3640c01990ecd11becdd92a6cb7ad6b64388d02"
+        }
+      ]
+    },
+    {
+      "id": "kernel:historyMachine",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "historyMachine",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 53,
+          "sha256": "353a42c2a217a65bf78f0a899dc4af8dcda50734b579c891361962c7453819cf"
+        }
+      ]
+    },
+    {
+      "id": "kernel:sameProtectedRequest",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "sameProtectedRequest",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 27,
+          "sha256": "9487f981b04f48212e0cc9627aaf730c25cef74173571181ec40042f25b97b1c"
+        }
+      ]
+    },
+    {
+      "id": "kernel:sameStrings",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "sameStrings",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 28,
+          "sha256": "45c50e535ff3f32e27ed9a1d28b8e54c441e58c9d3094f313eec3ddb98fba918"
+        }
+      ]
+    },
+    {
+      "id": "kernel:CandidateRequest",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "CandidateRequest",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 5,
+          "sha256": "55c2bdd99b9576308ce36e419317091a8f4317e06d3d0d74bdcc26a32812d704"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Machine",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Machine",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 20,
+          "sha256": "997aa752468cc102f436a143d62a4657c2d91ad37c58353393789a11af9eae18"
+        }
+      ]
+    },
+    {
+      "id": "kernel:MachineConstructor",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "MachineConstructor",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 25,
+          "sha256": "be2f9c656f7224a1d63192f276479275d9d976930d7747564a15a96a067edb04"
+        }
+      ]
+    },
+    {
+      "id": "kernel:Next",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "Next",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 9,
+          "sha256": "811a60f96123402a3adc776bffe70e86dc96a46e10f3415c66c7c0fbbeb91ad5"
+        }
+      ]
+    },
+    {
+      "id": "kernel:createOperation",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "createOperation",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 4,
+          "sha256": "7912844ff608bf7e91cf3092d442b65b00810d21e717f18e1b69dd21d8f3061e"
+        }
+      ]
+    },
+    {
+      "id": "kernel:createPlan",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "createPlan",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 11,
+          "sha256": "2f2deadb22c22df75f6da12d7297360ea4d5456fbb15a4f63711f9f41dfb6513"
+        }
+      ]
+    },
+    {
+      "id": "kernel:createPreparationScope",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "createPreparationScope",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 12,
+          "sha256": "bab27a85225acaf6b019c3ce5e63ba33261a2cf30dc598f2dc905d99448fcabe"
+        }
+      ]
+    },
+    {
+      "id": "kernel:loadPlan",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "loadPlan",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 16,
+          "sha256": "2b8f058d385df29864993ce27c17c90e63896cbc87fbfb3a55af736f6eaf1482"
+        }
+      ]
+    },
+    {
+      "id": "kernel:GitReceipt",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "GitReceipt",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 11,
+          "sha256": "1e35f9deb5737224f12f8e0232ce7641c93e6a2aada4f231fd25fdb2863ca605"
+        }
+      ]
+    },
+    {
+      "id": "kernel:makeCoreGitTransport",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "makeCoreGitTransport",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 37,
+          "sha256": "e4603f58a8171401609c32b3139005062f3e74b550d9bc8154f5ac96ccd236a8"
+        },
+        {
+          "line": 38,
+          "sha256": "146dd9d29e85891c372655f3b73010319a58543ba5327a753f695c4a4a1592f7"
+        }
+      ]
+    },
+    {
+      "id": "kernel:CoreGitOptions",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "CoreGitOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 18,
+          "sha256": "a06e398daf38e992f05d80360f101d0115e2ad5bab426b1a9b9708ad9251b6f2"
+        }
+      ]
+    },
+    {
+      "id": "kernel:GitExecution",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "GitExecution",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 14,
+          "sha256": "97f33ed0e3daefc71c4884814216cc3549161b64a83cff040e2d0edadce4c77f"
+        }
+      ]
+    },
+    {
+      "id": "kernel:reportRelease",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "reportRelease",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 8,
+          "sha256": "30d0025d3357cf326e4d59fe0266fc65503d06a7819d53d773f28902a6de4515"
+        }
+      ]
+    },
+    {
+      "id": "kernel:observeRelease",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "observeRelease",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 22,
+          "sha256": "641134b7afa6a150d3b80f722306793f0475d54c93cadd772ca5763d74f2df32"
+        }
+      ]
+    },
+    {
+      "id": "kernel:runRelease",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "runRelease",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 37,
+          "sha256": "b45f133be3a3e07c31cc67ccbf8feb0dfb000ddd37d84cdc064782a2beec8f07"
+        }
+      ]
+    },
+    {
+      "id": "kernel:supersedePlan",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "supersedePlan",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 49,
+          "sha256": "559d1abb6ec90c6bc0725cade333976a2f059337ff61d85061fbadfbd2209ded"
+        }
+      ]
+    },
+    {
+      "id": "kernel:acceptRisk",
+      "authority": "kernel",
+      "namespace": null,
+      "sourceName": "acceptRisk",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 65,
+          "sha256": "3ba8a539fe29809e43f15d0e3dc56cdecb744a58cf4e528c9ff769e0fb92502a"
         }
       ]
     },
@@ -776,417 +1202,6 @@
       ]
     },
     {
-      "id": "kernel:Snapshot",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "Snapshot",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 5,
-          "sha256": "13b1862004679683e6c9ab224c13199ae3607934d51a937651763106a69ea171"
-        }
-      ]
-    },
-    {
-      "id": "kernel:AppendResult",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "AppendResult",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 9,
-          "sha256": "8f6bf1b266843f8341ff3b824d3c235e083fe5628e7a0e17c571d78ba55a1738"
-        }
-      ]
-    },
-    {
-      "id": "kernel:JournalStore",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "JournalStore",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 21,
-          "sha256": "a06d71d28c7ed711f0b8cd780291243570089f96ec92bcf619da8666ef0c0715"
-        }
-      ]
-    },
-    {
-      "id": "kernel:Scope",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "Scope",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 27,
-          "sha256": "74b73f5478ea8c97cc22926ec2abbc121b14842705ff91a4dec7ca02ca682d67"
-        }
-      ]
-    },
-    {
-      "id": "kernel:JournalContext",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "JournalContext",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 34,
-          "sha256": "21d999ec9e11f5b1980b85d2f4c5ed40c673b1c67733b7251b18dfb8facef6aa"
-        }
-      ]
-    },
-    {
-      "id": "kernel:HostShape",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "HostShape",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 8,
-          "sha256": "c693d7a0034df2e730a520c4027326808488405d7fb6c703f398d88e0f5f011e"
-        }
-      ]
-    },
-    {
-      "id": "kernel:Host",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "Host",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 19,
-          "sha256": "08fbd7b7789af392ae7ec382d3640c01990ecd11becdd92a6cb7ad6b64388d02"
-        }
-      ]
-    },
-    {
-      "id": "kernel:CandidateRequest",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "CandidateRequest",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 3,
-          "sha256": "d4cb5446a8eaa659e2a2b836af3f0d634ff5420db912d659fd8b7ae2df0ec7ef"
-        }
-      ]
-    },
-    {
-      "id": "kernel:Next",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "Next",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 7,
-          "sha256": "811a60f96123402a3adc776bffe70e86dc96a46e10f3415c66c7c0fbbeb91ad5"
-        }
-      ]
-    },
-    {
-      "id": "kernel:Machine",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "Machine",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 18,
-          "sha256": "997aa752468cc102f436a143d62a4657c2d91ad37c58353393789a11af9eae18"
-        }
-      ]
-    },
-    {
-      "id": "kernel:MachineConstructor",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "MachineConstructor",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 23,
-          "sha256": "be2f9c656f7224a1d63192f276479275d9d976930d7747564a15a96a067edb04"
-        }
-      ]
-    },
-    {
-      "id": "kernel:sameProtectedRequest",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "sameProtectedRequest",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 25,
-          "sha256": "9487f981b04f48212e0cc9627aaf730c25cef74173571181ec40042f25b97b1c"
-        }
-      ]
-    },
-    {
-      "id": "kernel:sameStrings",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "sameStrings",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 26,
-          "sha256": "45c50e535ff3f32e27ed9a1d28b8e54c441e58c9d3094f313eec3ddb98fba918"
-        }
-      ]
-    },
-    {
-      "id": "kernel:historyMachine",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "historyMachine",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 51,
-          "sha256": "353a42c2a217a65bf78f0a899dc4af8dcda50734b579c891361962c7453819cf"
-        }
-      ]
-    },
-    {
-      "id": "kernel:createOperation",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "createOperation",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 5,
-          "sha256": "9333283edc9a53ff9b3d76c9db2def571d1fb3991a9b0297b5a3a99d73c8b42f"
-        }
-      ]
-    },
-    {
-      "id": "kernel:createPlan",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "createPlan",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 12,
-          "sha256": "0fdee4d3b5a224742f9660d2aa6be1e5018576dd96d57128148a2755d7bcaee6"
-        }
-      ]
-    },
-    {
-      "id": "kernel:createPreparationScope",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "createPreparationScope",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 13,
-          "sha256": "9279246fc2901d6372f94e80939614046363e6dd085df1c30e0a909ceccefa63"
-        }
-      ]
-    },
-    {
-      "id": "kernel:loadPlan",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "loadPlan",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 17,
-          "sha256": "c3cc3a76068130294e6679f847cc46c52d8c9ec2151b8692e267cd05bec7f2a5"
-        }
-      ]
-    },
-    {
-      "id": "kernel:GitReceipt",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "GitReceipt",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 12,
-          "sha256": "1e35f9deb5737224f12f8e0232ce7641c93e6a2aada4f231fd25fdb2863ca605"
-        }
-      ]
-    },
-    {
-      "id": "kernel:GitExecution",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "GitExecution",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 14,
-          "sha256": "75d136979830759e798d3940040401a4d7def432046f14fe6adf1b4000c858d5"
-        }
-      ]
-    },
-    {
-      "id": "kernel:CoreGitOptions",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "CoreGitOptions",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 18,
-          "sha256": "a06e398daf38e992f05d80360f101d0115e2ad5bab426b1a9b9708ad9251b6f2"
-        }
-      ]
-    },
-    {
-      "id": "kernel:makeCoreGitTransport",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "makeCoreGitTransport",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 37,
-          "sha256": "e4603f58a8171401609c32b3139005062f3e74b550d9bc8154f5ac96ccd236a8"
-        },
-        {
-          "line": 38,
-          "sha256": "146dd9d29e85891c372655f3b73010319a58543ba5327a753f695c4a4a1592f7"
-        }
-      ]
-    },
-    {
-      "id": "kernel:reportRelease",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "reportRelease",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 8,
-          "sha256": "f50c47ac291231f780a36d459f9964979ecba9563dbc52c68fa3cfab8c8ec962"
-        }
-      ]
-    },
-    {
-      "id": "kernel:observeRelease",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "observeRelease",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 22,
-          "sha256": "c2b3e9102ed1f3b706dbe35a36f9284aa8f0cf8dd64a2eba88deb6e1e28172f6"
-        }
-      ]
-    },
-    {
-      "id": "kernel:runRelease",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "runRelease",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 37,
-          "sha256": "16f43725724a833895f130e35a9ee4c04a189ce6f64c95f9d5f0fbbbd6bc049c"
-        }
-      ]
-    },
-    {
-      "id": "kernel:supersedePlan",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "supersedePlan",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 49,
-          "sha256": "5c6c2167c1e429d86c386610a2da015732a0e857d401f96a78d01c1669acb99e"
-        }
-      ]
-    },
-    {
-      "id": "kernel:acceptRisk",
-      "authority": "kernel",
-      "namespace": null,
-      "sourceName": "acceptRisk",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 65,
-          "sha256": "99bd838171fbe021ae9f189135a85985dcc46fd87c1c999b2ffbf520a9a3bfd2"
-        }
-      ]
-    },
-    {
       "id": "provider:GitHub.Repository",
       "authority": "provider",
       "namespace": "GitHub",
@@ -1440,7 +1455,7 @@
       ],
       "declarations": [
         {
-          "line": 40,
+          "line": 128,
           "sha256": "b3706d27cd2adf56454d4da8fbe344abd1fd0e0a117b49318890e6db16f877aa"
         }
       ]
@@ -1455,7 +1470,7 @@
       ],
       "declarations": [
         {
-          "line": 41,
+          "line": 129,
           "sha256": "0545b3ccfdc066d0e36b0bf3e5a4268b92dfb2660b644364071fbc39c212c94b"
         }
       ]
@@ -1470,7 +1485,7 @@
       ],
       "declarations": [
         {
-          "line": 42,
+          "line": 130,
           "sha256": "de2b15fc33e20496636f1ddbf1e188ade08563f53adf7ac40cac8da7f0bdb428"
         }
       ]
@@ -1485,7 +1500,7 @@
       ],
       "declarations": [
         {
-          "line": 43,
+          "line": 131,
           "sha256": "0221bd9a52350126a8b2c6925339e1c1634688947b6b7e5cd3e85ddef5ec6d1d"
         }
       ]
@@ -1500,7 +1515,7 @@
       ],
       "declarations": [
         {
-          "line": 44,
+          "line": 132,
           "sha256": "6d98cc9fa87427b0c6aaab6cd36016c743e665d82b5aa3eed160ca64d10e3db7"
         }
       ]
@@ -1515,7 +1530,7 @@
       ],
       "declarations": [
         {
-          "line": 45,
+          "line": 133,
           "sha256": "39ced47718891518d7aed7e306bff7addcd42117760ef12bc5538ed6b53a31cf"
         }
       ]
@@ -1545,8 +1560,8 @@
       ],
       "declarations": [
         {
-          "line": 7,
-          "sha256": "b1d75afec6f81263b5c32d1605827cdaa2f709fed7dfb5d26cfbf5d883bb6b44"
+          "line": 6,
+          "sha256": "de33ccf0c478cbfc503e86ed5dacc90b3d02bac9c999427779b1b3538cb32b48"
         }
       ]
     },
@@ -1561,7 +1576,7 @@
       ],
       "declarations": [
         {
-          "line": 8,
+          "line": 7,
           "sha256": "37f7cc0f3aaa8d13bce80bac567ce6d520bc41d23be8bc5efbcf7b0f6cfea44e"
         }
       ]
@@ -1577,7 +1592,7 @@
       ],
       "declarations": [
         {
-          "line": 24,
+          "line": 23,
           "sha256": "86a53fa6b165759a85bd070b15daeddffab688bb67eb33fe78de44458c748620"
         }
       ]
@@ -1592,7 +1607,7 @@
       ],
       "declarations": [
         {
-          "line": 26,
+          "line": 25,
           "sha256": "386d6bb3879e9a594e4c5baa1d06fd7213559f56e73b87ac0fb98d64b558532e"
         }
       ]
@@ -1608,7 +1623,7 @@
       ],
       "declarations": [
         {
-          "line": 8,
+          "line": 7,
           "sha256": "37f7cc0f3aaa8d13bce80bac567ce6d520bc41d23be8bc5efbcf7b0f6cfea44e"
         }
       ]
@@ -1624,7 +1639,7 @@
       ],
       "declarations": [
         {
-          "line": 20,
+          "line": 19,
           "sha256": "dcbc1d556c7ef799d3f57e9c2fc24fe18db382d74d78181fa07da8814cb24857"
         }
       ]
@@ -1639,7 +1654,7 @@
       ],
       "declarations": [
         {
-          "line": 22,
+          "line": 21,
           "sha256": "8d13988e44c37406a6e678806e13a501be3c5916f94583116f6390d77d9b907c"
         }
       ]
@@ -1686,7 +1701,7 @@
       ],
       "declarations": [
         {
-          "line": 29,
+          "line": 65,
           "sha256": "fb7cdca204c17b0f3c0d0ad77b92be13602294e1f3e65e2351166de91d11fe0b"
         }
       ]
@@ -1702,7 +1717,7 @@
       ],
       "declarations": [
         {
-          "line": 45,
+          "line": 117,
           "sha256": "8a168bbc2b9196dff7c59ac39f70698956df62ddbf2f288a384b40634cff328a"
         }
       ]
@@ -1718,7 +1733,7 @@
       ],
       "declarations": [
         {
-          "line": 61,
+          "line": 169,
           "sha256": "22b0d4f36b7fe525d7dbedfa18a1430c8530ecbc5b3eee52213b80aa1f7a2fc0"
         }
       ]
@@ -1734,12 +1749,12 @@
       ],
       "declarations": [
         {
-          "line": 63,
-          "sha256": "82efa63abd3c3de86f47d55bef36c35a4725a6e0249a79b8c4fe23ead33cee42"
+          "line": 171,
+          "sha256": "58c67189d17f9db0d990e6757b96826e34f37a4733f7dcbf3123de15d33cedfd"
         },
         {
-          "line": 138,
-          "sha256": "5a5bbb56b292cb02ef277bdd6a997ce31376bce9877d828dd979972385327d86"
+          "line": 172,
+          "sha256": "043608babb6b44ee8366aa137d29c42342bb1ed38d67d62e493d91fa10582994"
         }
       ]
     },
@@ -1754,7 +1769,7 @@
       ],
       "declarations": [
         {
-          "line": 142,
+          "line": 176,
           "sha256": "c1d4fab128f3a106098316232d9359aa3423c51559ba5a254f44ea756a3729dc"
         }
       ]
@@ -1770,7 +1785,7 @@
       ],
       "declarations": [
         {
-          "line": 149,
+          "line": 321,
           "sha256": "b5c74fcb565d5d65ebfae2d19c3f94c4306c637fc161ce51e290ce858ff62c5a"
         }
       ]
@@ -1786,7 +1801,7 @@
       ],
       "declarations": [
         {
-          "line": 156,
+          "line": 466,
           "sha256": "9e2daf3ebae6f37780e24ca000b8e41c21807bfb28472db9fbeb9f473a94cbe2"
         }
       ]
@@ -1802,12 +1817,12 @@
       ],
       "declarations": [
         {
-          "line": 158,
-          "sha256": "7a5c385ef044ef31872b0c88f9091acf0126c0eabadc5530fbff31a0ef81ff3b"
+          "line": 468,
+          "sha256": "13cd0ed4c5e86d7d11b8004514df039412f13724051ee8847ac22135335a7245"
         },
         {
-          "line": 159,
-          "sha256": "db4d4329cf879d460a7f4b5715a6f2a3f3e9edd7c85af43cca0d20657f0d2633"
+          "line": 469,
+          "sha256": "9b1e6823140af0f8853872ca8eb8e8c21bcebcbbd5f57b7288c00861f33db9fa"
         }
       ]
     },
@@ -1822,7 +1837,7 @@
       ],
       "declarations": [
         {
-          "line": 166,
+          "line": 650,
           "sha256": "10135942df78ec920c2e7b76bef91fb017871173508e1ce5f27f4047a9b9461c"
         }
       ]
@@ -1838,7 +1853,7 @@
       ],
       "declarations": [
         {
-          "line": 174,
+          "line": 832,
           "sha256": "1b6c39332fabae4e6e1e1b97e3bc0ba1288b7844cfef78130d1f5501f2d6d6ce"
         }
       ]
@@ -1854,12 +1869,12 @@
       ],
       "declarations": [
         {
-          "line": 176,
-          "sha256": "e3838a1b1d9edc16d37a8e2bec5225262898b5149cc6a6c23b5fe6c516acea49"
+          "line": 834,
+          "sha256": "42fb86ae23f0930b1170168c3cad47537b0edb6d5ede051a4b0f2212af8a06da"
         },
         {
-          "line": 177,
-          "sha256": "534fc69d94465903ae42c24ef000f8d17a6295f9dda44411f290f8b1ca1eb582"
+          "line": 835,
+          "sha256": "4b921ca4987c0dc10c82a51f7f406dbe28c5443e7fe7bd9aad64a6d35f6e9a99"
         }
       ]
     },
@@ -1874,7 +1889,7 @@
       ],
       "declarations": [
         {
-          "line": 337,
+          "line": 985,
           "sha256": "c3389358651259a8fcdafc95fda1745f2c55e8c441f03bedafad7149dc36408f"
         }
       ]
@@ -1890,7 +1905,7 @@
       ],
       "declarations": [
         {
-          "line": 498,
+          "line": 1136,
           "sha256": "d1efb05ada9f33bf32e5bae69d8e15bf80bb638f34186e8d250d4851435ea3f6"
         }
       ]
@@ -1906,7 +1921,7 @@
       ],
       "declarations": [
         {
-          "line": 659,
+          "line": 1287,
           "sha256": "1c032af7bbb56caea8a91b806d3602201364d88b7a4867dc7845888558201e5f"
         }
       ]
@@ -1922,7 +1937,7 @@
       ],
       "declarations": [
         {
-          "line": 818,
+          "line": 1436,
           "sha256": "6b7cebb469423c21e5b29f636766ff315c0dc83032080d2ce298fc33de02f99c"
         }
       ]
@@ -1938,7 +1953,7 @@
       ],
       "declarations": [
         {
-          "line": 979,
+          "line": 1587,
           "sha256": "8af8153185d3126205d13e2777e360c861848224c109f864fe74f7fdb9b4f4fe"
         }
       ]
@@ -1954,12 +1969,12 @@
       ],
       "declarations": [
         {
-          "line": 981,
-          "sha256": "68d8c3ed40c50ee375d0918879a29f9673296848ac5b216a916c27e318f879c3"
+          "line": 1589,
+          "sha256": "85055df4f2550ce19adb40059a96c627a160ed932bb309a34155395389dc3abd"
         },
         {
-          "line": 982,
-          "sha256": "86b5e9eb00db0f9ae3b6d5d47ede94668d9b7c6b03d49b52a605f83f24832de7"
+          "line": 1590,
+          "sha256": "f394c8e604c7898be8b1a6f3754dbdbe41172d0d453241eeb893bb9fa3b7339c"
         }
       ]
     },
@@ -1974,7 +1989,7 @@
       ],
       "declarations": [
         {
-          "line": 989,
+          "line": 1597,
           "sha256": "2830c04e000047b79e1412f52a951bec71c84d35bce5f5914eb6a8ee37dbf981"
         }
       ]
@@ -1990,7 +2005,7 @@
       ],
       "declarations": [
         {
-          "line": 997,
+          "line": 1605,
           "sha256": "c0bbe6b46972a9b4c9934fc0723bb96178e6bca2792b0982c86fb05966319f1d"
         }
       ]
@@ -2006,7 +2021,7 @@
       ],
       "declarations": [
         {
-          "line": 1014,
+          "line": 1622,
           "sha256": "dcbc1d556c7ef799d3f57e9c2fc24fe18db382d74d78181fa07da8814cb24857"
         }
       ]
@@ -2022,7 +2037,7 @@
       ],
       "declarations": [
         {
-          "line": 1020,
+          "line": 1629,
           "sha256": "2101e1debce68b71b51c54ea0c5c98dca7ab6bd33f991862da95ceae1122c1ef"
         }
       ]
@@ -2038,7 +2053,7 @@
       ],
       "declarations": [
         {
-          "line": 1030,
+          "line": 1639,
           "sha256": "a43f3809e673a1980d1b4932c283571c5d2f2d7e524e37d8a540091d4e361adf"
         }
       ]
@@ -2054,12 +2069,12 @@
       ],
       "declarations": [
         {
-          "line": 1032,
-          "sha256": "982f2171033080d1312ab43998456cf2c1d0a23b0e5ed22f561cb80ebcc72051"
+          "line": 1641,
+          "sha256": "4bfafa151297c846deaf5709ddaea0e2f635b4455e956a58d8afbf858ae8aeb0"
         },
         {
-          "line": 1033,
-          "sha256": "ea16ac045cc03fbd0f066fd787c32c4bf398341a0adf1407d8cb456bea2526cf"
+          "line": 1642,
+          "sha256": "0862fa81d646ad1648d8aa57aa2a4ad194a07b27460b35ba3e5d4f95cadc9ed2"
         }
       ]
     },
@@ -2074,7 +2089,7 @@
       ],
       "declarations": [
         {
-          "line": 1039,
+          "line": 1648,
           "sha256": "1ebf111b8ab832ee3115ae245ea6101bd3a8be506ae14b22a47b992ac3a1eb94"
         }
       ]
@@ -2089,8 +2104,8 @@
       ],
       "declarations": [
         {
-          "line": 9093,
-          "sha256": "add8b5af73a7de9cc5b8e437f6a11d908d588c6d05db851622c504c0d0d39c3d"
+          "line": 1654,
+          "sha256": "f7bc69c0ec842298db7a28374181f73b1d4bfe7ae2867188a18aec0171688f1c"
         }
       ]
     },
@@ -2104,8 +2119,8 @@
       ],
       "declarations": [
         {
-          "line": 9094,
-          "sha256": "c92b25da61af087c84c914614a87ae2c4e324fc2fafaea2857cd21870a830663"
+          "line": 1655,
+          "sha256": "0f7b8a0c8fb68e0e9475dc4ba286546767d07dc120ec7fa8761a47ac0f80d9b9"
         }
       ]
     },
@@ -2120,7 +2135,7 @@
       "declarations": [
         {
           "line": 4,
-          "sha256": "b43ec960754a2f9b13165a1ebf7de1998551373199c4631fa688ead2e8dcad88"
+          "sha256": "93eec94543dc9f2c7b4dfb7b8b9e9e2da6b3b3747c058771630dddd2cdccb674"
         }
       ]
     },
@@ -2149,8 +2164,8 @@
       ],
       "declarations": [
         {
-          "line": 6,
-          "sha256": "875a1472778773c18cc8df8be4d453dd13d7ae6546d0b8177fc0f980761dc704"
+          "line": 4,
+          "sha256": "fb377074f9ad2e5c3f52d24a57f611ac3a3e7b83a694b5cfe9017b8a949318cb"
         }
       ]
     },
@@ -2164,8 +2179,8 @@
       ],
       "declarations": [
         {
-          "line": 11,
-          "sha256": "68947676e72abb842ef6986afc780d4451254df3a3e41a286ed1ed1f0ba627b7"
+          "line": 13,
+          "sha256": "197ec60ffb6973ecc2c5ca9ec6014a48102453f7b31fff423252ba3002fb708d"
         }
       ]
     },
@@ -2180,7 +2195,7 @@
       ],
       "declarations": [
         {
-          "line": 10,
+          "line": 12,
           "sha256": "e846725761588753f422cf282d461f901f460957b475008e390011259f618cc3"
         }
       ]
@@ -2196,7 +2211,7 @@
       ],
       "declarations": [
         {
-          "line": 18,
+          "line": 20,
           "sha256": "e3661b80425c7d77d9418b07c4d6af1458ecba3b4cc475cd74f351e9fb7f9ca7"
         }
       ]
@@ -2212,7 +2227,7 @@
       ],
       "declarations": [
         {
-          "line": 26,
+          "line": 28,
           "sha256": "dcbc1d556c7ef799d3f57e9c2fc24fe18db382d74d78181fa07da8814cb24857"
         }
       ]
@@ -2228,7 +2243,7 @@
       ],
       "declarations": [
         {
-          "line": 32,
+          "line": 34,
           "sha256": "b0d4a754089ad57c31cf1b268aad6b6dd5c19cfce6103be67045567ff86498f5"
         }
       ]
@@ -2243,8 +2258,8 @@
       ],
       "declarations": [
         {
-          "line": 34,
-          "sha256": "2f303a32cf274161435e4e6a3b45d9f60a2372863a55bf2f0d3f211d5039bfe4"
+          "line": 36,
+          "sha256": "6ba2e7f7a15eebdb1fd845ddbec4e3901b6686fc432f5ed7c7a960cb8dc20951"
         }
       ]
     },
@@ -2258,8 +2273,8 @@
       ],
       "declarations": [
         {
-          "line": 48,
-          "sha256": "37dfb41fb61fa6aa9e3a24f309418239ba586b38359dc83ba08638dcb0c16599"
+          "line": 42,
+          "sha256": "3eb871cc35a4d53bdad0fef0375d36e9eee51c7a5717c577cd0dc735b3abd15a"
         }
       ]
     },
@@ -2273,8 +2288,8 @@
       ],
       "declarations": [
         {
-          "line": 59,
-          "sha256": "888485bb4547291cb4729330323e46dd99a01f2b5c76a65047f3c7a24fbbf025"
+          "line": 53,
+          "sha256": "4ec69bf52b065b6d42b3d412727300a66cd5b70b90b18e2df3515c090bfac5cc"
         }
       ]
     },
@@ -2289,7 +2304,7 @@
       ],
       "declarations": [
         {
-          "line": 17,
+          "line": 16,
           "sha256": "cbb773a1a43956f3af709bc5305aaf31ce404e8c4673557d049af36d2de8030e"
         }
       ]
@@ -2305,7 +2320,7 @@
       ],
       "declarations": [
         {
-          "line": 26,
+          "line": 25,
           "sha256": "1a9a0c913e8be0162cd68c5726fc96af6d91d04f43166b7091e85ac73d90c3e7"
         }
       ]
@@ -2320,8 +2335,8 @@
       ],
       "declarations": [
         {
-          "line": 30,
-          "sha256": "3e061fbe6cc311d330d2fd9045d3d4027be266f9bd0a7e894cbdb0a4d69fe2e9"
+          "line": 28,
+          "sha256": "8c6ecc4d2426551b6908f9567bc7f7bef778bb6f041a7421bf1d9b82e668c813"
         }
       ]
     },
@@ -2336,7 +2351,7 @@
       ],
       "declarations": [
         {
-          "line": 18,
+          "line": 17,
           "sha256": "e6b3ed4c3e2b59a274ef2e20eec35c47913e1219d4f7c3f450db435232d726b0"
         }
       ]
@@ -2352,7 +2367,7 @@
       ],
       "declarations": [
         {
-          "line": 27,
+          "line": 26,
           "sha256": "b7d5d6dc06ea227545196eaf4a95c93466a891b53630b96dc729e56d57a79da6"
         }
       ]
@@ -2368,7 +2383,7 @@
       ],
       "declarations": [
         {
-          "line": 35,
+          "line": 34,
           "sha256": "f1eb7233aef68f52cef8f4ff6c2eafb2fcb9b3cb2b5d4c91d96d8a6fa03f395e"
         }
       ]
@@ -2384,7 +2399,7 @@
       ],
       "declarations": [
         {
-          "line": 45,
+          "line": 44,
           "sha256": "4ea860754321e9d899fd06c4e8f5e8c96070534cbedcb1458d7df2f2d04c53e3"
         }
       ]
@@ -2400,7 +2415,7 @@
       ],
       "declarations": [
         {
-          "line": 57,
+          "line": 56,
           "sha256": "2cfeb6bb95405be5a4c980a5125fccc3fb8949a56b7e06b758eb9a855f5049e4"
         }
       ]
@@ -2415,8 +2430,23 @@
       ],
       "declarations": [
         {
-          "line": 59,
-          "sha256": "73a84d5530910e1a7db387a8e3634ce15030c9384c67dc155c4791932628bf1c"
+          "line": 58,
+          "sha256": "f378ce66f0adf5c50a4dae928a511b5afe0d18e56a51de3f75ead1bb0155d29e"
+        }
+      ]
+    },
+    {
+      "id": "apple:preparationProvider",
+      "authority": "apple",
+      "namespace": null,
+      "sourceName": "preparationProvider",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 6,
+          "sha256": "e3f5e2364d140a7bd93f8cd6d373859f3f12c5a59c6d0ec76d7bdb6eb79c8ba7"
         }
       ]
     },
@@ -2431,7 +2461,7 @@
       ],
       "declarations": [
         {
-          "line": 14,
+          "line": 13,
           "sha256": "50e5a03045315f4806b99fb75a5dda915d75f81a890ac19b95bde38a53277098"
         }
       ]
@@ -2447,7 +2477,7 @@
       ],
       "declarations": [
         {
-          "line": 21,
+          "line": 20,
           "sha256": "643aea2e6928ae2607f57aae6a8361f32a0c9b6cd5ce68d81ff151f9bab42e2d"
         }
       ]
@@ -2463,7 +2493,7 @@
       ],
       "declarations": [
         {
-          "line": 28,
+          "line": 27,
           "sha256": "6a90af3cdf8fff60318830171c98924eee27749e651125047ff5109290f8ae25"
         }
       ]
@@ -2479,7 +2509,7 @@
       ],
       "declarations": [
         {
-          "line": 42,
+          "line": 41,
           "sha256": "2f43c230f4880d0b3a05928b38e3fe6f5d07cc6bb24dd757e67afd223a989b58"
         }
       ]
@@ -2495,7 +2525,7 @@
       ],
       "declarations": [
         {
-          "line": 55,
+          "line": 54,
           "sha256": "c2aa873bbc2e407b3257f57b19f37241da9c1a964ad569e69bf454c94fdde322"
         }
       ]
@@ -2511,7 +2541,7 @@
       ],
       "declarations": [
         {
-          "line": 68,
+          "line": 67,
           "sha256": "73ea3b6d9a214435fc24ca544cfcfa300666f0cf7a13426b74f2d7a0865a8c9c"
         }
       ]
@@ -2527,11 +2557,11 @@
       ],
       "declarations": [
         {
-          "line": 70,
+          "line": 69,
           "sha256": "49cff20c8b941a79d9f1967c654880203591870a009489eec29d1e6331c6e158"
         },
         {
-          "line": 71,
+          "line": 70,
           "sha256": "d5d7bdc37e5ab635bf501595496a5f650d3638f14ca1442f5dde2070a70ae1a3"
         }
       ]
@@ -2546,7 +2576,7 @@
       ],
       "declarations": [
         {
-          "line": 72,
+          "line": 71,
           "sha256": "6073f301eb6d5492b2027012af2e7350caadc883abe1732f7446baff65e4f42e"
         }
       ]
@@ -2562,7 +2592,7 @@
       ],
       "declarations": [
         {
-          "line": 78,
+          "line": 77,
           "sha256": "3ad4142d798a205d9994672aa56f2a45ea984d0bac51a46472ba264fe8c823b9"
         }
       ]
@@ -2577,8 +2607,8 @@
       ],
       "declarations": [
         {
-          "line": 82,
-          "sha256": "65ef73a68abded4799b29467b6e78a2404e1b7b2fcfd1b337a9379ad6bf674e9"
+          "line": 81,
+          "sha256": "48ab2dba37eb125914dbf835601cd15ffa0a306688f1564dcd0f898aaf9753e4"
         }
       ]
     },
@@ -2592,8 +2622,8 @@
       ],
       "declarations": [
         {
-          "line": 83,
-          "sha256": "129da0d71f645bd99036da07581d9051ff59f9e1f1d599e1b8a1207b5173392f"
+          "line": 82,
+          "sha256": "6108a46a6d7e8df6e6385269e87b988e3939504805248c0fc679711cd78cc6b7"
         }
       ]
     },
@@ -2608,7 +2638,7 @@
       ],
       "declarations": [
         {
-          "line": 91,
+          "line": 90,
           "sha256": "f71c1e1074d84abfb0814f3d6fe27842190148de07d30d7c98be034c1ebfb29b"
         }
       ]
@@ -2624,7 +2654,7 @@
       ],
       "declarations": [
         {
-          "line": 100,
+          "line": 99,
           "sha256": "7c8ad5568e6cb2b150831f687863c8ca215f9bc71d444c5eeb31296a925aff7e"
         }
       ]
@@ -2640,7 +2670,7 @@
       ],
       "declarations": [
         {
-          "line": 109,
+          "line": 108,
           "sha256": "e2ba4976944525b4ee5a2117375d448d450c55ae5269b7bf161de9a153f7cc58"
         }
       ]
@@ -2656,11 +2686,11 @@
       ],
       "declarations": [
         {
-          "line": 111,
+          "line": 110,
           "sha256": "799969c0abd2a7ac0c68c835c054c73681b1c1db4db33d4b541d89fa427c92ee"
         },
         {
-          "line": 112,
+          "line": 111,
           "sha256": "a70a67aad7272d4ac54cdd22ffed2b0fce2761f1279f76625f9d147fb05e5596"
         }
       ]
@@ -2676,7 +2706,7 @@
       ],
       "declarations": [
         {
-          "line": 120,
+          "line": 119,
           "sha256": "27adda0785064f268e095c7dc4a6d1a15ec32f257f98cbf293a214eb8ac9be05"
         }
       ]
@@ -2692,11 +2722,11 @@
       ],
       "declarations": [
         {
-          "line": 122,
+          "line": 121,
           "sha256": "c9ae7e4aa55b20c9c2e4fd23a2f77751d25039381c4a1a4278d1ee4012bfef9e"
         },
         {
-          "line": 123,
+          "line": 122,
           "sha256": "f104083283f57117f991d1f3129dbb7ca5f6b3fd7c6ec52907694d21c61c6d97"
         }
       ]
@@ -2727,7 +2757,7 @@
       "declarations": [
         {
           "line": 22,
-          "sha256": "59007311d3b31c3975bed5cf530a0f651ed30ef05cecfb53c4b516028ad89c66"
+          "sha256": "393555b339ee6ffa076351ab05e3dd38678f092cb8c0f369f5eb3d8103cbec80"
         }
       ]
     },
@@ -2741,7 +2771,7 @@
       ],
       "declarations": [
         {
-          "line": 35,
+          "line": 34,
           "sha256": "95929650c23dbbf2d8696195f6ff394793fada61dc18a1aa0e835aecd8e7db04"
         }
       ]
@@ -2756,7 +2786,7 @@
       ],
       "declarations": [
         {
-          "line": 36,
+          "line": 35,
           "sha256": "3e0a2bd78b6e0369776caecdb0497e1672140babc551e06d97c8a8bb7e619294"
         }
       ]
@@ -2771,7 +2801,7 @@
       ],
       "declarations": [
         {
-          "line": 37,
+          "line": 36,
           "sha256": "09a0be34ecf0002ffc148f19680b0e02737adc4ed6c84a9cbea9f1bc14dd0dd5"
         }
       ]
@@ -2786,7 +2816,7 @@
       ],
       "declarations": [
         {
-          "line": 40,
+          "line": 39,
           "sha256": "c4294c7b3da0684d591a9d19c7b08f688f32163c512f5ab2324d2dba390f91ef"
         }
       ]
@@ -2801,7 +2831,7 @@
       ],
       "declarations": [
         {
-          "line": 41,
+          "line": 40,
           "sha256": "c5e328a05312fa68c1de7c4986b20465cb6bcb047853377ad23c9228d80bcf47"
         }
       ]
@@ -2816,23 +2846,8 @@
       ],
       "declarations": [
         {
-          "line": 44,
+          "line": 43,
           "sha256": "561c650f0f25381e33234a05a1e791d9d4a14368b785696e5130d1694627d4b8"
-        }
-      ]
-    },
-    {
-      "id": "apple:preparationProvider",
-      "authority": "apple",
-      "namespace": null,
-      "sourceName": "preparationProvider",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 6,
-          "sha256": "e3f5e2364d140a7bd93f8cd6d373859f3f12c5a59c6d0ec76d7bdb6eb79c8ba7"
         }
       ]
     },
@@ -2846,7 +2861,7 @@
       ],
       "declarations": [
         {
-          "line": 9,
+          "line": 10,
           "sha256": "8a68494a26701a16e22eaff13676caec86cdd4b2eefcfcc792e27e68937fe004"
         }
       ]
@@ -2861,7 +2876,7 @@
       ],
       "declarations": [
         {
-          "line": 15,
+          "line": 16,
           "sha256": "495fbfea997380f1b403dd017143a3ca4679729f8e80a661280d33065a32d434"
         }
       ]
@@ -2876,7 +2891,7 @@
       ],
       "declarations": [
         {
-          "line": 16,
+          "line": 17,
           "sha256": "dda8bf3304cd54a5b6d457c983533474a8bd4624d3d106d8d97193f9c7c9a379"
         }
       ]
@@ -2891,7 +2906,7 @@
       ],
       "declarations": [
         {
-          "line": 17,
+          "line": 18,
           "sha256": "87864126adbbb305f084b4e6333eb92071400e96d4574e6814447c270e35d45f"
         }
       ]
@@ -2907,7 +2922,172 @@
       "declarations": [
         {
           "line": 3,
-          "sha256": "d2036d2576de29e574e8c418df7cfe80c0910c25e3ab0ff4c3872e6acf09db14"
+          "sha256": "321eff105722f257fdefcc3d6fce62ec891d305ee71478b8b4991718c580bdb5"
+        }
+      ]
+    },
+    {
+      "id": "http:canonical",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "canonical",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 5,
+          "sha256": "0604a14eb0fe7334435566ecea6d760858535674a1b56f7f8cac97c89486ea8f"
+        }
+      ]
+    },
+    {
+      "id": "http:compareText",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "compareText",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 3,
+          "sha256": "b73f357d65c0c3aa121b2d8b37f8a298e96ea4f555596aef21faa1eea62e782b"
+        }
+      ]
+    },
+    {
+      "id": "http:decodeOwned",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "decodeOwned",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 12,
+          "sha256": "e7751f5167dfd507a387bb10f352e8a34dc14938c27539c183bd72132b0c2392"
+        }
+      ]
+    },
+    {
+      "id": "http:sameBytes",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "sameBytes",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 9,
+          "sha256": "55e52cd11243b6210560bd6c14b74ef6362a02f19c57a17a39e5b6d58bb79556"
+        }
+      ]
+    },
+    {
+      "id": "http:sameData",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "sameData",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 8,
+          "sha256": "407a86d784451d72f881dde616deec68b9102f17609e76630ab21741110ffb18"
+        }
+      ]
+    },
+    {
+      "id": "http:makeDataBoundary",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "makeDataBoundary",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 8,
+          "sha256": "c79b792d0c2b57adde5cf9d52bb09dfbb04ee34de6c5c0912ff460371a415b8a"
+        }
+      ]
+    },
+    {
+      "id": "http:containsSecret",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "containsSecret",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 20,
+          "sha256": "63ae95789b5688f677e8916eb874fefee433ab4b72d28b478084783c48c91e47"
+        }
+      ]
+    },
+    {
+      "id": "http:isPublicText",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "isPublicText",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 21,
+          "sha256": "7cb6205c9d483dcf000bb4dc05552c9ea11feabd531c9294f7422b2612319f7c"
+        }
+      ]
+    },
+    {
+      "id": "http:PublicText",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "PublicText",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 22,
+          "sha256": "5cce4cf9da17ba0fe9de329f945812dd1760dc6c918b7dc6f0c914caaa499689"
+        }
+      ]
+    },
+    {
+      "id": "http:isSafePath",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "isSafePath",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 23,
+          "sha256": "fa716d410839f947341bd7dcc8b2e87bcf1902c6c1b00d7c390d13be8aab8948"
+        }
+      ]
+    },
+    {
+      "id": "http:publicUrl",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "publicUrl",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 24,
+          "sha256": "4f02f97793f49e7c746ced82172dc0b6236ce045b7ba5a62bcea337db2e884db"
         }
       ]
     },
@@ -2922,7 +3102,7 @@
       ],
       "declarations": [
         {
-          "line": 17,
+          "line": 33,
           "sha256": "2905453a520d26b6c31c426fb9947da2b0172a47526f568d1bf35ce9c8b253f5"
         }
       ]
@@ -2937,7 +3117,7 @@
       ],
       "declarations": [
         {
-          "line": 19,
+          "line": 35,
           "sha256": "7141f8e0de1aab9708ead192528648150850a11d4d21153d99802b2327253a19"
         }
       ]
@@ -2952,7 +3132,7 @@
       ],
       "declarations": [
         {
-          "line": 20,
+          "line": 36,
           "sha256": "108732e0e5fc731d4d4e19a7855a434142c227f043312f310b7a7462822512da"
         }
       ]
@@ -2967,7 +3147,7 @@
       ],
       "declarations": [
         {
-          "line": 21,
+          "line": 37,
           "sha256": "b65c284a053a4a5e2a004986c268742ab31b0dcf60e6cd3f0ff6f9796a0ea3d3"
         }
       ]
@@ -2982,7 +3162,7 @@
       ],
       "declarations": [
         {
-          "line": 28,
+          "line": 44,
           "sha256": "31cbea1033b1b17ff82c75e6ed02a2b06cc2d844a107fe7f4d8b173356c30c8e"
         }
       ]
@@ -2997,7 +3177,7 @@
       ],
       "declarations": [
         {
-          "line": 33,
+          "line": 49,
           "sha256": "6e66ceceb2e328a144a3b8a985b1669f5b6d7855eee6cec290a939b319c1819b"
         }
       ]
@@ -3012,7 +3192,7 @@
       ],
       "declarations": [
         {
-          "line": 34,
+          "line": 50,
           "sha256": "9b14d37bb69dc0b113a2a065ce0589495107cde2c4eed3bf4712633811ee620e"
         }
       ]
@@ -3027,8 +3207,8 @@
       ],
       "declarations": [
         {
-          "line": 39,
-          "sha256": "298fee129f834b02c65cdb6359d162e49a2faf34e6c21f17e2912fa3dd0825df"
+          "line": 55,
+          "sha256": "41ddb19e923178f103b0492ceb395513ba91f01bd01e40d6575babb270f89511"
         }
       ]
     },
@@ -3042,8 +3222,38 @@
       ],
       "declarations": [
         {
-          "line": 45,
+          "line": 61,
           "sha256": "eedc82cfb72501c54a175fe31ffadfa7f3c898734292d7532279b34134b02d38"
+        }
+      ]
+    },
+    {
+      "id": "http:credentialToken",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "credentialToken",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 62,
+          "sha256": "38d6093bafcbea83e795073c882083087d577b8ba4ec4ace506716c23cf7dafe"
+        }
+      ]
+    },
+    {
+      "id": "http:bearerCredentials",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "bearerCredentials",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 63,
+          "sha256": "bab1a7ba65ee6ff9bc440371935628eb8d6b1188e83fefae36a911a501f5c070"
         }
       ]
     },
@@ -3057,8 +3267,38 @@
       ],
       "declarations": [
         {
-          "line": 46,
+          "line": 64,
           "sha256": "d4e264145b542f5c9f71e5ba8c174241b0fcf58f2705a6c46e0c50ca64187dcb"
+        }
+      ]
+    },
+    {
+      "id": "http:OidcAuthorization",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "OidcAuthorization",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 72,
+          "sha256": "09d35f41735a6d7af68223c3bf22e78d1418d54bdb4bee03abd0695848bf97e9"
+        }
+      ]
+    },
+    {
+      "id": "http:oidcRequest",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "oidcRequest",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 73,
+          "sha256": "18d9886527ffdda3296ed63566d82a2a38d0a1222a16694bc598d5ebbeca2e34"
         }
       ]
     },
@@ -3072,7 +3312,7 @@
       ],
       "declarations": [
         {
-          "line": 54,
+          "line": 74,
           "sha256": "db9094f6caca560364fef3930bb3b3a9f9f2ebc121293e423d01331d91a8c387"
         }
       ]
@@ -3087,7 +3327,7 @@
       ],
       "declarations": [
         {
-          "line": 55,
+          "line": 75,
           "sha256": "a0667e09ec6f2966b686a8545e592a18144fa78a81f4b5291ffc40e21b78b4fc"
         }
       ]
@@ -3102,8 +3342,23 @@
       ],
       "declarations": [
         {
-          "line": 60,
-          "sha256": "a0330bdc6e47d822b494eae3e4d8596ced4f07655b64e2f5f95aed5e43b2a396"
+          "line": 80,
+          "sha256": "2794ee1776f1afc6226534fbcf274c32b8ada89f49f2bd030a650ed13aeff617"
+        }
+      ]
+    },
+    {
+      "id": "http:captureTrustedPublisher",
+      "authority": "http",
+      "namespace": null,
+      "sourceName": "captureTrustedPublisher",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 84,
+          "sha256": "1cccd2957f13f7beb552b47f24b6a7579e4b7bbc8cb730026d1868b59d610ada"
         }
       ]
     },
@@ -3117,7 +3372,7 @@
       ],
       "declarations": [
         {
-          "line": 64,
+          "line": 85,
           "sha256": "f47fa4e7abd085330ca21849cc097c4778269e8dfdc4ec45e5c579d8e522ebbb"
         }
       ]
@@ -3132,7 +3387,7 @@
       ],
       "declarations": [
         {
-          "line": 65,
+          "line": 86,
           "sha256": "f6d74dc0693db447685fda8e1c58a63b1f1488533cc26f77ce6f75010e75cb48"
         }
       ]
@@ -3147,7 +3402,7 @@
       ],
       "declarations": [
         {
-          "line": 66,
+          "line": 87,
           "sha256": "b545e12e41c0de3f2fbc3e4ca3d72a5631660837688bf68c9741f1f20be00b24"
         }
       ]
@@ -3162,7 +3417,7 @@
       ],
       "declarations": [
         {
-          "line": 72,
+          "line": 93,
           "sha256": "dde057e1e1fc4dbfd06796b60024ea4bccda798524f563ecbe66020a1df541cf"
         }
       ]
@@ -3177,7 +3432,7 @@
       ],
       "declarations": [
         {
-          "line": 73,
+          "line": 94,
           "sha256": "13eabda143bf95de10254437579730ef647fb00d0437e4792614a6378a0b890a"
         }
       ]
@@ -3192,7 +3447,7 @@
       ],
       "declarations": [
         {
-          "line": 82,
+          "line": 103,
           "sha256": "f5d05cfdff0f13ce94ec1b1e96350597ec11e6ca5105fe318961a29695e8ea53"
         }
       ]
@@ -3207,8 +3462,28 @@
       ],
       "declarations": [
         {
-          "line": 83,
+          "line": 104,
           "sha256": "6ef9ed3bc3e8cb68302a419ea5d51cb70a0045fc74e08b6a5db0f6c510d64e75"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.Authorization",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "Authorization",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 29,
+          "sha256": "8cbbcbb8b2870ee2055cf4691038fb76e506c8912653365124082d8c40612dcb"
+        },
+        {
+          "line": 30,
+          "sha256": "ea16ac045cc03fbd0f066fd787c32c4bf398341a0adf1407d8cb456bea2526cf"
         }
       ]
     },
@@ -3245,38 +3520,18 @@
       ]
     },
     {
-      "id": "provider:Npm.Authorization",
+      "id": "provider:Npm.GitHubActionsProvenance",
       "authority": "provider",
       "namespace": "Npm",
-      "sourceName": "Authorization",
+      "sourceName": "GitHubActionsProvenance",
       "spaces": [
         "type",
         "value"
       ],
       "declarations": [
         {
-          "line": 29,
-          "sha256": "8cbbcbb8b2870ee2055cf4691038fb76e506c8912653365124082d8c40612dcb"
-        },
-        {
-          "line": 30,
-          "sha256": "ea16ac045cc03fbd0f066fd787c32c4bf398341a0adf1407d8cb456bea2526cf"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.ProvenanceSource",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "ProvenanceSource",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 47,
-          "sha256": "2111848539e64bbee7fd87189029a73ae2ef2ea7f6e7b1e6bf7e34269029d10f"
+          "line": 57,
+          "sha256": "36290d15cf2b1755f362c45e93871b95977cbfadb56a372d7a64bc2590572654"
         }
       ]
     },
@@ -3293,22 +3548,6 @@
         {
           "line": 50,
           "sha256": "91c7eb38c5e318cd9b976c4d62e9ca758285b6cffff75a21fcb2933e9bf2756e"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.GitHubActionsProvenance",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "GitHubActionsProvenance",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 57,
-          "sha256": "36290d15cf2b1755f362c45e93871b95977cbfadb56a372d7a64bc2590572654"
         }
       ]
     },
@@ -3333,18 +3572,18 @@
       ]
     },
     {
-      "id": "provider:Npm.PublishIntent",
+      "id": "provider:Npm.ProvenanceSource",
       "authority": "provider",
       "namespace": "Npm",
-      "sourceName": "PublishIntent",
+      "sourceName": "ProvenanceSource",
       "spaces": [
         "type",
         "value"
       ],
       "declarations": [
         {
-          "line": 74,
-          "sha256": "1ebf111b8ab832ee3115ae245ea6101bd3a8be506ae14b22a47b992ac3a1eb94"
+          "line": 47,
+          "sha256": "2111848539e64bbee7fd87189029a73ae2ef2ea7f6e7b1e6bf7e34269029d10f"
         }
       ]
     },
@@ -3361,6 +3600,58 @@
         {
           "line": 83,
           "sha256": "c419e2ea4003bd4ba07a598a0d86f8254c3d0fb1597454c45f2323ebf7389d3c"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.PackageCandidate",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "PackageCandidate",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 97,
+          "sha256": "7e5d82bbe3b54cd41892923d00cd64f95a39b87d7674c0669a7c7f5faef161e0"
+        },
+        {
+          "line": 98,
+          "sha256": "f61869f626bbec0d40e3c5615360dbd0faf90cd08f016647e431c99224fc81c8"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.PackageMetadata",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "PackageMetadata",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 117,
+          "sha256": "95c9c57091696ee8faddecd20abc65eba706c2280eba1572345d57c021aafeaf"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.PublishIntent",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "PublishIntent",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 74,
+          "sha256": "1ebf111b8ab832ee3115ae245ea6101bd3a8be506ae14b22a47b992ac3a1eb94"
         }
       ]
     },
@@ -3397,22 +3688,17 @@
       ]
     },
     {
-      "id": "provider:Npm.PackageCandidate",
+      "id": "provider:Npm.Attest",
       "authority": "provider",
       "namespace": "Npm",
-      "sourceName": "PackageCandidate",
+      "sourceName": "Attest",
       "spaces": [
-        "type",
-        "value"
+        "type"
       ],
       "declarations": [
         {
-          "line": 97,
-          "sha256": "7e5d82bbe3b54cd41892923d00cd64f95a39b87d7674c0669a7c7f5faef161e0"
-        },
-        {
-          "line": 98,
-          "sha256": "f61869f626bbec0d40e3c5615360dbd0faf90cd08f016647e431c99224fc81c8"
+          "line": 103,
+          "sha256": "ac93b74a0473195d432ec29fc1bf730badc15bb752af396de0459b4e0186dae5"
         }
       ]
     },
@@ -3432,21 +3718,6 @@
       ]
     },
     {
-      "id": "provider:Npm.Attest",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "Attest",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 103,
-          "sha256": "ac93b74a0473195d432ec29fc1bf730badc15bb752af396de0459b4e0186dae5"
-        }
-      ]
-    },
-    {
       "id": "provider:Npm.VerifyProvenance",
       "authority": "provider",
       "namespace": "Npm",
@@ -3462,22 +3733,6 @@
       ]
     },
     {
-      "id": "provider:Npm.PackageMetadata",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "PackageMetadata",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 117,
-          "sha256": "95c9c57091696ee8faddecd20abc65eba706c2280eba1572345d57c021aafeaf"
-        }
-      ]
-    },
-    {
       "id": "provider:Npm.publish",
       "authority": "provider",
       "namespace": "Npm",
@@ -3487,8 +3742,8 @@
       ],
       "declarations": [
         {
-          "line": 195,
-          "sha256": "1b2a5005b2d1d1d0482034a2fce904cf982ebcb3b9fa27ae73e774c94dd37a8f"
+          "line": 111,
+          "sha256": "a0573ecdae7134c74f5106afb7295d65702f830a2cc46282f7e48f143b9e09cc"
         }
       ]
     },
@@ -3502,8 +3757,8 @@
       ],
       "declarations": [
         {
-          "line": 196,
-          "sha256": "dbe4be3a71f5f23fc83e8b79fa16c5e15d091f09334e076476e7e83954911a10"
+          "line": 112,
+          "sha256": "e18440e16a3711477b9c70c3090416dfa8c4794b4184485de6949894b4215aba"
         }
       ]
     },
@@ -3517,8 +3772,8 @@
       ],
       "declarations": [
         {
-          "line": 197,
-          "sha256": "729088030b2537623748989d89ef600dfc8d43a4fa17262f5f6eeb7719e9317f"
+          "line": 113,
+          "sha256": "bc7398f54ed59f2e35e64eb7cc244ae76a9f59ac93c7eedd11589665e39e6886"
         }
       ]
     },
@@ -3532,8 +3787,8 @@
       ],
       "declarations": [
         {
-          "line": 206,
-          "sha256": "ab4f78373ad27f297cbfc9fe76aebcb4624c0d7ec77c08da607fa942de47e156"
+          "line": 122,
+          "sha256": "b795fe26249d66a3179e4abf632f748ca365c120c1c04946914b3fb320033a01"
         }
       ]
     },
@@ -3547,8 +3802,8 @@
       ],
       "declarations": [
         {
-          "line": 211,
-          "sha256": "1ce3e74fb3f2932b145a76e2587a2a2ce1e56ded3c162fa1bb4d356870bc5f1a"
+          "line": 127,
+          "sha256": "d4013b8f94c32c893968737664544d89549567d4a72b02fd6dbbd1eccbb799ec"
         }
       ]
     },
@@ -3562,8 +3817,8 @@
       ],
       "declarations": [
         {
-          "line": 7,
-          "sha256": "875a1472778773c18cc8df8be4d453dd13d7ae6546d0b8177fc0f980761dc704"
+          "line": 5,
+          "sha256": "fb377074f9ad2e5c3f52d24a57f611ac3a3e7b83a694b5cfe9017b8a949318cb"
         }
       ]
     },
@@ -3577,53 +3832,8 @@
       ],
       "declarations": [
         {
-          "line": 12,
-          "sha256": "30807a226402a4a9c1a16602eab56602ddf1621a2ed6957f3909f3c5fc97f6df"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.makeSigstoreAttester",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "makeSigstoreAttester",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 43,
-          "sha256": "f19768121ff7492b1269b9f5a081116b35bb51ab57ded9a3c10783c0720e8584"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.makeSigstoreVerifier",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "makeSigstoreVerifier",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 42,
-          "sha256": "90014e153f3c33b6924293d6a1d5c238642aef915ae9e9938ec738a53d5ddbd0"
-        }
-      ]
-    },
-    {
-      "id": "provider:Npm.SigstoreTrustOptions",
-      "authority": "provider",
-      "namespace": "Npm",
-      "sourceName": "SigstoreTrustOptions",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 36,
-          "sha256": "af1ef9fed105a3b375503eaeeffa42f05f0b9365d36fccdb682e35773c6036c9"
+          "line": 14,
+          "sha256": "727b09856450eaf4aba485feae5568187b8cada6a076da5a2d9295c3d0a1b6f1"
         }
       ]
     },
@@ -3637,40 +3847,73 @@
       ],
       "declarations": [
         {
-          "line": 24,
-          "sha256": "70bb95459b7ab9d113b110bec56d0c746dfc72d7a26b8d5754425c21e3a240ac"
+          "line": 36,
+          "sha256": "666c131b51825e5f902715e3ae74a33cfb91bbf3e4d0da35bce3d9035dd3548b"
         }
       ]
     },
     {
-      "id": "provider:Warehouse.PyPi",
+      "id": "provider:Npm.makeSigstoreAttester",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "makeSigstoreAttester",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 55,
+          "sha256": "dc6957c9e9f3fcbd7b8c3c5415e62fd23af2d0878b2c25c1527514699f82a393"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.makeSigstoreVerifier",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "makeSigstoreVerifier",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 54,
+          "sha256": "71f2700da52e9bbf4a70f1c0799c4f04f4dbcae51304d800f1e23636183986c6"
+        }
+      ]
+    },
+    {
+      "id": "provider:Npm.SigstoreTrustOptions",
+      "authority": "provider",
+      "namespace": "Npm",
+      "sourceName": "SigstoreTrustOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 48,
+          "sha256": "af1ef9fed105a3b375503eaeeffa42f05f0b9365d36fccdb682e35773c6036c9"
+        }
+      ]
+    },
+    {
+      "id": "provider:Warehouse.Authorization",
       "authority": "provider",
       "namespace": "Warehouse",
-      "sourceName": "PyPi",
+      "sourceName": "Authorization",
       "spaces": [
         "type",
         "value"
       ],
       "declarations": [
         {
-          "line": 13,
-          "sha256": "ac9c2dda202a804a3268d0e049e18be5247963763318fd6bf2668b17c2d996b1"
-        }
-      ]
-    },
-    {
-      "id": "provider:Warehouse.TestPyPi",
-      "authority": "provider",
-      "namespace": "Warehouse",
-      "sourceName": "TestPyPi",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
+          "line": 49,
+          "sha256": "8cbbcbb8b2870ee2055cf4691038fb76e506c8912653365124082d8c40612dcb"
+        },
         {
-          "line": 19,
-          "sha256": "d85ae95e94b6d51ce1c38dd7916d4bd04e5f85663bd35b3dec55fed7a6ac1a96"
+          "line": 50,
+          "sha256": "ea16ac045cc03fbd0f066fd787c32c4bf398341a0adf1407d8cb456bea2526cf"
         }
       ]
     },
@@ -3711,6 +3954,38 @@
       ]
     },
     {
+      "id": "provider:Warehouse.PyPi",
+      "authority": "provider",
+      "namespace": "Warehouse",
+      "sourceName": "PyPi",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 13,
+          "sha256": "ac9c2dda202a804a3268d0e049e18be5247963763318fd6bf2668b17c2d996b1"
+        }
+      ]
+    },
+    {
+      "id": "provider:Warehouse.TestPyPi",
+      "authority": "provider",
+      "namespace": "Warehouse",
+      "sourceName": "TestPyPi",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 19,
+          "sha256": "d85ae95e94b6d51ce1c38dd7916d4bd04e5f85663bd35b3dec55fed7a6ac1a96"
+        }
+      ]
+    },
+    {
       "id": "provider:Warehouse.TokenAuthorization",
       "authority": "provider",
       "namespace": "Warehouse",
@@ -3743,38 +4018,18 @@
       ]
     },
     {
-      "id": "provider:Warehouse.Authorization",
+      "id": "provider:Warehouse.DistributionMetadata",
       "authority": "provider",
       "namespace": "Warehouse",
-      "sourceName": "Authorization",
+      "sourceName": "DistributionMetadata",
       "spaces": [
         "type",
         "value"
       ],
       "declarations": [
         {
-          "line": 49,
-          "sha256": "8cbbcbb8b2870ee2055cf4691038fb76e506c8912653365124082d8c40612dcb"
-        },
-        {
-          "line": 50,
-          "sha256": "ea16ac045cc03fbd0f066fd787c32c4bf398341a0adf1407d8cb456bea2526cf"
-        }
-      ]
-    },
-    {
-      "id": "provider:Warehouse.WheelUpload",
-      "authority": "provider",
-      "namespace": "Warehouse",
-      "sourceName": "WheelUpload",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 61,
-          "sha256": "147cf8b3da7607b17249b556b9d8762d606663b1d90cd894faf51ae0929add59"
+          "line": 85,
+          "sha256": "8563784b5731d218443b18243e0495cf7f0163f74d1e4175abe0fcfc9817bdd5"
         }
       ]
     },
@@ -3815,18 +4070,18 @@
       ]
     },
     {
-      "id": "provider:Warehouse.DistributionMetadata",
+      "id": "provider:Warehouse.WheelUpload",
       "authority": "provider",
       "namespace": "Warehouse",
-      "sourceName": "DistributionMetadata",
+      "sourceName": "WheelUpload",
       "spaces": [
         "type",
         "value"
       ],
       "declarations": [
         {
-          "line": 85,
-          "sha256": "8563784b5731d218443b18243e0495cf7f0163f74d1e4175abe0fcfc9817bdd5"
+          "line": 61,
+          "sha256": "147cf8b3da7607b17249b556b9d8762d606663b1d90cd894faf51ae0929add59"
         }
       ]
     },
@@ -3915,8 +4170,8 @@
       ],
       "declarations": [
         {
-          "line": 5,
-          "sha256": "1752e6382706f7fbd65f32fb3afc0afef85be5ca31e256a7662edcf23d557219"
+          "line": 6,
+          "sha256": "82cc30e9f37da5e43a4426d4ddd64e4e49955abd7ce462c08585253541be1473"
         }
       ]
     },
@@ -3930,8 +4185,8 @@
       ],
       "declarations": [
         {
-          "line": 11,
-          "sha256": "598efb0b6df1633174d86605ec9fa296fd8fb7ad956fcaf72ff3981a120822ad"
+          "line": 16,
+          "sha256": "496786f241a94311816588ccbabed6bcf62a3bf414134b3b526357767b72e62a"
         }
       ]
     },
@@ -3962,7 +4217,7 @@
       ],
       "declarations": [
         {
-          "line": 12,
+          "line": 11,
           "sha256": "1e35f9deb5737224f12f8e0232ce7641c93e6a2aada4f231fd25fdb2863ca605"
         }
       ]
@@ -3987,21 +4242,6 @@
       ]
     },
     {
-      "id": "git:GitExecution",
-      "authority": "git",
-      "namespace": null,
-      "sourceName": "GitExecution",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 14,
-          "sha256": "75d136979830759e798d3940040401a4d7def432046f14fe6adf1b4000c858d5"
-        }
-      ]
-    },
-    {
       "id": "git:CoreGitOptions",
       "authority": "git",
       "namespace": null,
@@ -4017,6 +4257,21 @@
       ]
     },
     {
+      "id": "git:GitExecution",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "GitExecution",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 14,
+          "sha256": "97f33ed0e3daefc71c4884814216cc3549161b64a83cff040e2d0edadce4c77f"
+        }
+      ]
+    },
+    {
       "id": "git:NativeHost",
       "authority": "git",
       "namespace": null,
@@ -4026,8 +4281,24 @@
       ],
       "declarations": [
         {
-          "line": 8,
+          "line": 10,
           "sha256": "70f45af508723d623ad5e2d0eac8f835c6936af287467b677c00af4494e44141"
+        }
+      ]
+    },
+    {
+      "id": "git:CommitInput",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "CommitInput",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 35,
+          "sha256": "ecaad602ef819d218dfd81d2dd6b33465ebb49db2ad5a433023d85a0a611c6ac"
         }
       ]
     },
@@ -4042,7 +4313,7 @@
       ],
       "declarations": [
         {
-          "line": 14,
+          "line": 13,
           "sha256": "8a2852726425126e39beb5c4977b804e18014cbe1c3f0f26e487133732301f6c"
         }
       ]
@@ -4058,24 +4329,8 @@
       ],
       "declarations": [
         {
-          "line": 22,
+          "line": 21,
           "sha256": "c767b9e518608daeb9f02363faef1eca185decf52029a92ee52bf3a72cb51a8b"
-        }
-      ]
-    },
-    {
-      "id": "git:CommitInput",
-      "authority": "git",
-      "namespace": null,
-      "sourceName": "CommitInput",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 36,
-          "sha256": "ecaad602ef819d218dfd81d2dd6b33465ebb49db2ad5a433023d85a0a611c6ac"
         }
       ]
     },
@@ -4090,68 +4345,23 @@
       ],
       "declarations": [
         {
-          "line": 49,
+          "line": 48,
           "sha256": "568a32b2339adf536435243e7606a0a2f061966fc237d8533d8d4211fcbd3287"
         }
       ]
     },
     {
-      "id": "git:RefCoordinate",
+      "id": "git:definition",
       "authority": "git",
       "namespace": null,
-      "sourceName": "RefCoordinate",
+      "sourceName": "definition",
       "spaces": [
-        "type"
+        "value"
       ],
       "declarations": [
         {
-          "line": 51,
-          "sha256": "fc17ec64cb13e9582f1ddef3f8420d15108498011af65b412d2d9a37a4862391"
-        }
-      ]
-    },
-    {
-      "id": "git:Credentials",
-      "authority": "git",
-      "namespace": null,
-      "sourceName": "Credentials",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 52,
-          "sha256": "b9890b8759c0d1a269f30a5562fea917558d2cf247eb567dd2cc317a3a8253ca"
-        }
-      ]
-    },
-    {
-      "id": "git:ObserveRef",
-      "authority": "git",
-      "namespace": null,
-      "sourceName": "ObserveRef",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 62,
-          "sha256": "be417c19437538d0645a9ff35acce41cc27f76aa45f428b6e21e9c9b824d9ffe"
-        }
-      ]
-    },
-    {
-      "id": "git:ObjectBuilder",
-      "authority": "git",
-      "namespace": null,
-      "sourceName": "ObjectBuilder",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 65,
-          "sha256": "c5fa84e5d60a82a8c1cdc4647c1a773d3f21ed012de3fd0fba819f1d72712396"
+          "line": 82,
+          "sha256": "6ff2d2a38ad78b56638dc80340a8c345dcb50eacc4000418bbdd813559467ff8"
         }
       ]
     },
@@ -4165,7 +4375,7 @@
       ],
       "declarations": [
         {
-          "line": 78,
+          "line": 77,
           "sha256": "3d4661a524d4afbf7c4211449353d7e3534c157e64282f31ae7c9a3b3614a64b"
         }
       ]
@@ -4180,98 +4390,68 @@
       ],
       "declarations": [
         {
-          "line": 77,
+          "line": 76,
           "sha256": "9b32be60951ee82bfd7aea9990811dbec55ff3b177a06b56cef4fc6a196f1b44"
         }
       ]
     },
     {
-      "id": "git:definition",
+      "id": "git:Credentials",
       "authority": "git",
       "namespace": null,
-      "sourceName": "definition",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 83,
-          "sha256": "6ff2d2a38ad78b56638dc80340a8c345dcb50eacc4000418bbdd813559467ff8"
-        }
-      ]
-    },
-    {
-      "id": "nodeHost:openGitJournal",
-      "authority": "nodeHost",
-      "namespace": null,
-      "sourceName": "openGitJournal",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 19,
-          "sha256": "397c36a6207875dc1312876f6a374d248c624bd4e15026446097ae46baae5e97"
-        }
-      ]
-    },
-    {
-      "id": "nodeHost:GitJournalOptions",
-      "authority": "nodeHost",
-      "namespace": null,
-      "sourceName": "GitJournalOptions",
+      "sourceName": "Credentials",
       "spaces": [
         "type"
       ],
       "declarations": [
         {
-          "line": 6,
-          "sha256": "20bebf5bc12d0b6b7525f75bac3c46d713a39044527bd5812db1801c3dabb536"
+          "line": 51,
+          "sha256": "b9890b8759c0d1a269f30a5562fea917558d2cf247eb567dd2cc317a3a8253ca"
         }
       ]
     },
     {
-      "id": "nodeHost:makeGitCatalogHost",
-      "authority": "nodeHost",
+      "id": "git:ObjectBuilder",
+      "authority": "git",
       "namespace": null,
-      "sourceName": "makeGitCatalogHost",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 20,
-          "sha256": "4c80ee993a7bc2de2a2243aadf5bf16e48784fd997f1c2f5594f40ce92f635b1"
-        }
-      ]
-    },
-    {
-      "id": "nodeHost:GitCatalogHost",
-      "authority": "nodeHost",
-      "namespace": null,
-      "sourceName": "GitCatalogHost",
+      "sourceName": "ObjectBuilder",
       "spaces": [
         "type"
       ],
       "declarations": [
         {
-          "line": 8,
-          "sha256": "70f45af508723d623ad5e2d0eac8f835c6936af287467b677c00af4494e44141"
+          "line": 64,
+          "sha256": "c5fa84e5d60a82a8c1cdc4647c1a773d3f21ed012de3fd0fba819f1d72712396"
         }
       ]
     },
     {
-      "id": "nodeHost:GitCatalogHostOptions",
-      "authority": "nodeHost",
+      "id": "git:ObserveRef",
+      "authority": "git",
       "namespace": null,
-      "sourceName": "GitCatalogHostOptions",
+      "sourceName": "ObserveRef",
       "spaces": [
         "type"
       ],
       "declarations": [
         {
-          "line": 16,
-          "sha256": "72b353ac736fcad1c50c2dd65924ca026067a18dba9f301036fe5b4186d7d534"
+          "line": 61,
+          "sha256": "be417c19437538d0645a9ff35acce41cc27f76aa45f428b6e21e9c9b824d9ffe"
+        }
+      ]
+    },
+    {
+      "id": "git:RefCoordinate",
+      "authority": "git",
+      "namespace": null,
+      "sourceName": "RefCoordinate",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 50,
+          "sha256": "fc17ec64cb13e9582f1ddef3f8420d15108498011af65b412d2d9a37a4862391"
         }
       ]
     },
@@ -4285,7 +4465,7 @@
       ],
       "declarations": [
         {
-          "line": 9,
+          "line": 10,
           "sha256": "95193700dfc62cba4104e7e053f2f958f32aebb7dd6d0768bf7855dfa91115b8"
         }
       ]
@@ -4300,8 +4480,98 @@
       ],
       "declarations": [
         {
-          "line": 10,
+          "line": 11,
           "sha256": "8a7e3779b408cb59b4f0770fc75c7d2ac14df33ca83734eeaa16dfeaa82cc380"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:GitJournalOptions",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "GitJournalOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 7,
+          "sha256": "20bebf5bc12d0b6b7525f75bac3c46d713a39044527bd5812db1801c3dabb536"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:journalRef",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "journalRef",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 19,
+          "sha256": "cb6c357a0e082f6b9504ca6e91160f781dc6cc09586eedf140bde4957e49ba52"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:openGitJournal",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "openGitJournal",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 20,
+          "sha256": "397c36a6207875dc1312876f6a374d248c624bd4e15026446097ae46baae5e97"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:GitCatalogHost",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "GitCatalogHost",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 10,
+          "sha256": "70f45af508723d623ad5e2d0eac8f835c6936af287467b677c00af4494e44141"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:GitCatalogHostOptions",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "GitCatalogHostOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 18,
+          "sha256": "72b353ac736fcad1c50c2dd65924ca026067a18dba9f301036fe5b4186d7d534"
+        }
+      ]
+    },
+    {
+      "id": "nodeHost:makeGitCatalogHost",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "makeGitCatalogHost",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 22,
+          "sha256": "4c80ee993a7bc2de2a2243aadf5bf16e48784fd997f1c2f5594f40ce92f635b1"
         }
       ]
     },
@@ -4315,7 +4585,7 @@
       ],
       "declarations": [
         {
-          "line": 5,
+          "line": 6,
           "sha256": "9f2918a3bbc1557f1635b993235a3c65a975e05a3f61ed5fc08538123a144fb7"
         }
       ]
@@ -4330,7 +4600,7 @@
       ],
       "declarations": [
         {
-          "line": 7,
+          "line": 8,
           "sha256": "e1b096ed222e9e125eff85abc9ea133808b2dacfc71c576a15720f1896d95901"
         }
       ]
@@ -4345,7 +4615,7 @@
       ],
       "declarations": [
         {
-          "line": 9,
+          "line": 10,
           "sha256": "7cd4f42756d605f76441040d084cd7bf0a0a7f539ba7b38f3ca57b2c00f81fda"
         }
       ]
@@ -4381,6 +4651,22 @@
       ]
     },
     {
+      "id": "nodeHost:FinalizedReport",
+      "authority": "nodeHost",
+      "namespace": null,
+      "sourceName": "FinalizedReport",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 25,
+          "sha256": "83a2c256fb19740659e12c89e3f82bad8b7e81db8fa3fab7a397bd7a6946271f"
+        }
+      ]
+    },
+    {
       "id": "nodeHost:Application",
       "authority": "nodeHost",
       "namespace": null,
@@ -4411,18 +4697,17 @@
       ]
     },
     {
-      "id": "nodeHost:FinalizedReport",
+      "id": "nodeHost:runInterruptibleProcess",
       "authority": "nodeHost",
       "namespace": null,
-      "sourceName": "FinalizedReport",
+      "sourceName": "runInterruptibleProcess",
       "spaces": [
-        "type",
         "value"
       ],
       "declarations": [
         {
-          "line": 27,
-          "sha256": "83a2c256fb19740659e12c89e3f82bad8b7e81db8fa3fab7a397bd7a6946271f"
+          "line": 16,
+          "sha256": "36efe5d10cfaa686098fcbafb63a3283748e5885b3040527585a17d27bdaf063"
         }
       ]
     },
@@ -4436,158 +4721,8 @@
       ],
       "declarations": [
         {
-          "line": 17,
-          "sha256": "ca79a2ad20d24fb6702126d38f5683ff3c3d0c703ad4c6d9b3e123543b507bec"
-        }
-      ]
-    },
-    {
-      "id": "bunHost:openGitJournal",
-      "authority": "bunHost",
-      "namespace": null,
-      "sourceName": "openGitJournal",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
           "line": 19,
-          "sha256": "397c36a6207875dc1312876f6a374d248c624bd4e15026446097ae46baae5e97"
-        }
-      ]
-    },
-    {
-      "id": "bunHost:GitJournalOptions",
-      "authority": "bunHost",
-      "namespace": null,
-      "sourceName": "GitJournalOptions",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 6,
-          "sha256": "20bebf5bc12d0b6b7525f75bac3c46d713a39044527bd5812db1801c3dabb536"
-        }
-      ]
-    },
-    {
-      "id": "bunHost:makeGitCatalogHost",
-      "authority": "bunHost",
-      "namespace": null,
-      "sourceName": "makeGitCatalogHost",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 20,
-          "sha256": "4c80ee993a7bc2de2a2243aadf5bf16e48784fd997f1c2f5594f40ce92f635b1"
-        }
-      ]
-    },
-    {
-      "id": "bunHost:GitCatalogHost",
-      "authority": "bunHost",
-      "namespace": null,
-      "sourceName": "GitCatalogHost",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 8,
-          "sha256": "70f45af508723d623ad5e2d0eac8f835c6936af287467b677c00af4494e44141"
-        }
-      ]
-    },
-    {
-      "id": "bunHost:GitCatalogHostOptions",
-      "authority": "bunHost",
-      "namespace": null,
-      "sourceName": "GitCatalogHostOptions",
-      "spaces": [
-        "type"
-      ],
-      "declarations": [
-        {
-          "line": 16,
-          "sha256": "72b353ac736fcad1c50c2dd65924ca026067a18dba9f301036fe5b4186d7d534"
-        }
-      ]
-    },
-    {
-      "id": "bunHost:makeGithubOidcTokenSource",
-      "authority": "bunHost",
-      "namespace": null,
-      "sourceName": "makeGithubOidcTokenSource",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 9,
-          "sha256": "95193700dfc62cba4104e7e053f2f958f32aebb7dd6d0768bf7855dfa91115b8"
-        }
-      ]
-    },
-    {
-      "id": "bunHost:makeGithubTrustedPublisherHost",
-      "authority": "bunHost",
-      "namespace": null,
-      "sourceName": "makeGithubTrustedPublisherHost",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 10,
-          "sha256": "8a7e3779b408cb59b4f0770fc75c7d2ac14df33ca83734eeaa16dfeaa82cc380"
-        }
-      ]
-    },
-    {
-      "id": "bunHost:makeHttpTransport",
-      "authority": "bunHost",
-      "namespace": null,
-      "sourceName": "makeHttpTransport",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 5,
-          "sha256": "9f2918a3bbc1557f1635b993235a3c65a975e05a3f61ed5fc08538123a144fb7"
-        }
-      ]
-    },
-    {
-      "id": "bunHost:makeHttpRead",
-      "authority": "bunHost",
-      "namespace": null,
-      "sourceName": "makeHttpRead",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 7,
-          "sha256": "e1b096ed222e9e125eff85abc9ea133808b2dacfc71c576a15720f1896d95901"
-        }
-      ]
-    },
-    {
-      "id": "bunHost:makeCredentialExchange",
-      "authority": "bunHost",
-      "namespace": null,
-      "sourceName": "makeCredentialExchange",
-      "spaces": [
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 9,
-          "sha256": "7cd4f42756d605f76441040d084cd7bf0a0a7f539ba7b38f3ca57b2c00f81fda"
+          "sha256": "ca79a2ad20d24fb6702126d38f5683ff3c3d0c703ad4c6d9b3e123543b507bec"
         }
       ]
     },
@@ -4603,6 +4738,171 @@
         {
           "line": 5,
           "sha256": "5f8eb7dc6eac466aae07760aa7ed0dd3d480415c8e205a262abc791e04c9e491"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeGithubOidcTokenSource",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeGithubOidcTokenSource",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 10,
+          "sha256": "95193700dfc62cba4104e7e053f2f958f32aebb7dd6d0768bf7855dfa91115b8"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeGithubTrustedPublisherHost",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeGithubTrustedPublisherHost",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 11,
+          "sha256": "8a7e3779b408cb59b4f0770fc75c7d2ac14df33ca83734eeaa16dfeaa82cc380"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:GitJournalOptions",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "GitJournalOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 7,
+          "sha256": "20bebf5bc12d0b6b7525f75bac3c46d713a39044527bd5812db1801c3dabb536"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:journalRef",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "journalRef",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 19,
+          "sha256": "cb6c357a0e082f6b9504ca6e91160f781dc6cc09586eedf140bde4957e49ba52"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:openGitJournal",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "openGitJournal",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 20,
+          "sha256": "397c36a6207875dc1312876f6a374d248c624bd4e15026446097ae46baae5e97"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:GitCatalogHost",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "GitCatalogHost",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 10,
+          "sha256": "70f45af508723d623ad5e2d0eac8f835c6936af287467b677c00af4494e44141"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:GitCatalogHostOptions",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "GitCatalogHostOptions",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 18,
+          "sha256": "72b353ac736fcad1c50c2dd65924ca026067a18dba9f301036fe5b4186d7d534"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeGitCatalogHost",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeGitCatalogHost",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 22,
+          "sha256": "4c80ee993a7bc2de2a2243aadf5bf16e48784fd997f1c2f5594f40ce92f635b1"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeHttpTransport",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeHttpTransport",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 6,
+          "sha256": "9f2918a3bbc1557f1635b993235a3c65a975e05a3f61ed5fc08538123a144fb7"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeHttpRead",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeHttpRead",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 8,
+          "sha256": "e1b096ed222e9e125eff85abc9ea133808b2dacfc71c576a15720f1896d95901"
+        }
+      ]
+    },
+    {
+      "id": "bunHost:makeCredentialExchange",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "makeCredentialExchange",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 10,
+          "sha256": "7cd4f42756d605f76441040d084cd7bf0a0a7f539ba7b38f3ca57b2c00f81fda"
         }
       ]
     },
@@ -4637,6 +4937,22 @@
       ]
     },
     {
+      "id": "bunHost:FinalizedReport",
+      "authority": "bunHost",
+      "namespace": null,
+      "sourceName": "FinalizedReport",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 25,
+          "sha256": "83a2c256fb19740659e12c89e3f82bad8b7e81db8fa3fab7a397bd7a6946271f"
+        }
+      ]
+    },
+    {
       "id": "bunHost:Application",
       "authority": "bunHost",
       "namespace": null,
@@ -4667,18 +4983,17 @@
       ]
     },
     {
-      "id": "bunHost:FinalizedReport",
+      "id": "bunHost:runInterruptibleProcess",
       "authority": "bunHost",
       "namespace": null,
-      "sourceName": "FinalizedReport",
+      "sourceName": "runInterruptibleProcess",
       "spaces": [
-        "type",
         "value"
       ],
       "declarations": [
         {
-          "line": 27,
-          "sha256": "83a2c256fb19740659e12c89e3f82bad8b7e81db8fa3fab7a397bd7a6946271f"
+          "line": 16,
+          "sha256": "36efe5d10cfaa686098fcbafb63a3283748e5885b3040527585a17d27bdaf063"
         }
       ]
     },
@@ -4692,8 +5007,24 @@
       ],
       "declarations": [
         {
-          "line": 17,
+          "line": 19,
           "sha256": "ca79a2ad20d24fb6702126d38f5683ff3c3d0c703ad4c6d9b3e123543b507bec"
+        }
+      ]
+    },
+    {
+      "id": "bundle:AdoptionError",
+      "authority": "bundle",
+      "namespace": null,
+      "sourceName": "AdoptionError",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 6,
+          "sha256": "7e44839b9c59382aa3befdd35b61bc879fef3565252bb37a64bf8b81a36d1086"
         }
       ]
     },
@@ -4714,18 +5045,38 @@
       ]
     },
     {
-      "id": "bundle:AdoptionError",
+      "id": "bundle:Bundle",
       "authority": "bundle",
       "namespace": null,
-      "sourceName": "AdoptionError",
+      "sourceName": "Bundle",
       "spaces": [
         "type",
         "value"
       ],
       "declarations": [
         {
-          "line": 6,
-          "sha256": "7e44839b9c59382aa3befdd35b61bc879fef3565252bb37a64bf8b81a36d1086"
+          "line": 68,
+          "sha256": "392744ab91388eddccf75e2ed2e220d47363516551221707fb89a212f198519f"
+        }
+      ]
+    },
+    {
+      "id": "bundle:Artifact",
+      "authority": "bundle",
+      "namespace": null,
+      "sourceName": "Artifact",
+      "spaces": [
+        "type",
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 62,
+          "sha256": "2599fb2fd3432f6d8cc1663c5db6e584bd9bcd2a4cc8d8ccca9e09ff9bfc8bd9"
+        },
+        {
+          "line": 63,
+          "sha256": "b93fc25a522c0556d5064495dcfea36f849b0520b844706f36a08385f8416e66"
         }
       ]
     },
@@ -4762,42 +5113,6 @@
       ]
     },
     {
-      "id": "bundle:Artifact",
-      "authority": "bundle",
-      "namespace": null,
-      "sourceName": "Artifact",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 62,
-          "sha256": "2599fb2fd3432f6d8cc1663c5db6e584bd9bcd2a4cc8d8ccca9e09ff9bfc8bd9"
-        },
-        {
-          "line": 63,
-          "sha256": "b93fc25a522c0556d5064495dcfea36f849b0520b844706f36a08385f8416e66"
-        }
-      ]
-    },
-    {
-      "id": "bundle:Bundle",
-      "authority": "bundle",
-      "namespace": null,
-      "sourceName": "Bundle",
-      "spaces": [
-        "type",
-        "value"
-      ],
-      "declarations": [
-        {
-          "line": 68,
-          "sha256": "392744ab91388eddccf75e2ed2e220d47363516551221707fb89a212f198519f"
-        }
-      ]
-    },
-    {
       "id": "bundle:ContentOwner",
       "authority": "bundle",
       "namespace": null,
@@ -4823,7 +5138,7 @@
       "declarations": [
         {
           "line": 18,
-          "sha256": "2d82bb46001e5641c4bc9b7cf644e414d6f37952aabbdae363a6689771521bf5"
+          "sha256": "1f8a87aed4c22cecbbfb08582aae3c8e57275dc60807ebea73d48cab10b52b3b"
         }
       ]
     },
@@ -4854,6 +5169,21 @@
         {
           "line": 20,
           "sha256": "550b8383fc718a1e3f9cf7a59245deb71a0c8d3b818a345ceb0456a800a0799f"
+        }
+      ]
+    },
+    {
+      "id": "bundle:readVerifiedContent",
+      "authority": "bundle",
+      "namespace": null,
+      "sourceName": "readVerifiedContent",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 25,
+          "sha256": "5798adfc3d7ba7048c62a0810f14ffc3b3ab9a4db39c89d8b97438f1db5fd9d6"
         }
       ]
     },
@@ -4912,8 +5242,8 @@
       ],
       "declarations": [
         {
-          "line": 7,
-          "sha256": "011a3924801fef2c6606fa34d5c0f20dc88cab76a26d8d9a90a138988efaf1f9"
+          "line": 6,
+          "sha256": "4052a6aea8e4b45aa71af3df1091333d7f3bf53289d43bf812fcf49e24b852de"
         }
       ]
     },
@@ -4928,7 +5258,7 @@
       "declarations": [
         {
           "line": 3,
-          "sha256": "a56195d894bec6ce804442d508caf39e1bc93e5a828898e2e507cbbe3bc3a8fa"
+          "sha256": "a447db6fbefc446c7a4eacdf52c9773d3493f31f47b9575f729ec865f3c8c028"
         }
       ]
     },
@@ -4943,7 +5273,7 @@
       "declarations": [
         {
           "line": 8,
-          "sha256": "9ced9555ada8402c2ceeec8db766bf68a8e384c9f87f84ae2246df517957b648"
+          "sha256": "68b2f548c94a505d04038702d2f945ec26e8015f632ed39fb8c341d3b1240584"
         }
       ]
     },
@@ -4957,8 +5287,53 @@
       ],
       "declarations": [
         {
-          "line": 9,
-          "sha256": "6c633078f94b612b34f182cb10c711f8eed0ca50b53ff62974d053523265312e"
+          "line": 12,
+          "sha256": "56911133516bceb25c5efe5e8be5f95493d102ce18af8ccf2a9b47625e732947"
+        }
+      ]
+    },
+    {
+      "id": "bundle:readTarBytes",
+      "authority": "bundle",
+      "namespace": null,
+      "sourceName": "readTarBytes",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 8,
+          "sha256": "cef606d572d1060956573fce0075cf6d32b4a2c71b1af10bcdc84c585fe5ee6c"
+        }
+      ]
+    },
+    {
+      "id": "bundle:registerArchivePath",
+      "authority": "bundle",
+      "namespace": null,
+      "sourceName": "registerArchivePath",
+      "spaces": [
+        "value"
+      ],
+      "declarations": [
+        {
+          "line": 6,
+          "sha256": "37ed36a13bb4c86ac3f05f0e1c328eb77c4a837f31eedccb47b41777a3d5159f"
+        }
+      ]
+    },
+    {
+      "id": "bundle:TarEntry",
+      "authority": "bundle",
+      "namespace": null,
+      "sourceName": "TarEntry",
+      "spaces": [
+        "type"
+      ],
+      "declarations": [
+        {
+          "line": 1,
+          "sha256": "cb474efca98f53cd29a9ef02fcf2c0a569a4cffa45a0ea7cbd6cddd9d70e364b"
         }
       ]
     },
@@ -4973,7 +5348,7 @@
       "declarations": [
         {
           "line": 10,
-          "sha256": "430b985212fca798c203ed1fd8fa9df40bd0accd75973eebed893eb4d6a30d85"
+          "sha256": "95204731f6c82d7e81537d1fd0698bfbebfa2d075f48b5ca8bfb451fa52e5274"
         }
       ]
     },
@@ -5019,23 +5394,43 @@
           "module": "kernel.Provider"
         },
         {
-          "declaration": "kernel:PreparedRequest",
-          "name": "PreparedRequest",
+          "declaration": "kernel:defineProvider",
+          "name": "defineProvider",
+          "module": "kernel.Model"
+        },
+        {
+          "declaration": "kernel:makeRequest",
+          "name": "makeRequest",
+          "module": "kernel.Plan"
+        },
+        {
+          "declaration": "kernel:Author",
+          "name": "Author",
           "module": "kernel.Provider"
         },
         {
-          "declaration": "kernel:SendResult",
-          "name": "SendResult",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "kernel:Transport",
-          "name": "Transport",
+          "declaration": "kernel:Json",
+          "name": "Json",
           "module": "kernel.Provider"
         },
         {
           "declaration": "kernel:Observation",
           "name": "Observation",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:OperationId",
+          "name": "OperationId",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:PreparedRequest",
+          "name": "PreparedRequest",
+          "module": "kernel.Provider"
+        },
+        {
+          "declaration": "kernel:NativeFailureBoundary",
+          "name": "NativeFailureBoundary",
           "module": "kernel.Provider"
         },
         {
@@ -5049,11 +5444,6 @@
           "module": "kernel.Provider"
         },
         {
-          "declaration": "kernel:NativeFailureBoundary",
-          "name": "NativeFailureBoundary",
-          "module": "kernel.Provider"
-        },
-        {
           "declaration": "kernel:ProviderDefinition",
           "name": "ProviderDefinition",
           "module": "kernel.Provider"
@@ -5064,29 +5454,154 @@
           "module": "kernel.Provider"
         },
         {
-          "declaration": "kernel:Json",
-          "name": "Json",
+          "declaration": "kernel:SendResult",
+          "name": "SendResult",
           "module": "kernel.Provider"
         },
         {
-          "declaration": "kernel:OperationId",
-          "name": "OperationId",
+          "declaration": "kernel:Transport",
+          "name": "Transport",
           "module": "kernel.Provider"
-        },
-        {
-          "declaration": "kernel:Author",
-          "name": "Author",
-          "module": "kernel.Provider"
-        },
-        {
-          "declaration": "kernel:makeRequest",
-          "name": "makeRequest",
-          "module": "kernel.Plan"
         },
         {
           "declaration": "kernel:ReleaseError",
           "name": "ReleaseError",
           "module": "kernel.Error"
+        },
+        {
+          "declaration": "kernel:Snapshot",
+          "name": "Snapshot",
+          "module": "kernel.Journal"
+        },
+        {
+          "declaration": "kernel:AppendResult",
+          "name": "AppendResult",
+          "module": "kernel.Journal"
+        },
+        {
+          "declaration": "kernel:JournalStore",
+          "name": "JournalStore",
+          "module": "kernel.Journal"
+        },
+        {
+          "declaration": "kernel:Scope",
+          "name": "Scope",
+          "module": "kernel.Journal"
+        },
+        {
+          "declaration": "kernel:JournalContext",
+          "name": "JournalContext",
+          "module": "kernel.Journal"
+        },
+        {
+          "declaration": "kernel:HostShape",
+          "name": "HostShape",
+          "module": "kernel.Host"
+        },
+        {
+          "declaration": "kernel:Host",
+          "name": "Host",
+          "module": "kernel.Host"
+        },
+        {
+          "declaration": "kernel:historyMachine",
+          "name": "historyMachine",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:sameProtectedRequest",
+          "name": "sameProtectedRequest",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:sameStrings",
+          "name": "sameStrings",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:CandidateRequest",
+          "name": "CandidateRequest",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:Machine",
+          "name": "Machine",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:MachineConstructor",
+          "name": "MachineConstructor",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:Next",
+          "name": "Next",
+          "module": "kernel.Decision"
+        },
+        {
+          "declaration": "kernel:createOperation",
+          "name": "createOperation",
+          "module": "kernel.Plan"
+        },
+        {
+          "declaration": "kernel:createPlan",
+          "name": "createPlan",
+          "module": "kernel.Plan"
+        },
+        {
+          "declaration": "kernel:createPreparationScope",
+          "name": "createPreparationScope",
+          "module": "kernel.Plan"
+        },
+        {
+          "declaration": "kernel:loadPlan",
+          "name": "loadPlan",
+          "module": "kernel.Plan"
+        },
+        {
+          "declaration": "kernel:GitReceipt",
+          "name": "GitReceipt",
+          "module": "kernel.GitAuthority"
+        },
+        {
+          "declaration": "kernel:makeCoreGitTransport",
+          "name": "makeCoreGitTransport",
+          "module": "kernel.GitAuthority"
+        },
+        {
+          "declaration": "kernel:CoreGitOptions",
+          "name": "CoreGitOptions",
+          "module": "kernel.GitAuthority"
+        },
+        {
+          "declaration": "kernel:GitExecution",
+          "name": "GitExecution",
+          "module": "kernel.GitAuthority"
+        },
+        {
+          "declaration": "kernel:reportRelease",
+          "name": "reportRelease",
+          "module": "kernel.Release"
+        },
+        {
+          "declaration": "kernel:observeRelease",
+          "name": "observeRelease",
+          "module": "kernel.Release"
+        },
+        {
+          "declaration": "kernel:runRelease",
+          "name": "runRelease",
+          "module": "kernel.Release"
+        },
+        {
+          "declaration": "kernel:supersedePlan",
+          "name": "supersedePlan",
+          "module": "kernel.Release"
+        },
+        {
+          "declaration": "kernel:acceptRisk",
+          "name": "acceptRisk",
+          "module": "kernel.Release"
         },
         {
           "declaration": "kernel:Operation",
@@ -5217,141 +5732,6 @@
           "declaration": "kernel:RunOptions",
           "name": "RunOptions",
           "module": "kernel.Model"
-        },
-        {
-          "declaration": "kernel:Snapshot",
-          "name": "Snapshot",
-          "module": "kernel.Journal"
-        },
-        {
-          "declaration": "kernel:AppendResult",
-          "name": "AppendResult",
-          "module": "kernel.Journal"
-        },
-        {
-          "declaration": "kernel:JournalStore",
-          "name": "JournalStore",
-          "module": "kernel.Journal"
-        },
-        {
-          "declaration": "kernel:Scope",
-          "name": "Scope",
-          "module": "kernel.Journal"
-        },
-        {
-          "declaration": "kernel:JournalContext",
-          "name": "JournalContext",
-          "module": "kernel.Journal"
-        },
-        {
-          "declaration": "kernel:HostShape",
-          "name": "HostShape",
-          "module": "kernel.Host"
-        },
-        {
-          "declaration": "kernel:Host",
-          "name": "Host",
-          "module": "kernel.Host"
-        },
-        {
-          "declaration": "kernel:CandidateRequest",
-          "name": "CandidateRequest",
-          "module": "kernel.Decision"
-        },
-        {
-          "declaration": "kernel:Next",
-          "name": "Next",
-          "module": "kernel.Decision"
-        },
-        {
-          "declaration": "kernel:Machine",
-          "name": "Machine",
-          "module": "kernel.Decision"
-        },
-        {
-          "declaration": "kernel:MachineConstructor",
-          "name": "MachineConstructor",
-          "module": "kernel.Decision"
-        },
-        {
-          "declaration": "kernel:sameProtectedRequest",
-          "name": "sameProtectedRequest",
-          "module": "kernel.Decision"
-        },
-        {
-          "declaration": "kernel:sameStrings",
-          "name": "sameStrings",
-          "module": "kernel.Decision"
-        },
-        {
-          "declaration": "kernel:historyMachine",
-          "name": "historyMachine",
-          "module": "kernel.Decision"
-        },
-        {
-          "declaration": "kernel:createOperation",
-          "name": "createOperation",
-          "module": "kernel.Plan"
-        },
-        {
-          "declaration": "kernel:createPlan",
-          "name": "createPlan",
-          "module": "kernel.Plan"
-        },
-        {
-          "declaration": "kernel:createPreparationScope",
-          "name": "createPreparationScope",
-          "module": "kernel.Plan"
-        },
-        {
-          "declaration": "kernel:loadPlan",
-          "name": "loadPlan",
-          "module": "kernel.Plan"
-        },
-        {
-          "declaration": "kernel:GitReceipt",
-          "name": "GitReceipt",
-          "module": "kernel.GitAuthority"
-        },
-        {
-          "declaration": "kernel:GitExecution",
-          "name": "GitExecution",
-          "module": "kernel.GitAuthority"
-        },
-        {
-          "declaration": "kernel:CoreGitOptions",
-          "name": "CoreGitOptions",
-          "module": "kernel.GitAuthority"
-        },
-        {
-          "declaration": "kernel:makeCoreGitTransport",
-          "name": "makeCoreGitTransport",
-          "module": "kernel.GitAuthority"
-        },
-        {
-          "declaration": "kernel:reportRelease",
-          "name": "reportRelease",
-          "module": "kernel.Release"
-        },
-        {
-          "declaration": "kernel:observeRelease",
-          "name": "observeRelease",
-          "module": "kernel.Release"
-        },
-        {
-          "declaration": "kernel:runRelease",
-          "name": "runRelease",
-          "module": "kernel.Release"
-        },
-        {
-          "declaration": "kernel:supersedePlan",
-          "name": "supersedePlan",
-          "module": "kernel.Release"
-        },
-        {
-          "declaration": "kernel:acceptRisk",
-          "name": "acceptRisk",
-          "module": "kernel.Release"
         }
       ]
     },
@@ -5360,13 +5740,23 @@
       "entry": "kernel.Bundle",
       "symbols": [
         {
+          "declaration": "bundle:AdoptionError",
+          "name": "AdoptionError",
+          "module": "kernel.ArtifactModel"
+        },
+        {
           "declaration": "bundle:Content",
           "name": "Content",
           "module": "kernel.ArtifactModel"
         },
         {
-          "declaration": "bundle:AdoptionError",
-          "name": "AdoptionError",
+          "declaration": "bundle:Bundle",
+          "name": "Bundle",
+          "module": "kernel.ArtifactModel"
+        },
+        {
+          "declaration": "bundle:Artifact",
+          "name": "Artifact",
           "module": "kernel.ArtifactModel"
         },
         {
@@ -5377,16 +5767,6 @@
         {
           "declaration": "bundle:Tree",
           "name": "Tree",
-          "module": "kernel.ArtifactModel"
-        },
-        {
-          "declaration": "bundle:Artifact",
-          "name": "Artifact",
-          "module": "kernel.ArtifactModel"
-        },
-        {
-          "declaration": "bundle:Bundle",
-          "name": "Bundle",
           "module": "kernel.ArtifactModel"
         },
         {
@@ -5407,6 +5787,11 @@
         {
           "declaration": "bundle:ArtifactAccess",
           "name": "ArtifactAccess",
+          "module": "kernel.Content"
+        },
+        {
+          "declaration": "bundle:readVerifiedContent",
+          "name": "readVerifiedContent",
           "module": "kernel.Content"
         },
         {
@@ -5443,6 +5828,21 @@
           "declaration": "bundle:verifySha256Sums",
           "name": "verifySha256Sums",
           "module": "kernel.Checksums"
+        },
+        {
+          "declaration": "bundle:readTarBytes",
+          "name": "readTarBytes",
+          "module": "kernel.Tar"
+        },
+        {
+          "declaration": "bundle:registerArchivePath",
+          "name": "registerArchivePath",
+          "module": "kernel.Tar"
+        },
+        {
+          "declaration": "bundle:TarEntry",
+          "name": "TarEntry",
+          "module": "kernel.Tar"
         }
       ]
     },
@@ -5471,6 +5871,11 @@
       "id": "core.apple",
       "entry": "kernel.Apple",
       "symbols": [
+        {
+          "declaration": "apple:preparationProvider",
+          "name": "preparationProvider",
+          "module": "kernel.AppleProvider"
+        },
         {
           "declaration": "apple:ApplicationSignature",
           "name": "ApplicationSignature",
@@ -5597,11 +6002,6 @@
           "module": "kernel.AppleNative"
         },
         {
-          "declaration": "apple:preparationProvider",
-          "name": "preparationProvider",
-          "module": "kernel.AppleProvider"
-        },
-        {
           "declaration": "apple:preparationScopes",
           "name": "preparationScopes",
           "module": "kernel.ApplePreparation"
@@ -5630,6 +6030,61 @@
         {
           "declaration": "http:decodeJson",
           "name": "decodeJson",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:canonical",
+          "name": "canonical",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:compareText",
+          "name": "compareText",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:decodeOwned",
+          "name": "decodeOwned",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:sameBytes",
+          "name": "sameBytes",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:sameData",
+          "name": "sameData",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:makeDataBoundary",
+          "name": "makeDataBoundary",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:containsSecret",
+          "name": "containsSecret",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:isPublicText",
+          "name": "isPublicText",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:PublicText",
+          "name": "PublicText",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:isSafePath",
+          "name": "isSafePath",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:publicUrl",
+          "name": "publicUrl",
           "module": "kernel.Http"
         },
         {
@@ -5678,8 +6133,28 @@
           "module": "kernel.Http"
         },
         {
+          "declaration": "http:credentialToken",
+          "name": "credentialToken",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:bearerCredentials",
+          "name": "bearerCredentials",
+          "module": "kernel.Http"
+        },
+        {
           "declaration": "http:OidcTokenRequest",
           "name": "OidcTokenRequest",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:OidcAuthorization",
+          "name": "OidcAuthorization",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:oidcRequest",
+          "name": "oidcRequest",
           "module": "kernel.Http"
         },
         {
@@ -5695,6 +6170,11 @@
         {
           "declaration": "http:TrustedPublisherHost",
           "name": "TrustedPublisherHost",
+          "module": "kernel.Http"
+        },
+        {
+          "declaration": "http:captureTrustedPublisher",
+          "name": "captureTrustedPublisher",
           "module": "kernel.Http"
         },
         {
@@ -5754,18 +6234,23 @@
           "module": "kernel.Git"
         },
         {
-          "declaration": "git:GitExecution",
-          "name": "GitExecution",
-          "module": "kernel.Git"
-        },
-        {
           "declaration": "git:CoreGitOptions",
           "name": "CoreGitOptions",
           "module": "kernel.Git"
         },
         {
+          "declaration": "git:GitExecution",
+          "name": "GitExecution",
+          "module": "kernel.Git"
+        },
+        {
           "declaration": "git:NativeHost",
           "name": "NativeHost",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:CommitInput",
+          "name": "CommitInput",
           "module": "kernel.Git"
         },
         {
@@ -5779,33 +6264,13 @@
           "module": "kernel.Git"
         },
         {
-          "declaration": "git:CommitInput",
-          "name": "CommitInput",
-          "module": "kernel.Git"
-        },
-        {
           "declaration": "git:Intent",
           "name": "Intent",
           "module": "kernel.Git"
         },
         {
-          "declaration": "git:RefCoordinate",
-          "name": "RefCoordinate",
-          "module": "kernel.Git"
-        },
-        {
-          "declaration": "git:Credentials",
-          "name": "Credentials",
-          "module": "kernel.Git"
-        },
-        {
-          "declaration": "git:ObserveRef",
-          "name": "ObserveRef",
-          "module": "kernel.Git"
-        },
-        {
-          "declaration": "git:ObjectBuilder",
-          "name": "ObjectBuilder",
+          "declaration": "git:definition",
+          "name": "definition",
           "module": "kernel.Git"
         },
         {
@@ -5819,8 +6284,23 @@
           "module": "kernel.Git"
         },
         {
-          "declaration": "git:definition",
-          "name": "definition",
+          "declaration": "git:Credentials",
+          "name": "Credentials",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:ObjectBuilder",
+          "name": "ObjectBuilder",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:ObserveRef",
+          "name": "ObserveRef",
+          "module": "kernel.Git"
+        },
+        {
+          "declaration": "git:RefCoordinate",
+          "name": "RefCoordinate",
           "module": "kernel.Git"
         }
       ]
@@ -5830,8 +6310,13 @@
       "entry": "host.Node",
       "symbols": [
         {
-          "declaration": "nodeHost:openGitJournal",
-          "name": "openGitJournal",
+          "declaration": "nodeHost:makeGithubOidcTokenSource",
+          "name": "makeGithubOidcTokenSource",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:makeGithubTrustedPublisherHost",
+          "name": "makeGithubTrustedPublisherHost",
           "module": "host.Node"
         },
         {
@@ -5840,8 +6325,13 @@
           "module": "host.Node"
         },
         {
-          "declaration": "nodeHost:makeGitCatalogHost",
-          "name": "makeGitCatalogHost",
+          "declaration": "nodeHost:journalRef",
+          "name": "journalRef",
+          "module": "host.Node"
+        },
+        {
+          "declaration": "nodeHost:openGitJournal",
+          "name": "openGitJournal",
           "module": "host.Node"
         },
         {
@@ -5855,13 +6345,8 @@
           "module": "host.Node"
         },
         {
-          "declaration": "nodeHost:makeGithubOidcTokenSource",
-          "name": "makeGithubOidcTokenSource",
-          "module": "host.Node"
-        },
-        {
-          "declaration": "nodeHost:makeGithubTrustedPublisherHost",
-          "name": "makeGithubTrustedPublisherHost",
+          "declaration": "nodeHost:makeGitCatalogHost",
+          "name": "makeGitCatalogHost",
           "module": "host.Node"
         },
         {
@@ -5890,6 +6375,11 @@
           "module": "host.Node"
         },
         {
+          "declaration": "nodeHost:FinalizedReport",
+          "name": "FinalizedReport",
+          "module": "host.Node"
+        },
+        {
           "declaration": "nodeHost:Application",
           "name": "Application",
           "module": "host.Node"
@@ -5900,8 +6390,8 @@
           "module": "host.Node"
         },
         {
-          "declaration": "nodeHost:FinalizedReport",
-          "name": "FinalizedReport",
+          "declaration": "nodeHost:runInterruptibleProcess",
+          "name": "runInterruptibleProcess",
           "module": "host.Node"
         },
         {
@@ -5916,8 +6406,18 @@
       "entry": "host.Bun",
       "symbols": [
         {
-          "declaration": "bunHost:openGitJournal",
-          "name": "openGitJournal",
+          "declaration": "bunHost:openSqliteJournal",
+          "name": "openSqliteJournal",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:makeGithubOidcTokenSource",
+          "name": "makeGithubOidcTokenSource",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:makeGithubTrustedPublisherHost",
+          "name": "makeGithubTrustedPublisherHost",
           "module": "host.Bun"
         },
         {
@@ -5926,8 +6426,13 @@
           "module": "host.Bun"
         },
         {
-          "declaration": "bunHost:makeGitCatalogHost",
-          "name": "makeGitCatalogHost",
+          "declaration": "bunHost:journalRef",
+          "name": "journalRef",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:openGitJournal",
+          "name": "openGitJournal",
           "module": "host.Bun"
         },
         {
@@ -5941,13 +6446,8 @@
           "module": "host.Bun"
         },
         {
-          "declaration": "bunHost:makeGithubOidcTokenSource",
-          "name": "makeGithubOidcTokenSource",
-          "module": "host.Bun"
-        },
-        {
-          "declaration": "bunHost:makeGithubTrustedPublisherHost",
-          "name": "makeGithubTrustedPublisherHost",
+          "declaration": "bunHost:makeGitCatalogHost",
+          "name": "makeGitCatalogHost",
           "module": "host.Bun"
         },
         {
@@ -5966,11 +6466,6 @@
           "module": "host.Bun"
         },
         {
-          "declaration": "bunHost:openSqliteJournal",
-          "name": "openSqliteJournal",
-          "module": "host.Bun"
-        },
-        {
           "declaration": "bunHost:nodeDirectoryReader",
           "name": "nodeDirectoryReader",
           "module": "host.Bun"
@@ -5978,6 +6473,11 @@
         {
           "declaration": "bunHost:fileContentOwner",
           "name": "fileContentOwner",
+          "module": "host.Bun"
+        },
+        {
+          "declaration": "bunHost:FinalizedReport",
+          "name": "FinalizedReport",
           "module": "host.Bun"
         },
         {
@@ -5991,8 +6491,8 @@
           "module": "host.Bun"
         },
         {
-          "declaration": "bunHost:FinalizedReport",
-          "name": "FinalizedReport",
+          "declaration": "bunHost:runInterruptibleProcess",
+          "name": "runInterruptibleProcess",
           "module": "host.Bun"
         },
         {
@@ -6701,6 +7201,7 @@
             "createOperation",
             "createPlan",
             "createPreparationScope",
+            "defineProvider",
             "historyMachine",
             "loadPlan",
             "makeCoreGitTransport",
@@ -6789,6 +7290,9 @@
             "encodeBundle",
             "finalize",
             "loadBundle",
+            "readTarBytes",
+            "readVerifiedContent",
+            "registerArchivePath",
             "renderSha256Sums",
             "verifiedArtifacts",
             "verifySha256Sums"
@@ -6804,6 +7308,7 @@
             "File",
             "PutContent",
             "ReadContent",
+            "TarEntry",
             "Tree"
           ]
         },
@@ -6898,9 +7403,24 @@
           },
           "runtimeNames": [
             "HttpReceipt",
+            "PublicText",
+            "bearerCredentials",
+            "canonical",
+            "captureTrustedPublisher",
+            "compareText",
+            "containsSecret",
             "corresponds",
+            "credentialToken",
             "decodeJson",
-            "makeCredentialResolver"
+            "decodeOwned",
+            "isPublicText",
+            "isSafePath",
+            "makeCredentialResolver",
+            "makeDataBoundary",
+            "oidcRequest",
+            "publicUrl",
+            "sameBytes",
+            "sameData"
           ],
           "typeNames": [
             "BoundCredentials",
@@ -6917,6 +7437,7 @@
             "HttpReceipt",
             "HttpResponse",
             "HttpTransportOptions",
+            "OidcAuthorization",
             "OidcTokenRequest",
             "OidcTokenSource",
             "ResolveCredentials",
@@ -6976,6 +7497,7 @@
           "runtimeNames": [
             "FinalizedReport",
             "fileContentOwner",
+            "journalRef",
             "makeCredentialExchange",
             "makeGitCatalogHost",
             "makeGithubOidcTokenSource",
@@ -6984,7 +7506,8 @@
             "makeHttpTransport",
             "nodeDirectoryReader",
             "openGitJournal",
-            "runApplication"
+            "runApplication",
+            "runInterruptibleProcess"
           ],
           "typeNames": [
             "Application",
@@ -7009,6 +7532,7 @@
           "runtimeNames": [
             "FinalizedReport",
             "fileContentOwner",
+            "journalRef",
             "makeCredentialExchange",
             "makeGitCatalogHost",
             "makeGithubOidcTokenSource",
@@ -7018,7 +7542,8 @@
             "nodeDirectoryReader",
             "openGitJournal",
             "openSqliteJournal",
-            "runApplication"
+            "runApplication",
+            "runInterruptibleProcess"
           ],
           "typeNames": [
             "Application",
@@ -7343,7 +7868,7 @@
           ]
         }
       ],
-      "exportsSha256": "4208ca0bb4201b98de3a141ebf7523b63e436373e3b16e68363cb1ed020625a2"
+      "exportsSha256": "51f60bea45b86c72bf027618633f69edce8db8b9ca7fdd809fd72fd53296dffa"
     }
   ],
   "intentionallyPrivateAuthorityExports": [
@@ -7517,6 +8042,10 @@
     },
     {
       "id": "application:CreateApplication",
+      "reason": "Implementation detail, not included in the explicit proposed public API."
+    },
+    {
+      "id": "application:runInterruptibleProcess",
       "reason": "Implementation detail, not included in the explicit proposed public API."
     },
     {

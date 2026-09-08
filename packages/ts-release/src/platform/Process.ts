@@ -1,14 +1,8 @@
 import * as Effect from "effect/Effect"
 import { spawn } from "node:child_process"
 
-export interface ProcessBounds {
-  readonly timeoutMilliseconds: number
-  readonly maximumOutputBytes: number
-}
-export interface ProcessResult {
-  readonly exitCode: number
-  readonly stdout: Uint8Array
-}
+export type ProcessBounds = Readonly<{ timeoutMilliseconds: number; maximumOutputBytes: number }>
+export type ProcessResult = Readonly<{ exitCode: number; stdout: Uint8Array }>
 type RawCommand<E> = (
   args: readonly string[],
   input?: Uint8Array,
@@ -57,6 +51,11 @@ export const command = <E>(
         failed = true
         kill()
       }
+      const output = (chunk: Buffer, capture = false) => {
+        bytes += chunk.length
+        if (bytes > options.maximumOutputBytes) stop()
+        else if (capture) chunks.push(Buffer.from(chunk))
+      }
       const timer = setTimeout(stop, options.timeoutMilliseconds)
       try {
         child = spawn(executable, selected.args, {
@@ -68,22 +67,10 @@ export const command = <E>(
           stdio: ["pipe", "pipe", "pipe"],
         })
         closed = new Promise<void>((resolve) => child!.once("close", () => resolve()))
-        child.on("error", () => {
-          failed = true
-        })
+        child.on("error", stop)
         child.stdin!.on("error", stop)
-        child.stdout!.on("data", (chunk: Buffer) => {
-          bytes += chunk.length
-          if (bytes > options.maximumOutputBytes) {
-            stop()
-            return
-          }
-          chunks.push(Buffer.from(chunk))
-        })
-        child.stderr!.on("data", (chunk: Buffer) => {
-          bytes += chunk.length
-          if (bytes > options.maximumOutputBytes) stop()
-        })
+        child.stdout!.on("data", (chunk: Buffer) => output(chunk, true))
+        child.stderr!.on("data", output)
         child.on("close", (code) => {
           finished = true
           clearTimeout(timer)

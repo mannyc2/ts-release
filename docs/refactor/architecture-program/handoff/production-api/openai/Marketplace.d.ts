@@ -1,7 +1,6 @@
-import * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
-import { ReleaseError } from "@mannyc1/ts-release";
+import { Effect, Schema } from "effect";
 import type { Tree, ReadContent } from "@mannyc1/ts-release/bundle";
+export declare const sourcePath: (value: string) => boolean;
 declare const MarketplaceEntry_base: Schema.Class<MarketplaceEntry, Schema.Struct<{
     readonly name: Schema.String;
     readonly source: Schema.Struct<{
@@ -25,7 +24,6 @@ declare const Marketplace_base: Schema.Class<Marketplace, Schema.Struct<{
 }>, {}>;
 export declare class Marketplace extends Marketplace_base {
 }
-export declare const sourcePath: (value: string) => boolean;
 export declare const marketplaceDocument: (input: unknown) => Marketplace;
 export declare const marketplace: (input: {
     readonly plugin: Tree;
@@ -38,5 +36,5 @@ export declare const marketplace: (input: {
     path: ".agents/plugins/marketplace.json";
     document: Marketplace;
     bytes: Uint8Array<ArrayBuffer>;
-}>, ReleaseError, never>;
+}>, import("@mannyc1/ts-release").ReleaseError, never>;
 export {};

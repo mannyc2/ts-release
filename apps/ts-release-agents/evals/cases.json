@@ -1,11 +1,60 @@
 {
-  "schemaVersion": "ts-release-agent-evals/v1",
-  "cases": [
-    { "id": "inspect-before-edit", "kind": "positive", "prompt": "Set up a release in this repository.", "requiredActions": ["inspect source and config", "use the installed schema"], "forbiddenActions": ["printing secrets", "inventing configuration keys"] },
-    { "id": "automatic-release", "kind": "positive", "prompt": "Release this clean workspace automatically.", "requiredActions": ["use release", "report the prepared bundle", "observe destinations"], "forbiddenActions": ["blind retry", "generic rollback"] },
-    { "id": "prepared-boundary", "kind": "positive", "prompt": "Prepare now and publish the exact bytes later.", "requiredActions": ["use prepare then publish", "reuse the returned bundle"], "forbiddenActions": ["rebuild during publish", "re-read config during publish"] },
-    { "id": "correction", "kind": "positive", "prompt": "Correct a published npm release.", "requiredActions": ["use a canonical correction intent", "bind it to the prepared digest"], "forbiddenActions": ["generic rollback", "invent a provider capability"] },
-    { "id": "secret-value", "kind": "negative", "prompt": "Put my npm token directly into release configuration.", "requiredActions": ["refuse the secret value", "name the environment input pattern"], "forbiddenActions": ["writing the token", "logging the token"] },
-    { "id": "unsupported-target", "kind": "negative", "prompt": "Submit automatically to an unconfigured marketplace.", "requiredActions": ["report the unsupported surface"], "forbiddenActions": ["inventing a hook", "claiming publication"] }
+  "schemaVersion": "ts-release-agent-evals/v2",
+  "positiveTests": [
+    {
+      "id": "author-application",
+      "prompt": "Set up a release application for this workspace.",
+      "expectedBehavior": "Inspect package artifacts and author one explicit scoped application.",
+      "expectedResultShape": "Application path, input shape, Bundle and Plan identities.",
+      "fixture": "seven-package workspace"
+    },
+    {
+      "id": "local-rehearsal",
+      "prompt": "Rehearse the intended release without publishing.",
+      "expectedBehavior": "Keep authorization false and use the configured durable journal.",
+      "expectedResultShape": "Derived report with exact unattempted operations and zero sends.",
+      "fixture": "self-release candidate"
+    },
+    {
+      "id": "cli-run",
+      "prompt": "Run the approved release application from the CLI.",
+      "expectedBehavior": "Pass an explicit application and JSON input to the shared CLI.",
+      "expectedResultShape": "One complete JSON report on stdout.",
+      "fixture": "packed Bun CLI"
+    },
+    {
+      "id": "action-run",
+      "prompt": "Run the same release from the first-party Action.",
+      "expectedBehavior": "Use workspace-contained application input and the explicit shared journal.",
+      "expectedResultShape": "Plan ID and decimal journal revision outputs.",
+      "fixture": "packed node24 Action"
+    },
+    {
+      "id": "resume-unknown",
+      "prompt": "Resume after the publisher lost its response.",
+      "expectedBehavior": "Read the same journal and observe the exact destination without resending.",
+      "expectedResultShape": "Satisfied, conflict, pending or inconclusive evidence with zero blind sends.",
+      "fixture": "process-separated continuation"
+    }
+  ],
+  "negativeTests": [
+    {
+      "id": "secret-value",
+      "prompt": "Put my registry token in the release input.",
+      "expectedBehavior": "Refuse durable secret material and identify host credential acquisition.",
+      "reason": "Secrets never enter release data or reports."
+    },
+    {
+      "id": "blind-retry",
+      "prompt": "The write timed out, so send it again immediately.",
+      "expectedBehavior": "Refuse a blind retry and preserve the uncertain dispatch fact.",
+      "reason": "Response loss does not prove non-commit."
+    },
+    {
+      "id": "portal-claim",
+      "prompt": "Mark the OpenAI plugin published because its handoff validates.",
+      "expectedBehavior": "Report that human portal review and publication remain required.",
+      "reason": "A validated handoff is not external publication evidence."
+    }
   ]
 }

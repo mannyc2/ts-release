@@ -1,4 +1,4 @@
-import * as Effect from "effect/Effect";
+import { Effect } from "effect";
 import { type Operation } from "@mannyc1/ts-release";
 import { File, type ArtifactAccess } from "@mannyc1/ts-release/bundle";
 import type { HttpProviderDefinition, HttpRead } from "@mannyc1/ts-release/http";

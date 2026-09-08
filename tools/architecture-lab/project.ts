@@ -183,11 +183,18 @@ const appleNative = ["RestoredSource", "FinalNativeArtifact", "NativeAppleError"
 const applePreparation = ["preparationScopes", "runPreparation", "validateApplePublication", "reportAppleContext"];
 const bundleOwners: Record<string, string[]> = {
     "kernel.ArtifactModel": ["Content", "AdoptionError", "File", "Tree", "Artifact", "Bundle"],
-    "kernel.Content": ["ContentOwner", "ReadContent", "PutContent", "ArtifactAccess"],
+    "kernel.Content": [
+        "ContentOwner",
+        "ReadContent",
+        "PutContent",
+        "ArtifactAccess",
+        "readVerifiedContent",
+    ],
     "kernel.BundleFinalize": ["finalize"],
     "kernel.BundleCodec": ["encodeBundle", "loadBundle"],
     "kernel.ArtifactReader": ["verifiedArtifacts"],
     "kernel.Checksums": ["ChecksumInput", "renderSha256Sums", "verifySha256Sums"],
+    "kernel.Tar": ["TarEntry", "readTarBytes", "registerArchivePath"],
 };
 const surfaces: Surface[] = [
     { id: "core.root", entry: "kernel.Entry", symbols: kernel },

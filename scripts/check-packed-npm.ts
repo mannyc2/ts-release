@@ -8,6 +8,7 @@ const root = resolve(import.meta.dir, ".."),
 const includeCatalog = process.argv.includes("--catalog")
 const includeGithub = process.argv.includes("--github") || includeCatalog
 const includePyPi = process.argv.includes("--pypi") || includeGithub
+const includeAi = process.argv.includes("--ai") || includeCatalog
 const includeTransports = process.argv.includes("--transports")
 const owners = [
   "ts-release",
@@ -15,6 +16,7 @@ const owners = [
   ...(includePyPi ? ["pypi"] : []),
   ...(includeGithub ? ["github"] : []),
   ...(includeCatalog ? ["catalog"] : []),
+  ...(includeAi ? ["mcp", "openai"] : []),
 ]
 const node = process.env.TS_RELEASE_ACCEPTANCE_NODE ?? "node"
 const commands: unknown[] = []
@@ -53,6 +55,7 @@ for (const owner of owners) {
   ])
   archives.push({ owner, archive, sha256: hash(await readFile(archive)) })
 }
+const archiveByOwner = Object.fromEntries(archives.map(({ owner, archive }) => [owner, archive]))
 const producer = join(work, "producer")
 await mkdir(producer)
 await writeFile(
@@ -104,6 +107,12 @@ for (const manager of ["bun", "npm"]) {
         ...(includeGithub ? { "@mannyc1/ts-release-github": `file:${archives[3]!.archive}` } : {}),
         ...(includeCatalog
           ? { "@mannyc1/ts-release-catalog": `file:${archives[4]!.archive}` }
+          : {}),
+        ...(includeAi
+          ? {
+              "@mannyc1/ts-release-mcp": `file:${archiveByOwner.mcp}`,
+              "@mannyc1/ts-release-openai": `file:${archiveByOwner.openai}`,
+            }
           : {}),
         effect: "4.0.0-beta.107",
         typescript: "6.0.3",
@@ -205,6 +214,33 @@ void [formula, manifest, Homebrew.Download, Homebrew.Formula, Homebrew.render, S
 `,
     )
   }
+  if (includeAi) {
+    await writeFile(
+      join(cwd, "ai-consumer.mjs"),
+      `import assert from "node:assert/strict";
+import * as Mcp from "@mannyc1/ts-release-mcp";
+import * as OpenAi from "@mannyc1/ts-release-openai";
+assert.equal(typeof Mcp.validate, "function");
+assert.equal(typeof Mcp.publish, "function");
+assert.equal(typeof OpenAi.validatePackage, "function");
+assert.equal(typeof OpenAi.submission, "function");
+console.log(JSON.stringify({ runtime: process.version, bun: process.versions.bun ?? null, family: "ai", mcpExports: Object.keys(Mcp).length, openAiExports: Object.keys(OpenAi).length }));
+`,
+    )
+    await writeFile(
+      join(cwd, "consumer.ts"),
+      (await readFile(join(cwd, "consumer.ts"), "utf8")) +
+        `
+import * as Mcp from "@mannyc1/ts-release-mcp";
+import * as OpenAi from "@mannyc1/ts-release-openai";
+const mcpManifest: Mcp.Manifest = null as never;
+const mcpPackage: Mcp.Package = null as never;
+const pluginManifest: OpenAi.Manifest = null as never;
+const submission: OpenAi.Submission = null as never;
+void [mcpManifest, mcpPackage, pluginManifest, submission, Mcp.validate, Mcp.publish, OpenAi.validatePackage, OpenAi.submission];
+`,
+    )
+  }
   if (includeTransports) {
     for (const name of [
       "git-native-consumer.mjs",
@@ -259,6 +295,9 @@ void [gitHost, gitOptions, journalOptions, readHttp, exchange, Git.prepare, Git.
   if (includeCatalog)
     for (const runtime of [node, process.execPath])
       runtimes.push(JSON.parse(await run(cwd, [runtime, "catalog-consumer.mjs"])))
+  if (includeAi)
+    for (const runtime of [node, process.execPath])
+      runtimes.push(JSON.parse(await run(cwd, [runtime, "ai-consumer.mjs"])))
   if (includeTransports)
     for (const runtime of [node, process.execPath]) {
       runtimes.push(

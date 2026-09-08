@@ -1,5 +1,6 @@
 import * as Schema from "effect/Schema";
-import { RequestFacts, type Operation, type ProviderContext, type ObservationStatus } from "@mannyc1/ts-release";
+import { RequestFacts, type ObservationStatus, type Operation } from "@mannyc1/ts-release";
+import type { ProviderContext } from "@mannyc1/ts-release";
 import * as Model from "./Model.js";
 import { BoundScope, NativeFacts } from "./Binding.js";
 declare const Receipt_base: Schema.Class<Receipt, Schema.Struct<{

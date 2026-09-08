@@ -1,4 +1,5 @@
-import { NoReplay, type PreparedRequest, RequestFacts, type Operation, type ProviderContext } from "@mannyc1/ts-release";
+import { NoReplay, RequestFacts, type Operation } from "@mannyc1/ts-release";
+import type { PreparedRequest, ProviderContext } from "@mannyc1/ts-release";
 import { BoundScope } from "./Binding.js";
 export declare const sha256: (bytes: Uint8Array) => string;
 export declare const nativeRequest: (scope: BoundScope, bytes?: Uint8Array) => {

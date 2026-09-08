@@ -1,6 +1,4 @@
-import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { ReleaseError } from "./Error.js"
 
 export class Operation extends Schema.Class<Operation>("ReleaseOperation")({
   operationId: Schema.String,

@@ -1,24 +1,14 @@
 import * as Context from "effect/Context"
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
-import {
-  type JournalContext,
-  type JournalStore,
-  type Snapshot,
-  verifyEvents,
-  verifyNativeEvidence,
-  verifyPreparationSelection,
-} from "../Journal.js"
-import { type ProviderDefinition, type Transport, verifyProviderContracts } from "../Provider.js"
-import {
-  type MachineConstructor,
-  assertJournalAppend,
-  historyMachine,
-  projectReport,
-} from "./Decision.js"
+import { Effect, Schema } from "effect"
+import { verifyNativeEvidence, verifyPreparationSelection } from "../Journal.js"
+import type { JournalContext, JournalStore, Snapshot } from "../Journal.js"
+import { requestFingerprint, verifyProviderContracts } from "../Provider.js"
+import type { ProviderDefinition, Transport } from "../Provider.js"
+import { assertJournalAppend, historyMachine, projectReport } from "./Decision.js"
+import type { Machine, MachineConstructor } from "./Decision.js"
 import { JournalEvent, Plan } from "./ReleaseModel.js"
-import { decodeOwned, freeze } from "./Identity.js"
-import { ReleaseError, attempt, fail } from "./Error.js"
+import { decodeOwned } from "./Identity.js"
+import { attempt, fail, reject } from "./Error.js"
 import { loadPlan } from "../Plan.js"
 import { captureTransport } from "./GitAuthority.js"
 
@@ -37,52 +27,13 @@ export class Host extends Context.Service<Host, HostShape>()("ts-release/Host") 
  * state stays behind its functions; callers cannot replace this invocation's
  * provider table, transport, journal scopes, or clock after admission. */
 export const captureHost = (input: HostShape): HostShape => {
-  verifyProviderContracts(input.providers)
   return Object.freeze({
     store: Object.freeze({
       read: input.store.read.bind(input.store),
       append: input.store.append.bind(input.store),
     }),
     transport: captureTransport(input.transport),
-    providers: Object.freeze(
-      input.providers.map((provider) =>
-        Object.freeze({
-          contract: provider.contract,
-          definitionId: provider.definitionId,
-          intentVersion: provider.intentVersion,
-          intentCodec: provider.intentCodec,
-          ...(provider.validatePlan && { validatePlan: provider.validatePlan.bind(provider) }),
-          ...(provider.requestCorresponds && {
-            requestCorresponds: provider.requestCorresponds.bind(provider),
-          }),
-          receiptVersion: provider.receiptVersion,
-          receiptCodec: provider.receiptCodec,
-          prepare: provider.prepare.bind(provider),
-          receiptCorresponds: provider.receiptCorresponds.bind(provider),
-          classifyReceipt: provider.classifyReceipt.bind(provider),
-          ...(provider.observe && {
-            observe: provider.observe.bind(provider),
-            observationVersion: provider.observationVersion!,
-            observationCodec: provider.observationCodec!,
-            classifyObservation: provider.classifyObservation!.bind(provider),
-          }),
-          ...(provider.rejection && {
-            rejection: Object.freeze({
-              version: provider.rejection.version,
-              codec: provider.rejection.codec,
-              corresponds: provider.rejection.corresponds.bind(provider.rejection),
-            }),
-          }),
-          ...(provider.dispatchError && {
-            dispatchError: Object.freeze({
-              version: provider.dispatchError.version,
-              codec: provider.dispatchError.codec,
-              corresponds: provider.dispatchError.corresponds.bind(provider.dispatchError),
-            }),
-          }),
-        }),
-      ),
-    ),
+    providers: verifyProviderContracts(input.providers),
     now: input.now.bind(input),
     uniqueId: input.uniqueId.bind(input),
     ...(input.machine && { machine: input.machine.bind(input) }),
@@ -102,9 +53,6 @@ export const captureHost = (input: HostShape): HostShape => {
   })
 }
 export const currentHost = Effect.flatMap(Host, (host) => attempt(() => captureHost(host)))
-/** Both inputs were owned and frozen at admission, preserving Schema classes. */
-export const model = (host: HostShape, plan: Plan, events: ReadonlyArray<JournalEvent>) =>
-  (host.machine ?? historyMachine)(plan, events, scopeKind(host, plan))
 export const journalIdFor = (host: HostShape, plan: Plan) =>
   host.journal?.journalId ?? plan.journalId
 export const scopeKind = (host: HostShape, plan: Plan) =>
@@ -112,28 +60,21 @@ export const scopeKind = (host: HostShape, plan: Plan) =>
   "PublicationScope"
 export const read = Effect.fn("ts-release.readHistory")(function* (host: HostShape, plan: Plan) {
   yield* attempt(() => {
-    verifyProviderContracts(host.providers)
     const now = host.now()
     if (!Number.isSafeInteger(now) || now < 0)
       fail("host-time", "Host time must be a nonnegative safe integer")
   })
   const journalId = journalIdFor(host, plan)
   if (journalId !== plan.journalId)
-    return yield* new ReleaseError({
-      code: "journal-binding",
-      message: "Host cannot move an immutable plan into another journal",
-    })
+    return yield* reject("journal-binding", "Host cannot move a plan into another journal")
   const scopes = host.journal?.scopes ?? [{ _tag: "PublicationScope" as const, plan }]
   if (scopes.filter((scope) => scope._tag === "PublicationScope").length > 1) {
-    return yield* new ReleaseError({
-      code: "publication-scope",
-      message: "A release journal admits at most one publication plan",
-    })
+    return yield* reject("publication-scope", "A journal admits at most one publication plan")
   }
   const registered = new Map<string, Plan>()
   for (const scope of scopes) {
     if (scope._tag !== "PreparationScope" && scope._tag !== "PublicationScope")
-      return yield* new ReleaseError({ code: "scope-kind", message: "Unknown release scope kind" })
+      return yield* reject("scope-kind", "Unknown release scope kind")
     const admitted = yield* loadPlan(scope.plan, host.providers)
     yield* attempt(() => {
       if (admitted.journalId !== journalId)
@@ -157,10 +98,7 @@ export const read = Effect.fn("ts-release.readHistory")(function* (host: HostSha
     })
   }
   if (!registered.has(plan.planId))
-    return yield* new ReleaseError({
-      code: "unregistered-scope",
-      message: "Current plan is not admitted to this journal",
-    })
+    return yield* reject("unregistered-scope", "Current plan is not admitted to this journal")
   const stored = yield* host.store.read(journalId)
   const snapshot = yield* attempt(() =>
     decodeOwned(
@@ -181,32 +119,28 @@ export const read = Effect.fn("ts-release.readHistory")(function* (host: HostSha
       ids.add(event.eventId)
     }
   })
-  const decoded: JournalEvent[] = []
-  let selected: ReturnType<typeof model> | undefined
+  let selected: Machine | undefined
   for (const admitted of registered.values()) {
-    const scoped = yield* verifyEvents(
-      admitted,
+    const kind = scopeKind(host, admitted)
+    const scoped = Object.freeze(
       snapshot.events.filter((event) => event.planId === admitted.planId),
-      journalId,
     )
+    for (const { body } of scoped)
+      if (
+        body._tag === "DispatchStarted" &&
+        body.fingerprint !== (yield* requestFingerprint(body.request))
+      )
+        return yield* reject("request-fingerprint", "Historical request fingerprint mismatch")
     yield* attempt(() => verifyNativeEvidence(admitted, scoped, host.providers))
-    if (scopeKind(host, admitted) === "PreparationScope")
-      yield* attempt(() => verifyPreparationSelection(scoped))
+    if (kind === "PreparationScope") yield* attempt(() => verifyPreparationSelection(scoped))
     yield* attempt(() => {
       for (let index = 0; index < scoped.length; index++)
-        assertJournalAppend(
-          admitted,
-          scoped.slice(0, index),
-          scoped[index]!,
-          scopeKind(host, admitted),
-        )
+        assertJournalAppend(admitted, scoped.slice(0, index), scoped[index]!, kind)
     })
-    const machine = yield* attempt(() => model(host, admitted, scoped))
-    decoded.push(...scoped)
-    if (admitted.planId === plan.planId) selected = machine
+    if (admitted.planId === plan.planId)
+      selected = yield* attempt(() => (host.machine ?? historyMachine)(admitted, scoped, kind))
   }
-  const byId = new Map(decoded.map((event) => [event.eventId, event]))
-  const events = snapshot.events.map((event) => byId.get(event.eventId)!)
+  const events = snapshot.events
   const machine = selected!
   return {
     plans: [...registered.values()],

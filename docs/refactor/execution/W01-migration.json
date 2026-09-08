@@ -7942,7 +7942,11 @@
         "src/resolve/resolve.ts"
       ],
       "responsibility": "Actual producer/command/compiler/pack and owned-file/tree/collection/archive/checksum/source lineage obligations remain with effect-build integration. Do not infer full producer acceptance from W01 owned File/Tree fixtures. Preserve host containment, inode-alias rejection, native ordering, literal selection, runtime/toolchain and distinct owned content guarantees. Also retain resolve.ts missing source commit and source/version/name/repository disagreement guards at actual source/producer boundaries.",
-      "status": "open"
+      "status": "verified",
+      "verification": {
+        "record": "W08-verification.json",
+        "scope": "Owned producer, source, archive, checksum and final artifact migration duties pass local direct, packed producer and recovery matrices; native credentialed platform acceptance remains Plans009/010"
+      }
     },
     {
       "wave": "W09",
@@ -7950,7 +7954,11 @@
         "src/model/secret-patterns.ts"
       ],
       "responsibility": "OpenAI shipped plugin secret exclusion remains a native artifact inspection obligation, independent of bounded kernel diagnostics.",
-      "status": "open"
+      "status": "verified",
+      "verification": {
+        "record": "W09-verification.json",
+        "scope": "OpenAI package source, rendered tree and final owned bytes reject token-shaped material; hosted portal acceptance remains Plan009"
+      }
     },
     {
       "wave": "W10",
@@ -7965,7 +7973,11 @@
         "src/resolve/resolve.ts"
       ],
       "responsibility": "Thin CLI/Action/self-release composition, exact transfer/provenance/report retention, shared remote journal and native cleanup remain open. Old prepared URI/manifest APIs are hard-cut; no compatibility reader or orchestration engine is retained. Also retain resolve.ts exact user/source/project/repository disagreement rejection when composing the self-release application.",
-      "status": "open"
+      "status": "verified",
+      "verification": {
+        "record": "W10-verification.json",
+        "scope": "Hard-cut CLI, Action and self-release composition preserves exact Bundle/Plan/source/report/journal identity and scoped cleanup in local packed hosts; hosted acceptance remains Plans009/010"
+      }
     }
   ]
 }

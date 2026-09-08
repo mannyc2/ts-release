@@ -1,7 +1,16 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
-import { ReleaseError, attempt, fail } from "./Error.js"
+import { Effect, Schema } from "effect"
+import { attempt, fail, failure } from "./Error.js"
 
+/** Unicode scalar order equals UTF-8 byte order for admitted strings. */
+export const compareText = (left: string, right: string): number => {
+  const a = [...left],
+    b = [...right]
+  for (let index = 0; index < Math.min(a.length, b.length); index++) {
+    const difference = a[index]!.codePointAt(0)! - b[index]!.codePointAt(0)!
+    if (difference) return difference
+  }
+  return a.length - b.length
+}
 /** Canonical JSON includes every owned field; hidden data and accessors reject. */
 export const canonical = (input: unknown): string => {
   const active = new Set<object>()
@@ -33,22 +42,10 @@ export const canonical = (input: unknown): string => {
         fail("invalid-json-array", "Arrays must be dense and contain only indexed elements")
       encoded = `[${value.map(visit).join(",")}]`
     } else {
-      let prototype = Object.getPrototypeOf(value)
-      let schemaClass = false
-      while (prototype && prototype !== Object.prototype) {
-        if (
-          Reflect.ownKeys(prototype).some(
-            (key) => typeof key === "string" && key.startsWith("~effect/Schema/Class/"),
-          )
-        )
-          schemaClass = true
-        prototype = Object.getPrototypeOf(prototype)
-      }
-      if (
-        Object.getPrototypeOf(value) !== null &&
-        Object.getPrototypeOf(value) !== Object.prototype &&
-        !schemaClass
-      )
+      const prototype = Object.getPrototypeOf(value)
+      const constructor =
+        prototype && Object.getOwnPropertyDescriptor(prototype, "constructor")?.value
+      if (prototype !== null && prototype !== Object.prototype && !Schema.isSchema(constructor))
         fail("invalid-json-object", "Only plain records and Schema classes are canonical data")
       encoded = `{${(keys as string[])
         .sort()
@@ -63,16 +60,10 @@ export const canonical = (input: unknown): string => {
 
 /** Copy only admitted data; never retain caller aliases behind durable identities. */
 export const copyData = (input: unknown): unknown => JSON.parse(canonical(input))
-/** Unicode scalar order equals UTF-8 byte order for admitted strings. */
-export const compareText = (left: string, right: string): number => {
-  const a = [...left],
-    b = [...right]
-  for (let index = 0; index < Math.min(a.length, b.length); index++) {
-    const difference = a[index]!.codePointAt(0)! - b[index]!.codePointAt(0)!
-    if (difference) return difference
-  }
-  return a.length - b.length
-}
+export const sameData = (left: unknown, right: unknown): boolean =>
+  canonical(left) === canonical(right)
+export const sameBytes = (left: Uint8Array, right: Uint8Array): boolean =>
+  left.length === right.length && left.every((byte, index) => byte === right[index])
 export const freeze = <A>(value: A): A => {
   if (value !== null && typeof value === "object") {
     Object.values(value).forEach(freeze)
@@ -93,8 +84,7 @@ export const parseCanonical = (text: string): unknown => {
 export const sha256 = Effect.fn("ts-release.sha256")(function* (bytes: Uint8Array) {
   const digest = yield* Effect.tryPromise({
     try: () => globalThis.crypto.subtle.digest("SHA-256", new Uint8Array(bytes)),
-    catch: () =>
-      new ReleaseError({ code: "digest-failed", message: "Host WebCrypto SHA-256 failed" }),
+    catch: () => failure("digest-failed", "Host WebCrypto SHA-256 failed"),
   })
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")
 })
@@ -104,16 +94,6 @@ export const hashCanonical = Effect.fn("ts-release.hashCanonical")(function* (
 ) {
   const encoded = yield* attempt(() => canonical(value))
   const utf8 = new TextEncoder()
-  const domainBytes = utf8.encode(domain)
-  const payloadBytes = utf8.encode(encoded)
-  const prefix = utf8.encode(`${domainBytes.length}:`)
-  const middle = utf8.encode(`${payloadBytes.length}:`)
-  const bytes = new Uint8Array(
-    prefix.length + domainBytes.length + middle.length + payloadBytes.length,
-  )
-  bytes.set(prefix)
-  bytes.set(domainBytes, prefix.length)
-  bytes.set(middle, prefix.length + domainBytes.length)
-  bytes.set(payloadBytes, prefix.length + domainBytes.length + middle.length)
-  return yield* sha256(bytes)
+  const framed = `${utf8.encode(domain).length}:${domain}${utf8.encode(encoded).length}:${encoded}`
+  return yield* sha256(utf8.encode(framed))
 })

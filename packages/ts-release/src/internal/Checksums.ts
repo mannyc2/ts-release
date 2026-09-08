@@ -1,15 +1,11 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
+import { Effect, Schema } from "effect"
 import * as Artifact from "effect-build/Artifact"
 import { OwnedBundle, OwnedFile } from "./ArtifactModel.js"
 import type { ContentOwner } from "./Content.js"
-import { attempt, fail } from "./Error.js"
+import { attempt, fail, reject } from "./Error.js"
 import { canonical, compareText, decodeOwned } from "./Identity.js"
 
-export interface ChecksumInput {
-  readonly publicName: string
-  readonly file: OwnedFile
-}
+export type ChecksumInput = Readonly<{ publicName: string; file: OwnedFile }>
 const Input = Schema.Struct({ publicName: Schema.String, file: OwnedFile })
 const safeName = (name: string) => {
   Schema.decodeUnknownSync(Artifact.PortableRelativePath)(name)
@@ -67,8 +63,6 @@ export const verifySha256Sums = Effect.fn("ts-release.verifySha256Sums")(functio
   const entries = yield* prepare(bundle, inputs)
   const expected = render(entries)
   if (bytes.length !== expected.length || !expected.every((value, index) => bytes[index] === value))
-    return yield* attempt(() =>
-      fail("checksum-bytes", "SHA256SUMS differs from the exact Bundle view"),
-    )
+    return yield* reject("checksum-bytes", "SHA256SUMS differs from the exact Bundle view")
   for (const entry of entries) yield* verifyContent(entry.file.content)
 })

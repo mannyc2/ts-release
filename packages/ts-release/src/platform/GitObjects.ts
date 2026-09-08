@@ -1,17 +1,11 @@
 import { checkedText, nativeText as text } from "./GitProcess.js"
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
+import { Effect, Schema } from "effect"
 import { createHash } from "node:crypto"
 import { canonical, decodeOwned, parseCanonical } from "../internal/Identity.js"
 import { attempt } from "../internal/Error.js"
 import { readVerifiedContent, type ReadContent } from "../internal/Content.js"
-import {
-  CommitInput,
-  FileEdit,
-  invalid,
-  objectFormat,
-  validateFiles,
-} from "../internal/GitCatalog.js"
+import { CommitInput, FileEdit, invalid, objectFormat } from "../internal/GitCatalog.js"
+import { validateFiles } from "../internal/GitCatalog.js"
 import { checked, type GitCommand, type GitEnvironment } from "./GitProcess.js"
 
 class EncodedObject extends Schema.Class<EncodedObject>("GitEncodedObject")({

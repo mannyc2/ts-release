@@ -1,37 +1,16 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
+import type * as Effect from "effect/Effect"
 import { JournalEvent, Plan } from "./internal/ReleaseModel.js"
-import { ReleaseError, attempt, fail } from "./internal/Error.js"
-import { canonical, decodeOwned, freeze } from "./internal/Identity.js"
-import {
-  type ProviderDefinition,
-  decodeObservationEvidence,
-  evidenceContext,
-  isCoreErrorVersion,
-  nativeEvidence,
-  requestFingerprint,
-} from "./Provider.js"
+import { fail, type ReleaseError } from "./internal/Error.js"
+import { canonical } from "./internal/Identity.js"
+import { assertRequestCorresponds, decodeObservationEvidence } from "./Provider.js"
+import { evidenceContext, isCoreErrorVersion } from "./Provider.js"
+import { nativeEvidence, type ProviderDefinition } from "./Provider.js"
 
-export interface Snapshot {
-  readonly revision: number
-  readonly events: ReadonlyArray<JournalEvent>
-}
+export type Snapshot = Readonly<{ revision: number; events: ReadonlyArray<JournalEvent> }>
+type RevisedAppend = "Appended" | "AlreadyRecorded" | "RevisionMismatch"
 export type AppendResult =
-  | {
-      readonly _tag: "Appended"
-      readonly revision: number
-    }
-  | {
-      readonly _tag: "AlreadyRecorded"
-      readonly revision: number
-    }
-  | {
-      readonly _tag: "RevisionMismatch"
-      readonly revision: number
-    }
-  | {
-      readonly _tag: "AmbiguousStorageOutcome"
-    }
+  | { readonly _tag: RevisedAppend; readonly revision: number }
+  | { readonly _tag: "AmbiguousStorageOutcome" }
 export interface JournalStore {
   readonly read: (journalId: string) => Effect.Effect<Snapshot, ReleaseError>
   readonly append: (
@@ -43,45 +22,10 @@ export interface JournalStore {
 /** Preparation views are reconstructed from one concrete durable input; they
  * are never a second persisted publication plan or a future-work recipe. */
 export type Scope =
-  | {
-      readonly _tag: "PublicationScope"
-      readonly plan: Plan
-    }
-  | {
-      readonly _tag: "PreparationScope"
-      readonly plan: Plan
-    }
-export interface JournalContext {
-  readonly journalId: string
-  readonly scopes: ReadonlyArray<Scope>
-}
-export const verifyEvents = Effect.fn("ts-release.verifyEvents")(function* (
-  plan: Plan,
-  input: ReadonlyArray<JournalEvent>,
-  journalId: string = plan.journalId,
-) {
-  const ids = new Set<string>()
-  const events: JournalEvent[] = []
-  const owned = yield* attempt(() => decodeOwned(Schema.Array(JournalEvent), input))
-  for (const event of owned) {
-    yield* attempt(() => {
-      canonical(event)
-      if (event.journalId !== journalId || event.planId !== plan.planId || ids.has(event.eventId))
-        fail("journal-envelope", "Wrong journal, plan or repeated event ID")
-      ids.add(event.eventId)
-    })
-    if (
-      event.body._tag === "DispatchStarted" &&
-      event.body.fingerprint !== (yield* requestFingerprint(event.body.request))
-    )
-      return yield* new ReleaseError({
-        code: "request-fingerprint",
-        message: "Historical request fingerprint mismatch",
-      })
-    events.push(event)
-  }
-  return freeze(events)
-})
+  | { readonly _tag: "PublicationScope"; readonly plan: Plan }
+  | { readonly _tag: "PreparationScope"; readonly plan: Plan }
+export type JournalContext = Readonly<{ journalId: string; scopes: ReadonlyArray<Scope> }>
+type Started = Extract<JournalEvent["body"], { readonly _tag: "DispatchStarted" }>
 /** A preparation selects one immutable output. Receipt and observation channels
  * are distinct; their payloads cannot be assumed equivalent across codecs. */
 export const verifyPreparationSelection = (events: ReadonlyArray<JournalEvent>): void => {
@@ -118,41 +62,35 @@ export const verifyNativeEvidence = (
   events: ReadonlyArray<JournalEvent>,
   providers: ReadonlyArray<ProviderDefinition>,
 ): void => {
-  const starts = new Map<
-    string,
-    Extract<
-      JournalEvent["body"],
-      {
-        readonly _tag: "DispatchStarted"
-      }
-    >
-  >()
+  const starts = new Map<string, Started>()
   const receipts = new Map<string, unknown[]>()
+  const definition = (operationId: string) => {
+    const operation = plan.operations.find((item) => item.operationId === operationId)
+    if (!operation) fail("unknown-operation", "Evidence references an unknown operation")
+    return {
+      operation,
+      provider: providers.find((item) => item.definitionId === operation.definitionId)!,
+    }
+  }
+  const dispatched = (dispatchId: string, kind: string) => {
+    const start = starts.get(dispatchId)
+    if (!start) fail(`unassociated-${kind}`, `${kind} has no preceding dispatch`)
+    return { start, ...definition(start.operationId) }
+  }
   for (let index = 0; index < events.length; index++) {
     const { body } = events[index]!
     if (body._tag === "DispatchStarted") {
-      const operation = plan.operations.find((item) => item.operationId === body.operationId)
-      if (!operation) fail("unknown-operation", "Dispatch references an unknown operation")
-      const provider = providers.find((item) => item.definitionId === operation.definitionId)!
-      if (
-        provider.requestCorresponds &&
-        provider.requestCorresponds(
-          operation,
-          body.request,
-          evidenceContext(plan, operation, events.slice(0, index)),
-        ) !== true
+      const { operation, provider } = definition(body.operationId)
+      assertRequestCorresponds(
+        provider,
+        operation,
+        body.request,
+        evidenceContext(plan, operation, events.slice(0, index)),
       )
-        fail(
-          "request-correspondence",
-          "Historical request differs from preceding dependency evidence",
-        )
       starts.set(body.dispatchId, body)
     }
     if (body._tag === "ReceiptAccepted") {
-      const start = starts.get(body.dispatchId)
-      const operation = plan.operations.find((item) => item.operationId === start?.operationId)
-      if (!start || !operation) fail("unassociated-receipt", "Receipt has no preceding dispatch")
-      const provider = providers.find((item) => item.definitionId === operation.definitionId)!
+      const { start, operation, provider } = dispatched(body.dispatchId, "receipt")
       if (body.receiptVersion !== provider.receiptVersion)
         fail("unknown-receipt-codec", "Native receipt version is unavailable")
       const receipt = nativeEvidence(provider.receiptCodec, body.receipt)
@@ -166,13 +104,8 @@ export const verifyNativeEvidence = (
       receipts.set(operation.operationId, [...(receipts.get(operation.operationId) ?? []), receipt])
     }
     if (body._tag === "DispatchRejectedBeforeCommit") {
-      const start = starts.get(body.dispatchId)
-      const operation = plan.operations.find((item) => item.operationId === start?.operationId)
-      if (!start || !operation)
-        fail("unassociated-rejection", "Rejection has no preceding dispatch")
-      const boundary = providers.find(
-        (item) => item.definitionId === operation.definitionId,
-      )!.rejection
+      const { start, operation, provider } = dispatched(body.dispatchId, "rejection")
+      const boundary = provider.rejection
       if (!boundary || boundary.version !== body.proofVersion)
         fail("unknown-rejection-codec", "Native terminal noncommit proof version is unavailable")
       const proof = nativeEvidence(boundary.codec, body.proof)
@@ -183,9 +116,7 @@ export const verifyNativeEvidence = (
         )
     }
     if (body._tag === "ObservationRecorded") {
-      const operation = plan.operations.find((item) => item.operationId === body.operationId)
-      if (!operation) fail("unknown-operation", "Observation references an unknown operation")
-      const provider = providers.find((item) => item.definitionId === operation.definitionId)!
+      const { operation, provider } = definition(body.operationId)
       const evidence = decodeObservationEvidence(provider, body)
       if (body.evidenceKind === "DispatchError") {
         const start = starts.get(body.dispatchId!)

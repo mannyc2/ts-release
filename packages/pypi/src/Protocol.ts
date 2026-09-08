@@ -1,28 +1,15 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
-import {
-  createOperation,
-  makeRequest,
-  NoReplay,
-  RequestFacts,
-  PROVIDER_CONTRACT,
-  type Operation,
-} from "@mannyc1/ts-release"
+import { Effect, Schema } from "effect"
+import { NoReplay, PROVIDER_CONTRACT } from "@mannyc1/ts-release"
+import { createOperation, makeRequest, type Operation } from "@mannyc1/ts-release"
 import { verifiedArtifacts, File, type ArtifactAccess } from "@mannyc1/ts-release/bundle"
 import type { HttpProviderDefinition, HttpRead } from "@mannyc1/ts-release/http"
 import { UploadIntent } from "./Model.js"
-import { attempt, own, invalid, scopeFor, MAX_BYTES } from "./Native.js"
+import { attempt, own, ownOperation, ownRequest, invalid, scopeFor, MAX_BYTES } from "./Native.js"
 import { multipart, ownsRequest } from "./Wire.js"
 import { inspect } from "./Metadata.js"
-import {
-  UploadReceipt,
-  SimpleObservation,
-  NativeFailure,
-  receiptCorresponds,
-  failureCorresponds,
-  classifyObservation,
-  observeResponse,
-} from "./Evidence.js"
+import { NativeFailure, SimpleObservation, UploadReceipt } from "./Evidence.js"
+import { classifyObservation, failureCorresponds, observeResponse } from "./Evidence.js"
+import { receiptCorresponds } from "./Evidence.js"
 
 const descriptor = { definitionId: "pypi.upload", intentVersion: "1", intentCodec: UploadIntent }
 export const upload = (input: UploadIntent, dependsOn: readonly string[] = []) =>
@@ -68,14 +55,7 @@ export const definitions = (
     Schema.makeFilter((intent) => artifacts.has(intent.distribution)),
   )
   const prepare = Effect.fn("pypi.prepare")(function* (operation: Operation) {
-    const intent = yield* attempt(() => {
-      if (
-        operation.definitionId !== descriptor.definitionId ||
-        operation.intentVersion !== descriptor.intentVersion
-      )
-        invalid("definition")
-      return own(intentCodec, operation.intent)
-    })
+    const intent = yield* attempt(() => ownOperation(intentCodec, descriptor, operation))
     const bytes = yield* artifacts.read(intent.distribution),
       native = yield* attempt(() => multipart(intent, bytes))
     return yield* makeRequest({
@@ -109,8 +89,7 @@ export const definitions = (
       },
       decodeResponse: Effect.fn("pypi.decodeResponse")(function* (input, response) {
         const selected = yield* attempt(() => ({
-          facts: own(RequestFacts, input.facts),
-          body: new Uint8Array(input.body),
+          ...ownRequest(input),
           status: response.status,
         }))
         if (!ownsRequest(selected)) return yield* attempt(() => invalid("response-request"))

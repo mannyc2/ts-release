@@ -1,0 +1,153 @@
+{
+  "format": "ts-release/wave-verification/1",
+  "wave": "W10",
+  "status": "locally-qualified-candidate-not-hosted-or-final-certification",
+  "observedAt": "2026-09-08T08:27:04.603Z",
+  "commands": {
+    "direct": 11,
+    "tests": 287,
+    "assertions": 3036,
+    "testFiles": 51,
+    "focusedTests": 5,
+    "focusedAssertions": 54,
+    "focusedTestFiles": 2,
+    "producerCells": 4,
+    "producerChecks": 780,
+    "producerCommands": 36,
+    "appleCells": 4,
+    "appleCommands": 48,
+    "appleDriverChecks": 120,
+    "appleInstalledChecks": 32,
+    "appleSigkills": 8,
+    "externalCells": 4,
+    "externalChecks": 796,
+    "externalCliProcesses": 140,
+    "externalFrozenBindings": 100,
+    "externalSourceEdits": 0,
+    "actionManagers": 2,
+    "actionCommands": 12,
+    "actionSends": 2,
+    "catalogManagers": 2,
+    "packedPackageArchives": 7,
+    "packedPackageRuntimeOutcomes": 60,
+    "catalogCommands": 74
+  },
+  "kernelArchiveSha256": "2636c823d7e976791818263349525fdf67de2f86aca61a899477d9eac9640320",
+  "actionLauncherSha256": "0d4d4fa28f3e22da95cee72fc9f31502456654d653f9d2d4938c167e45ff84b1",
+  "architectureFiles": 301,
+  "productionSourceFiles": 93,
+  "productionDeclarationOwners": 90,
+  "productionImportFiles": 92,
+  "productionImportEdges": 619,
+  "logicalModules": 93,
+  "publicSymbols": 336,
+  "implementedPackages": 7,
+  "implementedEntries": 15,
+  "selectedOutcomes": 69,
+  "openOutcomes": 69,
+  "propositions": 226,
+  "replacementLines": 11485,
+  "remainingLegacyLines": 0,
+  "physicalProductLines": 11485,
+  "metadataLines": 694,
+  "productDataLines": 789,
+  "productDataBytes": 15973,
+  "generatedDeliveryLines": 20263,
+  "mcpModelDeclarationLines": 1655,
+  "mcpModelDeclarationBytes": 90532,
+  "ceiling": 11485,
+  "achievedReduction": true,
+  "completeProductWaiver": false,
+  "review": "docs/refactor/execution/W10-review.md",
+  "packedArchives": {
+    "npm": "2f2552942d69f8d13f374c1c0f93c1100f96c06e22092e799ff573299550df7d",
+    "pypi": "5d1bab1e4dd823cd6e623df5a4f93a8734baf9262fd689f9182e2210abcf1540",
+    "github": "0a30312b5fd32b44af8c368051e7cd41c0aa858d16c1a72af247e3983af074b8",
+    "catalog": "f11d7a9ce22e932c79525572a23fbc6321a2ce09e318e01f7fbc8618ce7a7ff7",
+    "mcp": "d820003d6e0be15ae42c880f51d658060207f889de016150384a46e9f62bb537",
+    "openai": "33419dde052e1bc5dc6684cfbf8cbe660440890fc4af84617b4cef77cf6e9e39"
+  },
+  "bindings": [
+    {
+      "path": "docs/refactor/execution/W10-migration.json",
+      "bytes": 63145,
+      "sha256": "3783e101a6c52558579011b0e5b8ca68e55a879ad722f6b111c82ab2b43cc549"
+    },
+    {
+      "path": "docs/refactor/execution/W10-source-result.json",
+      "bytes": 1573,
+      "sha256": "8356d3f650eef0c0e263b64bc6c2df547d32286a3a7db7379a949a3ad81a9f0b"
+    },
+    {
+      "path": "docs/refactor/execution/source-measurement.json",
+      "bytes": 126537,
+      "sha256": "100f5aca9ba80c40ad41c5a1178b18851601e4ee23ac96dc7935e53d4f8de884"
+    },
+    {
+      "path": "docs/refactor/execution/W10-review.md",
+      "bytes": 4730,
+      "sha256": "9a48634d311166b48cf9aed3a7846dfcab3190183b753a1e0b6f7da7c5d5ed7f"
+    },
+    {
+      "path": "docs/refactor/execution/progress.json",
+      "bytes": 2694,
+      "sha256": "7a87f385d224aaba9c906fa98ea8da85a914ea5b1df063da41d880efddadeb8d"
+    },
+    {
+      "path": "docs/refactor/execution/current-packed-external.json",
+      "bytes": 28813,
+      "sha256": "be8acdafbc41620ef6e484c1b5a4268da84c587ec175d5e70089270b12e5dab4"
+    },
+    {
+      "path": "docs/refactor/execution/current-packed-action.json",
+      "bytes": 3920,
+      "sha256": "6a71c411d9f1863019d7a0c2e69a3e703365a87bac688b3a1b09f3dc4903b064"
+    },
+    {
+      "path": "docs/refactor/execution/current-packed-catalog.json",
+      "bytes": 95866,
+      "sha256": "9c9f4be846cb299613b9888dd645e5b194bf7b7fb4ab756bce8b53d0daf1795c"
+    },
+    {
+      "path": "docs/refactor/execution/W10-evidence/packed-artifacts.json",
+      "bytes": 34254,
+      "sha256": "d67c3dcd4329c4d5dd338fe992c7db9be2ed00fac7743e1231233a330f02beb8"
+    },
+    {
+      "path": "docs/refactor/execution/W10-evidence/packed-apple.json",
+      "bytes": 225028,
+      "sha256": "fb0b37ac6814d8afd633d8c86c230c417f26f2e323ba6dc09386a4ef3201569f"
+    },
+    {
+      "path": "docs/refactor/execution/W10-evidence/kernel.tgz",
+      "bytes": 72308,
+      "sha256": "2636c823d7e976791818263349525fdf67de2f86aca61a899477d9eac9640320"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-verification.json",
+      "bytes": 41941,
+      "sha256": "322c2ed569eafe814ce95903ad438bc686bba313731190c1f337e2cfddd8e355"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/contract.json",
+      "bytes": 60337,
+      "sha256": "07fd8c6e6391e9622e161bb3930bb301cd22268f7c5073d8f8b75ff58e001c57"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/layout.json",
+      "bytes": 170638,
+      "sha256": "c0d317d09201c1fd2461f1268ddb53334b3f05285aba43d52d15085578de28a5"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/public-surface.json",
+      "bytes": 206544,
+      "sha256": "ea22ca6812b51d87a39b19c5bcdf6cd27038cec7275b70be77bbeaf21f5d87d9"
+    },
+    {
+      "path": "docs/refactor/architecture-program/handoff/production-api/emission.json",
+      "bytes": 27237,
+      "sha256": "77655e8f9288e7e2cb9378af147bb795ad404947f1b9882e47e0c4864402df69"
+    }
+  ],
+  "limits": "Implementer-reviewed local W10 candidate with exact source, migration, direct and retained packed evidence. Hosted node24 and destinations, credentialed trust, native Apple/Windows, direct Bun Sigstore/TUF, complete Plan009 launch evidence, independent Plan010 certification and publication remain open. All 69 selected outcomes are open; no remote mutation or release occurred."
+}

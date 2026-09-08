@@ -1,20 +1,11 @@
 import * as Schema from "effect/Schema"
 import type * as Effect from "effect/Effect"
 import { File } from "@mannyc1/ts-release/bundle"
+import { isSafePath, PublicText } from "@mannyc1/ts-release/http"
 import type { ReleaseError } from "@mannyc1/ts-release"
 import * as Semver from "semver"
 
-const text = Schema.NonEmptyString.check(
-  Schema.makeFilter(
-    (s) =>
-      s === s.normalize("NFC") &&
-      s.trim() === s &&
-      !/[\u0000-\u001f\u007f]/u.test(s) &&
-      !/(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[abps]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|npm_[A-Za-z0-9]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY)/u.test(
-        s,
-      ),
-  ),
-)
+const text = PublicText(Number.MAX_SAFE_INTEGER)
 export const name = text.check(
   Schema.makeFilter(
     (s) => s.length <= 214 && /^(?:@[a-z0-9][a-z0-9._~-]*\/)?[a-z0-9][a-z0-9._~-]*$/u.test(s),
@@ -35,14 +26,7 @@ export const tag = text.check(
 export const repository = text.check(
   Schema.makeFilter((s) => /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(s)),
 )
-export const workflow = text.check(
-  Schema.makeFilter(
-    (s) =>
-      !s.startsWith("/") &&
-      !s.includes("\\") &&
-      !s.split("/").some((part) => part === "" || part === "." || part === ".."),
-  ),
-)
+export const workflow = text.check(Schema.makeFilter(isSafePath))
 export const ref = text.check(
   Schema.makeFilter(
     (s) => /^refs\/(?:heads|tags)\/[A-Za-z0-9._/-]+$/u.test(s) && !s.includes(".."),

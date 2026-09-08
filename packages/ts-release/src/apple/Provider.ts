@@ -2,9 +2,9 @@ import { Effect, Schema } from "effect"
 import * as Notary from "effect-build-apple/Notary"
 import { PROVIDER_CONTRACT, makeRequest, type ProviderDefinition } from "../Provider.js"
 import { NoReplay, type RequestFacts } from "../internal/ReleaseModel.js"
-import { ReleaseError, attempt, fail } from "../internal/Error.js"
+import { attempt, fail, reject } from "../internal/Error.js"
 import { canonical, decodeOwned } from "../internal/Identity.js"
-import { AppleEvidence, ApplePreparation, ReadyToPlan } from "./Model.js"
+import { AppleEvidence, ApplePreparation } from "./Model.js"
 
 export const sourceCorresponds = (input: ApplePreparation, result: Notary.SubmissionReference) => {
   const target = result.stapleTarget
@@ -141,12 +141,7 @@ export const preparationProvider: ProviderDefinition = Object.freeze<ProviderDef
       receipts,
     ),
   observe: () =>
-    Effect.fail(
-      new ReleaseError({
-        code: "apple-completion-required",
-        message: "Apple observations require explicit recorded-submission completion",
-      }),
-    ),
+    reject("apple-completion-required", "Apple observations require recorded completion"),
   prepare: Effect.fn("apple.prepareOpaqueCall")(function* (operation) {
     const input = yield* attempt(() => decodeOwned(ApplePreparation, operation.intent))
     return yield* makeRequest({

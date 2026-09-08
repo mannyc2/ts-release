@@ -1,6 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Redacted from "effect/Redacted"
-import type { CredentialBinding, CredentialHeaders } from "@mannyc1/ts-release/http"
+import { bearerCredentials, publicUrl, type CredentialBinding } from "@mannyc1/ts-release/http"
+import type { CredentialHeaders } from "@mannyc1/ts-release/http"
 import { Repository } from "./Model.js"
 import { intentOf } from "./Graph.js"
 import { readScope } from "./Binding.js"
@@ -25,11 +26,9 @@ export const authorizeToken = Effect.fn("github.authorizeToken")(function* (inpu
     if (binding.principal === PUBLIC_DOWNLOAD && publicDownload(binding.endpoint))
       return Object.freeze({})
     if (binding.principal !== intent.principal) invalid("credential-principal")
-    const url = new URL(binding.endpoint),
+    const url = publicUrl(binding.endpoint) ?? invalid("credential-url"),
       base = api(repository),
       prefix = `${base}/`
-    if (url.href !== binding.endpoint || url.username || url.password || url.hash)
-      invalid("credential-url")
     let allowed = false
     try {
       allowed = binding.endpoint === nativeRequest(scope).endpoint
@@ -60,8 +59,6 @@ export const authorizeToken = Effect.fn("github.authorizeToken")(function* (inpu
         Number(url.searchParams.get("page")) <= 1000
     }
     if (!allowed) invalid("credential-route")
-    const token = Redacted.value(input.token)
-    if (!token || token.length > 65536 || /[^\x21-\x7e]/u.test(token)) invalid("credential-token")
-    return Object.freeze({ authorization: `Bearer ${token}` })
+    return bearerCredentials(input.token, () => invalid("credential-token"))
   })
 })

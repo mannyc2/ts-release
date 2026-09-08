@@ -1,120 +1,101 @@
-# Current status: W09 locally verified; W10 in progress
+# Current status: W10 locally qualified candidate
 
-W08 closed in commit `e393dd098090761d4157d4ea5af1c5676e4dc485` and is verified
-on `origin/codex/complete-hard-cut`. The user explicitly resumed the work on
-2026-09-07. W09 is locally verified and W10 application convergence is next.
-Do not publish while finishing this branch; hosted and credentialed acceptance
-remain separate.
+W01-W10 implementation and migration are locally complete on
+`codex/complete-hard-cut`. W09 is preserved in pushed commit
+`24ea51d9201fe3718344f37ebe07d66b5487d773`; the W10 candidate follows it on the
+same sequential branch. The user's 2026-09-07 branch-completion request ends at
+this qualified local candidate. It does not authorize publication from this
+turn, and no release was published.
 
-**Latest user instruction, 2026-09-07:** finish the work left in
-`codex/complete-hard-cut`.
+The local candidate passes the complete direct suite and fresh packed matrices
+for providers, external composition, real producers, Apple recovery and the
+Action. It contains 90 production source/declaration owners, 93 logical modules
+and 336 public symbols. Exact results, retained evidence and limitations are in
+`W10.md`, `W10-review.md` and `W10-verification.json`.
 
-Complete W09 and W10 on the existing sequential branch, including application
-convergence, final migration, local candidate evidence and the unchanged source
-ceiling. Do not infer hosted/native acceptance and do not publish a release from
-this branch-completion instruction.
+Actual complete product source is
+**11,485 = 11,485 replacement + 0 inherited legacy**, exactly meeting the
+unchanged 11,485 ceiling against the original 22,971 denominator. This is an
+actual result with no source variance or final waiver. Metadata, owned data,
+tests, fixtures, tooling and generated delivery remain separately visible in
+`W10-source-result.json` and `source-measurement.json`.
 
-The original long-term objective below remains context for future work. The
-current branch-completion scope ends at the qualified local candidate.
+All 69 selected launch outcomes remain open. Hosted and credentialed acceptance,
+native macOS/Windows, direct Bun Sigstore/TUF, complete launch evidence,
+independent Plan010 certification and publication remain future work. A local
+test, protocol double, pack or implementer review does not close those outcomes.
 
 # Original goal: complete and publish the hard cut
 
-Persistent goal: active, no token budget. The full refactor-and-publication
-objective remains unfinished until its external acceptance and publication work
-is separately executed.
+Persistent long-term goal: active beyond this branch-completion request. The
+full refactor-and-publication objective remains unfinished until external
+acceptance and publication are separately executed.
 
 Complete the approved simple/composable seven-package apps/packages monorepo,
-preserving all69 selected outcomes and release/recovery laws. Complete P0–P3,
-W01–W10, migration/deletion, real native/host/consumer acceptance, independent final
-candidate review, actual authorized publication and fresh installed published
-verification. An implementation wave, pack or unpublished candidate is not completion.
-The original user authorized commits, pushes, normal integration, tags and publication
-after concrete gates. Never overwrite immutable releases, force shared history,
-fabricate acceptance, retry unknown mutations blindly or expose secrets.
+preserving all 69 selected outcomes and release/recovery laws. Complete P0-P3,
+W01-W10, migration/deletion, real native/host/consumer acceptance, independent
+final candidate review, actual authorized publication and fresh installed
+published verification. An implementation wave, pack or unpublished candidate
+is not long-term completion. Never overwrite immutable releases, force shared
+history, fabricate acceptance, retry unknown mutations blindly or expose
+secrets.
 
 ## Preserved authority and environment
 
-Worktree `/tmp/ts-release-complete-hard-cut`, branch `codex/complete-hard-cut`.
-Original `/mnt/models/dev/ts-release`, its index and `.repos/effect` remain untouched.
-Original HEAD9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d/index72323d6191b11d69a77022f278bd3de671f43cbe
-were preserved (190 staged paths). Checkpoints7da2877/65f65b1/8fe9891 retain
-preservation/prerequisites/early W01. Required PR21 ancestry remains; no PR22/overlay
-merge. Valid mainline native donors are identified in handoff/mainline-donors.json.
-Ignored prior research is preserved under docs/refactor/research/. Active architecture
-is handoff/design.json; production progress is this directory's progress.json and
-per-wave records. Do not create another preservation clone.
+The implementation worktree is `/tmp/ts-release-complete-hard-cut` on branch
+`codex/complete-hard-cut`. The original `/mnt/models/dev/ts-release`, its index
+and `.repos/effect` remain untouched. Original
+HEAD `9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d` and index
+`72323d6191b11d69a77022f278bd3de671f43cbe` were preserved; checkpoints
+`7da2877`, `65f65b1` and `8fe9891` retain preservation/prerequisite/early-W01
+state. Required PR21 ancestry remains; PR22 and the prototype overlay were not
+merged. Mainline donors are recorded in handoff evidence, and ignored research
+remains under `docs/refactor/research/`.
 
-Use Bun1.3.14, exact aligned Effect beta.107 and the independently reviewed owned
-Sentinel declaration augmentation with actual effect-build0.6.3. Exact development
-pins and narrow public peer compatibility remain separate. Native Node22.22.2 is
-`/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node`;
-Bun's process.version does not prove native Node24. Native tools, Docker images and
-upstream digests are recorded in W08-native-tools.json/W08-upstream/registry.json.
+Use Bun 1.3.14, aligned Effect beta.107 and the independently reviewed owned
+Sentinel declaration augmentation with actual effect-build 0.6.3. Native
+Node22.22.2 is
+`/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node`.
+Bun's `process.version` is not evidence of native Node24. Native tools, Docker
+images and upstream digests are recorded in W08 evidence.
 
-## Current implementation
+## Completed local implementation
 
-W01–W08 are committed and pushed, ending at e393dd0. Earlier local results and
-limits remain in W01.md through W07.md; those historical receipts are not relabeled
-as final. Prerequisites passed168tests/993assertions and exact helper medians37/37/37
-with separate metadata; target40 is unchanged. These research witnesses do not
-certify the complete production graph.
+The hard cut now has seven public packages: the deterministic kernel/hosts,
+npm, PyPI, GitHub, catalog, MCP and OpenAI. The public CLI, thin Node Action and
+private self-release application share one scoped application boundary and one
+durable journal model. All 93 assigned legacy source files are physically
+retired with per-wave hash/declaration migration records; no compatibility
+lifecycle, provider switch or second plugin installer remains.
 
-W08 is locally verified, committed and pushed as `e393dd0`, including final direct
-execution, independent material and retained-evidence review. Its reviewed seal
-is retained with the checkpoint. Actual adopted File/Tree ownership, bounded native
-I/O, public restoration/checksums and Apple one-journal preparations are implemented.
-All14 assigned legacy files are retired:1581lines/118declarations, with explicitW10
-source/application/native acquisition duties. There are81 actual source/declaration
-owners and92 logical modules. See W08.md/W08-review.md/W08-migration.json.
+The final focused Action/self-release suite passes 5 tests/54 assertions. The
+complete reimplementation suite passes 287 tests/3,036 assertions across 51
+files. Fresh external composition freezes 100 bindings and passes four
+Bun/npm-by-Node/Bun cells with 796 checks, 140 CLI/native processes and zero
+source edits. The strict provider matrix installs all seven public archives with
+30 runtime outcomes under each package manager. Packed producer cells pass 780
+checks; packed Apple recovery uses real Git journals across 48 processes, 120
+driver checks, 32 installed checks and eight actual SIGKILL boundaries. Packed
+Bun/npm Action installs each perform one total send across initial and
+fresh-runner continuation. The final kernel archive SHA-256 is
+`2636c823d7e976791818263349525fdf67de2f86aca61a899477d9eac9640320`.
 
-Final integration passed18tests/159assertions. Four fresh Bun/npm×Node/Bun producer
-cells pass780checks; four packed Apple recovery cells execute48commands/120driver
-checks,32installedchecks and8SIGKILL points. Exact final kernel archive SHA-256:
-eb038cb394139f069a0f937b72578f8f987705fae53e4210b0705ad2b7c723d9.
-All8 native Git journal histories and exact receipts are retained inW08-evidence.
-Apple submit/info/staple/assessment observations remain protocol doubles; native
-macOS/Windows acceptance is not claimed. Independent review closed FIFO/stdin,
-readonly cleanup, capture, precommit restoration, runtime-edge and private-Schema
-projection findings. The final test PID-marker race was reproduced/corrected and
-100 native Bun controls pass. Full direct verification passes273tests/2941assertions across47files, including
-fresh external consumers with87bindings and zero source edits; consult progress.
+Apple submit/info/staple/assessment remain protocol doubles; the local Action is
+executed with native Node22.22.2 rather than hosted node24. Self-release validates
+the exact seven-package/four-wheel/catalog/MCP/OpenAI intention with mutation and
+network authority disabled. These boundaries are deliberate evidence limits,
+not skipped success claims.
 
-W09 adds actual MCP Registry and OpenAI skills-only package owners, with exact
-request recovery, marketplace bytes and human-only submission handoff. Focused
-verification passes9tests/41assertions; complete direct verification passes
-282tests/2982assertions across49files. Fresh external consumers freeze97 bindings
-and still pass796checks/140processes with zero source edits. All3 assigned legacy
-files are retired:348lines/49declarations. There are89 actual
-source/declaration owners and92 logical modules. See W09.md/W09-review.md and
-W09-migration.json.
+## Work remaining after branch completion
 
-Measured product **14874=12783replacement+2091legacy**. W09 replacement tripwire11000
-fails1783; exact planning variance permits further implementation without a final
-waiver. Forecast13225 exceeds unchanged11485 by1740; low13065 also fails. Metadata732
-and ownedSPDX789lines/15973bytes are separately charged. Original denominator22971
-and selected scope remain unchanged. There is no achieved full-product reduction.
+Plan009 must define exact live repository/package/registry/account/workflow and
+credential scopes, execute hosted/native destination acceptance, retain source
+and artifact-bound receipts and close only outcomes with their original witness
+facets. Registry versions and tags must be re-observed immediately before a
+cohort is selected; historical `0.3.0` observations are not current authority.
 
-## Work remaining
-
-W09 is locally verified: separate OpenAI/MCP packages preserve official MCP
-transport/auth/recovery and OpenAI skills/marketplace/submission outcomes. Its
-9 focused tests/41 assertions and full282 tests/2982 assertions pass; all three
-assigned legacy files are retired. Commit and push the checkpoint before W10.
-W10: complete real Action/self-release delivery, final migration/deletion, verified
-source/application/provenance and tool/cache/environment acquisition, embedded
-native Python wheels, seven-package manifests/exports/publication graph and
-source simplification to<=11485 with the same selected scope.
-
-Plans009/010 remain mandatory: native Apple/Windows and target/clean-host consumers,
-hosted trust and actual destination acceptance, direct Bun Sigstore/TUF compatibility,
-concurrency/restart and release rehearsal, independent complete-candidate review.
-All69 launch outcomes are open. No release has been published. Historical registry
-observation kernel0.3.0/six new names absent is not current version authority;
-recheck actual registries/tags before selecting the full cohort. Existing protected
-GitHub environments require actual human approval when a concrete qualified release
-reaches them; publication authorization itself is already given.
-
-Exact next action is in progress.json. Do not run builds/full tests concurrently
-with packed consumers: `bun run check` and the full suite's external-consumer test
-rebuild dist. Native process/socket/Docker acceptance requires the authorized native
-execution environment. Preserve failed and uncertain receipts, not just later passes.
+Plan010 must commission an independent cold review of the complete candidate and
+all Plan009 evidence. Only after that review and explicit concrete release
+execution should the seven-package cohort, Action and related artifacts be
+published and verified from fresh installed public consumers. Existing protected
+GitHub environments may require human approval at that point.

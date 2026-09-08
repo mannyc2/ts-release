@@ -1,10 +1,10 @@
 import * as Effect from "effect/Effect"
 import * as Cause from "effect/Cause"
 import type * as Scope from "effect/Scope"
-import { command } from "./Process.js"
+import { command, type ProcessResult } from "./Process.js"
 import { accessSync, constants, mkdtempSync, realpathSync, rmSync, lstatSync } from "node:fs"
 import { dirname, isAbsolute, join, delimiter } from "node:path"
-import { ReleaseError, attempt, fail } from "../internal/Error.js"
+import { ReleaseError, attempt, failure, reject } from "../internal/Error.js"
 import { admitCoordinate, type Credentials, type RefCoordinate } from "../internal/GitCatalog.js"
 import * as Redacted from "effect/Redacted"
 
@@ -14,10 +14,7 @@ export interface GitProcessOptions {
   readonly timeoutMilliseconds: number
   readonly maximumOutputBytes: number
 }
-export interface GitResult {
-  readonly exitCode: number
-  readonly stdout: Uint8Array
-}
+export type GitResult = ProcessResult
 export interface GitEnvironment {
   readonly identity?: Readonly<Record<string, string>>
   readonly credentialConfig?: Readonly<Record<string, string>>
@@ -27,19 +24,12 @@ export type GitCommand = (
   input?: Uint8Array,
   environment?: GitEnvironment,
 ) => Effect.Effect<GitResult, ReleaseError>
-export interface GitRepository {
-  readonly run: GitCommand
-  readonly directory: string
-}
+export type GitRepository = Readonly<{ run: GitCommand; directory: string }>
 export interface GitRuntime {
   readonly maximumOutputBytes: number
   readonly repository: (format: "sha1" | "sha256") => Effect.Effect<GitRepository, ReleaseError>
 }
-const error = () =>
-  new ReleaseError({
-    code: "git-process",
-    message: "Native Git command did not return complete bounded output",
-  })
+const error = () => failure("git-process", "Native Git command did not return complete bounded output")
 const config = (values: Readonly<Record<string, string>>) =>
   Object.fromEntries([
     ["GIT_CONFIG_COUNT", String(Object.keys(values).length)],
@@ -84,19 +74,12 @@ export const resolveGitCredentials = Effect.fn("git.resolveCredentials")(functio
   input: RefCoordinate,
 ) {
   const coordinate = yield* attempt(() => admitCoordinate(input))
-  return yield* Effect.gen(function* () {
-    const value = yield* Effect.suspend(() => resolve(coordinate))
-    return yield* attempt(() => credentialEnvironment(coordinate, value))
-  }).pipe(
+  return yield* Effect.suspend(() => resolve(coordinate)).pipe(
+    Effect.flatMap((value) => attempt(() => credentialEnvironment(coordinate, value))),
     Effect.catchCause((cause) =>
       Cause.hasInterrupts(cause)
         ? Effect.interrupt
-        : Effect.fail(
-            new ReleaseError({
-              code: "git-credentials",
-              message: "Git credentials could not be acquired",
-            }),
-          ),
+        : Effect.fail(failure("git-credentials", "Git credentials could not be acquired")),
     ),
   )
 })
@@ -148,10 +131,7 @@ export const openGitRuntime = Effect.fn("git.openRuntime")(
       return Object.freeze({
         maximumOutputBytes: options.maximumOutputBytes,
         repository: Effect.fn("git.openRepository")(function* (format: "sha1" | "sha256") {
-          if (format !== "sha1" && format !== "sha256")
-            return yield* attempt(() => {
-              throw error()
-            })
+          if (format !== "sha1" && format !== "sha256") return yield* Effect.fail(error())
           const directory = yield* attempt(() => mkdtempSync(join(root, "repository-"))),
             execute = command(options.gitExecutable, directory, options, error)
           const run: GitCommand = (args, bytes, environment) =>
@@ -193,7 +173,7 @@ export const checked = Effect.fn("git.checkedCommand")(function* (
 ) {
   const result = yield* run(args, bytes, environment)
   if (result.exitCode !== 0)
-    return yield* attempt(() => fail("git-command", "Native Git rejected the prepared operation"))
+    return yield* reject("git-command", "Native Git rejected the prepared operation")
   return result.stdout
 })
 export const nativeText = (bytes: Uint8Array): string =>

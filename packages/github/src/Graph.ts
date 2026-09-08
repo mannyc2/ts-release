@@ -1,27 +1,21 @@
 import * as Effect from "effect/Effect"
-import { createOperation, type Operation, type ProviderDescriptor } from "@mannyc1/ts-release"
+import {
+  createOperation,
+  defineProvider,
+  type Operation,
+  type ProviderDescriptor,
+} from "@mannyc1/ts-release"
+import { sameData } from "@mannyc1/ts-release/http"
 import * as Model from "./Model.js"
 import { attempt, invalid, own, api } from "./Native.js"
 
 export const descriptors = {
-  lightweight: {
-    definitionId: "github.lightweight-tag",
-    intentVersion: "1",
-    intentCodec: Model.LightweightTag,
-  },
-  object: {
-    definitionId: "github.annotated-tag",
-    intentVersion: "1",
-    intentCodec: Model.AnnotatedTag,
-  },
-  ref: {
-    definitionId: "github.annotated-ref",
-    intentVersion: "1",
-    intentCodec: Model.AnnotatedRef,
-  },
-  draft: { definitionId: "github.draft", intentVersion: "1", intentCodec: Model.DraftIntent },
-  asset: { definitionId: "github.asset", intentVersion: "1", intentCodec: Model.AssetIntent },
-  publish: { definitionId: "github.publish", intentVersion: "1", intentCodec: Model.PublishIntent },
+  lightweight: defineProvider("github.lightweight-tag", Model.LightweightTag),
+  object: defineProvider("github.annotated-tag", Model.AnnotatedTag),
+  ref: defineProvider("github.annotated-ref", Model.AnnotatedRef),
+  draft: defineProvider("github.draft", Model.DraftIntent),
+  asset: defineProvider("github.asset", Model.AssetIntent),
+  publish: defineProvider("github.publish", Model.PublishIntent),
 } as const satisfies Record<string, ProviderDescriptor>
 export type Kind = keyof typeof descriptors
 export type Intent =
@@ -115,8 +109,7 @@ export const validatePlan = (operations: readonly Operation[]): void => {
         })
         .map((op) => op.operationId)
         .sort()
-      if (JSON.stringify(assets) !== JSON.stringify([...intent.assetOperations].sort()))
-        invalid("complete-assets")
+      if (!sameData(assets, [...intent.assetOperations].sort())) invalid("complete-assets")
     }
     const coordinate =
       intent instanceof Model.AssetIntent

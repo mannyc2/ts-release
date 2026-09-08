@@ -1,7 +1,7 @@
 import * as Effect from "effect/Effect"
 import type * as Artifact from "effect-build/Artifact"
 import { Content, type AdoptionError, type OwnedBundle } from "./ArtifactModel.js"
-import { type ReleaseError, attempt, fail } from "./Error.js"
+import { type ReleaseError, attempt, fail, reject } from "./Error.js"
 import { decodeOwned, sha256 } from "./Identity.js"
 
 export interface ContentOwner {
@@ -29,15 +29,15 @@ export const captureContentOwner = (owner: ContentOwner): ContentOwner =>
     read: owner.read.bind(owner),
     verify: owner.verify.bind(owner),
   })
-export type ReadContent = (content: Content) => Effect.Effect<Uint8Array, ReleaseError>
+export type ReadContent<E = ReleaseError> = (content: Content) => Effect.Effect<Uint8Array, E>
 export type PutContent = (bytes: Uint8Array) => Effect.Effect<Content, ReleaseError>
 export interface ArtifactAccess {
   readonly bundle: OwnedBundle
   readonly readContent: ReadContent
 }
 /** Verify owned content before an adapter uses its bytes; never grants dispatch. */
-export const readVerifiedContent = Effect.fn("ts-release.readVerifiedContent")(function* (
-  read: ReadContent,
+export const readVerifiedContent = Effect.fn("ts-release.readVerifiedContent")(function* <E>(
+  read: ReadContent<E>,
   input: Content,
   maximumBytes: number,
 ) {
@@ -53,6 +53,6 @@ export const readVerifiedContent = Effect.fn("ts-release.readVerifiedContent")(f
   })
   const bytes = new Uint8Array(yield* read(content))
   if (String(bytes.length) !== content.bytes || (yield* sha256(bytes)) !== content.sha256)
-    return yield* attempt(() => fail("content-identity", "Owned content size or digest differs"))
+    return yield* reject("content-identity", "Owned content size or digest differs")
   return bytes
 })

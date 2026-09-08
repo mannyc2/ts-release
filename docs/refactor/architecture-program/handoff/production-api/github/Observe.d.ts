@@ -1,7 +1,7 @@
 import * as Effect from "effect/Effect";
 import type { Operation, ProviderContext } from "@mannyc1/ts-release";
 import type { HttpRead } from "@mannyc1/ts-release/http";
-import { Present, Missing, Unavailable } from "./Evidence.js";
+import { Missing, Present, Unavailable } from "./Evidence.js";
 export declare const PUBLIC_DOWNLOAD = "github:public-download";
 export declare const publicDownload: (value: string) => boolean;
 export declare const observations: (read: HttpRead) => {

@@ -1,9 +1,11 @@
-import { DispatchBasis, JournalEvent, type OperationStatus, Plan, type ReleaseReport, RequestFacts } from "./ReleaseModel.js";
+import { DispatchBasis, JournalEvent } from "./ReleaseModel.js";
+import { Plan, RequestFacts } from "./ReleaseModel.js";
+import type { OperationStatus, ReleaseReport } from "./ReleaseModel.js";
 import type { Scope } from "../Journal.js";
-export interface CandidateRequest {
-    readonly facts: RequestFacts;
-    readonly fingerprint: string;
-}
+export type CandidateRequest = Readonly<{
+    facts: RequestFacts;
+    fingerprint: string;
+}>;
 export type Next = {
     readonly _tag: "PrepareDispatch";
 } | {
@@ -27,7 +29,7 @@ export declare const sameStrings: (left: ReadonlyArray<string>, right: ReadonlyA
 /** Core-owned history laws, shared by M1 and the executor admission boundary. */
 export declare const operationFacts: (events: ReadonlyArray<JournalEvent>, operationId: string) => {
     starts: import("./ReleaseModel.js").DispatchStarted[];
-    receipts: JournalEvent[];
+    receipts: import("./ReleaseModel.js").ReceiptAccepted[];
     rejected: Set<string>;
     observations: import("./ReleaseModel.js").ObservationRecorded[];
     risks: import("./ReleaseModel.js").RiskAccepted[];

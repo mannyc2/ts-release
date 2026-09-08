@@ -1,8 +1,6 @@
-import * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
+import { Effect, Schema } from "effect";
 import { OwnedBundle } from "./ArtifactModel.js";
 import { JournalEvent, Plan } from "./ReleaseModel.js";
-import { ReleaseError } from "./Error.js";
 declare const FinalizedReport_base: Schema.Class<FinalizedReport, Schema.Struct<{
     readonly format: Schema.Literal<"ts-release/report/1">;
     readonly bundle: typeof OwnedBundle;
@@ -27,5 +25,5 @@ declare const FinalizedReport_base: Schema.Class<FinalizedReport, Schema.Struct<
 export declare class FinalizedReport extends FinalizedReport_base {
 }
 /** No permission is derived from this report, and no report is a journal reader. */
-export declare const reportFinalizedRelease: (bundle: OwnedBundle, input: Plan) => Effect.Effect<FinalizedReport, import("./ArtifactModel.js").AdoptionError | ReleaseError, import("./Host.js").Host>;
+export declare const reportFinalizedRelease: (bundle: OwnedBundle, input: Plan) => Effect.Effect<FinalizedReport, import("./ArtifactModel.js").AdoptionError | import("./Error.js").ReleaseError, import("./Host.js").Host>;
 export {};

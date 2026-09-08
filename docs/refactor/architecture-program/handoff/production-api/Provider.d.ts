@@ -1,14 +1,14 @@
-import * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
-import { ObservationRecorded, ObservationStatus, Operation, type JournalEvent, type Plan, RequestFacts } from "./internal/ReleaseModel.js";
+import { Effect, Schema } from "effect";
+import { ObservationRecorded, Operation, RequestFacts } from "./internal/ReleaseModel.js";
+import type { JournalEvent, ObservationStatus, Plan } from "./internal/ReleaseModel.js";
 import { ReleaseError } from "./internal/Error.js";
 /** Provider contract version spoken by this kernel. A definition built against another contract is rejected at Host verification, whatever the installer resolved. */
 export declare const PROVIDER_CONTRACT: "ts-release/provider/1";
 /** Transport owns actual sends; prepare and durable values contain no callback. */
-export interface PreparedRequest {
-    readonly facts: RequestFacts;
-    readonly body: Uint8Array;
-}
+export type PreparedRequest = Readonly<{
+    facts: RequestFacts;
+    body: Uint8Array;
+}>;
 export type SendResult = {
     readonly _tag: "Accepted";
     readonly receipt: unknown;
@@ -26,10 +26,10 @@ export interface Transport {
      * The returned send has no dispatch permission; only fresh core CAS grants it. */
     readonly prepare?: (request: PreparedRequest) => Effect.Effect<Transport["send"], ReleaseError>;
 }
-export interface Observation {
-    readonly status: ObservationStatus;
-    readonly evidence: unknown;
-}
+export type Observation = Readonly<{
+    status: ObservationStatus;
+    evidence: unknown;
+}>;
 export interface OperationEvidence {
     readonly operation: Operation;
     readonly receipts: ReadonlyArray<unknown>;
@@ -66,8 +66,14 @@ export interface ProviderDefinition {
     readonly observe?: (operation: Operation, context: ProviderContext) => Effect.Effect<Observation, ReleaseError>;
 }
 export type ProviderDescriptor = Pick<ProviderDefinition, "definitionId" | "intentVersion" | "intentCodec" | "validatePlan">;
+export declare const defineProvider: <Id extends string, A, I>(definitionId: Id, intentCodec: Schema.Codec<A, I>) => {
+    definitionId: Id;
+    intentVersion: "1";
+    intentCodec: Schema.Codec<A, I, never, never>;
+};
 /** A projection of a validated prefix only; later events cannot justify earlier requests. */
 export declare const evidenceContext: (plan: Plan, operation: Operation, history: ReadonlyArray<JournalEvent>) => ProviderContext;
+export declare const assertRequestCorresponds: (provider: ProviderDefinition, operation: Operation, request: RequestFacts, context: ProviderContext) => void;
 export type Json = Schema.Json;
 export type OperationId = string;
 export type Author<A> = (input: A, dependsOn?: readonly OperationId[]) => Effect.Effect<Operation, ReleaseError>;
@@ -78,13 +84,17 @@ export declare const makeRequest: (input: Omit<RequestFacts, "byteLength" | "bod
     facts: RequestFacts;
     body: Uint8Array<ArrayBuffer>;
 }, ReleaseError, never>;
-export declare const verifyRequest: (request: PreparedRequest) => Effect.Effect<{
+export declare const verifyRequest: (request: Readonly<{
+    facts: RequestFacts;
+    body: Uint8Array;
+}>) => Effect.Effect<{
     facts: RequestFacts;
     body: Uint8Array<ArrayBuffer>;
 }, ReleaseError, never>;
 export declare const CORE_ERROR_VERSIONS: Set<string>;
 export declare const isCoreErrorVersion: (version: string) => boolean;
 export declare const verifyDescriptor: (provider: ProviderDescriptor) => void;
-export declare const verifyProviderContracts: (providers: ReadonlyArray<ProviderDefinition>) => void;
+export declare const captureDescriptor: (provider: ProviderDescriptor) => ProviderDescriptor;
+export declare const verifyProviderContracts: (providers: ReadonlyArray<ProviderDefinition>) => ReadonlyArray<ProviderDefinition>;
 export declare const decodeObservationEvidence: (provider: ProviderDefinition, body: ObservationRecorded) => unknown;
 export declare const nativeEvidence: (codec: Schema.Codec<unknown, unknown>, input: unknown) => unknown;

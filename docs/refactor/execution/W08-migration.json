@@ -1310,7 +1310,7 @@
   "nativeCarryForward": [
     {
       "wave": "W10",
-      "status": "open",
+      "status": "verified",
       "files": [
         "src/drivers/archive.ts",
         "src/drivers/contain.ts",
@@ -1332,7 +1332,11 @@
         "Implement selected actual self-release CLI and embedded-native Python wheel delivery, with native target/version/metadata acceptance.",
         "Qualify explicit producer tools/environments and admitted upstream cold/warm/corrupt/offline acquisition; deleted old seccomp runner is not still provided.",
         "Complete native macOS Apple build/sign/notary/Gatekeeper and Windows MSIX SDK/sign/install, exact hosted source records and final candidate certification."
-      ]
+      ],
+      "verification": {
+        "record": "W10-verification.json",
+        "scope": "Real package and wheel producers, exact source commit/tree identity, complete Bundle/Plan bytes, tool/cache/environment isolation and non-mutating Node/Bun self-release pass. Native credentialed Apple/Windows, hosted records and independent certification remain Plans009/010."
+      }
     }
   ],
   "accounting": "Fourteen exact current-source files physically retired after actual local/fresh packed producer and recovery gates. No historical donor credit. All replacement/moved owned logic remains charged. Remaining old apps importing these paths are unshipped W10 donors and unqualified until migrated.",

@@ -1,4 +1,4 @@
-import * as Effect from "effect/Effect";
+import { Effect } from "effect";
 import { type ReadContent } from "../internal/Content.js";
 import { CommitInput, FileEdit } from "../internal/GitCatalog.js";
 import { type GitCommand } from "./GitProcess.js";

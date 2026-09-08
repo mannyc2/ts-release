@@ -4,38 +4,16 @@ import type { Transport } from "../Provider.js"
 import { type ReadContent, readVerifiedContent } from "../internal/Content.js"
 import { type ReleaseError, attempt } from "../internal/Error.js"
 import { canonical, decodeOwned } from "../internal/Identity.js"
-import {
-  authorityKey,
-  conditionalArguments,
-  makeCoreGitTransport,
-  type CoreGitOptions,
-} from "../internal/GitAuthority.js"
-import {
-  CommitInput,
-  admitCoordinate,
-  invalid,
-  objectFormat,
-  ownIntent,
-  type Credentials,
-  type Intent,
-  type ObjectBuilder,
-  type ObserveRef,
-  type RefCoordinate,
-} from "../internal/GitCatalog.js"
-import {
-  checked,
-  resolveGitCredentials,
-  nativeText as text,
-  openGitRuntime,
-  type GitProcessOptions,
-} from "./GitProcess.js"
-import {
-  construct,
-  exportObjects,
-  importObjects,
-  verifyGraph,
-  verifyManagedCommit,
-} from "./GitObjects.js"
+import { authorityKey, conditionalArguments } from "../internal/GitAuthority.js"
+import { makeCoreGitTransport, type CoreGitOptions } from "../internal/GitAuthority.js"
+import { CommitInput, admitCoordinate, invalid } from "../internal/GitCatalog.js"
+import { objectFormat, ownIntent, type Intent } from "../internal/GitCatalog.js"
+import type { Credentials, ObjectBuilder, ObserveRef } from "../internal/GitCatalog.js"
+import type { RefCoordinate } from "../internal/GitCatalog.js"
+import { checked, nativeText as text, openGitRuntime } from "./GitProcess.js"
+import { resolveGitCredentials, type GitProcessOptions } from "./GitProcess.js"
+import { construct, exportObjects, importObjects, verifyGraph } from "./GitObjects.js"
+import { verifyManagedCommit } from "./GitObjects.js"
 import { fetchRef, remoteRef } from "./GitRemote.js"
 
 export interface GitCatalogHost {

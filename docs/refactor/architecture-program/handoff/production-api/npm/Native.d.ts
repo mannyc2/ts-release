@@ -1,20 +1,15 @@
-import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as Model from "./Model.js";
-import { ReleaseError } from "@mannyc1/ts-release";
 import { type ArtifactAccess } from "@mannyc1/ts-release/bundle";
-export declare const invalid: (code: string) => never;
-export declare const attempt: <A>(body: () => A) => Effect.Effect<A, ReleaseError, never>;
+export declare const failure: (code: string, message: string) => import("@mannyc1/ts-release").ReleaseError, invalid: (code: string) => never, reject: (code: string, message: string) => import("effect/Effect").Effect<never, import("@mannyc1/ts-release").ReleaseError>, attempt: <A>(body: () => A) => import("effect/Effect").Effect<A, import("@mannyc1/ts-release").ReleaseError, never>, matches: (body: () => boolean) => boolean, object: (value: unknown) => Record<string, unknown>, own: <A, I>(codec: Schema.Codec<A, I>, input: unknown) => A, ownOperation: <A, I>(codec: Schema.Codec<A, I>, descriptor: Pick<import("@mannyc1/ts-release").ProviderDescriptor, "definitionId" | "intentVersion">, operation: import("@mannyc1/ts-release").Operation) => A, ownRequest: (request: import("@mannyc1/ts-release").PreparedRequest) => import("@mannyc1/ts-release").PreparedRequest;
 export declare const digest: (algorithm: string, bytes: Uint8Array) => string;
 export declare const encode: (input: unknown) => Uint8Array<ArrayBuffer>;
-export declare const object: (input: unknown) => Record<string, unknown>;
 export { decodeJson as parseJson } from "@mannyc1/ts-release/http";
 /** Native package metadata is extracted from the exact bounded owned tarball. */
 export declare const readManifest: (bytes: Uint8Array) => Record<string, unknown>;
-export declare const own: <A, I>(codec: Schema.Codec<A, I>, input: unknown) => A;
 export declare const captureArtifacts: (access: ArtifactAccess) => Readonly<{
-    has: (input: import("@mannyc1/ts-release/bundle").File) => boolean;
-    read: (input: import("@mannyc1/ts-release/bundle").File) => Effect.Effect<Uint8Array<ArrayBuffer>, ReleaseError, never>;
+    has: (input: import("@mannyc1/ts-release/bundle").Artifact) => boolean;
+    read: (input: import("@mannyc1/ts-release/bundle").File) => import("effect/Effect").Effect<Uint8Array<ArrayBuffer>, import("@mannyc1/ts-release").ReleaseError, never>;
 }>;
 export declare const metadataUrl: (packageName: string) => string;
 declare const NativeScope_base: Schema.Class<NativeScope, Schema.Struct<{
@@ -99,12 +94,12 @@ declare const NativeScope_base: Schema.Class<NativeScope, Schema.Struct<{
         };
     }, readonly [Schema.Struct<{
         readonly registry: Schema.Literal<"https://registry.npmjs.org/">;
-        readonly name: Schema.NonEmptyString;
-        readonly version: Schema.NonEmptyString;
+        readonly name: Schema.String;
+        readonly version: Schema.String;
         readonly tarball: typeof import("@mannyc1/ts-release/bundle").File;
         readonly integrity: Schema.String;
         readonly shasum: Schema.String;
-        readonly initialTag: Schema.NonEmptyString;
+        readonly initialTag: Schema.String;
         readonly access: Schema.Literal<"public">;
         readonly authorization: Schema.Union<readonly [typeof Model.TokenAuthorization, typeof Model.TrustedAuthorization]>;
         readonly provenance: Schema.Union<readonly [typeof Model.NoProvenance, typeof Model.GitHubActionsProvenance]>;
@@ -188,22 +183,18 @@ declare const NativeScope_base: Schema.Class<NativeScope, Schema.Struct<{
         };
     }>, Schema.Struct<{
         readonly registry: Schema.Literal<"https://registry.npmjs.org/">;
-        readonly name: Schema.NonEmptyString;
-        readonly version: Schema.NonEmptyString;
+        readonly name: Schema.String;
+        readonly version: Schema.String;
         readonly tarball: typeof import("@mannyc1/ts-release/bundle").File;
         readonly integrity: Schema.String;
         readonly shasum: Schema.String;
-        readonly initialTag: Schema.NonEmptyString;
+        readonly initialTag: Schema.String;
         readonly access: Schema.Literal<"public">;
         readonly authorization: Schema.Union<readonly [typeof Model.TokenAuthorization, typeof Model.TrustedAuthorization]>;
         readonly provenance: Schema.Union<readonly [typeof Model.NoProvenance, typeof Model.GitHubActionsProvenance]>;
     }>, never, never>, typeof Model.DistTagIntent]>;
 }>, {}>;
 export declare class NativeScope extends NativeScope_base {
-    get name(): string;
-    get version(): string;
-    get tag(): string;
-    get authorization(): Model.TokenAuthorization | Model.TrustedAuthorization;
 }
 export declare const scopeFor: (input: Model.PublishIntent | Model.DistTagIntent) => string;
 export declare const readScope: (scope: string) => NativeScope;

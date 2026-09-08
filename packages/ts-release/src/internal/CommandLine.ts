@@ -1,6 +1,6 @@
 import { constants } from "node:fs"
 import { open } from "node:fs/promises"
-import { runApplication } from "../platform/Application.js"
+import { runApplication, runInterruptibleProcess } from "../platform/Application.js"
 
 const usage = "Usage: ts-release <application.mjs> <input.json>\n"
 const write = (
@@ -36,42 +36,28 @@ export async function runCommandLine(args: readonly string[]): Promise<number> {
     await write(process.stderr, usage)
     return 1
   }
-  const controller = new AbortController()
-  // An Effect waiting without native handles still owns this process lifetime.
-  const keepAlive = setInterval(() => {}, 2_147_483_647)
-  let interrupted = 0
-  const stop = (code: number) => {
-    interrupted ||= code
-    controller.abort()
-  }
-  const interrupt = () => stop(130)
-  const terminate = () => stop(143)
-  process.on("SIGINT", interrupt)
-  process.on("SIGTERM", terminate)
-  try {
-    const file = await open(inputFile, constants.O_RDONLY | constants.O_NONBLOCK)
-    let input: unknown
+  return runInterruptibleProcess(async (signal, exitCode) => {
     try {
-      if (!(await file.stat()).isFile()) throw new Error("Expected a regular input file")
-      input = JSON.parse(await file.readFile({ encoding: "utf8", signal: controller.signal }))
-    } finally {
-      await file.close()
+      const file = await open(inputFile, constants.O_RDONLY | constants.O_NONBLOCK)
+      let input: unknown
+      try {
+        if (!(await file.stat()).isFile()) throw new Error("Expected a regular input file")
+        input = JSON.parse(await file.readFile({ encoding: "utf8", signal }))
+      } finally {
+        await file.close()
+      }
+      const report = await runApplication(application, input, signal)
+      if (!(await write(process.stdout, JSON.stringify(report) + "\n", signal)))
+        return exitCode() || 1
+      return exitCode() || (report.operations.every((op) => op.status === "Satisfied") ? 0 : 2)
+    } catch {
+      if (!exitCode())
+        await write(
+          process.stderr,
+          "ts-release: application failed; inspect the durable journal before resuming.\n",
+          signal,
+        )
+      return exitCode() || 1
     }
-    const report = await runApplication(application, input, controller.signal)
-    if (!(await write(process.stdout, JSON.stringify(report) + "\n", controller.signal)))
-      return interrupted || 1
-    return interrupted || (report.operations.every((op) => op.status === "Satisfied") ? 0 : 2)
-  } catch {
-    if (!interrupted)
-      await write(
-        process.stderr,
-        "ts-release: application failed; inspect the durable journal before resuming.\n",
-        controller.signal,
-      )
-    return interrupted || 1
-  } finally {
-    clearInterval(keepAlive)
-    process.off("SIGINT", interrupt)
-    process.off("SIGTERM", terminate)
-  }
+  })
 }

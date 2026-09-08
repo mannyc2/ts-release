@@ -1,5 +1,6 @@
 import * as Schema from "effect/Schema";
-import { RequestFacts, type Operation, type ObservationStatus, type PreparedRequest } from "@mannyc1/ts-release";
+import { RequestFacts, type ObservationStatus, type Operation } from "@mannyc1/ts-release";
+import type { PreparedRequest } from "@mannyc1/ts-release";
 import { type HttpResponse } from "@mannyc1/ts-release/http";
 declare const Absent_base: Schema.Class<Absent, Schema.TaggedStruct<"Absent", {}>, {}>;
 declare class Absent extends Absent_base {
@@ -10,20 +11,20 @@ declare const Unavailable_base: Schema.Class<Unavailable, Schema.TaggedStruct<"U
 declare class Unavailable extends Unavailable_base {
 }
 declare const DifferentPackage_base: Schema.Class<DifferentPackage, Schema.TaggedStruct<"DifferentPackage", {
-    readonly name: Schema.NonEmptyString;
+    readonly name: Schema.String;
 }>, {}>;
 declare class DifferentPackage extends DifferentPackage_base {
 }
 declare const VersionFacts_base: Schema.Class<VersionFacts, Schema.TaggedStruct<"VersionFacts", {
-    readonly name: Schema.NonEmptyString;
-    readonly version: Schema.NonEmptyString;
+    readonly name: Schema.String;
+    readonly version: Schema.String;
     readonly integrity: Schema.String;
     readonly shasum: Schema.String;
 }>, {}>;
 declare class VersionFacts extends VersionFacts_base {
 }
 declare const TagValue_base: Schema.Class<TagValue, Schema.TaggedStruct<"TagValue", {
-    readonly version: Schema.NonEmptyString;
+    readonly version: Schema.String;
 }>, {}>;
 declare class TagValue extends TagValue_base {
 }

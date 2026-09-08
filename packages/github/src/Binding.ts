@@ -1,6 +1,6 @@
 import * as Schema from "effect/Schema"
 import { Operation, type OperationEvidence, type ProviderContext } from "@mannyc1/ts-release"
-import { decodeJson } from "@mannyc1/ts-release/http"
+import { decodeJson, sameData } from "@mannyc1/ts-release/http"
 import * as Model from "./Model.js"
 import { intentOf, type Kind } from "./Graph.js"
 import { invalid, own, object } from "./Native.js"
@@ -25,7 +25,7 @@ export class BoundScope extends Schema.Class<BoundScope>("GitHubBoundScope")({
 export const encodeScope = (scope: BoundScope) => JSON.stringify(scope)
 export const readScope = (text: string): BoundScope => {
   if (text.length > 1024 * 1024) invalid("scope-bound")
-  const scope = own(BoundScope, decodeJson(new TextEncoder().encode(text)))
+  const scope = own(BoundScope, decodeJson(text))
   intentOf(scope.operation)
   if (encodeScope(scope) !== text) invalid("scope-encoding")
   return scope
@@ -33,34 +33,25 @@ export const readScope = (text: string): BoundScope => {
 /** These records are decoded only after the kernel has validated their native codecs. */
 const selected = (evidence: OperationEvidence): Parent => {
   const candidates: Parent[] = []
+  const parent = (scopeValue: unknown, facts: unknown) => {
+    const scope = readScope(String(scopeValue))
+    if (!sameData(scope.operation, evidence.operation)) invalid("parent-operation")
+    return new Parent({
+      operationId: evidence.operation.operationId,
+      targetCommit: scope.targetCommit,
+      facts: own(NativeFacts, facts),
+    })
+  }
   for (const receipt of evidence.receipts) {
     const record = object(receipt),
       request = object(record.request)
-    const scope = readScope(String(request.scope))
-    if (JSON.stringify(scope.operation) !== JSON.stringify(evidence.operation))
-      invalid("parent-operation")
-    candidates.push(
-      new Parent({
-        operationId: evidence.operation.operationId,
-        targetCommit: scope.targetCommit,
-        facts: own(NativeFacts, record.facts),
-      }),
-    )
+    candidates.push(parent(request.scope, record.facts))
   }
   for (const observation of evidence.observations) {
     if (observation.status !== "Satisfied") continue
     const record = object(observation.evidence)
     if (record._tag !== "Present") invalid("parent-observation")
-    const scope = readScope(String(record.scope))
-    if (JSON.stringify(scope.operation) !== JSON.stringify(evidence.operation))
-      invalid("parent-operation")
-    candidates.push(
-      new Parent({
-        operationId: evidence.operation.operationId,
-        targetCommit: scope.targetCommit,
-        facts: own(NativeFacts, record.facts),
-      }),
-    )
+    candidates.push(parent(record.scope, record.facts))
   }
   const stable = (value: Parent) => {
     const facts = { ...value.facts } as Record<string, unknown>
@@ -74,14 +65,11 @@ const selected = (evidence: OperationEvidence): Parent => {
   )
   if (new Set(digests).size > 1) invalid("parent-digest")
   // A later response cannot erase recorded public exposure or a known digest.
+  const latest = [...candidates].reverse()
   return (
-    [...candidates]
-      .reverse()
-      .find((c) => c.facts instanceof Model.ReleaseFacts && !c.facts.draft) ??
-    [...candidates]
-      .reverse()
-      .find((c) => c.facts instanceof Model.AssetFacts && c.facts.sha256 !== null) ??
-    candidates.at(-1)!
+    latest.find((c) => c.facts instanceof Model.ReleaseFacts && !c.facts.draft) ??
+    latest.find((c) => c.facts instanceof Model.AssetFacts && c.facts.sha256 !== null) ??
+    latest[0]!
   )
 }
 export const bindScope = (operation: Operation, context: ProviderContext): BoundScope => {

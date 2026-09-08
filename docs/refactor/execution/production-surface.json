@@ -10,7 +10,7 @@
     },
     {
       "path": "packages/npm/package.json",
-      "sha256": "b904cbf11544bf2f262203344cda109fbff69bedd12206d84c01fb7d85b5c296"
+      "sha256": "74b76b53c543d451780d58d4a5b1fafb07a2b4eb359b89aeaa2c18281c521cdf"
     },
     {
       "path": "packages/pypi/package.json",
@@ -37,11 +37,11 @@
     {
       "specifier": "@mannyc1/ts-release",
       "source": "packages/ts-release/src/index.ts",
-      "sourceSha256": "f1eec1bad25221744fa9a5750671604f05822aeedf5edf430ebe0136244f93eb",
+      "sourceSha256": "6d3bd164ab40978d6618c7df88d82a60312aad9477595bcc32b79688edc7c728",
       "runtimePath": "packages/ts-release/dist/index.js",
-      "runtimeSha256": "bac2cbc32b1e864a9172d6130b35094709ea3711778b24af721cdfed8e04cc7d",
+      "runtimeSha256": "09f7426c8e89ce2a7c35d912d8049cd391cf2caef83b19a8de6bf494e90d1ebd",
       "declarationsPath": "packages/ts-release/dist/index.d.ts",
-      "declarationsSha256": "9857ac00a85d33fbc9add72114a656df8e1816c692b0687af8d9f8f2dfa56587",
+      "declarationsSha256": "0f84920e925026d7fd07f93d3539171a69860ba09ced0410a360e20f705a4db3",
       "runtimeNames": [
         "AcceptedRisk",
         "CoreDispatchError",
@@ -73,6 +73,7 @@
         "createOperation",
         "createPlan",
         "createPreparationScope",
+        "defineProvider",
         "historyMachine",
         "loadPlan",
         "makeCoreGitTransport",
@@ -143,11 +144,11 @@
     {
       "specifier": "@mannyc1/ts-release/bundle",
       "source": "packages/ts-release/src/Bundle.ts",
-      "sourceSha256": "21511731379d4c3f0da8045a67a2be8dd3e73f649af0ed6835f570d366b0b074",
+      "sourceSha256": "e16858e9ec26cea5a06f3610a3711ad32344dca499129a034d44bb39bf5c4c60",
       "runtimePath": "packages/ts-release/dist/Bundle.js",
-      "runtimeSha256": "b3d0b7d092f7e8c21d1050629e5bc9ec870f49ad814d35c9edde0fcc9e3c406c",
+      "runtimeSha256": "8865ae0a9734b65cfe3707dc4b79d4d1aa180759a27cfd5265f7b713a40fcfec",
       "declarationsPath": "packages/ts-release/dist/Bundle.d.ts",
-      "declarationsSha256": "13f533ca16f62dbdd27e6d073ca2f0ce9341053f49bcbc89bac9f13eb28d3e22",
+      "declarationsSha256": "7c9985e1e59cb7ab6b2ffa3d1b36e10e7d71ae233721c2eb9ff6e6041d4ce73d",
       "runtimeNames": [
         "AdoptionError",
         "Artifact",
@@ -158,6 +159,9 @@
         "encodeBundle",
         "finalize",
         "loadBundle",
+        "readTarBytes",
+        "readVerifiedContent",
+        "registerArchivePath",
         "renderSha256Sums",
         "verifiedArtifacts",
         "verifySha256Sums"
@@ -173,22 +177,38 @@
         "File",
         "PutContent",
         "ReadContent",
+        "TarEntry",
         "Tree"
       ]
     },
     {
       "specifier": "@mannyc1/ts-release/http",
       "source": "packages/ts-release/src/Http.ts",
-      "sourceSha256": "ebc35bf75d15d5ae9cd467f0607a0e034e04f1cd8705b1d7a85a36ccfb4293d4",
+      "sourceSha256": "1ab4147ec9c09021b590febb20b433ca9cedae4957e058aa513c06b03bb15380",
       "runtimePath": "packages/ts-release/dist/Http.js",
-      "runtimeSha256": "b17c2824ac347d6d1e0ba0d0868609b120278f77e932ba1095158413d653ae04",
+      "runtimeSha256": "7add6ada3e9a393e154ba313313fe9c651810708e8b63e78bd2953041295730d",
       "declarationsPath": "packages/ts-release/dist/Http.d.ts",
-      "declarationsSha256": "0e318562851edda401c8ee201b79a91ce7d9a6fb74eab3fedf96bc0b6235a44e",
+      "declarationsSha256": "33a032f708ed8d351a5c50fe59e93320e85d5fd0632d1b58ff828ea7e8fe0f70",
       "runtimeNames": [
         "HttpReceipt",
+        "PublicText",
+        "bearerCredentials",
+        "canonical",
+        "captureTrustedPublisher",
+        "compareText",
+        "containsSecret",
         "corresponds",
+        "credentialToken",
         "decodeJson",
-        "makeCredentialResolver"
+        "decodeOwned",
+        "isPublicText",
+        "isSafePath",
+        "makeCredentialResolver",
+        "makeDataBoundary",
+        "oidcRequest",
+        "publicUrl",
+        "sameBytes",
+        "sameData"
       ],
       "typeNames": [
         "BoundCredentials",
@@ -205,6 +225,7 @@
         "HttpReceipt",
         "HttpResponse",
         "HttpTransportOptions",
+        "OidcAuthorization",
         "OidcTokenRequest",
         "OidcTokenSource",
         "ResolveCredentials",
@@ -214,11 +235,11 @@
     {
       "specifier": "@mannyc1/ts-release/effect-build",
       "source": "packages/ts-release/src/EffectBuild.ts",
-      "sourceSha256": "f029dae2ec1d4eac75058f17685a68b0a0cb7509ce4d279fae12b5da8ff91909",
+      "sourceSha256": "99776666872c7d8dc3a161ee64dbcec5aee835ea4288dd48040089ae3aa57b09",
       "runtimePath": "packages/ts-release/dist/EffectBuild.js",
-      "runtimeSha256": "7f745d3596c01a6fb17e68e9f33397bcaaed6554cea2b416828ad121d24609c7",
+      "runtimeSha256": "f409fdf9731ee67c10068d124abc0d5e6090f1cee998473c59213f506d334286",
       "declarationsPath": "packages/ts-release/dist/EffectBuild.d.ts",
-      "declarationsSha256": "9a89c26bcb2fc69b83b1097a0bbef85a54c8918a78a1edc9ac6ba2bee792ab2e",
+      "declarationsSha256": "cdaab0a2cc2f94abd5710126d967fa4b692b1b79a202bcd07584a037885ad2fc",
       "runtimeNames": [
         "adoptFile",
         "adoptTree",
@@ -229,11 +250,11 @@
     {
       "specifier": "@mannyc1/ts-release/git",
       "source": "packages/ts-release/src/Git.ts",
-      "sourceSha256": "0d334c07faf1b065b474e6e3cdbc6284a9c76c3cd5b80ded25019e0d10025974",
+      "sourceSha256": "ecf69f2ac446b505c6a4cd0d965a3f8449eeaa26ac135a705347a9f293108c67",
       "runtimePath": "packages/ts-release/dist/Git.js",
-      "runtimeSha256": "f13eabaf19e5d39208e7d2a1fe78ab9639f4236a813096ea077d5fdf15066372",
+      "runtimeSha256": "b31a321d31bac92cfd26e430606bfb4728d2351a54bf96fea0be3539fc2fa313",
       "declarationsPath": "packages/ts-release/dist/Git.d.ts",
-      "declarationsSha256": "3c04cd3e8a4ccf18759ecd95cacac9a5d52d86cc3cf7678dbb5b7d17af856334",
+      "declarationsSha256": "e215ad03413d06c62d9f462722cac0be6621647e9a82d67a57be3f69d3006c75",
       "runtimeNames": [
         "CommitInput",
         "FileEdit",
@@ -265,14 +286,15 @@
     {
       "specifier": "@mannyc1/ts-release/bun",
       "source": "packages/ts-release/src/Bun.ts",
-      "sourceSha256": "98d65b94c17db6e3dafc42906fc11337b5b6bdb1097801671c7e127ee50f3b66",
+      "sourceSha256": "2f70d468e6e6d49006a3aeec950d3d9697b084dc63f808b4f1d908708c7bec90",
       "runtimePath": "packages/ts-release/dist/Bun.js",
-      "runtimeSha256": "52c515902b72589df31aa76c3a5614e7a8b5caef3fc3c6146333f70c128e2508",
+      "runtimeSha256": "8de62d1b69d48bdaa2176e5ce3054bc923181d3f7338522fc6c8dfb04595dc17",
       "declarationsPath": "packages/ts-release/dist/Bun.d.ts",
-      "declarationsSha256": "4107e7b1c9d57182a469cf0d7dbd77a56376f263e29f183e8305962807f691cc",
+      "declarationsSha256": "8de62d1b69d48bdaa2176e5ce3054bc923181d3f7338522fc6c8dfb04595dc17",
       "runtimeNames": [
         "FinalizedReport",
         "fileContentOwner",
+        "journalRef",
         "makeCredentialExchange",
         "makeGitCatalogHost",
         "makeGithubOidcTokenSource",
@@ -282,7 +304,8 @@
         "nodeDirectoryReader",
         "openGitJournal",
         "openSqliteJournal",
-        "runApplication"
+        "runApplication",
+        "runInterruptibleProcess"
       ],
       "typeNames": [
         "Application",
@@ -296,14 +319,15 @@
     {
       "specifier": "@mannyc1/ts-release/node",
       "source": "packages/ts-release/src/Node.ts",
-      "sourceSha256": "ecc1e673dbb0a059315c6d524ecb2146c17acdcf42acae2a59c086932894d3e7",
+      "sourceSha256": "ec54dbdc1cd929513dac71e4f8bb70775c4cc1bf8aad4d04e90cc76719a64be5",
       "runtimePath": "packages/ts-release/dist/Node.js",
-      "runtimeSha256": "d060a41425be14b1542df6674ae8f0e2330c64fb1e1154a67e09d32028ffd15c",
+      "runtimeSha256": "e9bbff25e633bbf5075c53e1ba2a6f71d5297415289767278ca8a8a5b657308c",
       "declarationsPath": "packages/ts-release/dist/Node.d.ts",
-      "declarationsSha256": "fec87d48973920d69edae352729a02e889289049290caff643d8773deb2bac69",
+      "declarationsSha256": "b5d4a8803273ba4fe2310f90d7b2258471ae1e5c5f1a42b99a8e0da456bb78c3",
       "runtimeNames": [
         "FinalizedReport",
         "fileContentOwner",
+        "journalRef",
         "makeCredentialExchange",
         "makeGitCatalogHost",
         "makeGithubOidcTokenSource",
@@ -312,7 +336,8 @@
         "makeHttpTransport",
         "nodeDirectoryReader",
         "openGitJournal",
-        "runApplication"
+        "runApplication",
+        "runInterruptibleProcess"
       ],
       "typeNames": [
         "Application",
@@ -326,11 +351,11 @@
     {
       "specifier": "@mannyc1/ts-release/apple",
       "source": "packages/ts-release/src/Apple.ts",
-      "sourceSha256": "7e195b881bb2bb8a9694d07223cf3d3e59a5826611dc5248ebf74b420e43235f",
+      "sourceSha256": "2e8bdb6b8b3748a7cafe3e36941e25b85ac18e12d3c70d6925162e43c6d7f72b",
       "runtimePath": "packages/ts-release/dist/Apple.js",
-      "runtimeSha256": "4d1af8ad84e6ae981a55eb19be94e11737d1484bc8ce8abba68324142a020b30",
+      "runtimeSha256": "6d77d4e9d409831a592f2ec023b5f800dd366d6ea765075f6c1afbc3b0b9e5f3",
       "declarationsPath": "packages/ts-release/dist/Apple.d.ts",
-      "declarationsSha256": "a23af4b8b5737a8673320e10d368fef808cccbc6266212058f4a53a61a590b35",
+      "declarationsSha256": "4a7520c7b4724fd01e9cd5de1eaf639fc80fb7e303f57998baa702baabe4b210",
       "runtimeNames": [
         "AppPreparation",
         "AppleEvidence",
@@ -383,11 +408,11 @@
     {
       "specifier": "@mannyc1/ts-release-npm",
       "source": "packages/npm/src/index.ts",
-      "sourceSha256": "24f761eeafea23755b822b81dcd2f4d408a21d87569915e30ba8c6e578f127dd",
+      "sourceSha256": "e62191cdb43e135c4326f5f397b2beec8705bead9c1e305770faed7f355d90a9",
       "runtimePath": "packages/npm/dist/index.js",
-      "runtimeSha256": "b4a96b03e8600eb0ec8830fa605009e3c6d1e9967e048b267dd7ec6d30d2b1a0",
+      "runtimeSha256": "a9bb23d833b8ecdc274724eee40e3892a54f63c70e7b533569eb87df6b15c49c",
       "declarationsPath": "packages/npm/dist/index.d.ts",
-      "declarationsSha256": "fa0447e6bc92155425681adf3f5929065271d1523716bad2cdb9001c29dc7423",
+      "declarationsSha256": "a1296bd253a1104284135846d5706cc741ba72d64fb562a47ea1b2a64d2f151b",
       "runtimeNames": [
         "Authorization",
         "DistTagIntent",
@@ -436,11 +461,11 @@
     {
       "specifier": "@mannyc1/ts-release-pypi",
       "source": "packages/pypi/src/index.ts",
-      "sourceSha256": "d9984fdd2b297dbb6c10e355e2f1c25546797e2c93bbb14fa21e9114d1bed316",
+      "sourceSha256": "eb3f7c3432635967ddfa79edd641f852a94219767c3c6662982004f41e8985e5",
       "runtimePath": "packages/pypi/dist/index.js",
-      "runtimeSha256": "b70b66212c0e9e0e7512db57653ad9d5dea16158a455f355078652db424e9917",
+      "runtimeSha256": "2ca527b4fe607cc28a4766afb205160f00b28a0c25f54f74d7d4faa7a96cb923",
       "declarationsPath": "packages/pypi/dist/index.d.ts",
-      "declarationsSha256": "b70b66212c0e9e0e7512db57653ad9d5dea16158a455f355078652db424e9917",
+      "declarationsSha256": "2ca527b4fe607cc28a4766afb205160f00b28a0c25f54f74d7d4faa7a96cb923",
       "runtimeNames": [
         "Authorization",
         "Compatible",
@@ -478,11 +503,11 @@
     {
       "specifier": "@mannyc1/ts-release-github",
       "source": "packages/github/src/index.ts",
-      "sourceSha256": "c95c932e5f36d553e12254b609f988f47ee908ee03bc12652ecf257dec34337d",
+      "sourceSha256": "8c5c7e6ccc3072af25df30bf888a740059de38f6a46e6c17c81d50824248b28c",
       "runtimePath": "packages/github/dist/index.js",
-      "runtimeSha256": "7ccbff55c8c509a0aa1837eb83184a647ed52a39584de25ee62586f850ce254f",
+      "runtimeSha256": "a9aec0f5f1fff83deaa45ae9fb95a81e405391592f989e6e94abcd5cacf64c78",
       "declarationsPath": "packages/github/dist/index.d.ts",
-      "declarationsSha256": "7ccbff55c8c509a0aa1837eb83184a647ed52a39584de25ee62586f850ce254f",
+      "declarationsSha256": "a9aec0f5f1fff83deaa45ae9fb95a81e405391592f989e6e94abcd5cacf64c78",
       "runtimeNames": [
         "AnnotatedRef",
         "AnnotatedTag",
@@ -565,11 +590,11 @@
     {
       "specifier": "@mannyc1/ts-release-mcp",
       "source": "packages/mcp/src/index.ts",
-      "sourceSha256": "8926f23abc28b28bf739550aca6e090c28914b6b8bf7ab547104d219287e1b1c",
+      "sourceSha256": "4253169ecd79796145baabcc75eefaa651a3c8af1b1c80cc7fb06d2b4e0ee469",
       "runtimePath": "packages/mcp/dist/index.js",
-      "runtimeSha256": "d97574ee18194e635e8551aee8e9094b46c92f5e32739b7f541e89dddf389dce",
+      "runtimeSha256": "ed09708a8810ddb0a35c9898f3c2a9e9dc288db5fa0645e52a9b971ea01648e4",
       "declarationsPath": "packages/mcp/dist/index.d.ts",
-      "declarationsSha256": "6cd1b33947dfb64e4e8e2d29bd40e04eb14dae558556676849eb628d5e5a7ffc",
+      "declarationsSha256": "16b49c4982ebab62fbcb18e3b53fab7dacf5ea72e8b6c118b5441afb64679b69",
       "runtimeNames": [
         "Argument",
         "Authorization",
@@ -635,11 +660,11 @@
     {
       "specifier": "@mannyc1/ts-release-openai",
       "source": "packages/openai/src/index.ts",
-      "sourceSha256": "139efde2faa31f34d0b5ba0b8d9fd1021101a6427d61d7c92d320e840480b422",
+      "sourceSha256": "29b282908ac1285ac09faa075ed709a52d996e1dc2116973ebb4e33c612234cd",
       "runtimePath": "packages/openai/dist/index.js",
-      "runtimeSha256": "2d6caf4ab21227c060c95b4f5f4586e1315db2421e91677c84abf4514dd77dc6",
+      "runtimeSha256": "97216fd1c166db45180d4f90a28d3dda11bc66ef0abd6fab6bed572d7b86a9ce",
       "declarationsPath": "packages/openai/dist/index.d.ts",
-      "declarationsSha256": "a9b5a6f42fdd1f0997f752303b39b1ebde5afc08c9b9b7a7876062f32a43ea85",
+      "declarationsSha256": "170b4f2cbcf2a8dcae3f8947fb82cbd8cde12f8b026118336709621040dcd83c",
       "runtimeNames": [
         "Attestations",
         "Listing",

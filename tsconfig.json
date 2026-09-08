@@ -17,6 +17,11 @@
     "types": ["bun-types"],
     "paths": {}
   },
-  "include": ["packages/**/*.ts", "test/reimplementation/**/*.ts"],
+  "include": [
+    "packages/**/*.ts",
+    "apps/**/*.ts",
+    "test/reimplementation/**/*.ts",
+    "scripts/**/*.ts"
+  ],
   "exclude": ["**/dist", "**/node_modules", ".repos", "tools", "docs"]
 }

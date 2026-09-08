@@ -4,7 +4,6 @@ import type * as Tool from "effect-build/Author/Tool";
 import * as Notary from "effect-build-apple/Notary";
 import * as Assess from "effect-build-apple/Assess";
 import { Content, OwnedFile, OwnedTree } from "../internal/ArtifactModel.js";
-import { ReleaseError } from "../internal/Error.js";
 declare const ApplicationSignature_base: Schema.Class<ApplicationSignature, Schema.Struct<{
     readonly certificateSha1: Schema.String;
     readonly tool: Schema.declare<Tool.Observation<"codesign">, Tool.Observation<"codesign">>;
@@ -79,8 +78,8 @@ export declare class ApplePreparations extends ApplePreparations_base {
 }
 /** One root owns the exact caller-ordered native inputs, before a publication
  * graph exists. No caller-authored journal identity or borrowed path is retained. */
-export declare const createApplePreparations: (members: readonly [ApplePreparationInput, ...ApplePreparationInput[]]) => Effect.Effect<ApplePreparations, ReleaseError, never>;
-export declare const loadApplePreparations: (value: unknown) => Effect.Effect<ApplePreparations, ReleaseError, never>;
+export declare const createApplePreparations: (members: readonly [ApplePreparationInput, ...ApplePreparationInput[]]) => Effect.Effect<ApplePreparations, import("../internal/Error.js").ReleaseError, never>;
+export declare const loadApplePreparations: (value: unknown) => Effect.Effect<ApplePreparations, import("../internal/Error.js").ReleaseError, never>;
 declare const FinalApp_base: Schema.Class<FinalApp, Schema.TaggedStruct<"FinalApp", {
     readonly kind: Schema.Literal<"app">;
     readonly identityKind: Schema.Literal<"tree-manifest">;

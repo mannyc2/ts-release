@@ -1,38 +1,29 @@
 import * as Effect from "effect/Effect"
 import { currentHost, type HostShape, journalIdFor, read, scopeKind } from "./internal/Host.js"
-import {
-  CoreDispatchError,
-  CoreUndecodableReceipt,
-  DispatchRejectedBeforeCommit,
-  DispatchStarted,
-  EventBody,
-  JournalEvent,
-  ObservationRecorded,
-  Operation,
-  Plan,
-  PlanSuperseded,
-  ReceiptAccepted,
-  RiskAccepted,
-  type RunOptions,
-} from "./internal/ReleaseModel.js"
+import { CoreDispatchError, CoreUndecodableReceipt } from "./internal/ReleaseModel.js"
+import { DispatchRejectedBeforeCommit, DispatchStarted } from "./internal/ReleaseModel.js"
+import { ObservationRecorded, PlanSuperseded, ReceiptAccepted } from "./internal/ReleaseModel.js"
+import { EventBody, JournalEvent, Operation, Plan, RiskAccepted } from "./internal/ReleaseModel.js"
+import type { RunOptions } from "./internal/ReleaseModel.js"
 import { canonical, decodeOwned, freeze, sha256 } from "./internal/Identity.js"
-import { ReleaseError, attempt, fail } from "./internal/Error.js"
+import { attempt, fail, reject } from "./internal/Error.js"
 import { type Snapshot, verifyNativeEvidence, verifyPreparationSelection } from "./Journal.js"
 import { assertJournalAppend } from "./internal/Decision.js"
 import { loadPlan } from "./Plan.js"
-import {
-  type ProviderDefinition,
-  evidenceContext,
-  nativeEvidence,
-  requestFingerprint,
-  verifyRequest,
-} from "./Provider.js"
+import { assertRequestCorresponds, evidenceContext, nativeEvidence } from "./Provider.js"
+import { requestFingerprint, verifyRequest } from "./Provider.js"
+import type { ProviderDefinition } from "./Provider.js"
 import { assertTransportBinding } from "./internal/GitAuthority.js"
 
-export const eventFor = (host: HostShape, plan: Plan, body: EventBody): JournalEvent =>
+export const eventFor = (
+  host: HostShape,
+  plan: Plan,
+  body: EventBody,
+  eventId = host.uniqueId(),
+): JournalEvent =>
   new JournalEvent({
     format: "ts-release/event/1",
-    eventId: host.uniqueId(),
+    eventId,
     journalId: journalIdFor(host, plan),
     planId: plan.planId,
     body,
@@ -49,10 +40,7 @@ export const appendFact = Effect.fn("ts-release.appendFact")(function* (
     const existing = snapshot.events.find((item) => item.eventId === event.eventId)
     if (existing) {
       if (canonical(existing) !== canonical(event))
-        return yield* new ReleaseError({
-          code: "event-id-conflict",
-          message: "Event ID already has different facts",
-        })
+        return yield* reject("event-id-conflict", "Event ID already has different facts")
       return
     }
     yield* attempt(() => {
@@ -65,11 +53,15 @@ export const appendFact = Effect.fn("ts-release.appendFact")(function* (
     const result = yield* host.store.append(journalIdFor(host, plan), snapshot.revision, event)
     if (result._tag === "Appended" || result._tag === "AlreadyRecorded") return
   }
-  return yield* new ReleaseError({
-    code: "journal-contention",
-    message: "Fact append could not be reconciled within this invocation",
-  })
+  return yield* reject("journal-contention", "Fact append could not be reconciled")
 })
+const appendBody = (host: HostShape, plan: Plan, body: EventBody) =>
+  appendFact(host, plan, eventFor(host, plan, body))
+const appendObservation = (
+  host: HostShape,
+  plan: Plan,
+  body: Omit<typeof ObservationRecorded.Type, "_tag">,
+) => appendBody(host, plan, new ObservationRecorded(body))
 const recordObservation = Effect.fn("ts-release.recordObservation")(function* (
   host: HostShape,
   plan: Plan,
@@ -81,22 +73,14 @@ const recordObservation = Effect.fn("ts-release.recordObservation")(function* (
     operation,
     yield* attempt(() => evidenceContext(plan, operation, snapshot.events)),
   )
-  yield* appendFact(
-    host,
-    plan,
-    eventFor(
-      host,
-      plan,
-      new ObservationRecorded({
-        operationId: operation.operationId,
-        evidenceKind: "Observation",
-        status: observation.status,
-        evidence: observation.evidence,
-        evidenceVersion: provider.observationVersion!,
-        observedAt: host.now(),
-      }),
-    ),
-  )
+  yield* appendObservation(host, plan, {
+    operationId: operation.operationId,
+    evidenceKind: "Observation",
+    status: observation.status,
+    evidence: observation.evidence,
+    evidenceVersion: provider.observationVersion!,
+    observedAt: host.now(),
+  })
 })
 export const reportRelease = Effect.fn("ts-release.reportRelease")(function* (options: {
   readonly plan: Plan
@@ -128,18 +112,12 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
     typeof options.authorize !== "boolean" ||
     (options.observe !== undefined && typeof options.observe !== "boolean")
   )
-    return yield* new ReleaseError({
-      code: "run-options",
-      message: "Authorization and observation options must be booleans",
-    })
+    return yield* reject("run-options", "Authorization and observation options must be booleans")
   if (
     options.maxDispatches !== undefined &&
     (!Number.isSafeInteger(options.maxDispatches) || options.maxDispatches < 0)
   )
-    return yield* new ReleaseError({
-      code: "dispatch-limit",
-      message: "Dispatch limit must be a nonnegative safe integer",
-    })
+    return yield* reject("dispatch-limit", "Dispatch limit must be a nonnegative safe integer")
   const plan = yield* loadPlan(options.plan, host.providers)
   yield* read(host, plan)
   const visited = new Set<string>()
@@ -170,33 +148,18 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
       )
       if (first._tag !== "PrepareDispatch") continue
       // Private byte copy resolves credentials/artifacts before the uncertainty boundary.
-      const request = yield* verifyRequest(
-        yield* provider.prepare(
-          operation,
-          yield* attempt(() => evidenceContext(plan, operation, current.snapshot.events)),
-        ),
+      const context = yield* attempt(() =>
+        evidenceContext(plan, operation, current.snapshot.events),
       )
-      yield* attempt(() => {
-        if (
-          provider.requestCorresponds &&
-          provider.requestCorresponds(
-            operation,
-            request.facts,
-            evidenceContext(plan, operation, current.snapshot.events),
-          ) !== true
-        )
-          fail("request-correspondence", "Request differs from declared dependency evidence")
-      })
+      const request = yield* verifyRequest(yield* provider.prepare(operation, context))
+      yield* attempt(() => assertRequestCorresponds(provider, operation, request.facts, context))
       yield* attempt(() => assertTransportBinding(host.transport, request.facts))
       const send = host.transport.prepare
         ? yield* host.transport.prepare(yield* verifyRequest(request))
         : host.transport.send
       yield* attempt(() => {
         if (typeof send !== "function")
-          throw new ReleaseError({
-            code: "transport-preparation",
-            message: "Transport preparation did not return a callable send",
-          })
+          fail("transport-preparation", "Transport preparation did not return a callable send")
       })
       const fingerprint = yield* requestFingerprint(request.facts)
       current = yield* read(host, plan)
@@ -212,12 +175,10 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
       const eventId = host.uniqueId()
       const dispatchId = `${eventId}:dispatch`
       const event = yield* attempt(() =>
-        decodeOwned(JournalEvent, {
-          format: "ts-release/event/1",
-          eventId,
-          journalId: journalIdFor(host, plan),
-          planId: plan.planId,
-          body: new DispatchStarted({
+        eventFor(
+          host,
+          plan,
+          new DispatchStarted({
             operationId: operation.operationId,
             dispatchId,
             request: request.facts,
@@ -225,7 +186,8 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
             startedAt,
             basis: next.basis,
           }),
-        }),
+          eventId,
+        ),
       )
       yield* attempt(() => {
         verifyNativeEvidence(
@@ -272,76 +234,55 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
           ),
         })).pipe(Effect.catch((error) => Effect.succeed({ _tag: "Undecodable" as const, error })))
         if (decoded._tag === "Decoded") {
-          yield* appendFact(
+          yield* appendBody(
             host,
             plan,
-            eventFor(
-              host,
-              plan,
-              new ReceiptAccepted({
-                dispatchId: dispatchId,
-                receiptVersion: provider.receiptVersion,
-                status: decoded.status,
-                receipt: result.receipt,
-              }),
-            ),
+            new ReceiptAccepted({
+              dispatchId,
+              receiptVersion: provider.receiptVersion,
+              status: decoded.status,
+              receipt: result.receipt,
+            }),
           )
         } else {
           // The remote may have committed; keep the attempt uncertain and retain only a bounded, credential-free diagnostic.
-          let encoded: string | undefined
+          let diagnostic: Uint8Array | null = null
           try {
-            encoded = canonical(result.receipt)
-          } catch {
-            encoded = undefined
-          }
-          const receiptSha256 =
-            encoded === undefined ? null : yield* sha256(new TextEncoder().encode(encoded))
+            diagnostic = new TextEncoder().encode(canonical(result.receipt))
+          } catch {}
           const evidence = new CoreUndecodableReceipt({
             code: "undecodable-receipt",
             message: "Committed response could not be admitted by the installed provider",
-            receiptSha256,
-            receiptBytes:
-              encoded === undefined ? null : String(new TextEncoder().encode(encoded).byteLength),
+            receiptSha256: diagnostic && (yield* sha256(diagnostic)),
+            receiptBytes: diagnostic && String(diagnostic.byteLength),
           })
-          yield* appendFact(
-            host,
-            plan,
-            eventFor(
-              host,
-              plan,
-              new ObservationRecorded({
-                operationId: operation.operationId,
-                evidenceKind: "DispatchError",
-                dispatchId: dispatchId,
-                status: "Inconclusive",
-                evidenceVersion: "core-undecodable-receipt/1",
-                evidence,
-                observedAt: host.now(),
-              }),
-            ),
-          )
+          yield* appendObservation(host, plan, {
+            operationId: operation.operationId,
+            evidenceKind: "DispatchError",
+            dispatchId,
+            status: "Inconclusive",
+            evidenceVersion: "core-undecodable-receipt/1",
+            evidence,
+            observedAt: host.now(),
+          })
         }
       } else if (result._tag === "RejectedBeforeCommit" && provider.rejection) {
-        yield* appendFact(
+        yield* appendBody(
           host,
           plan,
-          eventFor(
-            host,
-            plan,
-            new DispatchRejectedBeforeCommit({
-              dispatchId: dispatchId,
-              proofVersion: provider.rejection.version,
-              proof: result.proof,
-            }),
-          ),
+          new DispatchRejectedBeforeCommit({
+            dispatchId,
+            proofVersion: provider.rejection.version,
+            proof: result.proof,
+          }),
         )
       } else {
         const native = result._tag === "Unknown" && result.nativeError !== undefined
         if (native && !provider.dispatchError)
-          return yield* new ReleaseError({
-            code: "unknown-error-codec",
-            message: "Native dispatch error requires an installed versioned codec",
-          })
+          return yield* reject(
+            "unknown-error-codec",
+            "Native dispatch error requires an installed versioned codec",
+          )
         const evidence = native
           ? result.nativeError
           : result._tag === "CoreError"
@@ -359,23 +300,15 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
                     ? "Transport supplied no declared native proof of terminal noncommit"
                     : "Transport did not provide a verifiable outcome",
               })
-        yield* appendFact(
-          host,
-          plan,
-          eventFor(
-            host,
-            plan,
-            new ObservationRecorded({
-              operationId: operation.operationId,
-              evidenceKind: "DispatchError",
-              dispatchId: dispatchId,
-              status: "Inconclusive",
-              evidenceVersion: native ? provider.dispatchError!.version : "core-dispatch-error/1",
-              evidence,
-              observedAt: host.now(),
-            }),
-          ),
-        )
+        yield* appendObservation(host, plan, {
+          operationId: operation.operationId,
+          evidenceKind: "DispatchError",
+          dispatchId,
+          status: "Inconclusive",
+          evidenceVersion: native ? provider.dispatchError!.version : "core-dispatch-error/1",
+          evidence,
+          observedAt: host.now(),
+        })
       }
     }
     if (!progressed) break
@@ -389,16 +322,9 @@ export const supersedePlan = Effect.fn("ts-release.supersedePlan")(function* (op
 }) {
   const host = yield* currentHost
   if (options.authorize !== true)
-    return yield* new ReleaseError({
-      code: "authority-required",
-      message: "Supersession requires host authorization",
-    })
+    return yield* reject("authority-required", "Supersession requires host authorization")
   const plan = yield* loadPlan(options.plan, host.providers)
-  yield* appendFact(
-    host,
-    plan,
-    eventFor(host, plan, new PlanSuperseded({ reason: options.reason })),
-  )
+  yield* appendBody(host, plan, new PlanSuperseded({ reason: options.reason }))
   return (yield* read(host, plan)).report()
 })
 export const acceptRisk = Effect.fn("ts-release.acceptRisk")(function* (options: {
@@ -408,11 +334,8 @@ export const acceptRisk = Effect.fn("ts-release.acceptRisk")(function* (options:
 }) {
   const host = yield* currentHost
   if (options.authorize !== true)
-    return yield* new ReleaseError({
-      code: "authority-required",
-      message: "Risk acceptance requires host authorization",
-    })
+    return yield* reject("authority-required", "Risk acceptance requires host authorization")
   const plan = yield* loadPlan(options.plan, host.providers)
-  yield* appendFact(host, plan, eventFor(host, plan, options.decision))
+  yield* appendBody(host, plan, options.decision)
   return (yield* read(host, plan)).report()
 })

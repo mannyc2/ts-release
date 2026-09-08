@@ -1,5 +1,6 @@
 import * as Effect from "effect/Effect";
 import type * as Scope from "effect/Scope";
+import { type ProcessResult } from "./Process.js";
 import { ReleaseError } from "../internal/Error.js";
 import { type Credentials, type RefCoordinate } from "../internal/GitCatalog.js";
 export interface GitProcessOptions {
@@ -8,19 +9,16 @@ export interface GitProcessOptions {
     readonly timeoutMilliseconds: number;
     readonly maximumOutputBytes: number;
 }
-export interface GitResult {
-    readonly exitCode: number;
-    readonly stdout: Uint8Array;
-}
+export type GitResult = ProcessResult;
 export interface GitEnvironment {
     readonly identity?: Readonly<Record<string, string>>;
     readonly credentialConfig?: Readonly<Record<string, string>>;
 }
 export type GitCommand = (args: readonly string[], input?: Uint8Array, environment?: GitEnvironment) => Effect.Effect<GitResult, ReleaseError>;
-export interface GitRepository {
-    readonly run: GitCommand;
-    readonly directory: string;
-}
+export type GitRepository = Readonly<{
+    run: GitCommand;
+    directory: string;
+}>;
 export interface GitRuntime {
     readonly maximumOutputBytes: number;
     readonly repository: (format: "sha1" | "sha256") => Effect.Effect<GitRepository, ReleaseError>;

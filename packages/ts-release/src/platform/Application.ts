@@ -6,7 +6,7 @@ import { resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 import { Host, captureHost, type HostShape } from "../internal/Host.js"
 import type { OwnedBundle } from "../internal/ArtifactModel.js"
-import { ReleaseError, attempt, fail } from "../internal/Error.js"
+import { attempt, fail, failure, type ReleaseError } from "../internal/Error.js"
 import type { RunOptions } from "../internal/ReleaseModel.js"
 import { FinalizedReport, reportFinalizedRelease } from "../internal/FinalizedReport.js"
 import { runRelease } from "../Release.js"
@@ -20,6 +20,26 @@ export interface Application {
 export type CreateApplication = (
   input: unknown,
 ) => Effect.Effect<Application, ReleaseError, Scope.Scope>
+/** Own process signal listeners and liveness for exactly one asynchronous main. */
+export const runInterruptibleProcess = async <A>(
+  main: (signal: AbortSignal, exitCode: () => 0 | 130 | 143) => Promise<A>,
+): Promise<A> => {
+  const controller = new AbortController(),
+    keepAlive = setInterval(() => {}, 2_147_483_647)
+  let code: 0 | 130 | 143 = 0
+  const stop = (exitCode: 130 | 143) => {
+      code ||= exitCode
+      controller.abort()
+    },
+    signals = { SIGINT: () => stop(130), SIGTERM: () => stop(143) } as const
+  for (const [signal, listener] of Object.entries(signals)) process.on(signal, listener)
+  try {
+    return await main(controller.signal, () => code)
+  } finally {
+    clearInterval(keepAlive)
+    for (const [signal, listener] of Object.entries(signals)) process.off(signal, listener)
+  }
+}
 
 /** This explicit path selects trusted application code. Neither Plan nor Journal
  * data can choose an import. The application supplies its complete host layers. */
@@ -33,11 +53,7 @@ export const runApplication = (
       Effect.gen(function* () {
         const loaded: unknown = yield* Effect.tryPromise({
           try: () => import(pathToFileURL(resolve(applicationPath)).href),
-          catch: () =>
-            new ReleaseError({
-              code: "application-load",
-              message: "Application module could not be loaded",
-            }),
+          catch: () => failure("application-load", "Application module could not be loaded"),
         })
         const factory = yield* attempt(() => {
           if (

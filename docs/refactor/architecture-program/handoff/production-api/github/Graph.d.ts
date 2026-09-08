@@ -3,34 +3,122 @@ import { type Operation } from "@mannyc1/ts-release";
 import * as Model from "./Model.js";
 export declare const descriptors: {
     readonly lightweight: {
-        readonly definitionId: "github.lightweight-tag";
-        readonly intentVersion: "1";
-        readonly intentCodec: typeof Model.LightweightTag;
+        definitionId: "github.lightweight-tag";
+        intentVersion: "1";
+        intentCodec: import("effect/Schema").Codec<Model.LightweightTag, {
+            readonly repository: {
+                readonly apiUrl: "https://api.github.com";
+                readonly owner: string;
+                readonly name: string;
+            };
+            readonly tag: string;
+            readonly commit: string;
+            readonly principal: string;
+        }, never, never>;
     };
     readonly object: {
-        readonly definitionId: "github.annotated-tag";
-        readonly intentVersion: "1";
-        readonly intentCodec: typeof Model.AnnotatedTag;
+        definitionId: "github.annotated-tag";
+        intentVersion: "1";
+        intentCodec: import("effect/Schema").Codec<Model.AnnotatedTag, {
+            readonly message: string;
+            readonly tagger: {
+                readonly name: string;
+                readonly email: string;
+                readonly date: string;
+            };
+            readonly repository: {
+                readonly apiUrl: "https://api.github.com";
+                readonly owner: string;
+                readonly name: string;
+            };
+            readonly tag: string;
+            readonly commit: string;
+            readonly principal: string;
+        }, never, never>;
     };
     readonly ref: {
-        readonly definitionId: "github.annotated-ref";
-        readonly intentVersion: "1";
-        readonly intentCodec: typeof Model.AnnotatedRef;
+        definitionId: "github.annotated-ref";
+        intentVersion: "1";
+        intentCodec: import("effect/Schema").Codec<Model.AnnotatedRef, {
+            readonly repository: {
+                readonly apiUrl: "https://api.github.com";
+                readonly owner: string;
+                readonly name: string;
+            };
+            readonly tag: string;
+            readonly annotatedTagOperation: string;
+            readonly principal: string;
+        }, never, never>;
     };
     readonly draft: {
-        readonly definitionId: "github.draft";
-        readonly intentVersion: "1";
-        readonly intentCodec: typeof Model.DraftIntent;
+        definitionId: "github.draft";
+        intentVersion: "1";
+        intentCodec: import("effect/Schema").Codec<Model.DraftIntent, {
+            readonly repository: {
+                readonly apiUrl: "https://api.github.com";
+                readonly owner: string;
+                readonly name: string;
+            };
+            readonly tag: string;
+            readonly tagSource: {
+                readonly _tag: "ManagedTag";
+                readonly operationId: string;
+            } | {
+                readonly _tag: "ExistingTag";
+                readonly commit: string;
+            };
+            readonly title: string;
+            readonly body: string;
+            readonly prerelease: boolean;
+            readonly principal: string;
+        }, never, never>;
     };
     readonly asset: {
-        readonly definitionId: "github.asset";
-        readonly intentVersion: "1";
-        readonly intentCodec: typeof Model.AssetIntent;
+        definitionId: "github.asset";
+        intentVersion: "1";
+        intentCodec: import("effect/Schema").Codec<Model.AssetIntent, {
+            readonly repository: {
+                readonly apiUrl: "https://api.github.com";
+                readonly owner: string;
+                readonly name: string;
+            };
+            readonly draftOperation: string;
+            readonly file: {
+                readonly _tag: "OwnedFile";
+                readonly logicalName: string;
+                readonly content: {
+                    readonly bytes: string;
+                    readonly sha256: string;
+                };
+                readonly deliveryMode: import("effect-build/Artifact").FileMode;
+                readonly executable: {
+                    readonly nativeFormat: "elf" | "mach-o" | "pe";
+                    readonly runtime: {
+                        readonly name: string;
+                        readonly version: string;
+                    };
+                    readonly target: "macos-x64" | "macos-aarch64" | "linux-x64-gnu" | "linux-x64-musl" | "linux-aarch64-gnu" | "linux-aarch64-musl" | "windows-x64" | "windows-aarch64";
+                } | null;
+                readonly provenance: import("effect-build/Artifact").Provenance;
+            };
+            readonly publicName: string;
+            readonly mediaType: string;
+            readonly principal: string;
+        }, never, never>;
     };
     readonly publish: {
-        readonly definitionId: "github.publish";
-        readonly intentVersion: "1";
-        readonly intentCodec: typeof Model.PublishIntent;
+        definitionId: "github.publish";
+        intentVersion: "1";
+        intentCodec: import("effect/Schema").Codec<Model.PublishIntent, {
+            readonly repository: {
+                readonly apiUrl: "https://api.github.com";
+                readonly owner: string;
+                readonly name: string;
+            };
+            readonly draftOperation: string;
+            readonly assetOperations: readonly string[];
+            readonly principal: string;
+        }, never, never>;
     };
 };
 export type Kind = keyof typeof descriptors;

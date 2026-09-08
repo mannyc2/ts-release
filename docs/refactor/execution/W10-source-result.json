@@ -1,0 +1,35 @@
+{
+  "format": "ts-release/final-source-result/1",
+  "wave": "W10",
+  "status": "actual-complete-product-meets-unchanged-ceiling",
+  "measuredAt": "2026-09-08T08:21:39.593Z",
+  "baseline": 22971,
+  "ceiling": 11485,
+  "reductionLines": 11486,
+  "counts": {
+    "product": 11485,
+    "unchangedLegacy": 0,
+    "replacement": 11485,
+    "metadata": 694,
+    "productData": 789,
+    "productDataBytes": 15973,
+    "tests": 32429,
+    "fixtureText": 4932,
+    "fixtureBinaryBytes": 727372,
+    "generatedDelivery": 20263,
+    "tooling": 40657
+  },
+  "productAndDataLines": 12274,
+  "replacementSha256": "56525759e4283e4ac3151868bbd805b59aba43d5587b91e0ce3c0de313d95a65",
+  "planningTripwirePassed": true,
+  "planningVarianceAccepted": false,
+  "completeProductWaiver": false,
+  "achievedReduction": true,
+  "sourceMeasurement": {
+    "path": "docs/refactor/execution/source-measurement.json",
+    "bytes": 126537,
+    "sha256": "100f5aca9ba80c40ad41c5a1178b18851601e4ee23ac96dc7935e53d4f8de884"
+  },
+  "method": "Exact physical lines in every maintained TypeScript/JavaScript product source and selected Action YAML. Generated delivery, metadata, owned data, tests, fixtures, tooling and documentation remain visible in separate lanes; no deletion credit, minification, density estimate or forecast contributes to the result.",
+  "qualification": "This closes the implementation source ceiling only. All 69 selected launch outcomes, hosted and credentialed acceptance, native Apple/Windows, direct Bun Sigstore, publication and independent Plan010 certification remain open."
+}

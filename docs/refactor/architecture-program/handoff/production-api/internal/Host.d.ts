@@ -1,10 +1,9 @@
 import * as Context from "effect/Context";
-import * as Effect from "effect/Effect";
-import { type JournalContext, type JournalStore } from "../Journal.js";
-import { type ProviderDefinition, type Transport } from "../Provider.js";
-import { type MachineConstructor } from "./Decision.js";
+import { Effect } from "effect";
+import type { JournalContext, JournalStore } from "../Journal.js";
+import type { ProviderDefinition, Transport } from "../Provider.js";
+import type { Machine, MachineConstructor } from "./Decision.js";
 import { JournalEvent, Plan } from "./ReleaseModel.js";
-import { ReleaseError } from "./Error.js";
 export interface HostShape {
     readonly store: JournalStore;
     readonly transport: Transport;
@@ -22,18 +21,16 @@ export declare class Host extends Host_base {
  * state stays behind its functions; callers cannot replace this invocation's
  * provider table, transport, journal scopes, or clock after admission. */
 export declare const captureHost: (input: HostShape) => HostShape;
-export declare const currentHost: Effect.Effect<HostShape, ReleaseError, Host>;
-/** Both inputs were owned and frozen at admission, preserving Schema classes. */
-export declare const model: (host: HostShape, plan: Plan, events: ReadonlyArray<JournalEvent>) => import("./Decision.js").Machine;
+export declare const currentHost: Effect.Effect<HostShape, import("./Error.js").ReleaseError, Host>;
 export declare const journalIdFor: (host: HostShape, plan: Plan) => string;
 export declare const scopeKind: (host: HostShape, plan: Plan) => "PublicationScope" | "PreparationScope";
 export declare const read: (host: HostShape, plan: Plan) => Effect.Effect<{
     plans: Plan[];
     snapshot: {
         revision: number;
-        events: JournalEvent[];
+        events: readonly JournalEvent[];
     };
-    machine: import("./Decision.js").Machine;
+    machine: Machine;
     report: () => {
         revision: number;
         planId: string;
@@ -46,5 +43,5 @@ export declare const read: (host: HostShape, plan: Plan) => Effect.Effect<{
             observations: number;
         }[];
     };
-}, ReleaseError, never>;
+}, import("./Error.js").ReleaseError, never>;
 export {};

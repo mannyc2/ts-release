@@ -7,12 +7,12 @@ import * as Notary from "effect-build-apple/Notary"
 import * as Staple from "effect-build-apple/Staple"
 import * as Assess from "effect-build-apple/Assess"
 import { adoptFile, adoptTree, restoreTree } from "../EffectBuild.js"
-import { AdoptionError, Content, type OwnedFile } from "../internal/ArtifactModel.js"
+import { AdoptionError, type OwnedFile } from "../internal/ArtifactModel.js"
 import { encodeBundle, loadBundle } from "../internal/BundleCodec.js"
 import { finalize } from "../internal/BundleFinalize.js"
-import { captureContentOwner, type ContentOwner } from "../internal/Content.js"
-import { ReleaseError, attempt } from "../internal/Error.js"
-import { canonical, decodeOwned, sha256 } from "../internal/Identity.js"
+import { captureContentOwner, readVerifiedContent, type ContentOwner } from "../internal/Content.js"
+import { attempt, failure, type ReleaseError } from "../internal/Error.js"
+import { decodeOwned, sameBytes } from "../internal/Identity.js"
 import { ApplePreparation, FinalApp, FinalDmg, FinalPkg, ReadyToPlan } from "./Model.js"
 import { classifyEvidence, sourceCorresponds } from "./Provider.js"
 
@@ -20,22 +20,11 @@ export type RestoredSource =
   | { readonly kind: "app"; readonly artifact: Model.DeveloperIdApplicationBundle }
   | { readonly kind: "dmg"; readonly artifact: Model.DeveloperIdDiskImage }
   | { readonly kind: "pkg"; readonly artifact: Model.DeveloperIdInstallerPackage }
-export type FinalNativeArtifact =
-  | {
-      readonly kind: "app"
-      readonly artifact: Model.StapledApplicationBundle
-      readonly assessment: Assess.GatekeeperAccepted
-    }
-  | {
-      readonly kind: "dmg"
-      readonly artifact: Model.StapledDiskImage
-      readonly assessment: Assess.GatekeeperAccepted
-    }
-  | {
-      readonly kind: "pkg"
-      readonly artifact: Model.StapledInstallerPackage
-      readonly assessment: Assess.GatekeeperAccepted
-    }
+export type FinalNativeArtifact = (
+  | { readonly kind: "app"; readonly artifact: Model.StapledApplicationBundle }
+  | { readonly kind: "dmg"; readonly artifact: Model.StapledDiskImage }
+  | { readonly kind: "pkg"; readonly artifact: Model.StapledInstallerPackage }
+) & { readonly assessment: Assess.GatekeeperAccepted }
 export type NativeAppleError =
   | ReleaseError
   | AdoptionError
@@ -62,11 +51,7 @@ export type NativeAppleServices =
 export type DeriveDeliveryFiles<R = never> = (
   final: FinalNativeArtifact,
 ) => Effect.Effect<readonly OwnedFile[], NativeAppleError, R>
-const mismatch = () =>
-  new ReleaseError({
-    code: "apple-native-binding",
-    message: "Apple native evidence differs from its exact prepared or final artifact",
-  })
+const mismatch = () => failure("apple-native-binding", "Apple native evidence differs")
 /** Native app trees can retain readonly nested directories. Make only private
  * real directories removable, with bounded enumeration and no symlink traversal. */
 const privateWorkspace = Effect.fn("apple.privateWorkspace")(function* (
@@ -151,26 +136,21 @@ export const restorePreparedSource = Effect.fn("apple.restoreSource")(function* 
       artifact.digest.value !== input.source.content.sha256
     )
       return yield* mismatch()
+    const signature =
+      input._tag === "DmgPreparation"
+        ? new Model.DeveloperIdDiskImageSignature({
+            ...input.signature,
+            architecture: input.architecture,
+          })
+        : new Model.DeveloperIdInstallerSignature({
+            ...input.signature,
+            architecture: input.architecture,
+          })
+    const native = { ...artifact, architecture: input.architecture, signature }
     if (input._tag === "DmgPreparation") {
-      const native = {
-        ...artifact,
-        architecture: input.architecture,
-        signature: new Model.DeveloperIdDiskImageSignature({
-          ...input.signature,
-          architecture: input.architecture,
-        }),
-      }
       if (!Model.hasDeveloperIdDiskImageSignature(native)) return yield* mismatch()
       restored = { kind: "dmg", artifact: native }
     } else {
-      const native = {
-        ...artifact,
-        architecture: input.architecture,
-        signature: new Model.DeveloperIdInstallerSignature({
-          ...input.signature,
-          architecture: input.architecture,
-        }),
-      }
       if (!Model.hasDeveloperIdInstallerSignature(native)) return yield* mismatch()
       restored = { kind: "pkg", artifact: native }
     }
@@ -275,18 +255,15 @@ export const finishPrepared = Effect.fn("apple.finishPrepared")(function* <R = n
         final.kind === "app"
           ? yield* adoptTree(owner, input.artifactName, final.artifact)
           : yield* adoptFile(owner, input.artifactName, final.artifact)
-      const fields =
-        adopted._tag === "OwnedTree"
-          ? {
-              logicalName: adopted.logicalName,
-              artifactBytes: Artifact.decimalBytes(adopted.totalBytes),
-              artifactDigest: Artifact.sha256Digest(adopted.upstreamManifestSha256),
-            }
-          : {
-              logicalName: adopted.logicalName,
-              artifactBytes: Artifact.decimalBytes(adopted.content.bytes),
-              artifactDigest: Artifact.sha256Digest(adopted.content.sha256),
-            }
+      const fields = {
+        logicalName: adopted.logicalName,
+        artifactBytes: Artifact.decimalBytes(
+          adopted._tag === "OwnedTree" ? adopted.totalBytes : adopted.content.bytes,
+        ),
+        artifactDigest: Artifact.sha256Digest(
+          adopted._tag === "OwnedTree" ? adopted.upstreamManifestSha256 : adopted.content.sha256,
+        ),
+      }
       const finalArtifact =
         final.kind === "app"
           ? new FinalApp({ ...fields, kind: "app", identityKind: "tree-manifest" })
@@ -304,13 +281,10 @@ export const finishPrepared = Effect.fn("apple.finishPrepared")(function* <R = n
       const derived = deriveDeliveryFiles ? yield* deriveDeliveryFiles(final) : []
       if (derived.some((artifact) => artifact._tag !== "OwnedFile")) return yield* mismatch()
       const outputs = yield* finalize([adopted, ...derived])
-      const bytes = encodeBundle(outputs),
-        expected = new Content({ bytes: String(bytes.length), sha256: yield* sha256(bytes) })
+      const bytes = encodeBundle(outputs)
       const outputsBundleContent = yield* owner.putOwned(bytes)
-      if (canonical(outputsBundleContent) !== canonical(expected)) return yield* mismatch()
-      const stored = new Uint8Array(yield* owner.read(expected))
-      if (String(stored.length) !== expected.bytes || (yield* sha256(stored)) !== expected.sha256)
-        return yield* mismatch()
+      const stored = yield* readVerifiedContent(owner.read, outputsBundleContent, bytes.length)
+      if (!sameBytes(stored, bytes)) return yield* mismatch()
       yield* loadBundle(owner, stored)
       const ready = yield* attempt(() =>
         decodeOwned(ReadyToPlan, {

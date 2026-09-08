@@ -41,7 +41,7 @@
   },
   "design": {
     "path": "docs/refactor/architecture-program/handoff/design.json",
-    "sha256": "a4347d2e6379434262c90630efed973370472c838047214cd47d39e50351e366"
+    "sha256": "2e4e704aed4981d5869e58959f47f6dbc89343cf033869dab697555298b40888"
   },
   "migration": {
     "path": "docs/refactor/architecture-program/handoff/migration.json",
@@ -76,47 +76,47 @@
     },
     "apple": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Apple.d.ts",
-      "sha256": "a23af4b8b5737a8673320e10d368fef808cccbc6266212058f4a53a61a590b35"
+      "sha256": "4a7520c7b4724fd01e9cd5de1eaf639fc80fb7e303f57998baa702baabe4b210"
     },
     "checksum": {
       "path": "docs/refactor/architecture-program/handoff/production-api/internal/Checksums.d.ts",
-      "sha256": "feec4d4da4bbabc7a371a5da76df53c0a3d4038147e11a0be37b2241c0af0ec3"
+      "sha256": "b725318dbfc52b5564cdef0bf9acdc0974c1ddae2abf890d7bd2434e8e5ce3e7"
     },
     "http": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Http.d.ts",
-      "sha256": "0e318562851edda401c8ee201b79a91ce7d9a6fb74eab3fedf96bc0b6235a44e"
+      "sha256": "33a032f708ed8d351a5c50fe59e93320e85d5fd0632d1b58ff828ea7e8fe0f70"
     },
     "application": {
       "path": "docs/refactor/architecture-program/handoff/production-api/platform/Application.d.ts",
-      "sha256": "707c1ceb6f170bc83e8454415805c881940afc2b980599cf6c50b11cb27fb99c"
+      "sha256": "f6c013a4de94cf26b63dc130bf23109aa5d76e1571cdef993daad75a6758c9b0"
     },
     "npm": {
       "path": "docs/refactor/architecture-program/handoff/production-api/npm/index.d.ts",
-      "sha256": "fa0447e6bc92155425681adf3f5929065271d1523716bad2cdb9001c29dc7423"
+      "sha256": "a1296bd253a1104284135846d5706cc741ba72d64fb562a47ea1b2a64d2f151b"
     },
     "pypi": {
       "path": "docs/refactor/architecture-program/handoff/production-api/pypi/index.d.ts",
-      "sha256": "b70b66212c0e9e0e7512db57653ad9d5dea16158a455f355078652db424e9917"
+      "sha256": "2ca527b4fe607cc28a4766afb205160f00b28a0c25f54f74d7d4faa7a96cb923"
     },
     "artifactReader": {
       "path": "docs/refactor/architecture-program/handoff/production-api/internal/ArtifactReader.d.ts",
-      "sha256": "fc61eec68de6dbb61ea353893873bd178b9871845fcc2b29eeafbb0ca001728e"
+      "sha256": "eb2f10e0b7337be433365eece2cc6970dea7c2e92870cfd048ccb07a29810335"
     },
     "git": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Git.d.ts",
-      "sha256": "3c04cd3e8a4ccf18759ecd95cacac9a5d52d86cc3cf7678dbb5b7d17af856334"
+      "sha256": "e215ad03413d06c62d9f462722cac0be6621647e9a82d67a57be3f69d3006c75"
     },
     "nodeHost": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Node.d.ts",
-      "sha256": "fec87d48973920d69edae352729a02e889289049290caff643d8773deb2bac69"
+      "sha256": "b5d4a8803273ba4fe2310f90d7b2258471ae1e5c5f1a42b99a8e0da456bb78c3"
     },
     "bunHost": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Bun.d.ts",
-      "sha256": "4107e7b1c9d57182a469cf0d7dbd77a56376f263e29f183e8305962807f691cc"
+      "sha256": "8de62d1b69d48bdaa2176e5ce3054bc923181d3f7338522fc6c8dfb04595dc17"
     },
     "github": {
       "path": "docs/refactor/architecture-program/handoff/production-api/github/index.d.ts",
-      "sha256": "7ccbff55c8c509a0aa1837eb83184a647ed52a39584de25ee62586f850ce254f"
+      "sha256": "a9aec0f5f1fff83deaa45ae9fb95a81e405391592f989e6e94abcd5cacf64c78"
     },
     "homebrew": {
       "path": "docs/refactor/architecture-program/handoff/production-api/catalog/homebrew/index.d.ts",
@@ -128,28 +128,28 @@
     },
     "bundle": {
       "path": "docs/refactor/architecture-program/handoff/production-api/Bundle.d.ts",
-      "sha256": "13f533ca16f62dbdd27e6d073ca2f0ce9341053f49bcbc89bac9f13eb28d3e22"
+      "sha256": "7c9985e1e59cb7ab6b2ffa3d1b36e10e7d71ae233721c2eb9ff6e6041d4ce73d"
     },
     "effectBuild": {
       "path": "docs/refactor/architecture-program/handoff/production-api/EffectBuild.d.ts",
-      "sha256": "9a89c26bcb2fc69b83b1097a0bbef85a54c8918a78a1edc9ac6ba2bee792ab2e"
+      "sha256": "cdaab0a2cc2f94abd5710126d967fa4b692b1b79a202bcd07584a037885ad2fc"
     },
     "mcp": {
       "path": "docs/refactor/architecture-program/handoff/production-api/mcp/index.d.ts",
-      "sha256": "6cd1b33947dfb64e4e8e2d29bd40e04eb14dae558556676849eb628d5e5a7ffc"
+      "sha256": "16b49c4982ebab62fbcb18e3b53fab7dacf5ea72e8b6c118b5441afb64679b69"
     },
     "openai": {
       "path": "docs/refactor/architecture-program/handoff/production-api/openai/index.d.ts",
-      "sha256": "a9b5a6f42fdd1f0997f752303b39b1ebde5afc08c9b9b7a7876062f32a43ea85"
+      "sha256": "170b4f2cbcf2a8dcae3f8947fb82cbd8cde12f8b026118336709621040dcd83c"
     }
   },
   "productionDeclarations": {
     "path": "docs/refactor/architecture-program/handoff/production-api/emission.json",
-    "sha256": "30b6009de7ecb57ebdb7701ac74b84697719db305bd7899369a0d22814ab98a5",
-    "files": 89,
+    "sha256": "77655e8f9288e7e2cb9378af147bb795ad404947f1b9882e47e0c4864402df69",
+    "files": 90,
     "meaning": "Complete actual declaration-owner files, including private Schema bases, and exact source hashes; regenerated by scripts/project-production-api.ts."
   },
-  "publicSurfaceSha256": "8e5546d8fb9e2e1bd8fc0f67eb0e07e59760bfd27bddefe612ad05ef2cd92309",
+  "publicSurfaceSha256": "ea22ca6812b51d87a39b19c5bcdf6cd27038cec7275b70be77bbeaf21f5d87d9",
   "effectPatch": {
     "required": false,
     "donorPath": "patches/effect@4.0.0-rc.108.patch",
@@ -287,6 +287,7 @@
               }
             },
             "dependencies": {
+              "@sigstore/bundle": "5.0.0",
               "semver": "7.8.5",
               "sigstore": "5.0.0"
             },
@@ -295,8 +296,8 @@
               "effect": ">=4.0.0-beta.107 <4.0.0-beta.108"
             }
           },
-          "manifestSha256": "b904cbf11544bf2f262203344cda109fbff69bedd12206d84c01fb7d85b5c296",
-          "manifestLines": 34
+          "manifestSha256": "74b76b53c543d451780d58d4a5b1fafb07a2b4eb359b89aeaa2c18281c521cdf",
+          "manifestLines": 35
         },
         {
           "id": "provider.pypi",
@@ -606,17 +607,12 @@
           "manifestPath": "apps/ts-release-agents/package.json",
           "manifest": {
             "name": "@mannyc1/ts-release-agents",
-            "version": "0.2.2",
+            "version": "0.4.0",
             "private": true,
-            "type": "module",
-            "scripts": {
-              "check": "tsc --noEmit -p tsconfig.json",
-              "build": "bun run src/build.ts",
-              "check:generated": "bun run src/check.ts"
-            }
+            "type": "module"
           },
-          "manifestSha256": "29a7c54612f712b51f5173f708ec833627223140ea31dee3eeea25399f4655d7",
-          "manifestLines": 11
+          "manifestSha256": "652f7479110993e554e20f5730a6f2a07b69f1f52f350d9de7e77179937ffcaf",
+          "manifestLines": 6
         }
       ],
       "configs": [
@@ -1015,6 +1011,14 @@
           ]
         },
         {
+          "id": "kernel.Tar",
+          "owner": "core",
+          "path": "packages/ts-release/src/internal/Tar.ts",
+          "zone": "neutral",
+          "dependencies": [],
+          "purpose": "One strict bounded ustar/PAX parser over provider-decompressed bytes."
+        },
+        {
           "id": "kernel.Bundle",
           "owner": "core",
           "path": "packages/ts-release/src/Bundle.ts",
@@ -1026,7 +1030,8 @@
             "kernel.BundleFinalize",
             "kernel.BundleCodec",
             "kernel.ArtifactReader",
-            "kernel.Checksums"
+            "kernel.Checksums",
+            "kernel.Tar"
           ],
           "typeOnlyDependencies": [
             "kernel.EffectTypes",
@@ -2168,8 +2173,8 @@
       ],
       "graph": {
         "edgeMeaning": "Direct module dependencies distinguish whole-declaration erased type imports from runtime imports for implemented core owners. Provider and remaining proposal edges retain their declared classification; native installed closure remains separately measured.",
-        "sourceEdgesSha256": "46e63caf0ce6e13cadfd20e79ff07fa80461813d6f0e630fdfc4db4f0b124b40",
-        "packageEdgesSha256": "e6e153576fe35b9b77916a2cdd382dc95dffcbf221af4f07e5c3a4591f6112df",
+        "sourceEdgesSha256": "c3fedd32fe69cb1af5e07375eeb63bae8d57106b080975f6e19a3cd014dd871c",
+        "packageEdgesSha256": "6d3a02e8e4d0ac32a0a4096dd33ff2baeb08ecae66bd5e41a3313bcc1072690c",
         "sourceEdges": [
           {
             "from": "kernel.Identity",
@@ -2506,6 +2511,12 @@
             "to": "kernel.Checksums",
             "loading": "static",
             "specifier": "./internal/Checksums.js"
+          },
+          {
+            "from": "kernel.Bundle",
+            "to": "kernel.Tar",
+            "loading": "static",
+            "specifier": "./internal/Tar.js"
           },
           {
             "from": "kernel.EffectBuild",
@@ -4635,6 +4646,13 @@
           },
           {
             "from": "provider.npm",
+            "to": "@sigstore/bundle",
+            "version": "5.0.0",
+            "kind": "dependencies",
+            "optional": false
+          },
+          {
+            "from": "provider.npm",
             "to": "semver",
             "version": "7.8.5",
             "kind": "dependencies",
@@ -5293,13 +5311,13 @@
         }
       ],
       "metadata": {
-        "publicPackageJsonLines": 277,
-        "privatePackageJsonLines": 83,
+        "publicPackageJsonLines": 278,
+        "privatePackageJsonLines": 78,
         "actionYamlLines": 22,
         "tsconfigJsonLines": 160,
         "futureScriptFiles": 3,
         "futureScriptLines": null,
-        "authoredProductModuleFiles": 92,
+        "authoredProductModuleFiles": 93,
         "generatedRuntimePolicyFiles": 0,
         "countBoundary": "Exact serialized templates only. Future script bodies have no claimed line measurement. package.json and tsconfig metadata are separate from the old TypeScript product numerator; Action YAML remains separately visible for the original comparable count."
       }

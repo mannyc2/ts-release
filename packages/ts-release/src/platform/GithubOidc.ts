@@ -1,17 +1,9 @@
-import * as Effect from "effect/Effect"
-import * as Config from "effect/Config"
-import * as Clock from "effect/Clock"
-import * as Redacted from "effect/Redacted"
-import * as Schema from "effect/Schema"
+import { Clock, Config, Effect, Redacted, Schema } from "effect"
 import { createPublicKey, verify } from "node:crypto"
-import type {
-  HttpExchangeOptions,
-  OidcTokenRequest,
-  OidcTokenSource,
-  TrustedPublisherHost,
-} from "../Http.js"
+import type { HttpExchangeOptions, OidcTokenRequest } from "../Http.js"
+import type { OidcTokenSource, TrustedPublisherHost } from "../Http.js"
 import { makeHttpRead, makeCredentialExchange } from "./HttpTransport.js"
-import { ReleaseError, attempt, fail } from "../internal/Error.js"
+import { attempt, fail, failure } from "../internal/Error.js"
 import { decodeOwned } from "../internal/Identity.js"
 import { decodeJson } from "../internal/NativeJson.js"
 
@@ -118,13 +110,7 @@ export const verifyGithubToken = (
 
 const readEnvironment = (name: string) =>
   Config.string(name).pipe(
-    Effect.mapError(
-      () =>
-        new ReleaseError({
-          code: "github-oidc",
-          message: "GitHub workload configuration is unavailable",
-        }),
-    ),
+    Effect.mapError(() => failure("github-oidc", "GitHub workload configuration is unavailable")),
   )
 const hostClaims = {
   sha: "GITHUB_SHA",
@@ -208,13 +194,7 @@ export const makeGithubOidcTokenSource = (options: HttpExchangeOptions): OidcTok
       return url.href
     })
     const secret = yield* Config.redacted("ACTIONS_ID_TOKEN_REQUEST_TOKEN").pipe(
-      Effect.mapError(
-        () =>
-          new ReleaseError({
-            code: "github-oidc",
-            message: "GitHub OIDC request credential is unavailable",
-          }),
-      ),
+      Effect.mapError(() => failure("github-oidc", "GitHub OIDC credential is unavailable")),
     )
     const fields = yield* attempt(() => {
       const value = Redacted.value(secret)

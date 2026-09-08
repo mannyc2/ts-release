@@ -16,31 +16,17 @@ const connect: (
 ) => (options: buildConnector.Options, callback: buildConnector.Callback) => Socket =
   nativeConnector
 import { canonical } from "../internal/Identity.js"
-import { ReleaseError, attempt, fail } from "../internal/Error.js"
+import { ReleaseError, attempt, fail, reject } from "../internal/Error.js"
 import { verifyProviderContracts, verifyRequest, type Transport } from "../Provider.js"
-import type {
-  CredentialExchange,
-  Headers,
-  HttpExchangeOptions,
-  HttpRead,
-  HttpReadOptions,
-  HttpResponse,
-  HttpTransportOptions,
-} from "../Http.js"
+import { publicUrl } from "../Http.js"
+import type { CredentialExchange, Headers, HttpExchangeOptions } from "../Http.js"
+import type { HttpRead, HttpReadOptions, HttpResponse, HttpTransportOptions } from "../Http.js"
 
 const invalid = (code: string): never =>
   fail(`http-${code}`, "HTTP authority or wire value could not be admitted")
 const endpoint = (input: string): URL => {
-  const url = new URL(input)
-  if (
-    !["http:", "https:"].includes(url.protocol) ||
-    url.username ||
-    url.password ||
-    url.hash ||
-    url.href !== input
-  )
-    invalid("endpoint")
-  return url
+  const url = publicUrl(input, ["http:", "https:"])
+  return url?.href === input ? url : invalid("endpoint")
 }
 const limits = (input: HttpExchangeOptions) => {
   const { timeoutMilliseconds, maximumResponseBytes } = input
@@ -83,14 +69,7 @@ const authorize = Effect.fn("http.authorize")(function* (
   const secret = yield* Effect.suspend(() =>
     resolve(Object.freeze({ endpoint: url.href, principal, scope })),
   ).pipe(
-    Effect.catchCause(() =>
-      Effect.fail(
-        new ReleaseError({
-          code: "http-credentials",
-          message: "HTTP credentials could not be acquired",
-        }),
-      ),
-    ),
+    Effect.catchCause(() => reject("http-credentials", "HTTP credentials could not be acquired")),
   )
   return yield* attempt(() => {
     const live = headers(Object.entries(secret))
@@ -140,14 +119,7 @@ const nativeRequest = (options: Required<HttpExchangeOptions>) =>
         resume(Effect.promise(() => closed).pipe(Effect.andThen(result)))
       }
       const failed = () =>
-        complete(
-          Effect.fail(
-            new ReleaseError({
-              code: "http-outcome-unknown",
-              message: "Native HTTP response was not completely observed",
-            }),
-          ),
-        )
+        complete(reject("http-outcome-unknown", "Native HTTP response was not completely observed"))
       const timer = setTimeout(failed, options.timeoutMilliseconds)
       try {
         client = new ClientConstructor(url.origin, {

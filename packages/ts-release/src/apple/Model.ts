@@ -6,7 +6,7 @@ import * as Notary from "effect-build-apple/Notary"
 import * as Assess from "effect-build-apple/Assess"
 import { Content, OwnedFile, OwnedTree } from "../internal/ArtifactModel.js"
 import { finalize } from "../internal/BundleFinalize.js"
-import { ReleaseError, attempt, fail } from "../internal/Error.js"
+import { attempt, fail, failure } from "../internal/Error.js"
 import { canonical, copyData, decodeOwned, hashCanonical } from "../internal/Identity.js"
 
 const observation = <Name extends string>(name: Name) =>
@@ -92,13 +92,7 @@ export const createApplePreparations = Effect.fn("apple.createPreparations")(fun
   })
   for (const input of admitted)
     yield* finalize([input.source]).pipe(
-      Effect.mapError(
-        () =>
-          new ReleaseError({
-            code: "preparation-source",
-            message: "Apple source artifact could not be admitted",
-          }),
-      ),
+      Effect.mapError(() => failure("preparation-source", "Apple source artifact is invalid")),
     )
   const preimage = admitted.map(({ journalId: _, ...input }) => input)
   yield* attempt(() => {

@@ -1,14 +1,14 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
+import { Effect, Schema } from "effect"
 import type * as Redacted from "effect/Redacted"
 import { Content } from "./ArtifactModel.js"
 import { type ReadContent, type PutContent, readVerifiedContent } from "./Content.js"
 import { ReleaseError, attempt, fail } from "./Error.js"
 import { canonical, decodeOwned, sha256 } from "./Identity.js"
 import { GitCas, type Operation } from "./ReleaseModel.js"
-import { GitReceipt, pushWitness } from "./GitAuthority.js"
+import { GitReceipt, pushWitness, validRef } from "./GitAuthority.js"
 import { PROVIDER_CONTRACT, makeRequest, type ProviderDefinition } from "../Provider.js"
 import { createOperation } from "../Plan.js"
+import { publicUrl } from "../Http.js"
 
 export class FileEdit extends Schema.Class<FileEdit>("GitFileEdit")({
   path: Schema.String,
@@ -75,29 +75,17 @@ export const objectFormat = (oid: string): "sha1" | "sha256" =>
   /^[0-9a-f]{40}$/u.test(oid) ? "sha1" : /^[0-9a-f]{64}$/u.test(oid) ? "sha256" : invalid()
 export const admitCoordinate = (input: RefCoordinate): RefCoordinate => {
   const value = decodeOwned(Schema.Struct(coordinate), input),
-    url = new URL(value.remote)
+    url = publicUrl(value.remote, ["https:", "file:"])
   if (
-    !["https:", "file:"].includes(url.protocol) ||
-    url.username ||
-    url.password ||
+    !url ||
     url.search ||
-    url.hash ||
     url.href !== value.remote ||
     (url.protocol === "file:" && url.hostname !== "") ||
     !value.principal ||
     !value.scope
   )
     invalid()
-  if (
-    !/^refs\/(?:heads|tags)\/[A-Za-z0-9][A-Za-z0-9/_.-]*$/u.test(value.ref) ||
-    value.ref
-      .split("/")
-      .some(
-        (part) => !part || part.startsWith(".") || part.endsWith(".") || part.endsWith(".lock"),
-      ) ||
-    value.ref.includes("..")
-  )
-    invalid()
+  if (!validRef(value.ref)) invalid()
   return value
 }
 export const validateFiles = (files: readonly FileEdit[]): void => {
@@ -194,6 +182,14 @@ class RefObservation extends Schema.Class<RefObservation>("GitRefObservation")({
   intent: Intent,
   oid: Schema.NullOr(Schema.String),
 }) {}
+const refStatus = (intent: Intent, oid: string | null) => {
+  if (oid !== null && objectFormat(oid) !== intent.objectFormat) invalid()
+  return oid === intent.desiredNew
+    ? "Satisfied"
+    : oid === intent.expectedOld
+      ? "Absent"
+      : "Conflict"
+}
 export const definition = (dependencies: {
   readonly readContent: ReadContent
   readonly observeRef: ObserveRef
@@ -251,27 +247,14 @@ export const definition = (dependencies: {
       const evidence = Schema.decodeUnknownSync(RefObservation)(input),
         intent = ownIntent(operation.intent)
       if (canonical(evidence.intent) !== canonical(intent)) invalid()
-      if (evidence.oid !== null && objectFormat(evidence.oid) !== intent.objectFormat) invalid()
-      return evidence.oid === intent.desiredNew
-        ? "Satisfied"
-        : evidence.oid === intent.expectedOld
-          ? "Absent"
-          : "Conflict"
+      return refStatus(intent, evidence.oid)
     },
     observe: Effect.fn("git.observeRef")(function* (operation) {
       const intent = yield* attempt(() => ownIntent(operation.intent)),
         { remote, ref, principal, scope } = intent
       const result = yield* observe({ remote, ref, principal, scope })
       const evidence = new RefObservation({ intent, oid: result.oid })
-      return {
-        status:
-          evidence.oid === intent.desiredNew
-            ? "Satisfied"
-            : evidence.oid === intent.expectedOld
-              ? "Absent"
-              : "Conflict",
-        evidence,
-      }
+      return { status: refStatus(intent, evidence.oid), evidence }
     }),
   }
 }

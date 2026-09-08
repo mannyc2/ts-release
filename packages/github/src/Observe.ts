@@ -2,44 +2,24 @@ import { createHash } from "node:crypto"
 import * as Effect from "effect/Effect"
 import type { Operation, ProviderContext } from "@mannyc1/ts-release"
 import type { HttpRead, HttpResponse } from "@mannyc1/ts-release/http"
+import { publicUrl, sameData } from "@mannyc1/ts-release/http"
 import * as Model from "./Model.js"
 import { intentOf } from "./Graph.js"
 import { bindScope, encodeScope, parentFacts, type BoundScope } from "./Binding.js"
-import {
-  attempt,
-  invalid,
-  own,
-  api,
-  headers,
-  object,
-  responseJson,
-  responseObject,
-  refFacts,
-  tagFacts,
-  releaseFacts,
-  assetFacts,
-  sameUrl,
-} from "./Native.js"
+import { api, attempt, headers, invalid, object, own } from "./Native.js"
+import { refFacts, responseJson, responseObject, sameUrl } from "./Native.js"
+import { assetFacts, releaseFacts, tagFacts } from "./Native.js"
 import { sha256 } from "./Wire.js"
-import {
-  AssetEvidence,
-  Present,
-  Missing,
-  Unavailable,
-  classifyObservation,
-  classifyAssets,
-  type Observation,
-} from "./Evidence.js"
+import { AssetEvidence, Missing, Present, Unavailable } from "./Evidence.js"
+import { classifyAssets, classifyObservation, type Observation } from "./Evidence.js"
 
 const MAX_PAGES = 1000
+const linkPattern = /^<([^<>]+)>;\s*rel=(?:"(first|prev|next|last)"|(first|prev|next|last))$/u
 export const PUBLIC_DOWNLOAD = "github:public-download"
 export const publicDownload = (value: string): boolean => {
-  const url = new URL(value)
+  const url = publicUrl(value)
   return (
-    url.protocol === "https:" &&
-    !url.username &&
-    !url.password &&
-    !url.hash &&
+    url !== null &&
     ["release-assets.githubusercontent.com", "objects.githubusercontent.com"].includes(
       url.hostname,
     ) &&
@@ -61,6 +41,8 @@ const objectCandidate = (intent: Model.AnnotatedTag) => {
     .update(body)
     .digest("hex")
 }
+const unavailable = (operation: Operation, reason: Unavailable["reason"]) =>
+  new Unavailable({ operationId: operation.operationId, reason })
 export const observations = (read: HttpRead) => {
   const get = Effect.fn("github.get")(function* (
     scope: BoundScope,
@@ -71,12 +53,7 @@ export const observations = (read: HttpRead) => {
     return yield* read({
       method: "GET",
       url,
-      headers: binary
-        ? headers.map(
-            ([name, value]) =>
-              [name, name === "accept" ? "application/octet-stream" : value] as const,
-          )
-        : headers,
+      headers: binary ? [["accept", "application/octet-stream"], ...headers.slice(1)] : headers,
       principal: publicAccess ? PUBLIC_DOWNLOAD : intentOf(scope.operation).principal,
       scope: encodeScope(scope),
     })
@@ -111,10 +88,7 @@ export const observations = (read: HttpRead) => {
         const link = header(response, "link"),
           relations = new Set<string>()
         for (const part of link === undefined ? [] : link.split(",")) {
-          const parsed =
-            /^<([^<>]+)>;\s*rel=(?:"(first|prev|next|last)"|(first|prev|next|last))$/u.exec(
-              part.trim(),
-            )
+          const parsed = linkPattern.exec(part.trim())
           if (!parsed) return invalid("pagination-link")
           const relation = (parsed[2] ?? parsed[3])!,
             prefix = `${endpoint}?per_page=100&page=`,
@@ -133,8 +107,8 @@ export const observations = (read: HttpRead) => {
             return invalid("pagination-link")
           relations.add(relation)
           if (relation === "last") {
-            if (last !== undefined && last !== target) return invalid("pagination-changing-last")
-            last = target
+            last ??= target
+            if (last !== target) return invalid("pagination-changing-last")
           }
           if (relation === "last" || relation === "next") through = Math.max(through, target)
         }
@@ -254,8 +228,7 @@ export const observations = (read: HttpRead) => {
     }
     if (intent instanceof Model.DraftIntent) {
       const commit = yield* tag(scope, intent.tag)
-      if (commit === null)
-        return new Unavailable({ operationId: operation.operationId, reason: "parent-unresolved" })
+      if (commit === null) return unavailable(operation, "parent-unresolved")
       const values = yield* list(scope, `${base}/releases`),
         candidates = yield* attempt(() =>
           values
@@ -278,7 +251,7 @@ export const observations = (read: HttpRead) => {
       const facts = releaseFacts(responseObject(response), repository)
       if (
         facts.releaseId !== parent.releaseId ||
-        JSON.stringify({ ...facts, draft: true }) !== JSON.stringify({ ...parent, draft: true })
+        !sameData({ ...facts, draft: true }, { ...parent, draft: true })
       )
         invalid("release-parent")
       return facts
@@ -298,11 +271,7 @@ export const observations = (read: HttpRead) => {
       context: ProviderContext,
     ) {
       const value = yield* evidence(operation, context).pipe(
-        Effect.catch(() =>
-          Effect.succeed(
-            new Unavailable({ operationId: operation.operationId, reason: "malformed-native" }),
-          ),
-        ),
+        Effect.catch(() => Effect.succeed(unavailable(operation, "malformed-native"))),
       )
       return {
         evidence: value,
@@ -328,8 +297,7 @@ export const observations = (read: HttpRead) => {
         yield* attempt(() => {
           if (response.status !== 200) invalid("asset-parent-status")
           const facts = releaseFacts(responseObject(response), intent.repository)
-          if (!facts.draft || JSON.stringify(facts) !== JSON.stringify(parent))
-            invalid("asset-parent-state")
+          if (!facts.draft || !sameData(facts, parent)) invalid("asset-parent-state")
         })
       } else if (intent instanceof Model.PublishIntent) {
         const value = yield* evidence(operation, context)

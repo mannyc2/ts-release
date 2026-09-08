@@ -1,33 +1,14 @@
 import * as Schema from "effect/Schema"
-import {
-  RequestFacts,
-  type Operation,
-  type ProviderContext,
-  type ObservationStatus,
-} from "@mannyc1/ts-release"
+import { RequestFacts, type ObservationStatus, type Operation } from "@mannyc1/ts-release"
+import type { ProviderContext } from "@mannyc1/ts-release"
+import { sameData } from "@mannyc1/ts-release/http"
 import * as Model from "./Model.js"
 import { intentOf, kindOf } from "./Graph.js"
-import {
-  BoundScope,
-  NativeFacts,
-  bindScope,
-  encodeScope,
-  readScope,
-  parentFacts,
-} from "./Binding.js"
+import { BoundScope, NativeFacts, bindScope, encodeScope } from "./Binding.js"
+import { parentFacts, readScope } from "./Binding.js"
 import { requestMatches } from "./Wire.js"
-import {
-  invalid,
-  own,
-  refFacts,
-  tagFacts,
-  releaseFacts,
-  assetFacts,
-  sameUrl,
-  uploadTemplate,
-  api,
-  assetUrls,
-} from "./Native.js"
+import { assetFacts, assetUrls, invalid, own, refFacts } from "./Native.js"
+import { releaseFacts, sameUrl, tagFacts, uploadTemplate } from "./Native.js"
 
 export class Receipt extends Schema.Class<Receipt>("GitHubReceipt")({
   request: RequestFacts,
@@ -77,7 +58,6 @@ export const decodeFacts = (scope: BoundScope, value: unknown): NativeFacts => {
     )
   return releaseFacts(value, intent.repository)
 }
-const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 export const matches = (scope: BoundScope, facts: NativeFacts): boolean => {
   const intent = intentOf(scope.operation)
   if (
@@ -145,12 +125,12 @@ export const matches = (scope: BoundScope, facts: NativeFacts): boolean => {
   const parent = parentFacts(scope, intent.draftOperation, "draft") as Model.ReleaseFacts
   return (
     facts instanceof Model.ReleaseFacts &&
-    same({ ...facts, draft: true }, { ...parent, draft: true })
+    sameData({ ...facts, draft: true }, { ...parent, draft: true })
   )
 }
 const bound = (operation: Operation, request: RequestFacts): BoundScope => {
   const scope = readScope(request.scope)
-  if (!same(operation, scope.operation) || !requestMatches(scope, request))
+  if (!sameData(operation, scope.operation) || !requestMatches(scope, request))
     invalid("receipt-request")
   return scope
 }
@@ -158,7 +138,7 @@ export const receiptCorresponds = (operation: Operation, request: RequestFacts, 
   const receipt = own(Receipt, value),
     scope = bound(operation, request)
   return (
-    same(receipt.request, request) &&
+    sameData(receipt.request, request) &&
     receipt.status === (kindOf(operation) === "publish" ? 200 : 201) &&
     (kindOf(operation) !== "draft" ||
       (receipt.facts instanceof Model.ReleaseFacts && receipt.facts.draft)) &&
@@ -170,7 +150,7 @@ export const receiptCorresponds = (operation: Operation, request: RequestFacts, 
 export const failureCorresponds = (operation: Operation, request: RequestFacts, value: unknown) => {
   const failure = own(NativeFailure, value)
   bound(operation, request)
-  return same(failure.request, request)
+  return sameData(failure.request, request)
 }
 export const classifyObservation = (
   operation: Operation,

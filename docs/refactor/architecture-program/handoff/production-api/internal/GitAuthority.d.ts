@@ -1,5 +1,4 @@
-import * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
+import { Effect, Schema } from "effect";
 import { ReleaseError } from "./Error.js";
 import { type Transport } from "../Provider.js";
 import { RequestFacts } from "./ReleaseModel.js";
@@ -11,10 +10,11 @@ declare const GitReceipt_base: Schema.Class<GitReceipt, Schema.Struct<{
 }>, {}>;
 export declare class GitReceipt extends GitReceipt_base {
 }
-export interface GitExecution {
-    readonly exitCode: number;
-    readonly stdout: string;
-}
+export declare const validRef: (ref: string) => boolean;
+export type GitExecution = Readonly<{
+    exitCode: number;
+    stdout: string;
+}>;
 export interface CoreGitOptions {
     readonly principal: string;
     readonly scope: string;

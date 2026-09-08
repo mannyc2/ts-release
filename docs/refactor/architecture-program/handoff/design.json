@@ -306,6 +306,14 @@
       ]
     },
     {
+      "id": "kernel.Tar",
+      "owner": "core",
+      "path": "src/internal/Tar.ts",
+      "zone": "neutral",
+      "dependencies": [],
+      "purpose": "One strict bounded ustar/PAX parser over provider-decompressed bytes."
+    },
+    {
       "id": "kernel.Bundle",
       "owner": "core",
       "path": "src/Bundle.ts",
@@ -317,7 +325,8 @@
         "kernel.BundleFinalize",
         "kernel.BundleCodec",
         "kernel.ArtifactReader",
-        "kernel.Checksums"
+        "kernel.Checksums",
+        "kernel.Tar"
       ],
       "typeOnlyDependencies": [
         "kernel.EffectTypes",
@@ -939,6 +948,7 @@
       "package": "npm",
       "namespace": "Npm",
       "dependencies": {
+        "@sigstore/bundle": "5.0.0",
         "semver": "7.8.5",
         "sigstore": "5.0.0"
       },

@@ -1,10 +1,9 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
+import { Effect, Schema } from "effect"
 import { OwnedBundle } from "./ArtifactModel.js"
 import { encodeBundle } from "./BundleCodec.js"
 import { currentHost, read } from "./Host.js"
 import { JournalEvent, Plan } from "./ReleaseModel.js"
-import { ReleaseError, attempt } from "./Error.js"
+import { attempt, reject } from "./Error.js"
 import { decodeOwned, sha256 } from "./Identity.js"
 import { loadPlan } from "../Plan.js"
 import { finalize } from "./BundleFinalize.js"
@@ -51,10 +50,7 @@ export const reportFinalizedRelease = Effect.fn("ts-release.reportFinalizedRelea
   const owned = yield* finalize(admitted.artifacts)
   const plan = yield* loadPlan(input, host.providers)
   if (plan.bundleId !== (yield* sha256(encodeBundle(owned))))
-    return yield* new ReleaseError({
-      code: "report-bundle",
-      message: "Report Bundle differs from the immutable Plan input",
-    })
+    return yield* reject("report-bundle", "Report Bundle differs from its immutable Plan")
   const current = yield* read(host, plan)
   const report = current.report()
   return yield* attempt(() =>

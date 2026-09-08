@@ -1,4 +1,4 @@
-import * as Effect from "effect/Effect";
+import { Effect } from "effect";
 import { AdoptionError, OwnedBundle } from "./ArtifactModel.js";
 import type { ContentOwner } from "./Content.js";
 export declare const encodeBundle: (bundle: OwnedBundle) => Uint8Array;

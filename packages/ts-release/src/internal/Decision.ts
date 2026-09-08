@@ -1,43 +1,22 @@
-import {
-  AcceptedRisk,
-  DispatchBasis,
-  Initial,
-  JournalEvent,
-  NonCommit,
-  type OperationStatus,
-  Plan,
-  ProtectedReplay,
-  type ReleaseReport,
-  RequestFacts,
-} from "./ReleaseModel.js"
+import { AcceptedRisk, DispatchBasis, Initial, JournalEvent } from "./ReleaseModel.js"
+import { NonCommit, Plan, ProtectedReplay, RequestFacts } from "./ReleaseModel.js"
+import type { OperationStatus, ReleaseReport } from "./ReleaseModel.js"
 import type { Scope } from "../Journal.js"
 import { canonical } from "./Identity.js"
 import { fail } from "./Error.js"
 
-export interface CandidateRequest {
-  readonly facts: RequestFacts
-  readonly fingerprint: string
-}
+export type CandidateRequest = Readonly<{ facts: RequestFacts; fingerprint: string }>
 export type Next =
-  | {
-      readonly _tag: "PrepareDispatch"
-    }
-  | {
-      readonly _tag: "AppendDispatch"
-      readonly basis: DispatchBasis
-    }
-  | {
-      readonly _tag: "RequestRiskAcceptance"
-    }
-  | {
-      readonly _tag: "Finish"
-      readonly status: OperationStatus
-    }
+  | { readonly _tag: "PrepareDispatch" }
+  | { readonly _tag: "AppendDispatch"; readonly basis: DispatchBasis }
+  | { readonly _tag: "RequestRiskAcceptance" }
+  | { readonly _tag: "Finish"; readonly status: OperationStatus }
 export interface Machine {
   readonly append: (event: JournalEvent) => Machine
   readonly report: () => ReleaseReport
   readonly next: (operationId: string, candidate: CandidateRequest | null, now: number) => Next
 }
+type Body<Tag extends JournalEvent["body"]["_tag"]> = Extract<JournalEvent["body"], { _tag: Tag }>
 export type MachineConstructor = (
   plan: Plan,
   events: ReadonlyArray<JournalEvent>,
@@ -53,37 +32,26 @@ export const sameStrings = (left: ReadonlyArray<string>, right: ReadonlyArray<st
   canonical([...left].sort()) === canonical([...right].sort())
 /** Core-owned history laws, shared by M1 and the executor admission boundary. */
 export const operationFacts = (events: ReadonlyArray<JournalEvent>, operationId: string) => {
-  const starts = events.flatMap((event) =>
-    event.body._tag === "DispatchStarted" && event.body.operationId === operationId
-      ? [event.body]
-      : [],
-  )
-  const dispatchIds = new Set(starts.map((start) => start.dispatchId))
-  const receipts = events.filter(
-    (event) => event.body._tag === "ReceiptAccepted" && dispatchIds.has(event.body.dispatchId),
-  )
-  const rejected = new Set(
-    events.flatMap((event) =>
-      event.body._tag === "DispatchRejectedBeforeCommit" && dispatchIds.has(event.body.dispatchId)
-        ? [event.body.dispatchId]
-        : [],
-    ),
-  )
-  const observations = events.flatMap((event) =>
-    event.body._tag === "ObservationRecorded" && event.body.operationId === operationId
-      ? [event.body]
-      : [],
-  )
-  const risks = events.flatMap((event) =>
-    event.body._tag === "RiskAccepted" && event.body.operationId === operationId
-      ? [event.body]
-      : [],
-  )
-  const consumed = new Set(
-    starts.flatMap((start) =>
-      start.basis._tag === "AcceptedRisk" ? [start.basis.decisionId] : [],
-    ),
-  )
+  const starts: Body<"DispatchStarted">[] = [],
+    dispatchIds = new Set<string>(),
+    receipts: Body<"ReceiptAccepted">[] = [],
+    rejected = new Set<string>(),
+    observations: Body<"ObservationRecorded">[] = [],
+    risks: Body<"RiskAccepted">[] = [],
+    consumed = new Set<string>()
+  for (const { body } of events) {
+    if (body._tag === "DispatchStarted" && body.operationId === operationId) {
+      starts.push(body)
+      dispatchIds.add(body.dispatchId)
+      if (body.basis._tag === "AcceptedRisk") consumed.add(body.basis.decisionId)
+    } else if (body._tag === "ReceiptAccepted" && dispatchIds.has(body.dispatchId))
+      receipts.push(body)
+    else if (body._tag === "DispatchRejectedBeforeCommit" && dispatchIds.has(body.dispatchId))
+      rejected.add(body.dispatchId)
+    else if (body._tag === "ObservationRecorded" && body.operationId === operationId)
+      observations.push(body)
+    else if (body._tag === "RiskAccepted" && body.operationId === operationId) risks.push(body)
+  }
   return { starts, receipts, rejected, observations, risks, consumed }
 }
 export const operationStatus = (
@@ -96,24 +64,12 @@ export const operationStatus = (
   if (
     scopeKind === "PreparationScope" &&
     (facts.observations.some((event) => event.status === "Satisfied") ||
-      facts.receipts.some(
-        (event) => event.body._tag === "ReceiptAccepted" && event.body.status === "Satisfied",
-      ))
+      facts.receipts.some((receipt) => receipt.status === "Satisfied"))
   )
     return "Satisfied"
   const latest = facts.observations.at(-1)
-  if (
-    latest?.status === "Satisfied" ||
-    latest?.status === "Conflict" ||
-    latest?.status === "Pending"
-  )
-    return latest.status
-  if (
-    facts.receipts.some(
-      (event) => event.body._tag === "ReceiptAccepted" && event.body.status === "Satisfied",
-    )
-  )
-    return "Satisfied"
+  if (latest && latest.status !== "Inconclusive" && latest.status !== "Absent") return latest.status
+  if (facts.receipts.some((receipt) => receipt.status === "Satisfied")) return "Satisfied"
   if (facts.receipts.length > 0) return "Pending"
   if (facts.starts.length === 0) return "Unattempted"
   if (facts.rejected.size === facts.starts.length) return "Rejected"
@@ -131,12 +87,7 @@ export const dispatchDecision = (
   if (!operation)
     return fail("unknown-operation", "Decision references an operation outside the plan")
   const status = operationStatus(events, operationId, scopeKind)
-  if (
-    status === "Superseded" ||
-    status === "Satisfied" ||
-    status === "Conflict" ||
-    status === "Pending"
-  )
+  if (["Superseded", "Satisfied", "Conflict", "Pending"].includes(status))
     return { _tag: "Finish", status }
   if (
     operation.dependsOn.some(
@@ -215,31 +166,19 @@ export const assertJournalAppend = (
     }
     case "ReceiptAccepted":
     case "DispatchRejectedBeforeCommit": {
-      const start = events.find(
-        (prior) =>
-          prior.body._tag === "DispatchStarted" && prior.body.dispatchId === body.dispatchId,
+      const dispatch = events.flatMap(({ body: prior }) =>
+        "dispatchId" in prior && prior.dispatchId === body.dispatchId ? [prior] : [],
       )
-      if (!start || start.body._tag !== "DispatchStarted")
+      if (!dispatch.some((prior) => prior._tag === "DispatchStarted"))
         fail("unknown-dispatch", "Evidence has no matching dispatch")
       const opposite =
         body._tag === "ReceiptAccepted" ? "DispatchRejectedBeforeCommit" : "ReceiptAccepted"
-      if (
-        events.some(
-          (prior) => prior.body._tag === opposite && prior.body.dispatchId === body.dispatchId,
-        )
-      )
+      if (dispatch.some((prior) => prior._tag === opposite))
         fail(
           "contradictory-evidence",
           "Acceptance and terminal non-commit cannot describe one dispatch",
         )
-      if (
-        events.some(
-          (prior) =>
-            prior.body._tag === body._tag &&
-            "dispatchId" in prior.body &&
-            prior.body.dispatchId === body.dispatchId,
-        )
-      )
+      if (dispatch.some((prior) => prior._tag === body._tag))
         fail("duplicate-evidence", "A dispatch has one acceptance or rejection event")
       break
     }

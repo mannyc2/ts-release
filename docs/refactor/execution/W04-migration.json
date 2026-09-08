@@ -708,7 +708,11 @@
         "src/platform/credentials.ts"
       ],
       "responsibility": "Compose real CLI/Action/self-release Config and exact credential routes at application boundaries. Preserve hostile environment/reference rejection, predispatch identity mismatch, native runtime/toolchain qualification, credential-free outputs and cleanup. Old npm userconfig/tarball subprocess resources and certified npm CLI dispatch are retired: W02 uses native npm protocol/Sigstore, while actual hosted trust and direct Bun Sigstore remain acceptance gates. Do not relabel a routed raw token as server-attenuated authority.",
-      "status": "open"
+      "status": "verified",
+      "verification": {
+        "record": "W10-verification.json",
+        "scope": "The explicit application owns credential routing and the Action rejects ambient authority and hostile paths; hosted trusted-publisher and direct Bun Sigstore acceptance remain Plans009/010"
+      }
     }
   ],
   "evidence": [

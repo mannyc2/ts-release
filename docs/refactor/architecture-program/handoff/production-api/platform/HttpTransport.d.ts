@@ -1,5 +1,6 @@
 import { type Transport } from "../Provider.js";
-import type { CredentialExchange, HttpExchangeOptions, HttpRead, HttpReadOptions, HttpTransportOptions } from "../Http.js";
+import type { CredentialExchange, HttpExchangeOptions } from "../Http.js";
+import type { HttpRead, HttpReadOptions, HttpTransportOptions } from "../Http.js";
 /** Capture definition methods once; each owner sees its own bytes. Resolving
  * credentials creates no dispatch permission. The kernel still owns fresh CAS. */
 export declare const makeHttpTransport: (options: HttpTransportOptions) => Transport;

@@ -2,19 +2,12 @@ export type {} from "./internal/EffectTypes.js"
 import { Effect, FileSystem, Path, PlatformError, Schema } from "effect"
 import * as Artifact from "effect-build/Artifact"
 import * as Tree from "effect-build/Author/Tree"
-import {
-  AdoptionError,
-  Content,
-  OwnedFile,
-  OwnedTree,
-  TreeDirectory,
-  TreeFile,
-  TreeLink,
-} from "./internal/ArtifactModel.js"
+import { AdoptionError, Content, OwnedFile, OwnedTree } from "./internal/ArtifactModel.js"
+import { TreeDirectory, TreeFile, TreeLink } from "./internal/ArtifactModel.js"
 import { adoptData, finalize } from "./internal/BundleFinalize.js"
-import { captureContentOwner, type ContentOwner } from "./internal/Content.js"
+import { captureContentOwner, readVerifiedContent, type ContentOwner } from "./internal/Content.js"
 import { encodeBundle, loadBundle } from "./internal/BundleCodec.js"
-import { copyData, decodeOwned, freeze, sha256 } from "./internal/Identity.js"
+import { copyData, decodeOwned, freeze } from "./internal/Identity.js"
 
 /** Producer subtypes may carry native class-valued evidence. Own the public
  * artifact contract only; signatures/tickets stay in their provider's evidence.
@@ -53,6 +46,10 @@ const treeFields = [
   "provenance",
   "publication",
 ]
+const ownedBytes = (read: ContentOwner["read"], content: Content, reason: string) =>
+  readVerifiedContent(read, content, Math.max(1, Number(content.bytes))).pipe(
+    Effect.mapError(() => new AdoptionError({ reason })),
+  )
 
 /** Recreate an owned tree through the real producer finalizer. effect-build
  * 0.6.3 publishes 0755 roots; other root modes reject before I/O. Nested modes
@@ -83,14 +80,11 @@ export const restoreTree = Effect.fn("ts-release.restoreTree")(function* (
           const destination = path.join(candidate, ...entry.relativePath.split("/"))
           if (entry._tag === "TreeDirectory") yield* fs.makeDirectory(destination)
           else if (entry._tag === "TreeFile") {
-            const bytes = new Uint8Array(yield* owner.read(entry.content))
-            if (
-              String(bytes.length) !== entry.content.bytes ||
-              (yield* sha256(bytes)) !== entry.content.sha256
+            const bytes = yield* ownedBytes(
+              owner.read,
+              entry.content,
+              "Restored content differs from its immutable identity",
             )
-              return yield* new AdoptionError({
-                reason: "Restored content differs from its immutable identity",
-              })
             yield* fs.writeFile(destination, bytes)
             yield* fs.chmod(destination, entry.mode)
           } else yield* fs.symlink(entry.target, destination)
@@ -253,10 +247,7 @@ export const adoptTree = Effect.fn("ts-release.adoptTree")(function* (
         )
         if (content.bytes !== entry.bytes || content.sha256 !== entry.digest.value)
           return yield* new AdoptionError({ reason: "Adopted tree file differs from its manifest" })
-        const bytes = new Uint8Array(yield* read(content))
-        if (String(bytes.length) !== entry.bytes || (yield* sha256(bytes)) !== entry.digest.value)
-          return yield* new AdoptionError({ reason: "Owned tree bytes differ from the manifest" })
-        return bytes
+        return yield* ownedBytes(read, content, "Owned tree bytes differ from the manifest")
       }).pipe(
         Effect.mapError(() =>
           PlatformError.badArgument({

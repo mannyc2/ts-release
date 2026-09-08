@@ -1,7 +1,7 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
+import { Effect, Schema } from "effect"
 import { ReleaseError } from "@mannyc1/ts-release"
 import { Bundle, File } from "@mannyc1/ts-release/bundle"
+import { publicUrl } from "@mannyc1/ts-release/http"
 
 export const Text = Schema.String.check(
   Schema.makeFilter(
@@ -15,20 +15,7 @@ export const Text = Schema.String.check(
   ),
 )
 export const Url = Text.check(
-  Schema.makeFilter((value) => {
-    try {
-      const url = new URL(value)
-      return (
-        url.protocol === "https:" &&
-        !url.username &&
-        !url.password &&
-        !url.hash &&
-        url.href === value
-      )
-    } catch {
-      return false
-    }
-  }),
+  Schema.makeFilter((value) => publicUrl(value)?.href === value),
 )
 export const Executable = Text.check(
   Schema.makeFilter(

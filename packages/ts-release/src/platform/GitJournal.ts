@@ -5,15 +5,11 @@ import { createHash } from "node:crypto"
 import { mkdirSync } from "node:fs"
 import type { AppendResult, JournalStore } from "../Journal.js"
 import type { JournalEvent } from "../internal/ReleaseModel.js"
-import { type ReleaseError, attempt, fail } from "../internal/Error.js"
+import { type ReleaseError, attempt, fail, reject } from "../internal/Error.js"
 import { canonical } from "../internal/Identity.js"
 import { conditionalArguments, pushWitness } from "../internal/GitAuthority.js"
-import {
-  admitCoordinate,
-  objectFormat,
-  type Credentials,
-  type RefCoordinate,
-} from "../internal/GitCatalog.js"
+import { admitCoordinate, objectFormat, type Credentials } from "../internal/GitCatalog.js"
+import type { RefCoordinate } from "../internal/GitCatalog.js"
 import { checked, resolveGitCredentials, openGitRuntime } from "./GitProcess.js"
 import { fetchRef, remoteRef } from "./GitRemote.js"
 import { EVENT_BYTES, encodeEvent, readEvent } from "./StoreCodec.js"
@@ -152,7 +148,7 @@ export const openGitJournal = Effect.fn("ts-release.openGitJournal")(
           const existing = current.events.findIndex((known) => known.eventId === event.eventId)
           if (existing >= 0) {
             if (canonical(current.events[existing]) !== canonical(event))
-              return yield* attempt(() => fail("event-id-conflict", "Event ID has different facts"))
+              return yield* reject("event-id-conflict", "Event ID has different facts")
             return { _tag: "AlreadyRecorded", revision: existing + 1 }
           }
           if (current.revision !== expectedRevision)

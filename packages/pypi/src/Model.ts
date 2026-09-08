@@ -1,18 +1,8 @@
 import * as Schema from "effect/Schema"
 import { File } from "@mannyc1/ts-release/bundle"
+import { isSafePath, publicUrl, PublicText } from "@mannyc1/ts-release/http"
 
-export const text = Schema.NonEmptyString.check(
-  Schema.makeFilter(
-    (s) =>
-      s.length <= 2048 &&
-      s === s.normalize("NFC") &&
-      s.trim() === s &&
-      !/[\u0000-\u001f\u007f]/u.test(s) &&
-      !/(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[abps]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|npm_[A-Za-z0-9]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY)/u.test(
-        s,
-      ),
-  ),
-)
+export const text = PublicText(2048)
 export const project = text.check(
   Schema.isPattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u),
   Schema.isMaxLength(200),
@@ -41,20 +31,8 @@ export const filename = text.check(
 )
 const https = text.check(
   Schema.makeFilter((value) => {
-    try {
-      const url = new URL(value)
-      return (
-        url.protocol === "https:" &&
-        !url.username &&
-        !url.password &&
-        !url.search &&
-        !url.hash &&
-        url.href === value &&
-        value.endsWith("/")
-      )
-    } catch {
-      return false
-    }
+    const url = publicUrl(value)
+    return url !== null && !url.search && url.href === value && value.endsWith("/")
   }),
 )
 export class PyPi extends Schema.TaggedClass<PyPi>()("PyPi", {
@@ -99,14 +77,7 @@ export class TrustedAuthorization extends Schema.TaggedClass<TrustedAuthorizatio
       ),
     ),
     repository: text.check(Schema.isPattern(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u)),
-    workflow: text.check(
-      Schema.makeFilter(
-        (s) =>
-          !s.startsWith("/") &&
-          !s.includes("\\") &&
-          !s.split("/").some((x) => ["", ".", ".."].includes(x)),
-      ),
-    ),
+    workflow: text.check(Schema.makeFilter(isSafePath)),
     workflowRef: text.check(
       Schema.makeFilter(
         (s) => /^refs\/(?:heads|tags)\/[A-Za-z0-9._/-]+$/u.test(s) && !s.includes(".."),

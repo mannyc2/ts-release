@@ -10,7 +10,7 @@ declare const Unavailable_base: Schema.Class<Unavailable, Schema.TaggedStruct<"U
 declare class Unavailable extends Unavailable_base {
 }
 declare const FileFacts_base: Schema.Class<FileFacts, Schema.TaggedStruct<"FileFacts", {
-    readonly filename: Schema.NonEmptyString;
+    readonly filename: Schema.String;
     readonly sha256: Schema.NullOr<Schema.String>;
     readonly bytes: Schema.NullOr<Schema.String>;
     readonly yanked: Schema.Boolean;
@@ -18,7 +18,7 @@ declare const FileFacts_base: Schema.Class<FileFacts, Schema.TaggedStruct<"FileF
 declare class FileFacts extends FileFacts_base {
 }
 declare const DifferentProject_base: Schema.Class<DifferentProject, Schema.TaggedStruct<"DifferentProject", {
-    readonly project: Schema.NonEmptyString;
+    readonly project: Schema.String;
 }>, {}>;
 declare class DifferentProject extends DifferentProject_base {
 }

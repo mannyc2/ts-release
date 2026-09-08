@@ -10,8 +10,8 @@
   "dependencies": {},
   "packageManager": "bun@1.3.14",
   "workspaces": [
-    "packages/*",
-    "apps/ts-release-agents"
+    "apps/*",
+    "packages/*"
   ],
   "devDependencies": {
     "@effect/platform-bun": "4.0.0-beta.107",
@@ -45,7 +45,7 @@
     "check:architecture-program": "bun tools/architecture-lab/verify.mjs && bun tools/architecture-lab/project.ts --check && bun scripts/check-architecture-ancestry.ts && bun scripts/check-migration-execution.ts && bun scripts/check-architecture-budget.ts --accept-recorded-planning-variance",
     "check:launch-evidence": "bun scripts/check-launch-evidence.ts",
     "check:launch-closure": "bun scripts/check-launch-evidence.ts --require-closed",
-    "check:packed-action": "bun scripts/check-wave-prerequisite.ts W10",
+    "check:packed-action": "bun scripts/check-packed-action.ts",
     "check:effect-build-integration": "bun scripts/check-effect-build-integration.ts",
     "build": "bun scripts/build.ts",
     "check": "bun scripts/check.ts",

@@ -1,15 +1,10 @@
 import { createHash } from "node:crypto"
-import {
-  NoReplay,
-  type PreparedRequest,
-  RequestFacts,
-  type Operation,
-  type ProviderContext,
-} from "@mannyc1/ts-release"
+import { NoReplay, RequestFacts, type Operation } from "@mannyc1/ts-release"
+import type { PreparedRequest, ProviderContext } from "@mannyc1/ts-release"
 import * as Model from "./Model.js"
 import { intentOf } from "./Graph.js"
 import { BoundScope, bindScope, readScope, encodeScope, parentFacts } from "./Binding.js"
-import { api, headers, invalid, own, sameUrl, uploadTemplate } from "./Native.js"
+import { api, headers, invalid, matches, own, sameUrl, uploadTemplate } from "./Native.js"
 
 const encode = (value: unknown) => new TextEncoder().encode(JSON.stringify(value))
 export const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex")
@@ -105,15 +100,13 @@ export const requestMatches = (scope: BoundScope, request: RequestFacts): boolea
   )
 }
 export const ownsRequest = (request: PreparedRequest) => {
-  try {
+  return matches(() => {
     return (
       requestMatches(readScope(request.facts.scope), request.facts) &&
       request.facts.byteLength === String(request.body.length) &&
       request.facts.bodyDigest === sha256(request.body)
     )
-  } catch {
-    return false
-  }
+  })
 }
 export const requestCorresponds = (
   operation: Operation,

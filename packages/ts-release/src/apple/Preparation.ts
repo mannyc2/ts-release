@@ -5,18 +5,14 @@ import { observeRelease, runRelease } from "../Release.js"
 import type { Scope } from "../Journal.js"
 import { Content, type OwnedBundle } from "../internal/ArtifactModel.js"
 import { loadBundle } from "../internal/BundleCodec.js"
-import { captureContentOwner, type ContentOwner } from "../internal/Content.js"
+import { captureContentOwner, readVerifiedContent, type ContentOwner } from "../internal/Content.js"
 import { projectReport } from "../internal/Decision.js"
 import { Host, currentHost, read } from "../internal/Host.js"
-import { ReleaseError, attempt, fail } from "../internal/Error.js"
-import { canonical, decodeOwned, freeze, sha256 } from "../internal/Identity.js"
+import { ReleaseError, attempt, fail, reject } from "../internal/Error.js"
+import { canonical, decodeOwned, freeze } from "../internal/Identity.js"
 import { Plan, type JournalEvent, type RunOptions } from "../internal/ReleaseModel.js"
-import {
-  ApplePreparations,
-  type AppleEvidence,
-  ReadyToPlan,
-  loadApplePreparations,
-} from "./Model.js"
+import { ApplePreparations, ReadyToPlan, loadApplePreparations } from "./Model.js"
+import type { AppleEvidence } from "./Model.js"
 import { classifyEvidence, preparationProvider } from "./Provider.js"
 
 export const preparationScopes = Effect.fn("apple.preparationScopes")(function* (
@@ -76,10 +72,7 @@ export const runPreparation = Effect.fn("apple.runPreparation")(function* (
   const { admitted, host, scopes } = yield* context(inputs)
   const scope = scopes.find((scope) => scope.plan.operations[0]!.operationId === preparationId)
   if (!scope)
-    return yield* new ReleaseError({
-      code: "preparation-id",
-      message: "Selected preparation is absent from this collection",
-    })
+    return yield* reject("preparation-id", "Selected preparation is absent from this collection")
   const plan = scope.plan,
     input = admitted.preparations[scopes.indexOf(scope)]!
   yield* runRelease({ ...runOptions, plan, observe: false }).pipe(Effect.provideService(Host, host))
@@ -109,10 +102,10 @@ export const runPreparation = Effect.fn("apple.runPreparation")(function* (
       () =>
         Effect.gen(function* () {
           if (!selected((yield* read(host, plan)).snapshot.events, plan))
-            return yield* new ReleaseError({
-              code: "preparation-selected",
-              message: "No validated selected Apple output exists",
-            })
+            return yield* reject(
+              "preparation-selected",
+              "No validated selected Apple output exists",
+            )
         }),
     ),
   )
@@ -121,13 +114,7 @@ const ownedBundle = Effect.fn("apple.readOwnedBundle")(function* (
   owner: ContentOwner,
   value: Content,
 ) {
-  const content = yield* attempt(() => decodeOwned(Content, value))
-  const bytes = new Uint8Array(yield* owner.read(content))
-  if (String(bytes.length) !== content.bytes || (yield* sha256(bytes)) !== content.sha256)
-    return yield* new ReleaseError({
-      code: "apple-content",
-      message: "Selected Bundle bytes differ from their immutable content identity",
-    })
+  const bytes = yield* readVerifiedContent(owner.read, value, Number.MAX_SAFE_INTEGER)
   return yield* loadBundle(owner, bytes)
 })
 const validateOutputs = Effect.fn("apple.validateOutputs")(function* (
@@ -140,10 +127,7 @@ const validateOutputs = Effect.fn("apple.validateOutputs")(function* (
   for (const scope of scopes) {
     const record = selected(events, scope.plan)
     if (!record || record.body._tag !== "ObservationRecorded")
-      return yield* new ReleaseError({
-        code: "not-ready",
-        message: "Every Apple preparation must select final bytes before publication",
-      })
+      return yield* reject("not-ready", "Every Apple preparation must select final bytes")
     const body = record.body
     const ready = yield* attempt(() => decodeOwned(ReadyToPlan, body.evidence))
     const outputs = yield* ownedBundle(owner, ready.outputsBundleContent)
@@ -198,10 +182,7 @@ const publicationContext = Effect.fn("apple.publicationContext")(function* (
     plan.journalId !== admitted.admitted.journalId ||
     plan.bundleId !== captured.content.sha256
   )
-    return yield* new ReleaseError({
-      code: "final-bundle-binding",
-      message: "The one publication Plan must bind the complete Bundle in the preparation journal",
-    })
+    return yield* reject("final-bundle-binding", "Publication Plan does not bind the final Bundle")
   const bundle = yield* ownedBundle(owner, captured.content)
   const prefix = yield* read(admitted.host, plan)
   const ready = yield* validateOutputs(admitted.scopes, prefix.snapshot.events, bundle, owner)

@@ -3,7 +3,9 @@ import type * as Scope from "effect/Scope";
 import type { Transport } from "../Provider.js";
 import { type ReadContent } from "../internal/Content.js";
 import { type ReleaseError } from "../internal/Error.js";
-import { type Credentials, type Intent, type ObjectBuilder, type ObserveRef, type RefCoordinate } from "../internal/GitCatalog.js";
+import { type Intent } from "../internal/GitCatalog.js";
+import type { Credentials, ObjectBuilder, ObserveRef } from "../internal/GitCatalog.js";
+import type { RefCoordinate } from "../internal/GitCatalog.js";
 import { type GitProcessOptions } from "./GitProcess.js";
 export interface GitCatalogHost {
     readonly objects: ObjectBuilder;

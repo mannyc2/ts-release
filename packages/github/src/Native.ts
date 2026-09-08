@@ -1,29 +1,13 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
-import { ReleaseError } from "@mannyc1/ts-release"
-import { decodeJson, type HttpResponse } from "@mannyc1/ts-release/http"
+import {
+  decodeJson,
+  makeDataBoundary,
+  publicUrl,
+  type HttpResponse,
+} from "@mannyc1/ts-release/http"
 import * as Model from "./Model.js"
 
-export const invalid = (code: string): never => {
-  throw new ReleaseError({
-    code: `github-${code}`,
-    message: `GitHub ${code.replaceAll("-", " ")} could not be admitted`,
-  })
-}
-export const attempt = <A>(run: () => A) =>
-  Effect.try({
-    try: run,
-    catch: (error) =>
-      error instanceof ReleaseError
-        ? error
-        : new ReleaseError({ code: "github-data", message: "GitHub data could not be admitted" }),
-  })
-export const own = <A, I>(schema: Schema.Codec<A, I>, value: unknown): A =>
-  Schema.decodeUnknownSync(schema, { onExcessProperty: "error" })(value)
-export const object = (input: unknown): Record<string, unknown> => {
-  if (!input || typeof input !== "object" || Array.isArray(input)) return invalid("object")
-  return input as Record<string, unknown>
-}
+export const { invalid, attempt, matches, object, own, ownOperation, ownRequest } =
+  makeDataBoundary("github", "GitHub")
 export const api = (repository: Model.Repository) =>
   `${repository.apiUrl}/repos/${repository.owner}/${repository.name}`
 export const uploadTemplate = (repository: Model.Repository, id: string) =>
@@ -156,20 +140,16 @@ export const assetFacts = (
   return facts
 }
 export const assetUrls = (facts: Model.AssetFacts, repository: Model.Repository, tag: string) => {
-  const download = new URL(facts.downloadUrl)
+  const download = publicUrl(facts.downloadUrl)
+  if (!download) return false
+  const path = decodeURIComponent(download.pathname),
+    prefix = `/${repository.owner}/${repository.name}/`
   if (
     !sameUrl(facts.apiUrl, `${api(repository)}/releases/assets/${facts.assetId}`, repository) ||
     download.origin !== "https://github.com" ||
     download.search ||
-    download.hash ||
-    download.username ||
-    download.password ||
-    decodeURIComponent(download.pathname)
-      .slice(0, repository.owner.length + repository.name.length + 3)
-      .toLowerCase() !== `/${repository.owner}/${repository.name}/`.toLowerCase() ||
-    decodeURIComponent(download.pathname).slice(
-      repository.owner.length + repository.name.length + 3,
-    ) !== `releases/download/${tag}/${facts.storedName}`
+    path.slice(0, prefix.length).toLowerCase() !== prefix.toLowerCase() ||
+    path.slice(prefix.length) !== `releases/download/${tag}/${facts.storedName}`
   )
     return false
   return true

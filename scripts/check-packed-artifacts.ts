@@ -8,6 +8,7 @@ const work = await mkdtemp("/tmp/ts-release-packed-artifacts-")
 const node = process.env.TS_RELEASE_ACCEPTANCE_NODE ?? process.env.TS_RELEASE_HTTP_PEER_NODE
 assert(node?.startsWith("/"), "Choose an absolute supported native Node executable")
 assert(process.env.TS_RELEASE_ALPINE_DEPENDENCIES, "Choose retained Alpine dependency archives")
+const nodeExecutable = node as string
 const commands: unknown[] = [],
   outcomes: unknown[] = []
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex")
@@ -16,8 +17,8 @@ const run = async (cwd: string, argv: string[], env: Record<string, string> = {}
     cwd,
     env: {
       ...process.env,
-      PATH: `${dirname(node)}${delimiter}${process.env.PATH}`,
-      TS_RELEASE_HTTP_PEER_NODE: node,
+      PATH: `${dirname(nodeExecutable)}${delimiter}${process.env.PATH}`,
+      TS_RELEASE_HTTP_PEER_NODE: nodeExecutable,
       ...env,
     },
     stdout: "pipe",
@@ -100,7 +101,7 @@ for (const manager of ["bun", "npm"]) {
     )
   const portable = `await Promise.all(["@mannyc1/ts-release", "@mannyc1/ts-release/bundle", "@mannyc1/ts-release/effect-build"].map((name) => import(name))); console.log("portable-without-optional-peers")`
   await writeFile(join(cwd, "portable.mjs"), portable)
-  for (const runtime of [node, process.execPath])
+  for (const runtime of [nodeExecutable, process.execPath])
     assert.equal(
       (await run(cwd, [runtime, "portable.mjs"])).trim(),
       "portable-without-optional-peers",
@@ -143,7 +144,7 @@ for (const manager of ["bun", "npm"]) {
     }),
   )
   await run(cwd, [process.execPath, "node_modules/typescript/bin/tsc", "-p", "tsconfig.json"])
-  for (const runtime of [node, process.execPath]) {
+  for (const runtime of [nodeExecutable, process.execPath]) {
     await run(cwd, [runtime, "types-consumer/public-contract.js"])
     const executableOutput = await run(cwd, [runtime, "executables.mjs"], {
       TS_RELEASE_PRODUCER_BUN: process.execPath,

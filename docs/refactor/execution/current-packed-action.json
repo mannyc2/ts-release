@@ -1,0 +1,145 @@
+{
+  "format": "ts-release/packed-action/1",
+  "work": "/tmp/ts-release-packed-action-Uw32g2",
+  "action": {
+    "metadataSha256": "29a0379edd42b2de5fecf0933e30158d751f50d1b97afb7d825f24a18a6f0e00",
+    "launcherSha256": "0d4d4fa28f3e22da95cee72fc9f31502456654d653f9d2d4938c167e45ff84b1"
+  },
+  "package": {
+    "sha256": "2636c823d7e976791818263349525fdf67de2f86aca61a899477d9eac9640320"
+  },
+  "outcomes": [
+    {
+      "manager": "bun",
+      "node": "v22.22.2",
+      "installedPackageSymlink": false,
+      "optionalPeersAbsent": true,
+      "freshRunnerEquivalent": true,
+      "sends": 1
+    },
+    {
+      "manager": "npm",
+      "node": "v22.22.2",
+      "installedPackageSymlink": false,
+      "optionalPeersAbsent": true,
+      "freshRunnerEquivalent": true,
+      "sends": 1
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "run",
+        "build:delivery"
+      ],
+      "cwd": "/tmp/ts-release-complete-hard-cut",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "pm",
+        "pack",
+        "--ignore-scripts",
+        "--filename",
+        "/tmp/ts-release-packed-action-Uw32g2/ts-release.tgz"
+      ],
+      "cwd": "/tmp/ts-release-complete-hard-cut/packages/ts-release",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/mnt/models/.bun/bin/bun",
+        "install",
+        "--ignore-scripts",
+        "--cache-dir",
+        "/tmp/ts-release-packed-action-Uw32g2/bun-cache"
+      ],
+      "cwd": "/tmp/ts-release-packed-action-Uw32g2/bun",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/usr/bin/git",
+        "init",
+        "--bare",
+        "--initial-branch=main",
+        "/tmp/ts-release-packed-action-Uw32g2/bun/journal.git"
+      ],
+      "cwd": "/tmp/ts-release-packed-action-Uw32g2/bun",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "/tmp/ts-release-packed-action-Uw32g2/action/dist/launcher.cjs"
+      ],
+      "cwd": "/tmp/ts-release-packed-action-Uw32g2/bun",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "/tmp/ts-release-packed-action-Uw32g2/action/dist/launcher.cjs"
+      ],
+      "cwd": "/tmp/ts-release-packed-action-Uw32g2/bun",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "--version"
+      ],
+      "cwd": "/tmp/ts-release-packed-action-Uw32g2/bun",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "npm",
+        "install",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/ts-release-packed-action-Uw32g2/npm",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/usr/bin/git",
+        "init",
+        "--bare",
+        "--initial-branch=main",
+        "/tmp/ts-release-packed-action-Uw32g2/npm/journal.git"
+      ],
+      "cwd": "/tmp/ts-release-packed-action-Uw32g2/npm",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "/tmp/ts-release-packed-action-Uw32g2/action/dist/launcher.cjs"
+      ],
+      "cwd": "/tmp/ts-release-packed-action-Uw32g2/npm",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "/tmp/ts-release-packed-action-Uw32g2/action/dist/launcher.cjs"
+      ],
+      "cwd": "/tmp/ts-release-packed-action-Uw32g2/npm",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node",
+        "--version"
+      ],
+      "cwd": "/tmp/ts-release-packed-action-Uw32g2/npm",
+      "exit": 0
+    }
+  ],
+  "limitation": "Local native Node acceptance; hosted node24 execution remains Plan 009."
+}

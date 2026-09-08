@@ -1,9 +1,5 @@
-import {
-  AdoptionError,
-  OwnedTree,
-  MAX_BUFFERED_TREE_BYTES,
-  MAX_TREE_ENTRIES,
-} from "./ArtifactModel.js"
+import { AdoptionError, MAX_BUFFERED_TREE_BYTES, MAX_TREE_ENTRIES } from "./ArtifactModel.js"
+import { OwnedTree } from "./ArtifactModel.js"
 import { compareText } from "./Identity.js"
 
 function invalid(reason: string): never {

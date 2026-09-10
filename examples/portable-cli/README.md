@@ -1,3 +1,7 @@
+> Historical pre-0.4 configuration example. The current CLI runs an authored
+> application; see the repository README and `docs/preparation.md`. Commands and
+> configuration APIs below are not supported by the current implementation.
+
 # Portable CLI example
 
 This fixture demonstrates a Bun-built CLI with Linux and macOS x64/arm64

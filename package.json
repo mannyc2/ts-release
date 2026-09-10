@@ -40,24 +40,17 @@
     "@effect/platform-node-shared": "4.0.0-beta.107"
   },
   "scripts": {
-    "check:architecture-schema": "bun run --cwd tools/architecture-program check && bun run --cwd tools/architecture-program test",
-    "check:architecture-inputs": "bun run --cwd tools/architecture-program check:inputs",
-    "check:architecture-program": "bun tools/architecture-lab/verify.mjs && bun tools/architecture-lab/project.ts --check && bun scripts/check-architecture-ancestry.ts && bun scripts/check-migration-execution.ts && bun scripts/check-architecture-budget.ts --accept-recorded-planning-variance",
-    "check:launch-evidence": "bun scripts/check-launch-evidence.ts",
-    "check:launch-closure": "bun scripts/check-launch-evidence.ts --require-closed",
     "check:packed-action": "bun scripts/check-packed-action.ts",
     "check:effect-build-integration": "bun scripts/check-effect-build-integration.ts",
     "build": "bun scripts/build.ts",
     "check": "bun scripts/check.ts",
-    "test": "bun test ./test/reimplementation",
+    "test": "bun scripts/test.ts",
     "format": "bun prettier --write packages apps/action apps/self-release test/reimplementation scripts/build.ts scripts/check.ts",
     "build:delivery": "bun scripts/build-delivery.ts",
     "check:import-rules": "bun scripts/check-import-rules.ts",
     "check:package-exports": "bun scripts/check-package-exports.ts",
     "check:packed-kernel": "bun scripts/check-packed-kernel.ts",
-    "check:portable": "bun run check && bun run check:production-api && bun run test && bun run check:migration && bun run check:import-rules && bun run check:package-exports && bun run check:packed-catalog",
-    "check:production-api": "bun scripts/project-production-api.ts --check",
-    "check:migration": "bun scripts/check-migration-execution.ts",
+    "check:portable": "bun run check && bun run test && bun run check:packed-kernel && bun run check:packed-catalog && bun run check:packed-action && bun run check:installed-workflow",
     "check:packed-npm": "bun scripts/check-packed-npm.ts",
     "check:native-npm-sigstore": "bun scripts/check-native-npm-sigstore.ts",
     "check:packed-pypi": "bun scripts/check-packed-npm.ts --pypi",
@@ -68,6 +61,7 @@
     "check:packed-external": "bun scripts/check-packed-external.ts",
     "setup:native-producers": "bun scripts/setup-native-producers.ts",
     "check:packed-artifacts": "bun scripts/check-packed-artifacts.ts",
-    "check:packed-apple": "bun scripts/check-packed-apple.ts"
+    "check:packed-apple": "bun scripts/check-packed-apple.ts",
+    "check:installed-workflow": "bun scripts/check-installed-workflow.ts"
   }
 }

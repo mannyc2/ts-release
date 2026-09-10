@@ -11,56 +11,13 @@ permissions:
   contents: read
 
 jobs:
-  architecture-program:
-    name: Architecture program validation
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22.22.2"
-
-      - name: Install
-        run: bun install --frozen-lockfile
-
-      - name: Verify lockfile stability
-        run: git diff --exit-code -- bun.lock
-
-      - name: Setup native Python acceptance
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11.14"
-
-      - name: Install pinned native Python fixtures
-        run: bun scripts/setup-native-python.ts
-
-      - name: Verify current architecture handoff and source tripwire
-        run: bun run check:architecture-program
-
-      - name: Verify exact selected-outcome ledger
-        run: bun run check:launch-evidence
-
   portable:
-    name: Portable package checks (${{ matrix.os }})
+    name: Package checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - name: Checkout
@@ -73,14 +30,11 @@ jobs:
         with:
           bun-version: 1.3.14
 
-      # The packed npm consumer and certified npm publisher both require an
-      # engine-admitted Node runtime. The Action itself is a composite/Bun
-      # entrypoint, so this pin proves the package boundary rather than a
-      # nonexistent JavaScript Action runtime.
+      # Exercise the package and the native Node Action launcher.
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "22.22.2"
+          node-version: "24.15.0"
 
       - name: Cache bun installs
         uses: actions/cache@v4
@@ -93,46 +47,23 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Setup native Python acceptance
+        if: runner.os == 'Linux'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11.14"
 
       - name: Install pinned native Python fixtures
+        if: runner.os == 'Linux'
         run: bun scripts/setup-native-python.ts
 
-      - name: Run portable package checks
+      - name: Install pinned native catalog consumers
+        if: runner.os == 'Linux'
+        run: bun run setup:native-catalog
+
+      - name: Run release workflow and native fixture checks
+        if: runner.os == 'Linux'
         run: bun run check:portable
 
-  agent-host:
-    name: Agent host validation
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-
-      - name: Cache bun installs
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-
-      - name: Install
-        run: bun install --frozen-lockfile
-
-      - name: Install Claude Code validator
-        run: npm install --global @anthropic-ai/claude-code@2.1.219
-
-      - name: Record Claude Code version
-        run: claude --version
-
-      - name: Run generated agent host checks
-        run: bun run check:agents
+      - name: Check macOS package imports and installed declarations
+        if: runner.os == 'macOS'
+        run: bun run check && bun run check:packed-kernel

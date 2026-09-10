@@ -1,3 +1,7 @@
+> Historical pre-0.4 configuration example. The current CLI runs an authored
+> application; see the repository README and `docs/preparation.md`. Commands and
+> configuration APIs below are not supported by the current implementation.
+
 # Bun CLI and GitHub Releases
 
 This complete fixture prepares an npm package plus a Bun-compiled CLI matrix

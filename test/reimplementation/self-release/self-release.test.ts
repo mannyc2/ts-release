@@ -560,7 +560,8 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     return { exit, stdout, stderr }
   }
   const first = await run(node, join(work, "journal-cache-node"))
-  expect({ exit: first.exit, stderr: first.stderr }).toEqual({ exit: 2, stderr: "" })
+  expect(first.exit).toBe(2)
+  expect(first.stderr).toContain("ts-release --observe")
   const report = JSON.parse(first.stdout)
   expect(report.plan.planId).toBe(prepared.plan.planId)
   expect(report.journal).toEqual({ journalId: prepared.plan.journalId, revision: 0, events: [] })
@@ -568,7 +569,8 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     Array(28).fill("Unattempted"),
   )
   const second = await run(process.execPath, join(work, "journal-cache-bun"))
-  expect({ exit: second.exit, stderr: second.stderr }).toEqual({ exit: 2, stderr: "" })
+  expect(second.exit).toBe(2)
+  expect(second.stderr).toContain("ts-release --observe")
   expect(JSON.parse(second.stdout)).toEqual(report)
   expect(native(journalRemote, ["for-each-ref", "--format=%(refname)"]).toString()).toBe("")
 
@@ -593,9 +595,7 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     const rejected = await run(node, join(work, `rejected-${crypto.randomUUID()}`), change)
     expect(rejected.exit).toBe(1)
     expect(rejected.stdout).toBe("")
-    expect(rejected.stderr).toBe(
-      "ts-release: application failed; inspect the durable journal before resuming.\n",
-    )
+    expect(rejected.stderr).toContain("ts-release --observe")
   }
   expect(native(journalRemote, ["for-each-ref", "--format=%(refname)"]).toString()).toBe("")
   expect(sha256(await readFile(bundleFile))).toBe(prepared.plan.bundleId)

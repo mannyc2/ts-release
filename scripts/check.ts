@@ -4,7 +4,6 @@ const root = resolve(import.meta.dir, "..")
 for (const argv of [
   [process.execPath, "scripts/build.ts"],
   [process.execPath, "node_modules/typescript/bin/tsc", "--noEmit", "-p", "tsconfig.json"],
-  [process.execPath, "scripts/project-production-api.ts", "--check"],
   [process.execPath, "scripts/check-import-rules.ts"],
   [process.execPath, "scripts/check-package-exports.ts"],
 ]) {

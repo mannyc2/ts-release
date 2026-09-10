@@ -8,7 +8,7 @@ import type { OwnedBundle } from "../internal/ArtifactModel.js"
 import { attempt, fail, failure, type ReleaseError } from "../internal/Error.js"
 import type { RunOptions } from "../internal/ReleaseModel.js"
 import { FinalizedReport, reportFinalizedRelease } from "../internal/FinalizedReport.js"
-import { runRelease } from "../Release.js"
+import { observeRelease, runRelease } from "../Release.js"
 
 export { FinalizedReport }
 export interface Application {
@@ -46,6 +46,7 @@ export const runApplication = (
   applicationPath: string,
   input: unknown,
   signal?: AbortSignal,
+  mode: "run" | "observe" = "run",
 ): Promise<FinalizedReport> =>
   Effect.runPromise(
     Effect.scoped(
@@ -74,7 +75,8 @@ export const runApplication = (
           // Admit the complete Bundle/Plan/Journal binding before dispatch, then keep
           // these owned inputs across the run. Reports never grant dispatch authority.
           const admitted = yield* reportFinalizedRelease(app.bundle, options.plan)
-          yield* runRelease({ ...options, plan: admitted.plan })
+          if (mode === "observe") yield* observeRelease({ plan: admitted.plan })
+          else yield* runRelease({ ...options, plan: admitted.plan })
           return yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
         }).pipe(Effect.provideService(Host, host))
       }),

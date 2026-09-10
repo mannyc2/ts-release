@@ -10,14 +10,7 @@ import * as Schema from "effect/Schema"
 import { Host, createPlan, runRelease } from "@mannyc1/ts-release"
 import * as Git from "@mannyc1/ts-release/git"
 import { makeGitCatalogHost, openSqliteJournal } from "@mannyc1/ts-release/bun"
-import {
-  Bundle,
-  Content,
-  File,
-  Tree,
-  finalize,
-  type ReadContent,
-} from "@mannyc1/ts-release/bundle"
+import { Bundle, Content, File, Tree, finalize, type ReadContent } from "@mannyc1/ts-release/bundle"
 import { ReleaseError } from "@mannyc1/ts-release"
 import {
   Attestations,
@@ -60,7 +53,8 @@ const readContent: ReadContent = (identity) => {
 }
 const provenance = { _tag: "IntrinsicProvenance" as const, producer: "openai-fixture" }
 const compare = (left: string, right: string): number => {
-  const a = [...left], b = [...right]
+  const a = [...left],
+    b = [...right]
   for (let index = 0; index < Math.min(a.length, b.length); index++) {
     const selected = a[index]!.codePointAt(0)! - b[index]!.codePointAt(0)!
     if (selected) return selected
@@ -133,7 +127,9 @@ const pluginInput = () =>
       files: [
         new SkillFile({
           path: "references/evidence.md",
-          content: content(new TextEncoder().encode("# Evidence\n\nReceipts are not observations.\n")),
+          content: content(
+            new TextEncoder().encode("# Evidence\n\nReceipts are not observations.\n"),
+          ),
           mode: 0o644,
         }),
       ],
@@ -192,7 +188,8 @@ describe("OpenAI skills-only plugin", () => {
       }),
     })
     await expect(Effect.runPromise(files(collision, readContent))).rejects.toThrow()
-    const { tree } = await makePlugin(), changed = structuredClone(Schema.encodeSync(Tree)(tree)) as any
+    const { tree } = await makePlugin(),
+      changed = structuredClone(Schema.encodeSync(Tree)(tree)) as any
     changed.entries.find((entry: any) => entry._tag === "TreeFile").content.sha256 = "0".repeat(64)
     await expect(
       Effect.runPromise(validatePackage(Schema.decodeUnknownSync(Tree)(changed), readContent)),
@@ -260,15 +257,23 @@ describe("OpenAI marketplace and human submission handoff", () => {
       await Effect.runPromise(
         Effect.scoped(
           Effect.gen(function* () {
-            const runtime = yield* openGitRuntime(processOptions), repository = yield* runtime.repository("sha1")
-            const expectedOld = seed(repository.directory), contents = contentFixture(), { tree } = yield* Effect.promise(makePlugin)
+            const runtime = yield* openGitRuntime(processOptions),
+              repository = yield* runtime.repository("sha1")
+            const expectedOld = seed(repository.directory),
+              contents = contentFixture(),
+              { tree } = yield* Effect.promise(makePlugin)
             const rendered = yield* marketplace(
               {
                 plugin: tree,
                 existing: null,
                 marketplaceName: "release-tools",
                 displayName: "Release Tools",
-                sourcePath: "./plugins/release-auditor",
+                source: {
+                  source: "git-subdir",
+                  url: "https://github.com/example/plugins.git",
+                  path: "./plugins/release-auditor",
+                  sha: "a".repeat(40),
+                },
                 category: "Developer Tools",
               },
               readContent,
@@ -289,9 +294,7 @@ describe("OpenAI marketplace and human submission handoff", () => {
               new Git.CommitInput({
                 ...coordinate,
                 expectedOld,
-                baseObjects: contents.put(
-                  yield* host.captureBase({ ...coordinate, expectedOld }),
-                ),
+                baseObjects: contents.put(yield* host.captureBase({ ...coordinate, expectedOld })),
                 files: [
                   new Git.FileEdit({
                     path: ".agents/plugins/marketplace.json",
@@ -309,13 +312,16 @@ describe("OpenAI marketplace and human submission handoff", () => {
                 putContent: (bytes) => Effect.sync(() => contents.put(bytes)),
               },
             )
-            const operation = yield* Git.update(intent), plan = yield* createPlan("openai-marketplace", [operation])
+            const operation = yield* Git.update(intent),
+              plan = yield* createPlan("openai-marketplace", [operation])
             const store = yield* openSqliteJournal(join(directory, "journal.sqlite"))
             let serial = 0
             const report = yield* runRelease({ plan, authorize: true, maxDispatches: 1 }).pipe(
               Effect.provide(
                 Layer.succeed(Host, {
-                  providers: [Git.definition({ readContent: contents.read, observeRef: host.observeRef })],
+                  providers: [
+                    Git.definition({ readContent: contents.read, observeRef: host.observeRef }),
+                  ],
                   transport: host.transport([intent]),
                   store,
                   now: () => 1000,
@@ -325,7 +331,10 @@ describe("OpenAI marketplace and human submission handoff", () => {
             )
             expect(report.operations[0]!.status).toBe("Satisfied")
             expect(
-              native(repository.directory, ["show", `${coordinate.ref}:.agents/plugins/marketplace.json`]),
+              native(repository.directory, [
+                "show",
+                `${coordinate.ref}:.agents/plugins/marketplace.json`,
+              ]),
             ).toEqual(Buffer.from(rendered.bytes))
           }),
         ),
@@ -350,7 +359,8 @@ describe("OpenAI marketplace and human submission handoff", () => {
         readContent,
       ),
     )
-    const logoBytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]), logoContent = content(logoBytes)
+    const logoBytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+      logoContent = content(logoBytes)
     const logo = Schema.decodeUnknownSync(File)({
       _tag: "OwnedFile",
       logicalName: "release-auditor-logo.png",
@@ -367,7 +377,8 @@ describe("OpenAI marketplace and human submission handoff", () => {
       listing: new Listing({
         displayName: "Release Auditor",
         shortDescription: "Audit release evidence.",
-        longDescription: "Audit immutable reports and identify absent evidence without inventing success.",
+        longDescription:
+          "Audit immutable reports and identify absent evidence without inventing success.",
         developerName: "Example Release Engineering",
         category: "Developer Tools",
         websiteUrl: "https://example.test/release-auditor",
@@ -412,4 +423,119 @@ describe("OpenAI marketplace and human submission handoff", () => {
       ),
     ).rejects.toThrow()
   })
+})
+
+test("preserves an existing multi-skill plugin, manifest metadata, binary assets and MCP files", async () => {
+  const { packageFiles } = await import("../../../packages/openai/src/index.js")
+  const manifest = {
+    name: "existing-tools",
+    version: "2.0.0",
+    description: "Existing tools\nwith preserved multiline metadata.",
+    author: { name: "Team", url: "https://example.test" },
+    license: "MIT",
+    skills: "./skills/",
+    mcpServers: "./.mcp.json",
+    apps: "./.app.json",
+    interface: { displayName: "Existing tools", capabilities: ["Read"], logo: "./assets/logo.png" },
+  }
+  const rendered: RenderedFile[] = [
+    {
+      path: ".codex-plugin/plugin.json",
+      bytes: new TextEncoder().encode(JSON.stringify(manifest, null, 2)),
+      mode: 0o644,
+    },
+    ...["one", "two"].map((name): RenderedFile => ({
+      path: `skills/${name}/SKILL.md`,
+      bytes: new TextEncoder().encode(
+        `---\nname: ${name}\ndescription: Existing YAML description\nallowed-tools: Read\n---\n\nInstructions.\n`,
+      ),
+      mode: 0o644,
+    })),
+    { path: ".mcp.json", bytes: new TextEncoder().encode('{"mcpServers":{}}'), mode: 0o644 },
+    { path: ".app.json", bytes: new TextEncoder().encode('{"apps":{}}'), mode: 0o644 },
+    { path: "scripts/run.sh", bytes: new TextEncoder().encode("#!/bin/sh\nexit 0\n"), mode: 0o755 },
+    { path: "assets/logo.png", bytes: new Uint8Array([137, 80, 78, 71, 0, 255]), mode: 0o644 },
+  ]
+  const tree = treeFrom(rendered)
+  const result = await Effect.runPromise(packageFiles(tree, readContent))
+  expect(result).toEqual([...rendered].sort((a, b) => compare(a.path, b.path)))
+  expect(await Effect.runPromise(validatePackage(tree, readContent))).toEqual(tree)
+  const dangling = treeFrom(rendered.filter((file) => file.path !== ".mcp.json"))
+  await expect(Effect.runPromise(validatePackage(dangling, readContent))).rejects.toThrow()
+  const portable = treeFrom([
+    {
+      path: "plugin.json",
+      mode: 0o644,
+      bytes: new TextEncoder().encode(
+        JSON.stringify({
+          $schema: "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+          name: "portable-tool",
+        }),
+      ),
+    },
+  ])
+  expect(await Effect.runPromise(validatePackage(portable, readContent))).toEqual(portable)
+})
+
+test("pins new Git marketplace sources and preserves unrelated entries and selected policy", async () => {
+  const { tree } = await makePlugin()
+  const existing = new Marketplace({
+    name: "tools",
+    interface: { displayName: "Tools" },
+    plugins: [
+      new MarketplaceEntry({
+        name: "aaa-npm",
+        source: {
+          source: "npm",
+          package: "@example/plugin",
+          version: "^1.0.0",
+          registry: "https://registry.npmjs.org",
+        },
+      }),
+      new MarketplaceEntry({ name: "bbb-local", source: "./plugins/legacy" }),
+      new MarketplaceEntry({
+        name: "other",
+        source: { source: "url", url: "https://github.com/example/other.git", ref: "main" },
+        pluginId: "plugin_existing",
+      }),
+      new MarketplaceEntry({
+        name: "release-auditor",
+        source: { source: "local", path: "./old" },
+        policy: { installation: "NOT_AVAILABLE", authentication: "ON_USE", products: ["CODEX"] },
+        category: "Tools",
+      }),
+    ],
+  })
+  for (const source of [
+    { source: "url" as const, url: "https://github.com/example/tools.git", sha: "a".repeat(40) },
+    {
+      source: "git-subdir" as const,
+      url: "https://github.com/example/tools.git",
+      path: "./plugins/tool",
+      sha: "b".repeat(40),
+    },
+  ]) {
+    const input = {
+      plugin: tree,
+      existing,
+      marketplaceName: "tools",
+      displayName: "Tools",
+      category: "Tools",
+      source,
+    }
+    const result = await Effect.runPromise(marketplace(input, readContent))
+    expect(result.document.plugins.slice(0, 3)).toEqual(existing.plugins.slice(0, 3))
+    expect(result.document.plugins[3]!.source).toEqual(source)
+    expect(result.document.plugins[3]!.policy).toEqual(existing.plugins[3]!.policy)
+    for (const invalid of [
+      { ...source, sha: undefined },
+      { ...source, sha: "main" },
+      { ...source, ref: "main" },
+      { ...source, url: "https://github.com/example/tools.git?token=x" },
+    ]) {
+      await expect(
+        Effect.runPromise(marketplace({ ...input, source: invalid as any }, readContent)),
+      ).rejects.toThrow()
+    }
+  }
 })

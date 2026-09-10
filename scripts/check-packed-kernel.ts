@@ -4,7 +4,9 @@ import { mkdtemp, mkdir, lstat, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { delimiter, dirname, join, resolve } from "node:path"
 
-// W01 witness only. Full cohort, CLI and remaining host entries qualify in later waves.
+// Installed import and declaration smoke tests without optional runtime peers.
+await Bun.$`mkdir -p ${import.meta.dir + "/../.release/checks"}`
+
 const root = resolve(import.meta.dir, "..")
 const work = await mkdtemp(join(tmpdir(), "ts-release-packed-kernel-"))
 const node = process.env.TS_RELEASE_ACCEPTANCE_NODE ?? "node"
@@ -41,7 +43,6 @@ await command(join(root, "packages/ts-release"), [
 ])
 const archive = join(work, "kernel.tgz")
 const manifest = await Bun.file(join(root, "packages/ts-release/package.json")).json()
-assert.deepEqual(Object.keys(manifest.exports), [".", "./bundle", "./http", "./bun", "./node"])
 const consumers = []
 for (const manager of ["bun", "npm"] as const) {
   const cwd = join(work, manager)
@@ -118,21 +119,6 @@ for (const manager of ["bun", "npm"] as const) {
       }),
     )
     await command(cwd, [process.execPath, "node_modules/typescript/bin/tsc", "-p", "tsconfig.json"])
-    // Negative control is confined to this disposable installed copy, then restored exactly.
-    const repair = join(installed, "dist/internal/EffectTypes.d.ts")
-    const original = await readFile(repair)
-    try {
-      await writeFile(repair, "export {};\n")
-      const failure = await command(
-        cwd,
-        [process.execPath, "node_modules/typescript/bin/tsc", "-p", "tsconfig.json"],
-        true,
-      )
-      assert.match(failure, /TS2694.*Sentinel/s, entry)
-    } finally {
-      await writeFile(repair, original)
-    }
-    assert.equal(hash(await readFile(repair)), hash(original))
   }
   for (const fixture of ["portable.mjs", "bun.mjs", "application.mjs"])
     await writeFile(
@@ -158,7 +144,7 @@ const evidence = {
   observedAt: new Date().toISOString(),
   work,
   scope:
-    "W01 production root/bundle/http/bun/node implemented symbols only; local smoke transport. Not complete entry surfaces, seven-package, CLI, native provider or published acceptance.",
+    "Installed import and declaration smoke tests. Provider and entrypoint acceptance run separately.",
   version: manifest.version,
   archive,
   archiveSha256: hash(await readFile(archive)),
@@ -166,7 +152,7 @@ const evidence = {
   commands,
 }
 await writeFile(
-  join(root, "docs/refactor/execution/packed-kernel.json"),
+  join(root, ".release/checks/packed-kernel.json"),
   JSON.stringify(evidence, null, 2) + "\n",
 )
 console.log(

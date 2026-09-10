@@ -1,3 +1,5 @@
+# Historical pre-0.4 workflow; not runnable with the current applications.
+# See the root README for the current apps/action application/input contract.
 name: Reviewed release
 
 on:

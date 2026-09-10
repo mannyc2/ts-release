@@ -35,6 +35,8 @@ const work = await mkdtemp(join(tmpdir(), "ts-release-native-sigstore-"))
 const seeds = await Bun.file(
   join(import.meta.dir, "../node_modules/@sigstore/tuf/seeds.json"),
 ).json()
+await Bun.$`mkdir -p ${import.meta.dir + "/../.release/checks"}`
+
 const root = Buffer.from(seeds["https://tuf-repo-cdn.sigstore.dev"]["root.json"], "base64")
 const tufRootPath = join(work, "root.json")
 await Bun.write(tufRootPath, root)
@@ -76,12 +78,12 @@ const receipt = {
   limits: [
     "read-only existing public package witness",
     "no signing/OIDC exchange/publication",
-    "not a full W02 or release qualification",
+    "read-only verification; no publication",
     "Bun1.3.14 native TUF verification fails on the same authentic root (0/3ECDSA signatures); this Node witness does not qualify Bun Sigstore",
   ],
 }
 await Bun.write(
-  join(import.meta.dir, "../docs/refactor/execution/W02-native-sigstore.json"),
+  join(import.meta.dir, "../.release/checks/native-sigstore.json"),
   JSON.stringify(receipt, null, 2) + "\n",
 )
 console.log(JSON.stringify(receipt, null, 2))

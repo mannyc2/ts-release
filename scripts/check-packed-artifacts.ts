@@ -9,6 +9,11 @@ const node = process.env.TS_RELEASE_ACCEPTANCE_NODE ?? process.env.TS_RELEASE_HT
 assert(node?.startsWith("/"), "Choose an absolute supported native Node executable")
 assert(process.env.TS_RELEASE_ALPINE_DEPENDENCIES, "Choose retained Alpine dependency archives")
 const nodeExecutable = node as string
+// Keep native declaration fixtures on the same Node types as the frozen workspace;
+// bun-types accepts any @types/node version and an older transitive copy conflicts.
+const nodeTypesVersion = (
+  await Bun.file(join(root, "node_modules/@types/node/package.json")).json()
+).version
 const commands: unknown[] = [],
   outcomes: unknown[] = []
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex")
@@ -55,7 +60,7 @@ for await (const path of new Bun.Glob("**/*").scan({
     sha256: hash(await readFile(join(root, "packages/ts-release/src", path))),
   })
 sourceBindings.sort((a, b) => a.path.localeCompare(b.path))
-const upstreamRoot = join(root, "docs/refactor/execution/W08-upstream")
+const upstreamRoot = join(root, "test/fixtures/producer-upstream")
 const upstream = JSON.parse(await readFile(join(upstreamRoot, "registry.json"), "utf8")) as {
   packages: { name: string; version: string; sha256: string; retainedTarball: string }[]
 }
@@ -75,6 +80,7 @@ for (const manager of ["bun", "npm"]) {
       "@mannyc1/ts-release": `file:${archive}`,
       effect: "4.0.0-beta.107",
       typescript: "6.0.3",
+      "@types/node": nodeTypesVersion,
     },
     overrides: { "@effect/platform-node-shared": "4.0.0-beta.107" },
   }

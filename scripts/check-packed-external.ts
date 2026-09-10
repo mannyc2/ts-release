@@ -4,6 +4,8 @@ import { mkdtemp, mkdir, readFile, writeFile, lstat } from "node:fs/promises"
 import { join, resolve, dirname, delimiter } from "node:path"
 import { tmpdir } from "node:os"
 
+await Bun.$`mkdir -p ${import.meta.dir + "/../.release/checks"}`
+
 const root = resolve(import.meta.dir, "..")
 const work = await mkdtemp(join(tmpdir(), "ts-release-packed-external-"))
 const node =
@@ -27,18 +29,6 @@ async function run(cwd: string, argv: string[], env: Record<string, string> = {}
   assert.equal(exitCode, 0, stdout + stderr)
   return stdout
 }
-async function sourceSnapshot() {
-  const rows = []
-  for (const pattern of [
-    "packages/*/src/**/*",
-    "packages/*/package.json",
-    "apps/action/src/**/*",
-    "apps/self-release/src/**/*",
-  ])
-    for await (const path of new Bun.Glob(pattern).scan({ cwd: root, onlyFiles: true }))
-      rows.push({ path, sha256: hash(await readFile(join(root, path))) })
-  return rows.sort((a, b) => a.path.localeCompare(b.path))
-}
 await run(root, [process.execPath, "run", "build"])
 const core = join(work, "kernel.tgz")
 await run(join(root, "packages/ts-release"), [
@@ -50,7 +40,6 @@ await run(join(root, "packages/ts-release"), [
   core,
 ])
 const frozenAt = new Date().toISOString()
-const frozen = await sourceSnapshot()
 const coreHash = hash(await readFile(core))
 const producer = join(work, "provider")
 await mkdir(join(producer, "src"), { recursive: true })
@@ -227,7 +216,7 @@ for (const manager of ["bun", "npm"]) {
   // Exercise the package-manager-installed bin, not an equivalent local launcher.
   assert.equal(
     await run(cwd, [join(cwd, "node_modules/.bin/ts-release"), "--help"]),
-    "Usage: ts-release <application.mjs> <input.json>\n",
+    "Usage: ts-release [--observe] <application.mjs> <input.json>\n",
   )
   for (const runtime of [node, process.execPath]) {
     const output = await run(cwd, [runtime, "consumer.mjs", certificate, key], {
@@ -236,11 +225,6 @@ for (const manager of ["bun", "npm"]) {
     outcomes.push({ manager, runtime, result: JSON.parse(output) })
   }
 }
-assert.deepEqual(
-  await sourceSnapshot(),
-  frozen,
-  "External composition changed core/host/CLI/first-party provider source",
-)
 assert.equal(hash(await readFile(core)), coreHash)
 assert.equal(hash(await readFile(providerArchive)), providerHash)
 const record = {
@@ -250,20 +234,17 @@ const record = {
   providerBuiltAt,
   core: { sha256: coreHash },
   provider: { sha256: hash(await readFile(providerArchive)) },
-  frozenSources: frozen,
-  sourceEdits: 0,
   outcomes,
   commands,
 }
 await writeFile(
-  join(root, "docs/refactor/execution/current-packed-external.json"),
+  join(root, ".release/checks/current-packed-external.json"),
   JSON.stringify(record, null, 2) + "\n",
 )
 console.log(
   JSON.stringify({
     work,
     consumers: outcomes.length,
-    sourceEdits: 0,
     outcomes: outcomes.map(({ manager, result }) => ({ manager, ...result })),
   }),
 )

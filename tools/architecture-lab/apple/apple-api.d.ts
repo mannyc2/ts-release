@@ -1,5 +1,0 @@
-/** Proposed research surface; this is not a published package or compatibility promise. */
-export { Content, OwnedFile as File, OwnedTree as Tree, OwnedBundle as Bundle, OwnedArtifact as Artifact, AdoptionError, adoptFile, adoptTree, finalize } from "./adoption.js";
-export type { ContentOwner } from "./adoption.js";
-export { encodeBundle, loadBundle, restoreTree } from "./bundle-codec.js";
-export { ApplePreparation, ApplicationSignature, ReadyToPlan, AppleEvidence, preparationProvider, preparationScope, submitPreparedApp, finishPreparedApp, runPreparation, validateApplePublication, reportAppleContext } from "./apple-preparation.js";

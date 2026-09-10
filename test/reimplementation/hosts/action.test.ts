@@ -98,9 +98,7 @@ test("Action path and failure boundaries fail closed without private diagnostics
       const result = await spawnAction(work, {}, selected)
       expect(result.exit).toBe(1)
       expect(result.stdout).toBe("")
-      expect(result.stderr).toBe(
-        "ts-release Action failed; inspect the configured durable journal before resuming.\n",
-      )
+      expect(result.stderr).toContain("Rerun with observe: true")
       expect(result.stderr).not.toContain("outside")
     }
     const marker = join(work, "marker")

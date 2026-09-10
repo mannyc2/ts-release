@@ -190,7 +190,9 @@ const launch = async (input) => {
 const run = async (input, expected) => {
   const result = await (await launch(input)).result
   check(`CLI ${expected}`, result.code, expected === "Satisfied" ? 0 : 2)
-  check("credential-free CLI diagnostics", result.stderr, "")
+  check("credential-free CLI diagnostics", result.stderr.includes("credential-"), false)
+  if (expected !== "Satisfied")
+    check("actionable progress diagnostics", result.stderr.includes("ts-release --observe"), true)
   check(
     "derived operation statuses",
     result.report.operations.map((operation) => operation.status),

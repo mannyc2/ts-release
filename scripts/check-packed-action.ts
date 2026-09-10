@@ -5,12 +5,14 @@ import { tmpdir } from "node:os"
 import { delimiter, dirname, join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 
+await Bun.$`mkdir -p ${import.meta.dir + "/../.release/checks"}`
+
 const root = resolve(import.meta.dir, "..")
 const work = await mkdtemp(join(tmpdir(), "ts-release-packed-action-"))
 const node =
   process.env.TS_RELEASE_ACCEPTANCE_NODE ??
   process.env.TS_RELEASE_HTTP_PEER_NODE ??
-  "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node"
+  Bun.which("node")!
 const git = Bun.which("git")
 assert.ok(git, "native Git is required")
 const path = `${dirname(node)}${delimiter}${process.env.PATH}`
@@ -143,10 +145,10 @@ const record = {
   package: { sha256: hash(await readFile(archive)) },
   outcomes,
   commands,
-  limitation: "Local native Node acceptance; hosted node24 execution remains Plan 009.",
+  limitation: "Local native Node acceptance; hosted node24 execution is separate acceptance.",
 }
 await writeFile(
-  join(root, "docs/refactor/execution/current-packed-action.json"),
+  join(root, ".release/checks/current-packed-action.json"),
   `${JSON.stringify(record, null, 2)}\n`,
 )
 console.log(JSON.stringify({ work, launcherSha256, outcomes }))

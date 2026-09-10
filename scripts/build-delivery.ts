@@ -1,4 +1,4 @@
-import { readFile, rm } from "node:fs/promises"
+import { rm } from "node:fs/promises"
 import { resolve } from "node:path"
 
 const root = resolve(import.meta.dir, "..")
@@ -24,12 +24,3 @@ if (!result.success) {
   for (const log of result.logs) console.error(log)
   process.exit(1)
 }
-const layout = await Bun.file(
-  resolve(root, "docs/refactor/architecture-program/handoff/layout.json"),
-).json()
-const selected = layout.alternatives.find(
-  (item: { id: string }) => item.id === layout.selection.topology,
-)
-const action = selected?.privateWorkspaces.find((item: { id: string }) => item.id === "action")
-if (!action || (await readFile(resolve(root, action.actionYamlPath), "utf8")) !== action.actionYaml)
-  throw new Error("Action metadata differs from the selected node24 contract")

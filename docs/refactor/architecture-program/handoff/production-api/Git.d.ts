@@ -1,9 +1,0 @@
-export type {} from "./internal/EffectTypes.js";
-export { GitCas } from "./internal/ReleaseModel.js";
-export { GitReceipt, makeCoreGitTransport } from "./internal/GitAuthority.js";
-export type { CoreGitOptions, GitExecution } from "./internal/GitAuthority.js";
-export type { GitCatalogHost as NativeHost } from "./platform/GitHost.js";
-export { CommitInput, FileEdit, Identity, Intent } from "./internal/GitCatalog.js";
-export { definition, prepare, update } from "./internal/GitCatalog.js";
-export type { Credentials, ObjectBuilder, ObserveRef } from "./internal/GitCatalog.js";
-export type { RefCoordinate } from "./internal/GitCatalog.js";

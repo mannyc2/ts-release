@@ -5,6 +5,8 @@ import policy from "./producer-tools.json" with { type: "json" }
 
 if (`${process.platform}-${process.arch}` !== policy.platform)
   throw new Error("This exact native producer bootstrap qualifies Linux x64 only")
+await Bun.$`mkdir -p ${import.meta.dir + "/../.release/checks"}`
+
 const root = resolve(import.meta.dir, "..")
 const directory = resolve(
   process.env.TS_RELEASE_PRODUCER_TOOLS ?? "/tmp/ts-release-native-producers",
@@ -47,7 +49,7 @@ for (const tool of policy.tools) {
   console.log(JSON.stringify({ tool: tool.name, version: tool.version, executable }))
 }
 await Bun.write(
-  resolve(root, "docs/refactor/execution/W08-native-tools.json"),
+  resolve(root, ".release/checks/native-tools.json"),
   JSON.stringify(
     {
       format: "ts-release/native-producer-tools/1",

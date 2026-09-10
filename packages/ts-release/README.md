@@ -1,20 +1,27 @@
 # ts-release
 
-Owned Bundle → immutable Plan → one Journal → derived Report.
+Run an authored release application with immutable Bundle and Plan inputs and a
+durable journal:
 
-This checkout is implementing the 0.4 hard cut. W01 provides the release kernel,
-owned Bundle/content, HTTP receipt contracts, and scoped local SQLite storage.
-The root, bundle, http, node, and bun entries have implemented subsets of the
-planned public API. Remaining symbols, provider packages and native outcomes
-are tracked in `docs/refactor/execution/GOAL.md`; this is not a release candidate.
+```sh
+ts-release ./release.mjs ./release-input.json > release-report.json
+ts-release --observe ./release.mjs ./release-input.json > release-report.json
+```
 
-The shared CLI runs `ts-release <application.mjs> <input.json>`. The explicit,
-trusted application exports `createApplication(input)`, returning a scoped Effect
-with the Bundle, host and run options. The application selects its providers,
-layers and dispatch authorization. The CLI emits the complete derived JSON report.
-Exit codes are 0 for all operations Satisfied, 2 for an unresolved report, 1 for
-invalid usage or failure, and 130/143 for SIGINT/SIGTERM. Signals interrupt the
-application and await its scope cleanup. Always consult the journal before
-resuming an interrupted release; a process exit cannot prove non-commit.
-Effect's default logs go to stderr. On a signal, pending stdout/stderr writes are
-cancelled and output may be partial; use the exit code and durable journal.
+The trusted module exports `createApplication(input)`, a scoped Effect returning
+`{ bundle, host, options }`. The application supplies providers, credentials,
+storage and explicit `options.authorize`. The CLI's observe mode records fresh
+provider evidence without dispatching publication; application setup still runs.
+
+Rerun the original invocation to continue with the same Bundle, Plan, content and
+journal. Fresh runners must retain unresolved dispatch history. Destination
+absence alone never authorizes resend. Reports are derived views, not authority.
+
+JSON goes to stdout, diagnostics to stderr. Exit codes: 0 satisfied, 2 incomplete,
+1 usage/application failure, 130/143 interruption. Interrupted output may be
+partial; inspect the durable journal before continuing.
+
+The root exports planning, provider and recovery APIs. Use `bundle`, `http`, `git`,
+`node`, `bun`, `effect-build` and `apple` subpaths for their respective capabilities.
+See the [application guide](https://github.com/mannyc2/ts-release/blob/main/docs/preparation.md)
+and [recovery guide](https://github.com/mannyc2/ts-release/blob/main/docs/recovery.md).

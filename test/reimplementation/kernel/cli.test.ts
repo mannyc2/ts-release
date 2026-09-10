@@ -21,7 +21,7 @@ for (const runtime of [node, process.execPath]) {
     }
     expect(await run(["--help"])).toEqual({
       exit: 0,
-      stdout: "Usage: ts-release <application.mjs> <input.json>\n",
+      stdout: "Usage: ts-release [--observe] <application.mjs> <input.json>\n",
       stderr: "",
     })
     expect((await run([])).exit).toBe(1)
@@ -29,7 +29,8 @@ for (const runtime of [node, process.execPath]) {
       await writeFile(input, JSON.stringify({ unresolved }))
       const result = await run([application, input])
       expect(result.exit).toBe(unresolved ? 2 : 0)
-      expect(result.stderr).toBe("")
+      if (unresolved) expect(result.stderr).toContain("ts-release --observe")
+      else expect(result.stderr).toBe("")
       const report = JSON.parse(result.stdout)
       expect(report.format).toBe("ts-release/report/1")
       expect(report.journal).toEqual({
@@ -43,11 +44,11 @@ for (const runtime of [node, process.execPath]) {
     }
     for (const body of ["{invalid-fixture-private-json", '{"failure":true}']) {
       await writeFile(input, body)
-      expect(await run([application, input])).toEqual({
-        exit: 1,
-        stdout: "",
-        stderr: "ts-release: application failed; inspect the durable journal before resuming.\n",
-      })
+      const failed = await run([application, input])
+      expect(failed.exit).toBe(1)
+      expect(failed.stdout).toBe("")
+      expect(failed.stderr).toContain("ts-release --observe")
+      expect(failed.stderr).not.toContain("fixture-private")
     }
     expect((await run(["/fixture-private-missing.mjs", input])).stderr).not.toContain(
       "fixture-private",

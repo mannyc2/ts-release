@@ -106,6 +106,7 @@ export const submission = Effect.fn("openai.submission")(function* (
       manifest: plugin.manifest,
       tree: plugin.tree,
       skillName: plugin.skillName,
+      skillNames: plugin.skillNames,
     },
     marketplace: selected.marketplace,
     listing: selected.value.listing,

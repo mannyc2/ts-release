@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { resolve } from "node:path"
 
-test("external packed providers compose after frozen kernel/CLI build under fresh Bun/npm Node/Bun consumers", async () => {
+test("external packed providers compose with the installed kernel/CLI under fresh Bun/npm Node/Bun consumers", async () => {
   const child = Bun.spawn([process.execPath, "scripts/check-packed-external.ts"], {
     cwd: resolve(import.meta.dir, "../../.."),
     stdout: "pipe",
@@ -13,5 +13,5 @@ test("external packed providers compose after frozen kernel/CLI build under fres
     new Response(child.stderr).text(),
   ])
   expect({ exit, stderr }).toEqual({ exit: 0, stderr: "" })
-  expect(JSON.parse(stdout).sourceEdits).toBe(0)
+  expect(JSON.parse(stdout).consumers).toBe(4)
 }, 240_000)

@@ -8,7 +8,7 @@ import {
   type ReadContent,
 } from "@mannyc1/ts-release/bundle"
 import { canonical, compareText as compare, containsSecret } from "@mannyc1/ts-release/http"
-import { decodeJson, isPublicText, isSafePath, makeDataBoundary } from "@mannyc1/ts-release/http"
+import { decodeJson, isSafePath, makeDataBoundary } from "@mannyc1/ts-release/http"
 import { PublicText } from "@mannyc1/ts-release/http"
 
 export { canonical, compare }
@@ -127,26 +127,25 @@ export const files = Effect.fn("openai.files")(function* (
   )
 })
 
-const parseFrontmatter = (bytes: Uint8Array): string => {
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
-  if (text !== text.normalize("NFC") || text.includes("\r") || !text.startsWith("---\n"))
-    throw new Error("OpenAI SKILL.md encoding or frontmatter is invalid")
-  const closing = text.indexOf("\n---\n", 4)
-  if (closing < 0 || !text.slice(closing + 5).trim())
-    throw new Error("OpenAI SKILL.md has no instructions")
-  const fields = /^name: (.*)\ndescription: (.*)$/u.exec(text.slice(4, closing))
-  if (!fields) throw new Error("OpenAI SKILL.md frontmatter is malformed")
-  const skillName: unknown = JSON.parse(fields[1]!),
-    description: unknown = JSON.parse(fields[2]!)
-  if (
-    typeof skillName !== "string" ||
-    typeof description !== "string" ||
-    !name(skillName) ||
-    !isPublicText(description, 1024)
-  )
-    throw new Error("OpenAI SKILL.md frontmatter is invalid")
-  return skillName
-}
+// Distribution validates identity and referenced paths, preserving the source
+// document and all other JSON fields. It is not a portal or skill authoring validator.
+export const PluginManifest = Schema.StructWithRest(
+  Schema.Struct({
+    name: Name,
+    version: Schema.optional(
+      Schema.String.check(Schema.makeFilter((value) => Semver.valid(value) === value)),
+    ),
+    description: Schema.optional(Schema.String),
+    skills: Schema.optional(Schema.String),
+    hooks: Schema.optional(Schema.String),
+    mcpServers: Schema.optional(
+      Schema.Union([Schema.String, Schema.Record(Schema.String, Schema.Json)]),
+    ),
+    apps: Schema.optional(Schema.Union([Schema.String, Schema.Record(Schema.String, Schema.Json)])),
+  }),
+  [Schema.Record(Schema.String, Schema.UndefinedOr(Schema.Json))],
+)
+export type PluginManifest = typeof PluginManifest.Type
 
 export const inspectPackage = Effect.fn("openai.inspectPackage")(function* (
   input: Tree,
@@ -176,45 +175,68 @@ export const inspectPackage = Effect.fn("openai.inspectPackage")(function* (
       contents.set(path, bytes)
     }
   }
-  const bytes = contents.get(".codex-plugin/plugin.json")
+  const paths = tree.entries.map((entry) => entry.relativePath)
+  if (
+    paths.some((path) => !safePath(path)) ||
+    new Set(paths.map((path) => path.toLowerCase())).size !== paths.length
+  )
+    return yield* reject("openai-tree", "OpenAI package paths are unsafe or collide")
+  const manifestPath = contents.has("plugin.json") ? "plugin.json" : ".codex-plugin/plugin.json"
+  const bytes = contents.get(manifestPath)
   if (!bytes) return yield* reject("openai-tree", "plugin.json is missing")
   const plugin = yield* attempt("openai-manifest", () => {
-    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes),
-      value = own(Manifest, decodeJson(bytes))
-    if (text !== new TextDecoder().decode(manifestBytes(value)))
-      throw new Error("plugin.json is not canonical")
+    const value = own(PluginManifest, decodeJson(bytes))
+    if (
+      manifestPath === "plugin.json" &&
+      value.$schema !== "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
+    )
+      throw new Error("Root plugin.json must declare the Agent Plugins 1.0 schema")
+    for (const field of ["skills", "mcpServers", "apps", "hooks"]) {
+      const selected = value[field]
+      if (typeof selected !== "string") continue
+      const path = selected.replace(/^\.\//u, "").replace(/\/$/u, "")
+      if (
+        !selected.startsWith("./") ||
+        !safePath(path) ||
+        !paths.some((candidate) => candidate === path || candidate.startsWith(path + "/"))
+      )
+        throw new Error(`Plugin ${field} must reference bundled contents`)
+    }
     return value
   })
-  const skillDocuments = [...contents.keys()].filter((path) =>
-    /^skills\/[^/]+\/SKILL\.md$/u.test(path),
-  )
-  if (skillDocuments.length !== 1)
-    return yield* reject("openai-tree", "OpenAI plugin needs one complete skill tree")
-  const root = skillDocuments[0]!.split("/")[1]!
-  if (
-    !name(root) ||
-    [...contents.keys()].some(
-      (path) => path !== ".codex-plugin/plugin.json" && !path.startsWith(`skills/${root}/`),
-    )
-  )
-    return yield* reject("openai-tree", "Only plugin.json and one skill may appear")
-  const skillName = yield* attempt("openai-skill", () =>
-    parseFrontmatter(contents.get(skillDocuments[0]!)!),
-  )
-  if (skillName !== root) return yield* reject("openai-skill", "OpenAI skill root differs")
-  const rootPath = `skills/${skillName}`
-  if (
-    tree.entries.some(
-      (entry) =>
-        entry._tag === "TreeDirectory" &&
-        ![".codex-plugin", "skills", rootPath].includes(entry.relativePath) &&
-        !entry.relativePath.startsWith(`${rootPath}/`),
-    )
-  )
-    return yield* reject("openai-tree", "OpenAI tree has an unowned or incomplete directory")
-  return Object.freeze({ tree, manifest: plugin, skillName, contents })
+  const skillNames = [...contents.keys()]
+    .filter((path) => /(?:^|\/)SKILL\.md$/u.test(path))
+    .map((path) => path.split("/").at(-2)!)
+  return Object.freeze({
+    tree,
+    manifest: plugin,
+    skillName: skillNames[0] ?? null,
+    skillNames,
+    contents,
+  })
 })
 
 export const validatePackage = Effect.fn("openai.validatePackage")(
   (tree: Tree, read: ReadContent) => Effect.map(inspectPackage(tree, read), (value) => value.tree),
 )
+
+/** Read an existing package faithfully, including assets, multiple skills and MCP/app files. */
+export const packageFiles = Effect.fn("openai.packageFiles")(function* (
+  tree: Tree,
+  read: ReadContent,
+) {
+  const inspected = yield* inspectPackage(tree, read)
+  return Object.freeze(
+    inspected.tree.entries.flatMap((entry): RenderedFile[] =>
+      entry._tag === "TreeFile"
+        ? [
+            {
+              path: entry.relativePath,
+              mode: entry.mode as 0o644 | 0o755,
+              bytes: new Uint8Array(inspected.contents.get(entry.relativePath)!),
+            },
+          ]
+        : [],
+    ),
+  )
+})

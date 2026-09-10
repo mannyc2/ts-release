@@ -1,50 +1,46 @@
-# Recovery and correction
+# Progress and recovery
 
-The prepared bundle is the recovery boundary. Keep the exact path-free
-reference for the whole recovery window:
-
-```sh
-ts-release publish prepared:local:sha256-<manifest-digest>
-```
-
-The local CLI resolves the digest against its selected store (`--store` chooses
-a non-default store). The publisher verifies the manifest and every blob,
-then observes each remote subject. Equivalent content is skipped. Mutation is
-possible only after a typed provider decision. A conflicting coordinate,
-malformed response, authentication ambiguity, timeout, or unavailable
-observation stops without mutation.
-
-Partial success is normal distributed-system behavior. If a process disappears
-after a provider accepts a request, rerun the same bundle; the destination
-observation decides whether the subject is equivalent. Do not rebuild, bump a
-coordinate, delete a subject, or claim a manual success.
-
-The CLI preserves the redacted report before returning nonzero. Its final
-recovery line names the exact reference rather than guessing remote state:
-
-```text
-publish re-observes every subject and mutates only what a provider decision authorizes; conflicts and unobservable outcomes still require operator action.
-Resume: ts-release publish prepared:local:sha256-<manifest-digest>
-```
-
-The Action likewise writes `prepared-ref` and `report-ref` before failing a
-blocked or uncertain step. Workflow templates upload only the redacted report;
-the prepared bundle stays in the dedicated content-addressed Action store.
-
-Post-mutation confirming reads use bounded provider profiles. Their numeric
-timing values are conservative `ASSUMED/UNVERIFIED` policy, not measurements of
-live visibility lag. They never turn a pre-mutation inconclusive result into
-absence or authorize a second write.
-
-Correction is not a generic inverse. Supply authored provider-specific desired
-state alongside the same prepared reference:
+Retain the exact Bundle, content bytes, Plan and durable journal for the entire
+recovery window. Reports are derived views and do not authorize dispatch.
 
 ```sh
-ts-release correct prepared:local:sha256-<manifest-digest> correction.json
+ts-release --observe ./release.mjs ./release-input.json > release-report.json
 ```
 
-The kernel verifies the reference before interpreting correction content and
-binds the proposal to the exact prepared publication. Neither installed
-provider has a proved conditional correction write, so the result is an
-external operator proposal and no corrective mutation is sent. Deletion and
-announcements remain outside the engine.
+Observation refreshes providers that implement observation and appends their
+evidence to the journal. It does not dispatch publication. The application
+factory still runs, so keep its setup appropriate for inspection. Library hosts
+can call `reportRelease({ plan })` for stored progress or `observeRelease({ plan })`
+for fresh provider evidence, providing the same `Host` at the runtime boundary.
+
+| Status       | Meaning and next step                                                                               |
+| ------------ | --------------------------------------------------------------------------------------------------- |
+| Satisfied    | Exact evidence establishes completion; the engine skips this operation.                             |
+| Unattempted  | No dispatch yet. Check the application's authorization and dispatch limit.                          |
+| Pending      | Work or an unresolved dispatch remains. Refresh observations; absence alone does not permit resend. |
+| Inconclusive | Evidence cannot establish the outcome. Restore observation access and inspect again.                |
+| Conflict     | Destination evidence disagrees with the intended operation. Resolve the conflict explicitly.        |
+| Rejected     | A dispatch was rejected. Inspect its evidence and the provider's noncommit/replay contract.         |
+| Superseded   | This plan was explicitly superseded. Use the selected successor plan.                               |
+
+After resolving the blocker, continue with the original invocation:
+
+```sh
+ts-release ./release.mjs ./release-input.json > release-report.json
+```
+
+A new runner may choose a fresh local Git journal cache. It must keep the same
+remote journal identity, original Bundle and Plan, installed providers and
+credential bindings. Do not replace the journal with an empty store. Loss of an
+HTTP response or process interruption cannot prove noncommit.
+
+The engine checks request/receipt correspondence and replay laws before sending.
+An exact observation can establish completion. Conditional Git updates can replay
+only against the protected request. Explicit `acceptRisk` and `supersedePlan`
+remain library operations for deliberate operator workflows, not automatic error
+recovery or CLI flags. A process failure never implicitly grants either.
+
+For the Action, use the same application and input with `observe: 'true'` to
+inspect; use `observe: 'false'` to continue under the application policy. Its
+`plan-id` and `journal-revision` outputs identify progress, not a complete backup.
+Interruption can truncate stdout; the shared journal is the recovery record.

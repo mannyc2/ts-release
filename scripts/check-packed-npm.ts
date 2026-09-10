@@ -3,6 +3,8 @@ import { mkdtemp, mkdir, readFile, writeFile, lstat, realpath } from "node:fs/pr
 import { join, dirname, delimiter, resolve } from "node:path"
 import { tmpdir } from "node:os"
 import { createHash } from "node:crypto"
+await Bun.$`mkdir -p ${import.meta.dir + "/../.release/checks"}`
+
 const root = resolve(import.meta.dir, ".."),
   work = await mkdtemp(join(tmpdir(), "ts-release-packed-npm-"))
 const includeCatalog = process.argv.includes("--catalog")
@@ -342,7 +344,7 @@ const receipt = {
 await writeFile(
   join(
     root,
-    `docs/refactor/execution/${includeCatalog ? "current-packed-catalog" : includeGithub ? "current-packed-github" : includeTransports ? "current-packed-transports" : includePyPi ? "current-packed-providers" : "current-packed-npm"}.json`,
+    `.release/checks/${includeCatalog ? "current-packed-catalog" : includeGithub ? "current-packed-github" : includeTransports ? "current-packed-transports" : includePyPi ? "current-packed-providers" : "current-packed-npm"}.json`,
   ),
   JSON.stringify(receipt, null, 2) + "\n",
 )

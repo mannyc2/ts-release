@@ -41,7 +41,7 @@ os.mkfifo(fifo)
 child = subprocess.run([runtime, cli, application, str(fifo)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3)
 assert child.returncode == 1
 assert child.stdout == b""
-assert child.stderr == b"ts-release: application failed; inspect the durable journal before resuming.\n"
+assert b"ts-release --observe" in child.stderr
 assert marker.read_text() == "acquire\nrelease\nacquire\nrelease\n"
 assert fifo.exists()
 assert input_file.exists()

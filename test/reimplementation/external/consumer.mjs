@@ -36,10 +36,10 @@ const body = Buffer.from("external owned artifact\n")
 const artifact = Schema.decodeUnknownSync(File)({
   _tag: "OwnedFile",
   logicalName: "external.bin",
-  content: { bytes: String(body.length), sha256: digest(body) },
+  content: { bytes: body.length, sha256: digest(body) },
   deliveryMode: 420,
   executable: null,
-  provenance: { _tag: "IntrinsicProvenance", producer: "external-fixture" },
+  producedBy: { name: "external-fixture", version: "fixture" },
 })
 const bundle = await Effect.runPromise(finalize([artifact]))
 const bundleId = digest(encodeBundle(bundle))
@@ -232,7 +232,7 @@ try {
             deliveryMode: 420,
             executable: null,
             logicalName: "external.bin",
-            provenance: { _tag: "IntrinsicProvenance", producer: "external-fixture" },
+            producedBy: { name: "external-fixture", version: "fixture" },
           },
           labels: ["nested", "artifact"],
         },
@@ -528,7 +528,7 @@ try {
     const put = (bytes) =>
       Effect.tryPromise({
         try: async () => {
-          const content = new Content({ bytes: String(bytes.length), sha256: digest(bytes) })
+          const content = new Content({ bytes: bytes.length, sha256: digest(bytes) })
           await writeFile(join(directory, "content", content.sha256), bytes)
           return content
         },

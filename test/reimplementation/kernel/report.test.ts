@@ -18,7 +18,7 @@ import { MemoryJournal, providerFor } from "./fixtures.js"
 test("acceptance.K01 local projection resolves multi-provider facts to one Bundle/Plan/Journal", async () => {
   const bytes = new TextEncoder().encode("report fixture bytes")
   const content = new Content({
-    bytes: String(bytes.byteLength),
+    bytes: bytes.byteLength,
     sha256: await Effect.runPromise(sha256(bytes)),
   })
   const file = Schema.decodeUnknownSync(File)({
@@ -27,7 +27,7 @@ test("acceptance.K01 local projection resolves multi-provider facts to one Bundl
     content,
     deliveryMode: 0o644,
     executable: null,
-    provenance: { _tag: "IntrinsicProvenance", producer: "report-fixture/source-bytes" },
+    producedBy: { name: "report-fixture/source-bytes", version: "fixture" },
   })
   const bundle = await Effect.runPromise(finalize([file]))
   const providers = [

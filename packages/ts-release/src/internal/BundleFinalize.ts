@@ -1,8 +1,9 @@
 import * as Effect from "effect/Effect"
-import { AdoptionError, OwnedArtifact, OwnedBundle } from "./ArtifactModel.js"
-import { decodeOwned, sha256 } from "./Identity.js"
-import { treeManifest } from "./TreeManifest.js"
+import { AdoptionError, BUNDLE_FORMAT, OwnedArtifact, OwnedBundle } from "./ArtifactModel.js"
+import { decodeOwned } from "./Identity.js"
+import { checkTree } from "./TreeLayout.js"
 
+/** Run synchronous admission; any failure other than an explicit refusal is reported generically. */
 export const adoptData = <A>(body: () => A): Effect.Effect<A, AdoptionError> =>
   Effect.try({
     try: body,
@@ -16,23 +17,12 @@ export const adoptData = <A>(body: () => A): Effect.Effect<A, AdoptionError> =>
 export const finalize = Effect.fn("ts-release.finalizeBundle")(function* (
   artifacts: readonly OwnedArtifact[],
 ) {
-  const bundle = yield* adoptData(() => {
-    const bundle = decodeOwned(OwnedBundle, { format: "ts-release/bundle/1", artifacts })
+  return yield* adoptData(() => {
+    const bundle = decodeOwned(OwnedBundle, { format: BUNDLE_FORMAT, artifacts })
     const names = bundle.artifacts.map((artifact) => artifact.logicalName.toLowerCase())
     if (new Set(names).size !== names.length)
       throw new AdoptionError({ reason: "Bundle logical names must be unique, including case" })
+    for (const artifact of bundle.artifacts) if (artifact._tag === "OwnedTree") checkTree(artifact)
     return bundle
   })
-  for (const artifact of bundle.artifacts) {
-    if (artifact._tag !== "OwnedTree") continue
-    const manifest = yield* adoptData(() => treeManifest(artifact))
-    const digest = yield* sha256(new TextEncoder().encode(manifest)).pipe(
-      Effect.mapError(() => new AdoptionError({ reason: "Host could not verify tree identity" })),
-    )
-    if (digest !== artifact.upstreamManifestSha256)
-      return yield* new AdoptionError({
-        reason: "Durable tree manifest differs from upstream identity",
-      })
-  }
-  return bundle
 })

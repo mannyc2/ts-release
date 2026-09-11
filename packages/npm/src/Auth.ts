@@ -143,7 +143,10 @@ const decimal = (input: unknown) => {
     Native.invalid("sigstore-decimal")
 }
 /** Structural/exact-byte admission only; signature trust belongs to Attest. */
-export const validateProvenance = (bytes: Uint8Array, expected?: Uint8Array): { bundle: unknown; payload: Uint8Array } => {
+export const validateProvenance = (
+  bytes: Uint8Array,
+  expected?: Uint8Array,
+): { bundle: unknown; payload: Uint8Array } => {
   if (bytes.length > 1024 * 1024) return Native.invalid("sigstore-bound")
   const value = Native.object(Native.parseJson(bytes))
   if (!Buffer.from(Native.encode(value)).equals(bytes)) Native.invalid("sigstore-encoding")

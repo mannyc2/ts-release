@@ -19,7 +19,10 @@ supplies a durable shared Git journal with a disposable local cache. The Bun
 subpath also supplies `openSqliteJournal` for a retained local database.
 
 Provide services/layers at the application boundary. Credentials stay in the host;
-never put credential values in durable operation intents. The standard runner
+never put credential values in durable operation intents. Apple preparation runs
+its native operations through the `AppleTools` service from the `apple` subpath;
+`appleToolsLayer(credential)` binds effect-build-apple's notarization, stapling
+and assessment to one host credential over `Apple.layer()` and platform services. The standard runner
 validates the Bundle/Plan/Journal binding before calling `runRelease` and returns
 a complete derived report. `--observe` uses `observeRelease` instead.
 

@@ -6,9 +6,8 @@ import { join } from "node:path"
 import { AdoptionError, Content } from "../internal/ArtifactModel.js"
 import type { ContentOwner } from "../internal/Content.js"
 import { decodeOwned } from "../internal/Identity.js"
-import { nodeDirectoryReader } from "./Directory.js"
 
-const READ_CAPACITY = 512n * 1024n * 1024n
+const READ_CAPACITY = 512 * 1024 * 1024
 const io = <A>(body: () => Promise<A>) =>
   Effect.tryPromise({
     try: body,
@@ -17,40 +16,35 @@ const io = <A>(body: () => Promise<A>) =>
   })
 const identify = (bytes: Uint8Array): Content =>
   decodeOwned(Content, {
-    bytes: String(bytes.byteLength),
+    bytes: bytes.byteLength,
     sha256: createHash("sha256").update(bytes).digest("hex"),
   })
+/** Read an open regular file to its end, refusing any deviation from `expected`. */
 const scan = async (
   input: FileHandle,
   expected: Content,
   consume?: (bytes: Uint8Array) => Promise<void>,
 ) => {
-  const stat = await input.stat({ bigint: true })
-  if (!stat.isFile() || String(stat.size) !== expected.bytes)
-    throw new Error("Expected regular file")
+  const stat = await input.stat()
+  if (!stat.isFile() || stat.size !== expected.bytes) throw new Error("Expected regular file")
   const hash = createHash("sha256"),
     buffer = Buffer.allocUnsafe(64 * 1024)
-  let bytes = 0n
+  let bytes = 0
   for (;;) {
     const { bytesRead } = await input.read(buffer, 0, buffer.length, null)
     if (!bytesRead) break
-    bytes += BigInt(bytesRead)
-    if (bytes > BigInt(expected.bytes)) throw new Error("Content grew")
+    bytes += bytesRead
+    if (bytes > expected.bytes) throw new Error("Content grew")
     const chunk = buffer.subarray(0, bytesRead)
     hash.update(chunk)
     if (consume) await consume(chunk)
   }
-  if (String(bytes) !== expected.bytes || hash.digest("hex") !== expected.sha256)
+  if (bytes !== expected.bytes || hash.digest("hex") !== expected.sha256)
     throw new Error("Content identity mismatch")
 }
 
 /** Immutable content names, exclusive temporary files and exact read-back on EEXIST. */
-export const fileContentOwner = (
-  directory: string,
-  readDirectoryBounded: ContentOwner["readDirectoryBounded"] = nodeDirectoryReader(
-    process.execPath,
-  ),
-): ContentOwner => {
+export const fileContentOwner = (directory: string): ContentOwner => {
   const withOwned = async <A>(
     content: Content,
     use: (input: FileHandle) => Promise<A>,
@@ -99,19 +93,17 @@ export const fileContentOwner = (
     }
   }
   return {
-    readDirectoryBounded,
     putOwned: (input) => {
       const bytes = new Uint8Array(input)
       return io(() => persist(identify(bytes), (output) => output.writeFile(bytes)))
     },
     putFileOwned: (source) =>
       io(async () => {
-        const expected = decodeOwned(Content, { bytes: source.bytes, sha256: source.digest.value })
-        const path = source.path
-        if (source.digest.algorithm !== "sha256" || typeof path !== "string" || path.includes("\0"))
-          throw new Error("Invalid source identity")
+        const expected = decodeOwned(Content, { bytes: source.bytes, sha256: source.sha256 })
+        if (typeof source.path !== "string" || source.path.includes("\0"))
+          throw new Error("Invalid source path")
         const input = await open(
-          path,
+          source.path,
           constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
         )
         try {
@@ -130,8 +122,7 @@ export const fileContentOwner = (
     read: (input) =>
       io(async () => {
         const content = decodeOwned(Content, input)
-        if (BigInt(content.bytes) > READ_CAPACITY)
-          throw new Error("Buffered read capacity exceeded")
+        if (content.bytes > READ_CAPACITY) throw new Error("Buffered read capacity exceeded")
         const chunks: Buffer[] = []
         await withOwned(content, (file) =>
           scan(file, content, async (bytes) => {

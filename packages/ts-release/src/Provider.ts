@@ -325,7 +325,10 @@ export const decodeObservationEvidence = (
     !provider.classifyObservation ||
     body.evidenceVersion !== provider.observationVersion
   )
-    fail("unknown-observation-codec", "Native observation version is unavailable")
+    fail(
+      "unknown-observation-codec",
+      `Recorded observation version ${body.evidenceVersion} is not the installed ${provider.observationVersion}`,
+    )
   return nativeEvidence(provider.observationCodec, body.evidence)
 }
 export const nativeEvidence = (codec: Schema.Codec<unknown, unknown>, input: unknown): unknown => {

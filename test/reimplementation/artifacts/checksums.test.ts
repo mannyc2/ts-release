@@ -4,7 +4,6 @@ import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { Effect } from "effect"
-import * as Artifact from "effect-build/Artifact"
 import {
   Bundle,
   File,
@@ -24,11 +23,11 @@ test("Bundle-derived checksums match independent GNU bytes, Unicode ordering and
     for (const [index, payload] of ["alpha\n", "beta\n", "gamma\n"].entries()) {
       files.push(
         new File({
-          logicalName: Artifact.portableRelativePath(`${index}.bin`),
+          logicalName: `${index}.bin`,
           content: await run(owner.putOwned(new TextEncoder().encode(payload))),
-          deliveryMode: Artifact.fileMode(0o644),
+          deliveryMode: 0o644,
           executable: null,
-          provenance: Artifact.intrinsicProvenance("native-checksum/source"),
+          producedBy: { name: "native-checksum/source", version: "fixture" },
         }),
       )
     }
@@ -93,7 +92,7 @@ test("Bundle-derived checksums match independent GNU bytes, Unicode ordering and
         { publicName: "one", file: a },
         { publicName: "two", file: a },
       ],
-      [{ publicName: "a", file: new File({ ...a, deliveryMode: Artifact.fileMode(0o755) }) }],
+      [{ publicName: "a", file: new File({ ...a, deliveryMode: 0o755 }) }],
       [{ publicName: "a", file: { ...a, _tag: "OwnedTree" } as unknown as File }],
     ])
       await expect(run(verifySha256Sums(bundle, inputs, bytes, checkContent))).rejects.toThrow()
@@ -102,7 +101,7 @@ test("Bundle-derived checksums match independent GNU bytes, Unicode ordering and
     ).rejects.toThrow()
     await expect(
       run(
-        renderSha256Sums(new Bundle({ format: "ts-release/bundle/1", artifacts: [a, a] }), entries),
+        renderSha256Sums(new Bundle({ format: "ts-release/bundle/2", artifacts: [a, a] }), entries),
       ),
     ).rejects.toThrow()
     for (const changed of [
@@ -112,7 +111,7 @@ test("Bundle-derived checksums match independent GNU bytes, Unicode ordering and
     ])
       await expect(run(verifySha256Sums(bundle, entries, changed, checkContent))).rejects.toThrow()
     expect(reads).toBe(0)
-    const privateDash = new File({ ...a, logicalName: Artifact.portableRelativePath("-") })
+    const privateDash = new File({ ...a, logicalName: "-" })
     const privateBundle = await run(finalize([privateDash]))
     expect(
       new TextDecoder().decode(

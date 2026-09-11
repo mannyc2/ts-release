@@ -7,11 +7,10 @@ import { promisify } from "node:util"
 import { Effect } from "effect"
 import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as Artifact from "effect-build/Artifact"
-import * as Tree from "effect-build/Author/Tree"
-import * as Python from "effect-build-python/Build"
+import * as Python from "effect-build-python"
 import { adoptFile, adoptTree } from "@mannyc1/ts-release/effect-build"
 import { encodeBundle, finalize, loadBundle } from "@mannyc1/ts-release/bundle"
-import { fileContentOwner, nodeDirectoryReader } from "@mannyc1/ts-release/node"
+import { fileContentOwner } from "@mannyc1/ts-release/node"
 
 const work = await mkdtemp("/tmp/ts-release-producer-python-")
 const producer = join(work, "producer"),
@@ -19,12 +18,11 @@ const producer = join(work, "producer"),
 await mkdir(producer)
 await mkdir(delivery)
 const fixtures = fileURLToPath(new URL("./fixtures/python/", import.meta.url))
-const node = process.env.TS_RELEASE_HTTP_PEER_NODE
-assert(node, "Explicit native Node reader is required")
 const python =
   process.env.TS_RELEASE_PRODUCER_PYTHON ?? "/tmp/ts-release-warehouse-native-venv/bin/python"
 const uv = join(process.env.TS_RELEASE_PRODUCER_TOOLS ?? "/tmp/ts-release-native-producers", "uv")
-const owner = fileContentOwner(join(work, "owned"), nodeDirectoryReader(node))
+const owner = fileContentOwner(join(work, "owned"))
+const producedBy = { name: "effect-build-pinned-python-fixture", version: "fixture" }
 const run = (effect) =>
   Effect.runPromise(
     effect.pipe(
@@ -44,38 +42,23 @@ for (const [fixture, module, backend, distribution] of [
   ["uv-build", "effect_build_uv_fixture", "uv_build", "effect-build-uv-fixture"],
   ["poetry-core", "effect_build_poetry_fixture", "poetry-core", "effect-build-poetry-fixture"],
 ]) {
-  const source = await run(
-    Tree.publish(
-      {
-        outdir: join(producer, fixture + "-source"),
-        observation: "hashed",
-        provenance: Artifact.intrinsicProvenance("effect-build-pinned-python-fixture"),
-      },
-      (candidate) =>
-        Effect.tryPromise(() =>
-          cp(join(fixtures, fixture), candidate, { recursive: true, force: false }),
-        ),
-    ),
-  )
+  const project = join(producer, fixture + "-source")
+  await cp(join(fixtures, fixture), project, { recursive: true, force: false })
+  const source = await run(Artifact.directory(project, producedBy))
   sources.push(await run(adoptTree(owner, fixture + "-source", source)))
-  const artifacts = await run(
-    Python.build(new Python.BuildInput({ source, outdir: join(producer, fixture) })),
-  )
+  const artifacts = await run(Python.build({ project, outdir: join(producer, fixture) }))
   check(
     `${fixture} exact native uv`,
-    artifacts.wheel.provenance.participants.map(({ name, version }) => ({ name, version })),
-    [{ name: "uv", version: "0.12.0" }],
+    [artifacts.wheel.producedBy.name, artifacts.wheel.producedBy.version],
+    ["uv", "0.12.0"],
   )
-  check(`${fixture} wheel/sdist provenance`, artifacts.sdist.provenance, artifacts.wheel.provenance)
+  check(`${fixture} wheel/sdist producer`, artifacts.sdist.producedBy, artifacts.wheel.producedBy)
   for (const [kind, native] of Object.entries(artifacts)) {
     const file = await run(adoptFile(owner, basename(native.path), native))
     check(
       `${fixture}/${kind} exact owned size and digest`,
       { ...file.content },
-      {
-        bytes: native.bytes,
-        sha256: native.digest.value,
-      },
+      { bytes: native.bytes, sha256: native.sha256 },
     )
     records.push({ fixture, module, backend, distribution, kind, native, file })
   }
@@ -133,7 +116,7 @@ await writeFile(
   join(work, "evidence.json"),
   JSON.stringify(
     {
-      format: "ts-release/native-producer-python/1",
+      format: "ts-release/native-producer-python/2",
       work,
       runtime: process.version,
       bun: process.versions.bun ?? null,

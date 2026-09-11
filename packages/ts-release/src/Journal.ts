@@ -92,7 +92,10 @@ export const verifyNativeEvidence = (
     if (body._tag === "ReceiptAccepted") {
       const { start, operation, provider } = dispatched(body.dispatchId, "receipt")
       if (body.receiptVersion !== provider.receiptVersion)
-        fail("unknown-receipt-codec", "Native receipt version is unavailable")
+        fail(
+          "unknown-receipt-codec",
+          `Recorded receipt version ${body.receiptVersion} is not the installed ${provider.receiptVersion}`,
+        )
       const receipt = nativeEvidence(provider.receiptCodec, body.receipt)
       if (!provider.receiptCorresponds(operation, start.request, receipt))
         fail(

@@ -25,7 +25,7 @@ test("real public v0.3.0 REST responses retain exact native tag, release and all
   for (const asset of release.assets) {
     const admitted = assetFacts(asset, repository, "v0.3.0")
     expect(admitted.assetId).toBe(String(asset.id))
-    expect(admitted.bytes).toBe(String(asset.size))
+    expect(admitted.bytes).toBe(asset.size)
     expect(admitted.sha256).toBe(asset.digest.slice(7))
     expect(admitted.storedName).toBe(asset.name)
   }

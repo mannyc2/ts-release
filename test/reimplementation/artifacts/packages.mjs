@@ -1,15 +1,14 @@
 import assert from "node:assert/strict"
 import { execFile } from "node:child_process"
 import { createHash } from "node:crypto"
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
+import { chmod, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { promisify } from "node:util"
 import { deflateSync } from "node:zlib"
-import { Effect, FileSystem } from "effect"
+import { Effect } from "effect"
 import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as Artifact from "effect-build/Artifact"
-import * as File from "effect-build/Author/File"
-import * as Nfpm from "effect-build-nfpm/Package"
+import * as Nfpm from "effect-build-nfpm"
 import { adoptFile } from "@mannyc1/ts-release/effect-build"
 import { encodeBundle, finalize, loadBundle } from "@mannyc1/ts-release/bundle"
 import { fileContentOwner } from "@mannyc1/ts-release/node"
@@ -51,21 +50,16 @@ const inputOwner = fileContentOwner(join(executableWork, "owned"))
 const inputBundle = await run(
   loadBundle(inputOwner, await readFile(join(executableWork, "bundle.json"))),
 )
-const publish = (name, bytes) =>
-  run(
-    File.publish(
-      {
-        destination: join(producer, name),
-        observation: "hashed",
-        provenance: Artifact.intrinsicProvenance("ts-release/owned-package-input"),
-      },
-      (candidate) =>
-        Effect.gen(function* () {
-          const fs = yield* FileSystem.FileSystem
-          yield* fs.writeFile(candidate, bytes)
-        }),
-    ),
+const producedBy = { name: "ts-release/owned-package-input", version: "fixture" }
+const publish = async (name, bytes, executable) => {
+  await writeFile(join(producer, name), bytes)
+  if (executable) await chmod(join(producer, name), 0o755)
+  return run(
+    executable
+      ? Artifact.executable(join(producer, name), producedBy)
+      : Artifact.file(join(producer, name), producedBy),
   )
+}
 const payloads = {}
 for (const [cell, logicalName] of Object.entries({
   gnu: "bun-linux-x64-gnu",
@@ -74,9 +68,10 @@ for (const [cell, logicalName] of Object.entries({
 })) {
   const owned = inputBundle.artifacts.find((file) => file.logicalName === logicalName)
   assert(owned && owned._tag === "OwnedFile")
-  const artifact = await publish(cell, await run(inputOwner.read(owned.content)))
+  const artifact = await publish(cell, await run(inputOwner.read(owned.content)), true)
   check(`${cell} exact restored executable bytes`, artifact.bytes, owned.content.bytes)
-  check(`${cell} exact restored executable digest`, artifact.digest.value, owned.content.sha256)
+  check(`${cell} exact restored executable digest`, artifact.sha256, owned.content.sha256)
+  check(`${cell} exact restored executable target`, artifact.target, owned.executable.target)
   payloads[cell] = artifact
 }
 // Valid PNG fixture bytes; native Windows SDK validation remains a separate gate.
@@ -121,40 +116,39 @@ for (const [name, size] of [
   ["logo150.png", 150],
   ["logo44.png", 44],
 ])
-  icons.push(
-    new Nfpm.PackageContent({ artifact: await publish(name, png(size)), dst: `/Assets/${name}` }),
-  )
-const msix = new Nfpm.MsixOptions({
+  icons.push({ artifact: await publish(name, png(size)), dst: `/Assets/${name}` })
+// Native nFPM MSIX configuration; the Windows SDK validates it separately.
+const msix = {
   publisher: "CN=TS Release Acceptance",
-  properties: new Nfpm.MsixProperties({
+  properties: {
     display_name: "ts-release acceptance",
     publisher_display_name: "ts-release acceptance",
     logo: "Assets/logo.png",
-  }),
+  },
   applications: [
-    new Nfpm.MsixApplication({
+    {
       id: "TsReleaseAcceptance",
       executable: "ts-release-acceptance.exe",
       entry_point: "Windows.FullTrustApplication",
-      visual_elements: new Nfpm.MsixVisualElements({
+      visual_elements: {
         display_name: "ts-release acceptance",
         description: "actual Bun executable fixture",
         background_color: "transparent",
         square150x150_logo: "Assets/logo150.png",
         square44x44_logo: "Assets/logo44.png",
-      }),
-    }),
+      },
+    },
   ],
-  dependencies: new Nfpm.MsixDependencies({
+  dependencies: {
     target_device_families: [
-      new Nfpm.MsixTargetDeviceFamily({
+      {
         name: "Windows.Desktop",
         min_version: "10.0.17763.0",
         max_version_tested: "10.0.26100.0",
-      }),
+      },
     ],
-  }),
-})
+  },
+}
 const extensions = {
   deb: ".deb",
   rpm: ".rpm",
@@ -166,41 +160,40 @@ for (const [format, extension] of Object.entries(extensions)) {
   const windows = format === "msix"
   const payload = payloads[windows ? "windows" : format === "apk" ? "musl" : "gnu"]
   const artifact = await run(
-    Nfpm.buildPackage(
+    Nfpm.package({
       format,
-      new Nfpm.PackageInput({
-        metadata: new Nfpm.PackageMetadata({
-          name: "ts-release-acceptance",
-          version: "1.0.0",
-          architecture: "amd64",
-          maintainer: "ts-release acceptance <acceptance@example.test>",
-          description: "actual compiled Bun fixture packaged through effect-build",
-          license: "MIT",
-          ...(format === "apk" ? { dependencies: ["libstdc++"] } : {}),
-          contents: [
-            new Nfpm.PackageContent({
-              artifact: payload,
-              dst: windows ? "/ts-release-acceptance.exe" : "/usr/bin/ts-release-acceptance",
-              mode: Artifact.fileMode(0o755),
-            }),
-            ...(windows ? icons : []),
-          ],
-        }),
+      config: {
+        name: "ts-release-acceptance",
+        version: "1.0.0",
+        arch: "amd64",
+        platform: windows ? "windows" : "linux",
+        maintainer: "ts-release acceptance <acceptance@example.test>",
+        description: "actual compiled Bun fixture packaged through effect-build",
+        license: "MIT",
         release: windows ? "0" : "1",
         mtime: "2009-11-10T23:00:00Z",
-        outfile: join(producer, "fixture" + extension),
+        ...(format === "apk" ? { depends: ["libstdc++"] } : {}),
         ...(windows ? { msix } : {}),
-      }),
-    ),
+      },
+      contents: [
+        {
+          artifact: payload,
+          dst: windows ? "/ts-release-acceptance.exe" : "/usr/bin/ts-release-acceptance",
+          mode: 0o755,
+        },
+        ...(windows ? icons : []),
+      ],
+      outfile: join(producer, "fixture" + extension),
+    }),
   )
   check(
     `${format} exact nFPM tool`,
-    artifact.provenance.participants.map(({ name, version }) => ({ name, version })),
-    [{ name: "nfpm", version: "2.47.0" }],
+    [artifact.producedBy.name, artifact.producedBy.version],
+    ["nfpm", "2.47.0"],
   )
   const file = await run(adoptFile(owner, "fixture" + extension, artifact))
   check(`${format} owned bytes`, file.content.bytes, artifact.bytes)
-  check(`${format} owned digest`, file.content.sha256, artifact.digest.value)
+  check(`${format} owned digest`, file.content.sha256, artifact.sha256)
   records.push({ format, native: artifact, file })
 }
 const bundle = await run(finalize(records.map((record) => record.file)))
@@ -285,7 +278,7 @@ await writeFile(
   join(work, "evidence.json"),
   JSON.stringify(
     {
-      format: "ts-release/native-producer-packages/1",
+      format: "ts-release/native-producer-packages/2",
       work,
       runtime: process.version,
       bun: process.versions.bun ?? null,

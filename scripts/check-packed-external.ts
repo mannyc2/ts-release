@@ -61,11 +61,11 @@ await writeFile(
       exports: { ".": { types: "./dist/index.d.ts", import: "./dist/index.js" } },
       peerDependencies: {
         "@mannyc1/ts-release": "0.4.0",
-        effect: ">=4.0.0-beta.107 <4.0.0-beta.108",
+        effect: ">=4.0.0-rc.108 <4.1.0-0",
       },
       devDependencies: {
         "@mannyc1/ts-release": `file:${core}`,
-        effect: "4.0.0-beta.107",
+        effect: "4.0.0-rc.108",
         typescript: "6.0.3",
       },
     },
@@ -142,7 +142,7 @@ for (const manager of ["bun", "npm"]) {
       dependencies: {
         "@mannyc1/ts-release": `file:${core}`,
         "@fixture/external-provider": `file:${providerArchive}`,
-        effect: "4.0.0-beta.107",
+        effect: "4.0.0-rc.108",
         typescript: "6.0.3",
       },
     }),

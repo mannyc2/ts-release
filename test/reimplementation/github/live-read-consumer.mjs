@@ -62,7 +62,7 @@ const operation = await Effect.runPromise(
   GitHub.draft(new GitHub.DraftIntent({ ...draft.intent, body: metadata.body ?? "" })),
 )
 const providers = GitHub.definitions({
-  bundle: new Bundle({ format: "ts-release/bundle/1", artifacts }),
+  bundle: new Bundle({ format: "ts-release/bundle/2", artifacts }),
   readContent: () => Effect.die(new Error("Live GET acceptance never reads owned bytes")),
   read: (request) => {
     urls.push(request.url)
@@ -112,10 +112,10 @@ assert.equal(`sha256:${digest}`, asset.digest)
 const file = Schema.decodeUnknownSync(File)({
   _tag: "OwnedFile",
   logicalName: asset.name,
-  content: { bytes: String(bytes.length), sha256: digest },
+  content: { bytes: bytes.length, sha256: digest },
   deliveryMode: 420,
   executable: null,
-  provenance: { _tag: "IntrinsicProvenance", producer: "native-github-download" },
+  producedBy: { name: "native-github-download", version: "fixture" },
 })
 const assetOperation = await Effect.runPromise(
   GitHub.uploadAsset(
@@ -130,7 +130,7 @@ const assetOperation = await Effect.runPromise(
   ),
 )
 const assetProviders = GitHub.definitions({
-  bundle: new Bundle({ format: "ts-release/bundle/1", artifacts: [file] }),
+  bundle: new Bundle({ format: "ts-release/bundle/2", artifacts: [file] }),
   readContent: () => Effect.succeed(bytes.slice()),
   read,
 })

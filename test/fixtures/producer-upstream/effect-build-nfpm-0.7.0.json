@@ -3,35 +3,34 @@
     "url": "https://github.com/mannyc2/effect-build/issues"
   },
   "dist": {
-    "shasum": "cacbbf7c52117439f5c6e92b85248eba9b90d8da",
-    "tarball": "https://registry.npmjs.org/effect-build-node-sea/-/effect-build-node-sea-0.6.3.tgz",
-    "fileCount": 31,
-    "integrity": "sha512-v2y1t2fPrDOlKun/1syncbaZ8e1SRSVyWOOo6ju6XTaoKIhKGU915oQCrsDHZkCwbLRZ8dPlEsUDQxk3yV56+w==",
+    "shasum": "6465c62c5dc658fcd170cf43f5a2e0a2bc0c4fe5",
+    "tarball": "https://registry.npmjs.org/effect-build-nfpm/-/effect-build-nfpm-0.7.0.tgz",
+    "fileCount": 13,
+    "integrity": "sha512-R8kVf7DpvmWOWkNXMn3Me+WVkbRULmMVMfyTnngpuHfnGaCrtN3z2nQAVo7JKHn4WsfDkwyvSZru0tVUtCQoSg==",
     "signatures": [
       {
-        "sig": "MEUCIQCQ/EsZAlbOTzn/CxzSqziN0tpFb5t9WcIxPoU0/j3s4wIgdJrpnYLDEwbRkm4b+IayYPkbGf58SbKIPmAOr4ubfhU=",
+        "sig": "MEYCIQD8O4soZ3aSe3ma0kby9AY7G1d+MRLewNuFOJUI9r29sAIhAPhI9LWMBbzfuzaERBwnhrWtsVOmCmCjuNqfalflTVkB",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       }
     ],
     "attestations": {
-      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-node-sea@0.6.3",
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-nfpm@0.7.0",
       "provenance": {
         "predicateType": "https://slsa.dev/provenance/v1"
       }
     },
-    "unpackedSize": 65100
+    "unpackedSize": 43881
   },
-  "name": "effect-build-node-sea",
+  "name": "effect-build-nfpm",
   "type": "module",
-  "_from": "file:/home/runner/work/_temp/npm-release-candidate/effect-build-node-sea-0.6.3.tgz",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-nfpm-0.7.0.tgz",
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./Command": {
-      "types": "./dist/Command/index.d.ts",
-      "import": "./dist/Command/index.js"
     }
   },
   "license": "MIT",
@@ -44,25 +43,28 @@
     "email": "npm-oidc-no-reply@github.com",
     "trustedPublisher": {
       "id": "github",
-      "oidcConfigId": "oidc:48550345-c34f-4d80-aaff-114a6276debe"
+      "oidcConfigId": "oidc:4d84cd71-ccc1-44b6-a2dd-0d8d06d0d845"
     }
   },
   "homepage": "https://github.com/mannyc2/effect-build#readme",
   "keywords": [
     "effect",
-    "node",
-    "sea",
-    "executable"
+    "nfpm",
+    "deb",
+    "rpm",
+    "apk",
+    "archlinux",
+    "msix"
   ],
-  "_resolved": "/home/runner/work/_temp/npm-release-candidate/effect-build-node-sea-0.6.3.tgz",
-  "_integrity": "sha512-v2y1t2fPrDOlKun/1syncbaZ8e1SRSVyWOOo6ju6XTaoKIhKGU915oQCrsDHZkCwbLRZ8dPlEsUDQxk3yV56+w==",
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-nfpm-0.7.0.tgz",
+  "_integrity": "sha512-R8kVf7DpvmWOWkNXMn3Me+WVkbRULmMVMfyTnngpuHfnGaCrtN3z2nQAVo7JKHn4WsfDkwyvSZru0tVUtCQoSg==",
   "repository": {
     "url": "git+https://github.com/mannyc2/effect-build.git",
     "type": "git",
-    "directory": "packages/effect-build-node-sea"
+    "directory": "packages/effect-build-nfpm"
   },
   "_npmVersion": "11.11.0",
-  "description": "Effect-native provider command access for direct Node SEA assembly.",
+  "description": "Effect-native nFPM system and MSIX package production.",
   "directories": {},
   "maintainers": [
     {
@@ -73,7 +75,7 @@
   "sideEffects": false,
   "_nodeVersion": "24.14.1",
   "dependencies": {
-    "effect-build": "^0.6.3"
+    "effect-build": "^0.7.0"
   },
   "publishConfig": {
     "access": "public",
@@ -84,12 +86,12 @@
     "effect": "4.0.0-rc.108"
   },
   "peerDependencies": {
-    "effect": ">=4.0.0-beta.104 <4.1.0-0"
+    "effect": ">=4.0.0-rc.108 <4.1.0-0"
   },
   "_npmOperationalInternal": {
-    "tmp": "tmp/effect-build-node-sea_0.6.3_1788645053262_0.5777804943131415",
+    "tmp": "tmp/effect-build-nfpm_0.7.0_1789091841087_0.8499305580887173",
     "host": "s3://npm-registry-packages-npm-production"
   },
-  "_id": "effect-build-node-sea@0.6.3",
-  "version": "0.6.3"
+  "_id": "effect-build-nfpm@0.7.0",
+  "version": "0.7.0"
 }

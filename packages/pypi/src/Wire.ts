@@ -6,7 +6,7 @@ import { digest, invalid, matches, own, readScope, scopeFor, MAX_BYTES } from ".
 
 export const multipart = (intent: UploadIntent, bytes: Uint8Array) => {
   if (
-    String(bytes.length) !== intent.distribution.content.bytes ||
+    bytes.length !== intent.distribution.content.bytes ||
     digest(bytes) !== intent.distribution.content.sha256
   )
     invalid("distribution-content")
@@ -88,7 +88,7 @@ export const ownsRequest = (request: PreparedRequest) => {
     const intent = readScope(facts.scope),
       boundary = facts.headers[1]![1].split("boundary=")[1]!
     const end = Buffer.from(`\r\n--${boundary}--\r\n`),
-      start = bytes.length - end.length - Number(intent.distribution.content.bytes)
+      start = bytes.length - end.length - intent.distribution.content.bytes
     if (start < 0 || !Buffer.from(bytes.subarray(bytes.length - end.length)).equals(end))
       return false
     const expected = multipart(intent, bytes.subarray(start, bytes.length - end.length))

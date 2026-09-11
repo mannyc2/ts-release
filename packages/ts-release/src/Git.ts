@@ -1,4 +1,3 @@
-export type {} from "./internal/EffectTypes.js"
 export { GitCas } from "./internal/ReleaseModel.js"
 export { GitReceipt, makeCoreGitTransport } from "./internal/GitAuthority.js"
 export type { CoreGitOptions, GitExecution } from "./internal/GitAuthority.js"

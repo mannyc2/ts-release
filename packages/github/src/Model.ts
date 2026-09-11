@@ -121,7 +121,7 @@ export class AssetFacts extends Schema.Class<AssetFacts>("GitHubAssetFacts")({
   storedName: text,
   state: Schema.Literals(["uploaded", "starter"]),
   contentType: text,
-  bytes: Schema.String.check(Schema.isPattern(/^(?:0|[1-9][0-9]*)$/u)),
+  bytes: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
   sha256: Schema.NullOr(Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/u))),
   apiUrl: text,
   downloadUrl: text,

@@ -18,7 +18,7 @@ In your application repository, install that archive and run your authored
 JavaScript application:
 
 ```sh
-bun add /tmp/ts-release.tgz effect@4.0.0-beta.107
+bun add /tmp/ts-release.tgz effect@4.0.0-rc.108
 ts-release ./release.mjs ./release-input.json > release-report.json
 ```
 

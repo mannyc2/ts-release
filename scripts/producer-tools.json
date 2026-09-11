@@ -1,5 +1,5 @@
 {
-  "source": "effect-build ef29a087baac8bdbcd90a54bb62a2dceb739dd91 scripts/acceptance/install-unix-tool.sh; official Deno release API and Node SHASUMS256.txt observed 2026-09-07",
+  "source": "effect-build v0.7.0 tested tool versions (Python.tested, Nfpm.tested, Sbom.tested, Deno.tested, NodeSea.tested); official Deno release API and Node SHASUMS256.txt observed 2026-09-07",
   "platform": "linux-x64",
   "tools": [
     {

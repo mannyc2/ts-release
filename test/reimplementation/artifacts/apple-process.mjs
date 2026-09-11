@@ -5,13 +5,12 @@ import { basename, join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { Effect, FileSystem, Schema } from "effect"
 import * as NodeServices from "@effect/platform-node/NodeServices"
-import * as File from "effect-build/Author/File"
-import * as Archive from "effect-build-archives/Archive"
-import * as Notary from "effect-build-apple/Notary"
+import * as Archive from "effect-build-archives"
+import * as Apple from "effect-build-apple"
 import { Host, ReleaseError, createPlan } from "@mannyc1/ts-release"
 import { encodeBundle, finalize, loadBundle } from "@mannyc1/ts-release/bundle"
 import { adoptFile } from "@mannyc1/ts-release/effect-build"
-import { fileContentOwner, nodeDirectoryReader, openGitJournal } from "@mannyc1/ts-release/node"
+import { fileContentOwner, openGitJournal } from "@mannyc1/ts-release/node"
 import {
   ApplePreparation,
   ReadyToPlan,
@@ -30,10 +29,7 @@ import { appleDoubles, makeSources } from "./apple-fixtures.js"
 const [root, mode] = process.argv.slice(2)
 assert(root && mode)
 const run = (effect) => Effect.runPromise(effect.pipe(Effect.provide(NodeServices.layer)))
-const owner = fileContentOwner(
-  join(root, "objects"),
-  nodeDirectoryReader(process.env.TS_RELEASE_HTTP_PEER_NODE),
-)
+const owner = fileContentOwner(join(root, "objects"))
 if (mode === "init" || mode === "init-lost") {
   await mkdir(root, { recursive: true })
   await mkdir(join(root, "work"))
@@ -52,7 +48,7 @@ if (mode === "init" || mode === "init-lost") {
   const scopes = await run(preparationScopes(collection))
   const doubles = appleDoubles()
   if (mode === "ready" || mode === "report" || mode === "restart-lost")
-    doubles.status(new Notary.Accepted({ providerStatus: "Accepted" }))
+    doubles.status({ _tag: "Accepted", providerStatus: "Accepted" })
   const publication =
     mode === "report"
       ? JSON.parse(await readFile(join(root, "publication.json"), "utf8"))
@@ -128,40 +124,30 @@ if (mode === "init" || mode === "init-lost") {
                 id,
                 owner,
                 join(root, "work"),
-                (result) =>
+                (assessed) =>
                   Effect.gen(function* () {
-                    if (result.kind !== "app") return []
-                    const final = result.artifact
+                    if (assessed.product !== "app") return []
                     const fs = yield* FileSystem.FileSystem
                     const directory = yield* fs.makeTempDirectoryScoped()
-                    const entries = []
-                    for (const entry of final.entries) {
-                      if (entry.kind !== "file") continue
-                      const artifact = yield* File.publish(
-                        {
-                          destination: join(directory, String(entries.length)),
-                          observation: "hashed",
-                          provenance: final.provenance,
+                    const entries = assessed.entries
+                      .filter((entry) => entry.kind === "file")
+                      .map((entry) => ({
+                        artifact: {
+                          kind: "file",
+                          path: join(assessed.path, entry.path),
+                          bytes: entry.bytes,
+                          sha256: entry.sha256,
+                          producedBy: assessed.producedBy,
                         },
-                        (candidate) => fs.copyFile(join(final.root, entry.relativePath), candidate),
-                      )
-                      entries.push(
-                        new Archive.ArchiveEntry({
-                          artifact,
-                          path: entry.relativePath,
-                          executable: Boolean(entry.mode & 0o111),
-                        }),
-                      )
-                    }
+                        path: entry.path,
+                        executable: Boolean(entry.mode & 0o111),
+                      }))
                     assert(entries.length > 0, "Native final tree files are archived")
-                    const archive = yield* Archive.archive(
-                      new Archive.ArchiveInput({
-                        format: "tar.gz",
-                        entries,
-                        outfile: join(directory, "app.tar.gz"),
-                      }),
-                    ).pipe(Effect.provide(Archive.layer))
-                    return [yield* adoptFile(owner, basename(final.root) + ".tar.gz", archive)]
+                    const archive = yield* Archive.tarGz({
+                      entries,
+                      outfile: join(directory, "app.tar.gz"),
+                    })
+                    return [yield* adoptFile(owner, basename(assessed.path) + ".tar.gz", archive)]
                   }),
               ).pipe(
                 Effect.provide(doubles.layer),
@@ -199,7 +185,7 @@ if (mode === "init" || mode === "init-lost") {
     const inputOwner = fileContentOwner(join(inputWork, "owned"))
     const linux = (
       await run(loadBundle(inputOwner, await readFile(join(inputWork, "bundle.json"))))
-    ).artifacts.find((file) => file.logicalName === "bun-linux-x64-gnu")
+    ).artifacts.find((file) => file.logicalName === "bun-linux-x64")
     assert(linux)
     const copied = await run(owner.putOwned(await run(inputOwner.read(linux.content))))
     assert.deepEqual({ ...copied }, { ...linux.content })

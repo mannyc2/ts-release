@@ -195,7 +195,7 @@ for (const candidate of evaluatorNames) {
     await Effect.runPromise(fixture.store.append(fixture.plan.journalId, 1, badVersion))
     await expect(
       runWithHost(fixture.host, runRelease({ plan: fixture.plan, authorize: true })),
-    ).rejects.toThrow("version is unavailable")
+    ).rejects.toThrow("is not the installed")
     expect(fixture.sends).toHaveLength(0)
     const observation = await makeFixture(
       providerFor(() => ({ status: "Satisfied", evidence: { visible: false } })),

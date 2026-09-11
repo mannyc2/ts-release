@@ -158,7 +158,7 @@ export const prepare = Effect.fn("git.prepareCommit")(function* (
   const bytes = new Uint8Array(built.objectSetBytes),
     desiredNew = built.desiredNew,
     format = built.objectFormat
-  const content = new Content({ bytes: String(bytes.length), sha256: yield* sha256(bytes) })
+  const content = new Content({ bytes: bytes.length, sha256: yield* sha256(bytes) })
   const stored = yield* selected.put(new Uint8Array(bytes))
   return yield* attempt(() => {
     if (canonical(stored) !== canonical(content)) invalid()

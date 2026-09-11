@@ -1,13 +1,10 @@
 import { expect, test } from "bun:test"
-import { createHash } from "node:crypto"
 import { chmod, mkdtemp, readdir, rm, symlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { Effect, FileSystem, Schema } from "effect"
+import { Effect, FileSystem, Schema, type Crypto, type Path } from "effect"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Artifact from "effect-build/Artifact"
-import * as Producer from "effect-build/Author/File"
-import * as ProducerTree from "effect-build/Author/Tree"
 import {
   Bundle,
   Content,
@@ -18,16 +15,19 @@ import {
 } from "../../../packages/ts-release/src/Bundle.js"
 import { fileContentOwner } from "../../../packages/ts-release/src/Node.js"
 import { createOperation, createPlan, loadPlan } from "../../../packages/ts-release/src/index.js"
+import { ownedTree, producedBy, treeEntries } from "../artifacts/tree-fixture.js"
 
-const provenance = Artifact.intrinsicProvenance("kernel-test/source-bytes")
 const fileFor = (content: Content) =>
   new File({
-    logicalName: Artifact.portableRelativePath("artifact.txt"),
+    logicalName: "artifact.txt",
     content,
-    deliveryMode: Artifact.fileMode(0o644),
+    deliveryMode: 0o644,
     executable: null,
-    provenance,
+    producedBy,
   })
+const run = <A, E>(
+  effect: Effect.Effect<A, E, FileSystem.FileSystem | Path.Path | Crypto.Crypto>,
+) => Effect.runPromise(effect.pipe(Effect.provide(BunServices.layer)))
 async function fixture(
   body: (root: string, owner: ReturnType<typeof fileContentOwner>) => Promise<void>,
 ) {
@@ -41,22 +41,11 @@ async function fixture(
 
 test("owned Bundle survives producer deletion and binds an immutable Plan", () =>
   fixture(async (root, owner) => {
-    const source = await Effect.runPromise(
-      Producer.publish(
-        {
-          destination: join(root, "producer.txt"),
-          observation: "hashed",
-          provenance,
-        },
-        (path) =>
-          Effect.gen(function* () {
-            const fs = yield* FileSystem.FileSystem
-            yield* fs.writeFileString(path, "exact owned bytes")
-          }),
-      ).pipe(Effect.provide(BunServices.layer)),
-    )
+    const produced = join(root, "producer.txt")
+    await writeFile(produced, "exact owned bytes")
+    const source = await run(Artifact.file(produced, producedBy))
     const content = await Effect.runPromise(owner.putFileOwned(source))
-    expect(content.sha256).toBe(source.digest.value)
+    expect(content.sha256).toBe(source.sha256)
     const artifacts = [fileFor(content)]
     const bundle = await Effect.runPromise(finalize(artifacts))
     artifacts.length = 0
@@ -106,14 +95,14 @@ test("buffer ownership, content collisions, symlinks and byte limits fail withou
     await symlink(outside, stored)
     await expect(Effect.runPromise(owner.read(content))).rejects.toThrow()
     await expect(
-      Effect.runPromise(owner.read(new Content({ bytes: "536870913", sha256: content.sha256 }))),
+      Effect.runPromise(owner.read(new Content({ bytes: 536870913, sha256: content.sha256 }))),
     ).rejects.toThrow()
     await expect(
       Effect.runPromise(owner.read({ ...content, sha256: "../outside" } as Content)),
     ).rejects.toThrow()
   }))
 
-test("bundle wire data rejects legacy, extra, noncanonical and duplicate identities before content IO", () =>
+test("bundle wire data rejects retired, extra, noncanonical and duplicate identities before content IO", () =>
   fixture(async (_root, owner) => {
     const content = await Effect.runPromise(owner.putOwned(new Uint8Array([1])))
     const file = fileFor(content)
@@ -128,55 +117,35 @@ test("bundle wire data rejects legacy, extra, noncanonical and duplicate identit
     }
     const encoded = new TextDecoder().decode(encodeBundle(bundle))
     for (const text of [
-      encoded.replace("ts-release/bundle/1", "lab/owned-bundle/1"),
+      encoded.replace("ts-release/bundle/2", "lab/owned-bundle/2"),
       encoded.replace('"artifacts":', '"extra":true,"artifacts":'),
       encoded + "\n",
-      encoded.replace('"format":', '"format":"ts-release/bundle/1","format":'),
+      encoded.replace('"format":', '"format":"ts-release/bundle/2","format":'),
       encoded.replace("artifact.txt", "e\u0301.txt"),
     ])
       await expect(
         Effect.runPromise(loadBundle(counting, new TextEncoder().encode(text))),
       ).rejects.toThrow()
+    // A format 1 Bundle names the effect-build 0.6 model; it is refused by name, not by accident.
+    const retired = encoded.replace("ts-release/bundle/2", "ts-release/bundle/1")
+    await expect(
+      Effect.runPromise(loadBundle(counting, new TextEncoder().encode(retired))),
+    ).rejects.toThrow("ts-release/bundle/1 records effect-build 0.6 identities")
     await expect(Effect.runPromise(finalize([file, file]))).rejects.toThrow()
     expect(verifications).toBe(0)
   }))
 
-test("tree metadata preserves ordered upstream identity and rejects unsafe graphs before IO", () =>
+test("tree metadata preserves the upstream manifest identity and rejects unsafe graphs before IO", () =>
   fixture(async (_root, owner) => {
     const content = await Effect.runPromise(owner.putOwned(new Uint8Array([1])))
-    const native = {
-      rootMode: 0o755,
-      totalBytes: "1",
-      entries: [
-        {
-          kind: "file",
-          relativePath: "file",
-          mode: 0o644,
-          bytes: "1",
-          digest: { algorithm: "sha256", value: content.sha256 },
-        },
-        { kind: "symbolic-link", relativePath: "link", target: "file" },
-      ],
-    }
-    const value = {
-      format: "ts-release/bundle/1",
-      artifacts: [
-        {
-          _tag: "OwnedTree",
-          logicalName: "tree",
-          rootMode: native.rootMode,
-          totalBytes: native.totalBytes,
-          upstreamManifestSha256: createHash("sha256").update(JSON.stringify(native)).digest("hex"),
-          entries: [
-            { _tag: "TreeFile", relativePath: "file", mode: 0o644, content },
-            { _tag: "TreeLink", relativePath: "link", target: "file" },
-          ],
-          provenance,
-        },
-      ],
-    }
-    const encode = (input: unknown) => encodeBundle(Schema.decodeUnknownSync(Bundle)(input))
-    expect((await Effect.runPromise(loadBundle(owner, encode(value)))).artifacts).toHaveLength(1)
+    const tree = ownedTree("tree", [
+      treeEntries.file("file", content),
+      treeEntries.symlink("link", "file"),
+    ])
+    const value = new Bundle({ format: "ts-release/bundle/2", artifacts: [tree] })
+    expect(
+      (await Effect.runPromise(loadBundle(owner, encodeBundle(value)))).artifacts,
+    ).toHaveLength(1)
     let verifications = 0
     const counting = {
       ...owner,
@@ -185,6 +154,11 @@ test("tree metadata preserves ordered upstream identity and rejects unsafe graph
           verifications++
         }),
     }
+    const withLink = (linkTarget: string) =>
+      ownedTree("tree", [
+        treeEntries.file("file", content),
+        treeEntries.symlink("link", linkTarget),
+      ])
     for (const target of [
       "../../outside",
       "link",
@@ -193,85 +167,51 @@ test("tree metadata preserves ordered upstream identity and rejects unsafe graph
       "/outside",
       "file/child",
     ]) {
-      const changed = structuredClone(value)
-      changed.artifacts[0]!.entries[1]!.target = target
-      await expect(Effect.runPromise(loadBundle(counting, encode(changed)))).rejects.toThrow()
+      const changed = withLink(target)
       await expect(
-        Effect.runPromise(finalize(Schema.decodeUnknownSync(Bundle)(changed).artifacts)),
+        Effect.runPromise(
+          loadBundle(counting, encodeBundle(new Bundle({ ...value, artifacts: [changed] }))),
+        ),
       ).rejects.toThrow()
+      await expect(Effect.runPromise(finalize([changed]))).rejects.toThrow()
     }
-    const changed = structuredClone(value)
-    changed.artifacts[0]!.upstreamManifestSha256 = "0".repeat(64)
-    await expect(Effect.runPromise(loadBundle(counting, encode(changed)))).rejects.toThrow()
+    const forged = Schema.decodeUnknownSync(Bundle)({
+      ...Schema.encodeSync(Bundle)(value),
+      artifacts: [{ ...Schema.encodeSync(Bundle)(value).artifacts[0], sha256: "0".repeat(64) }],
+    })
+    await expect(Effect.runPromise(loadBundle(counting, encodeBundle(forged)))).rejects.toThrow(
+      "recorded tree identity",
+    )
     expect(verifications).toBe(0)
   }))
 
-test("tree links expand before parent traversal and native UTF-8 order is preserved", () =>
+test("tree links expand before parent traversal and upstream entry order is preserved", () =>
   fixture(async (root, owner) => {
-    const tree = await Effect.runPromise(
-      ProducerTree.publish(
-        {
-          outdir: join(root, "native-tree"),
-          observation: "hashed",
-          provenance,
-        },
-        (path) =>
-          Effect.gen(function* () {
-            const fs = yield* FileSystem.FileSystem
-            yield* fs.writeFileString(join(path, "\ue000"), "a")
-            yield* fs.writeFileString(join(path, "\u{10000}"), "a")
-          }),
-      ).pipe(Effect.provide(BunServices.layer)),
-    )
-    expect(tree.entries.map((entry) => String(entry.relativePath))).toEqual(["\ue000", "\u{10000}"])
+    const native = join(root, "native-tree")
+    await Bun.write(join(native, "\ue000"), "a")
+    await Bun.write(join(native, "\u{10000}"), "a")
+    const tree = await run(Artifact.directory(native, producedBy))
+    expect(tree.entries.map((entry) => entry.path)).toEqual(["\u{10000}", "\ue000"])
     const content = await Effect.runPromise(owner.putOwned(new TextEncoder().encode("a")))
-    const value = {
-      format: "ts-release/bundle/1",
-      artifacts: [
-        {
-          _tag: "OwnedTree",
-          logicalName: "tree",
-          rootMode: tree.rootMode,
-          totalBytes: tree.totalBytes,
-          upstreamManifestSha256: tree.manifestDigest.value,
-          entries: tree.entries.map((entry) => ({
-            _tag: "TreeFile",
-            relativePath: entry.relativePath,
-            mode: entry.kind === "file" ? entry.mode : 0,
-            content,
-          })),
-          provenance,
-        },
-      ],
-    }
-    const bundle = await Effect.runPromise(
-      finalize(Schema.decodeUnknownSync(Bundle)(value).artifacts),
+    const owned = ownedTree(
+      "tree",
+      tree.entries.map((entry) => treeEntries.file(entry.path, content, entry.mode)),
     )
+    expect(owned.sha256).toBe(tree.sha256)
+    const bundle = await Effect.runPromise(finalize([owned]))
     expect(
       (await Effect.runPromise(loadBundle(owner, encodeBundle(bundle)))).artifacts,
     ).toHaveLength(1)
-    const links = {
-      format: "ts-release/bundle/1",
-      artifacts: [
-        {
-          _tag: "OwnedTree",
-          logicalName: "links",
-          rootMode: 0o755,
-          totalBytes: "0",
-          upstreamManifestSha256: "0".repeat(64),
-          entries: [
-            { _tag: "TreeLink", relativePath: "d", target: "." },
-            { _tag: "TreeLink", relativePath: "s", target: "d/.." },
-          ],
-          provenance,
-        },
-      ],
-    }
-    const decoded = Schema.decodeUnknownSync(Bundle)(links)
-    await expect(Effect.runPromise(finalize(decoded.artifacts))).rejects.toThrow("escapes tree")
-    await expect(Effect.runPromise(loadBundle(owner, encodeBundle(decoded)))).rejects.toThrow(
-      "escapes tree",
-    )
+    const links = ownedTree("links", [
+      treeEntries.symlink("d", "."),
+      treeEntries.symlink("s", "d/.."),
+    ])
+    await expect(Effect.runPromise(finalize([links]))).rejects.toThrow("escapes tree")
+    await expect(
+      Effect.runPromise(
+        loadBundle(owner, encodeBundle(new Bundle({ ...bundle, artifacts: [links] }))),
+      ),
+    ).rejects.toThrow("escapes tree")
   }))
 
 test("special-file inputs reject without waiting for another FIFO endpoint", () =>

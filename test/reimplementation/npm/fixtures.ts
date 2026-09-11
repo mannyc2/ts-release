@@ -34,12 +34,12 @@ export const artifact = (name: string, bytes: Uint8Array) =>
     _tag: "OwnedFile",
     logicalName: name,
     content: new Content({
-      bytes: String(bytes.length),
+      bytes: bytes.length,
       sha256: createHash("sha256").update(bytes).digest("hex"),
     }),
     deliveryMode: 0o644,
     executable: null,
-    provenance: { _tag: "IntrinsicProvenance", producer: "fixture/native-bun-pack" },
+    producedBy: { name: "fixture/native-bun-pack", version: "fixture" },
   })
 export const intent = (name = "@fixture/example", version = "1.2.3", initialTag = "latest") => {
   const bytes = pack({ name, version }),
@@ -73,7 +73,7 @@ export const accessFor = (bytes: Uint8Array, name = "@fixture/example", version 
     provenance: new NoProvenance({}),
   })
   const access: ArtifactAccess = {
-    bundle: new Bundle({ format: "ts-release/bundle/1", artifacts: [file] }),
+    bundle: new Bundle({ format: "ts-release/bundle/2", artifacts: [file] }),
     readContent: () => Effect.succeed(bytes.slice()),
   }
   return { publication, access }

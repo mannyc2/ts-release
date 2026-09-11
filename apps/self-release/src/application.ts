@@ -84,7 +84,7 @@ export const prepareSelfRelease = Effect.fn("selfRelease.prepare")(function* (in
   readonly owner: ContentOwner
   readonly producerFiles: ReadonlyArray<{
     readonly logicalName: string
-    readonly artifact: Producer.HashedFile | Producer.HashedExecutable
+    readonly artifact: Producer.Regular
   }>
   readonly ownedArtifacts?: ReadonlyArray<Artifact>
   readonly operations: ReadonlyArray<Operation>

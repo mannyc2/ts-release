@@ -172,7 +172,7 @@ export const observations = (read: HttpRead) => {
       })
       response = yield* get(scope, url, true, true)
     }
-    if (response.status !== 200 || String(response.body.length) !== facts.bytes)
+    if (response.status !== 200 || response.body.length !== facts.bytes)
       return yield* attempt(() => invalid("download-unavailable"))
     return new AssetEvidence({ facts, downloadedSha256: sha256(response.body) })
   })

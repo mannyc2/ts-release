@@ -93,8 +93,9 @@ export const requestMatches = (scope: BoundScope, request: RequestFacts): boolea
       new RequestFacts({
         ...fields,
         bodyDigest: intent instanceof Model.AssetIntent ? intent.file.content.sha256 : sha256(body),
-        byteLength:
-          intent instanceof Model.AssetIntent ? intent.file.content.bytes : String(body.length),
+        byteLength: String(
+          intent instanceof Model.AssetIntent ? intent.file.content.bytes : body.length,
+        ),
       }),
     )
   )

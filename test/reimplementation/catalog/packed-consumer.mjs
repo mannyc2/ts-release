@@ -24,12 +24,12 @@ const files = cells.map((cell) => {
     _tag: "OwnedFile",
     logicalName: cell + ".zip",
     content: {
-      bytes: String(bytes.length),
+      bytes: bytes.length,
       sha256: createHash("sha256").update(bytes).digest("hex"),
     },
     deliveryMode: 420,
     executable: null,
-    provenance: { _tag: "IntrinsicProvenance", producer: "packed-catalog" },
+    producedBy: { name: "packed-catalog", version: "fixture" },
   })
 })
 const archives = Object.fromEntries(
@@ -38,7 +38,7 @@ const archives = Object.fromEntries(
     { url: `https://example.com/releases/v1.2.3/${cell}.zip`, file: files[i] },
   ]),
 )
-const bundle = new Bundle({ format: "ts-release/bundle/1", artifacts: files })
+const bundle = new Bundle({ format: "ts-release/bundle/2", artifacts: files })
 const formula = new Homebrew.Formula({
   className: "Tool",
   version: "1.2.3",
@@ -68,7 +68,7 @@ assert.equal(json.architecture.arm64.hash, files[5].content.sha256)
 await assert.rejects(Effect.runPromise(Scoop.render({ ...manifest, version: "nightly" }, bundle)))
 await assert.rejects(
   Effect.runPromise(
-    Homebrew.render(formula, new Bundle({ format: "ts-release/bundle/1", artifacts: [] })),
+    Homebrew.render(formula, new Bundle({ format: "ts-release/bundle/2", artifacts: [] })),
   ),
 )
 console.log(

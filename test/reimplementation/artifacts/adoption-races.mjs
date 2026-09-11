@@ -1,96 +1,77 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdtemp, readdir, rm, symlink, unlink, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, readdir, rm, symlink, unlink, writeFile } from "node:fs/promises"
 import { join } from "node:path"
-import { Effect, FileSystem } from "effect"
+import { Effect } from "effect"
 import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as Artifact from "effect-build/Artifact"
-import * as Tree from "effect-build/Author/Tree"
-import { adoptTree } from "../../../packages/ts-release/dist/EffectBuild.js"
-import { fileContentOwner, nodeDirectoryReader } from "../../../packages/ts-release/dist/Node.js"
+import { adoptTree, restoreTree } from "../../../packages/ts-release/dist/EffectBuild.js"
+import { fileContentOwner } from "../../../packages/ts-release/dist/Node.js"
 
+// A produced directory is swapped for a FIFO or a symbolic link between the
+// producer's record and the release system's copy. Both must reject without
+// blocking on the FIFO and without following the link.
 const root = await mkdtemp("/tmp/ts-release-adoption-races-")
 const run = (effect) => Effect.runPromise(effect.pipe(Effect.provide(NodeServices.layer)))
 const cells = []
 try {
-  for (const stage of ["source", "snapshot"]) {
-    for (const kind of ["fifo", "symlink"]) {
-      const name = `${stage}-${kind}`
-      const source = await run(
-        Tree.publish(
-          {
-            outdir: join(root, name),
-            observation: "hashed",
-            provenance: Artifact.intrinsicProvenance("native-adoption-race"),
-          },
-          (candidate) =>
-            Effect.gen(function* () {
-              const fs = yield* FileSystem.FileSystem
-              yield* fs.writeFileString(join(candidate, "file"), "exact content")
-            }),
-        ),
-      )
-      const owner = fileContentOwner(
-        join(root, `${name}-objects`),
-        nodeDirectoryReader(process.env.TS_RELEASE_HTTP_PEER_NODE ?? "/usr/bin/node"),
-      )
-      const snapshots = []
-      let swapped = false
-      const raced = {
-        ...owner,
-        putFileOwned: (input) =>
-          Effect.gen(function* () {
-            assert(Object.isFrozen(input))
-            if (!swapped && input.path.startsWith(source.root + "/") === (stage === "source")) {
-              swapped = true
-              yield* Effect.promise(async () => {
-                await unlink(input.path)
-                if (kind === "fifo") execFileSync("mkfifo", [input.path])
-                else {
-                  const target = join(root, `${name}-target`)
-                  await writeFile(target, "exact content")
-                  await symlink(target, input.path)
-                }
-              })
-            }
-            return yield* owner.putFileOwned(input)
-          }),
-      }
-      const before = Date.now()
-      const result = await run(
+  for (const kind of ["fifo", "symlink"]) {
+    const directory = join(root, kind)
+    await mkdir(directory)
+    await writeFile(join(directory, "file"), "exact content")
+    const source = await run(Artifact.directory(directory, { name: "race-fixture", version: "0" }))
+    const owner = fileContentOwner(join(root, `${kind}-objects`))
+    let swapped = false
+    const raced = {
+      ...owner,
+      putFileOwned: (input) =>
         Effect.gen(function* () {
-          const fs = yield* FileSystem.FileSystem
-          const observed = {
-            ...fs,
-            makeTempDirectory: (options) =>
-              fs.makeTempDirectory({ ...options, directory: root }).pipe(
-                Effect.tap((path) =>
-                  Effect.sync(() => {
-                    snapshots.push(path)
-                  }),
-                ),
-              ),
-          }
-          return yield* adoptTree(raced, "tree", source).pipe(
-            Effect.provideService(FileSystem.FileSystem, observed),
-            Effect.catch((error) => Effect.succeed(error)),
-          )
+          swapped = true
+          yield* Effect.promise(async () => {
+            await unlink(input.path)
+            if (kind === "fifo") execFileSync("mkfifo", [input.path])
+            else {
+              const target = join(root, `${kind}-target`)
+              await writeFile(target, "exact content")
+              await symlink(target, input.path)
+            }
+          })
+          return yield* owner.putFileOwned(input)
         }),
-      )
-      assert(swapped)
-      assert.equal(result._tag, "TreeVerificationFailed")
-      const remaining = await readdir(root)
-      assert(snapshots.every((path) => !remaining.includes(path.split("/").at(-1))))
-      cells.push({
-        stage,
-        kind,
-        status: result._tag,
-        milliseconds: Date.now() - before,
-        privateSnapshots: snapshots.length,
-        retainedSnapshots: 0,
-      })
     }
+    const before = Date.now()
+    const result = await run(adoptTree(raced, "tree", source).pipe(Effect.flip))
+    assert(swapped)
+    assert.equal(result._tag, "AdoptionError")
+    assert.deepEqual(await readdir(join(root, `${kind}-objects`)).catch(() => []), [])
+    cells.push({ kind, status: result._tag, milliseconds: Date.now() - before })
   }
+  const directory = join(root, "restore-source")
+  await mkdir(directory)
+  await writeFile(join(directory, "file"), "exact content")
+  const source = await run(Artifact.directory(directory, { name: "race-fixture", version: "0" }))
+  const owner = fileContentOwner(join(root, "restore-objects"))
+  const owned = await run(adoptTree(owner, "tree", source))
+  const destination = join(root, "destination")
+  const racedOwner = {
+    ...owner,
+    read: (content) =>
+      Effect.gen(function* () {
+        yield* Effect.promise(async () => {
+          await mkdir(destination)
+          await writeFile(join(destination, "keep.txt"), "other writer")
+        })
+        return yield* owner.read(content)
+      }),
+  }
+  const result = await run(restoreTree(racedOwner, owned, destination).pipe(Effect.flip))
+  assert.equal(result._tag, "AdoptionError")
+  assert.equal(await readFile(join(destination, "keep.txt"), "utf8"), "other writer")
+  assert.deepEqual(await readdir(destination), ["keep.txt"])
+  // The same native host can still restore into an unoccupied destination.
+  const restored = await run(restoreTree(owner, owned, join(root, "unoccupied")))
+  assert.equal(await readFile(join(restored.path, "file"), "utf8"), "exact content")
+  cells.push({ kind: "restore-destination", status: result._tag })
   console.log(
     JSON.stringify({ runtime: process.version, bun: process.versions.bun ?? null, cells }),
   )

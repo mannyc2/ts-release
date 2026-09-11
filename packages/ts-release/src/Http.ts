@@ -1,4 +1,3 @@
-export type {} from "./internal/EffectTypes.js"
 export { decodeJson } from "./internal/NativeJson.js"
 export { canonical, compareText, decodeOwned, sameBytes, sameData } from "./internal/Identity.js"
 import { Effect, Redacted, Schema } from "effect"

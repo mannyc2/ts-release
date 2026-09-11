@@ -14,10 +14,10 @@ const base = { repository, tag: "v1.0.0", principal: "fixture" }
 const file = Schema.decodeUnknownSync(File)({
   _tag: "OwnedFile",
   logicalName: "asset",
-  content: { bytes: "1", sha256: "a".repeat(64) },
+  content: { bytes: 1, sha256: "a".repeat(64) },
   deliveryMode: 420,
   executable: null,
-  provenance: { _tag: "IntrinsicProvenance", producer: "graph-fixture" },
+  producedBy: { name: "graph-fixture", version: "fixture" },
 })
 async function fixture(count: number, annotated = false) {
   const object = annotated

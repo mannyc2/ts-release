@@ -4,8 +4,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises"
 import { join } from "node:path"
 import { Effect, Schema } from "effect"
 import * as BunServices from "@effect/platform-bun/BunServices"
-import * as Artifact from "effect-build/Artifact"
-import * as Notary from "effect-build-apple/Notary"
+import * as Apple from "effect-build-apple"
 import {
   Host,
   ReleaseError,
@@ -102,10 +101,10 @@ test("a lost Apple submit response stays Inconclusive across SQLite reopen witho
                 Effect.map((receipt) => ({
                   _tag: "Unknown" as const,
                   reason: "Protocol fixture discarded the submit response",
-                  nativeError: Schema.encodeSync(Notary.SubmissionOutcomeUnknown)(
-                    new Notary.SubmissionOutcomeUnknown({
-                      artifactDigest: receipt.artifactDigest.value,
-                      reason: "Response lost before receipt persistence",
+                  nativeError: Schema.encodeSync(Apple.Notary.ResponseInvalid)(
+                    new Apple.Notary.ResponseInvalid({
+                      operation: "submit",
+                      reason: `Response for ${receipt.submissionId} lost before receipt persistence`,
                     }),
                   ),
                 })),
@@ -162,7 +161,7 @@ test("publication requires every selected Apple output and accepts additional ex
     const scopes = await run(preparationScopes(collection)),
       doubles = appleDoubles(),
       store = new MemoryJournal()
-    doubles.status(new Notary.Accepted({ providerStatus: "Accepted" }))
+    doubles.status({ _tag: "Accepted", providerStatus: "Accepted" })
     const send = (request: PreparedRequest) =>
       submitPrepared(
         Schema.decodeUnknownSync(ApplePreparation)(
@@ -221,9 +220,7 @@ test("publication requires every selected Apple output and accepts additional ex
         ),
       )
     ).flatMap((bundle) => bundle.artifacts)
-    const extra = await run(
-      finalize([{ ...outputs[1]!, logicalName: Artifact.portableRelativePath("other-file.txt") }]),
-    )
+    const extra = await run(finalize([{ ...outputs[1]!, logicalName: "other-file.txt" }]))
     const publication = async (artifacts: readonly OwnedArtifact[]) => {
       const bundle = await run(finalize(artifacts)),
         content = await run(owner.putOwned(encodeBundle(bundle))),
@@ -265,12 +262,9 @@ test("publication requires every selected Apple output and accepts additional ex
     ).rejects.toMatchObject({ code: "final-bundle-binding" })
     await expect(
       run(
-        validateApplePublication(
-          collection,
-          full.plan,
-          { ...full.content, bytes: "0" },
-          owner,
-        ).pipe(Effect.provideService(Host, full.host)),
+        validateApplePublication(collection, full.plan, { ...full.content, bytes: 0 }, owner).pipe(
+          Effect.provideService(Host, full.host),
+        ),
       ),
     ).rejects.toThrow()
     const missingScope: HostShape = {
@@ -287,7 +281,7 @@ test("publication requires every selected Apple output and accepts additional ex
         ),
       ),
     ).rejects.toMatchObject({ code: "preparation-set" })
-    expect(doubles.calls).toEqual({ submit: 2, info: 0, staple: 2, assess: 2 })
+    expect(doubles.calls).toEqual({ submit: 2, info: 2, staple: 2, assess: 2 })
   } finally {
     await rm(root, { recursive: true, force: true })
   }

@@ -78,11 +78,11 @@ for (const manager of ["bun", "npm"]) {
     type: "module",
     dependencies: {
       "@mannyc1/ts-release": `file:${archive}`,
-      effect: "4.0.0-beta.107",
+      effect: "4.0.0-rc.108",
       typescript: "6.0.3",
       "@types/node": nodeTypesVersion,
     },
-    overrides: { "@effect/platform-node-shared": "4.0.0-beta.107" },
+    overrides: { "@effect/platform-node-shared": "4.0.0-rc.108" },
   }
   await writeFile(join(cwd, "package.json"), JSON.stringify(manifest))
   const install = () =>
@@ -113,8 +113,8 @@ for (const manager of ["bun", "npm"]) {
       "portable-without-optional-peers",
     )
   Object.assign(manifest.dependencies, upstreamDependencies, {
-    "@effect/platform-node": "4.0.0-beta.107",
-    "@effect/platform-bun": "4.0.0-beta.107",
+    "@effect/platform-node": "4.0.0-rc.108",
+    "@effect/platform-bun": "4.0.0-rc.108",
   })
   await writeFile(join(cwd, "package.json"), JSON.stringify(manifest))
   await install()

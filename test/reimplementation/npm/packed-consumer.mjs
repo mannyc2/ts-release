@@ -7,7 +7,7 @@ import { Content, File, Bundle } from "@mannyc1/ts-release/bundle"
 import { Host, createPlan, runRelease } from "@mannyc1/ts-release"
 const bytes = new Uint8Array(await readFile(process.argv[2]))
 const content = new Content({
-  bytes: String(bytes.length),
+  bytes: bytes.length,
   sha256: createHash("sha256").update(bytes).digest("hex"),
 })
 const file = Schema.decodeUnknownSync(File)({
@@ -16,10 +16,10 @@ const file = Schema.decodeUnknownSync(File)({
   content,
   deliveryMode: 420,
   executable: null,
-  provenance: { _tag: "IntrinsicProvenance", producer: "packed-native-consumer" },
+  producedBy: { name: "packed-native-consumer", version: "fixture" },
 })
 const access = {
-  bundle: new Bundle({ format: "ts-release/bundle/1", artifacts: [file] }),
+  bundle: new Bundle({ format: "ts-release/bundle/2", artifacts: [file] }),
   readContent: () => Effect.succeed(bytes),
 }
 const metadata = await Effect.runPromise(Npm.inspectTarball(file, access))

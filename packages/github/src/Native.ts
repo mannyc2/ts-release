@@ -131,7 +131,7 @@ export const assetFacts = (
     storedName: raw.name,
     state: raw.state,
     contentType: raw.content_type,
-    bytes: String(raw.size),
+    bytes: raw.size,
     sha256: digest,
     apiUrl: raw.url,
     downloadUrl: raw.browser_download_url,

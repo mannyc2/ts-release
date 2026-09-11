@@ -38,12 +38,13 @@ import {
   processOptions,
   seed,
 } from "../transports/git-fixture.js"
+import { ownedTree, treeEntries } from "../artifacts/tree-fixture.js"
 
 const stored = new Map<string, Uint8Array>()
 const content = (bytes: Uint8Array) => {
   const sha256 = createHash("sha256").update(bytes).digest("hex")
   stored.set(sha256, new Uint8Array(bytes))
-  return new Content({ bytes: String(bytes.length), sha256 })
+  return new Content({ bytes: bytes.length, sha256 })
 }
 const readContent: ReadContent = (identity) => {
   const bytes = stored.get(identity.sha256)
@@ -51,7 +52,6 @@ const readContent: ReadContent = (identity) => {
     ? Effect.succeed(new Uint8Array(bytes))
     : Effect.fail(new ReleaseError({ code: "fixture-content", message: "Missing fixture bytes" }))
 }
-const provenance = { _tag: "IntrinsicProvenance" as const, producer: "openai-fixture" }
 const compare = (left: string, right: string): number => {
   const a = [...left],
     b = [...right]
@@ -68,49 +68,13 @@ const treeFrom = (rendered: readonly RenderedFile[]) => {
     for (let length = 1; length < parts.length; length++)
       directories.add(parts.slice(0, length).join("/"))
   }
-  const entries = [
-    ...[...directories].map((relativePath) => ({
-      _tag: "TreeDirectory" as const,
-      relativePath,
-      mode: 0o755,
-    })),
-    ...rendered.map((file) => ({
-      _tag: "TreeFile" as const,
-      relativePath: file.path,
-      mode: file.mode,
-      content: content(file.bytes),
-    })),
-  ].sort((left, right) => compare(left.relativePath, right.relativePath))
-  const totalBytes = String(
-    entries.reduce(
-      (total, entry) => total + (entry._tag === "TreeFile" ? BigInt(entry.content.bytes) : 0n),
-      0n,
-    ),
+  // Decode through the installed package's class so equality holds against its outputs.
+  return Schema.decodeUnknownSync(Tree)(
+    ownedTree("release-auditor-plugin", [
+      ...[...directories].map((path) => treeEntries.directory(path)),
+      ...rendered.map((file) => treeEntries.file(file.path, content(file.bytes), file.mode)),
+    ]),
   )
-  const native = {
-    rootMode: 0o755,
-    totalBytes,
-    entries: entries.map((entry) =>
-      entry._tag === "TreeFile"
-        ? {
-            kind: "file",
-            relativePath: entry.relativePath,
-            mode: entry.mode,
-            bytes: entry.content.bytes,
-            digest: { algorithm: "sha256", value: entry.content.sha256 },
-          }
-        : { kind: "directory", relativePath: entry.relativePath, mode: entry.mode },
-    ),
-  }
-  return Schema.decodeUnknownSync(Tree)({
-    _tag: "OwnedTree",
-    logicalName: "release-auditor-plugin",
-    rootMode: 0o755,
-    totalBytes,
-    upstreamManifestSha256: createHash("sha256").update(JSON.stringify(native)).digest("hex"),
-    entries,
-    provenance,
-  })
 }
 const pluginInput = () =>
   new PluginInput({
@@ -190,7 +154,7 @@ describe("OpenAI skills-only plugin", () => {
     await expect(Effect.runPromise(files(collision, readContent))).rejects.toThrow()
     const { tree } = await makePlugin(),
       changed = structuredClone(Schema.encodeSync(Tree)(tree)) as any
-    changed.entries.find((entry: any) => entry._tag === "TreeFile").content.sha256 = "0".repeat(64)
+    changed.entries.find((entry: any) => entry.kind === "file").sha256 = "0".repeat(64)
     await expect(
       Effect.runPromise(validatePackage(Schema.decodeUnknownSync(Tree)(changed), readContent)),
     ).rejects.toThrow()
@@ -367,7 +331,7 @@ describe("OpenAI marketplace and human submission handoff", () => {
       content: logoContent,
       deliveryMode: 0o644,
       executable: null,
-      provenance,
+      producedBy: { name: "openai-fixture", version: "fixture" },
     })
     const bundle = await Effect.runPromise(finalize([tree, logo]))
     expect(bundle).toBeInstanceOf(Bundle)

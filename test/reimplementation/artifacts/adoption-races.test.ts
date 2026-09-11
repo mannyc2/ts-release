@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { join } from "node:path"
 
 for (const runtime of [process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node", process.execPath]) {
-  test(`native source/snapshot FIFO and symlink races reject and close: ${runtime}`, async () => {
+  test(`native adoption and restoration races preserve owned content and competing outputs: ${runtime}`, async () => {
     const child = Bun.spawn([runtime, join(import.meta.dir, "adoption-races.mjs")], {
       stdout: "pipe",
       stderr: "pipe",
@@ -20,13 +20,13 @@ for (const runtime of [process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node", process.
       expect(result).toBe(0)
       expect(await stderr).toBe("")
       const evidence = JSON.parse(await stdout)
-      expect(evidence.cells).toHaveLength(4)
       expect(
-        evidence.cells.every(
-          (cell: { status: string; retainedSnapshots: number }) =>
-            cell.status === "TreeVerificationFailed" && cell.retainedSnapshots === 0,
-        ),
-      ).toBe(true)
+        evidence.cells.map((cell: { kind: string; status: string }) => [cell.kind, cell.status]),
+      ).toEqual([
+        ["fifo", "AdoptionError"],
+        ["symlink", "AdoptionError"],
+        ["restore-destination", "AdoptionError"],
+      ])
     } finally {
       clearTimeout(timer)
       child.kill("SIGKILL")

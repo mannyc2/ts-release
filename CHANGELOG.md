@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+### effect-build 0.7.0
+
+- Correlate Apple recovery with the recorded submission and signed source while
+  retaining the current lookup tool's metadata separately. A new runner's tool
+  path, version or digest no longer prevents recovery.
+- Claim tree restoration destinations exclusively after verifying staged content.
+  Competing outputs and dangling links are refused; a failed final rename retains
+  the destination for inspection instead of moving or deleting it.
+- Adopt effect-build 0.7.0 and the Effect 4.0.0-rc.108 train across every
+  package, peer range, packed-consumer check and fixture. There is no
+  compatibility layer for the retired 0.6 `Author/*`, `SystemTarget`, hashed and
+  unhashed identity APIs.
+- Owned Bundles now record the native `Artifact.File`, `Artifact.Executable` and
+  `Artifact.Directory` identities: numeric byte counts, SHA-256 digests, the
+  upstream directory entry manifest and a path-free `producedBy` producer.
+  `ts-release/bundle/2` replaces format 1, which is refused by name because it
+  recorded 0.6 identities. Adoption copies each produced file into release
+  ownership while checking it against its recorded identity; restoration writes
+  entries from owned content, re-observes the tree with effect-build and commits
+  it atomically. The bounded native Node directory reader is gone.
+- Apple preparation records are `ts-release/apple-preparation/2`: signatures use
+  effect-build-apple's shapes, receipts are `Notary.SubmissionReference`, and
+  `ReadyToPlan` persists the assessed stapled product in the provider's schema.
+  Format 1 collections and 0.6.3 receipt versions are refused explicitly. Native
+  operations run through the release-owned `AppleTools` service, whose live
+  layer binds one notarization credential over `effect-build-apple`.
+- Provider evidence compares numeric byte counts, and journal receipts or
+  observations with an unknown version name both the recorded and installed
+  versions.
+
 ### PyPI embedded-binary distributions
 
 - Reopen the repository-specific PyPI wrapper-wheel decision with four

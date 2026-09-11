@@ -22,16 +22,16 @@ export const fixture = async (
     const file = Schema.decodeUnknownSync(File)({
       _tag: "OwnedFile",
       logicalName: entry.filename,
-      content: new Content({ bytes: String(bytes.length), sha256: entry.sha256 }),
+      content: new Content({ bytes: bytes.length, sha256: entry.sha256 }),
       deliveryMode: 420,
       executable: null,
-      provenance: { _tag: "IntrinsicProvenance", producer: "native-python-build-fixture" },
+      producedBy: { name: "native-python-build-fixture", version: "fixture" },
     })
     contents.set(entry.sha256, bytes)
     artifacts.push(file)
   }
   const access: ArtifactAccess = {
-    bundle: new Bundle({ format: "ts-release/bundle/1", artifacts }),
+    bundle: new Bundle({ format: "ts-release/bundle/2", artifacts }),
     readContent: (content) => Effect.succeed(new Uint8Array(contents.get(content.sha256)!)),
   }
   const authorization = new PyPi.TokenAuthorization({

@@ -1,161 +1,90 @@
 import { Crypto, Effect, FileSystem, Option, Path, PlatformError, Schema } from "effect"
 import * as Artifact from "effect-build/Artifact"
-import * as File from "effect-build/Author/File"
-import * as Tree from "effect-build/Author/Tree"
-import * as Model from "effect-build-apple/Model"
-import * as Notary from "effect-build-apple/Notary"
-import * as Staple from "effect-build-apple/Staple"
-import * as Assess from "effect-build-apple/Assess"
+import * as Apple from "effect-build-apple"
 import { adoptFile, adoptTree, restoreTree } from "../EffectBuild.js"
-import { AdoptionError, type OwnedFile } from "../internal/ArtifactModel.js"
+import { AdoptionError, identityOf, type OwnedFile } from "../internal/ArtifactModel.js"
 import { encodeBundle, loadBundle } from "../internal/BundleCodec.js"
 import { finalize } from "../internal/BundleFinalize.js"
 import { captureContentOwner, readVerifiedContent, type ContentOwner } from "../internal/Content.js"
 import { attempt, failure, type ReleaseError } from "../internal/Error.js"
 import { decodeOwned, sameBytes } from "../internal/Identity.js"
-import { ApplePreparation, FinalApp, FinalDmg, FinalPkg, ReadyToPlan } from "./Model.js"
+import { ApplePreparation, ReadyToPlan, productOf, sourceIdentity } from "./Model.js"
 import { classifyEvidence, sourceCorresponds } from "./Provider.js"
+import { AppleTools, type AppleToolError } from "./Tools.js"
 
-export type RestoredSource =
-  | { readonly kind: "app"; readonly artifact: Model.DeveloperIdApplicationBundle }
-  | { readonly kind: "dmg"; readonly artifact: Model.DeveloperIdDiskImage }
-  | { readonly kind: "pkg"; readonly artifact: Model.DeveloperIdInstallerPackage }
-export type FinalNativeArtifact = (
-  | { readonly kind: "app"; readonly artifact: Model.StapledApplicationBundle }
-  | { readonly kind: "dmg"; readonly artifact: Model.StapledDiskImage }
-  | { readonly kind: "pkg"; readonly artifact: Model.StapledInstallerPackage }
-) & { readonly assessment: Assess.GatekeeperAccepted }
 export type NativeAppleError =
   | ReleaseError
   | AdoptionError
   | Schema.SchemaError
   | PlatformError.PlatformError
-  | File.PublicationFailure
-  | File.FileVerificationFailed
-  | Tree.PublicationFailure
-  | Tree.TreeVerificationFailed
-  | Model.ProductStateInvalid
-  | Notary.SubmitAppError
-  | Notary.ObserveError
-  | Notary.ResultNotAccepted
-  | Notary.ResultHasNoStapleTarget
-  | Staple.StapleError
-  | Assess.AssessError
-export type NativeAppleServices =
-  | Crypto.Crypto
-  | FileSystem.FileSystem
-  | Path.Path
-  | Notary.Client
-  | Staple.Stapler
-  | Assess.Assessor
+  | AppleToolError
+  | Apple.Notary.ResultNotAccepted
+export type NativeAppleServices = FileSystem.FileSystem | Path.Path | Crypto.Crypto | AppleTools
 export type DeriveDeliveryFiles<R = never> = (
-  final: FinalNativeArtifact,
+  assessed: Apple.StapledProduct,
 ) => Effect.Effect<readonly OwnedFile[], NativeAppleError, R>
 const mismatch = () => failure("apple-native-binding", "Apple native evidence differs")
-/** Native app trees can retain readonly nested directories. Make only private
- * real directories removable, with bounded enumeration and no symlink traversal. */
+
+/** A private directory that is always removable afterwards: native app trees can
+ * hold read-only nested directories, so every real directory is reopened first. */
 const privateWorkspace = Effect.fn("apple.privateWorkspace")(function* (
-  owner: ContentOwner,
   directory: string,
   prefix: string,
 ) {
-  const fs = yield* FileSystem.FileSystem,
-    path = yield* Path.Path
-  const readDirectory = owner.readDirectoryBounded.bind(owner)
-  return yield* Effect.acquireRelease(fs.makeTempDirectory({ directory, prefix }), (root) =>
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const makeRemovable = (root: string) =>
     Effect.gen(function* () {
       const pending = [root]
-      let remaining = 300_000
       while (pending.length) {
         const current = pending.pop()!
-        if (Option.isSome(yield* Effect.option(fs.readLink(current)))) continue
         yield* fs.chmod(current, 0o700)
-        const names = yield* readDirectory(current, remaining)
-        remaining -= names.length
-        if (remaining < 0) return yield* mismatch()
-        for (const name of names) {
+        for (const name of yield* fs.readDirectory(current)) {
           const entry = path.join(current, name)
           if (Option.isSome(yield* Effect.option(fs.readLink(entry)))) continue
           if ((yield* fs.stat(entry)).type === "Directory") pending.push(entry)
         }
       }
-      yield* fs.remove(root, { recursive: true, force: true })
-    }).pipe(Effect.orDie),
+    })
+  return yield* Effect.acquireRelease(fs.makeTempDirectory({ directory, prefix }), (root) =>
+    makeRemovable(root).pipe(
+      Effect.andThen(fs.remove(root, { recursive: true, force: true })),
+      Effect.orDie,
+    ),
   )
 })
 
-/** Caller owns the workspace lifetime. Recreate source bytes through the actual
- * native finalizers; signature projection is reverified by native Apple tools. */
+/** Recreate the signed source bytes in `workspace`; native Apple tools reverify the signature. */
 export const restorePreparedSource = Effect.fn("apple.restoreSource")(function* (
   value: ApplePreparation,
   contentOwner: ContentOwner,
   workspace: string,
-) {
+): Effect.fn.Return<Apple.SignedProduct, NativeAppleError, NativeAppleServices> {
   const owner = captureContentOwner(contentOwner)
   const input = yield* attempt(() => decodeOwned(ApplePreparation, value))
-  const fs = yield* FileSystem.FileSystem,
-    path = yield* Path.Path
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
   if (!path.isAbsolute(workspace)) return yield* mismatch()
-  const bundle = yield* finalize([input.source])
-  yield* loadBundle(owner, encodeBundle(bundle))
   yield* fs.makeDirectory(workspace, { recursive: true })
-  let restored: RestoredSource
   if (input._tag === "AppPreparation") {
-    const source = input.source
-    const artifact = yield* restoreTree(
+    const directory = yield* restoreTree(
       owner,
-      source,
+      input.source,
       path.join(workspace, input.bundleName),
-      source.provenance,
     )
-    const native = {
-      ...artifact,
-      architecture: input.architecture,
-      signature: new Model.DeveloperIdApplicationSignature({
-        ...input.signature,
-        architecture: input.architecture,
-      }),
-    }
-    if (!Model.hasDeveloperIdApplicationSignature(native)) return yield* mismatch()
-    restored = { kind: "app", artifact: native }
-  } else {
-    const kind = input._tag === "DmgPreparation" ? "dmg" : "pkg"
-    const artifact = yield* File.publish(
-      {
-        destination: path.join(workspace, `source.${kind}`),
-        observation: "hashed",
-        provenance: input.source.provenance,
-      },
-      (candidate) =>
-        Effect.gen(function* () {
-          yield* fs.writeFile(candidate, new Uint8Array(yield* owner.read(input.source.content)))
-        }),
-    )
-    if (
-      artifact.bytes !== input.source.content.bytes ||
-      artifact.digest.value !== input.source.content.sha256
-    )
-      return yield* mismatch()
-    const signature =
-      input._tag === "DmgPreparation"
-        ? new Model.DeveloperIdDiskImageSignature({
-            ...input.signature,
-            architecture: input.architecture,
-          })
-        : new Model.DeveloperIdInstallerSignature({
-            ...input.signature,
-            architecture: input.architecture,
-          })
-    const native = { ...artifact, architecture: input.architecture, signature }
-    if (input._tag === "DmgPreparation") {
-      if (!Model.hasDeveloperIdDiskImageSignature(native)) return yield* mismatch()
-      restored = { kind: "dmg", artifact: native }
-    } else {
-      if (!Model.hasDeveloperIdInstallerSignature(native)) return yield* mismatch()
-      restored = { kind: "pkg", artifact: native }
-    }
+    const app = { ...directory, product: "app" as const, signature: input.signature }
+    if (!Schema.is(Apple.SignedApp)(app)) return yield* mismatch()
+    return app
   }
-  return restored
+  const destination = path.join(workspace, `source.${productOf(input)}`)
+  const identity = sourceIdentity(input)
+  const bytes = yield* readVerifiedContent(owner.read, identity, identity.bytes)
+  yield* fs.writeFile(destination, bytes)
+  const file = yield* Artifact.file(destination, input.source.producedBy)
+  if (file.bytes !== identity.bytes || file.sha256 !== identity.sha256) return yield* mismatch()
+  return input._tag === "DmgPreparation"
+    ? { ...file, product: "dmg" as const, signature: input.signature }
+    : { ...file, product: "pkg" as const, signature: input.signature }
 })
 
 export const submitPrepared = Effect.fn("apple.submitPrepared")(function* (
@@ -164,125 +93,82 @@ export const submitPrepared = Effect.fn("apple.submitPrepared")(function* (
   workspace: string,
 ) {
   const owner = captureContentOwner(contentOwner)
+  const tools = yield* AppleTools
   const input = yield* attempt(() => decodeOwned(ApplePreparation, value))
   return yield* Effect.scoped(
     Effect.gen(function* () {
-      const privateRoot = yield* privateWorkspace(owner, workspace, "apple-submit-")
+      const privateRoot = yield* privateWorkspace(workspace, "apple-submit-")
       const source = yield* restorePreparedSource(input, owner, privateRoot)
-      return source.kind === "app"
-        ? yield* Notary.submitApp({ bundle: source.artifact })
-        : source.kind === "dmg"
-          ? yield* Notary.submit({ kind: "dmg", artifact: source.artifact })
-          : yield* Notary.submit({ kind: "pkg", artifact: source.artifact })
+      return yield* tools.submit(source)
     }),
   )
 })
 
-/** Only poll the recorded identity; accepted bytes are stapled, assessed, then
- * adopted. Derived output blobs are not selected until the journal's one CAS. */
+/** Staple beside the restored source; an app keeps its bundle name, which is part of its identity. */
+const staple = (
+  tools: AppleTools["Service"],
+  source: Apple.SignedProduct,
+  acceptance: Apple.Notary.AcceptedReference,
+  privateRoot: string,
+  path: Path.Path,
+) =>
+  source.product === "app"
+    ? tools.staple({
+        artifact: source,
+        acceptance,
+        outdir: path.join(privateRoot, path.basename(source.path)),
+      })
+    : tools.staple({
+        artifact: source,
+        acceptance,
+        outfile: path.join(privateRoot, `final.${source.product}`),
+      })
+
+/**
+ * Poll only the recorded submission. Accepted bytes are restored, stapled,
+ * assessed, then adopted; the resulting outputs become durable only through
+ * the journal's one compare-and-swap.
+ */
 export const finishPrepared = Effect.fn("apple.finishPrepared")(function* <R = never>(
   value: ApplePreparation,
-  recorded: Notary.Submission,
+  recorded: Apple.Notary.SubmissionReference,
   preparationId: string,
   contentOwner: ContentOwner,
   workspace: string,
   deriveDeliveryFiles?: DeriveDeliveryFiles<R>,
 ) {
   const owner = captureContentOwner(contentOwner)
+  const tools = yield* AppleTools
   const input = yield* attempt(() => decodeOwned(ApplePreparation, value))
-  const submission = yield* attempt(() => decodeOwned(Notary.Submission, recorded))
+  const submission = yield* attempt(() => decodeOwned(Apple.Notary.SubmissionReference, recorded))
   if (!sourceCorresponds(input, submission)) return yield* mismatch()
-  const result = submission.status._tag === "Accepted" ? submission : yield* Notary.info(submission)
-  if (!sourceCorresponds(input, result)) return yield* mismatch()
-  yield* attempt(() => classifyEvidence(input, preparationId, result, [submission]))
-  if (result.status._tag !== "Accepted")
-    return yield* attempt(() => decodeOwned(Notary.Observation, result))
-  const acceptance = yield* Notary.acceptedReference(result)
+  const info = yield* tools.info(submission)
+  yield* attempt(() => classifyEvidence(input, preparationId, info, [submission]))
+  if (info.status._tag !== "Accepted") return info
+  const acceptance = yield* Apple.Notary.acceptedReference(info)
   return yield* Effect.scoped(
     Effect.gen(function* () {
       const path = yield* Path.Path
-      const privateRoot = yield* privateWorkspace(owner, workspace, "apple-finish-")
+      const privateRoot = yield* privateWorkspace(workspace, "apple-finish-")
       const source = yield* restorePreparedSource(input, owner, path.join(privateRoot, "source"))
-      let final: FinalNativeArtifact
-      if (source.kind === "app") {
-        if (input._tag !== "AppPreparation") return yield* mismatch()
-        const artifact = yield* Staple.stapleApp({
-          source: source.artifact,
-          acceptance,
-          outdir: path.join(privateRoot, input.bundleName),
-        })
-        final = {
-          kind: "app",
-          artifact,
-          assessment: yield* Assess.assess({ kind: "app", artifact }),
-        }
-      } else {
-        const artifact = yield* Staple.stapleFile(
-          source.kind === "dmg"
-            ? {
-                kind: "dmg",
-                source: source.artifact,
-                acceptance,
-                outfile: path.join(privateRoot, "final.dmg"),
-              }
-            : {
-                kind: "pkg",
-                source: source.artifact,
-                acceptance,
-                outfile: path.join(privateRoot, "final.pkg"),
-              },
-        )
-        if (source.kind === "dmg" && artifact.signature._tag === "DeveloperIdDiskImageSignature") {
-          const selected = { ...artifact, signature: artifact.signature }
-          final = {
-            kind: "dmg",
-            artifact: selected,
-            assessment: yield* Assess.assess({ kind: "dmg", artifact: selected }),
-          }
-        } else if (
-          source.kind === "pkg" &&
-          artifact.signature._tag === "DeveloperIdInstallerSignature"
-        ) {
-          const selected = { ...artifact, signature: artifact.signature }
-          final = {
-            kind: "pkg",
-            artifact: selected,
-            assessment: yield* Assess.assess({ kind: "pkg", artifact: selected }),
-          }
-        } else return yield* mismatch()
-      }
+      const stapled = yield* staple(tools, source, acceptance, privateRoot, path)
+      const assessed = yield* tools.assess(stapled)
+      if (assessed.product !== productOf(input)) return yield* mismatch()
       const adopted =
-        final.kind === "app"
-          ? yield* adoptTree(owner, input.artifactName, final.artifact)
-          : yield* adoptFile(owner, input.artifactName, final.artifact)
-      const fields = {
+        assessed.product === "app"
+          ? yield* adoptTree(owner, input.artifactName, assessed)
+          : yield* adoptFile(owner, input.artifactName, assessed)
+      const finalArtifact = {
+        product: assessed.product,
         logicalName: adopted.logicalName,
-        artifactBytes: Artifact.decimalBytes(
-          adopted._tag === "OwnedTree" ? adopted.totalBytes : adopted.content.bytes,
-        ),
-        artifactDigest: Artifact.sha256Digest(
-          adopted._tag === "OwnedTree" ? adopted.upstreamManifestSha256 : adopted.content.sha256,
-        ),
+        identity: identityOf(adopted),
       }
-      const finalArtifact =
-        final.kind === "app"
-          ? new FinalApp({ ...fields, kind: "app", identityKind: "tree-manifest" })
-          : final.kind === "dmg"
-            ? new FinalDmg({ ...fields, kind: "dmg", identityKind: "file-bytes" })
-            : new FinalPkg({ ...fields, kind: "pkg", identityKind: "file-bytes" })
-      if (
-        final.assessment.kind !== finalArtifact.kind ||
-        final.assessment.identityKind !== finalArtifact.identityKind ||
-        final.assessment.architecture !== input.architecture ||
-        final.assessment.artifactBytes !== finalArtifact.artifactBytes ||
-        final.assessment.artifactDigest.value !== finalArtifact.artifactDigest.value
-      )
-        return yield* mismatch()
-      const derived = deriveDeliveryFiles ? yield* deriveDeliveryFiles(final) : []
+      const derived = deriveDeliveryFiles ? yield* deriveDeliveryFiles(assessed) : []
       if (derived.some((artifact) => artifact._tag !== "OwnedFile")) return yield* mismatch()
       const outputs = yield* finalize([adopted, ...derived])
       const bytes = encodeBundle(outputs)
       const outputsBundleContent = yield* owner.putOwned(bytes)
+      // Read the outputs back through their recorded identity before evidence names them.
       const stored = yield* readVerifiedContent(owner.read, outputsBundleContent, bytes.length)
       if (!sameBytes(stored, bytes)) return yield* mismatch()
       yield* loadBundle(owner, stored)
@@ -290,10 +176,9 @@ export const finishPrepared = Effect.fn("apple.finishPrepared")(function* <R = n
         decodeOwned(ReadyToPlan, {
           _tag: "ReadyToPlan",
           preparationId,
-          acceptance,
-          outputsBundleContent,
+          assessed,
           finalArtifact,
-          assessment: final.assessment,
+          outputsBundleContent,
         }),
       )
       yield* attempt(() => classifyEvidence(input, preparationId, ready, [submission]))

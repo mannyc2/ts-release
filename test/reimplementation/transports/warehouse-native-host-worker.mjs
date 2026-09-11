@@ -27,15 +27,15 @@ for (const entry of build.files) {
     Schema.decodeUnknownSync(File)({
       _tag: "OwnedFile",
       logicalName: entry.filename,
-      content: new Content({ bytes: String(bytes.length), sha256: entry.sha256 }),
+      content: new Content({ bytes: bytes.length, sha256: entry.sha256 }),
       deliveryMode: 420,
       executable: null,
-      provenance: { _tag: "IntrinsicProvenance", producer: "packed-python-consumer" },
+      producedBy: { name: "packed-python-consumer", version: "fixture" },
     }),
   )
 }
 const access = {
-  bundle: new Bundle({ format: "ts-release/bundle/1", artifacts }),
+  bundle: new Bundle({ format: "ts-release/bundle/2", artifacts }),
   readContent: (content) => Effect.succeed(new Uint8Array(contents.get(content.sha256))),
 }
 const intents = []

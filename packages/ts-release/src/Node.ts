@@ -1,4 +1,3 @@
-export type {} from "./internal/EffectTypes.js"
 export { journalRef, openGitJournal } from "./platform/GitJournal.js"
 export type { GitJournalOptions } from "./platform/GitJournal.js"
 export { makeGitCatalogHost } from "./platform/GitHost.js"
@@ -9,8 +8,6 @@ export {
   makeHttpRead,
   makeCredentialExchange,
 } from "./platform/HttpTransport.js"
-
-export { nodeDirectoryReader } from "./platform/Directory.js"
 
 export { fileContentOwner } from "./platform/ContentStore.js"
 

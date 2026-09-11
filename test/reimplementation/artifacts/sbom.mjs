@@ -3,15 +3,13 @@ import { execFile } from "node:child_process"
 import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { promisify } from "node:util"
-import { Effect, FileSystem, Schema } from "effect"
+import { Effect } from "effect"
 import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as Artifact from "effect-build/Artifact"
-import * as File from "effect-build/Author/File"
-import * as Tree from "effect-build/Author/Tree"
-import * as Sbom from "effect-build-sbom/Generate"
+import * as Sbom from "effect-build-sbom"
 import { adoptFile, adoptTree } from "@mannyc1/ts-release/effect-build"
 import { encodeBundle, finalize, loadBundle } from "@mannyc1/ts-release/bundle"
-import { fileContentOwner, nodeDirectoryReader } from "@mannyc1/ts-release/node"
+import { fileContentOwner } from "@mannyc1/ts-release/node"
 
 const work = await mkdtemp("/tmp/ts-release-producer-sbom-")
 const producer = join(work, "producer"),
@@ -19,9 +17,8 @@ const producer = join(work, "producer"),
 await mkdir(producer)
 await mkdir(delivery)
 const tools = process.env.TS_RELEASE_PRODUCER_TOOLS ?? "/tmp/ts-release-native-producers"
-const node = process.env.TS_RELEASE_HTTP_PEER_NODE
-assert(node, "Explicit native Node bounded directory reader is required")
-const owner = fileContentOwner(join(work, "owned"), nodeDirectoryReader(node))
+const owner = fileContentOwner(join(work, "owned"))
+const producedBy = { name: "effect-build-pinned-sbom-fixture", version: "fixture" }
 const run = (effect) =>
   Effect.runPromise(
     effect.pipe(
@@ -35,70 +32,31 @@ const check = (name, actual, expected) => {
   assert.deepEqual(actual, expected, name)
   checks.push(name)
 }
-const snapshot = await run(
-  Tree.publish(
-    {
-      outdir: join(producer, "subject"),
-      observation: "hashed",
-      provenance: Artifact.intrinsicProvenance("effect-build-pinned-sbom-fixture"),
-    },
-    (candidate) =>
-      Effect.tryPromise(async () => {
-        for (const file of ["package.json", "package-lock.json"])
-          await copyFile(
-            join(import.meta.dirname, "fixtures/sbom-subject", file),
-            join(candidate, file),
-          )
-      }),
-  ),
-)
-const source = await run(adoptTree(owner, "subject", snapshot))
-const lockfile = await run(
-  File.publish(
-    {
-      destination: join(producer, "package-lock.json"),
-      observation: "hashed",
-      provenance: snapshot.provenance,
-    },
-    (candidate) =>
-      Effect.gen(function* () {
-        const fs = yield* FileSystem.FileSystem
-        yield* fs.copyFile(join(snapshot.root, "package-lock.json"), candidate)
-      }),
-  ),
-)
-for (const [name, subject, generate, schema] of [
-  [
-    "directory.spdx.json",
-    new Sbom.DirectorySubject({ snapshot }),
-    Sbom.generateSpdxJson,
-    Sbom.SpdxJsonDocument,
-  ],
-  [
-    "directory.cdx.json",
-    new Sbom.DirectorySubject({ snapshot }),
-    Sbom.generateCycloneDxJson,
-    Sbom.CycloneDxJsonDocument,
-  ],
-  [
-    "file.spdx.json",
-    new Sbom.FileSubject({ artifact: lockfile }),
-    Sbom.generateSpdxJson,
-    Sbom.SpdxJsonDocument,
-  ],
-]) {
-  const native = await run(
-    generate(new Sbom.GenerateInput({ subject, outfile: join(producer, name) })),
+await mkdir(join(producer, "subject"))
+for (const file of ["package.json", "package-lock.json"])
+  await copyFile(
+    join(import.meta.dirname, "fixtures/sbom-subject", file),
+    join(producer, "subject", file),
   )
+await copyFile(join(producer, "subject/package-lock.json"), join(producer, "package-lock.json"))
+const snapshot = await run(Artifact.directory(join(producer, "subject"), producedBy))
+const source = await run(adoptTree(owner, "subject", snapshot))
+const lockfile = await run(Artifact.file(join(producer, "package-lock.json"), producedBy))
+for (const [name, subject, format] of [
+  ["directory.spdx.json", snapshot, "spdx-json"],
+  ["directory.cdx.json", snapshot, "cyclonedx-json"],
+  ["file.spdx.json", lockfile, "spdx-json"],
+]) {
+  const native = await run(Sbom.generate({ subject, format, outfile: join(producer, name) }))
   check(
     `${name} exact Syft version`,
-    native.provenance.participants.map(({ name, version }) => ({ name, version })),
-    [{ name: "syft", version: "1.50.0" }],
+    [native.producedBy.name, native.producedBy.version],
+    ["syft", "1.50.0"],
   )
   const file = await run(adoptFile(owner, name, native))
   const bytes = await run(owner.read(file.content))
   const raw = JSON.parse(new TextDecoder().decode(bytes))
-  const document = Schema.decodeUnknownSync(schema)(raw)
+  const document = raw
   const cdx = name.includes("cdx")
   check(
     `${name} native schema version`,
@@ -197,7 +155,7 @@ await writeFile(
   join(work, "evidence.json"),
   JSON.stringify(
     {
-      format: "ts-release/native-producer-sbom/1",
+      format: "ts-release/native-producer-sbom/2",
       work,
       runtime: process.version,
       bun: process.versions.bun ?? null,

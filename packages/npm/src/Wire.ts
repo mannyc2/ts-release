@@ -88,7 +88,7 @@ export const admitBody = (scope: NativeScope, body: Uint8Array): void => {
   const tarball = Buffer.from(attachment.data, "base64")
   if (
     tarball.toString("base64") !== attachment.data ||
-    String(tarball.length) !== intent.tarball.content.bytes ||
+    tarball.length !== intent.tarball.content.bytes ||
     digest("sha256", tarball) !== intent.tarball.content.sha256
   )
     invalid("tarball-attachment")
@@ -98,7 +98,7 @@ export const admitBody = (scope: NativeScope, body: Uint8Array): void => {
     if (typeof data !== "string") return invalid("provenance-attachment")
     provenance = new TextEncoder().encode(data)
     if (
-      String(provenance.length) !== intent.provenance.bundle.content.bytes ||
+      provenance.length !== intent.provenance.bundle.content.bytes ||
       digest("sha256", provenance) !== intent.provenance.bundle.content.sha256
     )
       invalid("provenance-attachment")

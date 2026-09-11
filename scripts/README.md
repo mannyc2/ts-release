@@ -28,7 +28,7 @@ bun run check:portable
 ```
 
 The catalog fixture installer currently targets Linux x64. `bun run test` resolves
-Node on PATH (or TS_RELEASE_ACCEPTANCE_NODE) and passes its absolute path to
-bounded-directory tests. Use a supported Node version. `check:installed-workflow`
+Node on PATH (or TS_RELEASE_ACCEPTANCE_NODE) and passes its absolute path to the
+tests that run fixtures under both runtimes. Use a supported Node version. `check:installed-workflow`
 exercises real Git publication through both installed entrypoints, including a
 response lost at process interruption and continuation with an empty local cache.

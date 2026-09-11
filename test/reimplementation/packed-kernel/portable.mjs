@@ -28,7 +28,7 @@ try {
     content,
     deliveryMode: 0o644,
     executable: null,
-    provenance: { _tag: "IntrinsicProvenance", producer: "packed-consumer/source-bytes" },
+    producedBy: { name: "packed-consumer/source-bytes", version: "fixture" },
   })
   const bundle = await Effect.runPromise(finalize([file]))
   assert.deepEqual(await Effect.runPromise(loadBundle(owner, encodeBundle(bundle))), bundle)

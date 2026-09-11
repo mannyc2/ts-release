@@ -62,14 +62,14 @@ export async function fixture(count = 3, annotated = false) {
       Schema.decodeUnknownSync(File)({
         _tag: "OwnedFile",
         logicalName: `asset${i}.bin`,
-        content: { bytes: String(value.length), sha256: sha256(value) },
+        content: { bytes: value.length, sha256: sha256(value) },
         deliveryMode: 420,
         executable: null,
-        provenance: { _tag: "IntrinsicProvenance", producer: "github-protocol-fixture" },
+        producedBy: { name: "github-protocol-fixture", version: "fixture" },
       }),
     )
   const access: ArtifactAccess = {
-    bundle: new Bundle({ format: "ts-release/bundle/1", artifacts: files }),
+    bundle: new Bundle({ format: "ts-release/bundle/2", artifacts: files }),
     readContent: (content) =>
       Effect.sync(() =>
         bytes[files.findIndex((file) => file.content.sha256 === content.sha256)]!.slice(),

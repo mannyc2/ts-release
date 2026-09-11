@@ -19,15 +19,15 @@ export const fixture = () => {
       _tag: "OwnedFile",
       logicalName: `tool-${cells[i]}.${i < 4 ? "tar.gz" : "zip"}`,
       content: {
-        bytes: String(value.length),
+        bytes: value.length,
         sha256: createHash("sha256").update(value).digest("hex"),
       },
       deliveryMode: 420,
       executable: null,
-      provenance: { _tag: "IntrinsicProvenance", producer: "catalog-format-fixture" },
+      producedBy: { name: "catalog-format-fixture", version: "fixture" },
     }),
   )
-  const bundle = new Bundle({ format: "ts-release/bundle/1", artifacts: files })
+  const bundle = new Bundle({ format: "ts-release/bundle/2", artifacts: files })
   const archives = Object.fromEntries(
     cells.map((cell, i) => [
       cell,

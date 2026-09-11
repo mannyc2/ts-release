@@ -1,15 +1,15 @@
 import { Effect } from "effect"
-import * as Notary from "effect-build-apple/Notary"
+import * as Apple from "effect-build-apple"
 import { createPreparationScope, loadPlan } from "../Plan.js"
 import { observeRelease, runRelease } from "../Release.js"
 import type { Scope } from "../Journal.js"
-import { Content, type OwnedBundle } from "../internal/ArtifactModel.js"
+import { Content, identityOf, type OwnedBundle } from "../internal/ArtifactModel.js"
 import { loadBundle } from "../internal/BundleCodec.js"
 import { captureContentOwner, readVerifiedContent, type ContentOwner } from "../internal/Content.js"
 import { projectReport } from "../internal/Decision.js"
 import { Host, currentHost, read } from "../internal/Host.js"
 import { ReleaseError, attempt, fail, reject } from "../internal/Error.js"
-import { canonical, decodeOwned, freeze } from "../internal/Identity.js"
+import { canonical, decodeOwned, freeze, sameData } from "../internal/Identity.js"
 import { Plan, type JournalEvent, type RunOptions } from "../internal/ReleaseModel.js"
 import { ApplePreparations, ReadyToPlan, loadApplePreparations } from "./Model.js"
 import type { AppleEvidence } from "./Model.js"
@@ -64,7 +64,7 @@ export const runPreparation = Effect.fn("apple.runPreparation")(function* (
   preparationId: string,
   options: Omit<RunOptions, "plan">,
   complete: (
-    submission: Notary.Submission,
+    submission: Apple.Notary.SubmissionReference,
     preparationId: string,
   ) => Effect.Effect<AppleEvidence, ReleaseError>,
 ) {
@@ -83,7 +83,9 @@ export const runPreparation = Effect.fn("apple.runPreparation")(function* (
   )
   if (!receipt || receipt.body._tag !== "ReceiptAccepted") return
   const body = receipt.body
-  const submission = yield* attempt(() => decodeOwned(Notary.Submission, body.receipt))
+  const submission = yield* attempt(() =>
+    decodeOwned(Apple.Notary.SubmissionReference, body.receipt),
+  )
   const evidence = yield* complete(submission, preparationId)
   const status = yield* attempt(() =>
     classifyEvidence(input, preparationId, evidence, [submission]),
@@ -136,13 +138,8 @@ const validateOutputs = Effect.fn("apple.validateOutputs")(function* (
         artifact = outputs.artifacts.find((item) => item.logicalName === final.logicalName)
       if (
         !artifact ||
-        (artifact._tag === "OwnedTree"
-          ? final.kind !== "app" ||
-            artifact.totalBytes !== final.artifactBytes ||
-            artifact.upstreamManifestSha256 !== final.artifactDigest.value
-          : final.kind === "app" ||
-            artifact.content.bytes !== final.artifactBytes ||
-            artifact.content.sha256 !== final.artifactDigest.value) ||
+        (artifact._tag === "OwnedTree") !== (final.product === "app") ||
+        !sameData(identityOf(artifact), final.identity) ||
         outputs.artifacts.some((item) => item._tag === "OwnedTree" && item !== artifact)
       )
         fail(

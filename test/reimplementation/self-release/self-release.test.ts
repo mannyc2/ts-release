@@ -2,14 +2,11 @@ import { beforeAll, expect, test } from "bun:test"
 import { createHash } from "node:crypto"
 import { chmod, cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join, resolve } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
-import { Effect, FileSystem, Schema } from "effect"
+import { Effect, Schema } from "effect"
 import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as Artifact from "effect-build/Artifact"
-import * as ProducerFile from "effect-build/Author/File"
-import * as ProducerTree from "effect-build/Author/Tree"
-import type * as Producer from "effect-build/Artifact"
 import { ReleaseError, createPlan, type Operation } from "@mannyc1/ts-release"
 import * as Git from "@mannyc1/ts-release/git"
 import {
@@ -22,7 +19,7 @@ import {
   type ReadContent,
 } from "@mannyc1/ts-release/bundle"
 import { adoptFile, adoptTree } from "@mannyc1/ts-release/effect-build"
-import { fileContentOwner, makeGitCatalogHost, nodeDirectoryReader } from "@mannyc1/ts-release/node"
+import { fileContentOwner, makeGitCatalogHost } from "@mannyc1/ts-release/node"
 import * as Npm from "@mannyc1/ts-release-npm"
 import * as PyPi from "@mannyc1/ts-release-pypi"
 import * as GitHub from "@mannyc1/ts-release-github"
@@ -41,6 +38,7 @@ const node =
 const cli = join(root, "packages/ts-release/dist/bin/ts-release.js")
 const application = join(root, "apps/self-release/dist/application.js")
 const packageOwners = ["ts-release", "catalog", "github", "mcp", "npm", "openai", "pypi"]
+const producedBy = { name: "ts-release/self-release-input", version: "fixture" }
 const sha256 = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex")
 const runNode = <A, E, R>(effect: Effect.Effect<A, E, R>): Promise<A> =>
   Effect.runPromise(effect.pipe(Effect.provide(NodeServices.layer)) as Effect.Effect<A, E, never>)
@@ -89,7 +87,7 @@ test("real producers assemble one non-mutating seven-package self-release plan",
   const packs = join(work, "packs")
   await mkdir(producerDirectory)
   await mkdir(packs)
-  const owner = fileContentOwner(contentDirectory, nodeDirectoryReader(node))
+  const owner = fileContentOwner(contentDirectory)
   const contentFailure = () =>
     new ReleaseError({
       code: "self-release-content",
@@ -101,21 +99,14 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     owner.putOwned(bytes).pipe(Effect.mapError(contentFailure))
   const producers: Array<{
     logicalName: string
-    artifact: Producer.HashedFile | Producer.HashedExecutable
+    artifact: Artifact.Regular
   }> = []
   const owned: OwnedArtifact[] = []
   const publishFile = async (logicalName: string, bytes: Uint8Array) => {
-    const artifact = await runNode(
-      ProducerFile.publish(
-        {
-          destination: join(producerDirectory, logicalName),
-          observation: "hashed",
-          provenance: Artifact.intrinsicProvenance("ts-release/self-release-input"),
-        },
-        (candidate) =>
-          Effect.flatMap(FileSystem.FileSystem, (fs) => fs.writeFile(candidate, bytes)),
-      ),
-    )
+    const path = join(producerDirectory, logicalName)
+    await mkdir(dirname(path), { recursive: true })
+    await writeFile(path, bytes)
+    const artifact = await runNode(Artifact.file(path, producedBy))
     producers.push({ logicalName, artifact })
     const file = await runNode(adoptFile(owner, logicalName, artifact))
     owned.push(file)
@@ -158,29 +149,19 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     ),
   )
 
-  const producedTree = await runNode(
-    ProducerTree.publish(
-      {
-        outdir: join(producerDirectory, "ts-release-openai"),
-        observation: "hashed",
-        provenance: Artifact.intrinsicProvenance("ts-release/agent-source"),
-      },
-      (candidate) =>
-        Effect.tryPromise(async () => {
-          await cp(
-            join(root, "apps/ts-release-agents/.codex-plugin"),
-            join(candidate, ".codex-plugin"),
-            {
-              recursive: true,
-            },
-          )
-          await cp(join(root, "apps/ts-release-agents/skills"), join(candidate, "skills"), {
-            recursive: true,
-          })
-          await normalizeTreeModes(candidate)
-        }),
-    ),
+  const pluginDirectory = join(producerDirectory, "ts-release-openai")
+  await cp(
+    join(root, "apps/ts-release-agents/.codex-plugin"),
+    join(pluginDirectory, ".codex-plugin"),
+    {
+      recursive: true,
+    },
   )
+  await cp(join(root, "apps/ts-release-agents/skills"), join(pluginDirectory, "skills"), {
+    recursive: true,
+  })
+  await normalizeTreeModes(pluginDirectory)
+  const producedTree = await runNode(Artifact.directory(pluginDirectory, producedBy))
   const plugin = await runNode(adoptTree(owner, "ts-release-openai", producedTree))
   owned.push(plugin)
 

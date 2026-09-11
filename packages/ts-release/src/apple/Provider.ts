@@ -1,59 +1,48 @@
 import { Effect, Schema } from "effect"
-import * as Notary from "effect-build-apple/Notary"
+import * as Apple from "effect-build-apple"
 import { PROVIDER_CONTRACT, makeRequest, type ProviderDefinition } from "../Provider.js"
 import { NoReplay, type RequestFacts } from "../internal/ReleaseModel.js"
 import { attempt, fail, reject } from "../internal/Error.js"
-import { canonical, decodeOwned } from "../internal/Identity.js"
-import { AppleEvidence, ApplePreparation } from "./Model.js"
+import { canonical, decodeOwned, sameData } from "../internal/Identity.js"
+import { AppleEvidence, ApplePreparation, PREPARATION_FORMAT } from "./Model.js"
+import { productOf, sourceIdentity } from "./Model.js"
 
-export const sourceCorresponds = (input: ApplePreparation, result: Notary.SubmissionReference) => {
-  const target = result.stapleTarget
-  if (!target || result.architecture !== input.architecture) return false
-  if (input._tag === "AppPreparation")
-    return (
-      result.kind === "zip" &&
-      target.kind === "app" &&
-      target.identityKind === "tree-manifest" &&
-      target.bundleName === input.bundleName &&
-      target.artifactBytes === input.source.totalBytes &&
-      target.artifactDigest.value === input.source.upstreamManifestSha256 &&
-      result.transportTool?.name === "ditto"
-    )
-  const kind = input._tag === "DmgPreparation" ? "dmg" : "pkg"
+/** Apps upload as ZIP archives; disk images and installers upload as themselves. */
+const submissionKind = (input: ApplePreparation): Apple.Notary.SubmissionKind =>
+  input._tag === "AppPreparation" ? "zip" : input._tag === "DmgPreparation" ? "dmg" : "pkg"
+/** A notarization reference names exactly this preparation's signed source. */
+export const sourceCorresponds = (
+  input: ApplePreparation,
+  reference: Apple.Notary.SubmissionReference,
+): boolean => {
+  const artifact = reference.artifact
+  if (!("product" in artifact)) return false
+  const identity = sourceIdentity(input)
   return (
-    result.kind === kind &&
-    target.kind === kind &&
-    target.identityKind === "file-bytes" &&
-    target.artifactBytes === input.source.content.bytes &&
-    target.artifactDigest.value === input.source.content.sha256 &&
-    result.artifactBytes === input.source.content.bytes &&
-    result.artifactDigest.value === input.source.content.sha256 &&
-    target.bundleName === undefined &&
-    result.transportTool === undefined
+    reference.kind === submissionKind(input) &&
+    artifact.product === productOf(input) &&
+    artifact.bytes === identity.bytes &&
+    artifact.sha256 === identity.sha256 &&
+    sameData(artifact.signature, input.signature) &&
+    (input._tag !== "AppPreparation" || artifact.path.split("/").at(-1) === input.bundleName)
   )
 }
-const endpoint = (input: ApplePreparation) =>
-  input._tag === "AppPreparation"
-    ? "effect-build-apple/Notary.submitApp"
-    : "effect-build-apple/Notary.submit"
+const ENDPOINT = "effect-build-apple/Notary.submit"
 const requestCorresponds = (input: ApplePreparation, request: RequestFacts) =>
   request.transport === "opaque/1" &&
-  request.endpoint === endpoint(input) &&
+  request.endpoint === ENDPOINT &&
   request.method === "invoke" &&
   request.principal === input.principal &&
   request.scope === input.credentialRef &&
   request.headers.length === 0 &&
   request.replay._tag === "None"
-const reference = (value: Notary.SubmissionReference) => ({
-  submissionId: value.submissionId,
-  kind: value.kind,
-  architecture: value.architecture,
-  artifactBytes: value.artifactBytes,
-  artifactDigest: value.artifactDigest,
-  submissionTool: value.submissionTool,
-  ...(value.stapleTarget && { stapleTarget: value.stapleTarget }),
-  ...(value.transportTool && { transportTool: value.transportTool }),
-})
+/** A lookup has its own tool metadata; only the submission and signed source
+ * identify the notarization that was recorded by the original runner. */
+const submissionIdentity = ({
+  submissionId,
+  kind,
+  artifact,
+}: Apple.Notary.SubmissionReference) => ({ submissionId, kind, artifact })
 export const classifyEvidence = (
   input: ApplePreparation,
   operationId: string,
@@ -61,77 +50,65 @@ export const classifyEvidence = (
   receipts: readonly unknown[],
 ) => {
   const evidence = decodeOwned(AppleEvidence, value)
-  const correlated = "_tag" in evidence ? evidence.acceptance : evidence
-  if (
-    !sourceCorresponds(input, correlated) ||
-    !receipts.some((value) => {
-      const receipt = decodeOwned(Notary.Submission, value)
-      return (
-        sourceCorresponds(input, receipt) &&
-        canonical(reference(receipt)) === canonical(reference(correlated))
-      )
-    })
-  )
+  const correlated = "_tag" in evidence ? evidence.assessed.ticket : evidence
+  const recorded = receipts.some((receipt) => {
+    const submission = decodeOwned(Apple.Notary.SubmissionReference, receipt)
+    return (
+      sourceCorresponds(input, submission) &&
+      sameData(submissionIdentity(submission), submissionIdentity(correlated))
+    )
+  })
+  if (!sourceCorresponds(input, correlated) || !recorded)
     fail(
       "apple-correlation",
       "Apple observation has no matching recorded submission for this source",
     )
   if (!("_tag" in evidence))
     return evidence.status._tag === "Rejected" ? ("Conflict" as const) : ("Pending" as const)
-  const final = evidence.finalArtifact,
-    assessment = evidence.assessment
-  const kind =
-    input._tag === "AppPreparation" ? "app" : input._tag === "DmgPreparation" ? "dmg" : "pkg"
+  const product = productOf(input)
+  const { assessed, finalArtifact } = evidence
   if (
     evidence.preparationId !== operationId ||
-    final.logicalName !== input.artifactName ||
-    final.kind !== kind ||
-    assessment.kind !== kind ||
-    assessment.architecture !== input.architecture ||
-    assessment.identityKind !== final.identityKind ||
-    assessment.artifactBytes !== final.artifactBytes ||
-    assessment.artifactDigest.value !== final.artifactDigest.value ||
-    assessment.gatekeeper.name !== "spctl" ||
-    assessment.structuralVerifier.name !== (kind === "pkg" ? "pkgutil" : "codesign")
+    finalArtifact.logicalName !== input.artifactName ||
+    finalArtifact.product !== product ||
+    assessed.product !== product ||
+    assessed.bytes !== finalArtifact.identity.bytes ||
+    assessed.sha256 !== finalArtifact.identity.sha256 ||
+    !sameData(assessed.signature, input.signature)
   )
-    fail(
-      "apple-assessment",
-      "Selected final artifact does not match its native Gatekeeper assessment",
-    )
+    fail("apple-assessment", "Selected final artifact does not match its assessed stapled product")
   return "Satisfied" as const
 }
 
 export const preparationProvider: ProviderDefinition = Object.freeze<ProviderDefinition>({
   contract: PROVIDER_CONTRACT,
   definitionId: "effect-build-apple.prepare",
-  intentVersion: "ts-release/apple-preparation/1",
+  intentVersion: PREPARATION_FORMAT,
   intentCodec: ApplePreparation,
-  receiptVersion: "effect-build-apple/Submission/0.6.3",
-  receiptCodec: Notary.Submission,
+  receiptVersion: "effect-build-apple/Notary.SubmissionReference/0.7.0",
+  receiptCodec: Apple.Notary.SubmissionReference,
   requestCorresponds: (operation, request) =>
     requestCorresponds(decodeOwned(ApplePreparation, operation.intent), request),
   receiptCorresponds: (operation, request, value) => {
     const input = decodeOwned(ApplePreparation, operation.intent),
-      receipt = decodeOwned(Notary.Submission, value)
+      receipt = decodeOwned(Apple.Notary.SubmissionReference, value)
     return requestCorresponds(input, request) && sourceCorresponds(input, receipt)
   },
   classifyReceipt: () => "Pending",
+  // notarytool may have uploaded before its response became unreadable; that
+  // submission is then remembered as an unresolved dispatch, never resent.
   dispatchError: {
-    version: "effect-build-apple/SubmissionOutcomeUnknown/0.6.3",
-    codec: Notary.SubmissionOutcomeUnknown,
+    version: "effect-build-apple/Notary.ResponseInvalid/0.7.0",
+    codec: Apple.Notary.ResponseInvalid,
     corresponds: (operation, request, value) => {
-      const input = decodeOwned(ApplePreparation, operation.intent),
-        native = Schema.is(Notary.SubmissionOutcomeUnknown)(value)
-          ? value
-          : decodeOwned(Notary.SubmissionOutcomeUnknown, value)
-      return (
-        requestCorresponds(input, request) &&
-        /^[0-9a-f]{64}$/u.test(native.artifactDigest) &&
-        (input._tag === "AppPreparation" || native.artifactDigest === input.source.content.sha256)
-      )
+      const input = decodeOwned(ApplePreparation, operation.intent)
+      const native = Schema.is(Apple.Notary.ResponseInvalid)(value)
+        ? value
+        : decodeOwned(Apple.Notary.ResponseInvalid, value)
+      return requestCorresponds(input, request) && native.operation === "submit"
     },
   },
-  observationVersion: "ts-release/apple-evidence/1",
+  observationVersion: "ts-release/apple-evidence/2",
   observationCodec: AppleEvidence,
   classifyObservation: (operation, evidence, receipts) =>
     classifyEvidence(
@@ -146,7 +123,7 @@ export const preparationProvider: ProviderDefinition = Object.freeze<ProviderDef
     const input = yield* attempt(() => decodeOwned(ApplePreparation, operation.intent))
     return yield* makeRequest({
       transport: "opaque/1",
-      endpoint: endpoint(input),
+      endpoint: ENDPOINT,
       method: "invoke",
       headers: [],
       body: new TextEncoder().encode(canonical(input)),

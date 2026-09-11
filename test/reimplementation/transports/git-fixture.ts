@@ -69,7 +69,7 @@ export const contentFixture = () => {
     const bytes =
       typeof input === "string" ? new TextEncoder().encode(input) : new Uint8Array(input)
     const content = new Content({
-      bytes: String(bytes.length),
+      bytes: bytes.length,
       sha256: createHash("sha256").update(bytes).digest("hex"),
     })
     stored.set(content.sha256, bytes)

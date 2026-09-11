@@ -55,14 +55,14 @@
     }
   },
   "dependencies": {
-    "effect-build": "0.6.3",
+    "effect-build": "0.7.0",
     "undici": "8.10.1"
   },
   "peerDependencies": {
-    "effect": ">=4.0.0-beta.107 <4.0.0-beta.108",
-    "@effect/platform-node": ">=4.0.0-beta.107 <4.0.0-beta.108",
-    "@effect/platform-bun": ">=4.0.0-beta.107 <4.0.0-beta.108",
-    "effect-build-apple": "0.6.3"
+    "effect": ">=4.0.0-rc.108 <4.1.0-0",
+    "@effect/platform-node": ">=4.0.0-rc.108 <4.1.0-0",
+    "@effect/platform-bun": ">=4.0.0-rc.108 <4.1.0-0",
+    "effect-build-apple": "0.7.0"
   },
   "peerDependenciesMeta": {
     "@effect/platform-node": {

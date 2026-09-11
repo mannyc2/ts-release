@@ -4,7 +4,6 @@ import { mkdtemp, mkdir, readdir, rm } from "node:fs/promises"
 import { join } from "node:path"
 import { Effect, Schema } from "effect"
 import * as BunServices from "@effect/platform-bun/BunServices"
-import * as Notary from "effect-build-apple/Notary"
 import {
   Host,
   ReleaseError,
@@ -35,6 +34,7 @@ import {
   reportAppleContext,
 } from "../../../packages/ts-release/src/Apple.js"
 import { appleDoubles, makeSources, run } from "./apple-fixtures.js"
+import { classifyEvidence } from "../../../packages/ts-release/src/apple/Provider.js"
 
 const fixture = async (
   body: (root: string, sources: Awaited<ReturnType<typeof makeSources>>) => Promise<void>,
@@ -49,6 +49,50 @@ const fixture = async (
 }
 const boundaryError = () =>
   new ReleaseError({ code: "fixture-apple", message: "Apple protocol fixture failed" })
+
+test("Apple recovery accepts a different lookup tool while preserving submission and source binding", () =>
+  fixture(async (root, { owner, collection }) => {
+    const input = collection.preparations[1]!
+    const original = appleDoubles()
+    const submitted = await run(
+      submitPrepared(input, owner, join(root, "work")).pipe(Effect.provide(original.layer)),
+    )
+    // Real Notary.info records the current runner's tool, not the submitter's.
+    const lookupProducer = {
+      name: "xcrun",
+      version: "71.0.0",
+      path: "/different-runner/bin/xcrun",
+      sha256: "f".repeat(64),
+    }
+    const resumed = appleDoubles(lookupProducer)
+    const pending = await run(
+      finishPrepared(input, submitted, "operation", owner, join(root, "work")).pipe(
+        Effect.provide(resumed.layer),
+      ),
+    )
+    if ("_tag" in pending) throw new Error("Expected a pending notarization")
+    expect(pending.producedBy).toEqual(lookupProducer)
+    expect(classifyEvidence(input, "operation", pending, [submitted])).toBe("Pending")
+    for (const changed of [
+      { ...pending, submissionId: randomUUID() },
+      { ...pending, artifact: { ...pending.artifact, sha256: "e".repeat(64) } },
+    ])
+      expect(() => classifyEvidence(input, "operation", changed, [submitted])).toThrow(
+        "no matching recorded submission",
+      )
+    resumed.status({ _tag: "Accepted", providerStatus: "Accepted" })
+    const ready = await run(
+      finishPrepared(input, submitted, "operation", owner, join(root, "work")).pipe(
+        Effect.provide(resumed.layer),
+      ),
+    )
+    expect(ready).toBeInstanceOf(ReadyToPlan)
+    if (!(ready instanceof ReadyToPlan)) throw new Error("Expected completed preparation")
+    expect(ready.assessed.ticket.producedBy).toEqual(lookupProducer)
+    expect(classifyEvidence(input, "operation", ready, [submitted])).toBe("Satisfied")
+    expect(original.calls.submit).toBe(1)
+    expect(resumed.calls).toEqual({ submit: 0, info: 2, staple: 1, assess: 1 })
+  }))
 
 test(
   "Apple collection identity owns six exact native inputs and rejects changed roots or caller identities",
@@ -98,7 +142,7 @@ test("readonly nested app directories are removed after submit and final adoptio
     const { owner, collection } = await makeSources(root, true)
     const input = collection.preparations[0]!
     if (input._tag !== "AppPreparation") throw new Error("Expected app fixture")
-    expect(input.source.entries.find((entry) => entry.relativePath === "Contents")).toMatchObject({
+    expect(input.source.entries.find((entry) => entry.path === "Contents")).toMatchObject({
       mode: 0o555,
     })
     const doubles = appleDoubles()
@@ -107,7 +151,7 @@ test("readonly nested app directories are removed after submit and final adoptio
     )
     expect(submitted.submissionId).toMatch(/^[0-9a-f-]{36}$/u)
     expect(await readdir(join(root, "work"))).toEqual([])
-    doubles.status(new Notary.Accepted({ providerStatus: "Accepted" }))
+    doubles.status({ _tag: "Accepted", providerStatus: "Accepted" })
     const ready = await run(
       finishPrepared(input, submitted, "prepared-op", owner, join(root, "work")).pipe(
         Effect.provide(doubles.layer),
@@ -135,7 +179,7 @@ test(
         publication?: { plan: Plan; finalBundleContent: Content },
       ) => {
         const doubles = appleDoubles()
-        if (accepted) doubles.status(new Notary.Accepted({ providerStatus: "Accepted" }))
+        if (accepted) doubles.status({ _tag: "Accepted", providerStatus: "Accepted" })
         counters.push(doubles.calls)
         return await run(
           Effect.scoped(
@@ -254,7 +298,7 @@ test(
       expect(prepared).toBe(6)
       expect(await readdir(join(root, "work"))).toEqual([])
       for (const item of ready)
-        expect(item.assessment.artifactDigest.value).toBe(item.finalArtifact.artifactDigest.value)
+        expect(item.assessed.sha256).toBe(item.finalArtifact.identity.sha256)
     }),
   30_000,
 )

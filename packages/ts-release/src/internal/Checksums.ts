@@ -1,6 +1,5 @@
 import { Effect, Schema } from "effect"
-import * as Artifact from "effect-build/Artifact"
-import { OwnedBundle, OwnedFile } from "./ArtifactModel.js"
+import { LogicalName, OwnedBundle, OwnedFile } from "./ArtifactModel.js"
 import type { ContentOwner } from "./Content.js"
 import { attempt, fail, reject } from "./Error.js"
 import { canonical, compareText, decodeOwned } from "./Identity.js"
@@ -8,9 +7,8 @@ import { canonical, compareText, decodeOwned } from "./Identity.js"
 export type ChecksumInput = Readonly<{ publicName: string; file: OwnedFile }>
 const Input = Schema.Struct({ publicName: Schema.String, file: OwnedFile })
 const safeName = (name: string) => {
-  Schema.decodeUnknownSync(Artifact.PortableRelativePath)(name)
-  if ([...name].length > 1024 || /[\u0000-\u001f\u007f]/u.test(name))
-    fail("checksum-name", "Checksum names must be bounded portable text without controls")
+  if (!Schema.is(LogicalName)(name))
+    fail("checksum-name", "Checksum names must be portable relative paths without controls")
   if (name.split("/").at(-1)!.toLowerCase() === "sha256sums")
     fail("checksum-self", "A checksum cannot include itself")
   return name

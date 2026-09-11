@@ -88,7 +88,10 @@ const PositionalCodec = PositionalArgument.check(validInput).check(
   ),
 )
 export type Argument = PositionalArgument | NamedArgument
-export const Argument: Schema.Codec<Argument, unknown> = Schema.Union([PositionalCodec, NamedArgument.check(validInput)])
+export const Argument: Schema.Codec<Argument, unknown> = Schema.Union([
+  PositionalCodec,
+  NamedArgument.check(validInput),
+])
 
 export class Stdio extends Schema.Class<Stdio>("Mcp.Stdio")({ type: Schema.Literal("stdio") }) {}
 const networkTransport = {
@@ -104,7 +107,11 @@ export class Sse extends Schema.Class<Sse>("Mcp.Sse")({
   ...networkTransport,
 }) {}
 export type Transport = Stdio | StreamableHttp | Sse
-export const Transport: Schema.Codec<Transport, unknown> = Schema.Union([Stdio, StreamableHttp, Sse])
+export const Transport: Schema.Codec<Transport, unknown> = Schema.Union([
+  Stdio,
+  StreamableHttp,
+  Sse,
+])
 
 export class RemoteHttp extends StreamableHttp.extend<RemoteHttp>("Mcp.RemoteHttp")({
   variables,
@@ -274,7 +281,9 @@ const manifestIssue = (manifest: Manifest): string | undefined => {
     return "MCP publisher metadata exceeds 4096 bytes"
   return containsSecret(canonical(manifest)) ? "MCP data contains token-shaped text" : undefined
 }
-export const ManifestCodec: Schema.Codec<Manifest, unknown> = Manifest.check(Schema.makeFilter(manifestIssue))
+export const ManifestCodec: Schema.Codec<Manifest, unknown> = Manifest.check(
+  Schema.makeFilter(manifestIssue),
+)
 
 const Namespace = Schema.String.check(
   valid((value: string) => /^[a-z0-9]+(?:[.-][a-z0-9]+)+$/u.test(value)),
@@ -305,7 +314,10 @@ export class OidcAuthorization extends Schema.TaggedClass<OidcAuthorization>()(
   },
 ) {}
 export type Authorization = TokenAuthorization | OidcAuthorization
-export const Authorization: Schema.Codec<Authorization, unknown> = Schema.Union([TokenAuthorization, OidcAuthorization])
+export const Authorization: Schema.Codec<Authorization, unknown> = Schema.Union([
+  TokenAuthorization,
+  OidcAuthorization,
+])
 export class PublishIntent extends Schema.Class<PublishIntent>("Mcp.PublishIntent")({
   registry: Schema.Literals([
     "https://registry.modelcontextprotocol.io",

@@ -38,13 +38,13 @@ test("renderers refuse absent, substituted or ambiguously named owned files and 
   for (const artifacts of [[], f.files.slice(1), [...f.files, f.files[0]!]])
     await expect(
       Effect.runPromise(
-        Homebrew.render(f.formula, new Bundle({ format: "ts-release/bundle/1", artifacts })),
+        Homebrew.render(f.formula, new Bundle({ format: "ts-release/bundle/2", artifacts })),
       ),
     ).rejects.toThrow("could not be admitted")
   for (const change of [
     { content: { ...f.files[0]!.content, sha256: "0".repeat(64) } },
     { deliveryMode: 493 },
-    { provenance: { _tag: "IntrinsicProvenance", producer: "other" } },
+    { producedBy: { name: "other", version: "fixture" } },
   ]) {
     const changed = Schema.decodeUnknownSync(File)({ ...f.files[0]!, ...change })
     await expect(

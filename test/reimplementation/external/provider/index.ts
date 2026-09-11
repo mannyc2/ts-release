@@ -84,7 +84,7 @@ const requestMatches = (input: Intent, request: PreparedRequest["facts"]): boole
   request.principal === input.account &&
   request.scope === input.key &&
   request.bodyDigest === input.payload.artifact.content.sha256 &&
-  request.byteLength === input.payload.artifact.content.bytes &&
+  request.byteLength === String(input.payload.artifact.content.bytes) &&
   request.method === "POST" &&
   request.transport === (input._tag === "Upload" ? "core.http/1" : "opaque/1") &&
   request.replay._tag === "None" &&

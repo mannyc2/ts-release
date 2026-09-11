@@ -49,7 +49,7 @@ try {
     const put = (input) => {
       const owned = new Uint8Array(input),
         content = new Content({
-          bytes: String(owned.length),
+          bytes: owned.length,
           sha256: createHash("sha256").update(owned).digest("hex"),
         })
       bytes.set(content.sha256, owned)

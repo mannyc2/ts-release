@@ -14,9 +14,7 @@ export const Text = Schema.String.check(
       ),
   ),
 )
-export const Url = Text.check(
-  Schema.makeFilter((value) => publicUrl(value)?.href === value),
-)
+export const Url = Text.check(Schema.makeFilter((value) => publicUrl(value)?.href === value))
 export const Executable = Text.check(
   Schema.makeFilter(
     (value) =>

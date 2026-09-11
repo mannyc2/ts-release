@@ -19,15 +19,15 @@ for (const entry of build.files) {
     Schema.decodeUnknownSync(File)({
       _tag: "OwnedFile",
       logicalName: entry.filename,
-      content: new Content({ bytes: String(bytes.length), sha256: entry.sha256 }),
+      content: new Content({ bytes: bytes.length, sha256: entry.sha256 }),
       deliveryMode: 420,
       executable: null,
-      provenance: { _tag: "IntrinsicProvenance", producer: "packed-python-consumer" },
+      producedBy: { name: "packed-python-consumer", version: "fixture" },
     }),
   )
 }
 const access = {
-  bundle: new Bundle({ format: "ts-release/bundle/1", artifacts }),
+  bundle: new Bundle({ format: "ts-release/bundle/2", artifacts }),
   readContent: (content) => Effect.succeed(new Uint8Array(contents.get(content.sha256))),
 }
 const intents = []
@@ -150,10 +150,10 @@ for (const row of oracle.cases) {
   const file = Schema.decodeUnknownSync(File)({
     ...artifacts[0],
     logicalName: oracle.filename,
-    content: new Content({ bytes: String(bytes.length), sha256: row.sha256 }),
+    content: new Content({ bytes: bytes.length, sha256: row.sha256 }),
   })
   const effect = PyPi.inspectDistribution(file, oracle.filename, {
-    bundle: new Bundle({ format: "ts-release/bundle/1", artifacts: [file] }),
+    bundle: new Bundle({ format: "ts-release/bundle/2", artifacts: [file] }),
     readContent: () => Effect.succeed(bytes),
   })
   if (row.accepted) await Effect.runPromise(effect)

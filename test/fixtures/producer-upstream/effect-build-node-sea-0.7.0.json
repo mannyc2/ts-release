@@ -3,35 +3,34 @@
     "url": "https://github.com/mannyc2/effect-build/issues"
   },
   "dist": {
-    "shasum": "2060d4baaace04b0ff2cc63b505709de83eb930e",
-    "tarball": "https://registry.npmjs.org/effect-build-nfpm/-/effect-build-nfpm-0.6.3.tgz",
-    "fileCount": 19,
-    "integrity": "sha512-q65C+VFpn/afVuIh7xaIXQipn9vkcc6hnbA3xzMg0Ru74F3cpN+XrxLSNXwvK9YFhWL4n9hMO1C0Zs4/90Mk4A==",
+    "shasum": "5f745adef6ed06ba3b0091f62b26c334d1bd03bd",
+    "tarball": "https://registry.npmjs.org/effect-build-node-sea/-/effect-build-node-sea-0.7.0.tgz",
+    "fileCount": 14,
+    "integrity": "sha512-gkyCwORw/QL/EaSTPTxvT5EOh8zOlSsExIxisYbDpNnGFLkQ+L4LJPHQsozaK5pI2bBBYFsrGf+JqrEajrp93Q==",
     "signatures": [
       {
-        "sig": "MEQCIAhAuhZ1A7X+dRpgc/CkI6KqpibUuVlhvXRB41VsV8cEAiBHMC3S34a43PmgkjdEblCfGTf2fbwnqxYQggMrs97PtQ==",
+        "sig": "MEUCIQCumrFKi5U6Vn/dw0UJNZhEN+ZTi+s94EqeJAsGA8WVmwIgZ7mr2mLpIb52TsIXXSowUQJu0cQ+VJ7/UfhD2E34ftI=",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       }
     ],
     "attestations": {
-      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-nfpm@0.6.3",
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-node-sea@0.7.0",
       "provenance": {
         "predicateType": "https://slsa.dev/provenance/v1"
       }
     },
-    "unpackedSize": 64088
+    "unpackedSize": 38786
   },
-  "name": "effect-build-nfpm",
+  "name": "effect-build-node-sea",
   "type": "module",
-  "_from": "file:/home/runner/work/_temp/npm-release-candidate/effect-build-nfpm-0.6.3.tgz",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-node-sea-0.7.0.tgz",
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./Package": {
-      "types": "./dist/Package.d.ts",
-      "import": "./dist/Package.js"
     }
   },
   "license": "MIT",
@@ -44,28 +43,25 @@
     "email": "npm-oidc-no-reply@github.com",
     "trustedPublisher": {
       "id": "github",
-      "oidcConfigId": "oidc:4d84cd71-ccc1-44b6-a2dd-0d8d06d0d845"
+      "oidcConfigId": "oidc:48550345-c34f-4d80-aaff-114a6276debe"
     }
   },
   "homepage": "https://github.com/mannyc2/effect-build#readme",
   "keywords": [
     "effect",
-    "nfpm",
-    "deb",
-    "rpm",
-    "apk",
-    "archlinux",
-    "msix"
+    "node",
+    "sea",
+    "executable"
   ],
-  "_resolved": "/home/runner/work/_temp/npm-release-candidate/effect-build-nfpm-0.6.3.tgz",
-  "_integrity": "sha512-q65C+VFpn/afVuIh7xaIXQipn9vkcc6hnbA3xzMg0Ru74F3cpN+XrxLSNXwvK9YFhWL4n9hMO1C0Zs4/90Mk4A==",
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-node-sea-0.7.0.tgz",
+  "_integrity": "sha512-gkyCwORw/QL/EaSTPTxvT5EOh8zOlSsExIxisYbDpNnGFLkQ+L4LJPHQsozaK5pI2bBBYFsrGf+JqrEajrp93Q==",
   "repository": {
     "url": "git+https://github.com/mannyc2/effect-build.git",
     "type": "git",
-    "directory": "packages/effect-build-nfpm"
+    "directory": "packages/effect-build-node-sea"
   },
   "_npmVersion": "11.11.0",
-  "description": "Effect-native nFPM system and MSIX package production.",
+  "description": "Package CommonJS scripts and assets as Node single executable applications.",
   "directories": {},
   "maintainers": [
     {
@@ -76,7 +72,8 @@
   "sideEffects": false,
   "_nodeVersion": "24.14.1",
   "dependencies": {
-    "effect-build": "^0.6.3"
+    "postject": "1.0.0-alpha.6",
+    "effect-build": "^0.7.0"
   },
   "publishConfig": {
     "access": "public",
@@ -87,12 +84,12 @@
     "effect": "4.0.0-rc.108"
   },
   "peerDependencies": {
-    "effect": ">=4.0.0-beta.104 <4.1.0-0"
+    "effect": ">=4.0.0-rc.108 <4.1.0-0"
   },
   "_npmOperationalInternal": {
-    "tmp": "tmp/effect-build-nfpm_0.6.3_1788644996414_0.2954058356549396",
+    "tmp": "tmp/effect-build-node-sea_0.7.0_1789091845415_0.16080745184362133",
     "host": "s3://npm-registry-packages-npm-production"
   },
-  "_id": "effect-build-nfpm@0.6.3",
-  "version": "0.6.3"
+  "_id": "effect-build-node-sea@0.7.0",
+  "version": "0.7.0"
 }

@@ -12,7 +12,7 @@ const repository = new GitHub.Repository({
 })
 const bytes = new TextEncoder().encode("fresh packed consumer bytes"),
   content = {
-    bytes: String(bytes.length),
+    bytes: bytes.length,
     sha256: createHash("sha256").update(bytes).digest("hex"),
   }
 const files = Array.from({ length: 3 }, (_, i) =>
@@ -22,13 +22,13 @@ const files = Array.from({ length: 3 }, (_, i) =>
     content,
     deliveryMode: 420,
     executable: null,
-    provenance: { _tag: "IntrinsicProvenance", producer: "packed-consumer" },
+    producedBy: { name: "packed-consumer", version: "fixture" },
   }),
 )
 let reads = 0,
   credentials = 0
 const providers = GitHub.definitions({
-  bundle: new Bundle({ format: "ts-release/bundle/1", artifacts: files }),
+  bundle: new Bundle({ format: "ts-release/bundle/2", artifacts: files }),
   readContent: () => Effect.succeed(bytes.slice()),
   read: () =>
     Effect.sync(() => {
@@ -87,22 +87,20 @@ for (const annotated of [false, true])
       ),
     )
     const assets = await Promise.all(
-      files
-        .slice(0, count)
-        .map((file) =>
-          Effect.runPromise(
-            GitHub.uploadAsset(
-              new GitHub.AssetIntent({
-                repository,
-                principal: common.principal,
-                draftOperation: draft.operationId,
-                file,
-                publicName: file.logicalName,
-                mediaType: "application/octet-stream",
-              }),
-            ),
+      files.slice(0, count).map((file) =>
+        Effect.runPromise(
+          GitHub.uploadAsset(
+            new GitHub.AssetIntent({
+              repository,
+              principal: common.principal,
+              draftOperation: draft.operationId,
+              file,
+              publicName: file.logicalName,
+              mediaType: "application/octet-stream",
+            }),
           ),
         ),
+      ),
     )
     const publish = await Effect.runPromise(
       GitHub.publish(

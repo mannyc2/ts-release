@@ -3,39 +3,34 @@
     "url": "https://github.com/mannyc2/effect-build/issues"
   },
   "dist": {
-    "shasum": "84f8daf88b31a06bd0493534ac3266581d126db4",
-    "tarball": "https://registry.npmjs.org/effect-build-esbuild/-/effect-build-esbuild-0.6.3.tgz",
-    "fileCount": 79,
-    "integrity": "sha512-IMFmYIPxuiU8aI4caaRhOn13S42KW3yASzjTArTIvtHcM9nZFzuw8fQzavBn4Y99Wk4AaPAMnc5ZjMVyrxCw8g==",
+    "shasum": "97f03054ef39ef81c05af0017a40e938e069f6ef",
+    "tarball": "https://registry.npmjs.org/effect-build-esbuild/-/effect-build-esbuild-0.7.0.tgz",
+    "fileCount": 13,
+    "integrity": "sha512-O3OhkA0bXWkD3BjI6IzOyhEcE0WTGO/D6W49hV1eGQBRxlq2RmCmFWiK3duN0TBBAbxOmzT7JdaaX+gsMTcQRA==",
     "signatures": [
       {
-        "sig": "MEUCIAyzurNbJJjxLdpEUxtjSNpDx8TC6hHmQbC+vv53v39dAiEA2w7quRj76Xw9/8K4kO1tIanZ1Noj8KtO/sMiI2EUPdw=",
+        "sig": "MEQCID7x5bqj/f0iKbKm9f6khmXAJevFup21u0M9KNEUm8RtAiBuLkYso9J5wQYnEMl/9ldVjFDAocCXDCirb2/txsEmEw==",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       }
     ],
     "attestations": {
-      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-esbuild@0.6.3",
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-esbuild@0.7.0",
       "provenance": {
         "predicateType": "https://slsa.dev/provenance/v1"
       }
     },
-    "unpackedSize": 87399
+    "unpackedSize": 28375
   },
   "name": "effect-build-esbuild",
   "type": "module",
-  "_from": "file:/home/runner/work/_temp/npm-release-candidate/effect-build-esbuild-0.6.3.tgz",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-esbuild-0.7.0.tgz",
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./Api": {
-      "types": "./dist/Api/index.d.ts",
-      "import": "./dist/Api/index.js"
-    },
-    "./Command": {
-      "types": "./dist/Command/index.d.ts",
-      "import": "./dist/Command/index.js"
     }
   },
   "license": "MIT",
@@ -58,15 +53,15 @@
     "bundle",
     "javascript"
   ],
-  "_resolved": "/home/runner/work/_temp/npm-release-candidate/effect-build-esbuild-0.6.3.tgz",
-  "_integrity": "sha512-IMFmYIPxuiU8aI4caaRhOn13S42KW3yASzjTArTIvtHcM9nZFzuw8fQzavBn4Y99Wk4AaPAMnc5ZjMVyrxCw8g==",
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-esbuild-0.7.0.tgz",
+  "_integrity": "sha512-O3OhkA0bXWkD3BjI6IzOyhEcE0WTGO/D6W49hV1eGQBRxlq2RmCmFWiK3duN0TBBAbxOmzT7JdaaX+gsMTcQRA==",
   "repository": {
     "url": "git+https://github.com/mannyc2/effect-build.git",
     "type": "git",
     "directory": "packages/effect-build-esbuild"
   },
   "_npmVersion": "11.11.0",
-  "description": "Effect-native provider API and command access for esbuild.",
+  "description": "Build JavaScript bundles and scoped esbuild contexts as Effect programs.",
   "directories": {},
   "maintainers": [
     {
@@ -77,8 +72,7 @@
   "sideEffects": false,
   "_nodeVersion": "24.14.1",
   "dependencies": {
-    "esbuild": "0.28.2",
-    "effect-build": "^0.6.3"
+    "effect-build": "^0.7.0"
   },
   "publishConfig": {
     "access": "public",
@@ -86,15 +80,17 @@
   },
   "_hasShrinkwrap": false,
   "devDependencies": {
-    "effect": "4.0.0-rc.108"
+    "effect": "4.0.0-rc.108",
+    "esbuild": "0.28.2"
   },
   "peerDependencies": {
-    "effect": ">=4.0.0-beta.104 <4.1.0-0"
+    "effect": ">=4.0.0-rc.108 <4.1.0-0",
+    "esbuild": ">=0.28.2 <0.29.0"
   },
   "_npmOperationalInternal": {
-    "tmp": "tmp/effect-build-esbuild_0.6.3_1788644949562_0.7764625016694895",
+    "tmp": "tmp/effect-build-esbuild_0.7.0_1789091309995_0.792063206576213",
     "host": "s3://npm-registry-packages-npm-production"
   },
-  "_id": "effect-build-esbuild@0.6.3",
-  "version": "0.6.3"
+  "_id": "effect-build-esbuild@0.7.0",
+  "version": "0.7.0"
 }

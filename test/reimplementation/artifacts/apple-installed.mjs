@@ -29,26 +29,26 @@ for (const file of bundle.artifacts) {
         file.logicalName.includes(item.logicalName.endsWith("arm64") ? "arm64" : "x64"),
     )
     assert(tree)
-    const files = tree.entries.filter((entry) => entry._tag === "TreeFile")
+    const files = tree.entries.filter((entry) => entry.kind === "file")
     assert.deepEqual(
       native("/usr/bin/tar", ["-tzf", file.logicalName]).trim().split("\n").sort(),
-      files.map((entry) => entry.relativePath).sort(),
+      files.map((entry) => entry.path).sort(),
     )
     checks++
     for (const entry of files) {
       const extracted = execFileSync("/usr/bin/tar", [
         "-xOzf",
         join(delivery, file.logicalName),
-        entry.relativePath,
+        entry.path,
       ])
       assert.deepEqual(
         new Uint8Array(extracted),
-        await Effect.runPromise(owner.read(entry.content)),
+        await Effect.runPromise(owner.read({ bytes: entry.bytes, sha256: entry.sha256 })),
       )
       checks++
     }
   } else {
-    assert.equal(file.logicalName, "bun-linux-x64-gnu")
+    assert.equal(file.logicalName, "bun-linux-x64")
     await chmod(join(delivery, file.logicalName), file.deliveryMode)
     assert.equal(
       native(join(delivery, file.logicalName), ["--version"]),

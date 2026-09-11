@@ -12,12 +12,10 @@ import {
   writeFile,
 } from "node:fs/promises"
 import { join } from "node:path"
-import { Effect, FileSystem, Layer } from "effect"
+import { Effect } from "effect"
 import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as Artifact from "effect-build/Artifact"
-import * as File from "effect-build/Author/File"
-import * as Archive from "effect-build-archives/Archive"
-import * as SourceArchive from "effect-build-archives/SourceArchive"
+import * as Archive from "effect-build-archives"
 import { adoptFile } from "@mannyc1/ts-release/effect-build"
 import { encodeBundle, finalize, loadBundle } from "@mannyc1/ts-release/bundle"
 import { fileContentOwner } from "@mannyc1/ts-release/node"
@@ -52,55 +50,37 @@ const native = (tool, args, cwd = work) =>
 const run = (effect) =>
   Effect.runPromise(
     effect.pipe(
-      Effect.provide(
-        Layer.mergeAll(Archive.layer, SourceArchive.layer({ executable: "/usr/bin/git" })),
-      ),
+      Effect.provide(Archive.layer({ executable: "/usr/bin/git" })),
       Effect.provide(NodeServices.layer),
     ),
   )
-const finalized = (name, content) =>
-  run(
-    File.publish(
-      {
-        destination: join(producer, name),
-        observation: "hashed",
-        provenance: Artifact.intrinsicProvenance("ts-release/native-archive-fixture"),
-      },
-      (candidate) =>
-        Effect.gen(function* () {
-          const fs = yield* FileSystem.FileSystem
-          yield* fs.writeFileString(candidate, content)
-        }),
-    ),
-  )
+const producedBy = { name: "ts-release/native-archive-fixture", version: "fixture" }
+const finalized = async (name, content) => {
+  await writeFile(join(producer, name), content)
+  return run(Artifact.file(join(producer, name), producedBy))
+}
 const executable = await finalized(
   "cli",
   "#!/bin/sh\nprintf 'ts-release archive fixture 1.0.0\\n'\n",
 )
 const readme = await finalized("README.md", "owned archive fixture\n")
 const entries = [
-  new Archive.ArchiveEntry({ artifact: readme, path: "share/README.md" }),
-  new Archive.ArchiveEntry({
-    artifact: executable,
-    path: "bin/ts-release-fixture",
-    executable: true,
-  }),
+  { artifact: readme, path: "share/README.md" },
+  { artifact: executable, path: "bin/ts-release-fixture", executable: true },
 ]
+const archive = { zip: Archive.zip, "tar.gz": Archive.tarGz }
 for (const format of ["zip", "tar.gz"]) {
   const outputs = []
   for (const repeat of [0, 1])
     outputs.push(
       await run(
-        Archive.archive(
-          new Archive.ArchiveInput({
-            format,
-            entries: repeat ? [...entries].reverse() : entries,
-            outfile: join(producer, `binary-${repeat}.${format}`),
-          }),
-        ),
+        archive[format]({
+          entries: repeat ? [...entries].reverse() : entries,
+          outfile: join(producer, `binary-${repeat}.${format}`),
+        }),
       ),
     )
-  check(`${format} normalized input order repeat digest`, outputs[0].digest, outputs[1].digest)
+  check(`${format} normalized input order repeat digest`, outputs[0].sha256, outputs[1].sha256)
   const file = await run(adoptFile(owner, `binary.${format}`, outputs[0]))
   records.push({ kind: "binary", format, native: outputs[0], file })
   for (const [label, paths] of [
@@ -110,16 +90,8 @@ for (const format of ["zip", "tar.gz"]) {
   ]) {
     const outfile = join(producer, `rejected-${label}.${format}`)
     await assert.rejects(
-      run(
-        Archive.archive(
-          new Archive.ArchiveInput({
-            format,
-            outfile,
-            entries: paths.map((path) => new Archive.ArchiveEntry({ artifact: readme, path })),
-          }),
-        ),
-      ),
-      { _tag: "UnsafeArchiveLayout" },
+      run(archive[format]({ outfile, entries: paths.map((path) => ({ artifact: readme, path })) })),
+      { _tag: "InputInvalid" },
     )
     await assert.rejects(stat(outfile), { code: "ENOENT" })
     checks.push(`${format} ${label} typed rejection and no publication`)
@@ -163,19 +135,19 @@ for (const format of ["zip", "tar.gz"]) {
   for (const repeat of [0, 1])
     outputs.push(
       await run(
-        SourceArchive.sourceArchive(
-          new SourceArchive.SourceArchiveInput({
-            repository,
-            tree,
-            project: "fixture",
-            version: "1.0.0",
-            format,
-            outfile: join(producer, `source-${repeat}.${format}`),
-          }),
-        ),
+        Archive.source({
+          repository,
+          tree,
+          project: "fixture",
+          version: "1.0.0",
+          format,
+          // Tracked build output stays out of the source archive by explicit declaration.
+          excludes: ["dist"],
+          outfile: join(producer, `source-${repeat}.${format}`),
+        }),
       ),
     )
-  check(`${format} exact tree repeat digest`, outputs[0].digest, outputs[1].digest)
+  check(`${format} exact tree repeat digest`, outputs[0].sha256, outputs[1].sha256)
   records.push({
     kind: "source",
     format,
@@ -309,7 +281,7 @@ await writeFile(
   join(work, "evidence.json"),
   JSON.stringify(
     {
-      format: "ts-release/native-producer-archives/1",
+      format: "ts-release/native-producer-archives/2",
       work,
       runtime: process.version,
       bun: process.versions.bun ?? null,

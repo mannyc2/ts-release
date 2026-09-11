@@ -1,149 +1,151 @@
 {
-  "format": "ts-release/w08-upstream-registry/1",
-  "observedAt": "2026-09-07T11:35:15.070Z",
-  "contractCommit": "ef29a087baac8bdbcd90a54bb62a2dceb739dd91",
+  "format": "ts-release/upstream-registry/2",
+  "observedAt": "2026-09-11T10:25:00.000Z",
+  "contract": "effect-build v0.7.0 (tag commit d650f93f37f197d5fd57bd4ccb6f2d617490c1df)",
   "packages": [
     {
       "name": "effect-build",
-      "version": "0.6.3",
-      "tarball": "https://registry.npmjs.org/effect-build/-/effect-build-0.6.3.tgz",
-      "integrity": "sha512-Q7tHD0S7SwL6UAFnUbdROzxcb9xcn/d/xyNv784+FeWbl2lKtZ+rBDm9dIR1OTB99a7i6a+yupZbv7cXf+mv0g==",
-      "sha256": "508f3246ba41ef094fdca9fca796e9d80f002c3f25135f4a2de08cdd53c092f8",
-      "bytes": 47091,
-      "retainedTarball": "packs/effect-build-0.6.3.tgz",
+      "version": "0.7.0",
+      "tarball": "https://registry.npmjs.org/effect-build/-/effect-build-0.7.0.tgz",
+      "integrity": "sha512-Kcwf88qdVZ1178s0P1p07MXzsAlYHz/iygAQ+CwALxfFqcYz7bDNljuXaJaZCE1kpuebM84KDJtfAeZlc+dPLA==",
+      "sha256": "32de3c3c8d91bff7b8bc15d09696966995ce3f048f822d378eedf36b65ef2ceb",
+      "bytes": 72017,
+      "retainedTarball": "packs/effect-build-0.7.0.tgz",
       "gitHead": null,
       "peerDependencies": {
-        "effect": ">=4.0.0-beta.104 <4.1.0-0"
+        "effect": ">=4.0.0-rc.108 <4.1.0-0"
       }
     },
     {
       "name": "effect-build-apple",
-      "version": "0.6.3",
-      "tarball": "https://registry.npmjs.org/effect-build-apple/-/effect-build-apple-0.6.3.tgz",
-      "integrity": "sha512-WyBw7dQ756vvnX5lW/KnwAagiKYLepJh4FbGnlx15RmpkxzkVqJl0Vb+N4sjlpGcj33ZiVrUNQMEKibNjQUybw==",
-      "sha256": "80054e66b121d3a6486efa046832051d9a76045a85859429e8e9814ff0ec4a8f",
-      "bytes": 68405,
-      "retainedTarball": "packs/effect-build-apple-0.6.3.tgz",
+      "version": "0.7.0",
+      "tarball": "https://registry.npmjs.org/effect-build-apple/-/effect-build-apple-0.7.0.tgz",
+      "integrity": "sha512-mLPazuDL5LJbDiLQ3BlNZwlvxpui0Yurj3Om0YMVayNQDhYOKCmyFvpokGo1tJkuDTUtJ7bnCLHkc0Uevie4tw==",
+      "sha256": "c202066605b3527083f5ddb4f8c7cc360a35a61702e621f794243e8a9bba9d10",
+      "bytes": 52857,
+      "retainedTarball": "packs/effect-build-apple-0.7.0.tgz",
       "gitHead": null,
       "peerDependencies": {
-        "effect": ">=4.0.0-beta.104 <4.1.0-0"
+        "effect": ">=4.0.0-rc.108 <4.1.0-0"
       }
     },
     {
       "name": "effect-build-archives",
-      "version": "0.6.3",
-      "tarball": "https://registry.npmjs.org/effect-build-archives/-/effect-build-archives-0.6.3.tgz",
-      "integrity": "sha512-wMYOBFMVAfberI3zHY1vNqBFejaznlbRZy2HhuzhyAhk6m8cUHrdHsUW6vpHbYtdPH+UfzYMAqBhdo166TRrHQ==",
-      "sha256": "5e2b7175d4a64ccedbfd2ce4cbaab372fb762a0cf24a47a596d15a6a08a2d9f3",
-      "bytes": 23829,
-      "retainedTarball": "packs/effect-build-archives-0.6.3.tgz",
+      "version": "0.7.0",
+      "tarball": "https://registry.npmjs.org/effect-build-archives/-/effect-build-archives-0.7.0.tgz",
+      "integrity": "sha512-klhNvAROzZO7x6Z6WzpOgal3CXEp7wYqi9rjN5pBtd/Lq/Ox2V0bSg7PweO8LisVz7BqorHlmEenI3x8oajAkA==",
+      "sha256": "faedc83e382e550821707129cec39f590793432b376fd81051f94078d352c75a",
+      "bytes": 47048,
+      "retainedTarball": "packs/effect-build-archives-0.7.0.tgz",
       "gitHead": null,
       "peerDependencies": {
-        "effect": ">=4.0.0-beta.104 <4.1.0-0"
+        "effect": ">=4.0.0-rc.108 <4.1.0-0"
       }
     },
     {
       "name": "effect-build-bun",
-      "version": "0.6.3",
-      "tarball": "https://registry.npmjs.org/effect-build-bun/-/effect-build-bun-0.6.3.tgz",
-      "integrity": "sha512-m7hgjzLk1n5Qdx6KXyoHHlVg/v2KxdENwmtxgXoltdXv6g6OScRsUNvIFPQ2RBaNVW6ZxdEclluCFfb5avZC+Q==",
-      "sha256": "8cf474d4b119c4368fe7a2c44c61427af4aeea174894b64defeef47907e591dd",
-      "bytes": 27946,
-      "retainedTarball": "packs/effect-build-bun-0.6.3.tgz",
+      "version": "0.7.0",
+      "tarball": "https://registry.npmjs.org/effect-build-bun/-/effect-build-bun-0.7.0.tgz",
+      "integrity": "sha512-jpdS1TlntZbRPsXvcj9cT5JFTGOoS1ECs+fQKAL4n160h+siqBXlVYWv1IWnsBRtBJKszI0a0bLV3QgXNgLc5g==",
+      "sha256": "60e5ef52cc0ee2bb81070b3e1d3524abfafe760d74758f87ef68267ff3a10713",
+      "bytes": 26339,
+      "retainedTarball": "packs/effect-build-bun-0.7.0.tgz",
       "gitHead": null,
       "peerDependencies": {
-        "effect": ">=4.0.0-beta.104 <4.1.0-0"
+        "effect": ">=4.0.0-rc.108 <4.1.0-0",
+        "bun-types": ">=1.3.14 <2.0.0"
       }
     },
     {
       "name": "effect-build-deno",
-      "version": "0.6.3",
-      "tarball": "https://registry.npmjs.org/effect-build-deno/-/effect-build-deno-0.6.3.tgz",
-      "integrity": "sha512-9koDp4Zt/gZpcPBugAC9XDpFs8RkBYLM9xPv4etMjVCX85sCNMWSN9B3V2lzGvz/4qmY80feMoPQp1CEUEymDA==",
-      "sha256": "eb38f708e7c9f1d9f3c778be6e7a4133ab47fa0f100017ab83c972d304fa24f2",
-      "bytes": 30759,
-      "retainedTarball": "packs/effect-build-deno-0.6.3.tgz",
+      "version": "0.7.0",
+      "tarball": "https://registry.npmjs.org/effect-build-deno/-/effect-build-deno-0.7.0.tgz",
+      "integrity": "sha512-fV4liV+73Xp29iNB20R96qDgDPIC71jF/55Je5y+kIIVqow7NIINBrW/zaBMFquUmpDKZ82nbTSW3n50r79MgQ==",
+      "sha256": "b829fa6e45be7a07cadf500d71a3002bb45f818fed36c308e66f5187ca00302f",
+      "bytes": 29294,
+      "retainedTarball": "packs/effect-build-deno-0.7.0.tgz",
       "gitHead": null,
       "peerDependencies": {
-        "effect": ">=4.0.0-beta.104 <4.1.0-0"
+        "effect": ">=4.0.0-rc.108 <4.1.0-0"
       }
     },
     {
       "name": "effect-build-esbuild",
-      "version": "0.6.3",
-      "tarball": "https://registry.npmjs.org/effect-build-esbuild/-/effect-build-esbuild-0.6.3.tgz",
-      "integrity": "sha512-IMFmYIPxuiU8aI4caaRhOn13S42KW3yASzjTArTIvtHcM9nZFzuw8fQzavBn4Y99Wk4AaPAMnc5ZjMVyrxCw8g==",
-      "sha256": "81fe9999dd47449554ca697d1b19186a8d2f0b6847dabc3c4d6a7020f5add2d3",
-      "bytes": 17493,
-      "retainedTarball": "packs/effect-build-esbuild-0.6.3.tgz",
+      "version": "0.7.0",
+      "tarball": "https://registry.npmjs.org/effect-build-esbuild/-/effect-build-esbuild-0.7.0.tgz",
+      "integrity": "sha512-O3OhkA0bXWkD3BjI6IzOyhEcE0WTGO/D6W49hV1eGQBRxlq2RmCmFWiK3duN0TBBAbxOmzT7JdaaX+gsMTcQRA==",
+      "sha256": "fbf5fe982320f6de9b258d268aa111660b7923a6d38732ef3bd7b97bb5d2fadd",
+      "bytes": 6704,
+      "retainedTarball": "packs/effect-build-esbuild-0.7.0.tgz",
       "gitHead": null,
       "peerDependencies": {
-        "effect": ">=4.0.0-beta.104 <4.1.0-0"
+        "effect": ">=4.0.0-rc.108 <4.1.0-0",
+        "esbuild": ">=0.28.2 <0.29.0"
       }
     },
     {
       "name": "effect-build-nfpm",
-      "version": "0.6.3",
-      "tarball": "https://registry.npmjs.org/effect-build-nfpm/-/effect-build-nfpm-0.6.3.tgz",
-      "integrity": "sha512-q65C+VFpn/afVuIh7xaIXQipn9vkcc6hnbA3xzMg0Ru74F3cpN+XrxLSNXwvK9YFhWL4n9hMO1C0Zs4/90Mk4A==",
-      "sha256": "c917114855483bec71dee9b86efe03dbf6bdd9cfbfc86bb27d6c60a5693977f3",
-      "bytes": 14696,
-      "retainedTarball": "packs/effect-build-nfpm-0.6.3.tgz",
+      "version": "0.7.0",
+      "tarball": "https://registry.npmjs.org/effect-build-nfpm/-/effect-build-nfpm-0.7.0.tgz",
+      "integrity": "sha512-R8kVf7DpvmWOWkNXMn3Me+WVkbRULmMVMfyTnngpuHfnGaCrtN3z2nQAVo7JKHn4WsfDkwyvSZru0tVUtCQoSg==",
+      "sha256": "a3eff9d3ba79d1b84b954d616042d6b93a8962f3213d8448e61f55faf36aa0ca",
+      "bytes": 9619,
+      "retainedTarball": "packs/effect-build-nfpm-0.7.0.tgz",
       "gitHead": null,
       "peerDependencies": {
-        "effect": ">=4.0.0-beta.104 <4.1.0-0"
+        "effect": ">=4.0.0-rc.108 <4.1.0-0"
       }
     },
     {
       "name": "effect-build-node-sea",
-      "version": "0.6.3",
-      "tarball": "https://registry.npmjs.org/effect-build-node-sea/-/effect-build-node-sea-0.6.3.tgz",
-      "integrity": "sha512-v2y1t2fPrDOlKun/1syncbaZ8e1SRSVyWOOo6ju6XTaoKIhKGU915oQCrsDHZkCwbLRZ8dPlEsUDQxk3yV56+w==",
-      "sha256": "03be54447f25041573bbb04bc02e02773d3ee0765311687b329a042c3ab8525e",
-      "bytes": 15439,
-      "retainedTarball": "packs/effect-build-node-sea-0.6.3.tgz",
+      "version": "0.7.0",
+      "tarball": "https://registry.npmjs.org/effect-build-node-sea/-/effect-build-node-sea-0.7.0.tgz",
+      "integrity": "sha512-gkyCwORw/QL/EaSTPTxvT5EOh8zOlSsExIxisYbDpNnGFLkQ+L4LJPHQsozaK5pI2bBBYFsrGf+JqrEajrp93Q==",
+      "sha256": "f93e47a5924d411ae5aaf788dce5647b0b260051ba6ff8956e87965d40275783",
+      "bytes": 9277,
+      "retainedTarball": "packs/effect-build-node-sea-0.7.0.tgz",
       "gitHead": null,
       "peerDependencies": {
-        "effect": ">=4.0.0-beta.104 <4.1.0-0"
+        "effect": ">=4.0.0-rc.108 <4.1.0-0"
       }
     },
     {
       "name": "effect-build-python",
-      "version": "0.6.3",
-      "tarball": "https://registry.npmjs.org/effect-build-python/-/effect-build-python-0.6.3.tgz",
-      "integrity": "sha512-ACgsb3IlokhY+qWwZ4nBimDlZoLLGTWruLNpSafmrorL2HlMPYU4+RecbMRa4bIssvMvG8y3yjWkuzj/Uf1YTg==",
-      "sha256": "551192b3c762a50fa140c3585103971b23910a8f8863e5504f0c8d780de44e39",
-      "bytes": 11082,
-      "retainedTarball": "packs/effect-build-python-0.6.3.tgz",
+      "version": "0.7.0",
+      "tarball": "https://registry.npmjs.org/effect-build-python/-/effect-build-python-0.7.0.tgz",
+      "integrity": "sha512-u4ReqQ+opBUbiQ4tr2CfntLh+dKNf87jw/Yo9QtjKrBF6IXWVfVxX8XHryFvaaFZdUpCAZ1y+zSTa1Jg7ZNg1w==",
+      "sha256": "feb48c6e54455a08b85c48d34a53c92c1133b213a421be76fe62e5660107c035",
+      "bytes": 19187,
+      "retainedTarball": "packs/effect-build-python-0.7.0.tgz",
       "gitHead": null,
       "peerDependencies": {
-        "effect": ">=4.0.0-beta.104 <4.1.0-0"
+        "effect": ">=4.0.0-rc.108 <4.1.0-0"
       }
     },
     {
       "name": "effect-build-sbom",
-      "version": "0.6.3",
-      "tarball": "https://registry.npmjs.org/effect-build-sbom/-/effect-build-sbom-0.6.3.tgz",
-      "integrity": "sha512-9Z83BhqgG838AzKiS2Jq2z6AkKiCSFYGSDscsBSNkE7UFMQzmzSIknG0OxbVPlog+ylsUf5ls63b6ySgzLLscw==",
-      "sha256": "75d0527c222d9647fb2735e7ad9ab289da543139c2d544e70a8437a1be4e1ec3",
-      "bytes": 13205,
-      "retainedTarball": "packs/effect-build-sbom-0.6.3.tgz",
+      "version": "0.7.0",
+      "tarball": "https://registry.npmjs.org/effect-build-sbom/-/effect-build-sbom-0.7.0.tgz",
+      "integrity": "sha512-GWpIxxk1NNe6XLKwxrDc37zMj+fUedC+x83bY5G4G9nwBPiq/+2Tfa0CTpigvU9Hqg1HUEChyNQqlbvAPg4JyA==",
+      "sha256": "b5e15e8eaae96dcc20733dfb7b29c5139ff01c8823f9476929a7454f085fe608",
+      "bytes": 6069,
+      "retainedTarball": "packs/effect-build-sbom-0.7.0.tgz",
       "gitHead": null,
       "peerDependencies": {
-        "effect": ">=4.0.0-beta.104 <4.1.0-0"
+        "effect": ">=4.0.0-rc.108 <4.1.0-0"
       }
     },
     {
       "name": "effect-build-windows",
-      "version": "0.6.3",
-      "tarball": "https://registry.npmjs.org/effect-build-windows/-/effect-build-windows-0.6.3.tgz",
-      "integrity": "sha512-9CEqZjdlk1SN6d99SJqMFG9GLhtPiSiBKLr4P8o0AKC84MPbUb8J+hfWRRTSZ+JznHKVlq7BaON3qRFB85JqyA==",
-      "sha256": "1071d3c34e7055079098fb9e74069737c960a4965371578e91ed519886785e30",
-      "bytes": 10111,
-      "retainedTarball": "packs/effect-build-windows-0.6.3.tgz",
+      "version": "0.7.0",
+      "tarball": "https://registry.npmjs.org/effect-build-windows/-/effect-build-windows-0.7.0.tgz",
+      "integrity": "sha512-nI9itHiciK/zpZPw6sDUqY4JO6Ea1ZjysfPVEUjrnOyMcLHqViqRvOzfDvnusJwUdS2yQFEGhzDPZNVyaT1o2Q==",
+      "sha256": "cb5446c903b24f5a334b70eafed3884a815710ec3baaed2cb0cb0d41209d9c83",
+      "bytes": 11801,
+      "retainedTarball": "packs/effect-build-windows-0.7.0.tgz",
       "gitHead": null,
       "peerDependencies": {
-        "effect": ">=4.0.0-beta.104 <4.1.0-0"
+        "effect": ">=4.0.0-rc.108 <4.1.0-0"
       }
     }
   ],

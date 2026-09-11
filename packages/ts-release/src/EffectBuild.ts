@@ -1,266 +1,215 @@
-export type {} from "./internal/EffectTypes.js"
-import { Effect, FileSystem, Path, PlatformError, Schema } from "effect"
+import { Effect, FileSystem, Path, Schema } from "effect"
 import * as Artifact from "effect-build/Artifact"
-import * as Tree from "effect-build/Author/Tree"
 import { AdoptionError, Content, OwnedFile, OwnedTree } from "./internal/ArtifactModel.js"
-import { TreeDirectory, TreeFile, TreeLink } from "./internal/ArtifactModel.js"
-import { adoptData, finalize } from "./internal/BundleFinalize.js"
+import type { Producer } from "./internal/ArtifactModel.js"
+import { adoptData } from "./internal/BundleFinalize.js"
 import { captureContentOwner, readVerifiedContent, type ContentOwner } from "./internal/Content.js"
-import { encodeBundle, loadBundle } from "./internal/BundleCodec.js"
-import { copyData, decodeOwned, freeze } from "./internal/Identity.js"
+import { decodeOwned } from "./internal/Identity.js"
+import { checkTree } from "./internal/TreeLayout.js"
 
-/** Producer subtypes may carry native class-valued evidence. Own the public
- * artifact contract only; signatures/tickets stay in their provider's evidence.
- * Never invoke accessors, even on a field outside this projection. */
-const artifactData = (input: unknown, fields: readonly string[]) => {
-  if (!input || typeof input !== "object")
-    throw new AdoptionError({ reason: "Expected producer artifact data" })
-  const descriptors = Object.getOwnPropertyDescriptors(input)
-  for (const key of Reflect.ownKeys(input)) {
-    const descriptor = Object.getOwnPropertyDescriptor(input, key)!
-    if (typeof key !== "string" || !descriptor.enumerable || !("value" in descriptor))
-      throw new AdoptionError({ reason: "Artifact data could not be admitted" })
-  }
-  const selected =
-    descriptors._tag?.value === "HashedExecutable"
-      ? [...fields, "nativeFormat", "runtime", "target"]
-      : fields
-  return freeze(
-    copyData(
-      Object.fromEntries(
-        selected
-          .filter((key) => Object.hasOwn(descriptors, key))
-          .map((key) => [key, descriptors[key]!.value]),
-      ),
-    ),
-  )
-}
-const fileFields = ["_tag", "path", "bytes", "digest", "provenance", "publication"]
-const treeFields = [
-  "_tag",
-  "root",
+const Regular = Schema.Union([Artifact.File, Artifact.Executable])
+const regularKeys = ["kind", "path", "bytes", "sha256", "producedBy", "target", "format"] as const
+const directoryKeys = [
+  "kind",
+  "path",
+  "bytes",
+  "sha256",
+  "producedBy",
   "rootMode",
   "entries",
-  "totalBytes",
-  "manifestDigest",
-  "provenance",
-  "publication",
-]
-const ownedBytes = (read: ContentOwner["read"], content: Content, reason: string) =>
-  readVerifiedContent(read, content, Math.max(1, Number(content.bytes))).pipe(
-    Effect.mapError(() => new AdoptionError({ reason })),
-  )
+] as const
 
-/** Recreate an owned tree through the real producer finalizer. effect-build
- * 0.6.3 publishes 0755 roots; other root modes reject before I/O. Nested modes
- * are preserved. The application owns the destination lifetime. */
-export const restoreTree = Effect.fn("ts-release.restoreTree")(function* (
+/**
+ * Copy the core artifact fields out of a producer record without invoking
+ * accessors. Provider refinements (signatures, tickets, runtimes) stay with the
+ * provider's own schema; the release system owns only the core identity.
+ */
+const coreRecord = (input: unknown, keys: readonly string[]) => {
+  if (typeof input !== "object" || input === null)
+    throw new AdoptionError({ reason: "Expected a producer artifact record" })
+  const record: Record<string, unknown> = {}
+  for (const key of keys) {
+    const descriptor = Object.getOwnPropertyDescriptor(input, key)
+    if (descriptor === undefined) continue
+    if (!("value" in descriptor))
+      throw new AdoptionError({ reason: `Artifact field ${key} must be plain data` })
+    record[key] = descriptor.value
+  }
+  return record
+}
+/** The producer identity retained durably: the tool's path is a host detail. */
+const producerOf = ({ name, version, sha256 }: Artifact.Producer): Producer => ({
+  name,
+  version,
+  ...(sha256 === undefined ? {} : { sha256 }),
+})
+const sameIdentity = (content: Content, expected: { bytes: number; sha256: string }) =>
+  content.bytes === expected.bytes && content.sha256 === expected.sha256
+const admitTree = (logicalName: string, source: Artifact.Directory) =>
+  adoptData(() => {
+    const tree = decodeOwned(OwnedTree, {
+      _tag: "OwnedTree",
+      logicalName,
+      bytes: source.bytes,
+      sha256: source.sha256,
+      rootMode: source.rootMode,
+      entries: source.entries,
+      producedBy: producerOf(source.producedBy),
+    })
+    checkTree(tree)
+    return tree
+  })
+
+/** Copy a produced file into release ownership; the record's borrowed path is not retained. */
+export const adoptFile = Effect.fn("ts-release.adoptFile")(function* (
   contentOwner: ContentOwner,
-  tree: OwnedTree,
-  outdir: string,
-  provenance: Artifact.Provenance,
+  logicalName: string,
+  artifact: Artifact.Regular,
 ) {
   const owner = captureContentOwner(contentOwner)
-  const input = yield* adoptData(() => {
-    const source = decodeOwned(OwnedTree, tree)
-    if (source.rootMode !== 0o755)
-      throw new AdoptionError({ reason: "effect-build 0.6.3 restores only 0755 tree roots" })
-    return { source, provenance: decodeOwned(Artifact.ProvenanceSchema, provenance) }
-  })
-  const source = input.source
-  const bundle = yield* finalize([source])
-  yield* loadBundle(owner, encodeBundle(bundle))
-  const fs = yield* FileSystem.FileSystem,
-    path = yield* Path.Path
-  const artifact = yield* Tree.publish(
-    { outdir, observation: "hashed", provenance: input.provenance },
-    (candidate) =>
-      Effect.gen(function* () {
-        for (const entry of source.entries) {
-          const destination = path.join(candidate, ...entry.relativePath.split("/"))
-          if (entry._tag === "TreeDirectory") yield* fs.makeDirectory(destination)
-          else if (entry._tag === "TreeFile") {
-            const bytes = yield* ownedBytes(
-              owner.read,
-              entry.content,
-              "Restored content differs from its immutable identity",
-            )
-            yield* fs.writeFile(destination, bytes)
-            yield* fs.chmod(destination, entry.mode)
-          } else yield* fs.symlink(entry.target, destination)
-        }
-        for (const entry of [...source.entries].reverse())
-          if (entry._tag === "TreeDirectory")
-            yield* fs.chmod(path.join(candidate, ...entry.relativePath.split("/")), entry.mode)
-        yield* fs.chmod(candidate, source.rootMode)
-      }),
-    (candidate) =>
-      adoptData(() => {
-        if (
-          candidate.totalBytes !== source.totalBytes ||
-          candidate.manifestDigest.value !== source.upstreamManifestSha256
-        )
-          throw new AdoptionError({
-            reason: "Restored candidate differs from its immutable manifest",
-          })
-      }),
-  )
-  if (
-    artifact.totalBytes !== source.totalBytes ||
-    artifact.manifestDigest.value !== source.upstreamManifestSha256
-  )
-    return yield* new AdoptionError({ reason: "Restored tree differs from its immutable manifest" })
-  return artifact
-})
-
-/** Copy finalized producer bytes into release ownership; retain no borrowed path. */
-export const adoptFile = Effect.fn("ts-release.adoptFile")(function* (
-  owner: ContentOwner,
-  logicalName: string,
-  input: Artifact.HashedFile | Artifact.HashedExecutable,
-) {
-  const put = owner.putFileOwned.bind(owner)
-  const source = yield* adoptData(() => {
-    const value = artifactData(input, fileFields)
-    if (!Artifact.isHashedFile(value) && !Artifact.isHashedExecutable(value))
-      throw new AdoptionError({ reason: "Expected a finalized hashed file or executable" })
-    return value
-  })
+  const source = yield* adoptData(() => decodeOwned(Regular, coreRecord(artifact, regularKeys)))
   const file = yield* adoptData(() =>
     decodeOwned(OwnedFile, {
-      logicalName,
       _tag: "OwnedFile",
-      content: { bytes: source.bytes, sha256: source.digest.value },
-      deliveryMode: Artifact.isHashedExecutable(source) ? 0o755 : 0o644,
-      executable: Artifact.isHashedExecutable(source)
-        ? { nativeFormat: source.nativeFormat, runtime: source.runtime, target: source.target }
-        : null,
-      provenance: source.provenance,
+      logicalName,
+      content: { bytes: source.bytes, sha256: source.sha256 },
+      deliveryMode: source.kind === "executable" ? 0o755 : 0o644,
+      executable:
+        source.kind === "executable" ? { target: source.target, format: source.format } : null,
+      producedBy: producerOf(source.producedBy),
     }),
   )
-  const content = yield* put(source)
-  if (content.bytes !== file.content.bytes || content.sha256 !== file.content.sha256)
+  const content = yield* owner.putFileOwned(source)
+  if (!sameIdentity(content, file.content))
     return yield* new AdoptionError({ reason: "Adopted file identity differs from its producer" })
   return file
 })
 
-/** Verify the producer's exact private snapshot, then own each regular file. */
+/** Own every file of a produced directory; each copy is checked against its manifest entry. */
 export const adoptTree = Effect.fn("ts-release.adoptTree")(function* (
-  owner: ContentOwner,
+  contentOwner: ContentOwner,
   logicalName: string,
-  input: Artifact.HashedTree,
+  artifact: Artifact.Directory,
 ) {
-  const put = owner.putFileOwned.bind(owner)
-  const read = owner.read.bind(owner)
-  const readDirectory = owner.readDirectoryBounded.bind(owner)
+  const owner = captureContentOwner(contentOwner)
+  const source = yield* adoptData(() =>
+    decodeOwned(Artifact.Directory, coreRecord(artifact, directoryKeys)),
+  )
+  const tree = yield* admitTree(logicalName, source)
+  const path = yield* Path.Path
+  for (const entry of tree.entries) {
+    if (entry.kind !== "file") continue
+    const content = yield* owner.putFileOwned({
+      path: path.join(source.path, ...entry.path.split("/")),
+      bytes: entry.bytes,
+      sha256: entry.sha256,
+    })
+    if (!sameIdentity(content, entry))
+      return yield* new AdoptionError({ reason: "Adopted tree file differs from its manifest" })
+  }
+  return tree
+})
+
+/**
+ * Recreate an owned tree at `outdir` from owned content, then re-observe it with
+ * effect-build so the result carries the recorded identity. The destination must
+ * not exist. After verification, an exclusive mkdir claims the destination;
+ * the complete tree then replaces that owned empty reservation in one rename.
+ * Callers must wait for success before using the destination. Hosts that cannot
+ * rename over an empty directory fail without a replacement fallback. A failed
+ * rename leaves the reservation for the caller to inspect, never delete blindly.
+ */
+export const restoreTree = Effect.fn("ts-release.restoreTree")(function* (
+  contentOwner: ContentOwner,
+  tree: OwnedTree,
+  outdir: string,
+) {
+  const owner = captureContentOwner(contentOwner)
   const source = yield* adoptData(() => {
-    const value = artifactData(input, treeFields)
-    if (!Artifact.isHashedTree(value))
-      throw new AdoptionError({ reason: "Expected a finalized hashed tree" })
+    const value = decodeOwned(OwnedTree, tree)
+    checkTree(value)
     return value
   })
-  const tree = yield* adoptData(() =>
-    decodeOwned(OwnedTree, {
-      _tag: "OwnedTree",
-      logicalName,
-      rootMode: source.rootMode,
-      totalBytes: source.totalBytes,
-      upstreamManifestSha256: source.manifestDigest.value,
-      entries: source.entries.map((entry) =>
-        entry.kind === "file"
-          ? new TreeFile({
-              relativePath: entry.relativePath,
-              mode: entry.mode,
-              content: new Content({ bytes: entry.bytes, sha256: entry.digest.value }),
-            })
-          : entry.kind === "directory"
-            ? new TreeDirectory(entry)
-            : new TreeLink(entry),
-      ),
-      provenance: source.provenance,
-    }),
-  )
-  // Reuse the Bundle's one manifest/graph/capacity law before any filesystem work.
-  yield* finalize([tree])
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const reads = new Map<string, Artifact.HashedTreeFileEntry>()
-  const register = (root: string) => {
-    for (const entry of source.entries)
-      if (entry.kind === "file") reads.set(path.join(root, ...entry.relativePath.split("/")), entry)
-  }
-  register(source.root)
-  let temporary: string | undefined
-  let remainingEntries = 3 * source.entries.length
-  // The owner iterates source names within the remaining two-capture/cleanup
-  // budget. Never call the platform's unbounded complete-array enumeration.
-  const bounded: FileSystem.FileSystem = {
-    ...fs,
-    makeTempDirectory: (options) =>
-      fs.makeTempDirectory(options).pipe(
-        Effect.tap((root) =>
-          Effect.sync(() => {
-            temporary = root
-          }),
-        ),
+  const destination = path.resolve(outdir)
+  const occupied = () =>
+    new AdoptionError({ reason: `Restore destination already exists: ${destination}` })
+  if (yield* fs.exists(destination)) return yield* occupied()
+  const ownedBytes = (entry: { bytes: number; sha256: string }) =>
+    readVerifiedContent(owner.read, new Content(entry), entry.bytes).pipe(
+      Effect.mapError(
+        () => new AdoptionError({ reason: "Restored content differs from its owned identity" }),
       ),
-    realPath: (name) =>
-      fs.realPath(name).pipe(
-        Effect.tap((root) =>
-          Effect.sync(() => {
-            if (name === temporary) register(path.normalize(root))
-          }),
-        ),
-      ),
-    readDirectory: (directory) =>
-      Effect.gen(function* () {
-        const names = yield* readDirectory(directory, remainingEntries).pipe(
-          Effect.mapError(() =>
-            PlatformError.badArgument({
-              module: "artifact-adoption",
-              method: "readDirectory",
-              description: "Tree directory exceeded its entry budget or could not be read",
-            }),
-          ),
-        )
-        remainingEntries -= names.length
-        if (remainingEntries < 0)
-          return yield* PlatformError.badArgument({
-            module: "artifact-adoption",
-            method: "readDirectory",
-            description: "Directory reader exceeded its bound",
-          })
-        return [...names]
-      }),
-    readFile: (name) =>
-      Effect.gen(function* () {
-        const entry = reads.get(name)
-        if (!entry) return yield* new AdoptionError({ reason: "Unrecorded tree file" })
-        // Byte ingestion needs no invented publication marker for the private
-        // snapshot. The owner opens a nonblocking, no-follow regular descriptor.
-        const content = yield* put(
-          freeze({
-            path: yield* Schema.decodeUnknownEffect(Artifact.AbsolutePath)(name),
-            bytes: entry.bytes,
-            digest: entry.digest,
-          }),
-        )
-        if (content.bytes !== entry.bytes || content.sha256 !== entry.digest.value)
-          return yield* new AdoptionError({ reason: "Adopted tree file differs from its manifest" })
-        return yield* ownedBytes(read, content, "Owned tree bytes differ from the manifest")
-      }).pipe(
-        Effect.mapError(() =>
-          PlatformError.badArgument({
-            module: "artifact-adoption",
-            method: "readFile",
-            description: "Exact regular tree file could not be admitted",
-          }),
-        ),
-      ),
-  }
-  // Failed tree admission can leave unreferenced immutable blobs; those blobs
-  // are derived storage and cannot produce a Bundle or dispatch permission.
-  return yield* Tree.withVerifiedSnapshot(source, () => Effect.succeed(tree)).pipe(
-    Effect.provideService(FileSystem.FileSystem, bounded),
+    )
+  const write = (root: string) =>
+    Effect.gen(function* () {
+      const at = (entry: Artifact.Entry) => path.join(root, ...entry.path.split("/"))
+      for (const entry of source.entries) {
+        if (entry.kind === "directory") yield* fs.makeDirectory(at(entry))
+        else if (entry.kind === "symlink") yield* fs.symlink(entry.linkTarget, at(entry))
+        else {
+          yield* fs.writeFile(at(entry), yield* ownedBytes(entry))
+          yield* fs.chmod(at(entry), entry.mode)
+        }
+      }
+      // Directory modes last and deepest first: a read-only directory would block its children.
+      for (const entry of [...source.entries].reverse())
+        if (entry.kind === "directory") yield* fs.chmod(at(entry), entry.mode)
+      yield* fs.chmod(root, source.rootMode)
+      const restored = yield* Artifact.directory(root, source.producedBy)
+      if (
+        restored.bytes !== source.bytes ||
+        restored.sha256 !== source.sha256 ||
+        restored.rootMode !== source.rootMode
+      )
+        return yield* new AdoptionError({
+          reason: "Restored tree differs from its recorded identity",
+        })
+      return restored
+    })
+  return yield* Effect.scoped(
+    Effect.gen(function* () {
+      const parent = path.dirname(destination)
+      yield* fs.makeDirectory(parent, { recursive: true })
+      const staging = yield* Effect.acquireRelease(
+        fs.makeTempDirectory({ directory: parent, prefix: ".ts-release-restore-" }),
+        (root) =>
+          Effect.gen(function* () {
+            if (!(yield* fs.exists(root))) return
+            // Failed commits may leave verified read-only directories in staging.
+            yield* fs.chmod(root, 0o700)
+            for (const entry of source.entries) {
+              if (entry.kind !== "directory") continue
+              yield* fs
+                .chmod(path.join(root, ...entry.path.split("/")), 0o700)
+                .pipe(
+                  Effect.catch((error) =>
+                    error.reason._tag === "NotFound" ? Effect.void : Effect.fail(error),
+                  ),
+                )
+            }
+            yield* fs.remove(root, { recursive: true, force: true })
+          }).pipe(Effect.orDie),
+      )
+      const restored = yield* write(staging)
+      yield* Effect.uninterruptible(
+        Effect.gen(function* () {
+          // mkdir, unlike exists, refuses every occupied path in one operation,
+          // including an empty directory or dangling symlink created during restoration.
+          yield* fs
+            .makeDirectory(destination, { mode: 0o700 })
+            .pipe(
+              Effect.mapError((error) =>
+                error.reason._tag === "AlreadyExists" ? occupied() : error,
+              ),
+            )
+          // A writer may have populated the reservation. A plain directory rename
+          // refuses that conflict; never move it aside or remove it on failure.
+          yield* fs.rename(staging, destination)
+        }),
+      )
+      return { ...restored, path: destination }
+    }),
   )
 })

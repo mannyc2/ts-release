@@ -158,24 +158,23 @@ export const inspectPackage = Effect.fn("openai.inspectPackage")(function* (
   const tree = finalized.artifacts[0]
   if (tree?._tag !== "OwnedTree")
     return yield* reject("openai-tree", "OpenAI package is not a tree")
-  if (tree.rootMode !== 0o755 || tree.entries.some((entry) => entry._tag === "TreeLink"))
+  if (tree.rootMode !== 0o755 || tree.entries.some((entry) => entry.kind === "symlink"))
     return yield* reject("openai-tree", "OpenAI package must be a regular link-free tree")
   const contents = new Map<string, Uint8Array>()
   for (const entry of tree.entries) {
-    const path = entry.relativePath
-    if (entry._tag === "TreeDirectory") {
+    if (entry.kind === "directory") {
       if (entry.mode !== 0o755)
         return yield* reject("openai-tree", "OpenAI directory mode is invalid")
-    } else if (entry._tag === "TreeFile") {
+    } else if (entry.kind === "file") {
       if (![0o644, 0o755].includes(entry.mode))
         return yield* reject("openai-tree", "OpenAI file mode is invalid")
-      const bytes = yield* readVerified(entry.content, readContent)
+      const bytes = yield* readVerified(new Content(entry), readContent)
       if (containsSecret(bytes))
         return yield* reject("openai-secret", "OpenAI plugin contains token-shaped material")
-      contents.set(path, bytes)
+      contents.set(entry.path, bytes)
     }
   }
-  const paths = tree.entries.map((entry) => entry.relativePath)
+  const paths = tree.entries.map((entry) => entry.path)
   if (
     paths.some((path) => !safePath(path)) ||
     new Set(paths.map((path) => path.toLowerCase())).size !== paths.length
@@ -228,12 +227,12 @@ export const packageFiles = Effect.fn("openai.packageFiles")(function* (
   const inspected = yield* inspectPackage(tree, read)
   return Object.freeze(
     inspected.tree.entries.flatMap((entry): RenderedFile[] =>
-      entry._tag === "TreeFile"
+      entry.kind === "file"
         ? [
             {
-              path: entry.relativePath,
+              path: entry.path,
               mode: entry.mode as 0o644 | 0o755,
-              bytes: new Uint8Array(inspected.contents.get(entry.relativePath)!),
+              bytes: new Uint8Array(inspected.contents.get(entry.path)!),
             },
           ]
         : [],

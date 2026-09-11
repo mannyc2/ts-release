@@ -7,7 +7,6 @@ export {
   makeHttpTransport,
   makeHttpRead,
   makeCredentialExchange,
-  nodeDirectoryReader,
   fileContentOwner,
   FinalizedReport,
   runInterruptibleProcess,

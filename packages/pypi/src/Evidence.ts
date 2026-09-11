@@ -7,7 +7,7 @@ import { invalid, object, own, readScope } from "./Native.js"
 import * as Model from "./Model.js"
 
 const sha256 = Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/u))
-const bytes = Schema.String.check(Schema.isPattern(/^(?:0|[1-9][0-9]*)$/u))
+const bytes = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0))
 class Absent extends Schema.TaggedClass<Absent>()("Absent", {}) {}
 class Unavailable extends Schema.TaggedClass<Unavailable>()("Unavailable", {
   reason: Schema.Literals(["http-status", "malformed-simple"]),
@@ -128,7 +128,7 @@ const jsonFacet = (intent: Model.UploadIntent, body: Uint8Array) => {
     selected = new FileFacts({
       filename: intent.filename,
       sha256: hash,
-      bytes: file.size === undefined ? null : String(file.size),
+      bytes: typeof file.size === "number" ? file.size : null,
       yanked: file.yanked === true || typeof file.yanked === "string",
     })
   }

@@ -94,7 +94,7 @@ const fixture = () => {
   })
   const access: ArtifactAccess = {
     bundle: new Bundle({
-      format: "ts-release/bundle/1",
+      format: "ts-release/bundle/2",
       artifacts: [publication.tarball, provenanceFile],
     }),
     readContent: (content) =>

@@ -3,39 +3,38 @@
     "url": "https://github.com/mannyc2/effect-build/issues"
   },
   "dist": {
-    "shasum": "e7f418b8ead3e343dba4bc671231511081454257",
-    "tarball": "https://registry.npmjs.org/effect-build-windows/-/effect-build-windows-0.6.3.tgz",
-    "fileCount": 15,
-    "integrity": "sha512-9CEqZjdlk1SN6d99SJqMFG9GLhtPiSiBKLr4P8o0AKC84MPbUb8J+hfWRRTSZ+JznHKVlq7BaON3qRFB85JqyA==",
+    "shasum": "6b6fd665fe3fca2a5332b86f172d77a2c50e2bbd",
+    "tarball": "https://registry.npmjs.org/effect-build-windows/-/effect-build-windows-0.7.0.tgz",
+    "fileCount": 13,
+    "integrity": "sha512-nI9itHiciK/zpZPw6sDUqY4JO6Ea1ZjysfPVEUjrnOyMcLHqViqRvOzfDvnusJwUdS2yQFEGhzDPZNVyaT1o2Q==",
     "signatures": [
       {
-        "sig": "MEUCIDuFS28+yzF5CH52vHKQXac2QD5vxdh1mbZOv/bvClg4AiEA5BDSKfqK5GAgBZCl0/OlLQT+IffN8vbAgAm5l33StaU=",
+        "sig": "MEQCIAmRb/keU+PmaTkuG525eLcnYALFk/slb+WF7GK5P8MtAiB01OHsR3EbH1lNlXxExN09qPgYd+NB//jnclxDQYu1HQ==",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       },
       {
-        "sig": "MEUCID+VIjNAe2XNseg3mCTJOZvv6n6v44mRUCAOLXFc34D1AiEAnXEkfSo+V0TzDP4Z1/aViRGWkL6XrysTivrdPLodG6g=",
+        "sig": "MEQCIE+ABMQbAj8A19Z/as3k3mLsVbbMGy+AYlHhZmDP5vxOAiB2V1C4hQtAtUR2KKP7KeU6E72gqPo+BFFRQfEhAd1Z/g==",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       }
     ],
     "attestations": {
-      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-windows@0.6.3",
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-windows@0.7.0",
       "provenance": {
         "predicateType": "https://slsa.dev/provenance/v1"
       }
     },
-    "unpackedSize": 40728
+    "unpackedSize": 53462
   },
   "name": "effect-build-windows",
   "type": "module",
-  "_from": "file:/home/runner/work/_temp/npm-release-candidate/effect-build-windows-0.6.3.tgz",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-windows-0.7.0.tgz",
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./SignMsix": {
-      "types": "./dist/SignMsix.d.ts",
-      "import": "./dist/SignMsix.js"
     }
   },
   "license": "MIT",
@@ -55,19 +54,20 @@
   "keywords": [
     "effect",
     "windows",
+    "executable",
     "msix",
     "authenticode",
     "signtool"
   ],
-  "_resolved": "/home/runner/work/_temp/npm-release-candidate/effect-build-windows-0.6.3.tgz",
-  "_integrity": "sha512-9CEqZjdlk1SN6d99SJqMFG9GLhtPiSiBKLr4P8o0AKC84MPbUb8J+hfWRRTSZ+JznHKVlq7BaON3qRFB85JqyA==",
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-windows-0.7.0.tgz",
+  "_integrity": "sha512-nI9itHiciK/zpZPw6sDUqY4JO6Ea1ZjysfPVEUjrnOyMcLHqViqRvOzfDvnusJwUdS2yQFEGhzDPZNVyaT1o2Q==",
   "repository": {
     "url": "git+https://github.com/mannyc2/effect-build.git",
     "type": "git",
     "directory": "packages/effect-build-windows"
   },
   "_npmVersion": "11.11.0",
-  "description": "Effect-native Windows artifact signing operations.",
+  "description": "Experimental executable and MSIX signing with Windows SignTool and shared artifacts.",
   "directories": {},
   "maintainers": [
     {
@@ -78,7 +78,7 @@
   "sideEffects": false,
   "_nodeVersion": "24.14.1",
   "dependencies": {
-    "effect-build": "^0.6.3"
+    "effect-build": "^0.7.0"
   },
   "publishConfig": {
     "access": "public",
@@ -89,12 +89,12 @@
     "effect": "4.0.0-rc.108"
   },
   "peerDependencies": {
-    "effect": ">=4.0.0-beta.104 <4.1.0-0"
+    "effect": ">=4.0.0-rc.108 <4.1.0-0"
   },
   "_npmOperationalInternal": {
-    "tmp": "tmp/effect-build-windows_0.6.3_1788645364656_0.8902600675233123",
+    "tmp": "tmp/effect-build-windows_0.7.0_1789092194360_0.5018585055431835",
     "host": "s3://npm-registry-packages-npm-production"
   },
-  "_id": "effect-build-windows@0.6.3",
-  "version": "0.6.3"
+  "_id": "effect-build-windows@0.7.0",
+  "version": "0.7.0"
 }

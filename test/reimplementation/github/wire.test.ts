@@ -51,10 +51,10 @@ async function fixture() {
   const file = Schema.decodeUnknownSync(File)({
     _tag: "OwnedFile",
     logicalName: "asset.bin",
-    content: { bytes: String(bytes.length), sha256: sha256(bytes) },
+    content: { bytes: bytes.length, sha256: sha256(bytes) },
     deliveryMode: 420,
     executable: null,
-    provenance: { _tag: "IntrinsicProvenance", producer: "wire-fixture" },
+    producedBy: { name: "wire-fixture", version: "fixture" },
   })
   const asset = await Effect.runPromise(
     GitHub.uploadAsset(

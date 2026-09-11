@@ -1,4 +1,3 @@
-export type {} from "./internal/EffectTypes.js"
 export { PROVIDER_CONTRACT, defineProvider, makeRequest } from "./Provider.js"
 export type { Author, Json, Observation, OperationId, PreparedRequest } from "./Provider.js"
 export type { NativeFailureBoundary, OperationEvidence, ProviderContext } from "./Provider.js"

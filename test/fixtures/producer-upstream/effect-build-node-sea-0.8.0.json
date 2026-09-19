@@ -1,0 +1,99 @@
+{
+  "bugs": {
+    "url": "https://github.com/mannyc2/effect-build/issues"
+  },
+  "dist": {
+    "shasum": "6c239db233aaab91a1fac6ef60d360a0759da69c",
+    "tarball": "https://registry.npmjs.org/effect-build-node-sea/-/effect-build-node-sea-0.8.0.tgz",
+    "fileCount": 14,
+    "integrity": "sha512-K8EBJ/g7VpC77dYOWxoz+D1KkhQ7liG2Z2+R94Eh5dxsfkDzb2/1R+JlbJ9mmRNZCfUIHTgp1QDT95MIjbSH/A==",
+    "signatures": [
+      {
+        "sig": "MEUCIB1kfiIrzx/8D6YEwqhpx5uFkScMKjnWvTPADkJx+C61AiEA+n5bQjiuKYPm0UCik3mQq/J6raSeHvLQcQw9P2RsQ/Q=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "sig": "MEYCIQCmtB+l9wZyQ03iTqkcrSjomYbTMwq2mtuA1YL86oR0WgIhAJwo67BXflru6eopabIN5Gi4+yRQjnCnOyzyZR67/kty",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-node-sea@0.8.0",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 40518
+  },
+  "name": "effect-build-node-sea",
+  "type": "module",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-node-sea-0.8.0.tgz",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -b tsconfig.json --force",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "_npmUser": {
+    "name": "GitHub Actions",
+    "email": "npm-oidc-no-reply@github.com",
+    "trustedPublisher": {
+      "id": "github",
+      "oidcConfigId": "oidc:48550345-c34f-4d80-aaff-114a6276debe"
+    }
+  },
+  "homepage": "https://github.com/mannyc2/effect-build#readme",
+  "keywords": [
+    "effect",
+    "node",
+    "sea",
+    "executable"
+  ],
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-node-sea-0.8.0.tgz",
+  "_integrity": "sha512-K8EBJ/g7VpC77dYOWxoz+D1KkhQ7liG2Z2+R94Eh5dxsfkDzb2/1R+JlbJ9mmRNZCfUIHTgp1QDT95MIjbSH/A==",
+  "repository": {
+    "url": "git+https://github.com/mannyc2/effect-build.git",
+    "type": "git",
+    "directory": "packages/effect-build-node-sea"
+  },
+  "_npmVersion": "11.11.0",
+  "description": "Package CommonJS scripts and assets as Node single executable applications.",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "mannyc1",
+      "email": "c20carroll@gmail.com"
+    }
+  ],
+  "sideEffects": false,
+  "_nodeVersion": "24.14.1",
+  "dependencies": {
+    "postject": "1.0.0-alpha.6",
+    "effect-build": "^0.8.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "_hasShrinkwrap": false,
+  "devDependencies": {
+    "effect": "4.0.0-rc.115"
+  },
+  "peerDependencies": {
+    "effect": ">=4.0.0-rc.113 <4.1.0-0"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/effect-build-node-sea_0.8.0_1789830004384_0.7303414130093457",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "effect-build-node-sea@0.8.0",
+  "version": "0.8.0"
+}

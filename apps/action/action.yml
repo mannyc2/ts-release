@@ -1,0 +1,26 @@
+name: ts-release
+description: Execute one authored release application against its durable journal.
+author: mannyc2
+inputs:
+  application:
+    description: Workspace-contained ESM application exporting createApplication.
+    required: true
+  input:
+    description: JSON input passed to createApplication.
+    required: false
+    default: "{}"
+  observe:
+    description: Refresh provider observations without dispatching publication; records evidence in the journal.
+    required: false
+    default: "false"
+outputs:
+  plan-id:
+    description: Identity of the application's exact publication plan.
+  journal-revision:
+    description: Durable journal revision reported by the application.
+runs:
+  using: node24
+  main: dist/launcher.cjs
+branding:
+  icon: package
+  color: blue

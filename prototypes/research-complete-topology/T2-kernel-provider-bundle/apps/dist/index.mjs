@@ -1,0 +1,10 @@
+import { externalProvider } from "@trial/external-provider";
+import { FORBIDDEN_TRANSITIONS } from "@trial/kernel";
+import { prepareFirstParty } from "@trial/providers";
+export const runLibraryConsumer = async requestId => prepareFirstParty(requestId);
+export const runNodeHost = runLibraryConsumer;
+export const runBunHost = runLibraryConsumer;
+export const runCli = async requestId => (await runLibraryConsumer(requestId)).map(value => value.providerId).join(",");
+export const runAction = async requestId => ({ artifact: "action-bundle", operations: await runLibraryConsumer(requestId), transitionCount: FORBIDDEN_TRANSITIONS.length });
+export const runPackedExternal = async requestId => externalProvider.instances.map(instanceId => externalProvider.prepare(instanceId, requestId));
+export const adoptFinalizedArtifacts = values => values.map(value => ({ ...value, bytes: value.bytes.slice() }));

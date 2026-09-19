@@ -1,0 +1,71 @@
+{
+  "format": "ts-release/native-catalog-tools/1",
+  "homebrew": {
+    "repository": "https://github.com/Homebrew/brew.git",
+    "commit": "9b93c2c45d77bf41982419ac0ef3a23b8bc82d62",
+    "directory": "/tmp/ts-release-native-homebrew",
+    "portableRuby": "4.0.6_2",
+    "portableRubySha256": "01c1adce6394bcb5b1daa0921e5b0b5c64ec90641abd4678681ea7df7445791a"
+  },
+  "scoop": {
+    "repository": "https://github.com/ScoopInstaller/Scoop.git",
+    "commit": "b588a06e41d920d2123ec70aee682bae14935939",
+    "directory": "/tmp/ts-release-native-scoop"
+  },
+  "powershell": {
+    "version": "7.6.5",
+    "filename": "powershell-7.6.5-linux-x64.tar.gz",
+    "directory": "/tmp/ts-release-native-powershell",
+    "url": "https://github.com/PowerShell/PowerShell/releases/download/v7.6.5/powershell-7.6.5-linux-x64.tar.gz",
+    "sha256": "b34ab3b19acac1d3d4d0d3cfdb02acf62f457b0b6a962ff008132033f7566844",
+    "checksumAuthority": "https://github.com/PowerShell/PowerShell/releases/download/v7.6.5/hashes.sha256"
+  },
+  "sourceBindings": [
+    {
+      "owner": "homebrew",
+      "path": "Library/Homebrew/formulary.rb",
+      "sha256": "061cdfdf94f21a5f7ba65ccbcdbca3dcaafe6dee5e92985d9f12f71db0829882"
+    },
+    {
+      "owner": "homebrew",
+      "path": "Library/Homebrew/formula.rb",
+      "sha256": "9b8f387da4424b4b2702415af596691f84bc138986f3ae2744a1b220942ce67f"
+    },
+    {
+      "owner": "homebrew",
+      "path": "Library/Homebrew/version.rb",
+      "sha256": "ca535ccb1c36ff7be4689f8f9e91bc3b1026abd09855c37e511213512a524fb4"
+    },
+    {
+      "owner": "homebrew",
+      "path": "Library/Homebrew/resource_auditor.rb",
+      "sha256": "59e014cccefaade5e47c42a3a99b2c9bd7c6a5fd3115c867bc3d148e2812c3c4"
+    },
+    {
+      "owner": "homebrew",
+      "path": "Library/Homebrew/simulate_system.rb",
+      "sha256": "babd9113490646144833cce84904a51cfe44d6d29437ee4bb6cc7e0dd8bbfe31"
+    },
+    {
+      "owner": "scoop",
+      "path": "schema.json",
+      "sha256": "0eb85d104ac11aedde9022d68b0ec8b3bb6f3e22b4fea2612f5129fe93ed94ec"
+    },
+    {
+      "owner": "scoop",
+      "path": "lib/manifest.ps1",
+      "sha256": "62869b67e8b55ae89dd47466e98f82568d5ccc09165feac9bba3d52d7314ea20"
+    },
+    {
+      "owner": "scoop",
+      "path": "lib/install.ps1",
+      "sha256": "2188fbddd5faf34682d6dc7f9d4134875388eb25691feec48df6d47d2f7e73ab"
+    },
+    {
+      "owner": "scoop",
+      "path": "lib/core.ps1",
+      "sha256": "4c77a92137ceacd9435cf7d669ee26dd6eda576fc35da3de3fcaed30449fd88a"
+    }
+  ],
+  "limits": "Linux native format/selector/shim policy controls; no macOS/Windows native installation, hosted catalog publication or execution of native platform binaries."
+}

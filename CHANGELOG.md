@@ -2,79 +2,45 @@
 
 ## Unreleased
 
-## 0.3.1 - 2026-09-19
+### effect-build 0.8.0
 
-- Retain the existing single-package distribution and Effect beta.83 runtime.
-- Correct publication report retention to bind the hosted prepared reference to
-  the canonical prepared-content digest emitted by the release engine.
-- Update release tooling and immutable Action references for v0.3.1.
+- Align effect-build packages on 0.8.0 and Effect runtime/platform packages on rc.115.
+- Require explicit `Artifact.withSha256` before release adoption. Persist hashed
+  directory entries and retain portable layout checks and verified restoration.
+- Own Apple submission/source correlation in preparation format 3. Compose
+  signature verification, accepted status, stapling, ticket validation, assessment,
+  and final content identity explicitly. Reject earlier preparation formats.
+- Refresh published upstream tarballs, consumer fixtures, and installed checks.
 
-## 0.3.0 - 2026-09-01
+### effect-build 0.7.0
 
-### Self-release hardening
-
-- Split credential-free preparation, no-upload npm OIDC certification,
-  lightweight tag creation, npm publication, and later GitHub publication
-  into five exact-SHA dispatch modes. GitHub and npm consume distinct
-  content-addressed prepared bundles
-  under separately named environments and least-privilege job permissions;
-  no default path receives publication authority.
-- Pin GitHub-hosted runner labels, third-party Actions, Node 22.22.2, Bun
-  1.3.14, and the self-release npm CLI at 11.11.0. Reauthenticate the exact
-  checkout against the current public `main` tip immediately before every
-  preparation or publication boundary, and reject ambient npm credentials.
-- After npm publication, bind the adopted tarball bytes to registry integrity,
-  the exact GitHub SLSA v1 provenance statement and run identity, and npm's
-  cryptographic signature audit. Select same-run proof for a fresh mutation
-  and authenticate the provenance-named prior run for an exact
-  `AlreadyEquivalent` response-loss recovery. Pin Sigstore 4.1.0 from the
-  audited npm archive and require the exact Fulcio workflow SAN, OIDC issuer,
-  environment-bound ID-qualified repository subject, source/workflow SHA, and
-  run-invocation certificate extensions. Preserve
-  GitHub tag, release, and asset equivalence checks inside the provider-native
-  publisher.
-- Keep every credentialed job free of nonlocal Actions by natively checking
-  out the exact current-main candidate and executing its local Action. Stage
-  GitHub assets only in a private draft; a fresh later full asset reread is the
-  sole authority for PATCH-only public promotion. Bind trusted npm children to
-  an empty private home and explicit empty mode-0600 user/global configs.
-- Move final npm certification/publication evidence out of the `id-token:
-  write` producer jobs. A dependency-free Node bootstrap validates then drops
-  the runner-injected OIDC request authority, binds the exact private report,
-  and commits one explicitly non-final handoff. A separate no-environment,
-  no-id-token job verifies that artifact and alone retains the final v2
-  receipt; missing outputs, changed attempts, and unknown writes fail closed.
-
-### Canonical operation journal
-
-- Add a provider-neutral `operation-journal` subpath with one opaque canonical
-  event envelope, one finite transition reducer, and one versioned S3
-  conditional-write protocol. Durable acknowledgments require exact retained
-  event/head re-read and full-chain validation; response loss, CAS conflict,
-  and fresh-process orphan recovery are bounded and fail closed. Every retained
-  attempt that shares a transaction ID must carry the same opaque logical
-  record and workflow, including attempts already reachable from the head.
-- Keep provider codecs and provider calls outside the journal package boundary.
-  Add the sole package-owned `operation-journal/aws` adapter: it rejects
-  ambient AWS configuration, exchanges a GitHub OIDC token directly for one
-  short-lived role session, re-observes STS/IAM/S3 authority, parses the exact
-  role/trust/bucket policies, and emits only single-part conditional S3 writes.
-  Serialized SDK requests and fakes qualify this code without claiming live
-  AWS policy or retained-object qualification. No SQLite, Git ref, Actions
-  artifact, alternate endpoint, credential chain, or fallback store is added.
-- Bind caller and called reusable-workflow OIDC refs and source SHAs as
-  distinct claims, derive event run coordinates from the observed session, and
-  include the exact OIDC trust-policy digest in authority drift checks. Pin the
-  called workflow at one immutable commit, admit one frozen name- or
-  immutable-ID-bound environment subject, and locally require hosted public
-  workflow-dispatch branch claims from the same STS-admitted token. Bound every
-  OIDC fetch, AWS SDK send, and object stream by a fixed wall-clock deadline.
-  Operation identities, payloads, retained objects, request/response
-  coordinates, and JWT bytes are independently bounded, and Actions request
-  coordinates are consumed from the environment before use. The
-  checked-in reusable workflow remains permissionless and always fails until a
-  released adapter, exact infrastructure, opaque-byte call topology, and live
-  retained-object protocol are separately qualified.
+- Correlate Apple recovery with the recorded submission and signed source while
+  retaining the current lookup tool's metadata separately. A new runner's tool
+  path, version or digest no longer prevents recovery.
+- Claim tree restoration destinations exclusively after verifying staged content.
+  Competing outputs and dangling links are refused; a failed final rename retains
+  the destination for inspection instead of moving or deleting it.
+- Adopt effect-build 0.7.0 and the Effect 4.0.0-rc.108 train across every
+  package, peer range, packed-consumer check and fixture. There is no
+  compatibility layer for the retired 0.6 `Author/*`, `SystemTarget`, hashed and
+  unhashed identity APIs.
+- Owned Bundles now record the native `Artifact.File`, `Artifact.Executable` and
+  `Artifact.Directory` identities: numeric byte counts, SHA-256 digests, the
+  upstream directory entry manifest and a path-free `producedBy` producer.
+  `ts-release/bundle/2` replaces format 1, which is refused by name because it
+  recorded 0.6 identities. Adoption copies each produced file into release
+  ownership while checking it against its recorded identity; restoration writes
+  entries from owned content, re-observes the tree with effect-build and commits
+  it atomically. The bounded native Node directory reader is gone.
+- Apple preparation records are `ts-release/apple-preparation/2`: signatures use
+  effect-build-apple's shapes, receipts are `Notary.SubmissionReference`, and
+  `ReadyToPlan` persists the assessed stapled product in the provider's schema.
+  Format 1 collections and 0.6.3 receipt versions are refused explicitly. Native
+  operations run through the release-owned `AppleTools` service, whose live
+  layer binds one notarization credential over `effect-build-apple`.
+- Provider evidence compares numeric byte counts, and journal receipts or
+  observations with an unknown version name both the recorded and installed
+  versions.
 
 ### PyPI embedded-binary distributions
 

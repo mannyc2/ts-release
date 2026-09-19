@@ -1,0 +1,35 @@
+{
+  "format": "ts-release/native-github-read-fixtures/1",
+  "recordedAt": "2026-09-07T08:39:54.592Z",
+  "client": "gh2.45.0",
+  "requestVersionHeader": "No explicit override in capture command; provider requests pin2022-11-28",
+  "responses": [
+    {
+      "kind": "release",
+      "path": "test/reimplementation/github/fixtures/v030-release.json",
+      "rawSha256": "06d6547d57ae8722b952c2e25130df056c09c9c36c61b697f7b6afa5e3a3c268",
+      "retainedSha256": "59991eb566b32d203053dd79af53572a2f567169d0a0ba76075e225a6ce8db4f",
+      "formattingOnly": true,
+      "argv": [
+        "gh",
+        "api",
+        "repos/mannyc2/ts-release/releases/tags/v0.3.0"
+      ],
+      "exitCode": 0
+    },
+    {
+      "kind": "ref",
+      "path": "test/reimplementation/github/fixtures/v030-ref.json",
+      "rawSha256": "875ac871f8f71b9de5d4c219ee46a21d9d70282bfb4b16c188c7507aa9774ddd",
+      "retainedSha256": "3c9ee5379cb18770977ad0866827bd6563775cec9c926df1eca1fe7b2e2140a7",
+      "formattingOnly": true,
+      "argv": [
+        "gh",
+        "api",
+        "repos/mannyc2/ts-release/git/ref/tags/v0.3.0"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "limits": "Historical public GET responses only; no mutation, hosted recovery or downloaded-asset verification"
+}

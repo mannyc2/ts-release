@@ -3,9 +3,9 @@
   "$id": "https://raw.githubusercontent.com/mannyc2/ts-release/main/schema/release-config.schema.json",
   "title": "ts-release configuration",
   "description": "The authored configuration: the canonical shape with the facts a repository can observe made optional. ts-release resolves it against the repository during inspect, prepare, publish, or release.",
-  "$ref": "#/$defs/AuthoredConfig",
+  "$ref": "#/$defs/AuthoredConfigEncoded",
   "$defs": {
-    "AuthoredProject": {
+    "AuthoredProjectEncoded": {
       "type": "object",
       "properties": {
         "name": {
@@ -59,7 +59,28 @@
       },
       "additionalProperties": false
     },
-    "CandidateBunBuild": {
+    "Union_1": {
+      "type": "string",
+      "enum": [
+        "linux-x64",
+        "linux-arm64",
+        "darwin-x64",
+        "darwin-arm64"
+      ]
+    },
+    "Arrays_": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/Union_1"
+        }
+      ],
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Union_1"
+      }
+    },
+    "CandidateBunBuildEncoded": {
       "type": "object",
       "properties": {
         "id": {
@@ -71,28 +92,7 @@
           ]
         },
         "targets": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "type": "string",
-              "enum": [
-                "linux-x64",
-                "linux-arm64",
-                "darwin-x64",
-                "darwin-arm64"
-              ]
-            }
-          ],
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "enum": [
-              "linux-x64",
-              "linux-arm64",
-              "darwin-x64",
-              "darwin-arm64"
-            ]
-          }
+          "$ref": "#/$defs/Arrays_"
         },
         "output": {
           "type": "string"
@@ -128,7 +128,7 @@
       ],
       "additionalProperties": false
     },
-    "CandidateCommandBuild": {
+    "CandidateCommandBuildEncoded": {
       "type": "object",
       "properties": {
         "id": {
@@ -140,28 +140,7 @@
           ]
         },
         "targets": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "type": "string",
-              "enum": [
-                "linux-x64",
-                "linux-arm64",
-                "darwin-x64",
-                "darwin-arm64"
-              ]
-            }
-          ],
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "enum": [
-              "linux-x64",
-              "linux-arm64",
-              "darwin-x64",
-              "darwin-arm64"
-            ]
-          }
+          "$ref": "#/$defs/Arrays_"
         },
         "output": {
           "type": "string"
@@ -201,7 +180,7 @@
       ],
       "additionalProperties": false
     },
-    "CandidatePrebuiltBuild": {
+    "CandidatePrebuiltBuildEncoded": {
       "type": "object",
       "properties": {
         "id": {
@@ -213,28 +192,7 @@
           ]
         },
         "targets": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "type": "string",
-              "enum": [
-                "linux-x64",
-                "linux-arm64",
-                "darwin-x64",
-                "darwin-arm64"
-              ]
-            }
-          ],
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "enum": [
-              "linux-x64",
-              "linux-arm64",
-              "darwin-x64",
-              "darwin-arm64"
-            ]
-          }
+          "$ref": "#/$defs/Arrays_"
         },
         "output": {
           "type": "string"
@@ -261,7 +219,43 @@
       ],
       "additionalProperties": false
     },
-    "CandidateCheckPreparation": {
+    "Union_": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CandidateBunBuildEncoded"
+        },
+        {
+          "$ref": "#/$defs/CandidateCommandBuildEncoded"
+        },
+        {
+          "$ref": "#/$defs/CandidatePrebuiltBuildEncoded"
+        }
+      ]
+    },
+    "Arrays_1": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "string"
+        }
+      ],
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "Arrays_2": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "allOf": [
+          {
+            "minLength": 1
+          }
+        ]
+      }
+    },
+    "CandidateCheckPreparationEncoded": {
       "type": "object",
       "properties": {
         "kind": {
@@ -279,30 +273,13 @@
           ]
         },
         "run": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "type": "string"
-            }
-          ],
-          "minItems": 1,
-          "items": {
-            "type": "string"
-          }
+          "$ref": "#/$defs/Arrays_1"
         },
         "cwd": {
           "type": "string"
         },
         "inputs": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "allOf": [
-              {
-                "minLength": 1
-              }
-            ]
-          }
+          "$ref": "#/$defs/Arrays_2"
         }
       },
       "required": [
@@ -312,7 +289,45 @@
       ],
       "additionalProperties": false
     },
-    "CandidateArtifactPreparation": {
+    "Objects_": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "file",
+            "archive",
+            "executable",
+            "digest"
+          ]
+        },
+        "mediaType": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateArtifactPreparationEncoded": {
       "type": "object",
       "properties": {
         "kind": {
@@ -330,111 +345,24 @@
           ]
         },
         "run": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "type": "string"
-            }
-          ],
-          "minItems": 1,
-          "items": {
-            "type": "string"
-          }
+          "$ref": "#/$defs/Arrays_1"
         },
         "cwd": {
           "type": "string"
         },
         "inputs": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "allOf": [
-              {
-                "minLength": 1
-              }
-            ]
-          }
+          "$ref": "#/$defs/Arrays_2"
         },
         "outputs": {
           "type": "array",
           "prefixItems": [
             {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "allOf": [
-                    {
-                      "minLength": 1
-                    }
-                  ]
-                },
-                "path": {
-                  "type": "string"
-                },
-                "kind": {
-                  "type": "string",
-                  "enum": [
-                    "file",
-                    "archive",
-                    "executable",
-                    "digest"
-                  ]
-                },
-                "mediaType": {
-                  "type": "string",
-                  "allOf": [
-                    {
-                      "minLength": 1
-                    }
-                  ]
-                }
-              },
-              "required": [
-                "id",
-                "path"
-              ],
-              "additionalProperties": false
+              "$ref": "#/$defs/Objects_"
             }
           ],
           "minItems": 1,
           "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "allOf": [
-                  {
-                    "minLength": 1
-                  }
-                ]
-              },
-              "path": {
-                "type": "string"
-              },
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "file",
-                  "archive",
-                  "executable",
-                  "digest"
-                ]
-              },
-              "mediaType": {
-                "type": "string",
-                "allOf": [
-                  {
-                    "minLength": 1
-                  }
-                ]
-              }
-            },
-            "required": [
-              "id",
-              "path"
-            ],
-            "additionalProperties": false
+            "$ref": "#/$defs/Objects_"
           }
         }
       },
@@ -446,7 +374,16 @@
       ],
       "additionalProperties": false
     },
-    "OneArtifactCardinality": {
+    "Union_3": {
+      "type": "string",
+      "enum": [
+        "file",
+        "executable",
+        "archive",
+        "digest"
+      ]
+    },
+    "OneArtifactCardinalityEncoded": {
       "type": "object",
       "properties": {
         "kind": {
@@ -461,7 +398,7 @@
       ],
       "additionalProperties": false
     },
-    "OneOrMoreArtifactCardinality": {
+    "OneOrMoreArtifactCardinalityEncoded": {
       "type": "object",
       "properties": {
         "kind": {
@@ -476,7 +413,7 @@
       ],
       "additionalProperties": false
     },
-    "BoundedArtifactCardinality": {
+    "BoundedArtifactCardinalityEncoded": {
       "type": "object",
       "properties": {
         "kind": {
@@ -493,19 +430,9 @@
             {
               "type": "string",
               "enum": [
+                "Infinity",
+                "-Infinity",
                 "NaN"
-              ]
-            },
-            {
-              "type": "string",
-              "enum": [
-                "Infinity"
-              ]
-            },
-            {
-              "type": "string",
-              "enum": [
-                "-Infinity"
               ]
             }
           ]
@@ -518,19 +445,9 @@
             {
               "type": "string",
               "enum": [
+                "Infinity",
+                "-Infinity",
                 "NaN"
-              ]
-            },
-            {
-              "type": "string",
-              "enum": [
-                "Infinity"
-              ]
-            },
-            {
-              "type": "string",
-              "enum": [
-                "-Infinity"
               ]
             }
           ]
@@ -543,20 +460,27 @@
       ],
       "additionalProperties": false
     },
-    "CandidateArtifactCollection": {
+    "Union_4": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OneArtifactCardinalityEncoded"
+        },
+        {
+          "$ref": "#/$defs/OneOrMoreArtifactCardinalityEncoded"
+        },
+        {
+          "$ref": "#/$defs/BoundedArtifactCardinalityEncoded"
+        }
+      ]
+    },
+    "CandidateArtifactCollectionEncoded": {
       "type": "object",
       "properties": {
         "root": {
           "type": "string"
         },
         "artifactKind": {
-          "type": "string",
-          "enum": [
-            "file",
-            "executable",
-            "archive",
-            "digest"
-          ]
+          "$ref": "#/$defs/Union_3"
         },
         "pathSuffix": {
           "type": "string",
@@ -575,17 +499,7 @@
           ]
         },
         "cardinality": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/OneArtifactCardinality"
-            },
-            {
-              "$ref": "#/$defs/OneOrMoreArtifactCardinality"
-            },
-            {
-              "$ref": "#/$defs/BoundedArtifactCardinality"
-            }
-          ]
+          "$ref": "#/$defs/Union_4"
         }
       },
       "required": [
@@ -597,7 +511,7 @@
       ],
       "additionalProperties": false
     },
-    "CandidateCollectionPreparation": {
+    "CandidateCollectionPreparationEncoded": {
       "type": "object",
       "properties": {
         "kind": {
@@ -615,33 +529,16 @@
           ]
         },
         "run": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "type": "string"
-            }
-          ],
-          "minItems": 1,
-          "items": {
-            "type": "string"
-          }
+          "$ref": "#/$defs/Arrays_1"
         },
         "cwd": {
           "type": "string"
         },
         "inputs": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "allOf": [
-              {
-                "minLength": 1
-              }
-            ]
-          }
+          "$ref": "#/$defs/Arrays_2"
         },
         "collection": {
-          "$ref": "#/$defs/CandidateArtifactCollection"
+          "$ref": "#/$defs/CandidateArtifactCollectionEncoded"
         }
       },
       "required": [
@@ -652,7 +549,20 @@
       ],
       "additionalProperties": false
     },
-    "CandidateNpmPackageBuild": {
+    "Union_2": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CandidateCheckPreparationEncoded"
+        },
+        {
+          "$ref": "#/$defs/CandidateArtifactPreparationEncoded"
+        },
+        {
+          "$ref": "#/$defs/CandidateCollectionPreparationEncoded"
+        }
+      ]
+    },
+    "CandidateNpmPackageBuildEncoded": {
       "type": "object",
       "properties": {
         "run": {
@@ -696,19 +606,19 @@
       ],
       "additionalProperties": false
     },
-    "CandidateNpmPackage": {
+    "CandidateNpmPackageEncoded": {
       "type": "object",
       "properties": {
         "path": {
           "type": "string"
         },
         "build": {
-          "$ref": "#/$defs/CandidateNpmPackageBuild"
+          "$ref": "#/$defs/CandidateNpmPackageBuildEncoded"
         }
       },
       "additionalProperties": false
     },
-    "CandidateArtifact": {
+    "CandidateArtifactEncoded": {
       "type": "object",
       "properties": {
         "id": {
@@ -739,7 +649,7 @@
       ],
       "additionalProperties": false
     },
-    "CandidateArchive": {
+    "CandidateArchiveEncoded": {
       "type": "object",
       "properties": {
         "id": {
@@ -803,7 +713,7 @@
       },
       "additionalProperties": false
     },
-    "CandidateChecksum": {
+    "CandidateChecksumEncoded": {
       "type": "object",
       "properties": {
         "algorithm": {
@@ -819,7 +729,7 @@
       ],
       "additionalProperties": false
     },
-    "CandidateCatalogSource": {
+    "CandidateCatalogSourceEncoded": {
       "type": "object",
       "properties": {
         "artifact": {
@@ -844,7 +754,19 @@
       ],
       "additionalProperties": false
     },
-    "CandidateHomebrewCatalog": {
+    "Arrays_3": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/CandidateCatalogSourceEncoded"
+        }
+      ],
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/CandidateCatalogSourceEncoded"
+      }
+    },
+    "CandidateHomebrewCatalogEncoded": {
       "type": "object",
       "properties": {
         "id": {
@@ -880,16 +802,7 @@
           ]
         },
         "sources": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "$ref": "#/$defs/CandidateCatalogSource"
-            }
-          ],
-          "minItems": 1,
-          "items": {
-            "$ref": "#/$defs/CandidateCatalogSource"
-          }
+          "$ref": "#/$defs/Arrays_3"
         },
         "formulaName": {
           "type": "string",
@@ -918,7 +831,7 @@
       ],
       "additionalProperties": false
     },
-    "CandidateScoopCatalog": {
+    "CandidateScoopCatalogEncoded": {
       "type": "object",
       "properties": {
         "id": {
@@ -954,16 +867,7 @@
           ]
         },
         "sources": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "$ref": "#/$defs/CandidateCatalogSource"
-            }
-          ],
-          "minItems": 1,
-          "items": {
-            "$ref": "#/$defs/CandidateCatalogSource"
-          }
+          "$ref": "#/$defs/Arrays_3"
         },
         "manifestName": {
           "type": "string",
@@ -992,37 +896,37 @@
       ],
       "additionalProperties": false
     },
-    "CandidateCatalogs": {
+    "CandidateCatalogsEncoded": {
       "type": "object",
       "properties": {
         "homebrew": {
           "type": "array",
           "prefixItems": [
             {
-              "$ref": "#/$defs/CandidateHomebrewCatalog"
+              "$ref": "#/$defs/CandidateHomebrewCatalogEncoded"
             }
           ],
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/CandidateHomebrewCatalog"
+            "$ref": "#/$defs/CandidateHomebrewCatalogEncoded"
           }
         },
         "scoop": {
           "type": "array",
           "prefixItems": [
             {
-              "$ref": "#/$defs/CandidateScoopCatalog"
+              "$ref": "#/$defs/CandidateScoopCatalogEncoded"
             }
           ],
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/CandidateScoopCatalog"
+            "$ref": "#/$defs/CandidateScoopCatalogEncoded"
           }
         }
       },
       "additionalProperties": false
     },
-    "NpmTokenAuthentication": {
+    "NpmTokenAuthenticationEncoded": {
       "type": "object",
       "properties": {
         "strategy": {
@@ -1046,7 +950,7 @@
       ],
       "additionalProperties": false
     },
-    "NpmTrustedPublisherAttestation": {
+    "NpmTrustedPublisherAttestationEncoded": {
       "type": "object",
       "properties": {
         "provider": {
@@ -1102,7 +1006,7 @@
       ],
       "additionalProperties": false
     },
-    "NpmTrustedPublishingAuthentication": {
+    "NpmTrustedPublishingAuthenticationEncoded": {
       "type": "object",
       "properties": {
         "strategy": {
@@ -1112,7 +1016,7 @@
           ]
         },
         "attestation": {
-          "$ref": "#/$defs/NpmTrustedPublisherAttestation"
+          "$ref": "#/$defs/NpmTrustedPublisherAttestationEncoded"
         }
       },
       "required": [
@@ -1121,7 +1025,7 @@
       ],
       "additionalProperties": false
     },
-    "AuthoredNpmPublish": {
+    "AuthoredNpmPublishEncoded": {
       "type": "object",
       "properties": {
         "registry": {
@@ -1150,10 +1054,10 @@
         "authentication": {
           "anyOf": [
             {
-              "$ref": "#/$defs/NpmTokenAuthentication"
+              "$ref": "#/$defs/NpmTokenAuthenticationEncoded"
             },
             {
-              "$ref": "#/$defs/NpmTrustedPublishingAuthentication"
+              "$ref": "#/$defs/NpmTrustedPublishingAuthenticationEncoded"
             }
           ]
         },
@@ -1171,7 +1075,7 @@
       ],
       "additionalProperties": false
     },
-    "PyPiTokenAuthentication": {
+    "PyPiTokenAuthenticationEncoded": {
       "type": "object",
       "properties": {
         "strategy": {
@@ -1202,7 +1106,7 @@
       ],
       "additionalProperties": false
     },
-    "PyPiExternalTrustedPublishingAuthentication": {
+    "PyPiExternalTrustedPublishingAuthenticationEncoded": {
       "type": "object",
       "properties": {
         "strategy": {
@@ -1290,7 +1194,7 @@
       ],
       "additionalProperties": false
     },
-    "AuthoredPyPiPublish": {
+    "AuthoredPyPiPublishEncoded": {
       "type": "object",
       "properties": {
         "artifacts": {
@@ -1325,10 +1229,10 @@
         "authentication": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PyPiTokenAuthentication"
+              "$ref": "#/$defs/PyPiTokenAuthenticationEncoded"
             },
             {
-              "$ref": "#/$defs/PyPiExternalTrustedPublishingAuthentication"
+              "$ref": "#/$defs/PyPiExternalTrustedPublishingAuthenticationEncoded"
             }
           ]
         }
@@ -1339,7 +1243,7 @@
       ],
       "additionalProperties": false
     },
-    "CandidateCatalogGitDestination": {
+    "CandidateCatalogGitDestinationEncoded": {
       "type": "object",
       "properties": {
         "catalog": {
@@ -1391,7 +1295,7 @@
       ],
       "additionalProperties": false
     },
-    "ArtifactCollectionSelector": {
+    "ArtifactCollectionSelectorEncoded": {
       "type": "object",
       "properties": {
         "collection": {
@@ -1403,13 +1307,7 @@
           ]
         },
         "artifactKind": {
-          "type": "string",
-          "enum": [
-            "file",
-            "executable",
-            "archive",
-            "digest"
-          ]
+          "$ref": "#/$defs/Union_3"
         },
         "pathSuffix": {
           "type": "string",
@@ -1428,17 +1326,7 @@
           ]
         },
         "cardinality": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/OneArtifactCardinality"
-            },
-            {
-              "$ref": "#/$defs/OneOrMoreArtifactCardinality"
-            },
-            {
-              "$ref": "#/$defs/BoundedArtifactCardinality"
-            }
-          ]
+          "$ref": "#/$defs/Union_4"
         }
       },
       "required": [
@@ -1450,7 +1338,7 @@
       ],
       "additionalProperties": false
     },
-    "CandidateGitHubPublish": {
+    "CandidateGitHubPublishEncoded": {
       "type": "object",
       "properties": {
         "repository": {
@@ -1511,152 +1399,112 @@
           "type": "array",
           "prefixItems": [
             {
-              "$ref": "#/$defs/ArtifactCollectionSelector"
+              "$ref": "#/$defs/ArtifactCollectionSelectorEncoded"
             }
           ],
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/ArtifactCollectionSelector"
+            "$ref": "#/$defs/ArtifactCollectionSelectorEncoded"
           }
         }
       },
       "additionalProperties": false
     },
-    "AuthoredPublish": {
+    "AuthoredPublishEncoded": {
       "type": "object",
       "properties": {
         "npm": {
-          "$ref": "#/$defs/AuthoredNpmPublish"
+          "$ref": "#/$defs/AuthoredNpmPublishEncoded"
         },
         "pypi": {
-          "$ref": "#/$defs/AuthoredPyPiPublish"
+          "$ref": "#/$defs/AuthoredPyPiPublishEncoded"
         },
         "catalogGit": {
           "type": "array",
           "prefixItems": [
             {
-              "$ref": "#/$defs/CandidateCatalogGitDestination"
+              "$ref": "#/$defs/CandidateCatalogGitDestinationEncoded"
             }
           ],
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/CandidateCatalogGitDestination"
+            "$ref": "#/$defs/CandidateCatalogGitDestinationEncoded"
           }
         },
         "github": {
-          "$ref": "#/$defs/CandidateGitHubPublish"
+          "$ref": "#/$defs/CandidateGitHubPublishEncoded"
         }
       },
       "additionalProperties": false
     },
-    "AuthoredConfig": {
+    "AuthoredConfigEncoded": {
       "type": "object",
       "properties": {
         "$schema": {
           "type": "string"
         },
         "project": {
-          "$ref": "#/$defs/AuthoredProject"
+          "$ref": "#/$defs/AuthoredProjectEncoded"
         },
         "builds": {
           "type": "array",
           "prefixItems": [
             {
-              "anyOf": [
-                {
-                  "$ref": "#/$defs/CandidateBunBuild"
-                },
-                {
-                  "$ref": "#/$defs/CandidateCommandBuild"
-                },
-                {
-                  "$ref": "#/$defs/CandidatePrebuiltBuild"
-                }
-              ]
+              "$ref": "#/$defs/Union_"
             }
           ],
           "minItems": 1,
           "items": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/CandidateBunBuild"
-              },
-              {
-                "$ref": "#/$defs/CandidateCommandBuild"
-              },
-              {
-                "$ref": "#/$defs/CandidatePrebuiltBuild"
-              }
-            ]
+            "$ref": "#/$defs/Union_"
           }
         },
         "preparations": {
           "type": "array",
           "prefixItems": [
             {
-              "anyOf": [
-                {
-                  "$ref": "#/$defs/CandidateCheckPreparation"
-                },
-                {
-                  "$ref": "#/$defs/CandidateArtifactPreparation"
-                },
-                {
-                  "$ref": "#/$defs/CandidateCollectionPreparation"
-                }
-              ]
+              "$ref": "#/$defs/Union_2"
             }
           ],
           "minItems": 1,
           "items": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/CandidateCheckPreparation"
-              },
-              {
-                "$ref": "#/$defs/CandidateArtifactPreparation"
-              },
-              {
-                "$ref": "#/$defs/CandidateCollectionPreparation"
-              }
-            ]
+            "$ref": "#/$defs/Union_2"
           }
         },
         "npmPackage": {
-          "$ref": "#/$defs/CandidateNpmPackage"
+          "$ref": "#/$defs/CandidateNpmPackageEncoded"
         },
         "artifacts": {
           "type": "array",
           "prefixItems": [
             {
-              "$ref": "#/$defs/CandidateArtifact"
+              "$ref": "#/$defs/CandidateArtifactEncoded"
             }
           ],
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/CandidateArtifact"
+            "$ref": "#/$defs/CandidateArtifactEncoded"
           }
         },
         "archives": {
           "type": "array",
           "prefixItems": [
             {
-              "$ref": "#/$defs/CandidateArchive"
+              "$ref": "#/$defs/CandidateArchiveEncoded"
             }
           ],
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/CandidateArchive"
+            "$ref": "#/$defs/CandidateArchiveEncoded"
           }
         },
         "checksum": {
-          "$ref": "#/$defs/CandidateChecksum"
+          "$ref": "#/$defs/CandidateChecksumEncoded"
         },
         "catalogs": {
-          "$ref": "#/$defs/CandidateCatalogs"
+          "$ref": "#/$defs/CandidateCatalogsEncoded"
         },
         "publish": {
-          "$ref": "#/$defs/AuthoredPublish"
+          "$ref": "#/$defs/AuthoredPublishEncoded"
         },
         "versionFrom": {
           "type": "string",

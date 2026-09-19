@@ -1,0 +1,10 @@
+{
+  "ref": "refs/tags/v0.3.0",
+  "node_id": "REF_kwDOS8o_JbByZWZzL3RhZ3MvdjAuMy4w",
+  "url": "https://api.github.com/repos/mannyc2/ts-release/git/refs/tags/v0.3.0",
+  "object": {
+    "sha": "cea8c957090d89c88838782c4d3265521f47d895",
+    "type": "commit",
+    "url": "https://api.github.com/repos/mannyc2/ts-release/git/commits/cea8c957090d89c88838782c4d3265521f47d895"
+  }
+}

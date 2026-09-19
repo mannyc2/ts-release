@@ -1,0 +1,15 @@
+{
+  "upstreamRevision": "ef29a087baac8bdbcd90a54bb62a2dceb739dd91",
+  "files": [
+    {
+      "source": "test/integration/fixtures/sbom-subject/package.json",
+      "file": "package.json",
+      "sha256": "077ecd941c8b2c5fce25e5087c1012d5ca5b8de3c61f0ba0ad7381756ed21b32"
+    },
+    {
+      "source": "test/integration/fixtures/sbom-subject/package-lock.json",
+      "file": "package-lock.json",
+      "sha256": "873f15f643534b506da8cb940cbccc14ef2c66796f63bcab0a3419d807af4026"
+    }
+  ]
+}

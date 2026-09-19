@@ -1,0 +1,100 @@
+{
+  "bugs": {
+    "url": "https://github.com/mannyc2/effect-build/issues"
+  },
+  "dist": {
+    "shasum": "39cfddfdae47355920a7cbc3b8ce720f11b61650",
+    "tarball": "https://registry.npmjs.org/effect-build-archives/-/effect-build-archives-0.8.0.tgz",
+    "fileCount": 43,
+    "integrity": "sha512-XTJhCFt63U+FbFp5Cu/anOwwN6PbSsR4sFfNVZCjshHWy36rhSW8Ub9DSKA9jjqxcfCZsTjxwcPtviifOy3+tg==",
+    "signatures": [
+      {
+        "sig": "MEQCIHaHy4xJNaNntgpiPx+OYUZ0C/QrnfFZBZVkxHHTSaxOAiB1gl6uSmTK+U8Z+wpOmXKx08fj2a+yd/CHmzizMg+f9A==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "sig": "MEUCICIwtPdqkfhSukS7cN7KfuAfQyfhfExO02W/+RG9UMqKAiEAmrldjl95szAErFRPauz5Yc9bfaovtI+QpzflzKaLmM8=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-archives@0.8.0",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 197130
+  },
+  "name": "effect-build-archives",
+  "type": "module",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-archives-0.8.0.tgz",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -b tsconfig.json --force",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "_npmUser": {
+    "name": "GitHub Actions",
+    "email": "npm-oidc-no-reply@github.com",
+    "trustedPublisher": {
+      "id": "github",
+      "oidcConfigId": "oidc:a867fec8-c062-40d1-88bc-7dd64d8775de"
+    }
+  },
+  "homepage": "https://github.com/mannyc2/effect-build#readme",
+  "keywords": [
+    "effect",
+    "archive",
+    "zip",
+    "tar",
+    "git"
+  ],
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-archives-0.8.0.tgz",
+  "_integrity": "sha512-XTJhCFt63U+FbFp5Cu/anOwwN6PbSsR4sFfNVZCjshHWy36rhSW8Ub9DSKA9jjqxcfCZsTjxwcPtviifOy3+tg==",
+  "repository": {
+    "url": "git+https://github.com/mannyc2/effect-build.git",
+    "type": "git",
+    "directory": "packages/effect-build-archives"
+  },
+  "_npmVersion": "11.11.0",
+  "description": "Effect-native deterministic binary and exact Git-tree source archives.",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "mannyc1",
+      "email": "c20carroll@gmail.com"
+    }
+  ],
+  "sideEffects": false,
+  "_nodeVersion": "24.14.1",
+  "dependencies": {
+    "fflate": "0.8.3",
+    "effect-build": "^0.8.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "_hasShrinkwrap": false,
+  "devDependencies": {
+    "effect": "4.0.0-rc.115"
+  },
+  "peerDependencies": {
+    "effect": ">=4.0.0-rc.113 <4.1.0-0"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/effect-build-archives_0.8.0_1789829593140_0.20413397634750097",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "effect-build-archives@0.8.0",
+  "version": "0.8.0"
+}

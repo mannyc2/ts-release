@@ -1,0 +1,1 @@
+{"name":"@trial/external-provider","version":"0.0.0-trial","type":"module","files":["dist"],"dependencies":{"@trial/release":"0.0.0-trial"},"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.mjs"}},"publishConfig":{"access":"public"}}

@@ -1,0 +1,130 @@
+[
+  [
+    "Requires-Dist",
+    "package; os_name == '\\xZZ'"
+  ],
+  [
+    "Requires-Dist",
+    "package; os_name == '\\uZZZZ'"
+  ],
+  [
+    "Requires-Dist",
+    "package; os_name == '\\'"
+  ],
+  [
+    "Requires-Dist",
+    "package; os_name == '\\q'"
+  ],
+  [
+    "Requires-Dist",
+    "package; os_name == 'a\\x20b'"
+  ],
+  [
+    "Requires-Dist",
+    "package; os_name == '日本語'"
+  ],
+  [
+    "Requires-Dist",
+    "package; os_name == '\\U00110000'"
+  ],
+  [
+    "Requires-Dist",
+    "package; os_name == '\\uD800'"
+  ],
+  [
+    "Requires-Dist",
+    "package @ https://example.org/abc.whl; os_name == 'linux'"
+  ],
+  [
+    "Requires-Python",
+    "===foo bar"
+  ],
+  [
+    "Requires-Python",
+    "==1.2.*"
+  ],
+  [
+    "Requires-Python",
+    "===1.0;extra"
+  ],
+  [
+    "License-Expression",
+    "MIT+"
+  ],
+  [
+    "License-Expression",
+    "LicenseRef-foo+"
+  ],
+  [
+    "License-Expression",
+    "licenseref-foo"
+  ],
+  [
+    "License-Expression",
+    "LicenseRef-foo WITH Classpath-exception-2.0"
+  ],
+  [
+    "License-Expression",
+    "MIT WITH Classpath-exception-2.0+"
+  ],
+  [
+    "License-Expression",
+    "MIT and (Apache-2.0 OR GPL-2.0-only)"
+  ],
+  [
+    "License-Expression",
+    "(MIT) WITH Classpath-exception-2.0"
+  ],
+  [
+    "Import-Name",
+    "a·b"
+  ],
+  [
+    "Import-Name",
+    "a‍b"
+  ],
+  [
+    "Import-Name",
+    "℘x"
+  ],
+  [
+    "Import-Name",
+    "namespace.K"
+  ],
+  [
+    "Import-Name",
+    "aͺb"
+  ],
+  [
+    "Import-Name",
+    "a·b"
+  ],
+  [
+    "Description-Content-Type",
+    "text/plain; CHARSET=UTF-8; charset=ascii"
+  ],
+  [
+    "Description-Content-Type",
+    "text/plain; charset=UTF-8; charset=UTF-8"
+  ],
+  [
+    "Description-Content-Type",
+    "text/plain; charset*=UTF-8''UTF-8"
+  ],
+  [
+    "Description-Content-Type",
+    "text/plain; x=y; x=z"
+  ],
+  [
+    "Description-Content-Type",
+    "text/plain (comment)"
+  ],
+  [
+    "License-File",
+    ""
+  ],
+  [
+    "License-File",
+    "C:LICENSE"
+  ]
+]

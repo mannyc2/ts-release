@@ -12,37 +12,32 @@ permissions:
 
 jobs:
   portable:
-    name: Portable package checks (${{ matrix.os }})
+    name: Package checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-24.04
-          - macos-15
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
 
-      # The packed npm consumer and certified npm publisher both require an
-      # engine-admitted Node runtime. The Action itself is a composite/Bun
-      # entrypoint, so this pin proves the package boundary rather than a
-      # nonexistent JavaScript Action runtime.
+      # Exercise the package and the native Node Action launcher.
       - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@v4
         with:
-          node-version: "22.22.2"
+          node-version: "24.15.0"
 
       - name: Cache bun installs
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
@@ -51,44 +46,24 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Run portable package checks
+      - name: Setup native Python acceptance
+        if: runner.os == 'Linux'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.14"
+
+      - name: Install pinned native Python fixtures
+        if: runner.os == 'Linux'
+        run: bun scripts/setup-native-python.ts
+
+      - name: Install pinned native catalog consumers
+        if: runner.os == 'Linux'
+        run: bun run setup:native-catalog
+
+      - name: Run release workflow and native fixture checks
+        if: runner.os == 'Linux'
         run: bun run check:portable
 
-  agent-host:
-    name: Agent host validation
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: 1.3.14
-
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: "22.22.2"
-
-      - name: Cache bun installs
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-
-      - name: Install
-        run: bun install --frozen-lockfile
-
-      - name: Install Claude Code validator
-        run: npm install --global @anthropic-ai/claude-code@2.1.219
-
-      - name: Record Claude Code version
-        run: claude --version
-
-      - name: Run generated agent host checks
-        run: bun run check:agents
+      - name: Check macOS package imports and installed declarations
+        if: runner.os == 'macOS'
+        run: bun run check && bun run check:packed-kernel

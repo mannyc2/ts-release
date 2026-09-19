@@ -1,0 +1,35 @@
+{
+  "format": "ts-release/npm-native-request-oracle/1",
+  "npm": "10.9.7",
+  "libnpmpublish": "10.0.2",
+  "nodeVersion": "22.22.2",
+  "sources": [
+    {
+      "path": "node_modules/libnpmpublish/lib/publish.js",
+      "sha256": "c0bc91076a2f6db8b0fd9936871b9dabe127f5ec7ae27dcb599d5c363b16c749"
+    },
+    {
+      "path": "lib/commands/dist-tag.js",
+      "sha256": "a825d168247f4b6af454555f666001908eda15350b7fbdbfdddea75b9496a71e"
+    }
+  ],
+  "tarballSha256": "fe871fc21fc056d9f745cb0a8318abf9c90ecc985cd77a6acce267de198a8365",
+  "manifestSha256": "2b76500a58cef8352395fef73f4417590c7c8ff7698e79940bbab21e97fba19b",
+  "requests": [
+    {
+      "endpoint": "https://registry.npmjs.org/@fixture%2fexample",
+      "method": "PUT",
+      "body": "{\"_id\":\"@fixture/example\",\"name\":\"@fixture/example\",\"description\":\"Native npm oracle\",\"dist-tags\":{\"latest\":\"1.2.3\"},\"versions\":{\"1.2.3\":{\"name\":\"@fixture/example\",\"version\":\"1.2.3\",\"description\":\"Native npm oracle\",\"dist\":{\"custom\":\"retained\",\"integrity\":\"sha512-P/TlpimjxMTsEKjmRMP7ab+kTf+uzFpCAqBHLylXpOzIoibFOUAi6wgKEym0jAIoujO12kamYZyXtUp9mLXJ4w==\",\"shasum\":\"46c0c1d2afdf80ffce1e7454e92adb2ae0308b27\",\"tarball\":\"http://registry.npmjs.org/@fixture/example/-/@fixture/example-1.2.3.tgz\"},\"publishConfig\":{\"registry\":\"https://registry.npmjs.org/\",\"access\":\"public\",\"tag\":\"latest\",\"provenance\":false},\"_nodeVersion\":\"22.22.2\",\"_id\":\"@fixture/example@1.2.3\"}},\"access\":\"public\",\"_attachments\":{\"@fixture/example-1.2.3.tgz\":{\"content_type\":\"application/octet-stream\",\"data\":\"H4sIAAAAAAAC/+2TwWrEIBCGc85TiOeSaNx6KBQKvfcdrJnNuk1UdLKklH33arOFdi+9bBda/C4D4+8/jvB7pV/UAK1fa7OPzlYXhjEm5YbkmjivjAnZESZuJeNcSrYhjAvOeUVYdQXmiCqkp1xgyW/L/RHeamrVBPSO0IetWXAO0MKiJj8CvanpAUI0zuZj3nSNyL0eog7G46n/pNAcgFg/EReUXu/1JmI6TO46fbCbsjAAKmOhp/UxKfz8PJq4e3R2a4ZVGmBI18JrFu8Qfbxr289ek/z3sXFhaLO/0hpizMIPH517qLIPHRVCGp5HBHcAq6zO623VGKE+1seq8IVT7ltje1hS+n9jxk/5Z0Kc5b/rpCj5vwaweBeQaGcjErtG+Z5gmKEu4SgUCoV/zDtATD3AAAwAAA==\",\"length\":313}}}"
+    },
+    {
+      "endpoint": "https://registry.npmjs.org/-/package/@fixture%2fexample/dist-tags/next",
+      "method": "PUT",
+      "body": "\"1.2.3\""
+    }
+  ],
+  "limits": [
+    "Official native request encoders with intercepted registry port; no remote publication",
+    "Publish comparison excludes only npm-injected _nodeVersion and JSON object key order",
+    "Dist-tag compares exact body bytes; provenance trust has a separate authentic native witness"
+  ]
+}

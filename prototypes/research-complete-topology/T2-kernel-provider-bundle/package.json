@@ -1,0 +1,1 @@
+{"name":"@trial/topology-t2","private":true,"version":"0.0.0-trial","type":"module","workspaces":["apps","external","packages/*"],"scripts":{"build:dry-run":"bun x tsc -p tsconfig.json","self-release:dry-run":"bun test ./test/candidate.test.ts"}}

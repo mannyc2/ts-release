@@ -297,7 +297,7 @@ const makeTester = <R>(
       Object.keys(arbitraries).reduce(function(result, key) {
         const arb: any = (arbitraries as Record<string, any>)[key]
         if (Schema.isSchema(arb)) {
-          result[key] = Schema.toArbitrary(arb)
+          result[key] = Schema.toArbitrary(arb) as unknown as fc.Arbitrary<any>
         } else {
           result[key] = arb
         }

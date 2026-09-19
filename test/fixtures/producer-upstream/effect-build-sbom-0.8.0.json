@@ -1,0 +1,99 @@
+{
+  "bugs": {
+    "url": "https://github.com/mannyc2/effect-build/issues"
+  },
+  "dist": {
+    "shasum": "08044fe7cb7d9a753489b4041fbce4d988047c37",
+    "tarball": "https://registry.npmjs.org/effect-build-sbom/-/effect-build-sbom-0.8.0.tgz",
+    "fileCount": 13,
+    "integrity": "sha512-F2umc8l5Flx1uRHM+okTsJ3seyj75/4PDogOhI8a8sK6475cjXJXsWyd1lrSanIljfj4jLGfbjO5fZvJ25KWtQ==",
+    "signatures": [
+      {
+        "sig": "MEUCIFVUYCUCp1r1JXCRZHKn9d9rxlNBpZ2XMxZfvQR56WdQAiEAmZlLGooWUgd1ZQiUDOXI7NXkpKf+HiwFat2JBavborM=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "sig": "MEYCIQCZ7Yx4soV1QyOJfF7BsFW1y3m4wLrdPu94rJsnPXw7iQIhAK7xsx5nWIAhpw9VTaoypg0ELcV5sQT0LOWKntfen8rJ",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-sbom@0.8.0",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 19947
+  },
+  "name": "effect-build-sbom",
+  "type": "module",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-sbom-0.8.0.tgz",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -b tsconfig.json --force",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "_npmUser": {
+    "name": "GitHub Actions",
+    "email": "npm-oidc-no-reply@github.com",
+    "trustedPublisher": {
+      "id": "github",
+      "oidcConfigId": "oidc:32890761-af4e-4f5b-9797-957d7e963a23"
+    }
+  },
+  "homepage": "https://github.com/mannyc2/effect-build#readme",
+  "keywords": [
+    "effect",
+    "sbom",
+    "syft",
+    "spdx",
+    "cyclonedx"
+  ],
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-sbom-0.8.0.tgz",
+  "_integrity": "sha512-F2umc8l5Flx1uRHM+okTsJ3seyj75/4PDogOhI8a8sK6475cjXJXsWyd1lrSanIljfj4jLGfbjO5fZvJ25KWtQ==",
+  "repository": {
+    "url": "git+https://github.com/mannyc2/effect-build.git",
+    "type": "git",
+    "directory": "packages/effect-build-sbom"
+  },
+  "_npmVersion": "11.11.0",
+  "description": "Effect-native SPDX and CycloneDX SBOM generation with Syft.",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "mannyc1",
+      "email": "c20carroll@gmail.com"
+    }
+  ],
+  "sideEffects": false,
+  "_nodeVersion": "24.14.1",
+  "dependencies": {
+    "effect-build": "^0.8.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "_hasShrinkwrap": false,
+  "devDependencies": {
+    "effect": "4.0.0-rc.115"
+  },
+  "peerDependencies": {
+    "effect": ">=4.0.0-rc.113 <4.1.0-0"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/effect-build-sbom_0.8.0_1789830240841_0.3824403806879375",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "effect-build-sbom@0.8.0",
+  "version": "0.8.0"
+}

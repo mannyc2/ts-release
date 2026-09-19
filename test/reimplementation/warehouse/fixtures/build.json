@@ -1,0 +1,35 @@
+{
+  "work": "/tmp/ts-release-python-fixtures-5t9qCe",
+  "files": [
+    {
+      "filename": "ts_release_native_fixture-1.2.3-cp312-cp312-macosx_11_0_arm64.whl",
+      "sha256": "b7363d51b8c73e208649caf6668e590a2b30b691b8bbe51fb01856063f2f97fa",
+      "bytes": 1848
+    },
+    {
+      "filename": "ts_release_native_fixture-1.2.3-cp312-cp312-manylinux_2_17_x86_64.whl",
+      "sha256": "6eeecc169c304f8700c1189955316a1b68afcc2efef876f11f1ba40bf9f6ef9a",
+      "bytes": 1850
+    },
+    {
+      "filename": "ts_release_native_fixture-1.2.3-py3-none-any.whl",
+      "sha256": "7e622a17c857f6e9073f18b56fb1504643ef71cb8a9f89e149d6bbbae7c6642f",
+      "bytes": 1834
+    },
+    {
+      "filename": "ts_release_native_fixture-1.2.3.tar.gz",
+      "sha256": "cb2ce8a825e3822150c88574c6b27a26c7eb95d9f3ac747d75ba9e483527a65d",
+      "bytes": 1220
+    }
+  ],
+  "tools": {
+    "python": "3.11.14",
+    "build": "1.6.0",
+    "setuptools": "80.9.0",
+    "wheel": "0.48.0"
+  },
+  "limits": [
+    "Real native Python frontend and wheel tagging; CP312 platform tags are changed on the pure-Python fixture, not native compiled-extension acceptance",
+    "Full producer integrations follow W08"
+  ]
+}

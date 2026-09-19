@@ -19,7 +19,7 @@ export type SelfReleaseMode = typeof selfReleaseModes[number]
 
 const exactRepository = "mannyc2/ts-release"
 const exactRef = "refs/heads/main"
-const exactTagRef = "refs/tags/v0.3.0"
+const exactTagRef = "refs/tags/v0.3.1"
 const exactRemoteUrls = new Set([
   "https://github.com/mannyc2/ts-release",
   "https://github.com/mannyc2/ts-release.git"
@@ -217,7 +217,7 @@ const main = (): void => {
   if (releaseMode === "publish-npm" || releaseMode === "publish-github") {
     const tagLine = commandOutput("/usr/bin/git", ["ls-remote", remote, exactTagRef], gitEnvironment)
     if (tagLine !== `${candidateSha}\t${exactTagRef}`) {
-      fail("lightweight v0.3.0 tag is absent, annotated, moved, or differs from candidate_sha")
+      fail("lightweight v0.3.1 tag is absent, annotated, moved, or differs from candidate_sha")
     }
   }
   assertToolchain(closedEnvironment, nodeExecutable, bunExecutable)

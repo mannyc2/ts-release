@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.3.1 - 2026-09-19
+
+- Retain the existing single-package distribution and Effect beta.83 runtime.
+- Correct publication report retention to bind the hosted prepared reference to
+  the canonical prepared-content digest emitted by the release engine.
+- Update release tooling and immutable Action references for v0.3.1.
+
 ## 0.3.0 - 2026-09-01
 
 ### Self-release hardening

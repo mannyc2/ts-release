@@ -98,7 +98,7 @@ const tagReport = (patch: Readonly<Record<string, unknown>> = {}) => ({
   schemaVersion: "ts-release/tag-convergence/v1",
   status: "complete",
   result: "created-and-observed",
-  tag: "v0.3.0",
+  tag: "v0.3.1",
   candidateSha,
   mutationAttempts: 1,
   ...patch
@@ -110,8 +110,8 @@ const alreadyEquivalent = (subject: ReturnType<typeof SubjectId.make>) =>
   get(makeAlreadyEquivalent(subject, [equivalent(subject)], []))
 
 const uncertainGitHubRelease = () => {
-  const preparedSubject = SubjectId.make(prepared)
-  const remoteSubject = SubjectId.make("github:mannyc2/ts-release#v0.3.0")
+  const preparedSubject = SubjectId.make(`prepared:sha256-${prepared.split("#sha256-")[1]}`)
+  const remoteSubject = SubjectId.make("github:mannyc2/ts-release#v0.3.1")
   const different = () => PresentDifferent.make({
     subject: remoteSubject,
     differences: [new Difference({
@@ -159,8 +159,8 @@ const actionReport = (
   const report = kind === "github-publish"
     ? uncertainGitHubRelease()
     : makeReleaseReport([
-      alreadyEquivalent(SubjectId.make(prepared)),
-      alreadyEquivalent(SubjectId.make("npm:@mannyc1/ts-release@0.3.0"))
+      alreadyEquivalent(SubjectId.make(`prepared:sha256-${prepared.split("#sha256-")[1]}`)),
+      alreadyEquivalent(SubjectId.make("npm:@mannyc1/ts-release@0.3.1"))
     ])
   return {
     schemaVersion: "ts-release-action-report/v2",
@@ -193,7 +193,7 @@ const npmOidcReport = (): NpmOidcCertificationReceipt => {
     prepared,
     package: {
       name: "@mannyc1/ts-release",
-      version: "0.3.0",
+      version: "0.3.1",
       preparedDigest: digest,
       tarballSize: 123,
       tarballSha1: "c".repeat(40),
@@ -232,7 +232,7 @@ const npmOidcReport = (): NpmOidcCertificationReceipt => {
     npmDryRun: {
       command: "npm publish exact.tgz --dry-run --ignore-scripts --registry https://registry.npmjs.org/ --tag latest --access public --json --loglevel verbose",
       tokenExchangeMarkers: 1,
-      packageId: "@mannyc1/ts-release@0.3.0",
+      packageId: "@mannyc1/ts-release@0.3.1",
       packageSize: 123,
       claim: npmOidcCertificationScope,
       provenance: "not-certified"
@@ -688,6 +688,22 @@ test("refuses a producer report changed after the authority-dropping bootstrap s
     expect(current.transport.uploadCalls).toBe(0)
   } finally {
     rmSync(current.root, { recursive: true, force: true })
+  }
+})
+
+test("publication retention rejects transport aliases and mismatched content digests", async () => {
+  for (const subject of [prepared, `prepared:sha256-${"f".repeat(64)}`]) {
+    const report = makeReleaseReport([
+      alreadyEquivalent(SubjectId.make(subject)),
+      alreadyEquivalent(SubjectId.make("npm:@mannyc1/ts-release@0.3.1"))
+    ])
+    const current = fixture("npm-publish", actionReport("npm-publish", { report }))
+    try {
+      await expect(current.run()).rejects.toThrow("prepared and remote subjects")
+      expect(current.transport.uploadCalls).toBe(0)
+    } finally {
+      rmSync(current.root, { recursive: true, force: true })
+    }
   }
 })
 

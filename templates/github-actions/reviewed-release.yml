@@ -48,7 +48,7 @@ jobs:
           bun install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted
           bun --no-env-file --no-install -e 'await (await import("node:fs/promises")).rm("node_modules", { recursive: true, force: true })'
       - id: prepare
-        uses: mannyc2/ts-release/apps/ts-release-action@v0.3.0
+        uses: mannyc2/ts-release/apps/ts-release-action@v0.3.1
         env:
           TS_RELEASE_NODE_BIN: ${{ steps.release-tools.outputs.node-bin }}
           TS_RELEASE_BUN_BIN: ${{ steps.release-tools.outputs.bun-bin }}
@@ -98,7 +98,7 @@ jobs:
           echo "bun-bin=$bun_path" >> "$GITHUB_OUTPUT"
       - run: bun add --global npm@11.11.0
       - id: publish
-        uses: mannyc2/ts-release/apps/ts-release-action@v0.3.0
+        uses: mannyc2/ts-release/apps/ts-release-action@v0.3.1
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TS_RELEASE_NODE_BIN: ${{ steps.release-tools.outputs.node-bin }}

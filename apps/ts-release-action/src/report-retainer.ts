@@ -81,7 +81,7 @@ const kindContract = {
     retentionJob: "retain-npm-publication",
     command: "publish",
     reportPath: ".release/ts-release/action-report.json",
-    remoteSubject: "npm:@mannyc1/ts-release@0.3.0"
+    remoteSubject: "npm:@mannyc1/ts-release@0.3.1"
   },
   "npm-inspect": {
     producerJob: "preflight-github",
@@ -95,7 +95,7 @@ const kindContract = {
     retentionJob: "publish-github",
     command: "publish",
     reportPath: ".release/ts-release/action-report.json",
-    remoteSubject: "github:mannyc2/ts-release#v0.3.0"
+    remoteSubject: "github:mannyc2/ts-release#v0.3.1"
   }
 } as const satisfies Record<SelfReleaseReportKind, {
   readonly producerJob: string
@@ -292,9 +292,9 @@ const rejectSecretMaterial = (
 const validateTagReport = (value: JsonValue, candidateSha: string): void => {
   const report = expectObject(value, "tag report")
   exactKeys(report, ["schemaVersion", "status", "result", "tag", "candidateSha", "mutationAttempts"])
-  if (report.schemaVersion !== "ts-release/tag-convergence/v1" || report.tag !== "v0.3.0" ||
+  if (report.schemaVersion !== "ts-release/tag-convergence/v1" || report.tag !== "v0.3.1" ||
       report.candidateSha !== candidateSha || (report.mutationAttempts !== 0 && report.mutationAttempts !== 1)) {
-    return fail("tag report does not bind exact v0.3.0 and candidate_sha")
+    return fail("tag report does not bind exact v0.3.1 and candidate_sha")
   }
   const admittedResults = {
     complete: new Set(["already-equivalent", "created-and-observed", "converged-after-conflict"]),
@@ -350,7 +350,7 @@ const validateActionReport = (
     return fail("publish report does not satisfy the exact ReleaseReport schema")
   }
   if (release.status !== status || release.subjects.length !== 2 ||
-      release.subjects[0]?.subject.toString() !== expectedPrepared ||
+      release.subjects[0]?.subject.toString() !== `prepared:sha256-${preparedReference.exec(expectedPrepared)![3]}` ||
       release.subjects[0]?._tag !== "AlreadyEquivalent" ||
       release.subjects[1]?.subject.toString() !== contract.remoteSubject) {
     return fail("publish report does not bind the prepared and remote subjects")

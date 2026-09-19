@@ -249,7 +249,7 @@ const preparedFixture = (
   })
   const authority = makeNpmPublicationAuthorityIntent({
     packageName: "@mannyc1/ts-release",
-    version: "0.3.0",
+    version: "0.3.1",
     registryUrl: "https://registry.npmjs.org/",
     distTag: "latest",
     authentication,
@@ -259,7 +259,7 @@ const preparedFixture = (
     id: NonEmptyName.make("npm-release"),
     artifactId,
     packageName: NonEmptyName.make("@mannyc1/ts-release"),
-    version: Version.make("0.3.0"),
+    version: Version.make("0.3.1"),
     registryUrl: CanonicalNpmRegistryEndpoint.make("https://registry.npmjs.org/"),
     distTag: NpmDistTag.make("latest"),
     access: "public",
@@ -269,7 +269,7 @@ const preparedFixture = (
   })
   const artifact = PreparedArtifact.make({
     id: artifactId,
-    path: SafeRelativePath.make("ts-release-0.3.0.tgz"),
+    path: SafeRelativePath.make("ts-release-0.3.1.tgz"),
     kind,
     size: bytes.length,
     digest,
@@ -293,8 +293,8 @@ const preparedFixture = (
     project: PreparedProject.make({
       name: NonEmptyName.make("@mannyc1/ts-release"),
       packageName: NonEmptyName.make("@mannyc1/ts-release"),
-      version: Version.make("0.3.0"),
-      tag: NonEmptyName.make("v0.3.0"),
+      version: Version.make("0.3.1"),
+      tag: NonEmptyName.make("v0.3.1"),
       ...(repository === undefined ? {} : { repository })
     }),
     provenance: fixturePreparedProvenance,
@@ -325,7 +325,7 @@ test("admits only the sole exact prepared npm tarball with its durable authority
   }
 })
 
-test("anonymous registry snapshots prove v0.3.0 and attestations absent with latest unchanged", async () => {
+test("anonymous registry snapshots prove v0.3.1 and attestations absent with latest unchanged", async () => {
   const urls = {
     packument: "https://fixture.registry/package",
     distTags: "https://fixture.registry/tags",
@@ -434,7 +434,7 @@ const receiptFixture = (): NpmOidcCertificationReceipt => {
     prepared,
     package: {
       name: "@mannyc1/ts-release",
-      version: "0.3.0",
+      version: "0.3.1",
       preparedDigest,
       tarballSize: 123,
       tarballSha1: "b".repeat(40),
@@ -473,7 +473,7 @@ const receiptFixture = (): NpmOidcCertificationReceipt => {
     npmDryRun: {
       command: "npm publish exact.tgz --dry-run --ignore-scripts --registry https://registry.npmjs.org/ --tag latest --access public --json --loglevel verbose",
       tokenExchangeMarkers: 1,
-      packageId: "@mannyc1/ts-release@0.3.0",
+      packageId: "@mannyc1/ts-release@0.3.1",
       packageSize: 123,
       claim: npmOidcCertificationScope,
       provenance: "not-certified"
@@ -527,7 +527,7 @@ test.skipIf(!shouldRunExactNpm)("npm 11.11.0 performs exactly one OIDC exchange 
     mkdirSync(packageRoot, { recursive: true })
     writeFileSync(join(packageRoot, "package.json"), JSON.stringify({
       name: "@mannyc1/ts-release",
-      version: "0.3.0",
+      version: "0.3.1",
       files: ["index.js"]
     }))
     writeFileSync(join(packageRoot, "index.js"), "export const fixture = true\n")
@@ -593,7 +593,7 @@ test.skipIf(!shouldRunExactNpm)("npm 11.11.0 performs exactly one OIDC exchange 
       registryUrl: `http://127.0.0.1:${address.port}/`
     })
     expect(result).toEqual({
-      packageId: "@mannyc1/ts-release@0.3.0",
+      packageId: "@mannyc1/ts-release@0.3.1",
       packageSize: bytes.length,
       tokenExchangeMarkers: 1
     })

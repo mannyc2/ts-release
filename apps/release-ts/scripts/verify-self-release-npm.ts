@@ -15,7 +15,7 @@ import {
 } from "./install-self-release-npm.js"
 
 const packageName = "@mannyc1/ts-release"
-const version = "0.3.0"
+const version = "0.3.1"
 const registry = "https://registry.npmjs.org"
 const metadataUrl = `${registry}/@mannyc1%2fts-release/${version}`
 const distTagsUrl = `${registry}/-/package/@mannyc1%2fts-release/dist-tags`
@@ -624,7 +624,7 @@ const main = async (): Promise<void> => {
   const publications = manifest.publications.filter((publication) => publication._tag === "PreparedNpmPublication")
   if (manifest.source.commit.toString() !== candidateSha || manifest.project.version.toString() !== version ||
       publications.length !== 1 || manifest.publications.length !== 1) {
-    throw new Error("Adopted prepared bundle is not the exact npm-only 0.3.0 candidate.")
+    throw new Error("Adopted prepared bundle is not the exact npm-only 0.3.1 candidate.")
   }
   const publication = publications[0]!
   const artifact = manifest.artifacts.find((candidate) => candidate.id.toString() === publication.artifactId.toString())

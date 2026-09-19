@@ -87,7 +87,7 @@ unsupported advertised row, or unexercised claimed host stops certification.
 ## Bootstrap requirement
 
 The packaged README names the immutable Action coordinate
-`mannyc2/ts-release/apps/ts-release-action@v0.3.0`. Consumers must not see that
+`mannyc2/ts-release/apps/ts-release-action@v0.3.1`. Consumers must not see that
 README before the lightweight tag exists at exact result commit X. The
 self-release therefore creates only that tag before npm publication. It does
 not use the tag as privileged workflow code: each credentialed job performs a
@@ -214,7 +214,7 @@ prepared tarball without repacking, obtains and validates one GitHub OIDC token
 only in memory,
 and runs pinned Node 22.22.2/npm 11.11.0's exact `npm publish exact.tgz
 --dry-run` command. It requires one private npm token-exchange marker, exact
-tarball bytes, and byte-identical anonymous registry snapshots proving 0.3.0
+tarball bytes, and byte-identical anonymous registry snapshots proving 0.3.1
 and its attestations remain absent and `latest` is unchanged.
 
 The retained `ts-release/npm-oidc-certification/v1` receipt has status
@@ -230,7 +230,7 @@ publication.
 
 Under separately approved `github-tag` authority, dispatch `create-tag` with X
 and both prepared-reference inputs empty. It may create only the lightweight
-`v0.3.0` ref at X, then must reread it exactly; it creates no Release. Next,
+`v0.3.1` ref at X, then must reread it exactly; it creates no Release. Next,
 under a new, separate `npm` publication approval, dispatch `publish-npm` with X
 and the same exact npm prepared reference. That job publishes only the adopted
 tarball and must converge its public byte, latest-tag, provenance, and signature

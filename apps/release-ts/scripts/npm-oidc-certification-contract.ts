@@ -31,7 +31,7 @@ export interface NpmOidcCertificationReceipt {
   readonly prepared: string
   readonly package: {
     readonly name: "@mannyc1/ts-release"
-    readonly version: "0.3.0"
+    readonly version: "0.3.1"
     readonly preparedDigest: string
     readonly tarballSize: number
     readonly tarballSha1: string
@@ -78,7 +78,7 @@ export interface NpmOidcCertificationReceipt {
   readonly npmDryRun: {
     readonly command: "npm publish exact.tgz --dry-run --ignore-scripts --registry https://registry.npmjs.org/ --tag latest --access public --json --loglevel verbose"
     readonly tokenExchangeMarkers: 1
-    readonly packageId: "@mannyc1/ts-release@0.3.0"
+    readonly packageId: "@mannyc1/ts-release@0.3.1"
     readonly packageSize: number
     readonly claim: typeof npmOidcCertificationScope
     readonly provenance: "not-certified"
@@ -134,7 +134,7 @@ const decodeSnapshot = (value: unknown, name: string): NpmOidcRegistrySnapshot =
     }
   }
   const latest = boundedText(snapshot.latest, `${name}.latest`, 128)
-  if (latest === "0.3.0") fail(`${name}.latest already selects the release candidate`)
+  if (latest === "0.3.1") fail(`${name}.latest already selects the release candidate`)
   return snapshot as unknown as NpmOidcRegistrySnapshot
 }
 
@@ -164,7 +164,7 @@ export const decodeNpmOidcCertificationReceipt = (
   exactKeys(packageValue, [
     "name", "version", "preparedDigest", "tarballSize", "tarballSha1", "tarballSha256", "tarballIntegrity"
   ], "package")
-  if (packageValue.name !== "@mannyc1/ts-release" || packageValue.version !== "0.3.0" ||
+  if (packageValue.name !== "@mannyc1/ts-release" || packageValue.version !== "0.3.1" ||
       packageValue.preparedDigest !== reference[3] || !sha1.test(String(packageValue.tarballSha1)) ||
       !sha256.test(String(packageValue.tarballSha256)) || !sha512Sri.test(String(packageValue.tarballIntegrity))) {
     return fail("package bytes or coordinate is not canonical")
@@ -221,7 +221,7 @@ export const decodeNpmOidcCertificationReceipt = (
     "command", "tokenExchangeMarkers", "packageId", "packageSize", "claim", "provenance"
   ], "npmDryRun")
   if (npmDryRun.command !== "npm publish exact.tgz --dry-run --ignore-scripts --registry https://registry.npmjs.org/ --tag latest --access public --json --loglevel verbose" ||
-      npmDryRun.tokenExchangeMarkers !== 1 || npmDryRun.packageId !== "@mannyc1/ts-release@0.3.0" ||
+      npmDryRun.tokenExchangeMarkers !== 1 || npmDryRun.packageId !== "@mannyc1/ts-release@0.3.1" ||
       npmDryRun.packageSize !== tarballSize || npmDryRun.claim !== npmOidcCertificationScope ||
       npmDryRun.provenance !== "not-certified") {
     return fail("npm result does not prove one exact OIDC dry-run without upload")

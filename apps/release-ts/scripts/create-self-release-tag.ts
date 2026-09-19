@@ -5,7 +5,7 @@ import { assertNoForbiddenNpmEnvironment } from "./check-self-release-dispatch.j
 import { assertNoToolTransportEnvironment } from "./install-self-release-npm.js"
 
 const exactRepository = "mannyc2/ts-release"
-const exactTag = "v0.3.0"
+const exactTag = "v0.3.1"
 const exactRef = `refs/tags/${exactTag}`
 const apiRoot = `https://api.github.com/repos/${exactRepository}`
 const refUrl = `${apiRoot}/git/ref/tags/${encodeURIComponent(exactTag)}`
@@ -107,7 +107,7 @@ export const convergeSelfReleaseTag = async (
   boundary: GitHubTagBoundary
 ): Promise<SelfReleaseTagReport> => {
   if (input.tag !== exactTag || !gitSha.test(input.candidateSha)) {
-    throw new Error("Tag convergence requires exact v0.3.0 and one lowercase 40-hex candidate commit.")
+    throw new Error("Tag convergence requires exact v0.3.1 and one lowercase 40-hex candidate commit.")
   }
   const before = await readObservation(boundary, input)
   if (before._tag === "Equivalent") return report(input, "complete", "already-equivalent", 0)

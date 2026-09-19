@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
-import { chmod, mkdir, stat } from "node:fs/promises"
+import { chmod, mkdir, rename, rm, stat } from "node:fs/promises"
 import { join } from "node:path"
 
 // Reproducible Linux native-format controls. Native Windows/macOS installation
@@ -59,9 +59,20 @@ for (const binding of pins.sourceBindings)
 await mkdir(ps.directory, { recursive: true })
 const archive = join(ps.directory, ps.filename)
 if (!(await exists(archive))) {
-  const response = await fetch(ps.url)
-  assert.equal(response.status, 200)
-  await Bun.write(archive, response)
+  // Bun.write(path, Response) can hang on this redirected release download.
+  // Bound the transfer and admit only the pinned bytes into the fixture cache.
+  const pending = `${archive}.partial-${process.pid}`
+  try {
+    await run([
+      "curl", "--fail", "--location", "--silent", "--show-error",
+      "--connect-timeout", "15", "--max-time", "120",
+      "--output", pending, ps.url,
+    ])
+    assert.equal(createHash("sha256").update(await Bun.file(pending).bytes()).digest("hex"), ps.sha256)
+    await rename(pending, archive)
+  } finally {
+    await rm(pending, { force: true })
+  }
 }
 assert.equal(
   createHash("sha256")

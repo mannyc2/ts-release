@@ -23,7 +23,7 @@ const actionReport = (remoteTag: string, patch: Readonly<Record<string, unknown>
     status: "complete",
     subjects: [
       { _tag: "AlreadyEquivalent", subject: adoptedReference },
-      { _tag: remoteTag, subject: "npm:@mannyc1/ts-release@0.3.0" }
+      { _tag: remoteTag, subject: "npm:@mannyc1/ts-release@0.3.1" }
     ]
   },
   ...patch
@@ -60,7 +60,7 @@ const fulcioEvidence = () => ({
 const provenance = (patch: Readonly<Record<string, unknown>> = {}) => ({
   _type: "https://in-toto.io/Statement/v1",
   subject: [{
-    name: "pkg:npm/%40mannyc1/ts-release@0.3.0",
+    name: "pkg:npm/%40mannyc1/ts-release@0.3.1",
     digest: { sha512: sha512Hex }
   }],
   predicateType: "https://slsa.dev/provenance/v1",
@@ -115,16 +115,16 @@ const input = () => ({
   runAttempt: "1",
   repositoryId: "1271545637",
   repositoryOwnerId: "126291407",
-  distTags: { latest: "0.3.0" },
+  distTags: { latest: "0.3.1" },
   metadata: {
     name: "@mannyc1/ts-release",
-    version: "0.3.0",
+    version: "0.3.1",
     dist: {
       integrity,
       shasum,
-      tarball: "https://registry.npmjs.org/@mannyc1/ts-release/-/ts-release-0.3.0.tgz",
+      tarball: "https://registry.npmjs.org/@mannyc1/ts-release/-/ts-release-0.3.1.tgz",
       attestations: {
-        url: "https://registry.npmjs.org/-/npm/v1/attestations/@mannyc1%2fts-release@0.3.0",
+        url: "https://registry.npmjs.org/-/npm/v1/attestations/@mannyc1%2fts-release@0.3.1",
         provenance: { predicateType: "https://slsa.dev/provenance/v1" }
       }
     }
@@ -200,7 +200,7 @@ describe("published self-release npm evidence", () => {
           status: "complete",
           subjects: [
             { _tag: "AlreadyEquivalent", subject: `${adoptedReference}-other` },
-            { _tag: "AlreadyEquivalent", subject: "npm:@mannyc1/ts-release@0.3.0" }
+            { _tag: "AlreadyEquivalent", subject: "npm:@mannyc1/ts-release@0.3.1" }
           ]
         }
       }
@@ -244,7 +244,7 @@ describe("published self-release npm evidence", () => {
   test("binds adopted bytes to registry integrity and one exact GitHub SLSA statement", () => {
     expect(verifySelfReleaseNpmEvidence(input())).toEqual({
       packageName: "@mannyc1/ts-release",
-      version: "0.3.0",
+      version: "0.3.1",
       sha512: sha512Hex,
       sourceSha: candidateSha,
       workflow: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main",
@@ -259,7 +259,7 @@ describe("published self-release npm evidence", () => {
       { ...valid, candidateSha: "e".repeat(40) },
       { ...valid, runId: "43" },
       { ...valid, repositoryId: "9" },
-      { ...valid, metadata: { ...valid.metadata, version: "0.3.1" } },
+      { ...valid, metadata: { ...valid.metadata, version: "0.3.2" } },
       { ...valid, distTags: { latest: "0.2.2" } },
       {
         ...valid,

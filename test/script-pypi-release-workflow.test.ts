@@ -84,13 +84,13 @@ describe("official PyPA trusted-publishing workflow", () => {
     const resolved = resolveConfig(config, {
       commit: "c".repeat(40),
       manifestName: "@mannyc1/ts-release",
-      manifestVersion: "0.3.0",
+      manifestVersion: "0.3.1",
       repository: "mannyc2/ts-release"
     })
     expect(resolved.project).toMatchObject({
       name: "ts-release",
       packageName: "@mannyc1/ts-release",
-      version: "0.3.0"
+      version: "0.3.1"
     })
     expect(config.builds.map(({ entry }) => entry)).toEqual(["apps/release-ts/src/cli/main.ts"])
     const pypi = config.publish.pypi

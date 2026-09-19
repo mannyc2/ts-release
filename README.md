@@ -132,7 +132,7 @@ to the content-addressed Actions store. `certify-npm-oidc` adopts the exact npm
 bundle, proves one trusted-publisher exchange through pinned npm's dry-run, and
 proves unchanged anonymous registry state without upload, provenance, or
 publication. `create-tag` has only the separate
-`github-tag` environment and creates or reobserves the lightweight `v0.3.0`
+`github-tag` environment and creates or reobserves the lightweight `v0.3.1`
 tag at the exact candidate; it creates no Release. `publish-npm` accepts only
 the npm bundle under the `npm` environment with `id-token: write`, then
 rereads the public registry to prove exact tarball bytes and the exact GitHub
@@ -198,7 +198,7 @@ recovery artifact.
 
 ```yaml
 - id: release
-  uses: mannyc2/ts-release/apps/ts-release-action@v0.3.0
+  uses: mannyc2/ts-release/apps/ts-release-action@v0.3.1
   env:
     GITHUB_TOKEN: ${{ github.token }}
   with:
@@ -212,7 +212,7 @@ preparation, dispatch the same candidate with the exact emitted
 `prepared:gha:` reference; the job selects `publish`, loads and verifies the
 original bundle, and does not rebuild.
 
-`v0.3.0` is the immutable monorepo-subpath coordinate intended for this
+`v0.3.1` is the immutable monorepo-subpath coordinate intended for this
 candidate. Packaging and release certification must stop unless that tag is
 created from the exact certified result commit before consumers can see a
 README that names it. A floating Action branch is never an alternative.

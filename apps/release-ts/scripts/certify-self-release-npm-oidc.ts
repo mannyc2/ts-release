@@ -46,7 +46,7 @@ import {
 } from "./npm-oidc-certification-contract.js"
 
 const packageName = "@mannyc1/ts-release"
-const version = "0.3.0"
+const version = "0.3.1"
 const registry = "https://registry.npmjs.org/"
 const issuer = "https://token.actions.githubusercontent.com"
 const discoveryUrl = `${issuer}/.well-known/openid-configuration`
@@ -400,7 +400,7 @@ export const admitNpmPreparedBundle = (
       (manifest.project.repository !== undefined && manifest.project.repository !== repository) ||
       manifest.collections.length !== 0 ||
       manifest.publications.length !== 1 || manifest.artifacts.length !== 1) {
-    return fail("prepared bundle is not the sole exact npm v0.3.0 candidate")
+    return fail("prepared bundle is not the sole exact npm v0.3.1 candidate")
   }
   const publication = manifest.publications[0]
   const artifact = manifest.artifacts[0]
@@ -461,7 +461,7 @@ export const snapshotNpmRegistry = async (
   const tags = object(parseJsonBytes(distTags.bytes, "npm dist-tags"), "npm dist-tags")
   const latest = boundedText(tags.latest, "npm latest", 128)
   if (packumentValue.name !== packageName || version in versions || latest === version) {
-    return fail("npm public baseline does not prove v0.3.0 absent with a different latest")
+    return fail("npm public baseline does not prove v0.3.1 absent with a different latest")
   }
   return {
     packumentStatus: 200,
@@ -477,7 +477,7 @@ export const snapshotNpmRegistry = async (
 }
 
 interface NpmDryRunResult {
-  readonly packageId: "@mannyc1/ts-release@0.3.0"
+  readonly packageId: "@mannyc1/ts-release@0.3.1"
   readonly packageSize: number
   readonly tokenExchangeMarkers: 1
 }

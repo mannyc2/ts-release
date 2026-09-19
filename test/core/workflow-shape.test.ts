@@ -84,7 +84,7 @@ const clearedHandoffEnvironment = Object.fromEntries([
 
 const parseWorkflow = (value: string): ParsedWorkflow => Bun.YAML.parse(value) as ParsedWorkflow
 const isPublicReleaseAction = (value: unknown): value is string =>
-  value === "./apps/ts-release-action" || value === "mannyc2/ts-release/apps/ts-release-action@v0.3.0"
+  value === "./apps/ts-release-action" || value === "mannyc2/ts-release/apps/ts-release-action@v0.3.1"
 
 const actionPins = new Map([
   ["actions/checkout", "11d5960a326750d5838078e36cf38b85af677262"],
@@ -504,7 +504,7 @@ test("repository release hard-cuts prepare, npm OIDC certification, tag, npm, an
   }
   const tagTokenSteps = parsed.jobs?.["create-tag"]?.steps?.filter((step) => step.env?.GITHUB_TOKEN !== undefined) ?? []
   expect(tagTokenSteps).toHaveLength(1)
-  expect(tagTokenSteps[0]?.name).toBe("Converge exact lightweight v0.3.0 tag")
+  expect(tagTokenSteps[0]?.name).toBe("Converge exact lightweight v0.3.1 tag")
   const certificationTokenSteps = parsed.jobs?.["certify-npm-oidc"]?.steps
     ?.filter((step) => step.env?.GITHUB_TOKEN !== undefined) ?? []
   expect(certificationTokenSteps.map((step) => ({ name: step.name, uses: step.uses }))).toEqual([
@@ -633,7 +633,7 @@ test("user templates preserve the same handoff, with the environment gate only o
   const automatic = workflowTemplate("release.yml")
   const reviewed = workflowTemplate("reviewed-release.yml")
   for (const value of [automatic, reviewed]) {
-    expect(value).toContain("mannyc2/ts-release/apps/ts-release-action@v0.3.0")
+    expect(value).toContain("mannyc2/ts-release/apps/ts-release-action@v0.3.1")
     expect(value).not.toContain("__TS_RELEASE_ACTION_REF__")
     expect(value).toContain("persist-credentials: false")
     expect(value).not.toContain("mannyc2/ts-release-action")

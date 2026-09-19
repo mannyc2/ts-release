@@ -6,7 +6,7 @@ import {
 } from "../apps/release-ts/scripts/create-self-release-tag.js"
 
 const candidateSha = "c".repeat(40)
-const tag = "v0.3.0"
+const tag = "v0.3.1"
 const exact = (sha = candidateSha, type: "commit" | "tag" = "commit"): GitHubTagResponse => ({
   status: 200,
   body: {

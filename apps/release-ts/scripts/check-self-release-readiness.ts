@@ -187,7 +187,7 @@ const retainedReportSteps: Array<{ readonly job: string, readonly step: Workflow
 const reportHandoffSteps: Array<{ readonly job: string, readonly step: WorkflowStep }> = []
 let reportUploads = 0
 for (const [job, definition] of Object.entries(jobs)) for (const step of definition.steps ?? []) {
-  if (step.uses === "./apps/ts-release-action" || step.uses === "mannyc2/ts-release/apps/ts-release-action@v0.3.0") {
+  if (step.uses === "./apps/ts-release-action" || step.uses === "mannyc2/ts-release/apps/ts-release-action@v0.3.1") {
     actionSteps.push({ job, step })
   }
   if (step.uses === "./apps/ts-release-action/report-retainer") retainedReportSteps.push({ job, step })

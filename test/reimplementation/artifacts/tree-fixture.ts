@@ -10,7 +10,7 @@ export const producedBy = { name: "fixture-producer", version: "0.0.0" }
  * exact field order. `adoption.test.ts` checks this against a real
  * `Artifact.directory` observation so the fixture cannot drift from upstream.
  */
-export const manifestSha256 = (entries: readonly Artifact.Entry[]): string =>
+export const manifestSha256 = (entries: readonly (typeof Artifact.HashedEntry.Encoded)[]): string =>
   createHash("sha256")
     .update(
       `[${entries
@@ -19,7 +19,7 @@ export const manifestSha256 = (entries: readonly Artifact.Entry[]): string =>
             entry.kind,
             entry.mode,
             entry.bytes,
-            entry.sha256,
+            entry.kind === "file" ? entry.sha256 : undefined,
             entry.linkTarget,
             entry.path,
           ]),
@@ -39,7 +39,7 @@ export const treeEntries = {
 /** An owned tree whose identity is derived from its entries, sorted the way effect-build sorts. */
 export const ownedTree = (
   logicalName: string,
-  entries: readonly Artifact.Entry[],
+  entries: readonly (typeof Artifact.HashedEntry.Encoded)[],
   rootMode = 0o755,
 ): Tree => {
   const sorted = [...entries].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))

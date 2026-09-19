@@ -2,7 +2,9 @@ import { expect, test } from "bun:test"
 import { randomUUID } from "node:crypto"
 import { mkdtemp, mkdir, readdir, rm } from "node:fs/promises"
 import { join } from "node:path"
-import { Effect, Schema } from "effect"
+import * as Artifact from "effect-build/Artifact"
+import * as Tool from "effect-build/Tool"
+import { Effect, Layer, Schema } from "effect"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import {
   Host,
@@ -20,6 +22,7 @@ import {
   type Content,
 } from "../../../packages/ts-release/src/Bundle.js"
 import {
+  AppleTools,
   ApplePreparation,
   ApplePreparations,
   ReadyToPlan,
@@ -62,7 +65,7 @@ test("Apple recovery accepts a different lookup tool while preserving submission
       name: "xcrun",
       version: "71.0.0",
       path: "/different-runner/bin/xcrun",
-      sha256: "f".repeat(64),
+      sha256: Schema.decodeUnknownSync(Artifact.Sha256)("f".repeat(64)),
     }
     const resumed = appleDoubles(lookupProducer)
     const pending = await run(
@@ -73,13 +76,15 @@ test("Apple recovery accepts a different lookup tool while preserving submission
     if ("_tag" in pending) throw new Error("Expected a pending notarization")
     expect(pending.producedBy).toEqual(lookupProducer)
     expect(classifyEvidence(input, "operation", pending, [submitted])).toBe("Pending")
-    for (const changed of [
-      { ...pending, submissionId: randomUUID() },
-      { ...pending, artifact: { ...pending.artifact, sha256: "e".repeat(64) } },
-    ])
+    for (const changed of [{ ...pending, submissionId: randomUUID() }])
       expect(() => classifyEvidence(input, "operation", changed, [submitted])).toThrow(
         "no matching recorded submission",
       )
+    expect(() =>
+      classifyEvidence(input, "operation", pending, [
+        { ...submitted, artifact: { ...submitted.artifact, sha256: "e".repeat(64) } },
+      ]),
+    ).toThrow("no matching recorded submission")
     resumed.status({ _tag: "Accepted", providerStatus: "Accepted" })
     const ready = await run(
       finishPrepared(input, submitted, "operation", owner, join(root, "work")).pipe(
@@ -88,7 +93,10 @@ test("Apple recovery accepts a different lookup tool while preserving submission
     )
     expect(ready).toBeInstanceOf(ReadyToPlan)
     if (!(ready instanceof ReadyToPlan)) throw new Error("Expected completed preparation")
-    expect(ready.assessed.ticket.producedBy).toEqual(lookupProducer)
+    expect(ready.assessed.ticket).toEqual({
+      ...submitted,
+      status: { _tag: "Accepted", providerStatus: "Accepted" },
+    })
     expect(classifyEvidence(input, "operation", ready, [submitted])).toBe("Satisfied")
     expect(original.calls.submit).toBe(1)
     expect(resumed.calls).toEqual({ submit: 0, info: 2, staple: 1, assess: 1 })
@@ -298,7 +306,53 @@ test(
       expect(prepared).toBe(6)
       expect(await readdir(join(root, "work"))).toEqual([])
       for (const item of ready)
-        expect(item.assessed.sha256).toBe(item.finalArtifact.identity.sha256)
+        expect(String(item.assessed.sha256)).toBe(item.finalArtifact.identity.sha256)
     }),
   30_000,
 )
+
+for (const check of ["verifySignature", "validateTicket", "assess"] as const)
+  test(`Apple completion refuses failed ${check} before adopting final bytes`, () =>
+    fixture(async (root, { owner, collection }) => {
+      const input = collection.preparations[1]!
+      const native = appleDoubles()
+      const submitted = await run(
+        submitPrepared(input, owner, join(root, "work")).pipe(Effect.provide(native.layer)),
+      )
+      native.status({ _tag: "Accepted", providerStatus: "Accepted" })
+      let writes = 0
+      const counting = {
+        ...owner,
+        putFileOwned: (...args: Parameters<typeof owner.putFileOwned>) => {
+          writes++
+          return owner.putFileOwned(...args)
+        },
+      }
+      const layer = Layer.succeed(AppleTools, {
+        ...native.tools,
+        [check]: () =>
+          Effect.fail(new Tool.InputInvalid({ operation: check, reason: "assurance rejected" })),
+      })
+      await expect(
+        run(
+          finishPrepared(input, submitted, "operation", counting, join(root, "work")).pipe(
+            Effect.provide(layer),
+          ),
+        ),
+      ).rejects.toMatchObject({ _tag: "InputInvalid", operation: check })
+      expect(writes).toBe(0)
+      expect(await readdir(join(root, "work"))).toEqual([])
+    }))
+
+test("Apple v0.8 rejects both retired preparation collection formats", () =>
+  fixture(async (_root, { collection }) => {
+    for (const version of [1, 2])
+      await expect(
+        run(
+          loadApplePreparations({
+            ...collection,
+            format: `ts-release/apple-preparations/${version}`,
+          }),
+        ),
+      ).rejects.toMatchObject({ code: "preparation-format" })
+  }))

@@ -1,6 +1,7 @@
 import { Crypto, Effect, FileSystem, Option, Path, PlatformError, Schema } from "effect"
 import * as Artifact from "effect-build/Artifact"
 import * as Apple from "effect-build-apple"
+import { SubmissionReference, AcceptedReference, SignedProduct, StapledProduct } from "./Model.js"
 import { adoptFile, adoptTree, restoreTree } from "../EffectBuild.js"
 import { AdoptionError, identityOf, type OwnedFile } from "../internal/ArtifactModel.js"
 import { encodeBundle, loadBundle } from "../internal/BundleCodec.js"
@@ -21,7 +22,7 @@ export type NativeAppleError =
   | Apple.Notary.ResultNotAccepted
 export type NativeAppleServices = FileSystem.FileSystem | Path.Path | Crypto.Crypto | AppleTools
 export type DeriveDeliveryFiles<R = never> = (
-  assessed: Apple.StapledProduct,
+  assessed: StapledProduct,
 ) => Effect.Effect<readonly OwnedFile[], NativeAppleError, R>
 const mismatch = () => failure("apple-native-binding", "Apple native evidence differs")
 
@@ -59,7 +60,7 @@ export const restorePreparedSource = Effect.fn("apple.restoreSource")(function* 
   value: ApplePreparation,
   contentOwner: ContentOwner,
   workspace: string,
-): Effect.fn.Return<Apple.SignedProduct, NativeAppleError, NativeAppleServices> {
+): Effect.fn.Return<SignedProduct, NativeAppleError, NativeAppleServices> {
   const owner = captureContentOwner(contentOwner)
   const input = yield* attempt(() => decodeOwned(ApplePreparation, value))
   const fs = yield* FileSystem.FileSystem
@@ -80,7 +81,9 @@ export const restorePreparedSource = Effect.fn("apple.restoreSource")(function* 
   const identity = sourceIdentity(input)
   const bytes = yield* readVerifiedContent(owner.read, identity, identity.bytes)
   yield* fs.writeFile(destination, bytes)
-  const file = yield* Artifact.file(destination, input.source.producedBy)
+  const file = yield* Artifact.file(destination, input.source.producedBy).pipe(
+    Effect.flatMap(Artifact.withSha256),
+  )
   if (file.bytes !== identity.bytes || file.sha256 !== identity.sha256) return yield* mismatch()
   return input._tag === "DmgPreparation"
     ? { ...file, product: "dmg" as const, signature: input.signature }
@@ -99,7 +102,12 @@ export const submitPrepared = Effect.fn("apple.submitPrepared")(function* (
     Effect.gen(function* () {
       const privateRoot = yield* privateWorkspace(workspace, "apple-submit-")
       const source = yield* restorePreparedSource(input, owner, privateRoot)
-      return yield* tools.submit(source)
+      const submissionId = yield* tools.submit(source)
+      return {
+        submissionId,
+        kind: source.product === "app" ? ("zip" as const) : source.product,
+        artifact: source,
+      }
     }),
   )
 })
@@ -107,20 +115,17 @@ export const submitPrepared = Effect.fn("apple.submitPrepared")(function* (
 /** Staple beside the restored source; an app keeps its bundle name, which is part of its identity. */
 const staple = (
   tools: AppleTools["Service"],
-  source: Apple.SignedProduct,
-  acceptance: Apple.Notary.AcceptedReference,
+  source: SignedProduct,
   privateRoot: string,
   path: Path.Path,
 ) =>
   source.product === "app"
     ? tools.staple({
         artifact: source,
-        acceptance,
         outdir: path.join(privateRoot, path.basename(source.path)),
       })
     : tools.staple({
         artifact: source,
-        acceptance,
         outfile: path.join(privateRoot, `final.${source.product}`),
       })
 
@@ -131,7 +136,7 @@ const staple = (
  */
 export const finishPrepared = Effect.fn("apple.finishPrepared")(function* <R = never>(
   value: ApplePreparation,
-  recorded: Apple.Notary.SubmissionReference,
+  recorded: SubmissionReference,
   preparationId: string,
   contentOwner: ContentOwner,
   workspace: string,
@@ -140,19 +145,33 @@ export const finishPrepared = Effect.fn("apple.finishPrepared")(function* <R = n
   const owner = captureContentOwner(contentOwner)
   const tools = yield* AppleTools
   const input = yield* attempt(() => decodeOwned(ApplePreparation, value))
-  const submission = yield* attempt(() => decodeOwned(Apple.Notary.SubmissionReference, recorded))
+  const submission = yield* attempt(() => decodeOwned(SubmissionReference, recorded))
   if (!sourceCorresponds(input, submission)) return yield* mismatch()
-  const info = yield* tools.info(submission)
+  const info = yield* tools.info(submission.submissionId)
   yield* attempt(() => classifyEvidence(input, preparationId, info, [submission]))
   if (info.status._tag !== "Accepted") return info
-  const acceptance = yield* Apple.Notary.acceptedReference(info)
+  yield* Apple.Notary.expectAccepted(info)
+  const acceptance = yield* attempt(() =>
+    decodeOwned(AcceptedReference, { ...submission, status: info.status }),
+  )
   return yield* Effect.scoped(
     Effect.gen(function* () {
       const path = yield* Path.Path
       const privateRoot = yield* privateWorkspace(workspace, "apple-finish-")
       const source = yield* restorePreparedSource(input, owner, path.join(privateRoot, "source"))
-      const stapled = yield* staple(tools, source, acceptance, privateRoot, path)
-      const assessed = yield* tools.assess(stapled)
+      yield* tools.verifySignature(source)
+      const stapled = yield* staple(tools, source, privateRoot, path)
+      const verified = yield* tools.verifySignature(stapled)
+      const ticketed = yield* tools.validateTicket(verified)
+      const checked = yield* tools.assess(ticketed)
+      const identified = yield* Artifact.withSha256(checked)
+      const assessed = yield* attempt(() =>
+        decodeOwned(StapledProduct, {
+          ...identified,
+          signature: input.signature,
+          ticket: acceptance,
+        }),
+      )
       if (assessed.product !== productOf(input)) return yield* mismatch()
       const adopted =
         assessed.product === "app"

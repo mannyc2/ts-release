@@ -1,0 +1,100 @@
+{
+  "bugs": {
+    "url": "https://github.com/mannyc2/effect-build/issues"
+  },
+  "dist": {
+    "shasum": "01c96a8eaaf85857fdb772ee56f6d0e9e742e722",
+    "tarball": "https://registry.npmjs.org/effect-build-windows/-/effect-build-windows-0.8.0.tgz",
+    "fileCount": 13,
+    "integrity": "sha512-gWDEUIyDSHXZK3t7y335Gj956q9SvYKuQm8GgCjLPlKN9rrQUgSiupr78C3EaS6DiDeSQHEVPd4unKs0KkXjMg==",
+    "signatures": [
+      {
+        "sig": "MEQCIF//SB/lgoE6DrL8RdE2tRxU5bWpKV6CXHJCOELT8VAlAiBVVwcFWaz+68fmirp1h3vsmwh+rNznhdDzRSZpa1dmXw==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "sig": "MEUCIQD28XoDVU3BdoFgbIsVwXEXXBgFWd+eRGbw3yrWNuDL9QIgNf0xfjyknooLbHhQcUdffYZFCJ/6nEenJYOjtkRkLyg=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-windows@0.8.0",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 54237
+  },
+  "name": "effect-build-windows",
+  "type": "module",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-windows-0.8.0.tgz",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -b tsconfig.json --force",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "_npmUser": {
+    "name": "GitHub Actions",
+    "email": "npm-oidc-no-reply@github.com",
+    "trustedPublisher": {
+      "id": "github",
+      "oidcConfigId": "oidc:d78ba49e-dda0-4c31-81a7-4fdee77f67d3"
+    }
+  },
+  "homepage": "https://github.com/mannyc2/effect-build#readme",
+  "keywords": [
+    "effect",
+    "windows",
+    "executable",
+    "msix",
+    "authenticode",
+    "signtool"
+  ],
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-windows-0.8.0.tgz",
+  "_integrity": "sha512-gWDEUIyDSHXZK3t7y335Gj956q9SvYKuQm8GgCjLPlKN9rrQUgSiupr78C3EaS6DiDeSQHEVPd4unKs0KkXjMg==",
+  "repository": {
+    "url": "git+https://github.com/mannyc2/effect-build.git",
+    "type": "git",
+    "directory": "packages/effect-build-windows"
+  },
+  "_npmVersion": "11.11.0",
+  "description": "Experimental executable and MSIX signing with Windows SignTool and shared artifacts.",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "mannyc1",
+      "email": "c20carroll@gmail.com"
+    }
+  ],
+  "sideEffects": false,
+  "_nodeVersion": "24.14.1",
+  "dependencies": {
+    "effect-build": "^0.8.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "_hasShrinkwrap": false,
+  "devDependencies": {
+    "effect": "4.0.0-rc.115"
+  },
+  "peerDependencies": {
+    "effect": ">=4.0.0-rc.113 <4.1.0-0"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/effect-build-windows_0.8.0_1789830321797_0.8765396549713818",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "effect-build-windows@0.8.0",
+  "version": "0.8.0"
+}

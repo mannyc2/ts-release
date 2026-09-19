@@ -19,7 +19,11 @@ try {
     const directory = join(root, kind)
     await mkdir(directory)
     await writeFile(join(directory, "file"), "exact content")
-    const source = await run(Artifact.directory(directory, { name: "race-fixture", version: "0" }))
+    const source = await run(
+      Artifact.directory(directory, { name: "race-fixture", version: "0" }).pipe(
+        Effect.flatMap(Artifact.withSha256),
+      ),
+    )
     const owner = fileContentOwner(join(root, `${kind}-objects`))
     let swapped = false
     const raced = {
@@ -49,7 +53,11 @@ try {
   const directory = join(root, "restore-source")
   await mkdir(directory)
   await writeFile(join(directory, "file"), "exact content")
-  const source = await run(Artifact.directory(directory, { name: "race-fixture", version: "0" }))
+  const source = await run(
+    Artifact.directory(directory, { name: "race-fixture", version: "0" }).pipe(
+      Effect.flatMap(Artifact.withSha256),
+    ),
+  )
   const owner = fileContentOwner(join(root, "restore-objects"))
   const owned = await run(adoptTree(owner, "tree", source))
   const destination = join(root, "destination")

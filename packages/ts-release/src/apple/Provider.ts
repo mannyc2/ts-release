@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect"
 import * as Apple from "effect-build-apple"
+import { SubmissionReference } from "./Model.js"
 import { PROVIDER_CONTRACT, makeRequest, type ProviderDefinition } from "../Provider.js"
 import { NoReplay, type RequestFacts } from "../internal/ReleaseModel.js"
 import { attempt, fail, reject } from "../internal/Error.js"
@@ -8,12 +9,12 @@ import { AppleEvidence, ApplePreparation, PREPARATION_FORMAT } from "./Model.js"
 import { productOf, sourceIdentity } from "./Model.js"
 
 /** Apps upload as ZIP archives; disk images and installers upload as themselves. */
-const submissionKind = (input: ApplePreparation): Apple.Notary.SubmissionKind =>
+const submissionKind = (input: ApplePreparation): "zip" | "dmg" | "pkg" =>
   input._tag === "AppPreparation" ? "zip" : input._tag === "DmgPreparation" ? "dmg" : "pkg"
 /** A notarization reference names exactly this preparation's signed source. */
 export const sourceCorresponds = (
   input: ApplePreparation,
-  reference: Apple.Notary.SubmissionReference,
+  reference: SubmissionReference,
 ): boolean => {
   const artifact = reference.artifact
   if (!("product" in artifact)) return false
@@ -38,11 +39,11 @@ const requestCorresponds = (input: ApplePreparation, request: RequestFacts) =>
   request.replay._tag === "None"
 /** A lookup has its own tool metadata; only the submission and signed source
  * identify the notarization that was recorded by the original runner. */
-const submissionIdentity = ({
+const submissionIdentity = ({ submissionId, kind, artifact }: SubmissionReference) => ({
   submissionId,
   kind,
   artifact,
-}: Apple.Notary.SubmissionReference) => ({ submissionId, kind, artifact })
+})
 export const classifyEvidence = (
   input: ApplePreparation,
   operationId: string,
@@ -50,15 +51,17 @@ export const classifyEvidence = (
   receipts: readonly unknown[],
 ) => {
   const evidence = decodeOwned(AppleEvidence, value)
-  const correlated = "_tag" in evidence ? evidence.assessed.ticket : evidence
+  const correlated = "_tag" in evidence ? evidence.assessed.ticket : undefined
   const recorded = receipts.some((receipt) => {
-    const submission = decodeOwned(Apple.Notary.SubmissionReference, receipt)
+    const submission = decodeOwned(SubmissionReference, receipt)
     return (
       sourceCorresponds(input, submission) &&
-      sameData(submissionIdentity(submission), submissionIdentity(correlated))
+      ("_tag" in evidence
+        ? sameData(submissionIdentity(submission), submissionIdentity(evidence.assessed.ticket))
+        : submission.submissionId === evidence.submissionId)
     )
   })
-  if (!sourceCorresponds(input, correlated) || !recorded)
+  if ((correlated && !sourceCorresponds(input, correlated)) || !recorded)
     fail(
       "apple-correlation",
       "Apple observation has no matching recorded submission for this source",
@@ -85,20 +88,20 @@ export const preparationProvider: ProviderDefinition = Object.freeze<ProviderDef
   definitionId: "effect-build-apple.prepare",
   intentVersion: PREPARATION_FORMAT,
   intentCodec: ApplePreparation,
-  receiptVersion: "effect-build-apple/Notary.SubmissionReference/0.7.0",
-  receiptCodec: Apple.Notary.SubmissionReference,
+  receiptVersion: "ts-release/apple-submission/3",
+  receiptCodec: SubmissionReference,
   requestCorresponds: (operation, request) =>
     requestCorresponds(decodeOwned(ApplePreparation, operation.intent), request),
   receiptCorresponds: (operation, request, value) => {
     const input = decodeOwned(ApplePreparation, operation.intent),
-      receipt = decodeOwned(Apple.Notary.SubmissionReference, value)
+      receipt = decodeOwned(SubmissionReference, value)
     return requestCorresponds(input, request) && sourceCorresponds(input, receipt)
   },
   classifyReceipt: () => "Pending",
   // notarytool may have uploaded before its response became unreadable; that
   // submission is then remembered as an unresolved dispatch, never resent.
   dispatchError: {
-    version: "effect-build-apple/Notary.ResponseInvalid/0.7.0",
+    version: "effect-build-apple/Notary.ResponseInvalid/0.8.0",
     codec: Apple.Notary.ResponseInvalid,
     corresponds: (operation, request, value) => {
       const input = decodeOwned(ApplePreparation, operation.intent)
@@ -108,7 +111,7 @@ export const preparationProvider: ProviderDefinition = Object.freeze<ProviderDef
       return requestCorresponds(input, request) && native.operation === "submit"
     },
   },
-  observationVersion: "ts-release/apple-evidence/2",
+  observationVersion: "ts-release/apple-evidence/3",
   observationCodec: AppleEvidence,
   classifyObservation: (operation, evidence, receipts) =>
     classifyEvidence(

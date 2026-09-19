@@ -39,15 +39,27 @@ for (const file of ["package.json", "package-lock.json"])
     join(producer, "subject", file),
   )
 await copyFile(join(producer, "subject/package-lock.json"), join(producer, "package-lock.json"))
-const snapshot = await run(Artifact.directory(join(producer, "subject"), producedBy))
+const snapshot = await run(
+  Artifact.directory(join(producer, "subject"), producedBy).pipe(
+    Effect.flatMap(Artifact.withSha256),
+  ),
+)
 const source = await run(adoptTree(owner, "subject", snapshot))
-const lockfile = await run(Artifact.file(join(producer, "package-lock.json"), producedBy))
+const lockfile = await run(
+  Artifact.file(join(producer, "package-lock.json"), producedBy).pipe(
+    Effect.flatMap(Artifact.withSha256),
+  ),
+)
 for (const [name, subject, format] of [
   ["directory.spdx.json", snapshot, "spdx-json"],
   ["directory.cdx.json", snapshot, "cyclonedx-json"],
   ["file.spdx.json", lockfile, "spdx-json"],
 ]) {
-  const native = await run(Sbom.generate({ subject, format, outfile: join(producer, name) }))
+  const native = await run(
+    Sbom.generate({ subject, format, outfile: join(producer, name) }).pipe(
+      Effect.flatMap(Artifact.withSha256),
+    ),
+  )
   check(
     `${name} exact Syft version`,
     [native.producedBy.name, native.producedBy.version],

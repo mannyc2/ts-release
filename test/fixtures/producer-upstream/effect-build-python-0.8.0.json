@@ -3,31 +3,31 @@
     "url": "https://github.com/mannyc2/effect-build/issues"
   },
   "dist": {
-    "shasum": "9d95122438da05b5f70d0f063e271aaed7336f08",
-    "tarball": "https://registry.npmjs.org/effect-build-python/-/effect-build-python-0.7.0.tgz",
+    "shasum": "9bb1edd5610cfd8f8ee70eb8a44ce8358dc73413",
+    "tarball": "https://registry.npmjs.org/effect-build-python/-/effect-build-python-0.8.0.tgz",
     "fileCount": 18,
-    "integrity": "sha512-u4ReqQ+opBUbiQ4tr2CfntLh+dKNf87jw/Yo9QtjKrBF6IXWVfVxX8XHryFvaaFZdUpCAZ1y+zSTa1Jg7ZNg1w==",
+    "integrity": "sha512-SCsg7Rvq0ZGfIwxe1iyAzfsn5UNpJSQOumfLdDGZV4HFSbP9NoAXpE/3Ct9RoWwwYcXT7PndT3FDXNwtaWBDPg==",
     "signatures": [
       {
-        "sig": "MEUCIGpUpmXYc1KvHhthyPEOaCn2HtiOAaIfe03R/97xffbeAiEA1S+A7GhzsT8thHTj7jj/ckW9WowHiZLrXyhQ9aBUl1I=",
+        "sig": "MEYCIQCOm3BNK9/5GJC0oaT7wDintJBYyGtMzQaMqpy2SLzkhwIhAOXAhMi/o78sdtuYj4ttcbWrck3bsEZdMDd+PLc/E8o1",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       },
       {
-        "sig": "MEUCIQDCgg4TERNOvLKvv8IUMjxGU9/I3oghD4iMG1gRDkmolgIgPEGJBdDKJ2o1AwlazsXzuixnA0u+NJdjv3dIJ5NzKZw=",
+        "sig": "MEQCIExoZHvdx7Y+kf72UHfKekrPdgfzL9aIY0mkQItQsVhPAiAybGYxta4I1JPjVQRJCbJhHgt1AayQunTaHGd0Sno6FA==",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       }
     ],
     "attestations": {
-      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-python@0.7.0",
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-python@0.8.0",
       "provenance": {
         "predicateType": "https://slsa.dev/provenance/v1"
       }
     },
-    "unpackedSize": 85674
+    "unpackedSize": 87841
   },
   "name": "effect-build-python",
   "type": "module",
-  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-python-0.7.0.tgz",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-python-0.8.0.tgz",
   "engines": {
     "node": ">=22.19.0"
   },
@@ -58,8 +58,8 @@
     "wheel",
     "sdist"
   ],
-  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-python-0.7.0.tgz",
-  "_integrity": "sha512-u4ReqQ+opBUbiQ4tr2CfntLh+dKNf87jw/Yo9QtjKrBF6IXWVfVxX8XHryFvaaFZdUpCAZ1y+zSTa1Jg7ZNg1w==",
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-python-0.8.0.tgz",
+  "_integrity": "sha512-SCsg7Rvq0ZGfIwxe1iyAzfsn5UNpJSQOumfLdDGZV4HFSbP9NoAXpE/3Ct9RoWwwYcXT7PndT3FDXNwtaWBDPg==",
   "repository": {
     "url": "git+https://github.com/mannyc2/effect-build.git",
     "type": "git",
@@ -77,8 +77,9 @@
   "sideEffects": false,
   "_nodeVersion": "24.14.1",
   "dependencies": {
-    "effect-build": "^0.7.0",
-    "effect-build-archives": "^0.7.0"
+    "effect-build": "^0.8.0",
+    "@noble/hashes": "2.4.0",
+    "effect-build-archives": "^0.8.0"
   },
   "publishConfig": {
     "access": "public",
@@ -86,15 +87,15 @@
   },
   "_hasShrinkwrap": false,
   "devDependencies": {
-    "effect": "4.0.0-rc.108"
+    "effect": "4.0.0-rc.115"
   },
   "peerDependencies": {
-    "effect": ">=4.0.0-rc.108 <4.1.0-0"
+    "effect": ">=4.0.0-rc.113 <4.1.0-0"
   },
   "_npmOperationalInternal": {
-    "tmp": "tmp/effect-build-python_0.7.0_1789092007262_0.10270340616231621",
+    "tmp": "tmp/effect-build-python_0.8.0_1789830085166_0.11323829872707636",
     "host": "s3://npm-registry-packages-npm-production"
   },
-  "_id": "effect-build-python@0.7.0",
-  "version": "0.7.0"
+  "_id": "effect-build-python@0.8.0",
+  "version": "0.8.0"
 }

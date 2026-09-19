@@ -46,7 +46,7 @@ const fixture = async (
 const fileAt = async (root: string) => {
   const path = join(root, "producer.txt")
   await writeFile(path, "owned bytes")
-  return run(Artifact.file(path, producedBy))
+  return run(Artifact.file(path, producedBy).pipe(Effect.flatMap(Artifact.withSha256)))
 }
 const treeAt = async (root: string) => {
   const path = join(root, "producer-tree")
@@ -55,7 +55,7 @@ const treeAt = async (root: string) => {
   await chmod(join(path, "bin"), 0o750)
   await Bun.write(join(path, "copy"), "owned bytes")
   await symlink("bin/run", join(path, "link"))
-  return run(Artifact.directory(path, producedBy))
+  return run(Artifact.directory(path, producedBy).pipe(Effect.flatMap(Artifact.withSha256)))
 }
 
 for (const [runtime, services] of [
@@ -275,6 +275,7 @@ test("invalid producer metadata, tree graphs and identities reject before any co
         }),
     }
     const invalidTrees = [
+      Schema.decodeUnknownSync(Artifact.Directory)(tree),
       { ...tree, sha256: "0".repeat(64) },
       {
         ...tree,
@@ -294,14 +295,15 @@ test("invalid producer metadata, tree graphs and identities reject before any co
     ]
     for (const input of invalidTrees)
       await expect(
-        run(adoptTree(unused, "tree", input as Artifact.Directory)),
+        run(adoptTree(unused, "tree", input as Artifact.HashedDirectory)),
       ).rejects.toBeInstanceOf(AdoptionError)
     for (const input of [
+      Schema.decodeUnknownSync(Artifact.File)(file),
       { ...file, kind: "blob" },
       { ...file, kind: "executable" },
       { ...file, path: "" },
     ])
-      await expect(run(adoptFile(unused, "file", input as Artifact.File))).rejects.toThrow()
+      await expect(run(adoptFile(unused, "file", input as Artifact.HashedFile))).rejects.toThrow()
     for (const name of ["../unsafe", "é.txt", "/absolute", "back\\slash"])
       await expect(run(adoptFile(unused, name, file))).rejects.toThrow()
     const accessor = Object.defineProperty({ ...file }, "sha256", {

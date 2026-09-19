@@ -43,7 +43,9 @@ test("owned Bundle survives producer deletion and binds an immutable Plan", () =
   fixture(async (root, owner) => {
     const produced = join(root, "producer.txt")
     await writeFile(produced, "exact owned bytes")
-    const source = await run(Artifact.file(produced, producedBy))
+    const source = await run(
+      Artifact.file(produced, producedBy).pipe(Effect.flatMap(Artifact.withSha256)),
+    )
     const content = await Effect.runPromise(owner.putFileOwned(source))
     expect(content.sha256).toBe(source.sha256)
     const artifacts = [fileFor(content)]
@@ -190,7 +192,9 @@ test("tree links expand before parent traversal and upstream entry order is pres
     const native = join(root, "native-tree")
     await Bun.write(join(native, "\ue000"), "a")
     await Bun.write(join(native, "\u{10000}"), "a")
-    const tree = await run(Artifact.directory(native, producedBy))
+    const tree = await run(
+      Artifact.directory(native, producedBy).pipe(Effect.flatMap(Artifact.withSha256)),
+    )
     expect(tree.entries.map((entry) => entry.path)).toEqual(["\u{10000}", "\ue000"])
     const content = await Effect.runPromise(owner.putOwned(new TextEncoder().encode("a")))
     const owned = ownedTree(

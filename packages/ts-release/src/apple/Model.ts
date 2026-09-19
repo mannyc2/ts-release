@@ -1,15 +1,16 @@
 import { Effect, Schema } from "effect"
+import * as Artifact from "effect-build/Artifact"
 import * as Apple from "effect-build-apple"
 import { Content, LogicalName, OwnedFile, OwnedTree } from "../internal/ArtifactModel.js"
 import { finalize } from "../internal/BundleFinalize.js"
 import { attempt, fail, failure } from "../internal/Error.js"
 import { canonical, copyData, decodeOwned, hashCanonical } from "../internal/Identity.js"
 
-/** Format 1 recorded effect-build-apple 0.6 signatures and tool observations; it is not loadable. */
-export const PREPARATION_FORMAT = "ts-release/apple-preparation/2"
-export const PREPARATIONS_FORMAT = "ts-release/apple-preparations/2"
+/** Earlier formats retain retired provider evidence and must be prepared again. */
+export const PREPARATION_FORMAT = "ts-release/apple-preparation/3"
+export const PREPARATIONS_FORMAT = "ts-release/apple-preparations/3"
 /** The effect-build-apple contract a preparation was prepared against. */
-export const PRODUCER_VERSION = "0.7.0"
+export const PRODUCER_VERSION = "0.8.0"
 export const Product = Schema.Literals(["app", "dmg", "pkg"])
 export type Product = typeof Product.Type
 /** Signing evidence in effect-build-apple's own shape: apps carry the hardened runtime. */
@@ -101,7 +102,7 @@ export const createApplePreparations = Effect.fn("apple.createPreparations")(fun
     }),
   )
 })
-const RETIRED_FORMATS = ["ts-release/apple-preparations/1"]
+const RETIRED_FORMATS = ["ts-release/apple-preparations/1", "ts-release/apple-preparations/2"]
 export const loadApplePreparations = Effect.fn("apple.loadPreparations")(function* (
   value: unknown,
 ) {
@@ -111,7 +112,7 @@ export const loadApplePreparations = Effect.fn("apple.loadPreparations")(functio
     if (typeof format === "string" && RETIRED_FORMATS.includes(format))
       fail(
         "preparation-format",
-        `Apple preparation format ${format} records effect-build-apple 0.6 evidence; prepare the sources again with ${PRODUCER_VERSION}`,
+        `Apple preparation format ${format} records retired effect-build-apple evidence; prepare the sources again with ${PRODUCER_VERSION}`,
       )
     return decodeOwned(ApplePreparations, value)
   })
@@ -126,24 +127,45 @@ export const loadApplePreparations = Effect.fn("apple.loadPreparations")(functio
   return expected
 })
 
-/** The stapled product exactly as Gatekeeper accepted it, in effect-build-apple's
- * schema; its ticket is the notarization acceptance it was stapled from. */
-export const StapledApp = Schema.Struct({
-  ...Apple.SignedApp.fields,
-  ticket: Apple.Notary.AcceptedReference,
-}).check(
+// Release-owned evidence composes upstream identity and signing contracts.
+export const SignedApp = Artifact.HashedDirectory.pipe(
+  Schema.fieldsAssign({
+    product: Apple.SignedApp.fields.product,
+    signature: Apple.SignedApp.fields.signature,
+  }),
+).check(
   Schema.makeFilter((value) =>
     Schema.is(Apple.SignedApp)(value) ? undefined : "invalid signed app artifact",
   ),
 )
-export const StapledDmg = Schema.Struct({
-  ...Apple.SignedDmg.fields,
-  ticket: Apple.Notary.AcceptedReference,
+export const SignedDmg = Artifact.HashedFile.pipe(
+  Schema.fieldsAssign({
+    product: Apple.SignedDmg.fields.product,
+    signature: Apple.SignedDmg.fields.signature,
+  }),
+)
+export const SignedPkg = Artifact.HashedFile.pipe(
+  Schema.fieldsAssign({
+    product: Apple.SignedPkg.fields.product,
+    signature: Apple.SignedPkg.fields.signature,
+  }),
+)
+export const SignedProduct = Schema.Union([SignedApp, SignedDmg, SignedPkg])
+export type SignedProduct = typeof SignedProduct.Type
+export const SubmissionReference = Schema.Struct({
+  submissionId: Schema.NonEmptyString,
+  kind: Schema.Literals(["zip", "dmg", "pkg"]),
+  artifact: SignedProduct,
 })
-export const StapledPkg = Schema.Struct({
-  ...Apple.SignedPkg.fields,
-  ticket: Apple.Notary.AcceptedReference,
-})
+export type SubmissionReference = typeof SubmissionReference.Type
+export const AcceptedReference = SubmissionReference.pipe(
+  Schema.fieldsAssign({ status: Apple.Notary.Accepted }),
+)
+export type AcceptedReference = typeof AcceptedReference.Type
+/** Release-owned final identity, signature metadata, and accepted submission binding. */
+export const StapledApp = SignedApp.pipe(Schema.fieldsAssign({ ticket: AcceptedReference }))
+export const StapledDmg = SignedDmg.pipe(Schema.fieldsAssign({ ticket: AcceptedReference }))
+export const StapledPkg = SignedPkg.pipe(Schema.fieldsAssign({ ticket: AcceptedReference }))
 export const StapledProduct = Schema.Union([StapledApp, StapledDmg, StapledPkg])
 export type StapledProduct = typeof StapledProduct.Type
 /** The owned final artifact a preparation selected. */

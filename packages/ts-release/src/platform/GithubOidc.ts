@@ -109,7 +109,7 @@ export const verifyGithubToken = (
 }
 
 const readEnvironment = (name: string) =>
-  Config.string(name).pipe(
+  Config.String(name).pipe(
     Effect.mapError(() => failure("github-oidc", "GitHub workload configuration is unavailable")),
   )
 const hostClaims = {
@@ -193,7 +193,7 @@ export const makeGithubOidcTokenSource = (options: HttpExchangeOptions): OidcTok
       url.searchParams.set("audience", request.audience)
       return url.href
     })
-    const secret = yield* Config.redacted("ACTIONS_ID_TOKEN_REQUEST_TOKEN").pipe(
+    const secret = yield* Config.Redacted("ACTIONS_ID_TOKEN_REQUEST_TOKEN").pipe(
       Effect.mapError(() => failure("github-oidc", "GitHub OIDC credential is unavailable")),
     )
     const fields = yield* attempt(() => {

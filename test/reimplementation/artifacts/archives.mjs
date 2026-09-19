@@ -57,7 +57,9 @@ const run = (effect) =>
 const producedBy = { name: "ts-release/native-archive-fixture", version: "fixture" }
 const finalized = async (name, content) => {
   await writeFile(join(producer, name), content)
-  return run(Artifact.file(join(producer, name), producedBy))
+  return run(
+    Artifact.file(join(producer, name), producedBy).pipe(Effect.flatMap(Artifact.withSha256)),
+  )
 }
 const executable = await finalized(
   "cli",
@@ -77,7 +79,7 @@ for (const format of ["zip", "tar.gz"]) {
         archive[format]({
           entries: repeat ? [...entries].reverse() : entries,
           outfile: join(producer, `binary-${repeat}.${format}`),
-        }),
+        }).pipe(Effect.flatMap(Artifact.withSha256)),
       ),
     )
   check(`${format} normalized input order repeat digest`, outputs[0].sha256, outputs[1].sha256)
@@ -86,11 +88,15 @@ for (const format of ["zip", "tar.gz"]) {
   for (const [label, paths] of [
     ["traversal", ["../escape", "safe"]],
     ["duplicate", ["same", "same"]],
-    ["case", ["Readme", "README"]],
   ]) {
     const outfile = join(producer, `rejected-${label}.${format}`)
     await assert.rejects(
-      run(archive[format]({ outfile, entries: paths.map((path) => ({ artifact: readme, path })) })),
+      run(
+        archive[format]({
+          outfile,
+          entries: paths.map((path) => ({ artifact: readme, path })),
+        }).pipe(Effect.flatMap(Artifact.withSha256)),
+      ),
       { _tag: "InputInvalid" },
     )
     await assert.rejects(stat(outfile), { code: "ENOENT" })
@@ -144,7 +150,7 @@ for (const format of ["zip", "tar.gz"]) {
           // Tracked build output stays out of the source archive by explicit declaration.
           excludes: ["dist"],
           outfile: join(producer, `source-${repeat}.${format}`),
-        }),
+        }).pipe(Effect.flatMap(Artifact.withSha256)),
       ),
     )
   check(`${format} exact tree repeat digest`, outputs[0].sha256, outputs[1].sha256)

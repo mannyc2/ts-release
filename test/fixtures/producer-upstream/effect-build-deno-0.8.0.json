@@ -3,31 +3,31 @@
     "url": "https://github.com/mannyc2/effect-build/issues"
   },
   "dist": {
-    "shasum": "6b6fd665fe3fca2a5332b86f172d77a2c50e2bbd",
-    "tarball": "https://registry.npmjs.org/effect-build-windows/-/effect-build-windows-0.7.0.tgz",
-    "fileCount": 13,
-    "integrity": "sha512-nI9itHiciK/zpZPw6sDUqY4JO6Ea1ZjysfPVEUjrnOyMcLHqViqRvOzfDvnusJwUdS2yQFEGhzDPZNVyaT1o2Q==",
+    "shasum": "f5410729e5768e2720614a308afe87fbd47694a0",
+    "tarball": "https://registry.npmjs.org/effect-build-deno/-/effect-build-deno-0.8.0.tgz",
+    "fileCount": 38,
+    "integrity": "sha512-gV44FmvR38Lrr7HjUpvUXfzszFUUVQMHczvt/Fnb9YJX6T7Pu70BpaMb3dHSN7U9jgCunVkvlaWip3H0GvWH8A==",
     "signatures": [
       {
-        "sig": "MEQCIAmRb/keU+PmaTkuG525eLcnYALFk/slb+WF7GK5P8MtAiB01OHsR3EbH1lNlXxExN09qPgYd+NB//jnclxDQYu1HQ==",
+        "sig": "MEQCIFVzkke6VathrS3eAzP4g9AZeME/q6f0ZGeplP1mMtqHAiBf0+X5NfRPu5UOlddpHFvLUF9oSdbNxfMfYYEnh85MPQ==",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       },
       {
-        "sig": "MEQCIE+ABMQbAj8A19Z/as3k3mLsVbbMGy+AYlHhZmDP5vxOAiB2V1C4hQtAtUR2KKP7KeU6E72gqPo+BFFRQfEhAd1Z/g==",
+        "sig": "MEQCIAn/YcsmPpDS9Qt42sWMkC0F7pLceWxIH7LNPKEjcvH3AiAQu833lGx9QxBeeLwBTyq1yzY4jBG2KRqcxnDv9iPVwg==",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       }
     ],
     "attestations": {
-      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-windows@0.7.0",
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-deno@0.8.0",
       "provenance": {
         "predicateType": "https://slsa.dev/provenance/v1"
       }
     },
-    "unpackedSize": 53462
+    "unpackedSize": 139833
   },
-  "name": "effect-build-windows",
+  "name": "effect-build-deno",
   "type": "module",
-  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-windows-0.7.0.tgz",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-deno-0.8.0.tgz",
   "engines": {
     "node": ">=22.19.0"
   },
@@ -35,6 +35,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./api": {
+      "types": "./dist/Api/index.d.ts",
+      "import": "./dist/Api/index.js"
     }
   },
   "license": "MIT",
@@ -47,27 +51,25 @@
     "email": "npm-oidc-no-reply@github.com",
     "trustedPublisher": {
       "id": "github",
-      "oidcConfigId": "oidc:d78ba49e-dda0-4c31-81a7-4fdee77f67d3"
+      "oidcConfigId": "oidc:81d4ceca-4c49-47f9-8188-eeb5e6e9eebd"
     }
   },
   "homepage": "https://github.com/mannyc2/effect-build#readme",
   "keywords": [
     "effect",
-    "windows",
-    "executable",
-    "msix",
-    "authenticode",
-    "signtool"
+    "deno",
+    "compiler",
+    "executable"
   ],
-  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-windows-0.7.0.tgz",
-  "_integrity": "sha512-nI9itHiciK/zpZPw6sDUqY4JO6Ea1ZjysfPVEUjrnOyMcLHqViqRvOzfDvnusJwUdS2yQFEGhzDPZNVyaT1o2Q==",
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-deno-0.8.0.tgz",
+  "_integrity": "sha512-gV44FmvR38Lrr7HjUpvUXfzszFUUVQMHczvt/Fnb9YJX6T7Pu70BpaMb3dHSN7U9jgCunVkvlaWip3H0GvWH8A==",
   "repository": {
     "url": "git+https://github.com/mannyc2/effect-build.git",
     "type": "git",
-    "directory": "packages/effect-build-windows"
+    "directory": "packages/effect-build-deno"
   },
   "_npmVersion": "11.11.0",
-  "description": "Experimental executable and MSIX signing with Windows SignTool and shared artifacts.",
+  "description": "Compile, bundle, and transpile TypeScript with Deno as Effect programs.",
   "directories": {},
   "maintainers": [
     {
@@ -78,7 +80,7 @@
   "sideEffects": false,
   "_nodeVersion": "24.14.1",
   "dependencies": {
-    "effect-build": "^0.7.0"
+    "effect-build": "^0.8.0"
   },
   "publishConfig": {
     "access": "public",
@@ -86,15 +88,15 @@
   },
   "_hasShrinkwrap": false,
   "devDependencies": {
-    "effect": "4.0.0-rc.108"
+    "effect": "4.0.0-rc.115"
   },
   "peerDependencies": {
-    "effect": ">=4.0.0-rc.108 <4.1.0-0"
+    "effect": ">=4.0.0-rc.113 <4.1.0-0"
   },
   "_npmOperationalInternal": {
-    "tmp": "tmp/effect-build-windows_0.7.0_1789092194360_0.5018585055431835",
+    "tmp": "tmp/effect-build-deno_0.8.0_1789829752987_0.07842279085412374",
     "host": "s3://npm-registry-packages-npm-production"
   },
-  "_id": "effect-build-windows@0.7.0",
-  "version": "0.7.0"
+  "_id": "effect-build-deno@0.8.0",
+  "version": "0.8.0"
 }

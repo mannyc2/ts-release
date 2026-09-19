@@ -99,14 +99,16 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     owner.putOwned(bytes).pipe(Effect.mapError(contentFailure))
   const producers: Array<{
     logicalName: string
-    artifact: Artifact.Regular
+    artifact: Artifact.HashedRegular
   }> = []
   const owned: OwnedArtifact[] = []
   const publishFile = async (logicalName: string, bytes: Uint8Array) => {
     const path = join(producerDirectory, logicalName)
     await mkdir(dirname(path), { recursive: true })
     await writeFile(path, bytes)
-    const artifact = await runNode(Artifact.file(path, producedBy))
+    const artifact = await runNode(
+      Artifact.file(path, producedBy).pipe(Effect.flatMap(Artifact.withSha256)),
+    )
     producers.push({ logicalName, artifact })
     const file = await runNode(adoptFile(owner, logicalName, artifact))
     owned.push(file)
@@ -161,7 +163,9 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     recursive: true,
   })
   await normalizeTreeModes(pluginDirectory)
-  const producedTree = await runNode(Artifact.directory(pluginDirectory, producedBy))
+  const producedTree = await runNode(
+    Artifact.directory(pluginDirectory, producedBy).pipe(Effect.flatMap(Artifact.withSha256)),
+  )
   const plugin = await runNode(adoptTree(owner, "ts-release-openai", producedTree))
   owned.push(plugin)
 

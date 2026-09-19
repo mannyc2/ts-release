@@ -7,7 +7,7 @@ function invalid(reason: string): never {
   throw new AdoptionError({ reason })
 }
 /** The upstream directory record an owned tree stands for once it has a path. */
-export const directoryRecord = (tree: OwnedTree, path: string): Artifact.Directory => ({
+export const directoryRecord = (tree: OwnedTree, path: string): Artifact.HashedDirectory => ({
   kind: "directory",
   path,
   bytes: tree.bytes,
@@ -54,9 +54,9 @@ const resolveLink = (
  * link resolution are release requirements for restoring on any host.
  */
 export const checkTree = (tree: OwnedTree): void => {
-  if (!Schema.is(Artifact.Directory)(directoryRecord(tree, "/")))
+  if (!Schema.is(Artifact.HashedDirectory)(directoryRecord(tree, "/")))
     invalid("Tree entries do not reproduce the recorded tree identity")
-  const issue = Layout.validate(tree.entries)
+  const issue = Layout.validatePortable(tree.entries)
   if (issue !== undefined) invalid(`Tree entry ${JSON.stringify(issue.path)}: ${issue.reason}`)
   const entries = new Map(tree.entries.map((entry) => [entry.path, entry]))
   for (const entry of tree.entries)

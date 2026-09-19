@@ -56,8 +56,10 @@ const publish = async (name, bytes, executable) => {
   if (executable) await chmod(join(producer, name), 0o755)
   return run(
     executable
-      ? Artifact.executable(join(producer, name), producedBy)
-      : Artifact.file(join(producer, name), producedBy),
+      ? Artifact.executable(join(producer, name), producedBy).pipe(
+          Effect.flatMap(Artifact.withSha256),
+        )
+      : Artifact.file(join(producer, name), producedBy).pipe(Effect.flatMap(Artifact.withSha256)),
   )
 }
 const payloads = {}
@@ -184,7 +186,7 @@ for (const [format, extension] of Object.entries(extensions)) {
         ...(windows ? icons : []),
       ],
       outfile: join(producer, "fixture" + extension),
-    }),
+    }).pipe(Effect.flatMap(Artifact.withSha256)),
   )
   check(
     `${format} exact nFPM tool`,

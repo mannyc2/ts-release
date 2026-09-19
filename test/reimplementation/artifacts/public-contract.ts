@@ -1,4 +1,4 @@
-// Compile every public effect-build 0.7.0 entry against the selected Effect release candidate.
+// Compile every public effect-build 0.8.0 entry against the selected Effect release candidate.
 import * as Entry0 from "effect-build"
 import * as Entry1 from "effect-build/Artifact"
 import * as Entry2 from "effect-build/Checksums"
@@ -18,6 +18,9 @@ import * as Entry15 from "effect-build-node-sea"
 import * as Entry16 from "effect-build-python"
 import * as Entry17 from "effect-build-sbom"
 import * as Entry18 from "effect-build-windows"
+import * as Entry19 from "effect-build/Directory"
+import * as Entry20 from "effect-build/Cache"
+import * as Entry21 from "effect-build/testing"
 import type { ContentOwner, File } from "@mannyc1/ts-release/bundle"
 import { adoptFile, adoptTree, restoreTree } from "@mannyc1/ts-release/effect-build"
 import * as Apple from "@mannyc1/ts-release/apple"
@@ -45,9 +48,20 @@ export const upstreamEntries = [
   Entry16,
   Entry17,
   Entry18,
+  Entry19,
+  Entry20,
+  Entry21,
 ] as const
 export type SourceFile = Parameters<ContentOwner["putFileOwned"]>[0]
 export type FileAdoption = ReturnType<typeof adoptFile>
 export type TreeAdoption = ReturnType<typeof adoptTree>
 export type TreeRestoration = ReturnType<typeof restoreTree>
 export type DurableFile = File
+
+// Base producer records must establish identity before release ownership.
+export const requireIdentity = (owner: ContentOwner, file: Entry1.File, tree: Entry1.Directory) => {
+  // @ts-expect-error An ordinary file has no expected digest.
+  adoptFile(owner, "file", file)
+  // @ts-expect-error An ordinary directory has no expected manifest digests.
+  adoptTree(owner, "tree", tree)
+}

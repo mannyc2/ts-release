@@ -3,27 +3,31 @@
     "url": "https://github.com/mannyc2/effect-build/issues"
   },
   "dist": {
-    "shasum": "5f745adef6ed06ba3b0091f62b26c334d1bd03bd",
-    "tarball": "https://registry.npmjs.org/effect-build-node-sea/-/effect-build-node-sea-0.7.0.tgz",
+    "shasum": "6c239db233aaab91a1fac6ef60d360a0759da69c",
+    "tarball": "https://registry.npmjs.org/effect-build-node-sea/-/effect-build-node-sea-0.8.0.tgz",
     "fileCount": 14,
-    "integrity": "sha512-gkyCwORw/QL/EaSTPTxvT5EOh8zOlSsExIxisYbDpNnGFLkQ+L4LJPHQsozaK5pI2bBBYFsrGf+JqrEajrp93Q==",
+    "integrity": "sha512-K8EBJ/g7VpC77dYOWxoz+D1KkhQ7liG2Z2+R94Eh5dxsfkDzb2/1R+JlbJ9mmRNZCfUIHTgp1QDT95MIjbSH/A==",
     "signatures": [
       {
-        "sig": "MEUCIQCumrFKi5U6Vn/dw0UJNZhEN+ZTi+s94EqeJAsGA8WVmwIgZ7mr2mLpIb52TsIXXSowUQJu0cQ+VJ7/UfhD2E34ftI=",
+        "sig": "MEUCIB1kfiIrzx/8D6YEwqhpx5uFkScMKjnWvTPADkJx+C61AiEA+n5bQjiuKYPm0UCik3mQq/J6raSeHvLQcQw9P2RsQ/Q=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "sig": "MEYCIQCmtB+l9wZyQ03iTqkcrSjomYbTMwq2mtuA1YL86oR0WgIhAJwo67BXflru6eopabIN5Gi4+yRQjnCnOyzyZR67/kty",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       }
     ],
     "attestations": {
-      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-node-sea@0.7.0",
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-node-sea@0.8.0",
       "provenance": {
         "predicateType": "https://slsa.dev/provenance/v1"
       }
     },
-    "unpackedSize": 38786
+    "unpackedSize": 40518
   },
   "name": "effect-build-node-sea",
   "type": "module",
-  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-node-sea-0.7.0.tgz",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-node-sea-0.8.0.tgz",
   "engines": {
     "node": ">=22.19.0"
   },
@@ -53,8 +57,8 @@
     "sea",
     "executable"
   ],
-  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-node-sea-0.7.0.tgz",
-  "_integrity": "sha512-gkyCwORw/QL/EaSTPTxvT5EOh8zOlSsExIxisYbDpNnGFLkQ+L4LJPHQsozaK5pI2bBBYFsrGf+JqrEajrp93Q==",
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-node-sea-0.8.0.tgz",
+  "_integrity": "sha512-K8EBJ/g7VpC77dYOWxoz+D1KkhQ7liG2Z2+R94Eh5dxsfkDzb2/1R+JlbJ9mmRNZCfUIHTgp1QDT95MIjbSH/A==",
   "repository": {
     "url": "git+https://github.com/mannyc2/effect-build.git",
     "type": "git",
@@ -73,7 +77,7 @@
   "_nodeVersion": "24.14.1",
   "dependencies": {
     "postject": "1.0.0-alpha.6",
-    "effect-build": "^0.7.0"
+    "effect-build": "^0.8.0"
   },
   "publishConfig": {
     "access": "public",
@@ -81,15 +85,15 @@
   },
   "_hasShrinkwrap": false,
   "devDependencies": {
-    "effect": "4.0.0-rc.108"
+    "effect": "4.0.0-rc.115"
   },
   "peerDependencies": {
-    "effect": ">=4.0.0-rc.108 <4.1.0-0"
+    "effect": ">=4.0.0-rc.113 <4.1.0-0"
   },
   "_npmOperationalInternal": {
-    "tmp": "tmp/effect-build-node-sea_0.7.0_1789091845415_0.16080745184362133",
+    "tmp": "tmp/effect-build-node-sea_0.8.0_1789830004384_0.7303414130093457",
     "host": "s3://npm-registry-packages-npm-production"
   },
-  "_id": "effect-build-node-sea@0.7.0",
-  "version": "0.7.0"
+  "_id": "effect-build-node-sea@0.8.0",
+  "version": "0.8.0"
 }

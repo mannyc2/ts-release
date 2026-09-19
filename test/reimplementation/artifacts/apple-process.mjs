@@ -5,6 +5,7 @@ import { basename, join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { Effect, FileSystem, Schema } from "effect"
 import * as NodeServices from "@effect/platform-node/NodeServices"
+import * as Artifact from "effect-build/Artifact"
 import * as Archive from "effect-build-archives"
 import * as Apple from "effect-build-apple"
 import { Host, ReleaseError, createPlan } from "@mannyc1/ts-release"
@@ -146,7 +147,7 @@ if (mode === "init" || mode === "init-lost") {
                     const archive = yield* Archive.tarGz({
                       entries,
                       outfile: join(directory, "app.tar.gz"),
-                    })
+                    }).pipe(Effect.flatMap(Artifact.withSha256))
                     return [yield* adoptFile(owner, basename(assessed.path) + ".tar.gz", archive)]
                   }),
               ).pipe(

@@ -45,7 +45,9 @@ export const makeSources = async (
     await mkdir(join(appRoot, "Contents"), { recursive: true })
     await writeFile(join(appRoot, "Contents/Info.plist"), "Protocol fixture; not a native app")
     if (readOnlyApps) await chmod(join(appRoot, "Contents"), 0o555)
-    const tree = await run(Artifact.directory(appRoot, producedBy))
+    const tree = await run(
+      Artifact.directory(appRoot, producedBy).pipe(Effect.flatMap(Artifact.withSha256)),
+    )
     inputs.push({
       ...base,
       _tag: "AppPreparation",
@@ -59,7 +61,11 @@ export const makeSources = async (
       const path = join(root, `source-${flavor}.${product}`)
       await writeFile(path, `Protocol ${product}/${flavor}; not a native signed container`)
       const source = await run(
-        adoptFile(owner, `source-${flavor}.${product}`, await run(Artifact.file(path, producedBy))),
+        adoptFile(
+          owner,
+          `source-${flavor}.${product}`,
+          await run(Artifact.file(path, producedBy).pipe(Effect.flatMap(Artifact.withSha256))),
+        ),
       )
       inputs.push(
         product === "dmg"
@@ -82,17 +88,12 @@ export const appleDoubles = (lookupProducer: Artifact.Producer = producedBy) => 
     submit: (artifact) =>
       Effect.sync(() => {
         calls.submit++
-        return {
-          submissionId: randomUUID(),
-          kind: Apple.Notary.submissionKind(artifact),
-          artifact,
-          producedBy,
-        }
+        return randomUUID()
       }),
     info: (reference) =>
       Effect.sync(() => {
         calls.info++
-        return { ...reference, status, producedBy: lookupProducer }
+        return { submissionId: reference, status, producedBy: lookupProducer }
       }),
     staple: (input) =>
       Effect.gen(function* () {
@@ -102,15 +103,21 @@ export const appleDoubles = (lookupProducer: Artifact.Producer = producedBy) => 
           const outdir = ("outdir" in input && input.outdir) || input.artifact.path
           yield* Effect.promise(() => cp(input.artifact.path, outdir, { recursive: true }))
           yield* fs.writeFileString(join(outdir, "ticket"), "protocol ticket")
-          const current = yield* Artifact.directory(outdir, producedBy)
-          return { ...input.artifact, ...current, ticket: input.acceptance }
+          const current = yield* Artifact.directory(outdir, producedBy).pipe(
+            Effect.flatMap(Artifact.withSha256),
+          )
+          return { ...input.artifact, ...current }
         }
         const outfile = ("outfile" in input && input.outfile) || input.artifact.path
         const bytes = yield* Effect.promise(() => readFile(input.artifact.path))
         yield* fs.writeFile(outfile, Buffer.concat([bytes, Buffer.from("protocol ticket")]))
-        const current = yield* Artifact.file(outfile, producedBy)
-        return { ...input.artifact, ...current, ticket: input.acceptance }
+        const current = yield* Artifact.file(outfile, producedBy).pipe(
+          Effect.flatMap(Artifact.withSha256),
+        )
+        return { ...input.artifact, ...current }
       }).pipe(Effect.provide(BunServices.layer), Effect.orDie),
+    verifySignature: Effect.succeed,
+    validateTicket: Effect.succeed,
     assess: (artifact) =>
       Effect.sync(() => {
         calls.assess++
@@ -119,6 +126,7 @@ export const appleDoubles = (lookupProducer: Artifact.Producer = producedBy) => 
   }
   return {
     calls,
+    tools,
     layer: Layer.succeed(AppleTools, tools),
     status: (value: Apple.Notary.Status) => {
       status = value

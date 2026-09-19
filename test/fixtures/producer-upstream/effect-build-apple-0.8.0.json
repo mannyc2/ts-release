@@ -3,27 +3,31 @@
     "url": "https://github.com/mannyc2/effect-build/issues"
   },
   "dist": {
-    "shasum": "6b9579b7a228a9b2f6b031ff7d28699ab3e1eab3",
-    "tarball": "https://registry.npmjs.org/effect-build-apple/-/effect-build-apple-0.7.0.tgz",
-    "fileCount": 58,
-    "integrity": "sha512-mLPazuDL5LJbDiLQ3BlNZwlvxpui0Yurj3Om0YMVayNQDhYOKCmyFvpokGo1tJkuDTUtJ7bnCLHkc0Uevie4tw==",
+    "shasum": "76cd44cb51a69cefc51d3f841326b9e157a6d095",
+    "tarball": "https://registry.npmjs.org/effect-build-apple/-/effect-build-apple-0.8.0.tgz",
+    "fileCount": 63,
+    "integrity": "sha512-XwCocgjvxxb/PSYLGO9lca4WMyw4KD8Zqy/wkfFDUWCh2V+tFuZXoUAOwWPeas8Eyag+UcwouzSNbp9AZjke1Q==",
     "signatures": [
       {
-        "sig": "MEQCIGduNs/yCUoGw0zUVq3gvuX+hkbGMqQBlrVEKKJFWEd0AiAYcTkTS4AnPM/Z3tzdvWihGvWZqzQiG0h2j1kky/FTtw==",
+        "sig": "MEUCIHr7pTklo6Hv2e0b4TcOZVmHZobQur3TXYObEBAJ2d4CAiEA5cCJAWkILMshT7ZRAE7VRAgLnF7V8zAHNaQXLidEN7g=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "sig": "MEYCIQCJKTvsWuWgrtErYoLHIDV7s/QXGtCI0C4ehgppHsV6ZwIhANI0Jh952WzM0C6PHAtgzTEiY9yOIAzjEgs/xk1yxFhc",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       }
     ],
     "attestations": {
-      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-apple@0.7.0",
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-apple@0.8.0",
       "provenance": {
         "predicateType": "https://slsa.dev/provenance/v1"
       }
     },
-    "unpackedSize": 311473
+    "unpackedSize": 261429
   },
   "name": "effect-build-apple",
   "type": "module",
-  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-apple-0.7.0.tgz",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-apple-0.8.0.tgz",
   "engines": {
     "node": ">=22.19.0"
   },
@@ -55,8 +59,8 @@
     "dmg",
     "pkg"
   ],
-  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-apple-0.7.0.tgz",
-  "_integrity": "sha512-mLPazuDL5LJbDiLQ3BlNZwlvxpui0Yurj3Om0YMVayNQDhYOKCmyFvpokGo1tJkuDTUtJ7bnCLHkc0Uevie4tw==",
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-apple-0.8.0.tgz",
+  "_integrity": "sha512-XwCocgjvxxb/PSYLGO9lca4WMyw4KD8Zqy/wkfFDUWCh2V+tFuZXoUAOwWPeas8Eyag+UcwouzSNbp9AZjke1Q==",
   "repository": {
     "url": "git+https://github.com/mannyc2/effect-build.git",
     "type": "git",
@@ -74,7 +78,7 @@
   "sideEffects": false,
   "_nodeVersion": "24.14.1",
   "dependencies": {
-    "effect-build": "^0.7.0"
+    "effect-build": "^0.8.0"
   },
   "publishConfig": {
     "access": "public",
@@ -82,17 +86,17 @@
   },
   "_hasShrinkwrap": false,
   "devDependencies": {
-    "effect": "4.0.0-rc.108",
+    "effect": "4.0.0-rc.115",
     "vitest": "3.2.6",
-    "@effect/platform-node": "4.0.0-rc.108"
+    "@effect/platform-node": "4.0.0-rc.115"
   },
   "peerDependencies": {
-    "effect": ">=4.0.0-rc.108 <4.1.0-0"
+    "effect": ">=4.0.0-rc.113 <4.1.0-0"
   },
   "_npmOperationalInternal": {
-    "tmp": "tmp/effect-build-apple_0.7.0_1789090347307_0.43066116299010515",
+    "tmp": "tmp/effect-build-apple_0.8.0_1789829370975_0.7808732669034064",
     "host": "s3://npm-registry-packages-npm-production"
   },
-  "_id": "effect-build-apple@0.7.0",
-  "version": "0.7.0"
+  "_id": "effect-build-apple@0.8.0",
+  "version": "0.8.0"
 }

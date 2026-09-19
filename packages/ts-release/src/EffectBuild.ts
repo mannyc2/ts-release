@@ -7,7 +7,7 @@ import { captureContentOwner, readVerifiedContent, type ContentOwner } from "./i
 import { decodeOwned } from "./internal/Identity.js"
 import { checkTree } from "./internal/TreeLayout.js"
 
-const Regular = Schema.Union([Artifact.File, Artifact.Executable])
+const Regular = Schema.Union([Artifact.HashedFile, Artifact.HashedExecutable])
 const regularKeys = ["kind", "path", "bytes", "sha256", "producedBy", "target", "format"] as const
 const directoryKeys = [
   "kind",
@@ -45,7 +45,7 @@ const producerOf = ({ name, version, sha256 }: Artifact.Producer): Producer => (
 })
 const sameIdentity = (content: Content, expected: { bytes: number; sha256: string }) =>
   content.bytes === expected.bytes && content.sha256 === expected.sha256
-const admitTree = (logicalName: string, source: Artifact.Directory) =>
+const admitTree = (logicalName: string, source: Artifact.HashedDirectory) =>
   adoptData(() => {
     const tree = decodeOwned(OwnedTree, {
       _tag: "OwnedTree",
@@ -64,7 +64,7 @@ const admitTree = (logicalName: string, source: Artifact.Directory) =>
 export const adoptFile = Effect.fn("ts-release.adoptFile")(function* (
   contentOwner: ContentOwner,
   logicalName: string,
-  artifact: Artifact.Regular,
+  artifact: Artifact.HashedRegular,
 ) {
   const owner = captureContentOwner(contentOwner)
   const source = yield* adoptData(() => decodeOwned(Regular, coreRecord(artifact, regularKeys)))
@@ -89,11 +89,11 @@ export const adoptFile = Effect.fn("ts-release.adoptFile")(function* (
 export const adoptTree = Effect.fn("ts-release.adoptTree")(function* (
   contentOwner: ContentOwner,
   logicalName: string,
-  artifact: Artifact.Directory,
+  artifact: Artifact.HashedDirectory,
 ) {
   const owner = captureContentOwner(contentOwner)
   const source = yield* adoptData(() =>
-    decodeOwned(Artifact.Directory, coreRecord(artifact, directoryKeys)),
+    decodeOwned(Artifact.HashedDirectory, coreRecord(artifact, directoryKeys)),
   )
   const tree = yield* admitTree(logicalName, source)
   const path = yield* Path.Path
@@ -157,7 +157,9 @@ export const restoreTree = Effect.fn("ts-release.restoreTree")(function* (
       for (const entry of [...source.entries].reverse())
         if (entry.kind === "directory") yield* fs.chmod(at(entry), entry.mode)
       yield* fs.chmod(root, source.rootMode)
-      const restored = yield* Artifact.directory(root, source.producedBy)
+      const restored = yield* Artifact.directory(root, source.producedBy).pipe(
+        Effect.flatMap(Artifact.withSha256),
+      )
       if (
         restored.bytes !== source.bytes ||
         restored.sha256 !== source.sha256 ||

@@ -19,14 +19,16 @@ export type AppleToolError =
 export interface AppleToolsShape {
   readonly submit: (
     artifact: Apple.SignedProduct,
-  ) => Effect.Effect<Apple.Notary.SubmissionReference, AppleToolError>
+  ) => Effect.Effect<Apple.Notary.SubmissionId, AppleToolError>
+  readonly verifySignature: (
+    artifact: Apple.Product,
+  ) => Effect.Effect<Apple.Product, AppleToolError>
+  readonly validateTicket: (artifact: Apple.Product) => Effect.Effect<Apple.Product, AppleToolError>
   readonly info: (
-    reference: Apple.Notary.SubmissionReference,
+    reference: Apple.Notary.SubmissionId,
   ) => Effect.Effect<Apple.Notary.Info, AppleToolError>
-  readonly staple: (input: Apple.StapleInput) => Effect.Effect<Apple.StapledProduct, AppleToolError>
-  readonly assess: (
-    artifact: Apple.StapledProduct,
-  ) => Effect.Effect<Apple.StapledProduct, AppleToolError>
+  readonly staple: (input: Apple.StapleInput) => Effect.Effect<Apple.Product, AppleToolError>
+  readonly assess: (artifact: Apple.Product) => Effect.Effect<Apple.Product, AppleToolError>
 }
 export class AppleTools extends Context.Service<AppleTools, AppleToolsShape>()(
   "ts-release/AppleTools",
@@ -42,8 +44,15 @@ export const appleToolsLayer = (
       const native = <A, E>(effect: Effect.Effect<A, E, Apple.Apple | Apple.Env>) =>
         Effect.provideContext(effect, context)
       return {
-        submit: (artifact) => native(Apple.Notary.submit({ artifact, credential })),
-        info: (reference) => native(Apple.Notary.info({ reference, credential })),
+        submit: (artifact) =>
+          native(
+            Apple.verifySignature({ artifact }).pipe(
+              Effect.flatMap(() => Apple.Notary.submit({ artifact, credential })),
+            ),
+          ),
+        info: (submissionId) => native(Apple.Notary.info({ submissionId, credential })),
+        verifySignature: (artifact) => native(Apple.verifySignature({ artifact })),
+        validateTicket: (artifact) => native(Apple.validateTicket({ artifact })),
         staple: (input) => native(Apple.staple(input)),
         assess: (artifact) => native(Apple.assess({ artifact })),
       }

@@ -116,7 +116,7 @@ for (const manager of ["bun", "npm"]) {
               "@mannyc1/ts-release-openai": `file:${archiveByOwner.openai}`,
             }
           : {}),
-        effect: "4.0.0-rc.108",
+        effect: "4.0.0-rc.115",
         typescript: "6.0.3",
       },
     }),

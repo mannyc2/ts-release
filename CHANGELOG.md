@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### effect-build 0.8.0
+
+- Align effect-build packages on 0.8.0 and Effect runtime/platform packages on rc.115.
+- Require explicit `Artifact.withSha256` before release adoption. Persist hashed
+  directory entries and retain portable layout checks and verified restoration.
+- Own Apple submission/source correlation in preparation format 3. Compose
+  signature verification, accepted status, stapling, ticket validation, assessment,
+  and final content identity explicitly. Reject earlier preparation formats.
+- Refresh published upstream tarballs, consumer fixtures, and installed checks.
+
 ### effect-build 0.7.0
 
 - Correlate Apple recovery with the recorded submission and signed source while

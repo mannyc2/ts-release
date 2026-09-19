@@ -44,7 +44,9 @@ for (const [fixture, module, backend, distribution] of [
 ]) {
   const project = join(producer, fixture + "-source")
   await cp(join(fixtures, fixture), project, { recursive: true, force: false })
-  const source = await run(Artifact.directory(project, producedBy))
+  const source = await run(
+    Artifact.directory(project, producedBy).pipe(Effect.flatMap(Artifact.withSha256)),
+  )
   sources.push(await run(adoptTree(owner, fixture + "-source", source)))
   const artifacts = await run(Python.build({ project, outdir: join(producer, fixture) }))
   check(
@@ -53,7 +55,8 @@ for (const [fixture, module, backend, distribution] of [
     ["uv", "0.12.0"],
   )
   check(`${fixture} wheel/sdist producer`, artifacts.sdist.producedBy, artifacts.wheel.producedBy)
-  for (const [kind, native] of Object.entries(artifacts)) {
+  for (const [kind, output] of Object.entries(artifacts)) {
+    const native = await run(Artifact.withSha256(output))
     const file = await run(adoptFile(owner, basename(native.path), native))
     check(
       `${fixture}/${kind} exact owned size and digest`,

@@ -1,5 +1,5 @@
 import { Effect } from "effect"
-import * as Apple from "effect-build-apple"
+import { SubmissionReference } from "./Model.js"
 import { createPreparationScope, loadPlan } from "../Plan.js"
 import { observeRelease, runRelease } from "../Release.js"
 import type { Scope } from "../Journal.js"
@@ -64,7 +64,7 @@ export const runPreparation = Effect.fn("apple.runPreparation")(function* (
   preparationId: string,
   options: Omit<RunOptions, "plan">,
   complete: (
-    submission: Apple.Notary.SubmissionReference,
+    submission: SubmissionReference,
     preparationId: string,
   ) => Effect.Effect<AppleEvidence, ReleaseError>,
 ) {
@@ -83,9 +83,7 @@ export const runPreparation = Effect.fn("apple.runPreparation")(function* (
   )
   if (!receipt || receipt.body._tag !== "ReceiptAccepted") return
   const body = receipt.body
-  const submission = yield* attempt(() =>
-    decodeOwned(Apple.Notary.SubmissionReference, body.receipt),
-  )
+  const submission = yield* attempt(() => decodeOwned(SubmissionReference, body.receipt))
   const evidence = yield* complete(submission, preparationId)
   const status = yield* attempt(() =>
     classifyEvidence(input, preparationId, evidence, [submission]),

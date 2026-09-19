@@ -68,7 +68,7 @@ for (const manager of ["bun", "npm"] as const) {
       type: "module",
       dependencies: {
         "@mannyc1/ts-release": `file:${archive}`,
-        effect: "4.0.0-rc.108",
+        effect: "4.0.0-rc.115",
       },
     }),
   )

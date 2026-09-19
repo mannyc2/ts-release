@@ -54,7 +54,7 @@ for (const manager of ["bun", "npm"] as const) {
         name: `kernel-${manager}-acceptance`,
         private: true,
         type: "module",
-        dependencies: { "@mannyc1/ts-release": `file:${archive}`, effect: "4.0.0-rc.108" },
+        dependencies: { "@mannyc1/ts-release": `file:${archive}`, effect: "4.0.0-rc.115" },
         devDependencies: { typescript: "6.0.3" },
       },
       null,
@@ -76,7 +76,7 @@ for (const manager of ["bun", "npm"] as const) {
       optional,
     )
   const effect = await Bun.file(join(cwd, "node_modules/effect/package.json")).json()
-  assert.equal(effect.version, "4.0.0-rc.108")
+  assert.equal(effect.version, "4.0.0-rc.115")
   const packed = await Bun.file(join(installed, "package.json")).json()
   assert.deepEqual(packed.exports, manifest.exports)
   const bytes: Record<string, string> = {}

@@ -86,7 +86,7 @@ const application = Effect.gen(function* () {
         autoloadTsconfig: false,
         autoloadPackageJson: false,
       },
-    })
+    }).pipe(Effect.flatMap(Artifact.withSha256))
     check(`bun/${index} exact target`, native.target, expected)
     check(
       `bun/${index} exact producer`,
@@ -102,7 +102,7 @@ const application = Effect.gen(function* () {
       target,
       env: { DENO_DIR: join(work, "deno-cache") },
       options: { config: false, lock: false, noNpm: true, noRemote: true, check: false },
-    })
+    }).pipe(Effect.flatMap(Artifact.withSha256))
     check(`deno/${index} exact target`, native.target, expected)
     check(
       `deno/${index} exact producer`,
@@ -122,12 +122,14 @@ const application = Effect.gen(function* () {
   check("esbuild exact single in-memory output", built.outputFiles.length, 1)
   const bundled = join(producer, "main.cjs")
   yield* Effect.promise(() => writeFile(bundled, built.outputFiles[0].contents))
-  const main = yield* Artifact.file(bundled, { name: "esbuild", version: Esbuild.tested })
+  const main = yield* Artifact.file(bundled, { name: "esbuild", version: Esbuild.tested[0] }).pipe(
+    Effect.flatMap(Artifact.withSha256),
+  )
   const native = yield* NodeSea.assemble({
     main,
     outfile: join(producer, "node-sea"),
     disableExperimentalSEAWarning: true,
-  })
+  }).pipe(Effect.flatMap(Artifact.withSha256))
   check(
     "SEA exact producer",
     [native.producedBy.name, native.producedBy.version],
@@ -140,7 +142,7 @@ const application = Effect.gen(function* () {
     native,
     file,
     esbuild: {
-      version: Esbuild.tested,
+      version: Esbuild.tested[0],
       bundledSha256: createHash("sha256").update(built.outputFiles[0].contents).digest("hex"),
     },
   })

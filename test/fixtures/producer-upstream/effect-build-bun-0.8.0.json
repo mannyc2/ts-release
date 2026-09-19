@@ -3,31 +3,31 @@
     "url": "https://github.com/mannyc2/effect-build/issues"
   },
   "dist": {
-    "shasum": "47073ff5cf005f741943aca510f198e0f2e09a13",
-    "tarball": "https://registry.npmjs.org/effect-build-bun/-/effect-build-bun-0.7.0.tgz",
+    "shasum": "c31cdce44a5b20950c69fb3ee95db60e35edd45f",
+    "tarball": "https://registry.npmjs.org/effect-build-bun/-/effect-build-bun-0.8.0.tgz",
     "fileCount": 34,
-    "integrity": "sha512-jpdS1TlntZbRPsXvcj9cT5JFTGOoS1ECs+fQKAL4n160h+siqBXlVYWv1IWnsBRtBJKszI0a0bLV3QgXNgLc5g==",
+    "integrity": "sha512-YBqG5ODQ9YalPJNr9kHXKFTmdSy9rYfi/dZwCbY/sIJnXS7wawAEie6Vh6VOXbbXHXeFj/LMXImd/lp7KaKOIA==",
     "signatures": [
       {
-        "sig": "MEYCIQC51LZzIdTBXam/uw/aWS6B/ZgC8iwwmvvxd1Nu+CTzoQIhAIeDhHJydFDqRcApsIA1WUZdiKxftCS2vzUC9ovZuBlN",
+        "sig": "MEYCIQCUrHSAie7De92KCm3Jr8p2NcmgSydRsp9hLh/7CNTCHAIhAKXwlVhXeDLgWij+a5+ybj+Goiy/WGz8qjWZ5FNGomLw",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       },
       {
-        "sig": "MEUCIC3ublLb7i6+ITH56BhsU726L6EqK2siIIpTmHYszWePAiEA5bsULJFepY+KbibOxsFm7uYdshAUgypCABwiCDIZ/TI=",
+        "sig": "MEUCIQDEuYzBtBf6LZgDab3CGSFhimZQFRL0glZ7hpOPSuLaoAIgKpmJA1VwFCgb9zxMONvsPwlVpU7v/PSmwT588hXnrwg=",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       }
     ],
     "attestations": {
-      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-bun@0.7.0",
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect-build-bun@0.8.0",
       "provenance": {
         "predicateType": "https://slsa.dev/provenance/v1"
       }
     },
-    "unpackedSize": 121428
+    "unpackedSize": 121690
   },
   "name": "effect-build-bun",
   "type": "module",
-  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-bun-0.7.0.tgz",
+  "_from": "file:/home/runner/work/_temp/release-packages/effect-build-bun-0.8.0.tgz",
   "engines": {
     "node": ">=22.19.0"
   },
@@ -62,8 +62,8 @@
     "compiler",
     "executable"
   ],
-  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-bun-0.7.0.tgz",
-  "_integrity": "sha512-jpdS1TlntZbRPsXvcj9cT5JFTGOoS1ECs+fQKAL4n160h+siqBXlVYWv1IWnsBRtBJKszI0a0bLV3QgXNgLc5g==",
+  "_resolved": "/home/runner/work/_temp/release-packages/effect-build-bun-0.8.0.tgz",
+  "_integrity": "sha512-YBqG5ODQ9YalPJNr9kHXKFTmdSy9rYfi/dZwCbY/sIJnXS7wawAEie6Vh6VOXbbXHXeFj/LMXImd/lp7KaKOIA==",
   "repository": {
     "url": "git+https://github.com/mannyc2/effect-build.git",
     "type": "git",
@@ -81,7 +81,7 @@
   "sideEffects": false,
   "_nodeVersion": "24.14.1",
   "dependencies": {
-    "effect-build": "^0.7.0"
+    "effect-build": "^0.8.0"
   },
   "publishConfig": {
     "access": "public",
@@ -89,11 +89,11 @@
   },
   "_hasShrinkwrap": false,
   "devDependencies": {
-    "effect": "4.0.0-rc.108",
+    "effect": "4.0.0-rc.115",
     "bun-types": "1.3.14"
   },
   "peerDependencies": {
-    "effect": ">=4.0.0-rc.108 <4.1.0-0",
+    "effect": ">=4.0.0-rc.113 <4.1.0-0",
     "bun-types": ">=1.3.14 <2.0.0"
   },
   "peerDependenciesMeta": {
@@ -102,9 +102,9 @@
     }
   },
   "_npmOperationalInternal": {
-    "tmp": "tmp/effect-build-bun_0.7.0_1789091177207_0.16936968079305292",
+    "tmp": "tmp/effect-build-bun_0.8.0_1789829669878_0.9480974378692322",
     "host": "s3://npm-registry-packages-npm-production"
   },
-  "_id": "effect-build-bun@0.7.0",
-  "version": "0.7.0"
+  "_id": "effect-build-bun@0.8.0",
+  "version": "0.8.0"
 }

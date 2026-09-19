@@ -19,7 +19,7 @@ export const LogicalName = Schema.String.check(
 export const Producer = Schema.Struct({
   name: Schema.NonEmptyString,
   version: Schema.NonEmptyString,
-  sha256: Schema.optionalKey(Sha256),
+  sha256: Schema.optionalKey(Artifact.Sha256),
 })
 export type Producer = typeof Producer.Type
 
@@ -46,15 +46,15 @@ export class OwnedFile extends Schema.TaggedClass<OwnedFile>()("OwnedFile", {
 }) {}
 /**
  * A directory artifact minus its borrowed path. `entries` are the upstream
- * `Artifact.Entry` records, `bytes` totals the file entries and `sha256` is the
+ * `Artifact.HashedEntry` records, `bytes` totals the file entries and `sha256` is the
  * upstream entry-manifest digest, so the tree keeps the identity effect-build gave it.
  */
 export class OwnedTree extends Schema.TaggedClass<OwnedTree>()("OwnedTree", {
   logicalName: LogicalName,
   bytes: Bytes,
-  sha256: Sha256,
+  sha256: Artifact.Sha256,
   rootMode: Mode,
-  entries: Schema.Array(Artifact.Entry),
+  entries: Schema.Array(Artifact.HashedEntry),
   producedBy: Producer,
 }) {}
 export const OwnedArtifact = Schema.Union([OwnedFile, OwnedTree])

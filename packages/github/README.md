@@ -1,7 +1,7 @@
 # @mannyc1/ts-release-github
 
 GitHub tag, release and asset operations for the ts-release kernel. This workspace
-is an unpublished 0.4.0 candidate; full release certification is still in progress.
+uses the matching `@mannyc1/ts-release@0.4.0` core and `effect@4.0.0-rc.115`.
 
 Compose `definitions({ bundle, readContent, read })` with an owned Bundle, its
 content reader and an explicit HTTP reader. Install those six definitions in the

@@ -5,8 +5,17 @@ and resume partial releases using the same durable journal.
 
 ## Run a release application
 
-This checkout contains the 0.4 implementation. To try it before publication, build
-and pack it from this repository:
+Install the 0.4 core and the providers your application uses. An npm/GitHub
+application uses this version-aligned set:
+
+```sh
+bun add @mannyc1/ts-release@0.4.0 @mannyc1/ts-release-npm@0.4.0 @mannyc1/ts-release-github@0.4.0 effect@4.0.0-rc.115
+bun run ts-release ./release.mjs ./release-input.json > release-report.json
+```
+
+The [release page](https://github.com/mannyc2/ts-release/releases/tag/v0.4.0)
+records published availability and the tested Action commit. If evaluating an
+unpublished checkout, build and pack it from this repository:
 
 ```sh
 bun install --frozen-lockfile
@@ -19,7 +28,7 @@ JavaScript application:
 
 ```sh
 bun add /tmp/ts-release.tgz effect@4.0.0-rc.115
-ts-release ./release.mjs ./release-input.json > release-report.json
+bun run ts-release ./release.mjs ./release-input.json > release-report.json
 ```
 
 `release.mjs` exports `createApplication(input)`, a scoped Effect returning
@@ -37,7 +46,7 @@ For later publication, load those same bytes and identities rather than rebuild.
 ## Inspect progress and recover
 
 ```sh
-ts-release --observe ./release.mjs ./release-input.json > release-report.json
+bun run ts-release --observe ./release.mjs ./release-input.json > release-report.json
 ```
 
 This loads the same trusted application and invokes `observeRelease`. It refreshes
@@ -97,3 +106,8 @@ and validation with publication disabled.
 
 Read [design decisions](docs/design-decisions.md) for the recovery rationale and
 [plugin distribution](docs/skill-distribution.md) for catalog delivery.
+
+Upgrading from 0.3.1? Follow the [0.4 migration guide](docs/migration-0.4.md).
+Maintainers can prepare and publish the complete seven-package release using the
+[distribution runbook](docs/release-runbook.md). A successful CI run verifies the
+candidate; the runbook separately verifies registry availability.

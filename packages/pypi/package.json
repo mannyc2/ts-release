@@ -31,5 +31,14 @@
   "peerDependencies": {
     "@mannyc1/ts-release": ">=0.4.0 <0.5.0",
     "effect": ">=4.0.0-rc.115 <4.1.0-0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mannyc2/ts-release.git",
+    "directory": "packages/pypi"
+  },
+  "homepage": "https://github.com/mannyc2/ts-release#readme",
+  "bugs": {
+    "url": "https://github.com/mannyc2/ts-release/issues"
   }
 }

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { join, resolve } from "node:path"
 import { Config, Effect, Redacted, Schema } from "effect"
-import { Plan, loadPlan, type Operation } from "@mannyc1/ts-release"
+import { Plan, loadPlan, type Operation, type JournalContext } from "@mannyc1/ts-release"
 import { loadBundle, verifiedArtifacts, type ReadContent } from "@mannyc1/ts-release/bundle"
 import {
   decodeJson,
@@ -249,6 +249,33 @@ export const createApplication = Effect.fn("release.createApplication")(function
     ...GitHub.definitions({ bundle, readContent, read: httpRead }),
   ]
   const plan = yield* loadPlan(retained, providers)
+  const supersededPlans: NonNullable<JournalContext["supersededPlans"]>[number][] = []
+  for (const prior of input.supersededCandidates ?? []) {
+    const directory = resolve(prior.candidateDirectory)
+    const bytes = yield* read(join(directory, "bundle.json"))
+    if (sha256(bytes) !== prior.bundleSha256)
+      return yield* failure("superseded-bundle", "Historical Bundle identity differs")
+    const historicalOwner = fileContentOwner(join(directory, "content"))
+    const historicalBundle = yield* loadBundle(historicalOwner, bytes)
+    const unavailable = () =>
+      Effect.fail(failure("historical-effect", "Historical providers cannot perform I/O"))
+    const access = {
+      bundle: historicalBundle,
+      readContent: unavailable,
+      read: unavailable,
+      verifyProvenance: unavailable,
+    }
+    const historicalProviders = [...Npm.definitions(access), ...GitHub.definitions(access)]
+    const historical = yield* loadPlan(
+      decodeJson(yield* read(join(directory, "plan.json"))),
+      historicalProviders,
+    )
+    if (historical.planId !== prior.planId || historical.journalId !== plan.journalId)
+      return yield* failure("superseded-plan", "Historical Plan identity or journal differs")
+    if (historical.bundleId !== prior.bundleSha256)
+      return yield* failure("superseded-bundle", "Historical Plan targets another Bundle")
+    supersededPlans.push({ plan: historical, providers: historicalProviders })
+  }
   const remote = yield* attempt("journal-remote", () => {
     const url = new URL(input.journal.remote)
     if (
@@ -311,6 +338,15 @@ export const createApplication = Effect.fn("release.createApplication")(function
       transport: makeHttpTransport({ providers, credentials, ...bounds }),
       now: Date.now,
       uniqueId: randomUUID,
+      ...(supersededPlans.length
+        ? {
+            journal: {
+              journalId: plan.journalId,
+              scopes: [{ _tag: "PublicationScope" as const, plan }],
+              supersededPlans,
+            },
+          }
+        : {}),
     },
     ...(local ? { onRejected: (operation: Operation) => local.complete(operation) } : {}),
   }

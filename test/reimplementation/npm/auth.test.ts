@@ -160,7 +160,7 @@ test("token authorization binds exact origin, scope and authorization mode befor
   ).rejects.toThrow()
 })
 
-test("trusted npm exchange captures package and methods before OIDC and validates lifetime", async () => {
+test("trusted npm exchange captures package and methods before OIDC", async () => {
   const f = fixture(),
     selected = { authorization: trusted(), packageName: f.publication.name, binding: f.binding }
   let calls = 0
@@ -221,27 +221,39 @@ test("trusted npm exchange captures package and methods before OIDC and validate
         ),
       ),
     ).rejects.toThrow("exchange was not accepted")
-  await expect(
+  // Registry metadata is not durable authority. npm's own client consumes the
+  // new token without requiring created/expires fields or a timestamp format.
+  const exchange = (value: unknown) =>
     Effect.runPromise(
       authorizeTrusted(
         { ...selected, packageName: f.publication.name },
         {
           oidc: () => Effect.succeed(Redacted.make("identity-token")),
-          exchange: () =>
-            Effect.succeed({
-              status: 201,
-              headers: {},
-              body: encode({
-                token_type: "oidc",
-                token: "expired-token",
-                created: "2000-01-01T00:00:00Z",
-                expires: "2000-01-02T00:00:00Z",
-              }),
-            }),
+          exchange: () => Effect.succeed({ status: 201, headers: {}, body: encode(value) }),
         },
       ),
-    ),
-  ).rejects.toThrow("lifetime")
+    )
+  for (const metadata of [
+    {},
+    { created: Date.now(), expires: Date.now() + 60000 },
+    { created: null, expires: null },
+    { created: "2000-01-01T00:00:00Z", expires: "2000-01-02T00:00:00Z" },
+    { additionalRegistryMetadata: true },
+    { additionalRegistryMetadata: { fractionalValue: 1.5 } },
+  ]) {
+    expect(await exchange({ token_type: "oidc", token: "registry-token", ...metadata })).toEqual({
+      authorization: "Bearer registry-token",
+    })
+  }
+  for (const invalid of [
+    {},
+    { token_type: "Bearer", token: "registry-token" },
+    { token_type: "oidc", token: "" },
+    { token_type: "oidc", token: "token\nheader: injected" },
+    { token_type: "oidc", token: 123 },
+    { token_type: "oidc", token: "x".repeat(65537) },
+  ])
+    await expect(exchange(invalid)).rejects.toThrow()
 })
 
 test("provenance creation owns exact statement bytes and rejects callback payload substitution", async () => {

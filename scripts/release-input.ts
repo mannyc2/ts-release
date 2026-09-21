@@ -56,6 +56,27 @@ const input = {
     maximumOutputBytes: 64 * 1024 * 1024,
   },
   ...(sigstore ? { sigstore } : {}),
+  ...(process.env.TS_RELEASE_SUPERSEDED_CANDIDATES
+    ? {
+        supersededCandidates: await Promise.all(
+          (JSON.parse(process.env.TS_RELEASE_SUPERSEDED_CANDIDATES) as string[]).map(
+            async (directory) => {
+              assert.equal(typeof directory, "string")
+              const identity = JSON.parse(
+                await readFile(join(resolve(directory), "identity.json"), "utf8"),
+              )
+              assert.match(identity.planId, /^[a-f0-9]{64}$/u)
+              assert.match(identity.bundleSha256, /^[a-f0-9]{64}$/u)
+              return {
+                candidateDirectory: resolve(directory),
+                planId: identity.planId,
+                bundleSha256: identity.bundleSha256,
+              }
+            },
+          ),
+        ),
+      }
+    : {}),
 }
 await writeFile(resolve(destination), JSON.stringify(input, null, 2) + "\n", { flag: "wx" })
 if (process.env.GITHUB_OUTPUT)

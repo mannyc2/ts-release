@@ -24,7 +24,16 @@ export interface JournalStore {
 export type Scope =
   | { readonly _tag: "PublicationScope"; readonly plan: Plan }
   | { readonly _tag: "PreparationScope"; readonly plan: Plan }
-export type JournalContext = Readonly<{ journalId: string; scopes: ReadonlyArray<Scope> }>
+export type JournalContext = Readonly<{
+  journalId: string
+  scopes: ReadonlyArray<Scope>
+  /** Historical publication plans explicitly superseded before any dispatch.
+   * Their complete history remains validated in the same physical journal. */
+  supersededPlans?: ReadonlyArray<{
+    readonly plan: Plan
+    readonly providers: ReadonlyArray<ProviderDefinition>
+  }>
+}>
 type Started = Extract<JournalEvent["body"], { readonly _tag: "DispatchStarted" }>
 /** A preparation selects one immutable output. Receipt and observation channels
  * are distinct; their payloads cannot be assumed equivalent across codecs. */

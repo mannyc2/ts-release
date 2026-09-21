@@ -91,6 +91,15 @@ export class ApplicationInput extends Schema.Class<ApplicationInput>("Release.Ap
   journal: JournalInput,
   authentication: Schema.Union([TokenAuthentication, TrustedAuthentication, LocalAuthentication]),
   sigstore: Schema.optionalKey(SigstoreTrust),
+  supersededCandidates: Schema.optionalKey(
+    Schema.Array(
+      Schema.Struct({
+        candidateDirectory: text,
+        bundleSha256: digest,
+        planId: digest,
+      }),
+    ),
+  ),
   timeoutMilliseconds: Schema.optionalKey(positive),
 }) {}
 

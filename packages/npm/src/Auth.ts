@@ -1,4 +1,4 @@
-import { Clock, Effect, Redacted, Schema } from "effect"
+import { Effect, Redacted, Schema } from "effect"
 import * as NativeSigstore from "@sigstore/bundle"
 import * as Sigstore from "sigstore"
 import * as Bundle from "@mannyc1/ts-release/bundle"
@@ -46,8 +46,6 @@ export const authorizeToken = Effect.fn("npm.authorizeToken")(function* (input: 
 const ExchangeResponse = Schema.Struct({
   token_type: Schema.Literal("oidc"),
   token: Schema.String,
-  created: Schema.String,
-  expires: Schema.String,
 })
 export const authorizeTrusted = Effect.fn("npm.authorizeTrusted")(function* (
   input: {
@@ -77,22 +75,14 @@ export const authorizeTrusted = Effect.fn("npm.authorizeTrusted")(function* (
   if (response.status !== 201)
     return yield* Native.reject("npm-oidc-exchange", "npm OIDC exchange was not accepted")
   const value = yield* Native.attempt(() =>
-    Native.own(ExchangeResponse, Native.parseJson(response.body)),
+    Schema.decodeUnknownSync(ExchangeResponse)(
+      JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(response.body)),
+    ),
   )
-  const now = yield* Clock.currentTimeMillis
-  return yield* Native.attempt(() => {
-    const created = Date.parse(value.created),
-      expires = Date.parse(value.expires)
-    if (
-      !Number.isFinite(created) ||
-      !Number.isFinite(expires) ||
-      created > now ||
-      expires <= now ||
-      expires <= created
-    )
-      Native.invalid("credential-lifetime")
-    return bearer(Redacted.make(value.token))
-  })
+  // Like npm's own client, consume the freshly exchanged opaque token. The
+  // registry owns its lifetime; diagnostic metadata is not an authorization
+  // contract. Acquire per request, never cache or retain the credential.
+  return yield* Native.attempt(() => bearer(Redacted.make(value.token)))
 })
 
 const statementWithDigest = (

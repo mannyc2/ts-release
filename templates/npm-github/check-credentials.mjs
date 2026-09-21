@@ -26,6 +26,8 @@ export const diagnosticHost = (host, emit, now = Date.now) => ({
           responseShape: "object",
           tokenTypeMatches: value.token_type === "oidc",
           tokenPresent: typeof value.token === "string" && value.token.length > 0,
+          createdType: typeof value.created,
+          expiresType: typeof value.expires,
           unexpectedFields: Object.keys(value).some(
             (key) => !["token_type", "token", "created", "expires"].includes(key),
           ),
@@ -96,6 +98,7 @@ const knownCodes = new Set([
   "github-oidc",
   "http-credentials",
   "npm-oidc-exchange",
+  "npm-data",
   "npm-credential-lifetime",
   "npm-credential-token",
   "npm-credential-binding",

@@ -107,7 +107,6 @@ for (const status of [201, 401])
               Effect.sync(() => {
                 exchanges++
                 expect(request.headers.authorization).toBe(`Bearer ${identity}`)
-                const now = Date.now()
                 return {
                   status,
                   headers: {},
@@ -115,8 +114,6 @@ for (const status of [201, 401])
                     JSON.stringify({
                       token_type: "oidc",
                       token: credential,
-                      created: new Date(now - 1000).toISOString(),
-                      expires: new Date(now + 60000).toISOString(),
                       ...(status === 401 ? { message: identity, unknown: credential } : {}),
                     }),
                   ),
@@ -134,6 +131,8 @@ for (const status of [201, 401])
       status,
       tokenTypeMatches: true,
       tokenPresent: true,
+      createdType: "undefined",
+      expiresType: "undefined",
       unexpectedFields: status === 401,
     })
     expect(events.some((event) => event.stage === "npm-credentials-ready")).toBe(status === 201)

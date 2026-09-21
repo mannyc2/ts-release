@@ -15,6 +15,7 @@ export class FinalizedReport extends Schema.Class<FinalizedReport>("ts-release/F
   bundle: OwnedBundle,
   plan: Plan,
   preparations: Schema.Array(Plan),
+  supersededPlans: Schema.optionalKey(Schema.Array(Plan)),
   journal: Schema.Struct({
     journalId: Schema.String,
     revision: Schema.Number,
@@ -59,6 +60,7 @@ export const reportFinalizedRelease = Effect.fn("ts-release.reportFinalizedRelea
       bundle: owned,
       plan,
       preparations: current.plans.filter((item) => item.planId !== plan.planId),
+      ...(current.supersededPlans.length ? { supersededPlans: current.supersededPlans } : {}),
       journal: { journalId: plan.journalId, ...current.snapshot },
       superseded: report.superseded,
       operations: report.operations,

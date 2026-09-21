@@ -82,7 +82,9 @@ jobs:
           node-version: '24.15.0'
       - run: bun install --frozen-lockfile --ignore-scripts
       - name: Install the native provenance publisher
-        run: bun add --global npm@11.11.0
+        run: |
+          bun add --global npm@11.11.0
+          bun pm bin --global >> "$GITHUB_PATH"
       - uses: actions/download-artifact@v4
         with:
           name: ts-release-distribution

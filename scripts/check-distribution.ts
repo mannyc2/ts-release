@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { cp, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises"
+import { cp, lstat, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -11,10 +11,10 @@ const manifest = await readDistribution(directory)
 const workspace = JSON.parse(await readFile(join(root, "package.json"), "utf8"))
 const consumer = process.argv.includes("--hosted")
   ? join(root, ".release/distribution-consumer")
-  : await mkdtemp(join(tmpdir(), "ts-release-distribution-consumer-"))
-await mkdir(consumer, { recursive: true })
+  : join(await mkdtemp(join(tmpdir(), "ts-release-distribution-")), "consumer")
+await mkdir(consumer)
 const run = async (argv: string[]) => {
-  const child = Bun.spawn(argv, { cwd: consumer, stdout: "pipe", stderr: "pipe" })
+  const child = Bun.spawn(argv, { cwd: consumer, stdout: "pipe", stderr: "pipe", timeout: 120_000 })
   const [exit, stdout, stderr] = await Promise.all([
     child.exited,
     new Response(child.stdout).text(),
@@ -29,18 +29,31 @@ await writeFile(
     private: true,
     type: "module",
     dependencies: {
+      // Resolve the unpublished core before its providers' peer constraints.
+      "@mannyc1/ts-release": `file:${join(directory, manifest.packages.find((entry) => entry.name === "@mannyc1/ts-release")!.file)}`,
+      effect: workspace.devDependencies.effect,
       ...Object.fromEntries(
         manifest.packages.map((entry) => [entry.name, `file:${join(directory, entry.file)}`]),
       ),
-      effect: workspace.devDependencies.effect,
     },
   }),
 )
 await run([process.execPath, "install", "--ignore-scripts"])
-await writeFile(
-  join(consumer, "imports.mjs"),
-  manifest.packages.map((entry) => `await import(${JSON.stringify(entry.name)});`).join("\n"),
-)
+const imports = []
+for (const entry of manifest.packages) {
+  assert.equal((await lstat(join(consumer, "node_modules", entry.name))).isSymbolicLink(), false)
+  const installed = JSON.parse(
+    await readFile(join(consumer, "node_modules", entry.name, "package.json"), "utf8"),
+  )
+  assert.equal(installed.version, manifest.version)
+  // Catalog deliberately exports only /homebrew and /scoop, with no root entry.
+  const paths = Object.keys(installed.exports)
+  for (const path of paths.includes(".") ? ["."] : paths) {
+    const specifier = entry.name + (path === "." ? "" : path.slice(1))
+    imports.push(`await import(${JSON.stringify(specifier)});`)
+  }
+}
+await writeFile(join(consumer, "imports.mjs"), imports.join("\n"))
 await run(["node", "imports.mjs"])
 await run([process.execPath, "imports.mjs"])
 assert.equal(

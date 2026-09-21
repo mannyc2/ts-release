@@ -67,3 +67,16 @@ jobs:
       - name: Check macOS package imports and installed declarations
         if: runner.os == 'macOS'
         run: bun run check && bun run check:packed-kernel
+
+      - name: Check the retained seven-package distribution
+        if: runner.os == 'Linux'
+        run: |
+          bun run release:prepare .release/distribution
+          bun scripts/check-distribution.ts .release/distribution --hosted
+
+      - name: Exercise the committed Action on the hosted Node 24 runner
+        if: runner.os == 'Linux'
+        uses: ./apps/action
+        with:
+          application: .release/distribution-consumer/application.mjs
+          observe: 'true'

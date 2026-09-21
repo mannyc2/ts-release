@@ -38,7 +38,13 @@ await writeFile(
     },
   }),
 )
-await run([process.execPath, "install", "--ignore-scripts"])
+await run([
+  process.execPath,
+  "install",
+  "--ignore-scripts",
+  "--cache-dir",
+  join(consumer, ".bun-cache"),
+])
 const imports = []
 for (const entry of manifest.packages) {
   assert.equal((await lstat(join(consumer, "node_modules", entry.name))).isSymbolicLink(), false)

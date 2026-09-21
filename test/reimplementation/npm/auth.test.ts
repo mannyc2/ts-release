@@ -7,6 +7,7 @@ import {
   authorizeToken,
   authorizeTrusted,
   makeSigstoreAttester,
+  makeSigstoreVerifier,
   createProvenance,
   TrustedAuthorization,
   ProvenanceSource,
@@ -377,6 +378,19 @@ test("Sigstore rejects unrelated source and empty identity without reaching ambi
   expect(oidcCalls).toBe(0)
   await expect(
     Effect.runPromise(attest({ payloadType: "application/vnd.in-toto+json", payload: f.payload })),
-  ).rejects.toThrow("credential token")
-  expect(oidcCalls).toBe(1)
+  ).rejects.toThrow(process.versions.bun ? "require supported Node.js" : "credential token")
+  expect(oidcCalls).toBe(process.versions.bun ? 0 : 1)
+})
+
+test("native Sigstore verification reports the unqualified Bun runtime before TUF IO", async () => {
+  if (!process.versions.bun) return
+  const f = fixture()
+  const verify = makeSigstoreVerifier({
+    tufRootPath: "/fixture/not-read-root.json",
+    tufCachePath: "/fixture/not-written-cache",
+    timeoutMilliseconds: 1,
+  })
+  await expect(
+    Effect.runPromise(verify({ source: source(), bundleBytes: f.provenance })),
+  ).rejects.toThrow("require supported Node.js")
 })

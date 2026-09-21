@@ -60,7 +60,9 @@ await writeFile(
       files: ["dist"],
       exports: { ".": { types: "./dist/index.d.ts", import: "./dist/index.js" } },
       peerDependencies: {
-        "@mannyc1/ts-release": "0.4.0",
+        "@mannyc1/ts-release": JSON.parse(
+          await readFile(join(root, "packages/ts-release/package.json"), "utf8"),
+        ).version,
         effect: ">=4.0.0-rc.115 <4.1.0-0",
       },
       devDependencies: {

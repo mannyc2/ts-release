@@ -140,7 +140,14 @@ export interface HttpProviderDefinition extends ProviderDefinition {
     response: HttpResponse,
   ) => Effect.Effect<SendResult, ReleaseError>
 }
-export type CredentialBinding = Readonly<{ endpoint: string; principal: string; scope: string }>
+export type CredentialBinding = Readonly<{
+  endpoint: string
+  principal: string
+  scope: string
+  /** Native readers supply the method; native writes also supply the body digest. */
+  method?: string
+  bodyDigest?: string
+}>
 /** Live secret headers, never durable intent/request/journal fields. */
 export type CredentialHeaders = Readonly<Record<string, string>>
 export const credentialToken = (value: Redacted.Redacted<string>, invalid: () => never): string => {

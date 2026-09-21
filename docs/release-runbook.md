@@ -1,96 +1,116 @@
 # Release runbook
 
-## Publish this repository's seven npm packages
+The repository releases itself through the same public npm/GitHub application
+provided by the [starter](../templates/npm-github/README.md). Bun builds and packs
+the seven aligned packages. Preparation retains one Bundle, Plan and content
+directory. The CLI or Action loads those exact inputs and uses native providers
+with a shared Git journal. There is no independent npm/gh publishing script.
 
-The manual [Release workflow](../.github/workflows/release.yml) prepares one
-version-aligned cohort and a digest manifest from an exact commit on `main`.
-It runs the portable suite, installs the actual retained archives in a clean
-consumer, and exercises the committed Action on a hosted Node 24 runner.
-The final GitHub release notes contain a full commit pin for that Action.
+## Hosted publication
 
-Dispatch `release.yml` from `main` with `candidate_sha` equal to the current tip.
-Leave `publish` false to prepare and inspect the `ts-release-distribution` artifact
-without external publication. Set `publish` true only when publication of that
-exact candidate is approved. Concurrent release attempts are serialized.
+Use the manual [Release workflow](../.github/workflows/release.yml) on `main`,
+with `candidate_sha` equal to the exact reviewed current commit. Leave `publish`
+false for preparation and acceptance only. Set it true only after approval to
+sign and publish that candidate. Concurrent workflow runs are serialized.
 
-The two publication jobs download the retained tarballs and verify their manifest
-digest. They do not rebuild them. npm providers publish first and the core last;
-every version's registry integrity must match its retained archive. Only after all
-seven versions and `latest` tags are verified does the GitHub release become
-public. It includes all seven archives, `release.json`, migration notes and the
-immutable Action coordinate. npm's individual uploads are not an atomic batch.
+1. **Prepare** runs portable checks, the Node Sigstore witness, and produces the
+   seven exact archives. Installed acceptance uses the production application,
+   native HTTPS transport, real Git journals and committed Action launcher. It
+   exercises publication and recovery against local TLS peers. The job retains
+   `ts-release-unsigned-candidate`.
+2. **Attest** restores those archives, obtains hosted identity, signs provenance
+   under Node, and creates the final Bundle/Plan without publishing packages or
+   releases. It retains `ts-release-signed-candidate` before the next job starts.
+3. **Publish** verifies the retained Bundle/Plan digests, installs the exact
+   retained packages, and invokes the committed Action launcher with the shared
+   application under the same pinned Node used by the Sigstore checks. Native
+   npm providers publish the six providers before the core; GitHub finalization
+   depends on the complete npm cohort and its exact release assets. A final
+   read-only check waits for matching public registry and GitHub observations.
 
-### First publication and authentication
+npm acceptance and public registry visibility are distinct. A successful native
+acknowledgement is journaled; the verifier allows 31 observations with ten-second
+pauses for cache propagation. It never repeats publication. The cohort is not an
+atomic batch, and partial progress remains in the shared journal.
 
-Configure npm trusted publishing for **each** package listed in
-[the migration guide](migration-0.4.md): GitHub owner `mannyc2`, repository
-`ts-release`, workflow filename `release.yml`, no environment name, with direct
-`npm publish` allowed. The workflow uses GitHub-hosted runners, Node 24.15.0 and
-the pinned native npm 11.11.0 publisher for provenance. All package manifests carry
-the matching repository URL.
+Configure npm trusted publishing for **each** of the seven existing package names:
+owner `mannyc2`, repository `ts-release`, workflow `release.yml`, no environment.
+The workflow uses GitHub-hosted Node 24.15.0, `id-token: write`, and the library's
+native npm OIDC exchange and Sigstore adapters. It does not invoke `npm publish`.
+GitHub's job token has `contents: write` for release operations and the journal
+branches under `refs/heads/ts-release-journal/`. No long-lived npm secret is used.
 
-New package names need initial publication before their npm settings can be
-configured. For that bootstrap, supply a temporary publish-capable Actions secret
-`NPM_TOKEN` authorized for the new names. The workflow exposes it only to the npm
-publication step and writes a temporary npm config containing an environment
-variable reference. After first publication, configure each trusted publisher,
-remove the bootstrap secret and revoke its token. Never put a token in source or
-the distribution artifact. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).
+New package names need first-publication access before npm trusted-publisher
+settings can be configured. For that case, use the explicit local/token mode
+below for a separately approved candidate, then configure trusted publishing
+for the next version. Do not substitute authorization modes on an unfinished Plan.
 
-### Recovery and local preparation
+## Recovery
 
-If publication fails, preserve the successful prepare job and rerun failed jobs
-in the **same workflow run**. This downloads the same artifact. Existing versions
-are skipped only when their integrity matches. A differing version, missing
-verification or unexpected tag stops the workflow. No existing package version,
-release tag or asset is overwritten. If someone deliberately moved a `latest`
-tag, review that change and correct it explicitly before continuing.
+After publication begins, rerun only failed **Publish** jobs in the original
+workflow run. They restore the same signed candidate and fetch the same remote
+journal. Do not rerun attestation or rebuild archives to recover a dispatched
+release. A candidate whose Plan differs from existing history is rejected even
+if a new runner or workflow run is used: journal identity is stable per
+repository and version.
 
-If registry publication succeeded but GitHub publication failed, rerun only the
-GitHub job. A draft with exact existing assets can be completed. Partial package
-availability is reported as a failure until the complete cohort is verified.
-Artifacts are retained for 90 days; download and retain them outside Actions if
-recovery may take longer. Do not start a new build to recover an unfinished set.
+A lost response followed by a registry 404 does not permit resending. Observe the
+original candidate and follow [recovery](recovery.md) for unresolved outcomes.
+Matching evidence allows progress; conflicting bytes stop it. Existing releases,
+tags and assets are never overwritten. Retain the complete signed candidate
+outside Actions before its 90-day artifact retention expires, and preserve the
+remote journal branches independently of job logs or local caches.
 
-For local inspection, use Bun 1.3.14 and an admitted Node runtime, commit the
-reviewed source (including the built Action), then:
+If every operation was acknowledged but the final visibility check timed out,
+repeat only `verify.mjs` with the original input. It executes provider
+observations through the public runner and cannot publish.
+
+## Local preparation and browser authentication
+
+Use pinned Bun and Node, commit the reviewed source and generated Action/starter,
+then:
 
 ```sh
 bun install --frozen-lockfile
 bun run setup:native-python
 bun run setup:native-catalog
 bun run check:portable
-bun run release:prepare .release/distribution
-bun run release:check .release/distribution
-bun scripts/check-distribution.ts .release/distribution
+bun run release:prepare .release/candidate
+bun run release:check .release/candidate
+bun scripts/check-distribution.ts .release/candidate
 ```
 
-The distribution directory must be new. `release:prepare` never publishes.
-`release:publish` and `release:github` additionally require an explicit
-`--execute`; use the hosted workflow for the supported OIDC/provenance path.
-Local authentication alone does not provide GitHub Actions provenance.
+Preparation uses a new directory and never publishes. The candidate contains the
+canonical `bundle.json`, `plan.json`, `identity.json` and `content/`; the identity
+file selects the Bundle and Plan and contains no credentials.
 
-For an explicitly approved first publication using an interactive local npm login,
-download the workflow's validated `ts-release-distribution` artifact, check out
-its exact source commit and use the same Node and npm 11.11.0 publisher. Run
-`bun scripts/release.ts publish-local <retained-directory> --execute`, followed by
-`bun run release:github <retained-directory> --execute`. This bootstrap path
-explicitly disables provenance; it does not claim a hosted OIDC attestation.
-An npm login/2FA prompt may still require the maintainer. Configure trusted
-publishing for the new package names after bootstrap.
+For a new, approved local release, run `npm login`, explicitly select its user
+config via `NPM_CONFIG_USERCONFIG`, provide `GH_TOKEN` through your secret manager,
+and set `TS_RELEASE_JOURNAL_REMOTE=https://github.com/mannyc2/ts-release.git`.
+The login format supported here is a literal npmjs-registry-scoped `_authToken`.
+Then:
 
-## Run an application you author
+```sh
+bun run release:input .release/candidate .release/local-input.json Local --execute
+bun run release:observe .release/local-input.json
+bun run release:run .release/local-input.json > .release/local-report.json
+```
 
-1. Run `bun install --frozen-lockfile`, `bun run check:portable` and the relevant
-   native producer checks. Retain the exact tested source commit and packed files.
-2. Prepare and retain the Bundle, content, Plan and application input. Confirm the
-   intended destinations and the application's explicit authorization policy.
-3. Run `bun run ts-release --observe ./release.mjs ./release-input.json` to inspect current
-   evidence. Observation records journal evidence without publication dispatch.
-4. Once execution is approved, run `bun run ts-release ./release.mjs ./release-input.json`.
-   Retain its JSON report. Follow [recovery](recovery.md) for incomplete progress.
+Observe mode never dispatches publication; exit 2 before first publication is
+expected. The Local mode prints fresh npm browser challenge links on stderr and
+keeps passwords only in memory. A definite authentication rejection is durably
+recorded before a new attempt. A missing response cannot be treated as a rejected
+write. Use `Token` plus an explicitly supplied `NPM_TOKEN` for unattended token
+publication. These modes do not claim hosted provenance.
 
-The repository's self-release application is a preparation/validation rehearsal
-with dispatch disabled. Public registry publication, actual GitHub releases,
-portal submission and hosted Apple service acceptance are separate operational
-acceptance. Local fixtures do not establish those outcomes.
+To run visibility verification with the exact retained packages:
+
+```sh
+bun scripts/install-release-runtime.ts .release/candidate .release/local-runtime
+node .release/local-runtime/verify.mjs .release/local-runtime/application.js .release/local-input.json
+```
+
+Keep the same candidate and input for continuation. Changing only the local
+cache is safe; replacing the Plan or journal is not recovery. The broad
+multi-provider `apps/self-release/src/rehearsal.ts` remains a preparation fixture,
+separate from the npm/GitHub production application.

@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url"
 import { Host, captureHost, type HostShape } from "../internal/Host.js"
 import type { OwnedBundle } from "../internal/ArtifactModel.js"
 import { attempt, fail, failure, type ReleaseError } from "../internal/Error.js"
-import type { RunOptions } from "../internal/ReleaseModel.js"
+import type { Operation, RunOptions } from "../internal/ReleaseModel.js"
 import { FinalizedReport, reportFinalizedRelease } from "../internal/FinalizedReport.js"
 import { observeRelease, runRelease } from "../Release.js"
 
@@ -15,6 +15,10 @@ export interface Application {
   readonly bundle: OwnedBundle
   readonly host: HostShape
   readonly options: RunOptions
+  /** Complete live authentication only after a provider's terminal noncommit
+   * proof is durable. The kernel alone authorizes any subsequent dispatch.
+   * Called at most once per operation per invocation, never in observe mode. */
+  readonly onRejected?: (operation: Operation) => Effect.Effect<boolean, ReleaseError>
 }
 export type CreateApplication = (
   input: unknown,
@@ -70,6 +74,11 @@ export const runApplication = (
         })
         const app = yield* factory
         const options = { ...app.options }
+        const onRejected = yield* attempt(() => {
+          if (app.onRejected !== undefined && typeof app.onRejected !== "function")
+            fail("application-rejection", "Application rejection handler must be callable")
+          return app.onRejected?.bind(app)
+        })
         const host = yield* attempt(() => captureHost(app.host))
         return yield* Effect.gen(function* () {
           // Admit the complete Bundle/Plan/Journal binding before dispatch, then keep
@@ -77,7 +86,43 @@ export const runApplication = (
           const admitted = yield* reportFinalizedRelease(app.bundle, options.plan)
           if (mode === "observe") yield* observeRelease({ plan: admitted.plan })
           else yield* runRelease({ ...options, plan: admitted.plan })
-          return yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
+          let report = yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
+          const initialDispatches = admitted.operations.reduce(
+            (sum, item) => sum + item.dispatches,
+            0,
+          )
+          const handled = new Set<string>()
+          while (mode === "run" && options.authorize && onRejected) {
+            const used =
+              report.operations.reduce((sum, item) => sum + item.dispatches, 0) - initialDispatches
+            const remaining =
+              options.maxDispatches === undefined ? undefined : options.maxDispatches - used
+            if (remaining !== undefined && remaining <= 0) break
+            const rejected = report.operations.filter((item) => item.status === "Rejected")
+            if (rejected.length === 0 || rejected.some((item) => handled.has(item.operationId)))
+              break
+            let ready = true
+            for (const item of rejected) {
+              handled.add(item.operationId)
+              const operation = admitted.plan.operations.find(
+                (operation) => operation.operationId === item.operationId,
+              )!
+              if (!(yield* Effect.suspend(() => onRejected(operation)))) {
+                ready = false
+                break
+              }
+            }
+            if (!ready) break
+            // Re-enter the public interpreter with the original Plan and journal.
+            // The hook supplies live credentials, never a send permit or replay.
+            yield* runRelease({
+              ...options,
+              plan: admitted.plan,
+              ...(remaining === undefined ? {} : { maxDispatches: remaining }),
+            })
+            report = yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
+          }
+          return report
         }).pipe(Effect.provideService(Host, host))
       }),
     ).pipe(Effect.provideService(Logger.LogToStderr, true)),

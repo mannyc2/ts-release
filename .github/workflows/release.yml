@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       publish:
-        description: Publish the retained seven-package cohort and GitHub release
+        description: Sign and publish this exact seven-package candidate
         required: true
         default: false
         type: boolean
@@ -25,7 +25,7 @@ jobs:
     if: github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha
     runs-on: ubuntu-latest
     outputs:
-      manifest-sha256: ${{ steps.manifest.outputs.sha256 }}
+      bundle-sha256: ${{ steps.identity.outputs.bundle-sha256 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,38 +36,78 @@ jobs:
           bun-version: 1.3.14
       - uses: actions/setup-node@v4
         with:
-          node-version: '24.15.0'
+          node-version: "24.15.0"
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11.14'
+          python-version: "3.11.14"
       - run: bun install --frozen-lockfile
       - run: bun run setup:native-python && bun run setup:native-catalog
       - run: bun run check:portable
-      - name: Pack the complete release from the tested commit
+      - name: Verify native Sigstore under the publishing runtime
+        run: bun run check:native-npm-sigstore
+      - name: Retain the seven-package candidate without publication
         run: bun run release:prepare .release/distribution
-      - name: Install and observe the exact retained archives
+      - name: Exercise the installed production application and Action with native HTTPS peers
         run: bun scripts/check-distribution.ts .release/distribution --hosted
-      - name: Exercise the committed Action on the hosted Node 24 runner
-        uses: ./apps/action
-        with:
-          application: .release/distribution-consumer/application.mjs
-          observe: 'true'
-      - id: manifest
-        name: Bind the retained manifest
-        run: echo "sha256=$(sha256sum .release/distribution/release.json | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+      - id: identity
+        run: echo "bundle-sha256=$(sha256sum .release/distribution/bundle.json | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
-          name: ts-release-distribution
+          name: ts-release-unsigned-candidate
           path: .release/distribution/
           if-no-files-found: error
           retention-days: 90
 
-  publish-npm:
+  attest:
     needs: prepare
     if: inputs.publish
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
+    outputs:
+      bundle-sha256: ${{ steps.identity.outputs.bundle-sha256 }}
+      plan-sha256: ${{ steps.identity.outputs.plan-sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.15.0"
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run build
+      - uses: actions/download-artifact@v4
+        with:
+          name: ts-release-unsigned-candidate
+          path: .release/distribution
+      - name: Sign the retained archives and author the final Bundle and Plan
+        env:
+          BUNDLE_SHA256: ${{ needs.prepare.outputs.bundle-sha256 }}
+        run: |
+          printf '%s  %s\n' "$BUNDLE_SHA256" .release/distribution/bundle.json | sha256sum --check
+          bun run release:attest .release/distribution .release/signed --execute
+      - id: identity
+        run: |
+          echo "bundle-sha256=$(sha256sum .release/signed/bundle.json | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+          echo "plan-sha256=$(sha256sum .release/signed/plan.json | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+      # Retain before publication. Retry only publish after a dispatched write.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ts-release-signed-candidate
+          path: .release/signed/
+          if-no-files-found: error
+          retention-days: 90
+
+  publish:
+    needs: [prepare, attest]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -79,61 +119,38 @@ jobs:
           bun-version: 1.3.14
       - uses: actions/setup-node@v4
         with:
-          node-version: '24.15.0'
+          node-version: "24.15.0"
       - run: bun install --frozen-lockfile --ignore-scripts
-      - name: Install the native provenance publisher
-        run: |
-          bun add --global npm@11.11.0
-          bun pm bin --global >> "$GITHUB_PATH"
+      - run: bun run build
       - uses: actions/download-artifact@v4
         with:
-          name: ts-release-distribution
-          path: .release/distribution
-      - name: Verify the exact retained manifest
+          name: ts-release-signed-candidate
+          path: .release/signed
+      - name: Verify the retained Bundle and Plan
         env:
-          MANIFEST_SHA256: ${{ needs.prepare.outputs.manifest-sha256 }}
+          BUNDLE_SHA256: ${{ needs.attest.outputs.bundle-sha256 }}
+          PLAN_SHA256: ${{ needs.attest.outputs.plan-sha256 }}
         run: |
-          printf '%s  %s\n' "$MANIFEST_SHA256" .release/distribution/release.json | sha256sum --check
-          bun run release:check .release/distribution
-      - name: Publish providers, then the core, and verify registry bytes
+          printf '%s  %s\n' "$BUNDLE_SHA256" .release/signed/bundle.json | sha256sum --check
+          printf '%s  %s\n' "$PLAN_SHA256" .release/signed/plan.json | sha256sum --check
+          bun run release:check .release/signed
+      - name: Install the exact retained packages and shared application
+        run: bun scripts/install-release-runtime.ts .release/signed .release/publisher
+      - name: Bind live credentials and the shared journal
+        id: input
         env:
-          # Needed only for first publication before the new names have OIDC setup.
-          # Subsequent releases use npm trusted publishing with no token secret.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -n "$NODE_AUTH_TOKEN" ]; then
-            export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/ts-release.npmrc"
-            printf '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}\n' > "$NPM_CONFIG_USERCONFIG"
-            chmod 600 "$NPM_CONFIG_USERCONFIG"
-            trap 'rm -f "$NPM_CONFIG_USERCONFIG"' EXIT
-          fi
-          bun run release:publish .release/distribution --execute
-
-  publish-github:
-    needs: [prepare, publish-npm]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.candidate_sha }}
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24.15.0'
-      - run: bun install --frozen-lockfile --ignore-scripts
-      - uses: actions/download-artifact@v4
-        with:
-          name: ts-release-distribution
-          path: .release/distribution
-      - name: Verify the retained manifest and publish the immutable Action coordinate
+          TS_RELEASE_JOURNAL_REMOTE: https://github.com/mannyc2/ts-release.git
+        run: bun scripts/release-input.ts .release/signed .release/publish-input.json Trusted --execute
+      - name: Publish through the installed public providers and durable journal
         env:
-          MANIFEST_SHA256: ${{ needs.prepare.outputs.manifest-sha256 }}
           GH_TOKEN: ${{ github.token }}
-        run: |
-          printf '%s  %s\n' "$MANIFEST_SHA256" .release/distribution/release.json | sha256sum --check
-          bun run release:github .release/distribution --execute
+          INPUT_APPLICATION: .release/publisher/application.js
+          INPUT_INPUT: ${{ steps.input.outputs.application-input }}
+          INPUT_OBSERVE: "false"
+        # A uses/node24 step selects the runner's bundled Node, not setup-node.
+        # Execute the identical Action launcher under the runtime qualified above.
+        run: node apps/action/dist/launcher.cjs
+      - name: Confirm public visibility using native provider observations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .release/publisher/verify.mjs .release/publisher/application.js .release/publish-input.json

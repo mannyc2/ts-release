@@ -1,6 +1,6 @@
 {
   "name": "@ts-release-private/workspace",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -51,7 +51,7 @@
     "check:import-rules": "bun scripts/check-import-rules.ts",
     "check:package-exports": "bun scripts/check-package-exports.ts",
     "check:packed-kernel": "bun scripts/check-packed-kernel.ts",
-    "check:portable": "bun run check && bun run test && bun run check:packed-kernel && bun run check:packed-catalog && bun run check:packed-action && bun run check:installed-workflow",
+    "check:portable": "bun run check && bun run check:provenance-runtime && bun run test && bun run check:packed-kernel && bun run check:packed-catalog && bun run check:packed-action && bun run check:installed-workflow",
     "check:packed-npm": "bun scripts/check-packed-npm.ts",
     "check:native-npm-sigstore": "bun scripts/check-native-npm-sigstore.ts",
     "check:packed-pypi": "bun scripts/check-packed-npm.ts --pypi",
@@ -64,10 +64,12 @@
     "check:packed-artifacts": "bun scripts/check-packed-artifacts.ts",
     "check:packed-apple": "bun scripts/check-packed-apple.ts",
     "check:installed-workflow": "bun scripts/check-installed-workflow.ts",
-    "release:prepare": "bun scripts/release.ts prepare",
-    "release:check": "bun scripts/release.ts check",
-    "release:publish": "bun scripts/release.ts publish",
-    "release:verify-registry": "bun scripts/release.ts verify-registry",
-    "release:github": "bun scripts/release.ts github"
+    "check:provenance-runtime": "bun scripts/check-provenance-runtime.ts",
+    "release:prepare": "bun scripts/prepare-release.ts prepare",
+    "release:attest": "bun scripts/prepare-release.ts attest",
+    "release:check": "bun scripts/prepare-release.ts check",
+    "release:input": "bun scripts/release-input.ts",
+    "release:run": "node packages/ts-release/dist/bin/ts-release.js apps/self-release/dist/application.js",
+    "release:observe": "node packages/ts-release/dist/bin/ts-release.js --observe apps/self-release/dist/application.js"
   }
 }

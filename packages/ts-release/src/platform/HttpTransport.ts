@@ -64,10 +64,20 @@ const authorize = Effect.fn("http.authorize")(function* (
   principal: string,
   scope: string,
   durable: Record<string, string>,
+  method: string,
+  bodyDigest?: string,
 ) {
   if (!principal || !scope) return yield* attempt(() => invalid("binding"))
   const secret = yield* Effect.suspend(() =>
-    resolve(Object.freeze({ endpoint: url.href, principal, scope })),
+    resolve(
+      Object.freeze({
+        endpoint: url.href,
+        principal,
+        scope,
+        method,
+        ...(bodyDigest !== undefined && { bodyDigest }),
+      }),
+    ),
   ).pipe(
     Effect.catchCause(() => reject("http-credentials", "HTTP credentials could not be acquired")),
   )
@@ -275,6 +285,8 @@ export const makeHttpTransport = (options: HttpTransportOptions): Transport => {
       request.facts.principal,
       request.facts.scope,
       durable,
+      request.facts.method,
+      request.facts.bodyDigest,
     )
     return Effect.fn("http.sendPrepared")(function* (actual) {
       const verified = yield* verifyRequest(actual)
@@ -320,6 +332,7 @@ export const makeHttpRead = (options: HttpReadOptions): HttpRead => {
       selected.principal,
       selected.scope,
       selected.durable,
+      selected.method,
     )
     return yield* native(selected.url, selected.method, fields, new Uint8Array())
   })

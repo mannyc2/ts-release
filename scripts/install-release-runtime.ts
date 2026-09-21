@@ -29,7 +29,14 @@ for (const entry of candidate.packages) {
 }
 await writeFile(
   join(consumer, "package.json"),
-  JSON.stringify({ private: true, type: "module", dependencies }),
+  JSON.stringify({
+    private: true,
+    type: "module",
+    dependencies,
+    overrides: {
+      "@effect/platform-node-shared": workspace.devDependencies["@effect/platform-node"],
+    },
+  }),
 )
 const install = Bun.spawn(
   [process.execPath, "install", "--ignore-scripts", "--cache-dir", join(consumer, ".bun-cache")],

@@ -15,6 +15,7 @@ import {
   failure,
   io,
   read,
+  releaseJournalId,
   requireNodeProvenance,
   sha256,
 } from "./Model.js"
@@ -245,7 +246,11 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
   const bundle = yield* finalize(files)
   const bundleBytes = encodeBundle(bundle)
   const bundleSha256 = sha256(bundleBytes)
-  const plan = yield* createPlan(bundleSha256, [...npm, tag, draft, ...assets, publication])
+  const plan = yield* createPlan(
+    bundleSha256,
+    [...npm, tag, draft, ...assets, publication],
+    releaseJournalId(source),
+  )
   const noRead = () =>
     Effect.fail(failure("prepare-network", "Plan admission cannot read a publication destination"))
   yield* loadPlan(plan, [

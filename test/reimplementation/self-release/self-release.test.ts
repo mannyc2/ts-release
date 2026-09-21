@@ -30,8 +30,10 @@ import * as OpenAi from "@mannyc1/ts-release-openai"
 import { prepareSelfRelease } from "../../../apps/self-release/src/rehearsal.js"
 import { identity, native, nativeGit, processOptions, seed } from "../transports/git-fixture.js"
 import { wheels } from "./wheel.js"
+import workspace from "../../../package.json" with { type: "json" }
 
 const root = resolve(import.meta.dir, "../../..")
+const version = workspace.version
 const node =
   process.env.TS_RELEASE_HTTP_PEER_NODE ??
   "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node"
@@ -128,11 +130,11 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     ])
     packageFiles.set(
       packageOwner,
-      await publishFile(`${packageOwner}-0.4.0.tgz`, await readFile(archive)),
+      await publishFile(`${packageOwner}-${version}.tgz`, await readFile(archive)),
     )
   }
   const wheelFiles: File[] = []
-  for (const wheel of wheels("0.4.0"))
+  for (const wheel of wheels(version))
     wheelFiles.push(await publishFile(wheel.filename, wheel.bytes))
   const action = await publishFile(
     "ts-release-action.cjs",
@@ -232,14 +234,14 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     packageFiles.get("openai")!,
   ].map((file) => ({
     file,
-    url: `https://github.com/mannyc2/ts-release/releases/download/v0.4.0/${file.logicalName}`,
+    url: `https://github.com/mannyc2/ts-release/releases/download/v${version}/${file.logicalName}`,
   }))
   const formula = new Homebrew.Formula({
     className: "TsRelease",
     description: "Deterministic TypeScript release automation",
     homepage: "https://github.com/mannyc2/ts-release",
     license: "MIT",
-    version: "0.4.0",
+    version,
     executable: "bin/ts-release",
     archives: {
       "darwin-x64": new Homebrew.Download(downloads[0]!),
@@ -249,7 +251,7 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     },
   })
   const scoop = new Scoop.Manifest({
-    version: "0.4.0",
+    version,
     homepage: "https://github.com/mannyc2/ts-release",
     license: "MIT",
     executable: "bin/ts-release.exe",
@@ -344,7 +346,7 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     GitHub.lightweightTag(
       new GitHub.LightweightTag({
         repository,
-        tag: "v0.4.0",
+        tag: `v${version}`,
         commit: sourceCommit,
         principal,
       }),
@@ -354,9 +356,9 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     GitHub.draft(
       new GitHub.DraftIntent({
         repository,
-        tag: "v0.4.0",
+        tag: `v${version}`,
         tagSource: new GitHub.ManagedTag({ operationId: tag.operationId }),
-        title: "ts-release v0.4.0",
+        title: `ts-release v${version}`,
         body: "Seven-package hard-cut candidate.",
         prerelease: false,
         principal,
@@ -421,7 +423,7 @@ test("real producers assemble one non-mutating seven-package self-release plan",
               expectedOld,
               baseObjects,
               files: [new Git.FileEdit({ path, mode: "100644", content: file.content })],
-              message: `Publish ${name} v0.4.0\n`,
+              message: `Publish ${name} v${version}\n`,
               author: identity,
               committer: identity,
             }),
@@ -445,13 +447,13 @@ test("real producers assemble one non-mutating seven-package self-release plan",
           $schema: Mcp.schemaUrl,
           name: "io.github.mannyc2/ts-release",
           description: "Durable release planning and evidence server.",
-          version: "0.4.0",
+          version,
           packages: [
             new Mcp.NpmPackage({
               registryType: "npm",
               registryBaseUrl: "https://registry.npmjs.org",
               identifier: "@mannyc1/ts-release",
-              version: "0.4.0",
+              version,
               transport: new Mcp.Stdio({ type: "stdio" }),
             }),
           ],
@@ -486,7 +488,7 @@ test("real producers assemble one non-mutating seven-package self-release plan",
   const journalRemote = join(work, "journal.git")
   await bare(journalRemote)
   const baseInput = {
-    version: "0.4.0",
+    version,
     contentDirectory,
     bundleFile,
     planFile,

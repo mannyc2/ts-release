@@ -7,7 +7,9 @@ import {
   decodeJson,
   sameData,
   type HttpProviderDefinition,
+  type CredentialBinding,
   type ResolveCredentials,
+  type TrustedPublisherHost,
 } from "@mannyc1/ts-release/http"
 import {
   fileContentOwner,
@@ -26,6 +28,7 @@ import {
   attempt,
   failure,
   read,
+  releaseJournalId,
   requireNodeProvenance,
   sha256,
 } from "./Model.js"
@@ -38,6 +41,48 @@ const secret = (name: string) =>
       failure("credential", "An explicitly selected credential is unavailable"),
     ),
   )
+
+/** Public registry observations do not acquire publish authority. Keep this
+ * application policy after the provider's exact scope and cohort admission. */
+export const npmCredentials = Effect.fn("release.npmCredentials")(function* (
+  binding: CredentialBinding,
+  options: {
+    readonly publications: readonly Pick<Npm.PublishIntent, "name" | "authorization">[]
+    readonly authentication: ApplicationInput["authentication"]
+    readonly trusted: TrustedPublisherHost
+    readonly local: Npm.LocalAuthentication | null
+  },
+) {
+  const selected = yield* Npm.authorizationBinding(binding)
+  if (
+    !options.publications.some(
+      (intent) =>
+        intent.name === selected.packageName &&
+        sameData(intent.authorization, selected.authorization),
+    )
+  )
+    return yield* failure(
+      "credential-binding",
+      "npm credential request is outside the retained cohort",
+    )
+  if (binding.method === "GET" || binding.method === "HEAD") return {}
+  if (selected.authorization._tag === "TrustedAuthorization")
+    return yield* Npm.authorizeTrusted(
+      { authorization: selected.authorization, packageName: selected.packageName, binding },
+      options.trusted,
+    )
+  if (options.local) return yield* options.local.credentials(binding)
+  if (options.authentication.mode !== "Token")
+    return yield* failure(
+      "credential-mode",
+      "npm authentication mode differs from the retained Plan",
+    )
+  return yield* Npm.authorizeToken({
+    authorization: selected.authorization,
+    binding,
+    token: yield* secret(options.authentication.npmTokenEnvironment),
+  })
+})
 
 /** Reconstruct the exact retained release. The common CLI/Action interpreter
  * owns execution, durable dispatch authority and interruption recovery. */
@@ -82,6 +127,11 @@ export const createApplication = Effect.fn("release.createApplication")(function
     return yield* failure(
       "plan-identity",
       "Retained Plan differs from the selected Bundle and Plan identities",
+    )
+  if (retained.journalId !== releaseJournalId(source))
+    return yield* failure(
+      "journal-identity",
+      "Retained Plan must use the selected release coordinate's journal",
     )
   const publications = yield* attempt("publication-policy", () => {
     const npm = retained.operations
@@ -162,36 +212,13 @@ export const createApplication = Effect.fn("release.createApplication")(function
   const trusted = makeGithubTrustedPublisherHost(bounds)
   const authorization = publications[0]!.authorization
   const credentials: ResolveCredentials = Effect.fn("release.credentials")(function* (binding) {
-    if (new URL(binding.endpoint).origin === "https://registry.npmjs.org") {
-      const selected = yield* Npm.authorizationBinding(binding)
-      if (
-        !publications.some(
-          (intent) =>
-            intent.name === selected.packageName &&
-            sameData(intent.authorization, selected.authorization),
-        )
-      )
-        return yield* failure(
-          "credential-binding",
-          "npm credential request is outside the retained cohort",
-        )
-      if (selected.authorization._tag === "TrustedAuthorization")
-        return yield* Npm.authorizeTrusted(
-          { authorization: selected.authorization, packageName: selected.packageName, binding },
-          trusted,
-        )
-      if (local) return yield* local.credentials(binding)
-      if (input.authentication.mode !== "Token")
-        return yield* failure(
-          "credential-mode",
-          "npm authentication mode differs from the retained Plan",
-        )
-      return yield* Npm.authorizeToken({
-        authorization: selected.authorization,
-        binding,
-        token: yield* secret(input.authentication.npmTokenEnvironment),
+    if (new URL(binding.endpoint).origin === "https://registry.npmjs.org")
+      return yield* npmCredentials(binding, {
+        publications,
+        authentication: input.authentication,
+        trusted,
+        local,
       })
-    }
     return yield* GitHub.authorizeToken({
       repository: source.repository,
       binding,

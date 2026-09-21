@@ -4,11 +4,13 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { ConfigProvider, Effect, Schema } from "effect"
-import { Plan } from "@mannyc1/ts-release"
+import { Host, Plan, createPlan, runRelease } from "@mannyc1/ts-release"
 import { Bundle } from "@mannyc1/ts-release/bundle"
+import type { CredentialBinding } from "@mannyc1/ts-release/http"
 import * as Npm from "@mannyc1/ts-release-npm"
-import { createApplication } from "../../../apps/self-release/src/application.js"
+import { createApplication, npmCredentials } from "../../../apps/self-release/src/application.js"
 import { NPM_PRINCIPAL, prepareRelease } from "../../../apps/self-release/src/prepare.js"
+import { releaseJournalId } from "../../../apps/self-release/src/Model.js"
 import { pack } from "../npm/fixtures.js"
 
 const workspaces: string[] = []
@@ -123,6 +125,191 @@ test("preparation retains original bytes and authors provider-first npm and comp
     await readFile(join(result.candidateDirectory, "content", archive.content.sha256)),
   ).toEqual(original)
   await expect(Effect.runPromise(prepareRelease(f.input))).rejects.toThrow("candidate-directory")
+})
+
+test("changed preparation at the same release coordinate cannot escape the original uncertain journal", async () => {
+  const f = await preparedFixture()
+  await writeFile(f.input.notesFile, "Changed release notes\n")
+  const changed = await Effect.runPromise(
+    prepareRelease({
+      ...f.input,
+      candidateDirectory: join(f.work, "changed-candidate"),
+    }),
+  )
+  const originalPlan = Schema.decodeUnknownSync(Plan)(
+    JSON.parse(await readFile(join(f.identity.candidateDirectory, "plan.json"), "utf8")),
+  )
+  const changedPlan = Schema.decodeUnknownSync(Plan)(
+    JSON.parse(await readFile(join(changed.candidateDirectory, "plan.json"), "utf8")),
+  )
+  expect(changedPlan.planId).not.toBe(originalPlan.planId)
+  expect(changedPlan.journalId).toBe(originalPlan.journalId)
+  expect(originalPlan.journalId).toBe("npm-github:release-fixture/example:v1.2.3")
+  const source = JSON.parse(
+    await readFile(join(f.identity.candidateDirectory, "bundle.json"), "utf8"),
+  )
+  const sourceFile = source.artifacts.find(
+    (artifact: { logicalName: string }) => artifact.logicalName === "source.json",
+  )
+  expect(
+    releaseJournalId(
+      JSON.parse(
+        await readFile(
+          join(f.identity.candidateDirectory, "content", sourceFile.content.sha256),
+          "utf8",
+        ),
+      ),
+    ),
+  ).toBe(originalPlan.journalId)
+  let sends = 0
+  const transport = {
+    send: () =>
+      Effect.sync(() => {
+        sends++
+        return { _tag: "Unknown" as const, reason: "fixture response lost" }
+      }),
+  }
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const original = yield* createApplication(f.application)
+        yield* runRelease({
+          plan: original.options.plan,
+          authorize: true,
+          observe: false,
+          maxDispatches: 1,
+        }).pipe(Effect.provideService(Host, { ...original.host, transport }))
+        expect(sends).toBe(1)
+        const history = yield* original.host.store.read(originalPlan.journalId)
+        expect(
+          history.events.filter((event) => event.body._tag === "DispatchStarted"),
+        ).toHaveLength(1)
+        const resumed = yield* createApplication({
+          ...f.application,
+          ...changed,
+          journal: {
+            ...f.application.journal,
+            cacheDirectory: join(f.work, "fresh-journal-cache"),
+          },
+        })
+        const result = yield* Effect.exit(
+          runRelease({ plan: resumed.options.plan, authorize: true, observe: false }).pipe(
+            Effect.provideService(Host, { ...resumed.host, transport }),
+          ),
+        )
+        expect(result._tag).toBe("Failure")
+        expect(JSON.stringify(result)).toContain("unknown scope")
+        expect(sends).toBe(1)
+      }),
+    ),
+  )
+  const differentJournal = await Effect.runPromise(
+    createPlan(changedPlan.bundleId, changedPlan.operations, "fresh-history"),
+  )
+  await writeFile(join(changed.candidateDirectory, "plan.json"), JSON.stringify(differentJournal))
+  await expect(
+    Effect.runPromise(
+      Effect.scoped(
+        createApplication({
+          ...f.application,
+          ...changed,
+          planId: differentJournal.planId,
+        }),
+      ),
+    ),
+  ).rejects.toThrow("release coordinate's journal")
+})
+
+test("public npm GET and HEAD observations never acquire token or OIDC credentials", async () => {
+  for (const mode of ["Token", "Trusted"] as const) {
+    const authorization =
+      mode === "Token"
+        ? new Npm.TokenAuthorization({ principal: NPM_PRINCIPAL })
+        : new Npm.TrustedAuthorization({
+            principal: NPM_PRINCIPAL,
+            repository: "release-fixture/example",
+            workflow: ".github/workflows/release.yml",
+            workflowRef: "refs/heads/main",
+            issuer: "https://token.actions.githubusercontent.com",
+            audience: "npm:registry.npmjs.org",
+          })
+    const operation = await Effect.runPromise(
+      Npm.distTag(
+        new Npm.DistTagIntent({
+          registry: "https://registry.npmjs.org/",
+          name: "@release-fixture/core",
+          version: "1.2.3",
+          tag: "latest",
+          authorization,
+        }),
+      ),
+    )
+    const bindings: CredentialBinding[] = []
+    const providers = Npm.definitions({
+      bundle: new Bundle({ format: "ts-release/bundle/2", artifacts: [] }),
+      readContent: () => Effect.die("Observation should not read content"),
+      read: (request) =>
+        Effect.sync(() => {
+          bindings.push({
+            endpoint: request.url,
+            principal: request.principal,
+            scope: request.scope,
+            method: request.method,
+          })
+          return {
+            status: 404,
+            headers: { "content-type": "application/json" },
+            body: new TextEncoder().encode("{}"),
+          }
+        }),
+    })
+    await Effect.runPromise(
+      providers.find((provider) => provider.definitionId === "npm.dist-tag")!.observe!(operation, {
+        own: { operation, receipts: [], observations: [] },
+        dependencies: [],
+      }),
+    )
+    let configReads = 0,
+      credentialRequests = 0
+    const config = ConfigProvider.make(() =>
+      Effect.sync(() => {
+        configReads++
+        return undefined
+      }),
+    )
+    const unexpected = () =>
+      Effect.sync(() => {
+        credentialRequests++
+        throw new Error("Unexpected authority acquisition")
+      })
+    const authentication =
+      mode === "Token"
+        ? {
+            mode,
+            npmTokenEnvironment: "ABSENT_NPM_TOKEN",
+            githubTokenEnvironment: "ABSENT_GITHUB_TOKEN",
+          }
+        : { mode, githubTokenEnvironment: "ABSENT_GITHUB_TOKEN" }
+    const options = {
+      publications: [{ name: "@release-fixture/core", authorization }],
+      authentication,
+      trusted: { oidc: unexpected, exchange: unexpected },
+      local: null,
+    }
+    for (const method of ["GET", "HEAD"] as const)
+      expect(
+        await Effect.runPromise(
+          npmCredentials({ ...bindings[0]!, method }, options).pipe(
+            Effect.provide(ConfigProvider.layer(config)),
+          ),
+        ),
+      ).toEqual({})
+    await expect(
+      Effect.runPromise(npmCredentials(bindings[0]!, { ...options, publications: [] })),
+    ).rejects.toThrow("outside the retained cohort")
+    expect(configReads).toBe(0)
+    expect(credentialRequests).toBe(0)
+  }
 })
 
 test("application admits retained data and resolves real HTTP transport credentials lazily", async () => {

@@ -19,6 +19,11 @@ export class SourceIdentity extends Schema.Class<SourceIdentity>("Release.Source
   tree: oid,
   version: text,
 }) {}
+/** A new signature, notes file or source commit must not choose a fresh history
+ * for the same public release coordinate. A different Plan then fails admission
+ * against the original journal instead of bypassing its unresolved dispatches. */
+export const releaseJournalId = (source: Pick<SourceIdentity, "repository" | "version">) =>
+  `npm-github:${source.repository.owner.toLowerCase()}/${source.repository.name.toLowerCase()}:v${source.version}`
 export class SigstoreTrust extends Schema.Class<SigstoreTrust>("Release.SigstoreTrust")({
   tufRootPath: text,
   tufCachePath: text,

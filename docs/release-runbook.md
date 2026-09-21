@@ -22,7 +22,8 @@ sign and publish that candidate. Concurrent workflow runs are serialized.
    under Node, and creates the final Bundle/Plan without publishing packages or
    releases. It retains `ts-release-signed-candidate` before the next job starts.
 3. **Publish** verifies the retained Bundle/Plan digests, installs the exact
-   retained packages, and invokes the Action with the shared application. Native
+   retained packages, and invokes the committed Action launcher with the shared
+   application under the same pinned Node used by the Sigstore checks. Native
    npm providers publish the six providers before the core; GitHub finalization
    depends on the complete npm cohort and its exact release assets. A final
    read-only check waits for matching public registry and GitHub observations.

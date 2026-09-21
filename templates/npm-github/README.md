@@ -81,7 +81,8 @@ exchange instead of a long-lived npm token; GitHub still uses `GH_TOKEN`.
 
 The repository's [release workflow](../../.github/workflows/release.yml) shows the
 complete preparation, attestation, retained-artifact and publication jobs. It
-installs the exact retained packages before invoking the Action. For your own
+installs the exact retained packages before invoking the Action launcher under
+the pinned, qualified Node runtime. For your own
 workflow, pin the Action to a reviewed commit, set `application` to
 `release-tools/release/application.js`, and pass the complete input JSON to the
 Action's `input` field. The input helper emits `application-input` to

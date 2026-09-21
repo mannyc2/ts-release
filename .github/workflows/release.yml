@@ -142,13 +142,14 @@ jobs:
           TS_RELEASE_JOURNAL_REMOTE: https://github.com/mannyc2/ts-release.git
         run: bun scripts/release-input.ts .release/signed .release/publish-input.json Trusted --execute
       - name: Publish through the installed public providers and durable journal
-        uses: ./apps/action
         env:
           GH_TOKEN: ${{ github.token }}
-        with:
-          application: .release/publisher/application.js
-          input: ${{ steps.input.outputs.application-input }}
-          observe: "false"
+          INPUT_APPLICATION: .release/publisher/application.js
+          INPUT_INPUT: ${{ steps.input.outputs.application-input }}
+          INPUT_OBSERVE: "false"
+        # A uses/node24 step selects the runner's bundled Node, not setup-node.
+        # Execute the identical Action launcher under the runtime qualified above.
+        run: node apps/action/dist/launcher.cjs
       - name: Confirm public visibility using native provider observations
         env:
           GH_TOKEN: ${{ github.token }}

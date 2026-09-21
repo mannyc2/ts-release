@@ -30,7 +30,22 @@ The scoped factory allows cleanup on success, failure and SIGINT/SIGTERM. Choose
 an application-specific preparation command or script to create input; the CLI
 does not impose a second configuration format or rebuild missing artifacts.
 See `apps/self-release/src/application.ts` for the repository's composition and
-`test/reimplementation/hosts` for small executable applications used in tests.
+the [npm/GitHub starter](../templates/npm-github/README.md) for its runnable,
+generated projection. `prepareRelease` adopts tarballs and authors dependency
+ordered npm and GitHub operations. Credentials and the journal are supplied when
+loading the retained candidate; preparation does not publish packages or releases.
+
+The optional `onRejected(operation)` application hook completes live authentication
+after the kernel has persisted a provider's terminal noncommit proof. Returning
+true asks the runner to re-enter `runRelease` with the original Plan and journal.
+The hook is called at most once per operation per invocation, never during
+observation or an unauthorized run. An explicit `maxDispatches` covers all
+continuations. Unknown outcomes never invoke it or grant another dispatch.
+
+Use Node for native Sigstore signing and verification. Bun remains supported for
+package management, scripts, tests and token-based publication. Bun 1.3.14 fails
+the native Sigstore trust-root signature check; the native provenance adapters
+report `npm-sigstore-runtime` instead of a misleading trust failure.
 
 A complete small application using the real Git provider, file content owner and
 shared Git journal is exercised in

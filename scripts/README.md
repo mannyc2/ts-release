@@ -16,10 +16,15 @@ proof of a public upload or hosted execution. Generated records live in ignored
 `.release/checks` or the printed temporary work directory.
 
 `build:delivery` builds packages and the checked-in Node Action launcher.
+It also generates the npm/GitHub starter from the production release application.
 `release:prepare <new-directory>` retains the complete seven-package cohort from
 a clean committed candidate. `release:check <directory>` verifies its identities;
-`bun scripts/check-distribution.ts <directory>` installs and observes those exact
-archives in a clean consumer. See the [release runbook](../docs/release-runbook.md)
+`bun scripts/check-distribution.ts <directory>` installs those exact archives and
+exercises nonempty publication through the production application and Action,
+including process interruption and fresh-cache recovery against local TLS peers.
+`check:provenance-runtime` verifies native trust-root signatures under Node without
+networking; `check:native-npm-sigstore` also verifies a retained authentic public
+attestation using production TUF metadata. See the [release runbook](../docs/release-runbook.md)
 for the separately authorized publication commands and workflow.
 Research ancestry, migration, source-budget and API-projection gates were retired;
 see `docs/design-decisions.md` for the retained recovery decision.

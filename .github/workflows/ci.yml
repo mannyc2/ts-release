@@ -73,10 +73,3 @@ jobs:
         run: |
           bun run release:prepare .release/distribution
           bun scripts/check-distribution.ts .release/distribution --hosted
-
-      - name: Exercise the committed Action on the hosted Node 24 runner
-        if: runner.os == 'Linux'
-        uses: ./apps/action
-        with:
-          application: .release/distribution-consumer/application.mjs
-          observe: 'true'

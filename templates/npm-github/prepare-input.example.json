@@ -1,0 +1,18 @@
+{
+  "candidateDirectory": "./candidate",
+  "repository": { "owner": "your-org", "name": "your-repository" },
+  "source": {
+    "commit": "0000000000000000000000000000000000000000",
+    "tree": "0000000000000000000000000000000000000000"
+  },
+  "version": "1.2.3",
+  "title": "Release 1.2.3",
+  "notesFile": "./release-notes.md",
+  "packages": [
+    { "archiveFile": "../artifacts/my-package-1.2.3.tgz", "publicName": "my-package-1.2.3.tgz" }
+  ],
+  "npm": {
+    "authorization": { "_tag": "TokenAuthorization", "principal": "npm-publisher" },
+    "initialTag": "latest"
+  }
+}

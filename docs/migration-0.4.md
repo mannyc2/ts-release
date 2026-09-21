@@ -20,7 +20,7 @@ version. See [recovery](recovery.md) before changing providers on a retained Pla
 
 ## Install the matching packages
 
-After 0.4.0 has been published, an npm/GitHub application installs:
+The published 0.4.0 npm/GitHub packages install with:
 
 ```sh
 bun add @mannyc1/ts-release@0.4.0 @mannyc1/ts-release-npm@0.4.0 @mannyc1/ts-release-github@0.4.0 effect@4.0.0-rc.115
@@ -31,15 +31,15 @@ each required provider from its directory with `bun pm pack --ignore-scripts`.
 Install all required local archives in one `bun add` invocation so providers can
 resolve the unpublished core peer. Do not combine 0.3.1 core with 0.4 providers.
 
-| Package | Purpose |
-| --- | --- |
-| `@mannyc1/ts-release` | Bundle, Plan, executor, journal, CLI and runtime hosts |
-| `@mannyc1/ts-release-npm` | npm versions, dist-tags and provenance |
-| `@mannyc1/ts-release-github` | GitHub tags, releases and assets |
-| `@mannyc1/ts-release-pypi` | Python distribution publication |
-| `@mannyc1/ts-release-catalog` | Homebrew and Scoop catalog authoring |
-| `@mannyc1/ts-release-mcp` | MCP registry publication |
-| `@mannyc1/ts-release-openai` | OpenAI plugin packaging and submission data |
+| Package                       | Purpose                                                |
+| ----------------------------- | ------------------------------------------------------ |
+| `@mannyc1/ts-release`         | Bundle, Plan, executor, journal, CLI and runtime hosts |
+| `@mannyc1/ts-release-npm`     | npm versions, dist-tags and provenance                 |
+| `@mannyc1/ts-release-github`  | GitHub tags, releases and assets                       |
+| `@mannyc1/ts-release-pypi`    | Python distribution publication                        |
+| `@mannyc1/ts-release-catalog` | Homebrew and Scoop catalog authoring                   |
+| `@mannyc1/ts-release-mcp`     | MCP registry publication                               |
+| `@mannyc1/ts-release-openai`  | OpenAI plugin packaging and submission data            |
 
 Keep the selected packages at the same release version. Optional platform peers
 are needed only for the subpaths that import them; the `apple` subpath needs
@@ -65,14 +65,14 @@ An old npm/GitHub configuration looked like:
 
 Replace those declarations with the following application responsibilities:
 
-| 0.3.1 declaration | 0.4 responsibility |
-| --- | --- |
-| `project`, `versionFrom` | Resolve the intended version/source and author exact provider intents in preparation. |
-| `npmPackage`, artifact/build settings | Build and adopt immutable artifacts into a content owner; finalize and retain the Bundle. |
-| `publish.npm`, `publish.github` | Install the provider packages; author their operations and construct a Plan bound to the Bundle digest. |
+| 0.3.1 declaration                           | 0.4 responsibility                                                                                                               |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `project`, `versionFrom`                    | Resolve the intended version/source and author exact provider intents in preparation.                                            |
+| `npmPackage`, artifact/build settings       | Build and adopt immutable artifacts into a content owner; finalize and retain the Bundle.                                        |
+| `publish.npm`, `publish.github`             | Install the provider packages; author their operations and construct a Plan bound to the Bundle digest.                          |
 | Authentication strategy and credential name | Supply the host's credential resolver and provider authorization. Credential values stay out of the Bundle, Plan and input JSON. |
-| Prepared store and reference | Retain encoded Bundle, Plan, owned content and an application-defined input file. |
-| Recovery state | Configure a durable shared journal; a new runner reads the same journal and original content. |
+| Prepared store and reference                | Retain encoded Bundle, Plan, owned content and an application-defined input file.                                                |
+| Recovery state                              | Configure a durable shared journal; a new runner reads the same journal and original content.                                    |
 
 The module `release.mjs` exports `createApplication(input)`. Its scoped Effect
 loads the retained Bundle and Plan, constructs the provider/transport/journal
@@ -89,17 +89,25 @@ and [installed workflow check](../scripts/check-installed-workflow.ts) demonstra
 preparation, retained input, observation and continuation with real local Git
 destinations. The examples/templates marked historical target the old interface.
 
+The [current npm/GitHub starter](../templates/npm-github/README.md) targets 0.4.1
+and supplies the production application used for this repository's own release.
+Use matching retained 0.4.1 archives while evaluating its unreleased checkout.
+It includes explicit Token, Local browser authentication and Trusted OIDC modes;
+native provenance runs under Node. Keep the selected mode, Bundle and Plan for
+the lifetime of an unfinished release. Re-attesting creates different operation
+identities and cannot replace a Plan that already has journal history.
+
 ## Update commands and automation
 
-| Old command | Replacement |
-| --- | --- |
-| `ts-release init` | Author your application and input; there is no built-in wizard. |
+| Old command                                       | Replacement                                                                                                    |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `ts-release init`                                 | Author your application and input; there is no built-in wizard.                                                |
 | `ts-release release --config release.config.json` | Run your preparation script, retain its outputs, then `bun run ts-release ./release.mjs ./release-input.json`. |
-| `ts-release prepare --config …` | Run your own preparation script without publication. |
-| `ts-release inspect <prepared-ref>` | Inspect the retained Bundle/Plan/input with your application tooling. |
-| `ts-release observe <prepared-ref>` | `bun run ts-release --observe ./release.mjs ./release-input.json`. |
-| `ts-release publish <prepared-ref>` | `bun run ts-release ./release.mjs ./release-input.json`, loading the same Bundle/Plan/content/journal. |
-| `ts-release correct …` | Author explicit provider operations/operator decisions; there is no generic correction subcommand. |
+| `ts-release prepare --config …`                   | Run your own preparation script without publication.                                                           |
+| `ts-release inspect <prepared-ref>`               | Inspect the retained Bundle/Plan/input with your application tooling.                                          |
+| `ts-release observe <prepared-ref>`               | `bun run ts-release --observe ./release.mjs ./release-input.json`.                                             |
+| `ts-release publish <prepared-ref>`               | `bun run ts-release ./release.mjs ./release-input.json`, loading the same Bundle/Plan/content/journal.         |
+| `ts-release correct …`                            | Author explicit provider operations/operator decisions; there is no generic correction subcommand.             |
 
 Use `bun run ts-release` after local installation so the command resolves the
 project's binary. A globally installed 0.3.1 binary has a different CLI contract.
@@ -127,8 +135,8 @@ Pass file paths only if your factory explicitly loads them.
 - uses: mannyc2/ts-release/apps/action@ce25cac60c2e3b6c2686de78eb03a5a663194b90
   with:
     application: release.mjs
-    input: '{}' # Replace with input matching your factory's schema.
-    observe: 'true'
+    input: "{}" # Replace with input matching your factory's schema.
+    observe: "true"
 ```
 
 That immutable commit contains the 0.4 Action and its built launcher. The 0.4

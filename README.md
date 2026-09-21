@@ -43,6 +43,11 @@ Build preparation belongs to your application: own the artifact bytes, finalize
 the Bundle, construct the Plan, then retain both and the content they reference.
 For later publication, load those same bytes and identities rather than rebuild.
 
+The [npm/GitHub starter](templates/npm-github) supplies a complete preparation
+command and application. Its generated JavaScript is the same application used
+to release this repository. The current starter targets the 0.4.1 candidate;
+use that checkout's retained package archives until 0.4.1 is published.
+
 ## Inspect progress and recover
 
 ```sh
@@ -101,8 +106,10 @@ bun run check:portable
 [Maintained checks](scripts/README.md) cover behavioral tests, package imports,
 installed CLI and Action execution, and local provider fixtures. Public uploads,
 Apple service acceptance and hosted Action execution need separate environment
-access and approval. The self-release application currently rehearses preparation
-and validation with publication disabled.
+access and approval. The production self-release application composes native npm
+and GitHub providers. Installed acceptance exercises nonempty CLI/Action releases
+over TLS, process interruption, delayed visibility and fresh journal caches. The
+broader multi-provider preparation fixture is named `rehearsal.ts`.
 
 Read [design decisions](docs/design-decisions.md) for the recovery rationale and
 [plugin distribution](docs/skill-distribution.md) for catalog delivery.

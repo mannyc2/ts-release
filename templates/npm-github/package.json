@@ -1,0 +1,19 @@
+{
+  "name": "npm-github-release-application",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:release": "node prepare.mjs",
+    "input:release": "bun input.ts",
+    "observe:release": "ts-release --observe release/application.js",
+    "publish:release": "ts-release release/application.js",
+    "verify:release": "node verify.mjs release/application.js"
+  },
+  "dependencies": {
+    "@mannyc1/ts-release": "0.4.1",
+    "@mannyc1/ts-release-npm": "0.4.1",
+    "@mannyc1/ts-release-github": "0.4.1",
+    "effect": "4.0.0-rc.115",
+    "@effect/platform-node": "4.0.0-rc.115"
+  }
+}

@@ -163,6 +163,7 @@ await cp(
 )
 const launcher = join(consumer, "action-launcher.cjs")
 await cp(join(root, "apps/action/dist/launcher.cjs"), launcher)
+await cp(join(root, "templates/npm-github/verify.mjs"), join(consumer, "verify.mjs"))
 const launcherSha256 = sha256(await readFile(launcher))
 assert.equal(launcherSha256, sha256(await readFile(join(root, "apps/action/dist/launcher.cjs"))))
 const cli = join(consumer, "node_modules/@mannyc1/ts-release/dist/bin/ts-release.js")
@@ -415,6 +416,41 @@ for (const scenario of ["ordinary", "npm-response-loss", "github-response-loss"]
       "Native observations must confirm public visibility independently of receipts",
     )
     assert.equal(peer.mutations.length, writes, "Completed reruns must not dispatch")
+    if (scenario === "ordinary") {
+      const verifier: Bun.Subprocess<"ignore", "pipe", "pipe"> = Bun.spawn(
+        [
+          node,
+          "verify.mjs",
+          join(applicationDirectory, "application.js"),
+          join(scenarioDirectory, `input-${attempt}.json`),
+        ],
+        {
+          cwd: consumer,
+          env: {
+            ...process.env,
+            ...peer.environment,
+            NATIVE_FIXTURE_NPM_TOKEN: "ephemeral-native-fixture",
+            NATIVE_FIXTURE_GITHUB_TOKEN: "ephemeral-native-fixture",
+          },
+          stdout: "pipe",
+          stderr: "pipe",
+          timeout: 300_000,
+        },
+      )
+      active.add(verifier)
+      const [exit, stdout, stderr] = await Promise.all([
+        verifier.exited,
+        new Response(verifier.stdout).text(),
+        new Response(verifier.stderr).text(),
+      ])
+      active.delete(verifier)
+      assert.equal(exit, 0, stdout + stderr)
+      const verification = JSON.parse(stdout)
+      assert.equal(verification.status, "publication-visible")
+      assert.equal(verification.operations, 8)
+      assert.equal(verification.planId, prepared.planId)
+      assert.equal(peer.mutations.length, writes, "Visibility verification must not dispatch")
+    }
     assert.deepEqual(await readFile(join(candidateDirectory, "bundle.json")), originalBundle)
     assert.deepEqual(await readFile(join(candidateDirectory, "plan.json")), originalPlan)
     assert.deepEqual(peer.failures, [])

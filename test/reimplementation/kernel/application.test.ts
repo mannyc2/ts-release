@@ -2,7 +2,12 @@ import { expect, test } from "bun:test"
 import { Effect, Schema } from "effect"
 import { runApplication, FinalizedReport } from "../../../packages/ts-release/src/Bun.js"
 import { finalize, encodeBundle } from "../../../packages/ts-release/src/Bundle.js"
-import { createOperation, createPlan } from "../../../packages/ts-release/src/index.js"
+import {
+  createOperation,
+  createPlan,
+  type Operation,
+  type ReleaseError,
+} from "../../../packages/ts-release/src/index.js"
 import { sha256 } from "../../../packages/ts-release/src/internal/Identity.js"
 import { MemoryJournal, providerFor } from "./fixtures.js"
 
@@ -25,6 +30,8 @@ async function fixture() {
   const application = {
     bundle,
     options: { plan, authorize: true, maxDispatches: 1 },
+    onRejected: (_operation: Operation): Effect.Effect<boolean, ReleaseError> =>
+      Effect.succeed(false),
     host: {
       store,
       providers: [provider],
@@ -138,4 +145,111 @@ test("application cannot gain authorization from a retained caller alias", async
   const report = await runApplication(path, input)
   expect(input.sends()).toBe(0)
   expect(report.journal.revision).toBe(0)
+})
+
+async function challenged(outcome: "accepted" | "rejected" | "unknown" = "accepted") {
+  const input = await fixture()
+  const app = input.application
+  app.options.maxDispatches = 2
+  app.host.providers[0] = {
+    ...app.host.providers[0]!,
+    rejection: {
+      version: "application-authentication-rejection/1",
+      codec: Schema.Struct({
+        endpoint: Schema.String,
+        requestDigest: Schema.String,
+        terminal: Schema.Literal(true),
+      }),
+      corresponds: (_operation, request, value) => {
+        const proof = value as { endpoint: string; requestDigest: string }
+        return proof.endpoint === request.endpoint && proof.requestDigest === request.bodyDigest
+      },
+    },
+  }
+  let attempts = 0,
+    completed = 0
+  app.host.transport.send = (request) =>
+    Effect.sync(() => {
+      attempts++
+      if (outcome === "unknown") return { _tag: "Unknown", reason: "response lost" }
+      if (attempts === 1 || outcome === "rejected")
+        return {
+          _tag: "RejectedBeforeCommit",
+          proof: {
+            endpoint: request.facts.endpoint,
+            requestDigest: request.facts.bodyDigest,
+            terminal: true,
+          },
+        }
+      return {
+        _tag: "Accepted",
+        receipt: {
+          status: 201,
+          endpoint: request.facts.endpoint,
+          bodyDigest: request.facts.bodyDigest,
+        },
+      }
+    })
+  app.onRejected = (operation) =>
+    Effect.gen(function* () {
+      const snapshot = yield* app.host.store.read(app.options.plan.journalId)
+      expect(snapshot.events.at(-1)?.body._tag).toBe("DispatchRejectedBeforeCommit")
+      expect(operation.operationId).toBe(app.options.plan.operations[0]!.operationId)
+      completed++
+      return true
+    })
+  return { ...input, attempts: () => attempts, completed: () => completed }
+}
+
+test("application completes authentication only after durable noncommit and re-enters the kernel", async () => {
+  const input = await challenged()
+  const report = await runApplication(path, input)
+  expect(report.operations[0]).toMatchObject({ status: "Satisfied", dispatches: 2, receipts: 1 })
+  expect(input.completed()).toBe(1)
+  const starts = report.journal.events.filter((event) => event.body._tag === "DispatchStarted")
+  expect(starts[1]?.body).toMatchObject({ basis: { _tag: "NonCommit" } })
+  expect(input.lifecycle).toEqual(["acquire", "release"])
+  expect((await runApplication(path, input)).operations[0]?.status).toBe("Satisfied")
+  expect(input.attempts()).toBe(2)
+  expect(input.completed()).toBe(1)
+})
+
+test("application authentication continuation is bounded and respects the total explicit dispatch limit", async () => {
+  const input = await challenged("rejected")
+  input.application.options.maxDispatches = 10
+  expect((await runApplication(path, input)).operations[0]?.status).toBe("Rejected")
+  expect(input.attempts()).toBe(2)
+  expect(input.completed()).toBe(1)
+  const limited = await challenged()
+  limited.application.options.maxDispatches = 1
+  expect((await runApplication(path, limited)).operations[0]?.status).toBe("Rejected")
+  expect(limited.attempts()).toBe(1)
+  expect(limited.completed()).toBe(0)
+})
+
+test("observe and unauthorized application runs never complete authentication", async () => {
+  const input = await challenged()
+  input.application.options.maxDispatches = 1
+  await runApplication(path, input)
+  input.application.options.maxDispatches = 2
+  await runApplication(path, input, undefined, "observe")
+  input.application.options.authorize = false
+  await runApplication(path, input)
+  expect(input.attempts()).toBe(1)
+  expect(input.completed()).toBe(0)
+})
+
+test("unknown writes never invoke authentication continuation or resend on restart", async () => {
+  const input = await challenged("unknown")
+  expect((await runApplication(path, input)).operations[0]?.status).toBe("Inconclusive")
+  expect((await runApplication(path, input)).operations[0]?.status).toBe("Inconclusive")
+  expect(input.attempts()).toBe(1)
+  expect(input.completed()).toBe(0)
+})
+
+test("declining authentication continuation leaves the durable rejected attempt intact", async () => {
+  const input = await challenged()
+  input.application.onRejected = () => Effect.succeed(false)
+  expect((await runApplication(path, input)).operations[0]?.status).toBe("Rejected")
+  expect(input.attempts()).toBe(1)
 })

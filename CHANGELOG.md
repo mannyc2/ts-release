@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### 0.4 adoption and distribution
+
+- Replace the configuration-driven CLI with authored `createApplication(input)`
+  modules and explicit Bundle, Plan, content and durable journal ownership.
+  Provider adapters are now six separately installable packages alongside the core.
+  The Action moved to `apps/action` with `application`, `input` and `observe`
+  inputs. Follow [the 0.3.1 to 0.4 migration guide](docs/migration-0.4.md) before
+  upgrading; unfinished releases retain their original toolchain and state.
+- Add manual seven-package distribution with exact retained archives, registry
+  integrity verification and a GitHub release containing an immutable Action pin.
+  Preparation defaults to no publication and includes an installed-consumer check.
+- Use `bun run ts-release` after local installation and exercise that invocation
+  through the installed workflow acceptance check.
+
 ### effect-build 0.8.0
 
 - Align effect-build packages on 0.8.0 and Effect runtime/platform packages on rc.115.

@@ -1,7 +1,7 @@
 # @mannyc1/ts-release-pypi
 
 Explicit per-file publication to PyPI, TestPyPI and compatible Python indexes.
-This package is an unpublished release candidate component.
+Install with the matching `@mannyc1/ts-release@0.4.0` core and `effect@4.0.0-rc.115`.
 
 An owned wheel or sdist supplies its own native metadata. `inspectDistribution`
 returns the facts needed by `WheelUpload` or `SdistUpload`; `upload` authors one

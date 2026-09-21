@@ -1,8 +1,8 @@
 # @mannyc1/ts-release-npm
 
 Native npm publication, dist-tag updates, scoped authentication and GitHub Actions
-provenance for explicitly composed ts-release applications. This is an unpublished
-refactor candidate; the complete release qualification is still in progress.
+provenance for explicitly composed ts-release applications. Install this package
+with the matching `@mannyc1/ts-release@0.4.0` core and `effect@4.0.0-rc.115`.
 
 `inspectTarball(file, artifacts)` reads the exact owned Bundle member and returns
 package metadata plus native SHA-512 integrity and SHA-1 shasum. Put those hashes
@@ -59,5 +59,7 @@ responsibility of an explicitly supplied `VerifyProvenance` implementation.
 Actual native Sigstore verification is currently qualified locally under Node22.22.2.
 Bun1.3.14 fails the pinned client's TUF ECDSA root verification; direct Bun Sigstore
 signing/verification is unqualified. Ordinary npm authoring/provider execution and
-public declarations pass fresh Bun and npm consumers. Live npm/OIDC publication,
-CLI/Action and the complete seven-package cohort remain acceptance gates.
+public declarations pass fresh Bun and npm consumers. Live npm/OIDC execution
+through these provider APIs remains separate from publishing this package itself.
+See the repository's release runbook for seven-package distribution and the
+installed CLI/Action checks.

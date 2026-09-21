@@ -59,6 +59,11 @@ await writeFile(
 )
 await run(consumer, [process.execPath, "install", "--ignore-scripts"])
 const cli = join(consumer, "node_modules/.bin/ts-release")
+// Exercise the README's local-bin lookup, even if an older global CLI is on PATH.
+assert.equal(
+  await run(consumer, [process.execPath, "run", "ts-release", "--help"]),
+  "Usage: ts-release [--observe] <application.mjs> <input.json>",
+)
 const launcher = join(work, "launcher.cjs")
 await cp(join(root, "apps/action/dist/launcher.cjs"), launcher)
 await cp(
@@ -194,10 +199,19 @@ ${pause ? "else " : ""}{process.stdout.write(result.stdout);process.stderr.write
       await writeFile(output, "")
       const child = Bun.spawn(
         entrypoint === "cli"
-          ? [node, cli, ...(observe ? ["--observe"] : []), "consumer/application.mjs", inputFile]
+          ? scenario === "ordinary"
+            ? [
+                process.execPath,
+                "run",
+                "ts-release",
+                ...(observe ? ["--observe"] : []),
+                "./application.mjs",
+                inputFile,
+              ]
+            : [node, cli, ...(observe ? ["--observe"] : []), "consumer/application.mjs", inputFile]
           : [node, launcher],
         {
-          cwd: work,
+          cwd: entrypoint === "cli" && scenario === "ordinary" ? consumer : work,
           env: {
             ...process.env,
             GITHUB_WORKSPACE: work,

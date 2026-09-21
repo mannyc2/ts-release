@@ -1,11 +1,18 @@
 # ts-release
 
+Install the core locally, then add the matching provider packages your application
+uses (for example `@mannyc1/ts-release-npm@0.4.0`):
+
+```sh
+bun add @mannyc1/ts-release@0.4.0 effect@4.0.0-rc.115
+```
+
 Run an authored release application with immutable Bundle and Plan inputs and a
 durable journal:
 
 ```sh
-ts-release ./release.mjs ./release-input.json > release-report.json
-ts-release --observe ./release.mjs ./release-input.json > release-report.json
+bun run ts-release ./release.mjs ./release-input.json > release-report.json
+bun run ts-release --observe ./release.mjs ./release-input.json > release-report.json
 ```
 
 The trusted module exports `createApplication(input)`, a scoped Effect returning
@@ -25,3 +32,5 @@ The root exports planning, provider and recovery APIs. Use `bundle`, `http`, `gi
 `node`, `bun`, `effect-build` and `apple` subpaths for their respective capabilities.
 See the [application guide](https://github.com/mannyc2/ts-release/blob/main/docs/preparation.md)
 and [recovery guide](https://github.com/mannyc2/ts-release/blob/main/docs/recovery.md).
+For installation, package selection and upgrading older automation, see the
+[0.4 migration guide](https://github.com/mannyc2/ts-release/blob/main/docs/migration-0.4.md).

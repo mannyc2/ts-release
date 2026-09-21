@@ -63,6 +63,11 @@
     "setup:native-producers": "bun scripts/setup-native-producers.ts",
     "check:packed-artifacts": "bun scripts/check-packed-artifacts.ts",
     "check:packed-apple": "bun scripts/check-packed-apple.ts",
-    "check:installed-workflow": "bun scripts/check-installed-workflow.ts"
+    "check:installed-workflow": "bun scripts/check-installed-workflow.ts",
+    "release:prepare": "bun scripts/release.ts prepare",
+    "release:check": "bun scripts/release.ts check",
+    "release:publish": "bun scripts/release.ts publish",
+    "release:verify-registry": "bun scripts/release.ts verify-registry",
+    "release:github": "bun scripts/release.ts github"
   }
 }

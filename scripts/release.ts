@@ -188,14 +188,41 @@ export function assertEquivalent(
     `${entry.name}: published bytes conflict with the retained archive`,
   )
 }
-async function verifyRegistry(manifest: Distribution) {
+const waitForRegistry = (milliseconds: number) => Bun.sleep(milliseconds)
+
+async function waitForPublishedPackage(
+  entry: PackageArchive,
+  version: string,
+  selector: string,
+  observe: typeof observePackage,
+  wait: typeof waitForRegistry,
+) {
+  // npm can accept an upload before either the version or latest is visible.
+  // Only observations repeat; an upload is never retried by this loop.
+  for (let attempt = 0; attempt < 31; attempt++) {
+    const observed = await observe(entry.name, selector)
+    if (observed) {
+      assert.equal(observed.name, entry.name)
+      if (selector !== "latest" || observed.version === version) {
+        assertEquivalent(entry, version, observed)
+        return
+      }
+    }
+    if (attempt < 30) await wait(10_000)
+  }
+  assert.fail(
+    `${entry.name}: ${selector === "latest" ? "latest is unconfirmed" : "publication is unconfirmed"}; retain these archives and inspect the registry`,
+  )
+}
+
+export async function verifyRegistry(
+  manifest: Distribution,
+  observe: typeof observePackage = observePackage,
+  wait: typeof waitForRegistry = waitForRegistry,
+) {
   for (const entry of manifest.packages) {
-    const observed = await observePackage(entry.name, manifest.version)
-    assert.ok(observed, `${entry.name}@${manifest.version} is not published`)
-    assertEquivalent(entry, manifest.version, observed)
-    const latest = await observePackage(entry.name, "latest")
-    assert.ok(latest, `${entry.name}: latest is missing`)
-    assertEquivalent(entry, manifest.version, latest)
+    await waitForPublishedPackage(entry, manifest.version, manifest.version, observe, wait)
+    await waitForPublishedPackage(entry, manifest.version, "latest", observe, wait)
   }
 }
 
@@ -203,6 +230,7 @@ export async function publishCohort(
   manifest: Distribution,
   observe: typeof observePackage,
   send: (entry: PackageArchive) => Promise<void>,
+  wait: typeof waitForRegistry = waitForRegistry,
 ) {
   // Preflight the entire cohort before any write, so a known conflict stops all publication.
   for (const entry of manifest.packages) {
@@ -220,12 +248,7 @@ export async function publishCohort(
     // npm versions are immutable. A failed command stops; reruns first compare
     // registry integrity and never replace an existing version or blindly loop.
     await send(entry)
-    const after = await observe(entry.name, manifest.version)
-    assert.ok(
-      after,
-      `${entry.name}: publication is unconfirmed; retain these archives and inspect the registry`,
-    )
-    assertEquivalent(entry, manifest.version, after)
+    await waitForPublishedPackage(entry, manifest.version, manifest.version, observe, wait)
     console.log(`${entry.name}@${manifest.version}: publication verified`)
   }
 }
@@ -258,19 +281,32 @@ async function publish(directory: string, manifest: Distribution, provenance: bo
   await verifyRegistry(manifest)
 }
 
-async function publishGithub(directory: string, manifest: Distribution) {
-  await verifyRegistry(manifest)
+type GithubRelease = {
+  id: number
+  tag_name: string
+  draft: boolean
+  target_commitish: string
+  body: string
+  assets: Array<{ name: string; digest: string | null }>
+}
+
+export async function prepareGithubRelease(
+  directory: string,
+  manifest: Distribution,
+  execute: typeof run = run,
+): Promise<GithubRelease> {
   const tag = `v${manifest.version}`
-  const response = await fetch(`https://api.github.com/repos/${repository}/git/ref/tags/${tag}`)
-  if (response.ok) {
-    const commit = JSON.parse(await run(["gh", "api", `repos/${repository}/commits/${tag}`]))
-    assert.equal(commit.sha, manifest.commit, "Existing release tag points to a different commit")
-  } else assert.equal(response.status, 404, "Could not inspect release tag")
-  // Authenticated listing includes drafts, allowing interrupted asset upload to resume.
-  const releases = JSON.parse(await run(["gh", "api", `repos/${repository}/releases?per_page=100`]))
-  let release = releases.find((entry: { tag_name: string }) => entry.tag_name === tag)
+  // The tag endpoint can return 404 for a draft. Authenticated listing finds
+  // both a newly created draft and one retained after an interrupted upload.
+  const findRelease = async () => {
+    const releases: GithubRelease[] = JSON.parse(
+      await execute(["gh", "api", `repos/${repository}/releases?per_page=100`]),
+    )
+    return releases.find((entry) => entry.tag_name === tag)
+  }
+  let release = await findRelease()
   if (!release) {
-    await run([
+    await execute([
       "gh",
       "release",
       "create",
@@ -285,14 +321,27 @@ async function publishGithub(directory: string, manifest: Distribution) {
       join(directory, "release-notes.md"),
       "--draft",
     ])
-    release = JSON.parse(await run(["gh", "api", `repos/${repository}/releases/tags/${tag}`]))
+    release = await findRelease()
   }
+  assert.ok(release, "Created release is not visible; retain these archives and inspect GitHub")
   if (release.draft) assert.equal(release.target_commitish, manifest.commit, "Draft target differs")
   assert.equal(
     release.body.trimEnd(),
     (await readFile(join(directory, "release-notes.md"), "utf8")).trimEnd(),
     "Existing release notes differ",
   )
+  return release
+}
+
+async function publishGithub(directory: string, manifest: Distribution) {
+  await verifyRegistry(manifest)
+  const tag = `v${manifest.version}`
+  const response = await fetch(`https://api.github.com/repos/${repository}/git/ref/tags/${tag}`)
+  if (response.ok) {
+    const commit = JSON.parse(await run(["gh", "api", `repos/${repository}/commits/${tag}`]))
+    assert.equal(commit.sha, manifest.commit, "Existing release tag points to a different commit")
+  } else assert.equal(response.status, 404, "Could not inspect release tag")
+  const release = await prepareGithubRelease(directory, manifest)
   const files = [
     "release.json",
     "release-notes.md",

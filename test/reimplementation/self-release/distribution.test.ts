@@ -9,8 +9,10 @@ import {
   PackageArchive,
   owners,
   packageName,
+  prepareGithubRelease,
   publishCohort,
   readDistribution,
+  verifyRegistry,
   type RegistryVersion,
 } from "../../../scripts/release.js"
 
@@ -152,6 +154,7 @@ describe("cohort publication", () => {
   })
   test("does not claim completion when an upload is not observable", async () => {
     let sends = 0
+    let waits = 0
     await expect(
       publishCohort(
         distribution,
@@ -159,8 +162,132 @@ describe("cohort publication", () => {
         async () => {
           sends++
         },
+        async () => {
+          waits++
+        },
       ),
     ).rejects.toThrow("publication is unconfirmed")
     expect(sends).toBe(1)
+    expect(waits).toBeGreaterThan(0)
+  })
+  test("waits for accepted uploads to become visible without sending them again", async () => {
+    const pending = new Map<string, number>()
+    const sends: string[] = []
+    let waits = 0
+    await publishCohort(
+      distribution,
+      async (name) => {
+        const remaining = pending.get(name)
+        if (remaining === undefined) return null
+        if (remaining > 0) {
+          pending.set(name, remaining - 1)
+          return null
+        }
+        return observed(distribution.packages.find((entry) => entry.name === name)!)
+      },
+      async (entry) => {
+        sends.push(entry.name)
+        pending.set(entry.name, 2)
+      },
+      async () => {
+        waits++
+      },
+    )
+    expect(sends).toEqual(owners.map(packageName))
+    expect(waits).toBe(14)
+  })
+  test("stops immediately on conflicting bytes after an accepted upload", async () => {
+    const sends: string[] = []
+    let waits = 0
+    await expect(
+      publishCohort(
+        distribution,
+        async (name) =>
+          sends.includes(name)
+            ? { name, version: "0.4.0", dist: { integrity: "different" } }
+            : null,
+        async (entry) => {
+          sends.push(entry.name)
+        },
+        async () => {
+          waits++
+        },
+      ),
+    ).rejects.toThrow("published bytes conflict")
+    expect(sends).toHaveLength(1)
+    expect(waits).toBe(0)
+  })
+  test("waits for latest to catch up to the already visible version", async () => {
+    const stale = new Set(distribution.packages.map((entry) => entry.name))
+    let waits = 0
+    await verifyRegistry(
+      distribution,
+      async (name, selector) => {
+        const entry = distribution.packages.find((entry) => entry.name === name)!
+        if (selector === "latest" && stale.delete(name))
+          return { name, version: "0.3.1", dist: { integrity: "old" } }
+        return observed(entry)
+      },
+      async () => {
+        waits++
+      },
+    )
+    expect(waits).toBe(7)
+  })
+  test("does not accept a latest tag that never reaches the retained version", async () => {
+    await expect(
+      verifyRegistry(
+        distribution,
+        async (name, selector) =>
+          selector === "latest"
+            ? { name, version: "0.3.1", dist: { integrity: "old" } }
+            : observed(distribution.packages.find((entry) => entry.name === name)!),
+        async () => {},
+      ),
+    ).rejects.toThrow("latest is unconfirmed")
+  })
+})
+
+describe("GitHub release preparation", () => {
+  const draft = () => ({
+    id: 123,
+    tag_name: "v0.4.0",
+    draft: true,
+    target_commitish: distribution.commit,
+    body: "release notes\n",
+    assets: [],
+  })
+  test("finds a newly created draft even when lookup by tag would return 404", async () => {
+    let created = false
+    let creates = 0
+    const release = await prepareGithubRelease(work, distribution, async (argv) => {
+      if (argv[1] === "api") {
+        if (argv[2] !== "repos/mannyc2/ts-release/releases?per_page=100")
+          throw new Error("Not Found (HTTP 404)")
+        return JSON.stringify(created ? [draft()] : [])
+      }
+      expect(argv.slice(0, 4)).toEqual(["gh", "release", "create", "v0.4.0"])
+      expect(argv).toContain("--draft")
+      expect(argv).toContain(distribution.commit)
+      created = true
+      creates++
+      return "https://github.com/mannyc2/ts-release/releases/tag/untagged-example"
+    })
+    expect(release.id).toBe(123)
+    expect(creates).toBe(1)
+  })
+  test("resumes an existing draft without creating another release", async () => {
+    const release = await prepareGithubRelease(work, distribution, async (argv) => {
+      expect(argv[1]).toBe("api")
+      return JSON.stringify([draft()])
+    })
+    expect(release.id).toBe(123)
+  })
+  test("rejects a retained draft for another commit", async () => {
+    await expect(
+      prepareGithubRelease(work, distribution, async () =>
+        JSON.stringify([{ ...draft(), target_commitish: "f".repeat(40) }]),
+      ),
+    ).rejects.toThrow("Draft target differs")
   })
 })

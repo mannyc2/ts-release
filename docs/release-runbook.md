@@ -39,6 +39,12 @@ the distribution artifact. See [npm trusted publishing](https://docs.npmjs.com/t
 
 ### Recovery and local preparation
 
+After npm accepts an upload, verification allows 31 registry observations with
+ten-second pauses for the version and `latest` tag to become visible. These are
+read-only checks; the upload is not repeated. Conflicting bytes stop immediately.
+If visibility is still unconfirmed, retain the archives and inspect the registry
+before resuming.
+
 If publication fails, preserve the successful prepare job and rerun failed jobs
 in the **same workflow run**. This downloads the same artifact. Existing versions
 are skipped only when their integrity matches. A differing version, missing

@@ -15,5 +15,8 @@
     "@mannyc1/ts-release-github": "0.4.1",
     "effect": "4.0.0-rc.115",
     "@effect/platform-node": "4.0.0-rc.115"
+  },
+  "overrides": {
+    "@effect/platform-node-shared": "4.0.0-rc.115"
   }
 }

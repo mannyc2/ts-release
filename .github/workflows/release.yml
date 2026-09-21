@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       candidate_sha:
-        description: Exact current main commit to prepare and release
+        description: Exact reviewed current main workflow commit
         required: true
         type: string
       publish:
@@ -12,6 +12,18 @@ on:
         required: true
         default: false
         type: boolean
+      resume_run_id:
+        description: Restore a signed candidate from this earlier Release run (leave empty for a new candidate)
+        required: false
+        type: string
+      resume_bundle_sha256:
+        description: Expected bundle.json SHA256 when restoring an earlier run
+        required: false
+        type: string
+      resume_plan_sha256:
+        description: Expected plan.json file SHA256 when restoring an earlier run
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -22,7 +34,7 @@ concurrency:
 
 jobs:
   prepare:
-    if: github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha
+    if: github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha && inputs.resume_run_id == ''
     runs-on: ubuntu-latest
     outputs:
       bundle-sha256: ${{ steps.identity.outputs.bundle-sha256 }}
@@ -105,9 +117,15 @@ jobs:
 
   publish:
     needs: [prepare, attest]
+    if: >-
+      always() && !cancelled() && inputs.publish &&
+      github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha &&
+      ((inputs.resume_run_id == '' && needs.prepare.result == 'success' && needs.attest.result == 'success') ||
+       (inputs.resume_run_id != '' && needs.prepare.result == 'skipped' && needs.attest.result == 'skipped'))
     runs-on: ubuntu-latest
     environment: npm
     permissions:
+      actions: read
       contents: write
       id-token: write
     steps:
@@ -127,11 +145,15 @@ jobs:
         with:
           name: ts-release-signed-candidate
           path: .release/signed
+          run-id: ${{ inputs.resume_run_id || github.run_id }}
+          github-token: ${{ github.token }}
       - name: Verify the retained Bundle and Plan
         env:
-          BUNDLE_SHA256: ${{ needs.attest.outputs.bundle-sha256 }}
-          PLAN_SHA256: ${{ needs.attest.outputs.plan-sha256 }}
+          BUNDLE_SHA256: ${{ inputs.resume_run_id != '' && inputs.resume_bundle_sha256 || needs.attest.outputs.bundle-sha256 }}
+          PLAN_SHA256: ${{ inputs.resume_run_id != '' && inputs.resume_plan_sha256 || needs.attest.outputs.plan-sha256 }}
         run: |
+          [[ "$BUNDLE_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          [[ "$PLAN_SHA256" =~ ^[a-f0-9]{64}$ ]]
           printf '%s  %s\n' "$BUNDLE_SHA256" .release/signed/bundle.json | sha256sum --check
           printf '%s  %s\n' "$PLAN_SHA256" .release/signed/plan.json | sha256sum --check
           bun run release:check .release/signed
@@ -142,6 +164,10 @@ jobs:
         env:
           TS_RELEASE_JOURNAL_REMOTE: https://github.com/mannyc2/ts-release.git
         run: bun scripts/release-input.ts .release/signed .release/publish-input.json Trusted --execute
+      - name: Check trusted credentials before any publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .release/publisher/check-credentials.mjs .release/publisher/application.js .release/publish-input.json
       - name: Publish through the installed public providers and durable journal
         env:
           GH_TOKEN: ${{ github.token }}

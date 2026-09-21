@@ -41,7 +41,19 @@ interface Reply {
   bytes?: Uint8Array
   subject?: string
   contentType?: string
+  headers?: Readonly<Record<string, string>>
 }
+export interface NpmBrowserAuthentication {
+  readonly packageName: string
+  readonly loginToken: string
+  readonly oneTimePassword: string
+  /** Inspect the remote journal at the actual native request boundary. */
+  readonly beforeAuthenticatedRequest: (phase: "poll" | "publish") => Promise<void>
+}
+export const npmBrowserChallenge = {
+  authUrl: "https://www.npmjs.com/auth/cli/fixture-browser-challenge",
+  doneUrl: "https://registry.npmjs.org/-/v1/done/fixture-browser-challenge",
+} as const
 const sha256 = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex")
 const object = (value: unknown): Document => {
   assert.ok(value && typeof value === "object" && !Array.isArray(value), "Expected native object")
@@ -54,7 +66,11 @@ const string = (value: unknown): string => {
 const json = (bytes: Uint8Array): unknown => JSON.parse(new TextDecoder().decode(bytes))
 
 /** Native HTTPS protocol peer, not a replacement provider or transport. */
-export async function startNativeReleasePeer() {
+export async function startNativeReleasePeer(
+  options: {
+    readonly npmBrowserAuthentication?: NpmBrowserAuthentication
+  } = {},
+) {
   const root = await mkdtemp(join(tmpdir(), "ts-release-native-peer-"))
   const certificate = join(root, "certificate.pem")
   const key = join(root, "key.pem")
@@ -104,6 +120,51 @@ export async function startNativeReleasePeer() {
       }
     | undefined
   const visible = (subject: string) => !hidden.has(subject)
+  const browser = options.npmBrowserAuthentication
+  let challenged = false,
+    polls = 0,
+    authenticatedPublication = false
+  const browserAuthentication = async (
+    request: NativeRequest,
+    url: URL,
+    authorization: string | undefined,
+    password: string | string[] | undefined,
+  ): Promise<Reply | undefined> => {
+    if (!browser) return undefined
+    if (url.href === npmBrowserChallenge.doneUrl) {
+      assert.equal(request.method, "GET")
+      assert.ok(challenged && !authenticatedPublication, "Unexpected browser polling")
+      assert.ok(authorization === `Bearer ${browser.loginToken}`, "Expected fixture login")
+      assert.ok(password === undefined, "Polling must not receive the one-time password")
+      await browser.beforeAuthenticatedRequest("poll")
+      polls++
+      return polls === 1
+        ? { status: 202, headers: { "retry-after": "1" } }
+        : { status: 200, document: { token: browser.oneTimePassword } }
+    }
+    if (
+      request.method !== "PUT" ||
+      decodeURIComponent(url.pathname.slice(1)) !== browser.packageName
+    )
+      return undefined
+    assert.ok(authorization === `Bearer ${browser.loginToken}`, "Expected fixture login")
+    assert.equal(request.headers["npm-auth-type"], "web")
+    if (!challenged) {
+      assert.ok(password === undefined, "The initial request cannot have a one-time password")
+      challenged = true
+      return {
+        status: 401,
+        headers: { "www-authenticate": "OTP" },
+        document: { ...npmBrowserChallenge },
+        subject: `npm:${browser.packageName}:authentication`,
+      }
+    }
+    assert.ok(polls === 2 && !authenticatedPublication, "Unexpected authenticated retry")
+    assert.ok(password === browser.oneTimePassword, "Expected the exact fixture one-time password")
+    await browser.beforeAuthenticatedRequest("publish")
+    authenticatedPublication = true
+    return undefined
+  }
 
   const npm = (request: NativeRequest, url: URL): Reply => {
     const tagRoute = /^\/-\/package\/(.+)\/dist-tags\/([^/]+)$/u.exec(url.pathname)
@@ -340,7 +401,7 @@ export async function startNativeReleasePeer() {
         const authorization = incoming.headers.authorization
         const headers = Object.fromEntries(
           Object.entries(incoming.headers).filter(
-            ([name]) => !/^(authorization|cookie|x-api-key|x-auth-token)$/u.test(name),
+            ([name]) => !/^(authorization|cookie|x-api-key|x-auth-token|npm-otp)$/u.test(name),
           ),
         )
         const request: NativeRequest = {
@@ -353,7 +414,15 @@ export async function startNativeReleasePeer() {
         }
         requests.push(request)
         const url = new URL(request.path, `https://${host}`)
-        const reply = host === "registry.npmjs.org" ? npm(request, url) : github(request, url)
+        const reply =
+          host === "registry.npmjs.org"
+            ? ((await browserAuthentication(
+                request,
+                url,
+                authorization,
+                incoming.headers["npm-otp"],
+              )) ?? npm(request, url))
+            : github(request, url)
         if (reply.subject) {
           const mutation = Object.freeze({
             ...request,
@@ -375,6 +444,7 @@ export async function startNativeReleasePeer() {
         }
         response.writeHead(reply.status, {
           "content-type": reply.contentType ?? "application/json",
+          ...reply.headers,
         })
         response.end(reply.bytes ?? JSON.stringify(reply.document ?? {}))
       } catch (cause) {

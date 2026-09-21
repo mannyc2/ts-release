@@ -34,6 +34,13 @@ A response loss remains uncertain; later absence never authorizes a blind resend
 Native starter assets, changed names, conflicting bytes and incomplete pagination
 cannot be treated as a successful upload or complete release.
 
+Authenticated release and asset enumeration admits up to 16 MiB per JSON page,
+64 MiB across the complete enumeration and 1,000 pages. Individual native-object
+JSON responses remain limited to 1 MiB. Configure the HTTP reader's
+`maximumResponseBytes` to at least 16 MiB to admit populated release pages;
+exceeding any provider bound stops enumeration without treating a partial list as
+complete.
+
 The package uses the GitHub.com REST API, pinned to 2022-11-28, with an explicit
 User-Agent. It has no CLI or implicit environment/credential discovery. Compose
 CLI, Action or self-release policy at the application boundary. Keep the provider

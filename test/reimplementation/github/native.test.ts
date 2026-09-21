@@ -1,6 +1,11 @@
 import { expect, test } from "bun:test"
 import { Repository } from "../../../packages/github/src/Model.js"
-import { releaseFacts, refFacts, assetFacts } from "../../../packages/github/src/Native.js"
+import {
+  releaseFacts,
+  refFacts,
+  assetFacts,
+  responseObject,
+} from "../../../packages/github/src/Native.js"
 import release from "./fixtures/v030-release.json" with { type: "json" }
 import ref from "./fixtures/v030-ref.json" with { type: "json" }
 
@@ -57,4 +62,11 @@ test("native missing digests and starter states remain distinct from malformed a
     { browser_download_url: asset.browser_download_url.replace("v0.3.0", "v0.2.0") },
   ])
     expect(() => assetFacts({ ...asset, ...patch }, repository, "v0.3.0")).toThrow()
+})
+
+test("individual native-object responses retain their smaller byte bound", () => {
+  const body = new TextEncoder().encode(JSON.stringify({ body: "x".repeat(1024 * 1024) }))
+  expect(() =>
+    responseObject({ status: 200, headers: { "content-type": "application/json" }, body }),
+  ).toThrow("json response")
 })

@@ -38,12 +38,12 @@ export const headers = [
   ["x-github-api-version", "2022-11-28"],
   ["user-agent", "ts-release"],
 ] as const
-export const responseJson = (response: HttpResponse): unknown => {
+export const responseJson = (response: HttpResponse, maximumBytes = 1024 * 1024): unknown => {
   const type = Object.entries(response.headers).filter(
     ([name]) => name.toLowerCase() === "content-type",
   )
   if (
-    response.body.length > 1024 * 1024 ||
+    response.body.length > maximumBytes ||
     type.length !== 1 ||
     !/^(?:application\/json|application\/vnd\.github\+json)(?:\s*;|$)/iu.test(type[0]![1])
   )

@@ -14,6 +14,10 @@ import { AssetEvidence, Missing, Present, Unavailable } from "./Evidence.js"
 import { classifyAssets, classifyObservation, type Observation } from "./Evidence.js"
 
 const MAX_PAGES = 1000
+// A release page contains up to 100 complete release records, including notes
+// and embedded asset metadata. Its bound cannot be the single-object bound.
+const MAX_PAGE_BYTES = 16 * 1024 * 1024
+const MAX_ENUMERATION_BYTES = 64 * 1024 * 1024
 const linkPattern = /^<([^<>]+)>;\s*rel=(?:"(first|prev|next|last)"|(first|prev|next|last))$/u
 export const PUBLIC_DOWNLOAD = "github:public-download"
 export const publicDownload = (value: string): boolean => {
@@ -77,13 +81,16 @@ export const observations = (read: HttpRead) => {
   })
   const list = Effect.fn("github.list")(function* (scope: BoundScope, endpoint: string) {
     const values: unknown[] = []
-    let through = 1,
+    let bytes = 0,
+      through = 1,
       last: number | undefined
     for (let page = 1; page <= MAX_PAGES; page++) {
       const response = yield* get(scope, `${endpoint}?per_page=100&page=${page}`)
       const result = yield* attempt(() => {
         if (response.status !== 200) invalid("pagination-status")
-        const items = responseJson(response)
+        if (response.body.length > MAX_ENUMERATION_BYTES - bytes) invalid("pagination-bytes")
+        bytes += response.body.length
+        const items = responseJson(response, MAX_PAGE_BYTES)
         if (!Array.isArray(items) || items.length > 100) return invalid("pagination-data")
         const link = header(response, "link"),
           relations = new Set<string>()

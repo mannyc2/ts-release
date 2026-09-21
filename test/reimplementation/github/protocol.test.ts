@@ -236,3 +236,91 @@ test("last-page evidence persists across short intermediate pages and bounds com
     f.state.reads.filter((request) => request.url.includes("/releases?per_page")),
   ).toHaveLength(1)
 })
+
+test("populated release pages above the single-object limit remain complete across publication and restart", async () => {
+  const f = await fixture(0)
+  const populated = response(
+    200,
+    Array.from({ length: 100 }, (_, index) => ({
+      ...releaseDocument(index + 1000),
+      tag_name: `v0.${index}.0`,
+      body: "x".repeat(11_000),
+    })),
+    { link: `<${base}/releases?per_page=100&page=2>; rel="last"` },
+  )
+  expect(populated.body.length).toBeGreaterThan(1024 * 1024)
+  f.state.override = (request) =>
+    request.url === `${base}/releases?per_page=100&page=1`
+      ? populated
+      : request.url === `${base}/releases?per_page=100&page=2`
+        ? response(200, f.state.releases)
+        : undefined
+  for (let invocation = 0; invocation < 2; invocation++) {
+    const report = await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true }))
+    expect(report.operations.every((operation) => operation.status === "Satisfied")).toBe(true)
+    expect(f.state.sends).toHaveLength(3)
+  }
+  expect(
+    f.state.reads.some((request) => request.url === `${base}/releases?per_page=100&page=2`),
+  ).toBe(true)
+  expect(f.state.releases).toHaveLength(1)
+  expect(f.state.releases[0]!.draft).toBe(false)
+})
+
+test("oversized release pages remain inconclusive and cannot authorize draft creation", async () => {
+  const f = await fixture(0)
+  await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true, maxDispatches: 1 }))
+  const snapshot = await Effect.runPromise(f.store.read(f.plan.journalId)),
+    receipt = snapshot.events.find((event) => event.body._tag === "ReceiptAccepted")!.body
+  if (receipt._tag !== "ReceiptAccepted") throw new Error("fixture receipt")
+  const context: ProviderContext = {
+      own: { operation: f.draft, receipts: [], observations: [] },
+      dependencies: [{ operation: f.ref, receipts: [receipt.receipt], observations: [] }],
+    },
+    provider = f.providers.find((provider) => provider.definitionId === "github.draft")!,
+    oversized = { ...response(200, []), body: new Uint8Array(16 * 1024 * 1024 + 1) }
+  f.state.override = (request) =>
+    request.url.includes("/releases?per_page") ? oversized : undefined
+  expect((await Effect.runPromise(provider.observe!(f.draft, context))).status).toBe("Inconclusive")
+  await expect(Effect.runPromise(provider.prepare(f.draft, context))).rejects.toThrow(
+    "json response",
+  )
+  expect(f.state.sends).toHaveLength(1)
+  expect(f.state.releases).toHaveLength(0)
+})
+
+test("complete release enumeration has an aggregate byte bound even when each page is admitted", async () => {
+  const f = await fixture(0)
+  await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true, maxDispatches: 1 }))
+  const snapshot = await Effect.runPromise(f.store.read(f.plan.journalId)),
+    receipt = snapshot.events.find((event) => event.body._tag === "ReceiptAccepted")!.body
+  if (receipt._tag !== "ReceiptAccepted") throw new Error("fixture receipt")
+  const context: ProviderContext = {
+      own: { operation: f.draft, receipts: [], observations: [] },
+      dependencies: [{ operation: f.ref, receipts: [receipt.receipt], observations: [] }],
+    },
+    provider = f.providers.find((provider) => provider.definitionId === "github.draft")!,
+    populated = {
+      ...response(200, []),
+      body: new TextEncoder().encode("[]" + " ".repeat(8 * 1024 * 1024)),
+    }
+  expect(populated.body.length).toBeLessThan(16 * 1024 * 1024)
+  f.state.reads = []
+  f.state.override = (request) => {
+    if (!request.url.includes("/releases?per_page")) return undefined
+    const page = Number(new URL(request.url).searchParams.get("page"))
+    return {
+      ...populated,
+      headers: {
+        ...populated.headers,
+        link: `<${base}/releases?per_page=100&page=${page + 1}>; rel="next"`,
+      },
+    }
+  }
+  expect((await Effect.runPromise(provider.observe!(f.draft, context))).status).toBe("Inconclusive")
+  expect(
+    f.state.reads.filter((request) => request.url.includes("/releases?per_page")),
+  ).toHaveLength(Math.floor((64 * 1024 * 1024) / populated.body.length) + 1)
+  expect(f.state.sends).toHaveLength(1)
+  expect(f.state.releases).toHaveLength(0)
+})

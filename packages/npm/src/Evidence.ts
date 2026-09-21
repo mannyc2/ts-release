@@ -44,6 +44,25 @@ export class RegistryReceipt extends Schema.Class<RegistryReceipt>("NpmRegistryR
   status: Schema.Int.check(Schema.isBetween({ minimum: 200, maximum: 299 })),
   responseBody: Schema.Literal("not-used-as-publication-facts"),
 }) {}
+/** RFC 9110 15.5.2 and npm's exact OTP challenge establish terminal noncommit.
+ * Challenge URLs and credential bytes are deliberately absent from this proof. */
+export class AuthenticationRejection extends Schema.Class<AuthenticationRejection>(
+  "NpmAuthenticationRejection",
+)({ request: RequestFacts, status: Schema.Literal(401), challenge: Schema.Literal("otp") }) {}
+export const isAuthenticationRejection = (response: HttpResponse): boolean => {
+  const fields = Object.entries(response.headers).filter(
+    ([name]) => name.toLowerCase() === "www-authenticate",
+  )
+  return response.status === 401 && fields.length === 1 && /^[ \t]*otp[ \t]*$/iu.test(fields[0]![1])
+}
+export const rejectionCorresponds = (
+  operation: Operation,
+  request: RequestFacts,
+  input: unknown,
+) => {
+  const proof = own(AuthenticationRejection, input)
+  return requestMatches(operation, request) && sameData(proof.request, own(RequestFacts, request))
+}
 const ownsFacts = (definitionId: string, input: RequestFacts): boolean => {
   return matches(() => {
     const request = own(RequestFacts, input),

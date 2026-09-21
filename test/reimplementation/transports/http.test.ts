@@ -151,8 +151,10 @@ test("HTTP acknowledgement comes from exactly one native write after the fresh j
   try {
     let beforeCredentials = -1
     const f = await fixture(server.url, {
-      credentials: () =>
+      credentials: (binding) =>
         Effect.sync(() => {
+          expect(binding.method).toBe("PUT")
+          expect(binding.bodyDigest).toMatch(/^[a-f0-9]{64}$/u)
           beforeCredentials = f.store.journals.get(f.plan.journalId)?.length ?? 0
           return {}
         }),
@@ -373,7 +375,12 @@ test("native observation stays bounded and does not follow redirects; exchange r
       read({ url: server.url, method: "GET", headers: [], principal: "reader", scope: "exact" }),
     )
     expect(response.status).toBe(307)
-    expect(binding).toEqual({ endpoint: server.url, principal: "reader", scope: "exact" })
+    expect(binding).toEqual({
+      endpoint: server.url,
+      principal: "reader",
+      scope: "exact",
+      method: "GET",
+    })
     expect(server.writes).toHaveLength(1)
     const exchange = makeCredentialExchange({ timeoutMilliseconds: 100, maximumResponseBytes: 100 })
     await expect(

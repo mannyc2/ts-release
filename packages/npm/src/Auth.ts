@@ -21,6 +21,17 @@ const admitBinding = (
     Native.invalid("credential-binding")
   return scope
 }
+/** Decode an owned npm authorization without application knowledge of private scope encoding. */
+export const authorizationBinding = Effect.fn("npm.authorizationBinding")(function* (
+  binding: Http.CredentialBinding,
+) {
+  return yield* Native.attempt(() => {
+    const scope = Native.readScope(binding.scope)
+    const authorization = Native.own(Model.Authorization, scope.intent.authorization)
+    admitBinding(binding, authorization)
+    return { authorization, packageName: scope.intent.name }
+  })
+})
 export const authorizeToken = Effect.fn("npm.authorizeToken")(function* (input: {
   readonly authorization: Model.TokenAuthorization
   readonly binding: Http.CredentialBinding
@@ -243,6 +254,14 @@ export interface SigstoreTrustOptions {
   readonly tufCachePath: string
   readonly timeoutMilliseconds: number
 }
+const nativeSigstoreRuntime = Effect.suspend(() =>
+  process.versions.bun
+    ? Native.reject(
+        "npm-sigstore-runtime",
+        "Native npm Sigstore signing and verification require supported Node.js; Bun is not qualified",
+      )
+    : Effect.void,
+)
 /** Actual native verification is repeatable for loaded owned provenance files. */
 export const makeSigstoreVerifier = (input: SigstoreTrustOptions): Model.VerifyProvenance => {
   const { tufRootPath, tufCachePath, timeoutMilliseconds: timeout } = input
@@ -256,6 +275,7 @@ export const makeSigstoreVerifier = (input: SigstoreTrustOptions): Model.VerifyP
       return { source, bundle }
     })
     const identity = `^${`${source.serverUrl}/${source.repository}/${source.workflow}@${source.workflowRef}`.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}$`
+    yield* nativeSigstoreRuntime
     const signer = yield* Effect.tryPromise({
       try: () =>
         Sigstore.verify(bundle as Sigstore.Bundle, {
@@ -349,6 +369,7 @@ export const makeSigstoreAttester = (input: {
     if (request.payloadType !== "application/vnd.in-toto+json")
       return yield* Native.reject("npm-attestation-type", "Unsupported attestation payload type")
     yield* Native.attempt(() => admitStatementSource(payload, source))
+    yield* nativeSigstoreRuntime
     const token = yield* oidc({
       issuer: "https://token.actions.githubusercontent.com",
       audience: "sigstore",

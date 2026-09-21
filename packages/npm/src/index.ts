@@ -6,4 +6,11 @@ export { PrivatePackage, PublicPackage } from "./Model.js"
 export type { Attest, AttestationRequest, VerifyProvenance } from "./Model.js"
 export { publish, distTag, author, definitions, inspectTarball } from "./Protocol.js"
 export { authorizeToken, authorizeTrusted, createProvenance } from "./Auth.js"
+export { authorizationBinding } from "./Auth.js"
+export { authenticationChallenge, makeLocalAuthentication } from "./LocalAuthentication.js"
+export type {
+  AuthenticationChallenge,
+  LocalAuthentication,
+  LocalAuthenticationOptions,
+} from "./LocalAuthentication.js"
 export { makeSigstoreAttester, makeSigstoreVerifier, type SigstoreTrustOptions } from "./Auth.js"

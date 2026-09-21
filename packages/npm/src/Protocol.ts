@@ -127,6 +127,11 @@ export const definitions = (
       receiptCodec: Evidence.RegistryReceipt,
       receiptCorresponds: Evidence.receiptCorresponds,
       classifyReceipt: () => "Satisfied",
+      rejection: {
+        version: "npm-authentication-rejection/1",
+        codec: Evidence.AuthenticationRejection,
+        corresponds: Evidence.rejectionCorresponds,
+      },
       observationVersion: "npm-registry-observation/1",
       observationCodec: Evidence.RegistryObservation,
       classifyObservation: Evidence.classifyObservation,
@@ -142,6 +147,15 @@ export const definitions = (
             "npm-response-binding",
             "npm response request could not be admitted",
           )
+        if (Evidence.isAuthenticationRejection(response))
+          return {
+            _tag: "RejectedBeforeCommit",
+            proof: new Evidence.AuthenticationRejection({
+              request: selected.facts,
+              status: 401,
+              challenge: "otp",
+            }),
+          }
         const accepted =
           descriptor.definitionId === "npm.publish"
             ? selected.status === 201

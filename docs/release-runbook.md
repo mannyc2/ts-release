@@ -34,7 +34,9 @@ pauses for cache propagation. It never repeats publication. The cohort is not an
 atomic batch, and partial progress remains in the shared journal.
 
 Configure npm trusted publishing for **each** of the seven existing package names:
-owner `mannyc2`, repository `ts-release`, workflow `release.yml`, no environment.
+owner `mannyc2`, repository `ts-release`, workflow `release.yml`, environment `npm`.
+The Publish job uses the existing protected `npm` environment; its deployment
+approval must complete before npm's OIDC exchange can match that binding.
 The workflow uses GitHub-hosted Node 24.15.0, `id-token: write`, and the library's
 native npm OIDC exchange and Sigstore adapters. It does not invoke `npm publish`.
 GitHub's job token has `contents: write` for release operations and the journal

@@ -27,7 +27,7 @@ import * as Homebrew from "@mannyc1/ts-release-catalog/homebrew"
 import * as Scoop from "@mannyc1/ts-release-catalog/scoop"
 import * as Mcp from "@mannyc1/ts-release-mcp"
 import * as OpenAi from "@mannyc1/ts-release-openai"
-import { prepareSelfRelease } from "../../../apps/self-release/src/application.js"
+import { prepareSelfRelease } from "../../../apps/self-release/src/rehearsal.js"
 import { identity, native, nativeGit, processOptions, seed } from "../transports/git-fixture.js"
 import { wheels } from "./wheel.js"
 
@@ -36,7 +36,7 @@ const node =
   process.env.TS_RELEASE_HTTP_PEER_NODE ??
   "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node"
 const cli = join(root, "packages/ts-release/dist/bin/ts-release.js")
-const application = join(root, "apps/self-release/dist/application.js")
+const application = join(root, "apps/self-release/dist/rehearsal.js")
 const packageOwners = ["ts-release", "catalog", "github", "mcp", "npm", "openai", "pypi"]
 const producedBy = { name: "ts-release/self-release-input", version: "fixture" }
 const sha256 = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex")

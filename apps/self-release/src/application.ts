@@ -1,238 +1,290 @@
-import { createHash, randomUUID } from "node:crypto"
-import { readFile } from "node:fs/promises"
-import { Effect, Schema } from "effect"
-import type * as Producer from "effect-build/Artifact"
-import { ReleaseError, createPlan, loadPlan, type Operation } from "@mannyc1/ts-release"
-import type { ProviderDefinition, Transport } from "@mannyc1/ts-release"
-import { Tree, encodeBundle, finalize, loadBundle } from "@mannyc1/ts-release/bundle"
-import { verifiedArtifacts, type Artifact, type ContentOwner } from "@mannyc1/ts-release/bundle"
-import { adoptFile } from "@mannyc1/ts-release/effect-build"
-import { Intent as GitIntent, definition as gitDefinition } from "@mannyc1/ts-release/git"
-import { decodeJson, sameBytes, sameData, type HttpRead } from "@mannyc1/ts-release/http"
-import { fileContentOwner, openGitJournal } from "@mannyc1/ts-release/node"
-import * as Npm from "@mannyc1/ts-release-npm"
-import * as PyPi from "@mannyc1/ts-release-pypi"
+import { randomUUID } from "node:crypto"
+import { join, resolve } from "node:path"
+import { Config, Effect, Redacted, Schema } from "effect"
+import { Plan, loadPlan, type Operation } from "@mannyc1/ts-release"
+import { loadBundle, verifiedArtifacts, type ReadContent } from "@mannyc1/ts-release/bundle"
+import {
+  decodeJson,
+  sameData,
+  type HttpProviderDefinition,
+  type ResolveCredentials,
+} from "@mannyc1/ts-release/http"
+import {
+  fileContentOwner,
+  makeGithubTrustedPublisherHost,
+  makeHttpRead,
+  makeHttpTransport,
+  openGitJournal,
+} from "@mannyc1/ts-release/node"
 import * as GitHub from "@mannyc1/ts-release-github"
-import * as Homebrew from "@mannyc1/ts-release-catalog/homebrew"
-import * as Scoop from "@mannyc1/ts-release-catalog/scoop"
-import * as Mcp from "@mannyc1/ts-release-mcp"
-import * as OpenAi from "@mannyc1/ts-release-openai"
+import * as Npm from "@mannyc1/ts-release-npm"
+import {
+  ApplicationInput,
+  GITHUB_PRINCIPAL,
+  NPM_PRINCIPAL,
+  SourceIdentity,
+  attempt,
+  failure,
+  read,
+  requireNodeProvenance,
+  sha256,
+} from "./Model.js"
 
-const Sha256 = Schema.String.check(Schema.isPattern(/^[a-f0-9]{64}$/u))
-const GitOid = Schema.String.check(Schema.isPattern(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u))
-const PositiveInt = Schema.Int.check(Schema.makeFilter((value) => value > 0))
-const SourceIdentity = Schema.Struct({ commit: GitOid, repository: Schema.String, tree: GitOid })
-class JournalInput extends Schema.Class<JournalInput>("SelfRelease.JournalInput")({
-  cacheDirectory: Schema.String,
-  remote: Schema.String,
-  principal: Schema.String,
-  scope: Schema.String,
-  gitExecutable: Schema.String,
-  timeoutMilliseconds: PositiveInt,
-  maximumOutputBytes: PositiveInt,
-}) {}
-class CatalogInput extends Schema.Class<CatalogInput>("SelfRelease.CatalogInput")({
-  homebrew: Homebrew.Formula,
-  homebrewFile: Schema.String,
-  scoop: Scoop.Manifest,
-  scoopFile: Schema.String,
-}) {}
-class Input extends Schema.Class<Input>("SelfRelease.Input")({
-  version: Schema.String,
-  contentDirectory: Schema.String,
-  bundleFile: Schema.String,
-  planFile: Schema.String,
-  bundleSha256: Sha256,
-  planId: Sha256,
-  sourceCommit: GitOid,
-  sourceTree: GitOid,
-  sourceFile: Schema.String,
-  openAiPlugin: Tree,
-  catalog: CatalogInput,
-  journal: JournalInput,
-}) {}
+export { ApplicationInput } from "./Model.js"
 
-const failure = (code: string, message: string) => new ReleaseError({ code, message })
-const read = (path: string, subject: string) =>
-  Effect.tryPromise({
-    try: () => readFile(path),
-    catch: () => failure(`self-release-${subject}`, `Self-release ${subject} could not be read`),
-  })
-const unavailable = (code: string, message: string) => () =>
-  Effect.fail(failure(`self-release-${code}`, message))
-const unavailableRead: HttpRead = unavailable("network", "Rehearsal cannot perform network reads")
-const noMutation: Transport = { send: unavailable("mutation", "Rehearsal cannot dispatch") }
-const intents = <A, I>(
-  operations: readonly Operation[],
-  definitionId: string,
-  codec: Schema.Codec<A, I>,
-) =>
-  operations
-    .filter((operation) => operation.definitionId === definitionId)
-    .map((operation) => Schema.decodeUnknownSync(codec)(operation.intent))
-const packageNames = [
-  "@mannyc1/ts-release",
-  "@mannyc1/ts-release-catalog",
-  "@mannyc1/ts-release-github",
-  "@mannyc1/ts-release-mcp",
-  "@mannyc1/ts-release-npm",
-  "@mannyc1/ts-release-openai",
-  "@mannyc1/ts-release-pypi",
-] as const
-
-export const prepareSelfRelease = Effect.fn("selfRelease.prepare")(function* (input: {
-  readonly owner: ContentOwner
-  readonly producerFiles: ReadonlyArray<{
-    readonly logicalName: string
-    readonly artifact: Producer.HashedRegular
-  }>
-  readonly ownedArtifacts?: ReadonlyArray<Artifact>
-  readonly operations: ReadonlyArray<Operation>
-  readonly journalId?: string
-}) {
-  const adopted = yield* Effect.forEach(input.producerFiles, ({ logicalName, artifact }) =>
-    adoptFile(input.owner, logicalName, artifact),
-  )
-  const bundle = yield* finalize([...adopted, ...(input.ownedArtifacts ?? [])])
-  const bundleBytes = encodeBundle(bundle)
-  const identity = yield* input.owner.putOwned(bundleBytes)
-  const plan = yield* createPlan(identity.sha256, input.operations, input.journalId)
-  return Object.freeze({ bundle, bundleBytes, plan })
-})
-
-export const createApplication = Effect.fn("selfRelease.createApplication")(function* (
-  raw: unknown,
-) {
-  const input = yield* Schema.decodeUnknownEffect(Input, { onExcessProperty: "error" })(raw).pipe(
-    Effect.mapError(() => failure("self-release-input", "Self-release input is invalid")),
-  )
-  const bundleBytes = yield* read(input.bundleFile, "bundle")
-  if (createHash("sha256").update(bundleBytes).digest("hex") !== input.bundleSha256)
-    return yield* failure("self-release-bundle", "Self-release Bundle identity differs")
-  const owner = fileContentOwner(input.contentDirectory)
-  const bundle = yield* loadBundle(owner, bundleBytes)
-  const artifacts = new Map<string, Artifact>(
-    bundle.artifacts.map((artifact) => [artifact.logicalName, artifact]),
-  )
-  const planBytes = yield* read(input.planFile, "plan")
-  const planInput = yield* Effect.try({
-    try: () => decodeJson(planBytes),
-    catch: () => failure("self-release-plan", "Self-release Plan is not exact JSON"),
-  })
-  const readContent = Effect.fn("selfRelease.readContent")((content) =>
-    Effect.mapError(owner.read(content), () =>
-      failure("self-release-content", "Owned self-release content could not be read"),
+const secret = (name: string) =>
+  Config.Redacted(name).pipe(
+    Effect.mapError(() =>
+      failure("credential", "An explicitly selected credential is unavailable"),
     ),
   )
-  const access = { bundle, readContent }
-  const providers: ProviderDefinition[] = [
-    ...Npm.definitions({ ...access, read: unavailableRead }),
-    ...PyPi.definitions({ ...access, read: unavailableRead }),
-    ...GitHub.definitions({ ...access, read: unavailableRead }),
-    ...Mcp.definitions({ read: unavailableRead }),
-    gitDefinition({
-      readContent,
-      observeRef: unavailable("observation", "Rehearsal cannot observe a publication ref"),
-    }),
-  ]
-  const plan = yield* loadPlan(planInput, providers)
-  if (plan.planId !== input.planId || plan.bundleId !== input.bundleSha256)
-    return yield* failure("self-release-plan", "Self-release Plan identity differs")
 
-  const files = verifiedArtifacts(access, 32 * 1024 * 1024)
-  if (!files.has(input.openAiPlugin))
-    return yield* failure("self-release-openai", "OpenAI plugin is not an exact Bundle member")
-  const source = artifacts.get(input.sourceFile)
-  if (source?._tag !== "OwnedFile")
-    return yield* failure("self-release-source", "Source identity is not a Bundle member")
-  const sourceBytes = yield* files.read(source)
-  const sourceIdentity = yield* Effect.try(() =>
+/** Reconstruct the exact retained release. The common CLI/Action interpreter
+ * owns execution, durable dispatch authority and interruption recovery. */
+export const createApplication = Effect.fn("release.createApplication")(function* (raw: unknown) {
+  const input = yield* attempt("input", () =>
+    Schema.decodeUnknownSync(ApplicationInput, { onExcessProperty: "error" })(raw),
+  )
+  const candidateDirectory = resolve(input.candidateDirectory)
+  const bundleBytes = yield* read(join(candidateDirectory, "bundle.json"))
+  if (sha256(bundleBytes) !== input.bundleSha256)
+    return yield* failure("bundle-identity", "Retained Bundle differs from the selected identity")
+  const owner = fileContentOwner(join(candidateDirectory, "content"))
+  const bundle = yield* loadBundle(owner, bundleBytes).pipe(
+    Effect.mapError(() =>
+      failure("bundle", "Retained Bundle or owned content could not be admitted"),
+    ),
+  )
+  const readContent: ReadContent = (content) =>
+    owner
+      .read(content)
+      .pipe(Effect.mapError(() => failure("content", "Owned release bytes differ")))
+  const files = verifiedArtifacts({ bundle, readContent }, 512 * 1024 * 1024)
+  const sourceFile = bundle.artifacts.find((artifact) => artifact.logicalName === "source.json")
+  const notesFile = bundle.artifacts.find((artifact) => artifact.logicalName === "release-notes.md")
+  if (sourceFile?._tag !== "OwnedFile" || notesFile?._tag !== "OwnedFile")
+    return yield* failure("source", "Release source and notes must be retained Bundle files")
+  const sourceBytes = yield* files.read(sourceFile)
+  const source = yield* attempt("source", () =>
     Schema.decodeUnknownSync(SourceIdentity, { onExcessProperty: "error" })(
       decodeJson(sourceBytes),
     ),
-  ).pipe(Effect.mapError(() => failure("self-release-source", "Source identity is invalid")))
-  if (
-    sourceIdentity.repository !== "mannyc2/ts-release" ||
-    sourceIdentity.commit !== input.sourceCommit ||
-    sourceIdentity.tree !== input.sourceTree
   )
-    return yield* failure("self-release-source", "Source commit or tree differs")
-
-  const npm = intents(plan.operations, "npm.publish", Npm.PublishIntent)
-  if (
-    npm.some((intent) => intent.version !== input.version) ||
-    !sameData(npm.map((intent) => intent.name).sort(), packageNames)
+  const notesBytes = yield* files.read(notesFile)
+  const notes = yield* attempt("notes", () =>
+    new TextDecoder("utf-8", { fatal: true }).decode(notesBytes),
   )
-    return yield* failure("self-release-npm", "npm cohort differs from the seven packages")
-  const python = intents(plan.operations, "pypi.upload", PyPi.UploadIntent)
-  const wheelPrefix = `ts_release-${input.version.replaceAll("-", "_")}-py3-none-`
-  const wheelNames = [
-    `${wheelPrefix}manylinux_2_17_x86_64.whl`,
-    `${wheelPrefix}manylinux_2_17_aarch64.whl`,
-    `${wheelPrefix}macosx_13_0_x86_64.whl`,
-    `${wheelPrefix}macosx_13_0_arm64.whl`,
-  ].sort()
-  if (
-    !sameData(python.map((intent) => intent.filename).sort(), wheelNames) ||
-    python.some(
-      (intent) =>
-        intent._tag !== "WheelUpload" ||
-        intent.project !== "ts-release" ||
-        intent.version !== input.version,
+  const planBytes = yield* read(join(candidateDirectory, "plan.json"))
+  const retained = yield* attempt("plan", () =>
+    Schema.decodeUnknownSync(Plan, { onExcessProperty: "error" })(decodeJson(planBytes)),
+  )
+  if (retained.planId !== input.planId || retained.bundleId !== input.bundleSha256)
+    return yield* failure(
+      "plan-identity",
+      "Retained Plan differs from the selected Bundle and Plan identities",
     )
-  )
-    return yield* failure("self-release-pypi", "PyPI four-wheel cohort differs")
-  const githubTags = intents(plan.operations, "github.lightweight-tag", GitHub.LightweightTag)
-  if (
-    githubTags.length !== 1 ||
-    githubTags[0]!.tag !== `v${input.version}` ||
-    githubTags[0]!.commit !== input.sourceCommit
-  )
-    return yield* failure("self-release-github", "GitHub tag differs from the source release")
-  const marketplace = yield* OpenAi.marketplace(
-    {
-      plugin: input.openAiPlugin,
-      existing: null,
-      marketplaceName: "ts-release",
-      displayName: "ts-release",
-      sourcePath: "./plugins/ts-release",
-      category: "Developer Tools",
-    },
-    readContent,
-  )
-  const outputs = new Map<string, Uint8Array>([
-    [input.catalog.homebrewFile, yield* Homebrew.render(input.catalog.homebrew, bundle)],
-    [input.catalog.scoopFile, yield* Scoop.render(input.catalog.scoop, bundle)],
-    [marketplace.path, marketplace.bytes],
-  ])
-  const gitUpdates = intents(plan.operations, "git.catalog.update", GitIntent),
-    gitFiles = gitUpdates.flatMap((intent) => intent.files)
-  if (
-    outputs.size !== 3 ||
-    gitUpdates.length !== outputs.size ||
-    gitFiles.length !== outputs.size ||
-    intents(plan.operations, "mcp.publish", Mcp.PublishIntent).length !== 1
-  )
-    return yield* failure("self-release-plan", "Catalog, marketplace or MCP operation differs")
-  for (const edit of gitFiles) {
-    const expected = outputs.get(edit.path),
-      artifact = artifacts.get(edit.path)
+  const publications = yield* attempt("publication-policy", () => {
+    const npm = retained.operations
+      .filter((operation) => operation.definitionId === "npm.publish")
+      .map((operation) =>
+        Schema.decodeUnknownSync(Npm.PublishIntent, { onExcessProperty: "error" })(
+          operation.intent,
+        ),
+      )
+    if (!npm.length || new Set(npm.map((intent) => intent.name)).size !== npm.length)
+      throw new Error("Expected unique npm publications")
+    for (const intent of npm) {
+      if (intent.version !== source.version || intent.authorization.principal !== NPM_PRINCIPAL)
+        throw new Error("Package version or principal differs")
+      if (
+        (intent.authorization._tag === "TrustedAuthorization") !==
+        (input.authentication.mode === "Trusted")
+      )
+        throw new Error("Authentication mode differs from the retained Plan")
+      if (!sameData(intent.authorization, npm[0]!.authorization))
+        throw new Error("npm authorization differs across the cohort")
+      if (
+        intent.provenance._tag === "GitHubActionsProvenance" &&
+        (intent.provenance.source.sourceCommit !== source.commit ||
+          intent.provenance.source.repository !==
+            `${source.repository.owner}/${source.repository.name}`)
+      )
+        throw new Error("Provenance differs from retained source")
+    }
+    const tags: GitHub.LightweightTag[] = []
+    const drafts: GitHub.DraftIntent[] = []
+    for (const operation of retained.operations) {
+      if (operation.definitionId === "npm.publish") continue
+      const intent =
+        operation.definitionId === "github.lightweight-tag"
+          ? Schema.decodeUnknownSync(GitHub.LightweightTag)(operation.intent)
+          : operation.definitionId === "github.draft"
+            ? Schema.decodeUnknownSync(GitHub.DraftIntent)(operation.intent)
+            : operation.definitionId === "github.asset"
+              ? Schema.decodeUnknownSync(GitHub.AssetIntent)(operation.intent)
+              : operation.definitionId === "github.publish"
+                ? Schema.decodeUnknownSync(GitHub.PublishIntent)(operation.intent)
+                : undefined
+      if (
+        !intent ||
+        !sameData(intent.repository, source.repository) ||
+        intent.principal !== GITHUB_PRINCIPAL
+      )
+        throw new Error("Release operation is outside the selected repository or principal")
+      if (intent instanceof GitHub.LightweightTag) tags.push(intent)
+      if (intent instanceof GitHub.DraftIntent) drafts.push(intent)
+    }
     if (
-      !expected ||
-      artifact?._tag !== "OwnedFile" ||
-      !sameData(edit.content, artifact.content) ||
-      !sameBytes(yield* files.read(artifact), expected)
+      tags.length !== 1 ||
+      tags[0]!.tag !== `v${source.version}` ||
+      tags[0]!.commit !== source.commit ||
+      drafts.length !== 1 ||
+      drafts[0]!.body !== notes
     )
-      return yield* failure("self-release-output", "Planned output differs from its Bundle file")
-    outputs.delete(edit.path)
+      throw new Error("Release tag or notes differ from the owned source")
+    return npm
+  })
+  const hasProvenance = publications.some(
+    (intent) => intent.provenance._tag === "GitHubActionsProvenance",
+  )
+  if (hasProvenance) {
+    yield* attempt("provenance-runtime", requireNodeProvenance)
+    if (!input.sigstore)
+      return yield* failure(
+        "provenance-trust",
+        "Retained provenance requires explicit Sigstore trust inputs",
+      )
   }
+  const bounds = {
+    timeoutMilliseconds: input.timeoutMilliseconds ?? 30_000,
+    maximumResponseBytes: 16 * 1024 * 1024,
+  }
+  const trusted = makeGithubTrustedPublisherHost(bounds)
+  const authorization = publications[0]!.authorization
+  const credentials: ResolveCredentials = Effect.fn("release.credentials")(function* (binding) {
+    if (new URL(binding.endpoint).origin === "https://registry.npmjs.org") {
+      const selected = yield* Npm.authorizationBinding(binding)
+      if (
+        !publications.some(
+          (intent) =>
+            intent.name === selected.packageName &&
+            sameData(intent.authorization, selected.authorization),
+        )
+      )
+        return yield* failure(
+          "credential-binding",
+          "npm credential request is outside the retained cohort",
+        )
+      if (selected.authorization._tag === "TrustedAuthorization")
+        return yield* Npm.authorizeTrusted(
+          { authorization: selected.authorization, packageName: selected.packageName, binding },
+          trusted,
+        )
+      if (local) return yield* local.credentials(binding)
+      if (input.authentication.mode !== "Token")
+        return yield* failure(
+          "credential-mode",
+          "npm authentication mode differs from the retained Plan",
+        )
+      return yield* Npm.authorizeToken({
+        authorization: selected.authorization,
+        binding,
+        token: yield* secret(input.authentication.npmTokenEnvironment),
+      })
+    }
+    return yield* GitHub.authorizeToken({
+      repository: source.repository,
+      binding,
+      token: yield* secret(input.authentication.githubTokenEnvironment),
+    })
+  })
+  const httpRead = makeHttpRead({ ...bounds, credentials })
+  const npmProviders = Npm.definitions({
+    bundle,
+    readContent,
+    read: httpRead,
+    ...(hasProvenance && input.sigstore
+      ? { verifyProvenance: Npm.makeSigstoreVerifier(input.sigstore) }
+      : {}),
+  })
+  const providers: HttpProviderDefinition[] = [
+    ...npmProviders.map(
+      (provider) =>
+        ({
+          ...provider,
+          decodeResponse: Effect.fn("release.captureAuthentication")(function* (request, response) {
+            if (local)
+              yield* attempt("authentication-response", () => local.capture(request, response))
+            return yield* provider.decodeResponse(request, response)
+          }),
+        }) satisfies HttpProviderDefinition,
+    ),
+    ...GitHub.definitions({ bundle, readContent, read: httpRead }),
+  ]
+  const plan = yield* loadPlan(retained, providers)
+  const remote = yield* attempt("journal-remote", () => {
+    const url = new URL(input.journal.remote)
+    if (
+      url.protocol === "file:" &&
+      !url.hostname &&
+      !url.username &&
+      !url.password &&
+      !url.search &&
+      !url.hash
+    )
+      return "Anonymous" as const
+    const path = `/${source.repository.owner}/${source.repository.name}`
+    if (
+      url.origin !== "https://github.com" ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      ![path, `${path}.git`].includes(url.pathname)
+    )
+      throw new Error("Journal must be a local file remote or the selected GitHub repository")
+    return "Github" as const
+  })
+  // Admission above is pure with respect to credentials. Open the local npm
+  // session only after the complete retained Plan and journal destination pass.
+  const local =
+    input.authentication.mode === "Local" && authorization._tag === "TokenAuthorization"
+      ? yield* Npm.makeLocalAuthentication({
+          authorization,
+          configFile: input.authentication.npmConfigFile,
+          notify: (url) =>
+            Effect.sync(() => {
+              process.stderr.write(`Complete npm authentication: ${Redacted.value(url)}\n`)
+            }),
+        })
+      : null
   const store = yield* openGitJournal({
     ...input.journal,
-    credentials: () => Effect.succeed({ _tag: "Anonymous" as const }),
+    credentials: Effect.fn("release.journalCredentials")(function* (coordinate) {
+      if (
+        coordinate.remote !== input.journal.remote ||
+        coordinate.principal !== input.journal.principal ||
+        coordinate.scope !== input.journal.scope
+      )
+        return yield* failure("journal-binding", "Journal credential binding differs")
+      if (remote === "Anonymous") return { _tag: "Anonymous" as const }
+      return {
+        _tag: "Basic" as const,
+        username: "x-access-token",
+        password: yield* secret(input.authentication.githubTokenEnvironment),
+      }
+    }),
   })
   return {
     bundle,
-    options: { plan, authorize: false, observe: false, maxDispatches: 0 },
-    host: { store, providers, transport: noMutation, now: Date.now, uniqueId: randomUUID },
+    options: { plan, authorize: input.authorize },
+    host: {
+      providers,
+      store,
+      transport: makeHttpTransport({ providers, credentials, ...bounds }),
+      now: Date.now,
+      uniqueId: randomUUID,
+    },
+    ...(local ? { onRejected: (operation: Operation) => local.complete(operation) } : {}),
   }
 })

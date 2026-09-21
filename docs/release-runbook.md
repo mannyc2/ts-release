@@ -49,9 +49,23 @@ for the next version. Do not substitute authorization modes on an unfinished Pla
 
 ## Recovery
 
-After publication begins, rerun only failed **Publish** jobs in the original
-workflow run. They restore the same signed candidate and fetch the same remote
-journal. Do not rerun attestation or rebuild archives to recover a dispatched
+After publication begins, normally rerun only failed **Publish** jobs in the
+original workflow run. They restore the same signed candidate and fetch the same
+remote journal. If workflow or diagnostic changes are needed, run the current
+reviewed workflow on `main` with `publish: true`, `resume_run_id` set to the
+original run, and `resume_bundle_sha256` / `resume_plan_sha256` set to the reviewed
+SHA256 digests of its `bundle.json` and `plan.json` files. The latter is the file
+digest, not the Plan ID. `candidate_sha` selects the current workflow commit;
+the retained Bundle keeps the original release source identity. Restoration
+skips preparation and attestation and verifies both digests before installation.
+
+The Publish job checks every npm trusted-publisher credential before the first
+publication. Its diagnostics identify OIDC verification and npm exchange stages,
+HTTP status and response shape without printing tokens or raw response bodies.
+This check reads the journal and prepares requests but does not append history
+or invoke a publication transport.
+
+Do not rerun attestation or rebuild archives to recover a dispatched
 release. A candidate whose Plan differs from existing history is rejected even
 if a new runner or workflow run is used: journal identity is stable per
 repository and version.

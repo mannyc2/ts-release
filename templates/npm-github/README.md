@@ -79,6 +79,11 @@ explicit Sigstore trust paths. Retain that final candidate before publication.
 Use `Trusted` when generating runtime input. It selects the hosted identity
 exchange instead of a long-lived npm token; GitHub still uses `GH_TOKEN`.
 
+Before publication, `node check-credentials.mjs release/application.js release-input.json`
+checks the retained npm requests and trusted-publisher credentials without
+publishing or appending to the journal. Diagnostics contain protocol stages and
+response shape, never tokens or raw credential responses.
+
 The repository's [release workflow](../../.github/workflows/release.yml) shows the
 complete preparation, attestation, retained-artifact and publication jobs. It
 installs the exact retained packages before invoking the Action launcher under

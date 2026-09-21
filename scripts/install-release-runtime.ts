@@ -42,11 +42,11 @@ const application = new URL("../templates/npm-github/release/", import.meta.url)
 for (const file of await readdir(application))
   if (file.endsWith(".js"))
     await cp(new URL(file, application), join(consumer, file), { errorOnExist: true, force: false })
-await cp(
-  new URL("../templates/npm-github/verify.mjs", import.meta.url),
-  join(consumer, "verify.mjs"),
-  { errorOnExist: true, force: false },
-)
+for (const file of ["verify.mjs", "check-credentials.mjs"])
+  await cp(new URL(`../templates/npm-github/${file}`, import.meta.url), join(consumer, file), {
+    errorOnExist: true,
+    force: false,
+  })
 console.log(
   JSON.stringify({
     consumer,

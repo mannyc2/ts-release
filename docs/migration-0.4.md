@@ -20,14 +20,14 @@ version. See [recovery](recovery.md) before changing providers on a retained Pla
 
 ## Install the matching packages
 
-The published 0.4.0 npm/GitHub packages install with:
+The published 0.4.1 npm/GitHub packages install with:
 
 ```sh
-bun add @mannyc1/ts-release@0.4.0 @mannyc1/ts-release-npm@0.4.0 @mannyc1/ts-release-github@0.4.0 effect@4.0.0-rc.115
+bun add @mannyc1/ts-release@0.4.1 @mannyc1/ts-release-npm@0.4.1 @mannyc1/ts-release-github@0.4.1 effect@4.0.0-rc.115
 ```
 
-Until publication, follow the root README to build and pack the core, and pack
-each required provider from its directory with `bun pm pack --ignore-scripts`.
+For an unpublished development checkout, follow the root README to build and
+pack the core, and pack each required provider with `bun pm pack --ignore-scripts`.
 Install all required local archives in one `bun add` invocation so providers can
 resolve the unpublished core peer. Do not combine 0.3.1 core with 0.4 providers.
 
@@ -91,7 +91,7 @@ destinations. The examples/templates marked historical target the old interface.
 
 The [current npm/GitHub starter](../templates/npm-github/README.md) targets 0.4.1
 and supplies the production application used for this repository's own release.
-Use matching retained 0.4.1 archives while evaluating its unreleased checkout.
+Its version-aligned dependencies install directly from npm with `bun install`.
 It includes explicit Token, Local browser authentication and Trusted OIDC modes;
 native provenance runs under Node. Keep the selected mode, Bundle and Plan for
 the lifetime of an unfinished release. Re-attesting creates different operation

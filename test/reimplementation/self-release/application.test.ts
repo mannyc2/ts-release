@@ -4,7 +4,8 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { ConfigProvider, Effect, Schema } from "effect"
-import { Host, Plan, createPlan, runRelease } from "@mannyc1/ts-release"
+import { Host, Plan, createPlan, runRelease, supersedePlan } from "@mannyc1/ts-release"
+import { reportFinalizedRelease } from "../../../packages/ts-release/src/internal/FinalizedReport.js"
 import { Bundle } from "@mannyc1/ts-release/bundle"
 import type { CredentialBinding } from "@mannyc1/ts-release/http"
 import * as Npm from "@mannyc1/ts-release-npm"
@@ -218,6 +219,48 @@ test("changed preparation at the same release coordinate cannot escape the origi
       ),
     ),
   ).rejects.toThrow("release coordinate's journal")
+})
+
+test("an explicitly retired candidate is retained when its successor opens the same Git journal", async () => {
+  const f = await preparedFixture()
+  await writeFile(f.input.notesFile, "Corrected candidate before any publication\n")
+  const changed = await Effect.runPromise(
+    prepareRelease({
+      ...f.input,
+      candidateDirectory: join(f.work, "corrected-candidate"),
+    }),
+  )
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const original = yield* createApplication(f.application)
+        yield* supersedePlan({
+          plan: original.options.plan,
+          authorize: true,
+          reason: "Credential compatibility fix",
+        }).pipe(Effect.provideService(Host, original.host))
+        const resumed = yield* createApplication({
+          ...f.application,
+          ...changed,
+          authorize: false,
+          supersededCandidates: [f.identity],
+          journal: { ...f.application.journal, cacheDirectory: join(f.work, "successor-cache") },
+        })
+        const report = yield* reportFinalizedRelease(resumed.bundle, resumed.options.plan).pipe(
+          Effect.provideService(Host, resumed.host),
+        )
+        expect(report.plan.planId).toBe(changed.planId)
+        expect(report.supersededPlans?.map((plan) => plan.planId)).toEqual([f.identity.planId])
+        expect(report.preparations).toEqual([])
+        expect(report.journal.revision).toBe(1)
+        expect(report.journal.events.map((event) => event.body._tag)).toEqual(["PlanSuperseded"])
+        expect(report.operations.every((operation) => operation.status === "Unattempted")).toBe(
+          true,
+        )
+        expect(report.superseded).toBe(false)
+      }),
+    ),
+  )
 })
 
 test("public npm GET and HEAD observations never acquire token or OIDC credentials", async () => {

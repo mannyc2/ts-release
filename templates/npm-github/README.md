@@ -12,6 +12,12 @@ resolving its package.json from npm. Use Node 24.15.0 for execution, and Bun 1.3
 for dependency installation and preparation scripts. Native provenance requires
 Node; token publication also works on Bun.
 
+If an operator explicitly supersedes a candidate before any dispatch, set
+`TS_RELEASE_SUPERSEDED_CANDIDATES` to a JSON array of retained candidate directories
+when generating the successor's input. The application keeps the same journal
+and rejects historical Plans without a supersession record or with any dispatch.
+Retain the original Bundles, Plans, content and bindings for every continuation.
+
 ## Prepare once
 
 Copy this directory into your project's `release-tools/` directory and install

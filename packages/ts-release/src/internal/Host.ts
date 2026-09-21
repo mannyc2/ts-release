@@ -48,6 +48,16 @@ export const captureHost = (input: HostShape): HostShape => {
             }),
           ),
         ),
+        ...(input.journal.supersededPlans && {
+          supersededPlans: Object.freeze(
+            input.journal.supersededPlans.map((prior) =>
+              Object.freeze({
+                plan: decodeOwned(Plan, prior.plan),
+                providers: verifyProviderContracts(prior.providers),
+              }),
+            ),
+          ),
+        }),
       }),
     }),
   })
@@ -99,6 +109,17 @@ export const read = Effect.fn("ts-release.readHistory")(function* (host: HostSha
   }
   if (!registered.has(plan.planId))
     return yield* reject("unregistered-scope", "Current plan is not admitted to this journal")
+  const superseded = new Map<string, ReadonlyArray<ProviderDefinition>>()
+  for (const prior of host.journal?.supersededPlans ?? []) {
+    const admitted = yield* loadPlan(prior.plan, prior.providers)
+    if (admitted.journalId !== journalId || registered.has(admitted.planId))
+      return yield* reject(
+        "superseded-plan-binding",
+        "Historical plan must be distinct and use this journal",
+      )
+    registered.set(admitted.planId, admitted)
+    superseded.set(admitted.planId, prior.providers)
+  }
   const stored = yield* host.store.read(journalId)
   const snapshot = yield* attempt(() =>
     decodeOwned(
@@ -131,11 +152,19 @@ export const read = Effect.fn("ts-release.readHistory")(function* (host: HostSha
         body.fingerprint !== (yield* requestFingerprint(body.request))
       )
         return yield* reject("request-fingerprint", "Historical request fingerprint mismatch")
-    yield* attempt(() => verifyNativeEvidence(admitted, scoped, host.providers))
+    yield* attempt(() =>
+      verifyNativeEvidence(admitted, scoped, superseded.get(admitted.planId) ?? host.providers),
+    )
     if (kind === "PreparationScope") yield* attempt(() => verifyPreparationSelection(scoped))
     yield* attempt(() => {
       for (let index = 0; index < scoped.length; index++)
         assertJournalAppend(admitted, scoped.slice(0, index), scoped[index]!, kind)
+      if (
+        superseded.has(admitted.planId) &&
+        (!scoped.some((event) => event.body._tag === "PlanSuperseded") ||
+          scoped.some((event) => event.body._tag === "DispatchStarted"))
+      )
+        fail("superseded-plan-history", "Historical plan must be superseded without any dispatch")
     })
     if (admitted.planId === plan.planId)
       selected = yield* attempt(() => (host.machine ?? historyMachine)(admitted, scoped, kind))
@@ -143,7 +172,8 @@ export const read = Effect.fn("ts-release.readHistory")(function* (host: HostSha
   const events = snapshot.events
   const machine = selected!
   return {
-    plans: [...registered.values()],
+    plans: [...registered.values()].filter((item) => !superseded.has(item.planId)),
+    supersededPlans: [...registered.values()].filter((item) => superseded.has(item.planId)),
     snapshot: { revision: snapshot.revision, events } satisfies Snapshot,
     machine,
     report: () => ({

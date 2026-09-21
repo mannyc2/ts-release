@@ -24,6 +24,18 @@ on:
         description: Expected plan.json file SHA256 when restoring an earlier run
         required: false
         type: string
+      superseded_run_id:
+        description: Earlier signed candidate explicitly superseded before any dispatch
+        required: false
+        type: string
+      superseded_bundle_sha256:
+        description: Expected historical bundle.json SHA256
+        required: false
+        type: string
+      superseded_plan_sha256:
+        description: Expected historical plan.json file SHA256
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -159,10 +171,30 @@ jobs:
           bun run release:check .release/signed
       - name: Install the exact retained packages and shared application
         run: bun scripts/install-release-runtime.ts .release/signed .release/publisher
+      - name: Restore the superseded candidate
+        if: inputs.superseded_run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: ts-release-signed-candidate
+          path: .release/superseded
+          run-id: ${{ inputs.superseded_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify historical candidate identity
+        if: inputs.superseded_run_id != ''
+        env:
+          BUNDLE_SHA256: ${{ inputs.superseded_bundle_sha256 }}
+          PLAN_SHA256: ${{ inputs.superseded_plan_sha256 }}
+        run: |
+          [[ "$BUNDLE_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          [[ "$PLAN_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          printf '%s  %s\n' "$BUNDLE_SHA256" .release/superseded/bundle.json | sha256sum --check
+          printf '%s  %s\n' "$PLAN_SHA256" .release/superseded/plan.json | sha256sum --check
+          bun run release:check .release/superseded
       - name: Bind live credentials and the shared journal
         id: input
         env:
           TS_RELEASE_JOURNAL_REMOTE: https://github.com/mannyc2/ts-release.git
+          TS_RELEASE_SUPERSEDED_CANDIDATES: ${{ inputs.superseded_run_id != '' && '[".release/superseded"]' || '[]' }}
         run: bun scripts/release-input.ts .release/signed .release/publish-input.json Trusted --execute
       - name: Check trusted credentials before any publication
         env:

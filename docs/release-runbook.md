@@ -70,6 +70,21 @@ release. A candidate whose Plan differs from existing history is rejected even
 if a new runner or workflow run is used: journal identity is stable per
 repository and version.
 
+For an explicitly superseded candidate that never dispatched, preserve its Plan
+and Bundle, and select their signed artifact using `superseded_run_id`,
+`superseded_bundle_sha256` and `superseded_plan_sha256` (the Plan file hash). The successor uses the same journal, whose
+history must already record supersession. Any prior dispatch blocks this path.
+Keep this input on subsequent resume runs as well. See [recovery](recovery.md).
+
+The first 0.4.1 candidate is retained at
+`.github/release-history/v0.4.1/original-plan.json`. Its credential preflight
+accepted GitHub OIDC and received HTTP 201 from npm, then rejected timestamp
+metadata. It must be explicitly superseded through the public `supersedePlan`
+operation before publishing a corrected candidate; the recorded Plan alone
+does not authorize replacement. For the corrected release, use run `35651390251`, Bundle SHA256
+`2185a825efd159af8ff2dc0d957a21b3d4146147cb97c680d2f622b4f62ec951` and Plan file SHA256
+`9216b5ac391ea4c3a53635617e96021040899d6646daa9f721952674bfd91f57`.
+
 A lost response followed by a registry 404 does not permit resending. Observe the
 original candidate and follow [recovery](recovery.md) for unresolved outcomes.
 Matching evidence allows progress; conflicting bytes stop it. Existing releases,

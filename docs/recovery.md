@@ -40,6 +40,23 @@ only against the protected request. Explicit `acceptRisk` and `supersedePlan`
 remain library operations for deliberate operator workflows, not automatic error
 recovery or CLI flags. A process failure never implicitly grants either.
 
+A candidate that never dispatched can be explicitly superseded before preparing
+a corrected candidate for the same release coordinate. Supply the original Plan
+with its original providers in `Host.journal.supersededPlans`, alongside the
+successor's single publication scope. The host validates both Plans and the
+complete original journal. Every
+historical Plan must have a `PlanSuperseded` event and **no `DispatchStarted`
+event**, including acknowledged or rejected dispatches. Merely listing a Plan
+does not supersede it. Reports retain these Plans separately from preparations.
+
+The npm/GitHub application accepts `supersededCandidates` in its input, each
+with `candidateDirectory`, `bundleSha256` and `planId`. It restores the original
+Bundle and creates historical providers with no I/O capabilities.
+`TS_RELEASE_SUPERSEDED_CANDIDATES`, a JSON array of retained candidate directories,
+supplies these bindings to its input generator. Keep the original artifacts and
+these bindings on every continuation. This cannot bypass an uncertain dispatched
+release or move the successor into an empty journal.
+
 For the Action, use the same application and input with `observe: 'true'` to
 inspect; use `observe: 'false'` to continue under the application policy. Its
 `plan-id` and `journal-revision` outputs identify progress, not a complete backup.

@@ -1,10 +1,10 @@
 # ts-release
 
 Install the core locally, then add the matching provider packages your application
-uses (for example `@mannyc1/ts-release-npm@0.4.0`):
+uses (for example `@mannyc1/ts-release-npm@0.4.1`):
 
 ```sh
-bun add @mannyc1/ts-release@0.4.0 effect@4.0.0-rc.115
+bun add @mannyc1/ts-release@0.4.1 effect@4.0.0-rc.115
 ```
 
 Run an authored release application with immutable Bundle and Plan inputs and a

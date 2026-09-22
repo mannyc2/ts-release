@@ -2,7 +2,7 @@
 
 Native npm publication, dist-tag updates, scoped authentication and GitHub Actions
 provenance for explicitly composed ts-release applications. Install this package
-with the matching `@mannyc1/ts-release@0.4.0` core and `effect@4.0.0-rc.115`.
+with the matching `@mannyc1/ts-release@0.4.1` core and `effect@4.0.0-rc.115`.
 
 `inspectTarball(file, artifacts)` reads the exact owned Bundle member and returns
 package metadata plus native SHA-512 integrity and SHA-1 shasum. Put those hashes

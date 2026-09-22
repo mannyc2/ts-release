@@ -1,7 +1,7 @@
 # @mannyc1/ts-release-catalog
 
 Homebrew Formula and Scoop manifest rendering over exact owned Bundle files.
-Install with the matching `@mannyc1/ts-release@0.4.0` core and `effect@4.0.0-rc.115`.
+Install with the matching `@mannyc1/ts-release@0.4.1` core and `effect@4.0.0-rc.115`.
 
 Import `Download`, `Formula` and `render` from
 `@mannyc1/ts-release-catalog/homebrew`, or `Download`, `Manifest` and `render`

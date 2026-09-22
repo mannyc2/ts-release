@@ -5,15 +5,15 @@ and resume partial releases using the same durable journal.
 
 ## Run a release application
 
-Install the 0.4 core and the providers your application uses. An npm/GitHub
+Install the 0.4.1 core and the providers your application uses. An npm/GitHub
 application uses this version-aligned set:
 
 ```sh
-bun add @mannyc1/ts-release@0.4.0 @mannyc1/ts-release-npm@0.4.0 @mannyc1/ts-release-github@0.4.0 effect@4.0.0-rc.115
+bun add @mannyc1/ts-release@0.4.1 @mannyc1/ts-release-npm@0.4.1 @mannyc1/ts-release-github@0.4.1 effect@4.0.0-rc.115
 bun run ts-release ./release.mjs ./release-input.json > release-report.json
 ```
 
-The [release page](https://github.com/mannyc2/ts-release/releases/tag/v0.4.0)
+The [release page](https://github.com/mannyc2/ts-release/releases/tag/v0.4.1)
 records published availability and the tested Action commit. If evaluating an
 unpublished checkout, build and pack it from this repository:
 
@@ -45,8 +45,9 @@ For later publication, load those same bytes and identities rather than rebuild.
 
 The [npm/GitHub starter](templates/npm-github) supplies a complete preparation
 command and application. Its generated JavaScript is the same application used
-to release this repository. The current starter targets the 0.4.1 candidate;
-use that checkout's retained package archives until 0.4.1 is published.
+to release this repository. Copy the starter into your project, install its
+aligned 0.4.1 dependencies, and follow its prepare, observe, publish and verify
+commands.
 
 ## Inspect progress and recover
 

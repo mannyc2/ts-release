@@ -67,14 +67,18 @@ export const observations = (read: HttpRead) => {
       response = yield* get(scope, api(repository))
     yield* attempt(() => {
       if (response.status !== 200) invalid("namespace-status")
-      const raw = responseObject(response),
-        permissions = object(raw.permissions)
+      const raw = responseObject(response)
+      // GitHub includes `permissions` only on authenticated reads, and reports every
+      // grant as false for the Actions installation token, so no grant can be
+      // required here. Write authority is proven by each write's own acknowledgement.
       if (
         typeof raw.full_name !== "string" ||
         raw.full_name.toLowerCase() !== `${repository.owner}/${repository.name}`.toLowerCase() ||
         typeof raw.url !== "string" ||
         raw.url.toLowerCase() !== api(repository).toLowerCase() ||
-        permissions.push !== true
+        typeof raw.permissions !== "object" ||
+        raw.permissions === null ||
+        Array.isArray(raw.permissions)
       )
         invalid("namespace-authority")
     })

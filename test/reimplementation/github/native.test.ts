@@ -60,8 +60,23 @@ test("native missing digests and starter states remain distinct from malformed a
     { id: Number.MAX_SAFE_INTEGER + 1 },
     { url: asset.url + "/other" },
     { browser_download_url: asset.browser_download_url.replace("v0.3.0", "v0.2.0") },
+    { browser_download_url: asset.browser_download_url.replace("v0.3.0", "untagged-XYZ") },
+    {
+      browser_download_url: asset.browser_download_url
+        .replace("v0.3.0", "untagged-73ebe5f856e3d7cc865b")
+        .replace(asset.name, "other-name"),
+    },
   ])
     expect(() => assetFacts({ ...asset, ...patch }, repository, "v0.3.0")).toThrow()
+  // A draft's asset is addressed under GitHub's untagged placeholder until publication.
+  const draft = {
+    ...asset,
+    browser_download_url: asset.browser_download_url.replace(
+      "v0.3.0",
+      "untagged-73ebe5f856e3d7cc865b",
+    ),
+  }
+  expect(assetFacts(draft, repository, "v0.3.0").storedName).toBe(asset.name)
 })
 
 test("individual native-object responses retain their smaller byte bound", () => {

@@ -43,7 +43,10 @@ export const releaseDocument = (id = 731, draft = true) => ({
   assets_url: `${base}/releases/${id}/assets`,
   upload_url: `https://uploads.github.com/repos/owner/repo/releases/${id}/assets{?name,label}`,
 })
-export const assetDocument = (id: number, name: string, bytes: Uint8Array) => ({
+/** GitHub addresses a draft's assets under an `untagged-<hex>` placeholder until publication. */
+export const downloadUrl = (name: string, draft = false) =>
+  `https://github.com/owner/repo/releases/download/${draft ? "untagged-73ebe5f856e3d7cc865b" : "v1.0.0"}/${encodeURIComponent(name)}`
+export const assetDocument = (id: number, name: string, bytes: Uint8Array, draft = false) => ({
   id,
   name,
   state: "uploaded",
@@ -51,7 +54,13 @@ export const assetDocument = (id: number, name: string, bytes: Uint8Array) => ({
   size: bytes.length,
   digest: `sha256:${sha256(bytes)}` as string | null,
   url: `${base}/releases/assets/${id}`,
-  browser_download_url: `https://github.com/owner/repo/releases/download/v1.0.0/${encodeURIComponent(name)}`,
+  browser_download_url: downloadUrl(name, draft),
+})
+/** The Actions installation token's repository view: authenticated, every grant reported false. */
+export const repositoryDocument = () => ({
+  full_name: "owner/repo",
+  url: base,
+  permissions: { admin: false, maintain: false, pull: false, push: false, triage: false },
 })
 /** Stateful REST protocol double. Hosted GitHub mutation acceptance is separate. */
 export async function fixture(count = 3, annotated = false) {
@@ -167,8 +176,7 @@ export async function fixture(count = 3, annotated = false) {
       if (custom) return custom
       const url = new URL(request.url),
         path = url.pathname.replace("/repos/owner/repo", "")
-      if (path === "")
-        return response(200, { full_name: "owner/repo", url: base, permissions: { push: true } })
+      if (path === "") return response(200, repositoryDocument())
       if (path === "/git/ref/tags/v1.0.0")
         return state.ref ? response(200, state.ref) : response(404)
       if (path.startsWith("/git/tags/"))
@@ -246,11 +254,13 @@ export async function fixture(count = 3, annotated = false) {
               1001 + state.assets.length,
               url.searchParams.get("name")!,
               request.body,
+              state.releases[0]!.draft,
             )
             state.assets.push(asset)
             result = response(201, asset)
           } else if (path === "/releases/731" && request.facts.method === "PATCH") {
             state.releases[0]!.draft = false
+            for (const asset of state.assets) asset.browser_download_url = downloadUrl(asset.name)
             result = response(200, state.releases[0])
           } else throw new Error(`Unexpected fixture send: ${request.facts.endpoint}`)
           if (state.lost === owners[0]!.definitionId) {

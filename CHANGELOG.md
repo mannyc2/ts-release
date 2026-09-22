@@ -12,6 +12,8 @@
   asset stays bound by its API id and stored name, and the tag form applies once
   the release is published. Both blocked the first hosted GitHub finalization
   (Release run 35737797624) after all seven npm publications were acknowledged.
+- Exclude an asset's download URL from its parent identity, so a published
+  release still binds assets first observed under the draft placeholder.
 
 ### npm acknowledgement and host diagnostics
 

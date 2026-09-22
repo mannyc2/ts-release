@@ -19,6 +19,15 @@ for (const annotated of [false, true])
       expect(() => verifyNativeEvidence(f.plan, snapshot.events, f.providers)).not.toThrow()
       await runWithHost({ ...f.host }, runRelease({ plan: f.plan, authorize: true }))
       expect(f.state.sends).toHaveLength(count + (annotated ? 4 : 3))
+      // After publication every asset is addressed by its tag URL; the published
+      // release still binds its asset parents and observes as Satisfied.
+      await runWithHost({ ...f.host }, observeRelease({ plan: f.plan }))
+      const latest = new Map<string, string>()
+      for (const event of (await Effect.runPromise(f.store.read(f.plan.journalId))).events)
+        if (event.body._tag === "ObservationRecorded")
+          latest.set(event.body.operationId, event.body.status)
+      expect(latest.get(f.publish.operationId)).toBe("Satisfied")
+      expect([...latest.values()].every((status) => status === "Satisfied")).toBe(true)
     })
 
 test("response-lost hidden draft is observed by authenticated enumeration and its returned ID survives restart", async () => {

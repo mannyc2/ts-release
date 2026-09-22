@@ -41,9 +41,10 @@ export const createApplication = (input) =>
       )
     if (input.failure)
       return yield* new ReleaseError({
-        code: "action-fixture-private",
-        message: "Private fixture diagnostic",
+        code: "action-fixture-rejected",
+        message: "Fixture rejected its input",
       })
+    if (input.die) return yield* Effect.die(new Error("Private fixture diagnostic"))
     if (input.wait) return yield* Effect.never
 
     const bundle = yield* finalize([])

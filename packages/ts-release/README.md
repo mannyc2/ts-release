@@ -26,7 +26,9 @@ absence alone never authorizes resend. Reports are derived views, not authority.
 
 JSON goes to stdout, diagnostics to stderr. Exit codes: 0 satisfied, 2 incomplete,
 1 usage/application failure, 130/143 interruption. Interrupted output may be
-partial; inspect the durable journal before continuing.
+partial; inspect the durable journal before continuing. A failed run prints the
+application's `ReleaseError` code and message; other failures are named by type
+only, so defect text, paths and native output stay out of process logs.
 
 The root exports planning, provider and recovery APIs. Use `bundle`, `http`, `git`,
 `node`, `bun`, `effect-build` and `apple` subpaths for their respective capabilities.

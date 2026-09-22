@@ -189,7 +189,7 @@ test("native CLI completes journaled npm browser authentication and resumes with
     const puts = peer.mutations.filter(
       (request) => request.host === "registry.npmjs.org" && request.method === "PUT",
     )
-    expect(puts.map((request) => request.status)).toEqual([401, 201])
+    expect(puts.map((request) => request.status)).toEqual([401, 200])
     expect(puts[0]!.body).toEqual(puts[1]!.body)
     const attachment = Object.values(
       JSON.parse(new TextDecoder().decode(puts[1]!.body))._attachments,

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### npm acknowledgement and host diagnostics
+
+- Accept any 2xx registry reply as npm's acknowledgement of the exact publish.
+  npm documents HTTP 200 for a successful publish; 201 was historical. A release
+  no longer needs a further dispatch per package before its dependent dist-tag
+  operations run. Other statuses are journaled as `npm-native-failure/1` with the
+  HTTP status and stay inconclusive; the write is never resent on absence alone.
+- Print the failing `ReleaseError` code and message when the CLI or the Action
+  fails, ahead of the recovery guidance. Other failures name only their type, so
+  defect text, paths and native output stay out of process logs.
+
 ### 0.4 adoption and distribution
 
 - Replace the configuration-driven CLI with authored `createApplication(input)`

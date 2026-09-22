@@ -228,7 +228,8 @@ export async function startNativeReleasePeer(
     for (const [tag, selected] of Object.entries(object(document["dist-tags"])))
       state.tags[tag] = string(selected)
     packages.set(name, state)
-    return { status: 201, document: { ok: true }, subject: `npm:${name}@${version}` }
+    // npm documents HTTP 200 with {"success": true} for a publish; 201 was historical.
+    return { status: 200, document: { success: true }, subject: `npm:${name}@${version}` }
   }
 
   const github = (request: NativeRequest, url: URL): Reply => {

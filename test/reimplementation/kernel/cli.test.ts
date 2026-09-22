@@ -42,17 +42,36 @@ for (const runtime of [node, process.execPath]) {
         unresolved ? ["Unattempted"] : [],
       )
     }
-    for (const body of ["{invalid-fixture-private-json", '{"failure":true}']) {
-      await writeFile(input, body)
+    // Defects and native errors are named only; their text stays private.
+    for (const [body, named] of [
+      ["{invalid-fixture-private-json", "SyntaxError"],
+      ['{"failure":true}', "Error"],
+    ]) {
+      await writeFile(input, body!)
       const failed = await run([application, input])
       expect(failed.exit).toBe(1)
       expect(failed.stdout).toBe("")
+      expect(failed.stderr).toContain(
+        `ts-release: application failed: ${named} (only a ReleaseError`,
+      )
       expect(failed.stderr).toContain("ts-release --observe")
       expect(failed.stderr).not.toContain("fixture-private")
     }
-    expect((await run(["/fixture-private-missing.mjs", input])).stderr).not.toContain(
-      "fixture-private",
+    // A typed ReleaseError is the diagnostic contract: its code and message are printed.
+    await writeFile(input, '{"reject":true}')
+    const rejected = await run([application, input])
+    expect(rejected.exit).toBe(1)
+    expect(rejected.stdout).toBe("")
+    expect(rejected.stderr).toContain(
+      "ts-release: application failed: fixture-rejected: Fixture rejected its input\n",
     )
+    expect(rejected.stderr).toContain("ts-release --observe")
+    const missing = await run(["/fixture-private-missing.mjs", input])
+    expect(missing.exit).toBe(1)
+    expect(missing.stderr).toContain(
+      "application failed: application-load: Application module could not be loaded",
+    )
+    expect(missing.stderr).not.toContain("fixture-private")
     await writeFile(input, '{"log":true}')
     const logged = await run([application, input])
     expect(logged.exit).toBe(0)

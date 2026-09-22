@@ -68,7 +68,10 @@ See [recovery](docs/recovery.md) for status meanings and operator decisions.
 The CLI writes JSON to stdout and diagnostics to stderr. Exit codes are 0 when
 all operations are satisfied, 2 for incomplete progress, 1 for invalid usage or
 application failure, and 130/143 for interruption. Interrupted output may be
-partial; retain the journal rather than infer success from process output.
+partial; retain the journal rather than infer success from process output. A
+failed run prints the application's `ReleaseError` code and message; keep those
+free of secrets. Any other failure is named by type only, so defect text, paths
+and native output never reach process logs.
 
 ## GitHub Action
 

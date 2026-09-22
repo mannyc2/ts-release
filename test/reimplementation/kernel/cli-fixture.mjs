@@ -18,6 +18,11 @@ export const createApplication = (input) =>
     }
     if (input.wait) return yield* Effect.never
     if (input.failure) return yield* Effect.die(new Error("fixture-private-diagnostic"))
+    if (input.reject)
+      return yield* new ReleaseError({
+        code: "fixture-rejected",
+        message: "Fixture rejected its input",
+      })
     const bundle = yield* finalize([])
     const provider = {
       contract: PROVIDER_CONTRACT,

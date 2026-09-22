@@ -46,7 +46,11 @@ The common executor retains fresh conditional-append authority and the sole send
 Publication evidence separates the immutable version from its initial tag. A moved
 tag cannot authorize another package upload. A separate new dist-tag operation can
 move an existing tag. After a possible write, absence never authorizes a blind retry.
-Accepted receipts exclude arbitrary response bodies.
+Accepted receipts exclude arbitrary response bodies. Any 2xx reply is the registry's
+acknowledgement of the exact write: npm documents HTTP 200 for a successful publish
+and answered 201 historically. Public visibility follows asynchronously and is
+established only by observation. Every other status is journaled as
+`npm-native-failure/1` with the HTTP status and stays inconclusive until observed.
 
 Local browser authentication uses `makeLocalAuthentication` inside the application's
 Effect scope. Supply a `TokenAuthorization`, an explicit `configFile` containing the

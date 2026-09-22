@@ -1,6 +1,7 @@
 import { constants } from "node:fs"
 import { open } from "node:fs/promises"
 import { runApplication, runInterruptibleProcess } from "../platform/Application.js"
+import { describeFailure } from "./Error.js"
 
 const usage = "Usage: ts-release [--observe] <application.mjs> <input.json>\n"
 const write = (
@@ -61,11 +62,12 @@ export async function runCommandLine(args: readonly string[]): Promise<number> {
           signal,
         )
       return exitCode() || (complete ? 0 : 2)
-    } catch {
+    } catch (error) {
       if (!exitCode())
         await write(
           process.stderr,
-          "ts-release: application failed; verify the application module, input file and journal access. To inspect progress, run ts-release --observe <application.mjs> <input.json> with the same application and input. Preserve the original Bundle, Plan and durable journal before resuming.\n",
+          `ts-release: application failed: ${describeFailure(error)}\n` +
+            "ts-release: verify the application module, input file and journal access. To inspect progress, run ts-release --observe <application.mjs> <input.json> with the same application and input. Preserve the original Bundle, Plan and durable journal before resuming.\n",
           signal,
         )
       return exitCode() || 1

@@ -132,6 +132,11 @@ export const definitions = (
         codec: Evidence.AuthenticationRejection,
         corresponds: Evidence.rejectionCorresponds,
       },
+      dispatchError: {
+        version: "npm-native-failure/1",
+        codec: Evidence.NativeFailure,
+        corresponds: Evidence.failureCorresponds,
+      },
       observationVersion: "npm-registry-observation/1",
       observationCodec: Evidence.RegistryObservation,
       classifyObservation: Evidence.classifyObservation,
@@ -156,20 +161,26 @@ export const definitions = (
               challenge: "otp",
             }),
           }
-        const accepted =
-          descriptor.definitionId === "npm.publish"
-            ? selected.status === 201
-            : Number.isInteger(selected.status) && selected.status >= 200 && selected.status < 300
-        if (!accepted)
-          return { _tag: "Unknown", reason: "npm did not acknowledge the exact native write" }
-        return {
-          _tag: "Accepted",
-          receipt: new Evidence.RegistryReceipt({
+        if (Evidence.acknowledges(selected.status))
+          return {
+            _tag: "Accepted",
+            receipt: new Evidence.RegistryReceipt({
+              request: selected.facts,
+              status: selected.status,
+              responseBody: "not-used-as-publication-facts",
+            }),
+          }
+        // Anything else is not an acknowledgement, yet the write may have committed.
+        // Retain the status as native evidence; absence alone never resends the PUT.
+        return yield* Native.attempt(() => ({
+          _tag: "Unknown" as const,
+          reason: `npm did not acknowledge the exact native write (HTTP ${selected.status})`,
+          nativeError: new Evidence.NativeFailure({
             request: selected.facts,
             status: selected.status,
-            responseBody: "not-used-as-publication-facts",
+            kind: "http-status",
           }),
-        }
+        }))
       }),
       observe: Effect.fn("npm.observe")(function* (operation, context) {
         const request = yield* prepare(operation)

@@ -100,26 +100,57 @@ test("native npm PUT preserves exact metadata, scoped URL, attachments and body 
     expect(
       f.providers[0]!.ownsRequest({ facts: { ...request.facts, ...patch }, body: request.body }),
     ).toBe(false)
-  const accepted = await Effect.runPromise(
-    f.providers[0]!.decodeResponse(request, response(201, { token: "must-never-be-retained" })),
-  )
-  expect(accepted._tag).toBe("Accepted")
-  if (accepted._tag !== "Accepted") throw new Error("expected acceptance")
-  expect(JSON.stringify(accepted.receipt)).not.toContain("must-never-be-retained")
-  expect(f.providers[0]!.receiptCorresponds(f.operation, request.facts, accepted.receipt)).toBe(
-    true,
-  )
-  expect(
-    f.providers[0]!.receiptCorresponds(
-      f.operation,
-      { ...request.facts, bodyDigest: "0".repeat(64) },
-      accepted.receipt,
-    ),
-  ).toBe(false)
-  for (const status of [200, 202, 400, 401, 409, 500])
+  // npm documents 200 for a successful publish and answered 201 historically.
+  for (const status of [200, 201, 202, 204, 299]) {
+    const accepted = await Effect.runPromise(
+      f.providers[0]!.decodeResponse(
+        request,
+        response(status, { token: "must-never-be-retained" }),
+      ),
+    )
+    expect(accepted._tag).toBe("Accepted")
+    if (accepted._tag !== "Accepted") throw new Error("expected acceptance")
+    expect(JSON.stringify(accepted.receipt)).not.toContain("must-never-be-retained")
+    expect((accepted.receipt as { status: number }).status).toBe(status)
+    expect(f.providers[0]!.receiptCorresponds(f.operation, request.facts, accepted.receipt)).toBe(
+      true,
+    )
     expect(
-      (await Effect.runPromise(f.providers[0]!.decodeResponse(request, response(status))))._tag,
-    ).toBe("Unknown")
+      f.providers[0]!.receiptCorresponds(
+        f.operation,
+        { ...request.facts, bodyDigest: "0".repeat(64) },
+        accepted.receipt,
+      ),
+    ).toBe(false)
+  }
+  // Every other reply retains only its status, as inconclusive native evidence.
+  const boundary = f.providers[0]!.dispatchError!
+  for (const status of [300, 400, 401, 403, 409, 500, 503]) {
+    const unknown = await Effect.runPromise(
+      f.providers[0]!.decodeResponse(
+        request,
+        response(status, { token: "must-never-be-retained" }),
+      ),
+    )
+    expect(unknown._tag).toBe("Unknown")
+    if (unknown._tag !== "Unknown") throw new Error("expected an unknown outcome")
+    expect(unknown.reason).toContain(`HTTP ${status}`)
+    expect(JSON.stringify(unknown.nativeError)).not.toContain("must-never-be-retained")
+    expect(boundary.corresponds(f.operation, request.facts, unknown.nativeError)).toBe(true)
+    expect(
+      boundary.corresponds(
+        f.operation,
+        { ...request.facts, bodyDigest: "0".repeat(64) },
+        unknown.nativeError,
+      ),
+    ).toBe(false)
+    expect(
+      boundary.corresponds(f.operation, request.facts, {
+        ...(unknown.nativeError as object),
+        status: 200,
+      }),
+    ).toBe(false)
+  }
   const altered: PreparedRequest = { facts: request.facts, body: new Uint8Array([0]) }
   await expect(
     Effect.runPromise(f.providers[0]!.decodeResponse(altered, response(201))),
@@ -356,5 +387,94 @@ test("a new dist-tag operation can move an existing tag; later drift cannot rese
   expect((await run()).operations[0]?.status).toBe("Conflict")
   f.set(response(200, { ...f.metadata(), "dist-tags": {} }))
   expect((await run()).operations[0]?.status).toBe("Pending")
+  expect(sends).toBe(1)
+})
+
+test("any 2xx acknowledgement satisfies the publish and its dependent dist-tag in one run", async () => {
+  const f = await fixture(),
+    store = new MemoryJournal()
+  const move = new DistTagIntent({
+    registry: f.publication.registry,
+    name: f.publication.name,
+    version: f.publication.version,
+    tag: "latest",
+    authorization: f.publication.authorization,
+  })
+  const tagOperation = await Effect.runPromise(distTag(move, [f.operation.operationId]))
+  const plan = await Effect.runPromise(
+    createPlan("npm-acknowledged-fixture", [f.operation, tagOperation]),
+  )
+  const statuses: number[] = []
+  const host = {
+    providers: f.providers,
+    store,
+    now: Date.now,
+    uniqueId: () => crypto.randomUUID(),
+    transport: {
+      send: (request: PreparedRequest) =>
+        Effect.gen(function* () {
+          const owner = f.providers.find((provider) => provider.ownsRequest(request))!
+          const status = owner === f.providers[0] ? 200 : 204
+          statuses.push(status)
+          return yield* owner.decodeResponse(request, response(status, { success: true }))
+        }),
+    },
+  }
+  const report = await Effect.runPromise(
+    runRelease({ plan, authorize: true }).pipe(Effect.provide(Layer.succeed(Host, host))),
+  )
+  expect(report.operations.map((operation) => operation.status)).toEqual(["Satisfied", "Satisfied"])
+  expect(statuses).toEqual([200, 204])
+  const events = (await Effect.runPromise(store.read(plan.journalId))).events
+  expect(
+    events.flatMap((event) =>
+      event.body._tag === "ReceiptAccepted"
+        ? [(event.body.receipt as { status: number }).status]
+        : [],
+    ),
+  ).toEqual([200, 204])
+})
+
+test("an unacknowledged registry status is journaled as native evidence and never resent", async () => {
+  const f = await fixture(),
+    store = new MemoryJournal()
+  const plan = await Effect.runPromise(createPlan("npm-unacknowledged-fixture", [f.operation]))
+  let sends = 0
+  const host = {
+    providers: f.providers,
+    store,
+    now: Date.now,
+    uniqueId: () => crypto.randomUUID(),
+    transport: {
+      send: (request: PreparedRequest) =>
+        Effect.gen(function* () {
+          sends++
+          return yield* f.providers[0]!.decodeResponse(
+            request,
+            response(503, { token: "secret-response" }),
+          )
+        }),
+    },
+  }
+  const run = () =>
+    Effect.runPromise(
+      runRelease({ plan, authorize: true }).pipe(Effect.provide(Layer.succeed(Host, host))),
+    )
+  expect((await run()).operations[0]?.status).toBe("Inconclusive")
+  const events = (await Effect.runPromise(store.read(plan.journalId))).events
+  expect(
+    events.find(
+      (event) =>
+        event.body._tag === "ObservationRecorded" && event.body.evidenceKind === "DispatchError",
+    )?.body,
+  ).toMatchObject({
+    status: "Inconclusive",
+    evidenceVersion: "npm-native-failure/1",
+    evidence: { status: 503, kind: "http-status" },
+  })
+  expect(JSON.stringify(events)).not.toContain("secret-response")
+  // The registry later shows the exact version and tag: convergence without another PUT.
+  f.set(response(200, f.metadata()))
+  expect((await run()).operations[0]?.status).toBe("Satisfied")
   expect(sends).toBe(1)
 })

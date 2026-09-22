@@ -98,14 +98,24 @@ test("Action path and failure boundaries fail closed without private diagnostics
       const result = await spawnAction(work, {}, selected)
       expect(result.exit).toBe(1)
       expect(result.stdout).toBe("")
+      expect(result.stderr).toContain(
+        "ts-release Action failed: action-workspace: Action application must be inside GITHUB_WORKSPACE\n",
+      )
       expect(result.stderr).toContain("Rerun with observe: true")
       expect(result.stderr).not.toContain("outside")
     }
+    // A typed ReleaseError is printed; a defect is named only and its text stays private.
     const marker = join(work, "marker")
     const result = await spawnAction(work, { marker, failure: true })
     expect(result.exit).toBe(1)
-    expect(result.stderr).not.toContain("Private fixture diagnostic")
+    expect(result.stderr).toContain(
+      "ts-release Action failed: action-fixture-rejected: Fixture rejected its input\n",
+    )
     expect(await readFile(marker, "utf8")).toBe("acquire\nrelease\n")
+    const defect = await spawnAction(work, { die: true })
+    expect(defect.exit).toBe(1)
+    expect(defect.stderr).toContain("ts-release Action failed: Error (only a ReleaseError")
+    expect(defect.stderr).not.toContain("Private fixture diagnostic")
   } finally {
     await Bun.file(link).delete()
   }

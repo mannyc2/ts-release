@@ -39,10 +39,22 @@ export class RegistryObservation extends Schema.Class<RegistryObservation>(
   version: Schema.Union([Absent, Unavailable, DifferentPackage, VersionFacts, NotApplicable]),
   tag: Schema.Union([Absent, Unavailable, TagValue]),
 }) {}
+/** npm documents HTTP 200 for a successful publish and answered 201 historically.
+ * Any 2xx is the registry's acknowledgement of the exact write; public visibility
+ * follows asynchronously and is established only by observation. */
+export const acknowledges = (status: number): boolean =>
+  Number.isInteger(status) && status >= 200 && status < 300
 export class RegistryReceipt extends Schema.Class<RegistryReceipt>("NpmRegistryReceipt")({
   request: RequestFacts,
   status: Schema.Int.check(Schema.isBetween({ minimum: 200, maximum: 299 })),
   responseBody: Schema.Literal("not-used-as-publication-facts"),
+}) {}
+/** A reply that acknowledges nothing. The write may still have committed, so the
+ * dispatch stays inconclusive; the status is retained, the body never is. */
+export class NativeFailure extends Schema.Class<NativeFailure>("NpmNativeFailure")({
+  request: RequestFacts,
+  status: Schema.Int.check(Schema.isBetween({ minimum: 100, maximum: 599 })),
+  kind: Schema.Literal("http-status"),
 }) {}
 /** RFC 9110 15.5.2 and npm's exact OTP challenge establish terminal noncommit.
  * Challenge URLs and credential bytes are deliberately absent from this proof. */
@@ -106,10 +118,14 @@ export const requestMatches = (operation: Operation, request: RequestFacts) =>
   request.scope === scopeFor(operation.intent as Model.PublishIntent | Model.DistTagIntent)
 export const receiptCorresponds = (operation: Operation, request: RequestFacts, input: unknown) => {
   const receipt = own(RegistryReceipt, input)
+  return requestMatches(operation, request) && sameData(receipt.request, own(RequestFacts, request))
+}
+export const failureCorresponds = (operation: Operation, request: RequestFacts, input: unknown) => {
+  const failure = own(NativeFailure, input)
   return (
     requestMatches(operation, request) &&
-    sameData(receipt.request, own(RequestFacts, request)) &&
-    (operation.definitionId !== "npm.publish" || receipt.status === 201)
+    sameData(failure.request, own(RequestFacts, request)) &&
+    !acknowledges(failure.status)
   )
 }
 export const classifyObservation = (

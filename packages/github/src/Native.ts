@@ -143,13 +143,18 @@ export const assetUrls = (facts: Model.AssetFacts, repository: Model.Repository,
   const download = publicUrl(facts.downloadUrl)
   if (!download) return false
   const path = decodeURIComponent(download.pathname),
-    prefix = `/${repository.owner}/${repository.name}/`
+    prefix = `/${repository.owner}/${repository.name}/`,
+    remainder = path.slice(prefix.length)
+  // GitHub serves a draft's assets under an `untagged-<hex>` placeholder until the
+  // release is published. The asset stays bound by its API id and stored name.
+  const placeholder = /^releases\/download\/untagged-[0-9a-f]+\/(.*)$/u.exec(remainder)
   if (
     !sameUrl(facts.apiUrl, `${api(repository)}/releases/assets/${facts.assetId}`, repository) ||
     download.origin !== "https://github.com" ||
     download.search ||
     path.slice(0, prefix.length).toLowerCase() !== prefix.toLowerCase() ||
-    path.slice(prefix.length) !== `releases/download/${tag}/${facts.storedName}`
+    (remainder !== `releases/download/${tag}/${facts.storedName}` &&
+      placeholder?.[1] !== facts.storedName)
   )
     return false
   return true

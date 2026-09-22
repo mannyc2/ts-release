@@ -4,6 +4,7 @@ import { runRelease, observeRelease, type ProviderContext } from "@mannyc1/ts-re
 import { verifyNativeEvidence } from "../../../packages/ts-release/src/Journal.js"
 import { runWithHost } from "../kernel/fixtures.js"
 import { fixture, response, releaseDocument, assetDocument, base } from "./fixtures.js"
+import { repositoryDocument } from "./fixtures.js"
 
 for (const annotated of [false, true])
   for (const count of [0, 3])
@@ -323,4 +324,23 @@ test("complete release enumeration has an aggregate byte bound even when each pa
   ).toHaveLength(Math.floor((64 * 1024 * 1024) / populated.body.length) + 1)
   expect(f.state.sends).toHaveLength(1)
   expect(f.state.releases).toHaveLength(0)
+})
+
+test("namespace authority is an authenticated exact repository view and requires no reported grant", async () => {
+  const f = await fixture(1)
+  const provider = f.providers.find((provider) => provider.definitionId === f.ref.definitionId)!
+  const context: ProviderContext = {
+    own: { operation: f.ref, receipts: [], observations: [] },
+    dependencies: [],
+  }
+  // The double answers as GitHub does for the Actions installation token: every grant false.
+  expect((await Effect.runPromise(provider.observe!(f.ref, context))).status).toBe("Absent")
+  for (const document of [
+    { full_name: "owner/repo", url: base },
+    { ...repositoryDocument(), full_name: "owner/other" },
+    { ...repositoryDocument(), permissions: [] },
+  ]) {
+    f.state.override = (request) => (request.url === base ? response(200, document) : undefined)
+    expect((await Effect.runPromise(provider.observe!(f.ref, context))).status).toBe("Inconclusive")
+  }
 })

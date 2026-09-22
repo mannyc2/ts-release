@@ -23,7 +23,11 @@ Journal evidence. A fresh host reconstructs them from the same history. An uploa
 uses owned raw bytes and retains native effective name, state, size and digest.
 Missing native digests require exact downloaded-byte verification. Explicit
 GitHub asset redirects receive no repository token, and signed download URLs are
-not durable journal data.
+not durable journal data. A draft's assets are addressed under GitHub's
+`untagged-<hex>` placeholder until publication; the provider accepts that form and
+the tag form, binding each asset by API id and stored name. Repository authority is
+an authenticated exact view: GitHub reports no grants for the Actions installation
+token, so none is required, and write authority is proven by each acknowledged write.
 
 Draft preparation requires complete authenticated release enumeration and an
 exact tag target even when optional observations are disabled. Publish preparation

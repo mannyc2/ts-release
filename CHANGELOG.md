@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### GitHub finalization under Actions
+
+- Admit the Actions installation token's repository view. GitHub includes
+  `permissions` only on authenticated reads and reports every grant as false for
+  that token, so namespace authority no longer requires `push`; write authority
+  is proven by each write's own acknowledgement.
+- Accept GitHub's `untagged-<hex>` download placeholder for a draft's assets. The
+  asset stays bound by its API id and stored name, and the tag form applies once
+  the release is published. Both blocked the first hosted GitHub finalization
+  (Release run 35737797624) after all seven npm publications were acknowledged.
+
 ### npm acknowledgement and host diagnostics
 
 - Accept any 2xx registry reply as npm's acknowledgement of the exact publish.

@@ -56,7 +56,12 @@ const selected = (evidence: OperationEvidence): Parent => {
   const stable = (value: Parent) => {
     const facts = { ...value.facts } as Record<string, unknown>
     if (value.facts instanceof Model.ReleaseFacts) delete facts.draft
-    if (value.facts instanceof Model.AssetFacts) delete facts.sha256
+    // An asset's download URL moves from GitHub's draft placeholder to the tag
+    // form at publication; neither it nor a later-known digest is identity.
+    if (value.facts instanceof Model.AssetFacts) {
+      delete facts.sha256
+      delete facts.downloadUrl
+    }
     return JSON.stringify({ ...value, facts })
   }
   if (!candidates.length || new Set(candidates.map(stable)).size !== 1) invalid("parent-evidence")

@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.4.2
+
+- Admit large npm publication bodies without exhausting V8's regular-expression
+  stack. JSON strings use a character scanner while retaining duplicate-key,
+  safe-integer, Unicode and nesting checks.
+- Align all seven packages and the npm/GitHub starter at 0.4.2; providers require
+  the corrected core at 0.4.2 or newer.
 
 ### GitHub finalization under Actions
 
@@ -14,6 +20,8 @@
   (Release run 35737797624) after all seven npm publications were acknowledged.
 - Exclude an asset's download URL from its parent identity, so a published
   release still binds assets first observed under the draft placeholder.
+
+## Unreleased
 
 ### npm acknowledgement and host diagnostics
 

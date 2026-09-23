@@ -89,9 +89,9 @@ and [installed workflow check](../scripts/check-installed-workflow.ts) demonstra
 preparation, retained input, observation and continuation with real local Git
 destinations. The examples/templates marked historical target the old interface.
 
-The [current npm/GitHub starter](../templates/npm-github/README.md) targets 0.4.1
+The [current npm/GitHub starter](../templates/npm-github/README.md) targets 0.4.2
 and supplies the production application used for this repository's own release.
-Use matching retained 0.4.1 archives while evaluating its unreleased checkout.
+Use matching retained 0.4.2 archives while evaluating its unreleased checkout.
 It includes explicit Token, Local browser authentication and Trusted OIDC modes;
 native provenance runs under Node. Keep the selected mode, Bundle and Plan for
 the lifetime of an unfinished release. Re-attesting creates different operation

@@ -45,8 +45,8 @@ For later publication, load those same bytes and identities rather than rebuild.
 
 The [npm/GitHub starter](templates/npm-github) supplies a complete preparation
 command and application. Its generated JavaScript is the same application used
-to release this repository. The current starter targets the 0.4.1 candidate;
-use that checkout's retained package archives until 0.4.1 is published.
+to release this repository. The current starter targets the 0.4.2 candidate;
+use that checkout's retained package archives until 0.4.2 is published.
 
 ## Inspect progress and recover
 

@@ -1,6 +1,6 @@
 # Release templates
 
-The [npm/GitHub application](npm-github/README.md) is the runnable 0.4.1 starter.
+The [npm/GitHub application](npm-github/README.md) is the runnable 0.4.2 starter.
 Its application JavaScript is generated from the repository's production
 self-release source; CI installs the retained packages and exercises that code.
 

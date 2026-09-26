@@ -11,11 +11,10 @@ test("Homebrew has all four exact owned cells; Scoop has native x64/arm64 select
   const ruby = new TextDecoder().decode(
     await Effect.runPromise(Homebrew.render(f.formula, f.bundle)),
   )
-  for (const [cell, download] of Object.entries(f.formula.archives)) {
+  for (const download of Object.values(f.formula.archives)) {
     expect(ruby).toContain(download.url)
     expect(ruby).toContain(download.file.content.sha256)
     expect(ruby.split(download.url)).toHaveLength(2)
-    expect(cell).toMatch(/^(darwin|linux)-(x64|arm64)$/u)
   }
   const json: unknown = JSON.parse(
     new TextDecoder().decode(await Effect.runPromise(Scoop.render(f.manifest, f.bundle))),

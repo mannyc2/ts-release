@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import evals from "../../../apps/ts-release-agents/evals/cases.json" with { type: "json" }
-import { beforeAll, expect, test } from "bun:test"
+import { expect, test } from "bun:test"
 import { createHash } from "node:crypto"
 import { chmod, cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
@@ -46,16 +46,6 @@ const sha256 = (bytes: Uint8Array | string) => createHash("sha256").update(bytes
 const runNode = <A, E>(
   effect: Effect.Effect<A, E, Layer.Success<typeof NodeServices.layer>>,
 ): Promise<A> => Effect.runPromise(effect.pipe(Effect.provide(NodeServices.layer)))
-
-beforeAll(async () => {
-  const child = Bun.spawn([process.execPath, "run", "build:delivery"], {
-    cwd: root,
-    stdout: "pipe",
-    stderr: "pipe",
-  })
-  const [exit, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
-  expect(exit, stderr).toBe(0)
-}, 60_000)
 
 const command = async (cwd: string, argv: string[], input?: Uint8Array) => {
   const child = Bun.spawn(argv, {

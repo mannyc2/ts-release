@@ -59,22 +59,6 @@ test("Git catalog and journal sanitize failing, thrown and defective credential 
   }
 })
 
-test("public Node and Bun Git host/journal entries execute native SHA1/SHA256 release and reopened-history consumers", async () => {
-  for (const executable of [process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node", process.execPath]) {
-    const child = Bun.spawn(
-      [executable, fileURLToPath(new URL("./git-native-consumer.mjs", import.meta.url)), nativeGit],
-      { stdout: "pipe", stderr: "pipe" },
-    )
-    const [stdout, stderr, code] = await Promise.all([
-      new Response(child.stdout).text(),
-      new Response(child.stderr).text(),
-      child.exited,
-    ])
-    expect({ code, stderr }).toEqual({ code: 0, stderr: "" })
-    expect(JSON.parse(stdout)).toMatchObject({ assertions: 15 })
-  }
-}, 30000)
-
 test("native Git subprocess deadline and interruption close the whole process group on Node and Bun", async () => {
   const node = process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node"
   for (const executable of [node, process.execPath]) {

@@ -8,7 +8,7 @@ the complete native, hosted and release qualification matrix.
 | Profile | Existing command and stages | Prerequisites and evidence |
 | --- | --- | --- |
 | Static | `bun run check`: compiler-patch guard, formatting, build, strict lint, root/portable/Node types, imports and package entries. | Frozen installation with lifecycle scripts. Raw command exit and diagnostics. |
-| Behavior | `bun run test`: the maintained Bun suite, selecting Node for native workers. | Relevant local Git, Python and catalog fixtures. Select a file with `bun test <path>` when a focused proof suffices. |
+| Behavior | `bun run test`: builds shared delivery outputs once, then runs the maintained Bun suite, selecting Node for native workers. | Relevant local Git, Python and catalog fixtures. For direct focused `bun test <path>` calls, first run `bun run build:delivery` after source/dependency changes. Tests themselves do not rebuild shared outputs. |
 | Portable runtime | `bun run check:portable-runtime`: provenance runtime, behavior, packed core, packed catalog/transports, packed Action and installed workflow, in that order. | Supported Node, Python/catalog fixtures and package-install access. Receipts in `.release/checks` plus printed temporary directories. This excludes retained distribution and the separate producer/Sigstore profiles below. |
 | Static plus portable runtime | `bun run check:portable`. | Both profiles above, without a second static pass. A stopped aggregate is incomplete even if later stages are run separately. |
 | Retained distribution | `bun run release:prepare <new-directory>`, then `bun scripts/check-distribution.ts <directory>`; CI also selects `--hosted`. | Clean committed source and retained exact seven-package candidate. Installs those archives and exercises production application/Action recovery against local TLS peers. Candidate identities and the script's acceptance records bind the proof. |
@@ -20,6 +20,12 @@ The individual packed provider commands remain available for changes affecting
 one boundary. Their script records the selected providers and prerequisites;
 passing one selection does not qualify all others. Avoid repeating successful
 checks unless their inputs changed or a remaining concern justifies it.
+
+Native raw-header, TLS and public Git consumers, and the Action fresh-runner
+happy path, are owned by the packed catalog/transports and packed Action stages.
+A behavior-only run does not execute those installed-consumer checks. Source
+tests retain distinct malformed-input, credential, pending-handshake, process
+group and signal failures; the portable runtime profile includes both owners.
 
 `build:delivery` builds packages and the checked-in Node Action launcher.
 It also generates the npm/GitHub starter from the production release application.

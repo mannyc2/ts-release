@@ -1,38 +1,15 @@
-import assert from "node:assert/strict"
-import { Schema } from "effect"
-import { FinalizedReport } from "@mannyc1/ts-release/node"
-import { beforeAll, expect, test } from "bun:test"
+import { expect, test } from "bun:test"
 import { mkdtemp, readFile, symlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
-import { pathToFileURL } from "node:url"
 
 const root = resolve(import.meta.dir, "../../..")
 const node =
   process.env.TS_RELEASE_HTTP_PEER_NODE ??
   "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node"
-const git = Bun.which("git")
-assert.ok(git, "Action tests require Git")
 const launcher = join(root, "apps/action/dist/launcher.cjs")
 const application = join(import.meta.dir, "action-application.mjs")
 
-beforeAll(async () => {
-  const child = Bun.spawn([process.execPath, "run", "build:delivery"], {
-    cwd: root,
-    stdout: "pipe",
-    stderr: "pipe",
-  })
-  const [code, output] = await Promise.all([child.exited, new Response(child.stderr).text()])
-  expect(code, output).toBe(0)
-}, 60_000)
-
-const bare = async (directory: string) => {
-  const child = Bun.spawn([git, "init", "--bare", "--initial-branch=main", directory], {
-    stdout: "pipe",
-    stderr: "pipe",
-  })
-  expect(await child.exited, await new Response(child.stderr).text()).toBe(0)
-}
 const spawnAction = async (
   work: string,
   input: Record<string, unknown>,
@@ -62,34 +39,6 @@ const spawnAction = async (
   ])
   return { exit, stdout, stderr, output: await readFile(output, "utf8") }
 }
-
-test("packed node Action uses one explicit shared journal and survives a fresh runner", async () => {
-  const work = await mkdtemp(join(tmpdir(), "ts-release-action-"))
-  const remote = join(work, "journal.git")
-  const sendLog = join(work, "sends")
-  await bare(remote)
-  const base = {
-    authorize: true,
-    hostile: true,
-    gitExecutable: git,
-    journalRemote: pathToFileURL(remote).href,
-    sendLog,
-  }
-  const first = await spawnAction(work, { ...base, cacheDirectory: join(work, "cache-a") })
-  expect({ exit: first.exit, stderr: first.stderr }).toEqual({ exit: 0, stderr: "" })
-  const report = Schema.decodeSync(Schema.fromJsonString(FinalizedReport))(first.stdout)
-  expect(report.operations.map((row: { status: string }) => row.status)).toEqual(["Satisfied"])
-  expect(report.journal.revision).toBe(2)
-  expect(first.output).toBe(
-    `plan-id=${report.plan.planId}\njournal-revision=${report.journal.revision}\n`,
-  )
-
-  const second = await spawnAction(work, { ...base, cacheDirectory: join(work, "cache-b") })
-  expect({ exit: second.exit, stderr: second.stderr }).toEqual({ exit: 0, stderr: "" })
-  expect(JSON.parse(second.stdout)).toEqual(report)
-  expect(second.output).toBe(first.output)
-  expect((await readFile(sendLog, "utf8")).trim().split("\n")).toHaveLength(1)
-}, 30_000)
 
 test("Action path and failure boundaries fail closed without private diagnostics", async () => {
   const work = await mkdtemp(join(tmpdir(), "ts-release-action-failure-"))

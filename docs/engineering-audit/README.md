@@ -127,3 +127,26 @@ on `codex/effect-patterns-refactor`. Its exact remote SHA was verified. It conta
 the previous refactor/reports and the initial requirements draft, with an explicit
 `CHECKPOINT.md`; it is not an approved standards implementation. Later research
 documents were then local. This directory now preserves that research alongside the later implementation milestone; [current implementation status](implementation-status.md) owns its qualification and remaining work.
+
+## Current decisions and remaining implementation
+
+The [requirement status ledger](requirements-status.md) maps R01–R36 to current
+evidence and specific remaining owners. Use it with the implementation record;
+the historical gap inventory above is not a current completion report.
+
+- [Provider error-policy prerequisites](provider-error-policy-prerequisites.md)
+  inventories native/parser and successful-fallback owners before tightening the
+  shared provider helpers, with existing codes and proof gaps.
+- [Native lifetime prerequisites](native-lifetime-prerequisites.md) traces the
+  actual application file and Sigstore/TUF work that interruption currently
+  detaches, and defines bounded repairs and necessary proof without claiming a
+  reproduced leak.
+- [Core/host test retention](test-retention-core.md) and
+  [provider/artifact test retention](test-retention-providers.md) review all 58
+  current test-file bodies, identify actual stronger proof, and state unread
+  supporting-fixture and host limits. They support selective consolidation,
+  not removal based on test counts.
+
+Registry visibility, repaired-executor recovery and whole-release request
+preflight remain the leading adopter product increments. Their motivating
+incidents and acceptance criteria remain in [the incident mapping](incident-to-plan.md).

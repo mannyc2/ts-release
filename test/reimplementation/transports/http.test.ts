@@ -3,9 +3,6 @@ import { createServer } from "node:http"
 import { once } from "node:events"
 import { fork } from "node:child_process"
 import { fileURLToPath } from "node:url"
-import { mkdtempSync, rmSync } from "node:fs"
-import { tmpdir } from "node:os"
-import { join } from "node:path"
 import { Cause, Effect, Exit, Schema } from "effect"
 import {
   Host,
@@ -415,67 +412,6 @@ test("native observation stays bounded and does not follow redirects; exchange r
     expect(server.writes).toHaveLength(1)
   } finally {
     await server.close()
-  }
-})
-
-test("Node and Bun retain complete raw headers and reject duplicate singleton evidence", async () => {
-  for (const executable of [process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node", process.execPath]) {
-    const child = Bun.spawn(
-      [executable, fileURLToPath(new URL("./http-wire-consumer.mjs", import.meta.url))],
-      { stdout: "pipe", stderr: "pipe" },
-    )
-    const [stdout, stderr, code] = await Promise.all([
-      new Response(child.stdout).text(),
-      new Response(child.stderr).text(),
-      child.exited,
-    ])
-    expect({ code, stderr }).toEqual({ code: 0, stderr: "" })
-    expect(JSON.parse(stdout)).toMatchObject({ assertions: 15 })
-  }
-})
-
-test("native TLS sends exact ephemeral credentials and rejects a certificate hostname mismatch on both hosts", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "ts-release-native-tls-")),
-    key = join(directory, "key.pem"),
-    cert = join(directory, "cert.pem")
-  try {
-    const generated = Bun.spawnSync(
-      [
-        "openssl",
-        "req",
-        "-x509",
-        "-newkey",
-        "rsa:2048",
-        "-nodes",
-        "-keyout",
-        key,
-        "-out",
-        cert,
-        "-days",
-        "1",
-        "-subj",
-        "/CN=127.0.0.1",
-        "-addext",
-        "subjectAltName=IP:127.0.0.1",
-      ],
-      { stdout: "pipe", stderr: "pipe" },
-    )
-    expect(generated.exitCode).toBe(0)
-    for (const executable of [process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node", process.execPath]) {
-      const child = Bun.spawn(
-        [executable, fileURLToPath(new URL("./http-tls-consumer.mjs", import.meta.url)), key, cert],
-        { env: { ...process.env, NODE_EXTRA_CA_CERTS: cert }, stdout: "pipe", stderr: "pipe" },
-      )
-      const [stdout, stderr, code] = await Promise.all([
-        new Response(child.stdout).text(),
-        new Response(child.stderr).text(),
-        child.exited,
-      ])
-      expect({ code, stderr }).toEqual({ code: 0, stderr: "" })
-      expect(JSON.parse(stdout)).toMatchObject({ assertions: 12, writes: 3 })
-    }
-  } finally {
-    rmSync(directory, { recursive: true, force: true })
   }
 })
 

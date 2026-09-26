@@ -200,8 +200,71 @@ passed. No uninterrupted aggregate pass is claimed. Runtime source stayed frozen
 through qualification and Effect/platform remain rc.115.
 
 Provider/application-local broad helpers, self-release and Sigstore lifetime
-joining, HTTP/SQLite cleanup classification, complete test-retention review and
-final W7 closure remain open. R32–R34 product improvements remain separate work.
+joining, HTTP/SQLite cleanup classification and final W7 closure remain open.
+The subsequent retention review below resolves the whole-test-file review item
+within its stated supporting-fixture limits. R32–R34 product improvements remain
+separate work.
 These local commits have not been pushed to the new implementation branch; the
 earlier checkpoint approval does not satisfy the automatic review's direct
 approval requirement for that destination.
+
+## Test retention and next-owner planning
+
+Branch `codex/test-retention` starts at core error-policy commit
+`f2266bd7065cb1378a1fbf95cc0172c7f1b389e4`. Independent reviewers read all 58
+test-file bodies and compared materially distinct scenarios with their native,
+packed and installed owners. The [core review](test-retention-core.md) and
+[provider review](test-retention-providers.md) retain explicit coverage limits:
+not every supporting server/worker implementation was re-audited, and no source
+test can certify unrun native hosts or live providers.
+
+Nine repeated test executions are removed: the Action successful fresh-runner
+case, public Git/raw HTTP/TLS consumer wrappers, one GitHub shared-transport
+preparation case, and four M3 native crash cells. Existing packed Action/catalog
+stages provide stronger installation proof for the first five; M3 still runs in
+the semantic matrices, while native crash coverage retains independent M1/M2,
+both cache settings and both fault windows. One fixture-key assertion and one
+positive private-verifier assertion are removed; retained renderer output and
+public journal re-entry assert the actual behavior. No fixture or meaningful
+failure case was discarded, and no replacement test was added.
+
+The existing `scripts/test.ts` now owns one delivery build before loading tests.
+Both output-mutating beforeAll hooks are removed. The runner stops on a build
+failure and selects the repository root for generation and test execution.
+Direct focused `bun test` calls require a current `build:delivery`, as documented
+in [the check profiles](../../scripts/README.md). Behavior-only runs no longer
+repeat the installed native consumers; the portable runtime profile still runs
+their packed owners.
+
+One cross-owner test import remains an explicit R26/R27 exception:
+`self-release/credentials.test.js` obtains private npm scope helpers. Its one-byte
+provenance fixture cannot simply pass real public provider preparation. The
+review records a bounded repair using the existing npm structural-provenance
+fixture with public `createProvenance` and provider preparation, without adding
+test APIs or pretending cryptographic verification occurred. That fixture work
+is separate from these deletions. Tiny partial npm grammar overlap is retained
+with its unique lexical/prototype controls; no new parser suite is warranted.
+
+Next implementation is specified in the
+[provider error-policy prerequisites](provider-error-policy-prerequisites.md)
+and [native lifetime prerequisites](native-lifetime-prerequisites.md). The
+[R01–R36 status ledger](requirements-status.md) distinguishes qualified mechanisms,
+partial semantic adoption and still-planned product improvements.
+
+Final static checks passed. The updated `bun run test` generated delivery once
+before loading the suite, then passed **349 tests, 0 failures, 3,701 assertions
+across 58 files**. Logs are `/tmp/ts-release-test-retention-check-final.log` and
+`/tmp/ts-release-test-retention-behavior.log`; the initial static run caught an
+orphaned GitHub transport import, which was removed without suppressions.
+The ten changed test/runner/profile inputs are recorded in
+`/tmp/ts-release-test-retention-inputs.json`, SHA-256
+`75b9b8deced286a264c2c3efb851fc35bcc16b95ba37f50ec80216793e6c3f47`.
+
+Production source, dependency locks, delivery generator and packed consumer
+inputs are unchanged from qualified `f2266bd`; the successful packed catalog,
+Action and installed-workflow evidence from that increment remains applicable.
+Those costly unchanged stages were not repeated just to remove source duplicates.
+The full behavior command was repeated because its build ownership and selected
+test cases changed. These are correctness results, not a speed benchmark or a
+new all-host/full-distribution qualification claim. This increment adds no
+production code, public API, test case, dependency or publication authority.

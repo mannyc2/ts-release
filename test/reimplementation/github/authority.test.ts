@@ -4,37 +4,12 @@ import { Schema, Effect, Redacted } from "effect"
 import { makeRequest, type ProviderContext } from "@mannyc1/ts-release"
 import * as GitHub from "../../../packages/github/src/index.js"
 import { bindScope } from "../../../packages/github/src/Binding.js"
-import { makeHttpTransport } from "@mannyc1/ts-release/node"
 import { nativeRequest } from "../../../packages/github/src/Wire.js"
 import { repository, fixture, response, releaseDocument, commit, tagger } from "./fixtures.js"
 
 const empty = (operation: ProviderContext["own"]["operation"]): ProviderContext => ({
   own: { operation, receipts: [], observations: [] },
   dependencies: [],
-})
-test("GitHub requests prepare through the actual shared HTTP boundary with transport-owned framing", async () => {
-  const f = await fixture(0),
-    request = await Effect.runPromise(makeRequest(nativeRequest(bindScope(f.tag, empty(f.tag)))))
-  let credentials = 0
-  const transport = makeHttpTransport({
-    providers: f.providers,
-    credentials: () =>
-      Effect.sync(() => {
-        credentials++
-        return {}
-      }),
-    timeoutMilliseconds: 1000,
-    maximumResponseBytes: 1024,
-  })
-  expect(
-    typeof (await Effect.runPromise(
-      (transport.prepare ?? fail("Missing fixture transport.prepare")).call(transport, request),
-    )),
-  ).toBe("function")
-  expect(credentials).toBe(1)
-  expect(
-    request.facts.headers.some(([name]) => /^(content-length|transfer-encoding)$/u.test(name)),
-  ).toBe(false)
 })
 test("draft creation cannot accept an already-public native acknowledgement", async () => {
   const f = await fixture(0),

@@ -9,8 +9,9 @@ import { canonical, createOperation, createPlan } from "./kernel.js"
 import { providerFor } from "./fixtures.js"
 
 const worker = resolve(import.meta.dir, "process-runner.ts")
-import { evaluatorNames } from "./fixtures.js"
-for (const candidate of evaluatorNames)
+// M3 only memoizes M1; retain its semantic matrix without repeating native
+// crash windows in fresh workers whose caches cannot survive the process.
+for (const candidate of ["M1", "M2"] as const)
   for (const cache of [false, true])
     for (const fault of ["after-append", "after-send"] as const) {
       test(`${candidate}${cache ? "+cache" : ""}: fresh OS process resumes ${fault} from SQLite after deleting original workspace`, async () => {

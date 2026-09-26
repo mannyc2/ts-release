@@ -166,7 +166,6 @@ test("native returned parent IDs survive a fresh runner and are the only declare
   )
   if (child === undefined) throw new Error("Fixture requires the child dispatch")
   expect(child.body._tag === "DispatchStarted" && child.body.request.scope).toBe('"returned:1"')
-  expect(() => verifyNativeEvidence(f.plan, snapshot.events, [f.provider])).not.toThrow()
   await runWithHost(f.host, Release.runRelease({ plan: f.plan, authorize: true, observe: false }))
   expect(f.calls.sends).toBe(2)
 })

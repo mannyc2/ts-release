@@ -1,4 +1,4 @@
-import { fail } from "node:assert"
+import { fail, throws } from "node:assert"
 import { expect, test } from "bun:test"
 import { gzipSync, gunzipSync } from "node:zlib"
 import { Effect, Schema } from "effect"
@@ -29,8 +29,16 @@ test("npm reads the actual Bun tarball package manifest and rejects changed nati
   })
   const tar = new Uint8Array(gunzipSync(bytes))
   tar[1] = (tar[1] ?? fail("Missing fixture tar[1]")) ^ 1
-  expect(() => readManifest(gzipSync(tar))).toThrow("checksum")
-  expect(() => readManifest(bytes.subarray(0, bytes.length - 12))).toThrow()
+  throws(() => readManifest(gzipSync(tar)), {
+    _tag: "ReleaseError",
+    code: "npm-tar-checksum",
+    message: "npm tar checksum could not be admitted",
+  })
+  throws(() => readManifest(bytes.subarray(0, bytes.length - 12)), {
+    _tag: "ReleaseError",
+    code: "npm-data",
+    message: "npm data could not be admitted",
+  })
 })
 
 test("npm native JSON rejects duplicate keys, ambiguous numbers and trailing input", () => {

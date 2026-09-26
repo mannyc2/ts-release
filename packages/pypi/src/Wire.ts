@@ -1,8 +1,8 @@
-import { RequestFacts, type PreparedRequest } from "@mannyc1/ts-release"
+import type { RequestFacts, PreparedRequest } from "@mannyc1/ts-release"
 import { sameData } from "@mannyc1/ts-release/http"
 import type { UploadIntent } from "./Model.js"
 import { inspect } from "./Metadata.js"
-import { digest, invalid, matches, own, readScope, scopeFor, MAX_BYTES } from "./Native.js"
+import { digest, invalid, matches, ownRequest, readScope, scopeFor, MAX_BYTES } from "./Native.js"
 
 export const multipart = (intent: UploadIntent, bytes: Uint8Array) => {
   if (
@@ -76,8 +76,7 @@ export const ownsFacts = (facts: RequestFacts) => {
 }
 export const ownsRequest = (request: PreparedRequest) => {
   return matches(() => {
-    const facts = own(RequestFacts, request.facts),
-      bytes = new Uint8Array(request.body)
+    const { facts, body: bytes } = ownRequest(request)
     if (
       bytes.length > MAX_BYTES + 2 * 1024 * 1024 ||
       !ownsFacts(facts) ||

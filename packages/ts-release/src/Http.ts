@@ -50,10 +50,17 @@ export const makeDataBoundary = (prefix: string, subject: string) => {
       invalid("operation-definition")
     return decodeOwned(codec, operation.intent)
   }
-  const ownRequest = (request: PreparedRequest): PreparedRequest => ({
-    facts: decodeOwned(RequestFacts, request.facts),
-    body: new Uint8Array(request.body),
-  })
+  const ownRequest = (request: PreparedRequest): PreparedRequest => {
+    const facts = decodeOwned(RequestFacts, request.facts),
+      input = request.body
+    let body: Uint8Array
+    try {
+      body = new Uint8Array(input)
+    } catch {
+      return invalid("data")
+    }
+    return { facts, body }
+  }
   return {
     failure,
     invalid,

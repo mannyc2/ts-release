@@ -503,3 +503,25 @@ checked the workflow and contributor guide successfully. No new test/configurati
 mirror, full profile, hosted workflow, signing or publication was run. Provider
 and self-release agents are editing separate owners; this local CI commit stages
 only the workflow, contributor guide and this status record.
+
+## Provider request and archive prerequisites
+
+Following local CI commit `0354d1c7caba8e283b2f5162e2c1f1f377e718de`, the first
+compatible provider primitives now classify their own expected native failures:
+request byte cloning, tar UTF-8, npm/PyPI gzip and PyPI ZIP UTF-8/inflate.
+PyPI request matching reuses existing owned-request capture. Existing provider
+codes remain; direct public tar users now receive the supplied callback's
+`encoding` reason instead of an uncaught decoder exception. Shared provider
+`attempt`/`admit`/`matches` are deliberately still broad while other callers are
+prepared. [Owner inventory and evidence](provider-native-prerequisites.md).
+
+The strengthened existing gzip assertion genuinely failed before these edits
+at the private native owner and passed afterward. With frozen inputs, full
+static checks and the rebuilt npm/Warehouse composition passed, alongside the
+separate candidate-write proof: 11 tests/312 assertions/4 files. Exact limits
+and the ignored nonexistent preparation selector are recorded in the owner
+note. Installed-provider qualification remains assigned to the coordinated
+strict-boundary slice; no packed or live provider success is inferred here.
+Candidate-write source/generated/proof changes are present but excluded from
+this bounded provider commit. All work remains local, with publication approval
+still pending.

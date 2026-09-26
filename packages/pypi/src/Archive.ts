@@ -2,7 +2,14 @@ import { gunzipSync, inflateRawSync, crc32 } from "node:zlib"
 import { readTarBytes, registerArchivePath } from "@mannyc1/ts-release/bundle"
 import { invalid, MAX_BYTES } from "./Native.js"
 
-const text = (bytes: Uint8Array) => new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+const text = (bytes: Uint8Array) => {
+  const decoder = new TextDecoder("utf-8", { fatal: true })
+  try {
+    return decoder.decode(bytes)
+  } catch {
+    return invalid("data")
+  }
+}
 const register = (seen: Set<string>, name: string) => {
   registerArchivePath(seen, name, name.endsWith("/"), () => invalid("archive-path"))
 }
@@ -69,10 +76,14 @@ export const readZip = (input: Uint8Array) => {
         bytes.readUInt32LE(local + 22) !== size)
     )
       invalid("zip-file-facts")
-    const body =
-      method === 0
-        ? bytes.subarray(start, finish)
-        : inflateRawSync(bytes.subarray(start, finish), { maxOutputLength: Math.max(size, 1) })
+    let body = bytes.subarray(start, finish)
+    if (method !== 0) {
+      try {
+        body = inflateRawSync(body, { maxOutputLength: Math.max(size, 1) })
+      } catch {
+        return invalid("data")
+      }
+    }
     if (body.length !== size || crc32(body) !== bytes.readUInt32LE(cursor + 16))
       invalid("zip-file-crc")
     if (name.endsWith("/")) {
@@ -83,12 +94,16 @@ export const readZip = (input: Uint8Array) => {
   if (cursor !== end) invalid("zip-directory-size")
   return files
 }
-export const readTar = (input: Uint8Array) =>
-  new Map(
-    readTarBytes(
-      gunzipSync(input, { maxOutputLength: MAX_BYTES }),
-      MAX_BYTES,
-      new Set(["mtime", "atime", "ctime"]),
-      (reason) => invalid(`tar-${reason}`),
+export const readTar = (input: Uint8Array) => {
+  let tar: Uint8Array
+  try {
+    tar = gunzipSync(input, { maxOutputLength: MAX_BYTES })
+  } catch {
+    return invalid("data")
+  }
+  return new Map(
+    readTarBytes(tar, MAX_BYTES, new Set(["mtime", "atime", "ctime"]), (reason) =>
+      invalid(reason === "encoding" ? "data" : `tar-${reason}`),
     ).flatMap((entry) => (entry.kind === "file" ? [[entry.path, entry.body] as const] : [])),
   )
+}

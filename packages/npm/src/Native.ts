@@ -14,11 +14,14 @@ export const encode = (input: unknown) => new TextEncoder().encode(JSON.stringif
 export { decodeJson as parseJson } from "@mannyc1/ts-release/http"
 /** Native package metadata is extracted from the exact bounded owned tarball. */
 export const readManifest = (bytes: Uint8Array): Record<string, unknown> => {
-  const entries = readTarBytes(
-    gunzipSync(bytes, { maxOutputLength: 128 * 1024 * 1024 }),
-    128 * 1024 * 1024,
-    new Set(),
-    (reason) => invalid(`tar-${reason}`),
+  let tar: Uint8Array
+  try {
+    tar = gunzipSync(bytes, { maxOutputLength: 128 * 1024 * 1024 })
+  } catch {
+    return invalid("data")
+  }
+  const entries = readTarBytes(tar, 128 * 1024 * 1024, new Set(), (reason) =>
+    invalid(reason === "encoding" ? "data" : `tar-${reason}`),
   )
   if (entries.some((entry) => entry.path !== "package" && !entry.path.startsWith("package/")))
     invalid("tar-path")

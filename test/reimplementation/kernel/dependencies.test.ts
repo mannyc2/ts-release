@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { Effect, Schema } from "effect"
+import { Cause, Effect, Exit, Result, Schema } from "effect"
 import * as Release from "../../../packages/ts-release/src/index.js"
 import { verifyNativeEvidence } from "../../../packages/ts-release/src/Journal.js"
 import { MemoryJournal, runWithHost } from "./fixtures.js"
@@ -246,6 +246,27 @@ test("complete-graph validation cannot silently return an unexecuted Effect", as
   expect(f.calls).toEqual({ reads: 0, credentials: 0, sends: 0, observations: 0 })
 })
 
+// An intentional refusal does not exercise a callback bug being changed into
+// ordinary invalid-data. Preserve the original defect before external work.
+test("complete-graph validator defects remain defects before external actions", async () => {
+  const f = await fixture()
+  const defect = new TypeError("Provider validator implementation failed")
+  Object.assign(f.provider, {
+    validatePlan: () => {
+      throw defect
+    },
+  })
+  const exit = await runWithHost(
+    f.host,
+    Effect.exit(Release.runRelease({ plan: f.plan, authorize: true })),
+  )
+  expect(f.calls).toEqual({ reads: 0, credentials: 0, sends: 0, observations: 0 })
+  expect(f.store.journals.size).toBe(0)
+  if (!Exit.isFailure(exit)) throw new Error("Expected provider validator defect")
+  const found = Cause.findDie(exit.cause)
+  expect(Result.isSuccess(found) && found.success.defect).toBe(defect)
+})
+
 test("a valid parent change during credential preparation prevents a stale child CAS and send", async () => {
   const f = await fixture()
   const host: Release.HostShape = {
@@ -286,19 +307,30 @@ test("a valid parent change during credential preparation prevents a stale child
   expect(() => verifyNativeEvidence(f.plan, snapshot.events, [f.provider])).not.toThrow()
 })
 
-test("public loadPlan captures descriptor methods and receivers before asynchronous hashing", async () => {
+test("public loadPlan captures descriptor receivers and preserves constructor-independent refusals", async () => {
   const f = await fixture()
-  class Descriptor {
-    readonly definitionId = f.provider.definitionId
-    readonly intentVersion = "1"
-    readonly intentCodec = Intent
-    #message = "Original captured validator"
-    validatePlan() {
-      throw new Release.ReleaseError({ code: "original-validator", message: this.#message })
+  // A separately defined domain error shares the stable contract, not the core
+  // constructor. This covers foreign refusal classification without a new host.
+  class ForeignReleaseError extends Schema.TaggedError<ForeignReleaseError>()("ReleaseError", {
+    code: Schema.String,
+    message: Schema.String,
+  }) {}
+  for (const ErrorType of [Release.ReleaseError, ForeignReleaseError]) {
+    class Descriptor {
+      readonly definitionId = f.provider.definitionId
+      readonly intentVersion = "1"
+      readonly intentCodec = Intent
+      #message = "Original captured validator"
+      validatePlan() {
+        throw new ErrorType({ code: "original-validator", message: this.#message })
+      }
     }
+    const descriptor = new Descriptor()
+    const loaded = Effect.runPromise(Release.loadPlan(f.plan, [descriptor]))
+    queueMicrotask(() => Object.assign(descriptor, { validatePlan: () => undefined }))
+    expect(loaded).rejects.toMatchObject({
+      code: "original-validator",
+      message: "Original captured validator",
+    })
   }
-  const descriptor = new Descriptor()
-  const loaded = Effect.runPromise(Release.loadPlan(f.plan, [descriptor]))
-  queueMicrotask(() => Object.assign(descriptor, { validatePlan: () => undefined }))
-  expect(loaded).rejects.toThrow("Original captured validator")
 })

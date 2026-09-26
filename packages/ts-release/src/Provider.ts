@@ -40,7 +40,9 @@ export interface ProviderDefinition {
   readonly definitionId: string
   readonly intentVersion: string
   readonly intentCodec: Schema.Codec<unknown, unknown>
-  /** Pure complete-graph admission, before storage, reads, credentials or sends. */
+  /** Pure synchronous complete-graph admission, before storage, reads, credentials
+   * or sends. Throw ReleaseError for a domain refusal; unexpected exceptions are
+   * defects. A schema refusal becomes the safe invalid-data failure. */
   readonly validatePlan?: (operations: ReadonlyArray<Operation>) => void
   /** Pure binding to already-validated declared dependency evidence. No dispatch permission. */
   readonly requestCorresponds?: (

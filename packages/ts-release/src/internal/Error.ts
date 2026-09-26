@@ -26,9 +26,7 @@ const bounded = (text: string): string =>
     .replace(/[\u0000-\u001f\u007f-\u009f]+/gu, " ")
     .trim()
     .slice(0, 512)
-const isReleaseErrorLike = Schema.is(
-  Schema.TaggedStruct("ReleaseError", { code: Schema.String, message: Schema.String }),
-)
+export const isReleaseErrorLike = Schema.is(Schema.Struct(ReleaseError.fields))
 /** One bounded line for host diagnostics. A ReleaseError's code and message are
  * the typed failure contract and are printed. Any other value is named only, so
  * defect text, paths and native output never reach process logs. */

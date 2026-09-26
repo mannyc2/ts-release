@@ -34,6 +34,11 @@
 - Join issued native content operations before interruption completes. File
   handles close before immutable installation, and owned temporary files are
   removed on failure or interruption. Cleanup failures remain observable.
+- Preserve defects thrown by complete-plan provider validators. Intentional
+  `ReleaseError` refusals retain their fields across package constructors; schema
+  refusals retain safe admission diagnostics before any external operation.
+- Bundle the npm/GitHub starter input helper's workspace dependencies, so its
+  documented input command runs from an isolated installation.
 - Treat malformed GitHub tag object types as inconclusive. OpenAI skill discovery
   no longer includes an undefined skill name for a root-level `SKILL.md`.
 - Enforce a patched Effect compiler, type-aware lint, explicit host compiler

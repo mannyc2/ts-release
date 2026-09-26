@@ -117,3 +117,27 @@ Bundle/adoption checks, packed core consumers and installed CLI/Action recovery
 also pass. See [the increment record](content-store-lifecycle.md) for exact proof
 selection, source hashes and limits. Other W3–W7 work remains as listed above;
 this increment does not establish completion of the entire standards migration.
+
+## Provider validation and starter closure
+
+Branch `codex/provider-validation-defects` continues from content lifecycle
+commit `07eff4faba15483d5d80879c493c3233733344c5`. A separate starter fix closes
+a reproduced missing-module failure in the documented input command. Its
+workspace schemas are bundled from their existing source; package dependencies
+resolve from the adopter's installation. The actual generated command passed
+in an isolated installed consumer without publication authorization; see
+[starter dependency closure](starter-dependency-closure.md).
+
+Complete-plan provider validation now preserves unexpected thrown values as
+defects, local domain-error identity, foreign tagged domain-error fields and
+safe schema refusals. The change is confined to the captured synchronous
+callback on an admitted Plan. The [slice record](provider-validation-defects.md)
+includes failing evidence, a corrected Cause-inspection assertion, subsequent
+baseline control and final checks. It does not change the global admission
+helpers or the documented credential/legacy Promise projections.
+
+Final static checks, nine dependency tests, 45 existing GitHub/application/CLI
+tests and packed Bun/npm core qualification passed. The separate
+[closure review](standards-closure-review.md) identifies justified native
+exceptions and concrete remaining test/lifecycle/profile work; milestone one
+and these increments are still not completion of all 36 requirements.

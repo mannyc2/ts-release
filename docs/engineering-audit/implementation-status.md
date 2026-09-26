@@ -88,9 +88,10 @@ cycle list alone was incomplete evidence; the current checker corrects that.
 - **W3:** shared `attempt`/`matches` still normalize unexpected exceptions. Repair
   them by caller-visible slice while retaining privacy and Promise compatibility.
   Passing static diagnostics does not establish this semantic error policy.
-- **W4:** native ContentStore work still needs the smallest acquisition/write
-  interruption proof and an implementation that joins issued work before cleanup.
-  The checkpoint's broad instrumentation matrix was deliberately not copied.
+- **W4:** the ContentStore acquisition/write interruption repair is completed in
+  the subsequent increment below. The checkpoint's broad instrumentation matrix
+  was deliberately not copied. Other capability-inventory decisions and native
+  adapter/platform comparisons still require their own qualification.
 - **W2/W5:** finish the whole-suite retention/ownership review and remaining
   public declaration/example completeness work. Static import analysis does not
   prove arbitrary external initialization pure. Untyped installed JS fixtures
@@ -105,3 +106,14 @@ cycle list alone was incomplete evidence; the current checker corrects that.
 Research markdown and inventories are review artifacts in the repository. Package
 file allowlists exclude them from published archives. Unrelated repository names
 from the discovery census are omitted; the count and relevant findings remain.
+
+## Subsequent content lifecycle increment
+
+Branch `codex/content-store-lifecycle` starts at the completed local milestone
+`32fe7cdb4335d0ec269859772ced519367a292b7`. It closes the specific ContentStore
+item above: two native settlement races failed on that baseline and pass with
+per-operation joining, bracketed handles and guarded temporary cleanup. Existing
+Bundle/adoption checks, packed core consumers and installed CLI/Action recovery
+also pass. See [the increment record](content-store-lifecycle.md) for exact proof
+selection, source hashes and limits. Other W3–W7 work remains as listed above;
+this increment does not establish completion of the entire standards migration.

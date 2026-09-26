@@ -18,6 +18,12 @@ installed providers. `fileContentOwner` supplies local content; `openGitJournal`
 supplies a durable shared Git journal with a disposable local cache. The Bun
 subpath also supplies `openSqliteJournal` for a retained local database.
 
+`fileContentOwner` owns each file handle and temporary copy until its operation
+finishes, including interruption. Cancellation waits for an already-issued native
+file operation before closing its handle and removing its temporary copy; a
+native operation that never settles can therefore delay cancellation. An
+interrupted copy does not continue installing content in detached work.
+
 Provide services/layers at the application boundary. Credentials stay in the host;
 never put credential values in durable operation intents. Apple preparation runs
 its native operations through the `AppleTools` service from the `apple` subpath;

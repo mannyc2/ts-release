@@ -31,6 +31,9 @@
   its 0.4.2 factory-throw diagnostics.
 - Preserve HTTP credential interruption before dispatch. Secret-bearing errors
   and defects remain redacted, including mixed interruption causes.
+- Join issued native content operations before interruption completes. File
+  handles close before immutable installation, and owned temporary files are
+  removed on failure or interruption. Cleanup failures remain observable.
 - Treat malformed GitHub tag object types as inconclusive. OpenAI skill discovery
   no longer includes an undefined skill name for a root-level `SKILL.md`.
 - Enforce a patched Effect compiler, type-aware lint, explicit host compiler

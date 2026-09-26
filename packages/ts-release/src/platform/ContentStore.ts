@@ -5,132 +5,142 @@ import { constants } from "node:fs"
 import { chmod, link, mkdir, open, unlink, type FileHandle } from "node:fs/promises"
 import { join } from "node:path"
 import { AdoptionError, Content } from "../internal/ArtifactModel.js"
-import type { ContentOwner } from "../internal/Content.js"
+import type { ContentOwner, SourceFile } from "../internal/Content.js"
 import { decodeOwned } from "../internal/Identity.js"
 
 const READ_CAPACITY = 512 * 1024 * 1024
+const failure = () =>
+  new AdoptionError({ reason: "Owned content operation failed; bytes were not admitted" })
+const admit = <A>(body: () => A) => Effect.try({ try: body, catch: failure })
+// Native file operations do not all support cancellation. Join each issued
+// operation before closing its handle, with interruption points between calls.
 const io = <A>(body: () => Promise<A>) =>
-  Effect.tryPromise({
-    try: body,
-    catch: () =>
-      new AdoptionError({ reason: "Owned content operation failed; bytes were not admitted" }),
-  })
+  Effect.tryPromise({ try: body, catch: failure }).pipe(Effect.uninterruptible)
+const close = (file: FileHandle) => io(() => file.close())
 const identify = (bytes: Uint8Array): Content =>
   decodeOwned(Content, {
     bytes: bytes.byteLength,
     sha256: createHash("sha256").update(bytes).digest("hex"),
   })
 /** Read an open regular file to its end, refusing any deviation from `expected`. */
-const scan = async (
+const scan = Effect.fnUntraced(function* (
   input: FileHandle,
   expected: Content,
-  consume?: (bytes: Uint8Array) => Promise<void>,
-) => {
-  const stat = await input.stat()
-  if (!stat.isFile() || stat.size !== expected.bytes) throw new Error("Expected regular file")
+  consume?: (bytes: Uint8Array) => Effect.Effect<void, AdoptionError>,
+) {
+  const stat = yield* io(() => input.stat())
+  if (!stat.isFile() || stat.size !== expected.bytes) return yield* failure()
   const hash = createHash("sha256"),
     buffer = Buffer.allocUnsafe(64 * 1024)
   let bytes = 0
   for (;;) {
-    const { bytesRead } = await input.read(buffer, 0, buffer.length, null)
+    const { bytesRead } = yield* io(() => input.read(buffer, 0, buffer.length, null))
     if (!bytesRead) break
     bytes += bytesRead
-    if (bytes > expected.bytes) throw new Error("Content grew")
+    if (bytes > expected.bytes) return yield* failure()
     const chunk = buffer.subarray(0, bytesRead)
     hash.update(chunk)
-    if (consume) await consume(chunk)
+    if (consume) yield* consume(chunk)
   }
-  if (bytes !== expected.bytes || hash.digest("hex") !== expected.sha256)
-    throw new Error("Content identity mismatch")
-}
+  if (bytes !== expected.bytes || hash.digest("hex") !== expected.sha256) return yield* failure()
+})
 
 /** Immutable content names, exclusive temporary files and exact read-back on EEXIST. */
 export const fileContentOwner = (directory: string): ContentOwner => {
-  const withOwned = async <A>(
+  const withOwned = <A>(
     content: Content,
-    use: (input: FileHandle) => Promise<A>,
-  ): Promise<A> => {
-    const input = await open(
-      join(directory, content.sha256),
-      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+    use: (input: FileHandle) => Effect.Effect<A, AdoptionError>,
+  ) =>
+    Effect.acquireUseRelease(
+      io(() =>
+        open(
+          join(directory, content.sha256),
+          constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+        ),
+      ),
+      use,
+      close,
     )
-    try {
-      return await use(input)
-    } finally {
-      await input.close()
-    }
-  }
-  const persist = async (
+  const persist = Effect.fn("content.persist")(function* (
     expected: Content,
-    write: (output: FileHandle) => Promise<void>,
-  ): Promise<Content> => {
-    await mkdir(directory, { recursive: true, mode: 0o700 })
+    write: (output: FileHandle) => Effect.Effect<void, AdoptionError>,
+  ) {
+    yield* io(() => mkdir(directory, { recursive: true, mode: 0o700 }))
     const temporary = join(directory, `.copy-${randomUUID()}`)
-    const output = await open(temporary, "wx", 0o600)
-    try {
-      try {
-        await write(output)
-        await output.sync()
-      } finally {
-        await output.close()
-      }
-      await chmod(temporary, 0o400)
-      try {
-        await link(temporary, join(directory, expected.sha256))
-      } catch (error) {
-        if (!Predicate.hasProperty(error, "code") || error.code !== "EEXIST") throw error
-      }
+    let created = false
+    return yield* Effect.gen(function* () {
+      yield* Effect.acquireUseRelease(
+        io(() => open(temporary, "wx", 0o600)).pipe(
+          Effect.tap(() =>
+            Effect.sync(() => {
+              // Acquisition is masked until the handle and path have owners.
+              created = true
+            }),
+          ),
+        ),
+        (output) => write(output).pipe(Effect.andThen(io(() => output.sync()))),
+        close,
+      )
+      // The writer is closed before immutable installation. Cancellation at
+      // that boundary cannot continue into chmod/link as detached Promise work.
+      yield* io(() => chmod(temporary, 0o400))
+      yield* io(async () => {
+        try {
+          await link(temporary, join(directory, expected.sha256))
+        } catch (error) {
+          if (!Predicate.hasProperty(error, "code") || error.code !== "EEXIST") throw error
+        }
+      })
       // An existing name is never accepted as proof of its contents.
-      await withOwned(expected, (input) => scan(input, expected))
-      const parent = await open(directory, constants.O_RDONLY | constants.O_DIRECTORY)
-      try {
-        await parent.sync()
-      } finally {
-        await parent.close()
-      }
+      yield* withOwned(expected, (input) => scan(input, expected))
+      yield* Effect.acquireUseRelease(
+        io(() => open(directory, constants.O_RDONLY | constants.O_DIRECTORY)),
+        (parent) => io(() => parent.sync()),
+        close,
+      )
       return expected
-    } finally {
-      await unlink(temporary)
-    }
-  }
+    }).pipe(Effect.onExit(() => (created ? io(() => unlink(temporary)) : Effect.void)))
+  })
+  const putOwned = Effect.fn("content.putOwned")(function* (bytes: Uint8Array) {
+    const expected = yield* admit(() => identify(bytes))
+    return yield* persist(expected, (output) => io(() => output.writeFile(bytes)))
+  })
   return {
     putOwned: (input) => {
-      const bytes = new Uint8Array(input)
-      return io(() => persist(identify(bytes), (output) => output.writeFile(bytes)))
+      return putOwned(new Uint8Array(input))
     },
-    putFileOwned: (source) =>
-      io(async () => {
+    putFileOwned: Effect.fn("content.putFileOwned")(function* (source: SourceFile) {
+      const { path, expected } = yield* admit(() => {
+        const { path } = source
         const expected = decodeOwned(Content, { bytes: source.bytes, sha256: source.sha256 })
-        if (typeof source.path !== "string" || source.path.includes("\0"))
-          throw new Error("Invalid source path")
-        const input = await open(
-          source.path,
-          constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
-        )
-        try {
-          return await persist(expected, (output) =>
-            scan(input, expected, (bytes) => output.writeFile(bytes)),
-          )
-        } finally {
-          await input.close()
-        }
-      }),
-    verify: (input) =>
-      io(async () => {
-        const content = decodeOwned(Content, input)
-        await withOwned(content, (file) => scan(file, content))
-      }),
-    read: (input) =>
-      io(async () => {
-        const content = decodeOwned(Content, input)
-        if (content.bytes > READ_CAPACITY) throw new Error("Buffered read capacity exceeded")
-        const chunks: Buffer[] = []
-        await withOwned(content, (file) =>
-          scan(file, content, async (bytes) => {
+        if (typeof path !== "string" || path.includes("\0")) throw failure()
+        return { path, expected }
+      })
+      return yield* Effect.acquireUseRelease(
+        io(() => open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)),
+        (input) =>
+          persist(expected, (output) =>
+            scan(input, expected, (bytes) => io(() => output.writeFile(bytes))),
+          ),
+        close,
+      )
+    }),
+    verify: Effect.fn("content.verify")(function* (input: Content) {
+      const content = yield* admit(() => decodeOwned(Content, input))
+      yield* withOwned(content, (file) => scan(file, content))
+    }),
+    read: Effect.fn("content.read")(function* (input: Content) {
+      const content = yield* admit(() => decodeOwned(Content, input))
+      if (content.bytes > READ_CAPACITY) return yield* failure()
+      const chunks: Buffer[] = []
+      yield* withOwned(content, (file) =>
+        scan(file, content, (bytes) =>
+          Effect.sync(() => {
             chunks.push(Buffer.from(bytes))
           }),
-        )
-        return new Uint8Array(Buffer.concat(chunks))
-      }),
+        ),
+      )
+      return new Uint8Array(Buffer.concat(chunks))
+    }),
   }
 }

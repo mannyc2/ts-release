@@ -39,6 +39,9 @@ bun run prepare:release prepare-input.json
 This retains `candidate/bundle.json`, `plan.json`, `identity.json` and immutable
 `content/`. It never publishes packages or releases. A destination directory must
 be new. Keep the complete candidate; recreating it is not a recovery operation.
+Cancellation waits for each issued candidate write to settle, then stops before
+the next operation. Partial candidates remain available for inspection. A native
+operation that never settles can delay cancellation.
 GitHub receives the package archives, source identity, notes and extra assets.
 
 ## Observe and publish

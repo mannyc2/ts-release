@@ -39,6 +39,8 @@
 - Join self-release file reads through handle closure and issued native Sigstore
   verification through SDK settlement before interruption completes. Native calls
   that never settle can still delay cancellation.
+- Join issued self-release candidate-directory and Bundle/Plan writes before
+  cancellation completes, retaining partial candidates for inspection.
 - Preserve defects thrown by complete-plan provider validators. Intentional
   `ReleaseError` refusals retain their fields across package constructors; schema
   refusals retain safe admission diagnostics before any external operation.

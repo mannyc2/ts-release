@@ -525,3 +525,32 @@ strict-boundary slice; no packed or live provider success is inferred here.
 Candidate-write source/generated/proof changes are present but excluded from
 this bounded provider commit. All work remains local, with publication approval
 still pending.
+
+## Candidate write settlement
+
+Based on provider-prerequisite commit `8aa26ccfe55558cf99a615143a5352fc3f046ddc`,
+self-release now joins each issued exclusive directory creation and Bundle/Plan
+write before restoring interruption. The existing bytes, `wx` flags, directory/
+file modes, ordering and partial-candidate retention stay intact. No rollback,
+atomic-directory promise or new recovery identity is introduced. Generated starter
+`release/prepare.js` contains exactly these three masks and the same explanation;
+its public guide and changelog describe cancellation and stuck-native limits.
+
+[Detailed proof](self-release-write-lifecycle.md) records a genuine baseline
+failure using actual prepareRelease and a real Bundle write with held completion
+delivery. Teardown joined the write on the failing baseline too. The exact test
+then passed after rebuilding; no Plan write starts after the interruption. Root
+full static checks passed together with the provider prerequisites. Selected
+provider/lifecycle checks passed 11 tests/312 assertions; the actual existing
+application file then passed 11 tests/70 assertions separately. Delivery
+regeneration exited 0. Logs use `/tmp/ts-release-primitives-writes-` and
+`/tmp/ts-release-candidate-write-` prefixes in the detailed record.
+
+No new archive/API/installed-starter/native-signing/full-distribution run is
+claimed. The generated diff adds no import or eager operation; the prior installed
+starter closure remains applicable, while this native compiled-application proof
+owns the changed write lifecycle. Native mkdir and Plan-write holds were not
+independently reproduced; the one real Bundle-write interruption covers the
+shared per-issued-operation pattern. Source remains local and original staging
+is untouched. Signing settlement and self-release privacy/error classification
+remain separate next slices, with R32–R35 and W7 still open.

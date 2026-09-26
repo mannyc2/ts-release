@@ -44,7 +44,9 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw) {
     });
     const candidateDirectory = resolve(input.candidateDirectory);
     // Refuse replacement: a failed or interrupted preparation remains inspectable.
-    yield* io("candidate-directory", () => mkdir(candidateDirectory, { recursive: false, mode: 0o700 }));
+    // Join each issued native mutation, then restore interruption before continuing.
+    // A native operation that never settles can delay cancellation.
+    yield* io("candidate-directory", () => mkdir(candidateDirectory, { recursive: false, mode: 0o700 })).pipe(Effect.uninterruptible);
     const owner = fileContentOwner(join(candidateDirectory, "content"));
     const readContent = (content) => owner
         .read(content)
@@ -184,10 +186,10 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw) {
         }),
         ...GitHub.definitions({ bundle, readContent, read: noRead }),
     ]);
-    yield* io("bundle", () => writeFile(join(candidateDirectory, "bundle.json"), bundleBytes, { flag: "wx", mode: 0o600 }));
+    yield* io("bundle", () => writeFile(join(candidateDirectory, "bundle.json"), bundleBytes, { flag: "wx", mode: 0o600 })).pipe(Effect.uninterruptible);
     yield* io("plan", () => writeFile(join(candidateDirectory, "plan.json"), JSON.stringify(plan), {
         flag: "wx",
         mode: 0o600,
-    }));
+    })).pipe(Effect.uninterruptible);
     return { candidateDirectory, bundleSha256, planId: plan.planId };
 });

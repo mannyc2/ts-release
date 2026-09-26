@@ -3,8 +3,7 @@ import { createHash } from "node:crypto"
 import { execFileSync } from "node:child_process"
 import { realpathSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { Content } from "../../../packages/ts-release/src/Bundle.js"
-import type { ReadContent } from "../../../packages/ts-release/src/internal/Content.js"
+import { Content, type ReadContent } from "@mannyc1/ts-release/bundle"
 
 const selectedGit = Bun.which("git")
 if (selectedGit === null) throw new Error("Native Git fixtures require git")

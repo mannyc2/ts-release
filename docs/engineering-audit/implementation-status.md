@@ -141,3 +141,32 @@ tests and packed Bun/npm core qualification passed. The separate
 [closure review](standards-closure-review.md) identifies justified native
 exceptions and concrete remaining test/lifecycle/profile work; milestone one
 and these increments are still not completion of all 36 requirements.
+
+## Verification ownership and clock increment
+
+Branch `codex/verification-ownership` starts at
+`e0bedee2433e7d2dccee94131c8f51824ac97902`. Four cross-owner tests now use public
+core APIs or native fixture setup, and the shared Git fixture uses the public
+Bundle entry. All existing cases remain; one duplicate private-verifier assertion
+was removed from four GitHub DAG rows because the retained public rerun validates
+that history. See [the ownership decisions](test-ownership.md).
+
+The existing npm authentication retry and timeout scenarios now use TestClock
+and own their root fibers through Bun's finish hook. A temporary runner-timeout
+probe established joined cleanup and caught an abandoned-Promise rejection;
+the retained pattern awaits an Exit and still rethrows active-test failures.
+No new test case or harness was added. See [clock evidence](logical-clock-tests.md).
+
+The affected selections passed: 44 cross-owner tests, 20 shared-fixture tests
+(with the nested-build self-release case subsequently requalified alone), and
+six authentication tests. Full static checks passed. Runtime source and package
+artifacts are unchanged. [Maintained check profiles](../../scripts/README.md)
+now name their actual stages and limitations instead of calling the portable
+profile the full local suite. Other lifecycle/error-policy and whole-suite
+retention decisions remain subject to the closure review; this is a bounded W5
+increment, not a full migration-completion claim.
+
+The [core error-policy prerequisite inventory](core-error-policy-prerequisites.md)
+now identifies each native/parser owner that needs local failure translation
+before narrowing shared `attempt`. It also records credential privacy and
+post-dispatch ambiguity contracts that a global replacement must preserve.

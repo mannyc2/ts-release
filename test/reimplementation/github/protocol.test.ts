@@ -2,7 +2,6 @@ import { fail } from "node:assert"
 import { expect, test } from "bun:test"
 import { Effect } from "effect"
 import { runRelease, observeRelease, type ProviderContext } from "@mannyc1/ts-release"
-import { verifyNativeEvidence } from "../../../packages/ts-release/src/Journal.js"
 import { runWithHost } from "../kernel/fixtures.js"
 import { fixture, response, releaseDocument, assetDocument, base } from "./fixtures.js"
 import { commit, refDocument, repositoryDocument } from "./fixtures.js"
@@ -55,8 +54,6 @@ for (const annotated of [false, true])
         (f.state.sends.at(-1) ?? fail("Missing fixture f.state.sends.at(-1)")).facts.method,
       ).toBe("PATCH")
       expect((f.state.releases[0] ?? fail("Missing fixture f.state.releases[0]")).draft).toBe(false)
-      const snapshot = await Effect.runPromise(f.store.read(f.plan.journalId))
-      expect(() => verifyNativeEvidence(f.plan, snapshot.events, f.providers)).not.toThrow()
       await runWithHost({ ...f.host }, runRelease({ plan: f.plan, authorize: true }))
       expect(f.state.sends).toHaveLength(count + (annotated ? 4 : 3))
       // After publication every asset is addressed by its tag URL; the published

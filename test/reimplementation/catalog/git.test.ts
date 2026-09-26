@@ -11,7 +11,6 @@ import * as Git from "@mannyc1/ts-release/git"
 import { makeGitCatalogHost, openSqliteJournal } from "@mannyc1/ts-release/bun"
 import * as Homebrew from "../../../packages/catalog/src/homebrew/index.js"
 import * as Scoop from "../../../packages/catalog/src/scoop/index.js"
-import { openGitRuntime } from "../../../packages/ts-release/src/platform/GitProcess.js"
 import {
   contentFixture,
   identity,
@@ -30,6 +29,14 @@ for (const family of ["homebrew", "scoop"] as const)
       test(`${family} native ${format} atomically publishes ${count} paths and reopens its journal after lost push acknowledgement`, async () => {
         const directory = await mkdtemp(join(tmpdir(), "ts-release-catalog-git-"))
         try {
+          const repository = join(directory, "catalog.git")
+          native(repository, [
+            "init",
+            "--bare",
+            "--quiet",
+            "--template=",
+            `--object-format=${format}`,
+          ])
           // Real Git runs to completion. Only its acknowledgement is discarded.
           const wrapper = join(directory, "git-drop-ack")
           await writeFile(
@@ -40,18 +47,16 @@ for (const family of ["homebrew", "scoop"] as const)
           await Effect.runPromise(
             Effect.scoped(
               Effect.gen(function* () {
-                const runtime = yield* openGitRuntime(processOptions),
-                  repository = yield* runtime.repository(format)
-                const old = seed(repository.directory),
+                const old = seed(repository),
                   contents = contentFixture(),
                   f = fixture()
                 const coordinate = {
-                  remote: pathToFileURL(repository.directory).href,
+                  remote: pathToFileURL(repository).href,
                   ref: "refs/heads/catalog",
                   scope: family,
                   principal: "publisher",
                 }
-                native(repository.directory, ["update-ref", coordinate.ref, old])
+                native(repository, ["update-ref", coordinate.ref, old])
                 const paths = Array.from({ length: count }, (_, i) =>
                   family === "homebrew" ? `Formula/tool${i}.rb` : `bucket/tool${i}.json`,
                 )
@@ -138,20 +143,18 @@ for (const family of ["homebrew", "scoop"] as const)
                             .status,
                         ).toBe("Satisfied")
                       expect(
-                        native(repository.directory, ["rev-parse", coordinate.ref])
-                          .toString()
-                          .trim(),
+                        native(repository, ["rev-parse", coordinate.ref]).toString().trim(),
                       ).toBe(intent.desiredNew)
                       for (const [i, path] of paths.entries()) {
-                        expect(
-                          native(repository.directory, ["show", `${coordinate.ref}:${path}`]),
-                        ).toEqual(Buffer.from(bytes[i] ?? fail("Missing fixture bytes[i]")))
+                        expect(native(repository, ["show", `${coordinate.ref}:${path}`])).toEqual(
+                          Buffer.from(bytes[i] ?? fail("Missing fixture bytes[i]")),
+                        )
                         if (loseAcknowledgement && family === "homebrew") {
                           const nativePath = join(directory, `tool${i}.rb`)
                           yield* Effect.promise(() =>
                             writeFile(
                               nativePath,
-                              native(repository.directory, ["show", `${coordinate.ref}:${path}`]),
+                              native(repository, ["show", `${coordinate.ref}:${path}`]),
                             ),
                           )
                           const loaded = yield* Schema.decodeEffect(
@@ -179,7 +182,7 @@ for (const family of ["homebrew", "scoop"] as const)
                         }
                       }
                       expect(
-                        native(repository.directory, [
+                        native(repository, [
                           "diff-tree",
                           "--no-commit-id",
                           "--name-only",
@@ -192,25 +195,17 @@ for (const family of ["homebrew", "scoop"] as const)
                           .split("\n"),
                       ).toEqual(paths)
                       expect(
-                        native(repository.directory, ["rev-parse", `${intent.desiredNew}^`])
+                        native(repository, ["rev-parse", `${intent.desiredNew}^`])
                           .toString()
                           .trim(),
                       ).toBe(old)
                       expect(
-                        native(repository.directory, [
-                          "show",
-                          `${coordinate.ref}:README.md`,
-                        ]).toString(),
+                        native(repository, ["show", `${coordinate.ref}:README.md`]).toString(),
                       ).toBe("preserved unmanaged README\n")
                       for (const path of ["untouched-empty", "Formula/empty"])
                         expect(
-                          native(repository.directory, [
-                            "rev-parse",
-                            `${coordinate.ref}:${path}`,
-                          ]).toString(),
-                        ).toBe(
-                          native(repository.directory, ["rev-parse", `${old}:${path}`]).toString(),
-                        )
+                          native(repository, ["rev-parse", `${coordinate.ref}:${path}`]).toString(),
+                        ).toBe(native(repository, ["rev-parse", `${old}:${path}`]).toString())
                     }),
                   )
                 }

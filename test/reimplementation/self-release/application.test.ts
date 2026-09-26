@@ -6,7 +6,7 @@ import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { ConfigProvider, Effect, Schema } from "effect"
 import { Host, Plan, createPlan, runRelease, supersedePlan } from "@mannyc1/ts-release"
-import { reportFinalizedRelease } from "../../../packages/ts-release/src/internal/FinalizedReport.js"
+import { runApplicationEffect } from "@mannyc1/ts-release/node"
 import { Bundle } from "@mannyc1/ts-release/bundle"
 import type { CredentialBinding } from "@mannyc1/ts-release/http"
 import * as Npm from "@mannyc1/ts-release-npm"
@@ -249,15 +249,21 @@ test("an explicitly retired candidate is retained when its successor opens the s
           authorize: true,
           reason: "Credential compatibility fix",
         }).pipe(Effect.provideService(Host, original.host))
-        const resumed = yield* createApplication({
-          ...f.application,
-          ...changed,
-          authorize: false,
-          supersededCandidates: [f.identity],
-          journal: { ...f.application.journal, cacheDirectory: join(f.work, "successor-cache") },
-        })
-        const report = yield* reportFinalizedRelease(resumed.bundle, resumed.options.plan).pipe(
-          Effect.provideService(Host, resumed.host),
+        const report = yield* runApplicationEffect(
+          (input) =>
+            createApplication(input).pipe(
+              Effect.map((application) => ({
+                ...application,
+                options: { ...application.options, authorize: false, observe: false },
+              })),
+            ),
+          {
+            ...f.application,
+            ...changed,
+            authorize: false,
+            supersededCandidates: [f.identity],
+            journal: { ...f.application.journal, cacheDirectory: join(f.work, "successor-cache") },
+          },
         )
         expect(report.plan.planId).toBe(changed.planId)
         expect(report.supersededPlans?.map((plan) => plan.planId)).toEqual([f.identity.planId])

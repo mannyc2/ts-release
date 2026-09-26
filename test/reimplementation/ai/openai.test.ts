@@ -30,7 +30,6 @@ import {
   validatePackage,
   type RenderedFile,
 } from "../../../packages/openai/src/index.js"
-import { openGitRuntime } from "../../../packages/ts-release/src/platform/GitProcess.js"
 import {
   contentFixture,
   identity,
@@ -231,12 +230,12 @@ describe("OpenAI marketplace and human submission handoff", () => {
   test("feeds the intended marketplace bytes through the kernel's conditional Git owner", async () => {
     const directory = await mkdtemp(join(tmpdir(), "ts-release-openai-git-"))
     try {
+      const repository = join(directory, "marketplace.git")
+      native(repository, ["init", "--bare", "--quiet", "--template=", "--object-format=sha1"])
       await Effect.runPromise(
         Effect.scoped(
           Effect.gen(function* () {
-            const runtime = yield* openGitRuntime(processOptions),
-              repository = yield* runtime.repository("sha1")
-            const expectedOld = seed(repository.directory),
+            const expectedOld = seed(repository),
               contents = contentFixture(),
               { tree } = yield* Effect.promise(makePlugin)
             const rendered = yield* marketplace(
@@ -256,12 +255,12 @@ describe("OpenAI marketplace and human submission handoff", () => {
               readContent,
             )
             const coordinate = {
-              remote: pathToFileURL(repository.directory).href,
+              remote: pathToFileURL(repository).href,
               ref: "refs/heads/openai-marketplace",
               principal: "marketplace-publisher",
               scope: "openai-marketplace",
             }
-            native(repository.directory, ["update-ref", coordinate.ref, expectedOld])
+            native(repository, ["update-ref", coordinate.ref, expectedOld])
             const host = yield* makeGitCatalogHost({
               ...processOptions,
               readContent: contents.read,
@@ -308,10 +307,7 @@ describe("OpenAI marketplace and human submission handoff", () => {
               (report.operations[0] ?? fail("Missing fixture report.operations[0]")).status,
             ).toBe("Satisfied")
             expect(
-              native(repository.directory, [
-                "show",
-                `${coordinate.ref}:.agents/plugins/marketplace.json`,
-              ]),
+              native(repository, ["show", `${coordinate.ref}:.agents/plugins/marketplace.json`]),
             ).toEqual(Buffer.from(rendered.bytes))
           }),
         ),

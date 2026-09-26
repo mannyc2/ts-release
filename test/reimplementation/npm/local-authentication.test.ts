@@ -1,6 +1,7 @@
 import { fail } from "node:assert"
-import { expect, test } from "bun:test"
-import { Schema, Effect, Redacted } from "effect"
+import { expect, onTestFinished, test } from "bun:test"
+import { Schema, Effect, Fiber, Redacted } from "effect"
+import { TestClock } from "effect/testing"
 import {
   Host,
   createPlan,
@@ -108,9 +109,10 @@ for (const lostResponse of [false, true])
     )
     let sends = 0,
       polls = 0,
-      visible = false
+      visible = false,
+      finishing = false
     const notices: string[] = []
-    const result = await Effect.runPromise(
+    const root = Effect.runFork(
       Effect.scoped(
         Effect.gen(function* () {
           const session = yield* makeLocalAuthenticationWith(
@@ -218,7 +220,9 @@ for (const lostResponse of [false, true])
               },
             }),
           ).toBe(false)
-          expect(yield* session.complete(f.operation)).toBe(true)
+          const completion = yield* Effect.forkChild(session.complete(f.operation))
+          yield* TestClock.adjust(1000)
+          expect(yield* Fiber.join(completion)).toBe(true)
           expect(sends).toBe(1)
           // Reads on the same origin/scope do not consume or receive the OTP or login token.
           for (const method of ["GET", "HEAD"])
@@ -258,8 +262,17 @@ for (const lostResponse of [false, true])
           ).toHaveLength(1)
           return session
         }),
-      ),
+      ).pipe(Effect.provide(TestClock.layer())),
     )
+    onTestFinished(async () => {
+      finishing = true
+      await Effect.runPromise(Fiber.interrupt(root))
+    })
+    // Bun abandons the test Promise on timeout; await an Exit so joined cleanup
+    // does not create a detached rejection after the runner has already failed.
+    const exit = await Effect.runPromise(Fiber.await(root))
+    if (finishing) return
+    const result = await Effect.runPromise(exit)
     expect(polls).toBe(2)
     expect(notices).toEqual([authUrl])
     expect(Effect.runPromise(result.credentials(f.request.facts))).rejects.toThrow("closed")
@@ -433,8 +446,9 @@ test("browser completion refuses redirects, errors, malformed tokens and unbound
     )
     expect(polls).toBe(1)
   }
-  let canceled = false
-  await Effect.runPromise(
+  let canceled = false,
+    finishing = false
+  const root = Effect.runFork(
     Effect.scoped(
       Effect.gen(function* () {
         const session = yield* makeLocalAuthenticationWith(
@@ -457,10 +471,19 @@ test("browser completion refuses redirects, errors, malformed tokens and unbound
           },
         )
         session.capture(f.request, challenge())
-        expect((yield* Effect.exit(session.complete(f.operation)))._tag).toBe("Failure")
+        const completion = yield* Effect.forkChild(Effect.exit(session.complete(f.operation)))
+        yield* TestClock.adjust(20)
+        expect((yield* Fiber.join(completion))._tag).toBe("Failure")
         expect(yield* session.complete(f.operation)).toBe(false)
       }),
-    ),
+    ).pipe(Effect.provide(TestClock.layer())),
   )
+  onTestFinished(async () => {
+    finishing = true
+    await Effect.runPromise(Fiber.interrupt(root))
+  })
+  const exit = await Effect.runPromise(Fiber.await(root))
+  if (finishing) return
+  await Effect.runPromise(exit)
   expect(canceled).toBe(true)
 })

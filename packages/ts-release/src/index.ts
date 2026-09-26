@@ -1,5 +1,12 @@
 export { PROVIDER_CONTRACT, defineProvider, makeRequest } from "./Provider.js"
-export type { Author, Json, Observation, OperationId, PreparedRequest } from "./Provider.js"
+export type {
+  Author,
+  Json,
+  Observation,
+  OperationId,
+  PreparedRequest,
+  RequestPreflight,
+} from "./Provider.js"
 export type { NativeFailureBoundary, OperationEvidence, ProviderContext } from "./Provider.js"
 export type { ProviderDefinition, ProviderDescriptor, SendResult, Transport } from "./Provider.js"
 export { ReleaseError } from "./internal/Error.js"
@@ -38,4 +45,12 @@ export type { CandidateRequest, Machine, MachineConstructor, Next } from "./inte
 export { createOperation, createPlan, createPreparationScope, loadPlan } from "./Plan.js"
 export { GitReceipt, makeCoreGitTransport } from "./internal/GitAuthority.js"
 export type { CoreGitOptions, GitExecution } from "./internal/GitAuthority.js"
-export { reportRelease, observeRelease, runRelease, supersedePlan, acceptRisk } from "./Release.js"
+export {
+  reportRelease,
+  observeRelease,
+  preflightRelease,
+  runRelease,
+  supersedePlan,
+  acceptRisk,
+} from "./Release.js"
+export type { PreflightReport } from "./Release.js"

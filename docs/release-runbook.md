@@ -68,7 +68,13 @@ records archive/application hashes and checkout identity separately from candida
 identity. Unsupported historical formats or provider intent versions still fail
 ordinary admission; selecting a newer executor never rewrites them.
 
-The Publish job checks every npm trusted-publisher credential before the first
+The installed application first checks all unfinished, locally resolvable native
+requests, including later npm packages behind ordering dependencies. Requests
+needing future GitHub parent IDs remain deferred; completed operations retain
+their journal status. This check precedes publication credential acquisition,
+though the shared journal read can require its separate Git credential.
+
+The Publish job then checks every npm trusted-publisher credential before the first
 publication. Its diagnostics identify OIDC verification and npm exchange stages,
 HTTP status and response shape without printing tokens or raw response bodies.
 This check reads the journal and prepares requests but does not append history

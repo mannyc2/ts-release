@@ -20,14 +20,15 @@ version. See [recovery](recovery.md) before changing providers on a retained Pla
 
 ## Install the matching packages
 
-The published 0.4.0 npm/GitHub packages install with:
+The 0.4.2 npm/GitHub baseline installs with:
 
 ```sh
-bun add @mannyc1/ts-release@0.4.0 @mannyc1/ts-release-npm@0.4.0 @mannyc1/ts-release-github@0.4.0 effect@4.0.0-rc.115
+bun add @mannyc1/ts-release@0.4.2 @mannyc1/ts-release-npm@0.4.2 @mannyc1/ts-release-github@0.4.2 effect@4.0.0-rc.115
 ```
 
-Until publication, follow the root README to build and pack the core, and pack
-each required provider from its directory with `bun pm pack --ignore-scripts`.
+For the unreleased APIs documented in this checkout, follow the root README to
+build and pack the core, and pack each required provider from its directory with
+`bun pm pack --ignore-scripts`.
 Install all required local archives in one `bun add` invocation so providers can
 resolve the unpublished core peer. Do not combine 0.3.1 core with 0.4 providers.
 

@@ -106,7 +106,7 @@ for (const manager of ["bun", "npm"] as const) {
     bytes[path] = hash(actual)
   }
   const declarations = {
-    ".": 'import { Plan, createOperation } from "@mannyc1/ts-release"; export { Plan, createOperation };',
+    ".": 'import { Plan, createOperation, preflightRelease, type PreflightReport, type RequestPreflight } from "@mannyc1/ts-release"; export { Plan, createOperation, preflightRelease }; export type { PreflightReport, RequestPreflight };',
     "./http":
       'import { HttpReceipt, corresponds } from "@mannyc1/ts-release/http"; export { HttpReceipt, corresponds };',
     "./bun":

@@ -1,7 +1,12 @@
 import { fail } from "node:assert"
 import { expect, test } from "bun:test"
 import { Effect } from "effect"
-import { runRelease, observeRelease, type ProviderContext } from "@mannyc1/ts-release"
+import {
+  runRelease,
+  observeRelease,
+  preflightRelease,
+  type ProviderContext,
+} from "@mannyc1/ts-release"
 import { runWithHost } from "../kernel/fixtures.js"
 import { fixture, response, releaseDocument, assetDocument, base } from "./fixtures.js"
 import { commit, refDocument, repositoryDocument } from "./fixtures.js"
@@ -65,6 +70,15 @@ for (const annotated of [false, true])
           latest.set(event.body.operationId, event.body.status)
       expect(latest.get(f.publish.operationId)).toBe("Satisfied")
       expect([...latest.values()].every((status) => status === "Satisfied")).toBe(true)
+      // Already published assets are history, not new upload candidates. This
+      // fixture's transport intentionally has no optional validation capability.
+      const preflight = await runWithHost(f.host, preflightRelease({ plan: f.plan }))
+      expect(preflight).toMatchObject({
+        superseded: false,
+        satisfied: report.operations.map((operation) => operation.operationId),
+        checked: [],
+        deferred: [],
+      })
     })
 
 test("response-lost hidden draft is observed by authenticated enumeration and its returned ID survives restart", async () => {

@@ -10,12 +10,19 @@ import { hashCanonical, sha256 } from "./internal/Identity.js"
 export const PROVIDER_CONTRACT = "ts-release/provider/1" as const
 /** Transport owns actual sends; prepare and durable values contain no callback. */
 export type PreparedRequest = Readonly<{ facts: RequestFacts; body: Uint8Array }>
+/** Invocation-only local preparation. Deferred names only declared dependencies
+ * whose real receipt/observation facts do not exist yet; it is not a send permit. */
+export type RequestPreflight =
+  | { readonly _tag: "Prepared"; readonly request: PreparedRequest }
+  | { readonly _tag: "Deferred"; readonly dependencies: ReadonlyArray<string> }
 export type SendResult =
   | { readonly _tag: "Accepted"; readonly receipt: unknown }
   | { readonly _tag: "RejectedBeforeCommit"; readonly proof: unknown }
   | { readonly _tag: "Unknown"; readonly reason: string; readonly nativeError?: unknown }
 export interface Transport {
   readonly send: (request: PreparedRequest) => Effect.Effect<SendResult, ReleaseError>
+  /** Admit the exact native wire request without credentials or a send closure. */
+  readonly validate?: (request: PreparedRequest) => Effect.Effect<void, ReleaseError>
   /** Resolve ephemeral credentials before the journal uncertainty boundary.
    * The returned send has no dispatch permission; only fresh core CAS grants it. */
   readonly prepare?: (request: PreparedRequest) => Effect.Effect<Transport["send"], ReleaseError>
@@ -76,6 +83,13 @@ export interface ProviderDefinition {
     operation: Operation,
     context: ProviderContext,
   ) => Effect.Effect<PreparedRequest, ReleaseError>
+  /** Construct the exact local request or identify absent real parent facts.
+   * Read owned artifacts, but never resolve publication credentials, probe a
+   * remote provider, or perform cryptographic trust-network verification. */
+  readonly preflight?: (
+    operation: Operation,
+    context: ProviderContext,
+  ) => Effect.Effect<RequestPreflight, ReleaseError>
   readonly observe?: (
     operation: Operation,
     context: ProviderContext,
@@ -254,7 +268,8 @@ export const verifyProviderContracts = (
       ![provider.receiptCorresponds, provider.classifyReceipt, provider.prepare].every(
         isFunction,
       ) ||
-      (provider.requestCorresponds !== undefined && !isFunction(provider.requestCorresponds))
+      (provider.requestCorresponds !== undefined && !isFunction(provider.requestCorresponds)) ||
+      (provider.preflight !== undefined && !isFunction(provider.preflight))
     )
       fail(
         "missing-receipt-codec",
@@ -301,6 +316,7 @@ export const verifyProviderContracts = (
         receiptCorresponds: provider.receiptCorresponds.bind(provider),
         classifyReceipt: provider.classifyReceipt.bind(provider),
         prepare: provider.prepare.bind(provider),
+        ...(provider.preflight && { preflight: provider.preflight.bind(provider) }),
         ...observation,
         ...(rejection && { rejection }),
         ...(dispatchError && { dispatchError }),

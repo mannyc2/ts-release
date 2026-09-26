@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema"
 import { Operation, type OperationEvidence, type ProviderContext } from "@mannyc1/ts-release"
 import { decodeJson, sameData } from "@mannyc1/ts-release/http"
 import * as Model from "./Model.js"
-import { intentOf, type Kind } from "./Graph.js"
+import { intentOf, requiredParents, type Kind } from "./Graph.js"
 import { invalid, own, object } from "./Native.js"
 
 export const NativeFacts = Schema.Union([
@@ -31,7 +31,7 @@ export const readScope = (text: string): BoundScope => {
   return scope
 }
 /** These records are decoded only after the kernel has validated their native codecs. */
-const selected = (evidence: OperationEvidence): Parent => {
+const selected = (evidence: OperationEvidence): Parent | undefined => {
   const candidates: Parent[] = []
   const parent = (scopeValue: unknown, facts: unknown) => {
     const scope = readScope(String(scopeValue))
@@ -64,7 +64,8 @@ const selected = (evidence: OperationEvidence): Parent => {
     }
     return JSON.stringify({ ...value, facts })
   }
-  if (!candidates.length || new Set(candidates.map(stable)).size !== 1) invalid("parent-evidence")
+  if (!candidates.length) return undefined
+  if (new Set(candidates.map(stable)).size !== 1) invalid("parent-evidence")
   const digests = candidates.flatMap((c) =>
     c.facts instanceof Model.AssetFacts && c.facts.sha256 !== null ? [c.facts.sha256] : [],
   )
@@ -78,6 +79,20 @@ const selected = (evidence: OperationEvidence): Parent => {
     invalid("parent-evidence")
   )
 }
+/** Check every available parent even when another is absent. Conflicting or
+ * malformed real evidence is a refusal, never a future-fact deferral. */
+export const missingParents = (
+  operation: Operation,
+  context: ProviderContext,
+): readonly string[] => {
+  const missing: string[] = []
+  for (const id of requiredParents(intentOf(operation))) {
+    const evidence = context.dependencies.find((item) => item.operation.operationId === id)
+    if (evidence === undefined) return invalid("undeclared-parent")
+    if (selected(evidence) === undefined) missing.push(id)
+  }
+  return missing
+}
 export const bindScope = (operation: Operation, context: ProviderContext): BoundScope => {
   const intent = intentOf(operation),
     parents: Parent[] = []
@@ -86,7 +101,7 @@ export const bindScope = (operation: Operation, context: ProviderContext): Bound
       (candidate) => candidate.operation.operationId === id,
     )
     if (!evidence) return invalid("undeclared-parent")
-    const result = selected(evidence)
+    const result = selected(evidence) ?? invalid("parent-evidence")
     parents.push(result)
     return result
   }

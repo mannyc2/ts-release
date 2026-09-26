@@ -158,6 +158,9 @@ test("credential diagnostics never emit arbitrary failure codes or messages", ()
   expect(failureCode({ code: "npm-oidc-exchange", message: "sensitive-credential" })).toBe(
     "npm-oidc-exchange",
   )
+  expect(failureCode({ code: "http-request-owner", message: "sensitive-credential" })).toBe(
+    "http-request-owner",
+  )
   expect(failureCode({ code: "sensitive-credential", message: "sensitive-credential" })).toBe(
     "unclassified",
   )

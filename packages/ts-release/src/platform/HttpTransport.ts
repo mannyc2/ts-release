@@ -297,7 +297,7 @@ export const makeHttpTransport = (options: HttpTransportOptions): Transport => {
     ownsRequest: provider.ownsRequest.bind(provider),
     decodeResponse: provider.decodeResponse.bind(provider),
   }))
-  const prepare: NonNullable<Transport["prepare"]> = Effect.fn("http.prepare")(function* (input) {
+  const admit = Effect.fnUntraced(function* (input: PreparedRequest) {
     const request = yield* verifyRequest(input)
     const { url, durable, key } = yield* attempt(() => {
       if (
@@ -322,6 +322,10 @@ export const makeHttpTransport = (options: HttpTransportOptions): Transport => {
     const [owner] = owners
     if (owners.length !== 1 || owner === undefined)
       return yield* attempt(() => invalid("request-owner"))
+    return { request, url, durable, key, owner }
+  })
+  const prepare: NonNullable<Transport["prepare"]> = Effect.fn("http.prepare")(function* (input) {
+    const { request, url, durable, key, owner } = yield* admit(input)
     const fields = yield* authorize(
       resolve,
       url,
@@ -340,6 +344,9 @@ export const makeHttpTransport = (options: HttpTransportOptions): Transport => {
     })
   })
   return Object.freeze({
+    validate: Effect.fn("http.validate")(function* (request: PreparedRequest) {
+      yield* admit(request)
+    }),
     prepare,
     send: Effect.fn("http.send")(function* (request: PreparedRequest) {
       return yield* (yield* prepare(request))(request)

@@ -51,12 +51,21 @@ export const mechanisms = new WeakMap<Transport, ReadonlyMap<string, CoreGitOpti
 export const captureTransport = (transport: Transport): Transport => {
   if (mechanisms.has(transport)) return transport
   const send = transport.send,
-    prepare = transport.prepare
-  if (typeof send !== "function" || (prepare !== undefined && typeof prepare !== "function"))
-    fail("transport-capability", "Transport send and any declared preparation must be callable")
+    prepare = transport.prepare,
+    validate = transport.validate
+  if (
+    typeof send !== "function" ||
+    (prepare !== undefined && typeof prepare !== "function") ||
+    (validate !== undefined && typeof validate !== "function")
+  )
+    fail(
+      "transport-capability",
+      "Transport send and declared admission operations must be callable",
+    )
   return Object.freeze({
     send: send.bind(transport),
     ...(prepare === undefined ? {} : { prepare: prepare.bind(transport) }),
+    ...(validate === undefined ? {} : { validate: validate.bind(transport) }),
   })
 }
 export const assertTransportBinding = (transport: Transport, facts: RequestFacts): void => {

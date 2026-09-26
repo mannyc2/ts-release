@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { join, resolve } from "node:path";
 import { Config, Effect, Redacted, Schema } from "effect";
-import { Plan, loadPlan } from "@mannyc1/ts-release";
+import { Host, Plan, loadPlan, preflightRelease, } from "@mannyc1/ts-release";
 import { loadBundle, verifiedArtifacts } from "@mannyc1/ts-release/bundle";
 import { decodeJson, sameData, } from "@mannyc1/ts-release/http";
 import { fileContentOwner, makeGithubTrustedPublisherHost, makeHttpRead, makeHttpTransport, openGitJournal, } from "@mannyc1/ts-release/node";
@@ -210,17 +210,6 @@ export const createApplication = Effect.fn("release.createApplication")(function
             throw admissionFailure("journal-remote");
         return "Github";
     });
-    // Admission above is pure with respect to credentials. Open the local npm
-    // session only after the complete retained Plan and journal destination pass.
-    const local = input.authentication.mode === "Local" && authorization._tag === "TokenAuthorization"
-        ? yield* Npm.makeLocalAuthentication({
-            authorization,
-            configFile: input.authentication.npmConfigFile,
-            notify: (url) => Effect.sync(() => {
-                process.stderr.write(`Complete npm authentication: ${Redacted.value(url)}\n`);
-            }),
-        })
-        : null;
     const store = yield* openGitJournal({
         ...input.journal,
         credentials: Effect.fn("release.journalCredentials")(function* (coordinate) {
@@ -237,25 +226,41 @@ export const createApplication = Effect.fn("release.createApplication")(function
             };
         }),
     });
+    const host = {
+        providers,
+        store,
+        transport: makeHttpTransport({ providers, credentials, ...bounds }),
+        now: Date.now,
+        uniqueId: randomUUID,
+        ...(supersededPlans.length
+            ? {
+                journal: {
+                    journalId: plan.journalId,
+                    scopes: [{ _tag: "PublicationScope", plan }],
+                    supersededPlans,
+                },
+            }
+            : {}),
+    };
+    // Reading the admitted journal may need its own Git credential. No provider
+    // reads, publication credentials or trust-network probes run in preflight.
+    if (input.authorize)
+        yield* preflightRelease({ plan }).pipe(Effect.provideService(Host, host));
+    // Local authentication reads .npmrc immediately, so acquire it only after
+    // all currently resolvable requests pass their real native wire admission.
+    const local = input.authentication.mode === "Local" && authorization._tag === "TokenAuthorization"
+        ? yield* Npm.makeLocalAuthentication({
+            authorization,
+            configFile: input.authentication.npmConfigFile,
+            notify: (url) => Effect.sync(() => {
+                process.stderr.write(`Complete npm authentication: ${Redacted.value(url)}\n`);
+            }),
+        })
+        : null;
     return {
         bundle,
         options: { plan, authorize: input.authorize },
-        host: {
-            providers,
-            store,
-            transport: makeHttpTransport({ providers, credentials, ...bounds }),
-            now: Date.now,
-            uniqueId: randomUUID,
-            ...(supersededPlans.length
-                ? {
-                    journal: {
-                        journalId: plan.journalId,
-                        scopes: [{ _tag: "PublicationScope", plan }],
-                        supersededPlans,
-                    },
-                }
-                : {}),
-        },
+        host,
         ...(local ? { onRejected: (operation) => local.complete(operation) } : {}),
     };
 });

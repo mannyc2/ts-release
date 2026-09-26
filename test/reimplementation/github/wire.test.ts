@@ -2,7 +2,7 @@ import { fail } from "node:assert"
 import { expect, test } from "bun:test"
 import { Effect, Schema } from "effect"
 import { makeRequest, type ProviderContext } from "@mannyc1/ts-release"
-import { File } from "@mannyc1/ts-release/bundle"
+import { Bundle, File } from "@mannyc1/ts-release/bundle"
 import * as GitHub from "../../../packages/github/src/index.js"
 import { bindScope, readScope } from "../../../packages/github/src/Binding.js"
 import {
@@ -79,7 +79,30 @@ async function fixture() {
       },
     ],
   }
-  return { repository, draft, draftContext, draftRequest, facts, bytes, asset, context }
+  const providers = GitHub.definitions({
+    bundle: new Bundle({ format: "ts-release/bundle/2", artifacts: [file] }),
+    readContent: () => Effect.succeed(bytes),
+    read: () => Effect.die("Local request preflight cannot probe GitHub"),
+  })
+  const draftPreflight = providers.find(
+    (provider) => provider.definitionId === "github.draft",
+  )?.preflight
+  const assetPreflight = providers.find(
+    (provider) => provider.definitionId === "github.asset",
+  )?.preflight
+  if (!draftPreflight || !assetPreflight) throw new Error("Fixture requires native local preflight")
+  return {
+    repository,
+    draft,
+    draftContext,
+    draftRequest,
+    facts,
+    bytes,
+    asset,
+    context,
+    draftPreflight,
+    assetPreflight,
+  }
 }
 test("GitHub wire uses exact JSON or owned binary bodies and the returned parent upload template", async () => {
   const f = await fixture(),
@@ -106,6 +129,22 @@ test("GitHub wire uses exact JSON or owned binary bodies and the returned parent
     generate_release_notes: false,
   })
   expect(ownsRequest(f.draftRequest)).toBe(true)
+  expect(await Effect.runPromise(f.draftPreflight(f.draft, f.draftContext))).toEqual({
+    _tag: "Prepared",
+    request: f.draftRequest,
+  })
+  expect(
+    await Effect.runPromise(
+      f.assetPreflight(f.asset, {
+        ...f.context,
+        dependencies: [{ operation: f.draft, receipts: [], observations: [] }],
+      }),
+    ),
+  ).toEqual({ _tag: "Deferred", dependencies: [f.draft.operationId] })
+  expect(await Effect.runPromise(f.assetPreflight(f.asset, f.context))).toEqual({
+    _tag: "Prepared",
+    request,
+  })
 })
 test("exact wire admission rejects changed method, endpoint, bytes, headers and foreign parent evidence", async () => {
   const f = await fixture(),
@@ -137,6 +176,11 @@ test("exact wire admission rejects changed method, endpoint, bytes, headers and 
     ],
   }
   expect(() => bindScope(f.asset, conflicting)).toThrow("parent evidence")
+  expect(
+    await Effect.runPromise(Effect.flip(f.assetPreflight(f.asset, conflicting))),
+  ).toMatchObject({
+    code: "github-parent-evidence",
+  })
   expect(() => bindScope(f.asset, { ...f.context, dependencies: [] })).toThrow("undeclared parent")
 })
 test("published-parent observation cannot authorize an asset write through a stale draft receipt", async () => {

@@ -37,7 +37,7 @@ export const intentOf = (operation: Operation): Intent =>
     descriptors[kindOf(operation)].intentCodec as import("effect/Schema").Codec<Intent, unknown>,
     operation.intent,
   )
-const required = (intent: Intent): readonly string[] => {
+export const requiredParents = (intent: Intent): readonly string[] => {
   if (intent instanceof Model.AnnotatedRef) return [intent.annotatedTagOperation]
   if (intent instanceof Model.DraftIntent)
     return intent.tagSource._tag === "ManagedTag" ? [intent.tagSource.operationId] : []
@@ -54,7 +54,7 @@ const author = <A extends Intent>(
   Effect.fn(descriptor.definitionId)(function* (input: A, dependsOn: readonly string[] = []) {
     const intent = yield* attempt(() => own(descriptor.intentCodec, input))
     return yield* createOperation(descriptor, intent, [
-      ...new Set([...required(intent), ...dependsOn]),
+      ...new Set([...requiredParents(intent), ...dependsOn]),
     ])
   })
 export const lightweightTag = author(descriptors.lightweight)
@@ -75,7 +75,7 @@ export const validatePlan = (operations: readonly Operation[]): void => {
   for (const operation of selected) {
     const intent = intents.get(operation.operationId) ?? invalid("definition"),
       kind = kindOf(operation)
-    for (const id of required(intent)) {
+    for (const id of requiredParents(intent)) {
       const dependency = intents.get(id)
       if (!dependency || !operation.dependsOn.includes(id) || !sameRepository(intent, dependency))
         invalid("graph-dependency")

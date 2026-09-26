@@ -77,7 +77,7 @@ export const definitions = (
     tagDescriptor,
   ] as const
   return descriptors.map((descriptor): HttpProviderDefinition => {
-    const prepare = Effect.fn("npm.prepare")(function* (operation: Core.Operation) {
+    const localRequest = Effect.fn("npm.localRequest")(function* (operation: Core.Operation) {
       const intent = yield* Native.attempt(() =>
         Native.ownOperation(
           descriptor.intentCodec as Schema.Codec<
@@ -90,6 +90,7 @@ export const definitions = (
       )
       const scope = Native.scopeFor(intent)
       let body: Uint8Array
+      let verification: Parameters<Model.VerifyProvenance>[0] | undefined
       if ("tarball" in intent) {
         const tarball = yield* artifacts.read(intent.tarball)
         if (intent.provenance._tag === "GitHubActionsProvenance") {
@@ -102,15 +103,13 @@ export const definitions = (
             )
             return publishBody(intent, tarball, provenance)
           })
-          if (verifyProvenance === undefined)
-            return yield* Native.reject("npm-provenance", "Provenance verifier is required")
-          yield* verifyProvenance({
+          verification = {
             source: Native.own(Model.ProvenanceSource, provenanceSource),
             bundleBytes: new Uint8Array(provenance),
-          })
+          }
         } else body = yield* Native.attempt(() => publishBody(intent, tarball))
       } else body = Native.encode(intent.version)
-      return yield* Core.makeRequest({
+      const request = yield* Core.makeRequest({
         transport: "core.http/1",
         endpoint: Native.endpointFor(Native.readScope(scope)),
         method: "PUT",
@@ -120,6 +119,16 @@ export const definitions = (
         scope,
         replay: new Core.NoReplay({}),
       })
+      return { request, verification }
+    })
+    const prepare = Effect.fn("npm.prepare")(function* (operation: Core.Operation) {
+      const { request, verification } = yield* localRequest(operation)
+      if (verification !== undefined) {
+        if (verifyProvenance === undefined)
+          return yield* Native.reject("npm-provenance", "Provenance verifier is required")
+        yield* verifyProvenance(verification)
+      }
+      return request
     })
     return {
       ...descriptor,
@@ -142,6 +151,11 @@ export const definitions = (
       observationCodec: Evidence.RegistryObservation,
       classifyObservation: Evidence.classifyObservation,
       prepare,
+      preflight: Effect.fn("npm.preflight")(function* (operation: Core.Operation) {
+        // Structural provenance admission is local. SDK signature trust remains
+        // mandatory in prepare and is not claimed by this wire-only result.
+        return { _tag: "Prepared" as const, request: (yield* localRequest(operation)).request }
+      }),
       ownsRequest: (request) => Evidence.ownsRequest(descriptor.definitionId, request),
       decodeResponse: Effect.fn("npm.decodeResponse")(function* (request, response) {
         const selected = yield* Native.attempt(() => ({

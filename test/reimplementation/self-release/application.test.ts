@@ -12,6 +12,8 @@ import {
   createPlan,
   runRelease,
   supersedePlan,
+  type PreparedRequest,
+  type Transport,
 } from "@mannyc1/ts-release"
 import { runApplicationEffect } from "@mannyc1/ts-release/node"
 import { Bundle } from "@mannyc1/ts-release/bundle"
@@ -58,8 +60,8 @@ const fixture = async (
     },
   }
 }
-const preparedFixture = async () => {
-  const f = await fixture()
+const preparedFixture = async (manifests?: Parameters<typeof fixture>[0]) => {
+  const f = await fixture(manifests)
   const identity = await Effect.runPromise(prepareRelease(f.input))
   const git = Bun.which("git")
   assert.ok(git, "Application fixtures require Git")
@@ -231,18 +233,20 @@ test("changed preparation at the same release coordinate cannot escape the origi
         expect(
           history.events.filter((event) => event.body._tag === "DispatchStarted"),
         ).toHaveLength(1)
-        const resumed = yield* createApplication({
+        const result = yield* createApplication({
           ...f.application,
           ...changed,
           journal: {
             ...f.application.journal,
             cacheDirectory: join(f.work, "fresh-journal-cache"),
           },
-        })
-        const result = yield* Effect.exit(
-          runRelease({ plan: resumed.options.plan, authorize: true, observe: false }).pipe(
-            Effect.provideService(Host, { ...resumed.host, transport }),
+        }).pipe(
+          Effect.flatMap((resumed) =>
+            runRelease({ plan: resumed.options.plan, authorize: true, observe: false }).pipe(
+              Effect.provideService(Host, { ...resumed.host, transport }),
+            ),
           ),
+          Effect.exit,
         )
         expect(result._tag).toBe("Failure")
         expect(JSON.stringify(result)).toContain("unknown scope")
@@ -451,6 +455,93 @@ test("application admits retained data and resolves real HTTP transport credenti
       }),
     ).pipe(Effect.provide(ConfigProvider.layer(config))),
   )
+
+  // The archive parser admits this metadata, but embedding it in npm's native
+  // publication document exceeds the JSON depth bound. The late core package
+  // must fail real wire admission before publishing the earlier provider.
+  let nested: unknown = 0
+  for (let depth = 0; depth < 127; depth++) nested = [nested]
+  const manifests = [
+    { name: "@release-fixture/provider", version: "1.2.3" },
+    { name: "@release-fixture/core", version: "1.2.3", nested },
+  ]
+  const late = await preparedFixture(manifests)
+  requested.length = 0
+  let sends = 0
+  const acknowledgedApplication = (input: unknown) =>
+    createApplication(input).pipe(
+      Effect.map((app) => {
+        const prepare = app.host.transport.prepare?.bind(app.host.transport)
+        const npm = app.host.providers.find((provider) => provider.definitionId === "npm.publish")
+        assert.ok(prepare)
+        assert.ok(npm)
+        const transport: Transport = {
+          ...app.host.transport,
+          prepare: (request) =>
+            prepare(request).pipe(
+              Effect.as(
+                Effect.fn("fixture.acknowledgePublication")(function* (actual: PreparedRequest) {
+                  sends++
+                  return yield* npm.decodeResponse(actual, {
+                    status: 201,
+                    headers: {},
+                    body: new Uint8Array(),
+                  })
+                }),
+              ),
+            ),
+        }
+        return {
+          ...app,
+          options: { ...app.options, observe: false },
+          host: { ...app.host, transport },
+        }
+      }),
+    )
+  const exit = await Effect.runPromiseExit(
+    runApplicationEffect(acknowledgedApplication, late.application).pipe(
+      Effect.provide(ConfigProvider.layer(config)),
+    ),
+  )
+  assert(Exit.isFailure(exit))
+  const failure = Cause.findError(exit.cause)
+  expect(
+    Result.isSuccess(failure) && Schema.is(ReleaseError)(failure.success) && failure.success.code,
+  ).toBe("http-request-owner")
+  const history = await Effect.runPromise(
+    Effect.scoped(
+      createApplication({ ...late.application, authorize: false }).pipe(
+        Effect.flatMap((app) => app.host.store.read(app.options.plan.journalId)),
+      ),
+    ),
+  )
+  expect({
+    sends,
+    credentials: requested,
+    dispatches: history.events.filter((event) => event.body._tag === "DispatchStarted").length,
+  }).toEqual({ sends: 0, credentials: [], dispatches: 0 })
+  // Seed one acknowledged operation through the unchanged legacy runner, then
+  // require the maintained factory to check the unfinished late request again.
+  await Effect.runPromise(
+    runApplicationEffect(
+      (input) =>
+        acknowledgedApplication(input).pipe(
+          Effect.map((app) => ({
+            ...app,
+            options: { ...app.options, authorize: true, maxDispatches: 1 },
+          })),
+        ),
+      { ...late.application, authorize: false },
+    ).pipe(Effect.provide(ConfigProvider.layer(config))),
+  )
+  const beforeResume = { sends, credentials: [...requested] }
+  const resumed = await Effect.runPromise(
+    Effect.flip(Effect.scoped(createApplication(late.application))).pipe(
+      Effect.provide(ConfigProvider.layer(config)),
+    ),
+  )
+  expect(Schema.is(ReleaseError)(resumed) && resumed.code).toBe("http-request-owner")
+  expect({ sends, credentials: requested }).toEqual(beforeResume)
 })
 
 test("application rejects changed Bundle, Plan and owned bytes before loading credentials", async () => {

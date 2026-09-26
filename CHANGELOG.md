@@ -34,6 +34,24 @@
   retaining the original publication Bundle, Plan, content and provenance. Workflow
   attempts retain exact executor archives and their receipt separately.
 
+### Request admission and resource ownership
+
+- Add explicit whole-release request preflight for npm/GitHub. The maintained
+  authorized application checks every locally resolvable unfinished request
+  before publication credentials or dispatch; real missing parent facts remain
+  deferred. Completed and superseded operations need no new write request.
+- Expose credential-free HTTP wire validation through the same admission path
+  used by execution. Preflight reports carry facts and fingerprints, never bodies
+  or dispatch permission. The credential diagnostic retains the safe wire-refusal
+  code when application creation fails.
+- Preserve HTTP body and cleanup failures together while joining client/socket
+  shutdown; preserve SQLite initialization and close failures together.
+- Release completed Git journal and builder repositories during long application
+  sessions. Prepared sends retain the repositories they still need.
+- Preserve failed authentication cleanup when its elapsed budget expires.
+  Native process and CLI pipe tests now join owned children on runner teardown;
+  pipe backpressure uses native readiness rather than a fixed delay.
+
 ### Effect and engineering boundaries
 
 - Preserve unexpected self-release admission defects while keeping fixed safe

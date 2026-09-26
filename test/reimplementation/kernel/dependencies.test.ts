@@ -135,15 +135,35 @@ test("an external provider admits the complete graph before storage, observation
   const f = await fixture()
   const child = await Effect.runPromise(Release.createOperation(f.provider, f.child.intent))
   const plan = await Effect.runPromise(Release.createPlan("owned:bundle", [child, f.parent]))
-  for (const effect of [
+  const admissions: ReadonlyArray<Effect.Effect<unknown, Release.ReleaseError, Release.Host>> = [
     Release.runRelease({ plan, authorize: true }),
     Release.observeRelease({ plan }),
     Release.reportRelease({ plan }),
-  ]) {
+    Release.preflightRelease({ plan }),
+  ]
+  for (const effect of admissions) {
     expect(runWithHost(f.host, effect)).rejects.toThrow("Exact parent")
   }
   expect(f.calls).toEqual({ reads: 0, credentials: 0, sends: 0, observations: 0 })
   expect(f.store.journals.size).toBe(0)
+  expect(
+    await runWithHost(f.host, Effect.flip(Release.preflightRelease({ plan: f.plan }))),
+  ).toMatchObject({ code: "preflight-provider-unsupported" })
+  expect(
+    await runWithHost(
+      {
+        ...f.host,
+        providers: [
+          {
+            ...f.provider,
+            preflight: () => Effect.die("Unsupported transport cannot start provider work"),
+          },
+        ],
+      },
+      Effect.flip(Release.preflightRelease({ plan: f.plan })),
+    ),
+  ).toMatchObject({ code: "preflight-transport-unsupported" })
+  expect(f.calls).toEqual({ reads: 2, credentials: 0, sends: 0, observations: 0 })
 })
 
 test("native returned parent IDs survive a fresh runner and are the only declared dependency facts", async () => {

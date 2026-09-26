@@ -13,13 +13,14 @@ Install the 0.4 core and the providers your application uses. An npm/GitHub
 application uses this version-aligned set:
 
 ```sh
-bun add @mannyc1/ts-release@0.4.0 @mannyc1/ts-release-npm@0.4.0 @mannyc1/ts-release-github@0.4.0 effect@4.0.0-rc.115
+bun add @mannyc1/ts-release@0.4.2 @mannyc1/ts-release-npm@0.4.2 @mannyc1/ts-release-github@0.4.2 effect@4.0.0-rc.115
 bun run ts-release ./release.mjs ./release-input.json > release-report.json
 ```
 
-The [release page](https://github.com/mannyc2/ts-release/releases/tag/v0.4.0)
-records published availability and the tested Action commit. If evaluating an
-unpublished checkout, build and pack it from this repository:
+[Release history](https://github.com/mannyc2/ts-release/releases) records published
+availability and tested Action commits. The Effect runner, bounded observation,
+request preflight and repaired recovery described in this checkout are **unreleased**.
+To use them, build and pack this reviewed checkout:
 
 ```sh
 bun install --frozen-lockfile
@@ -49,8 +50,8 @@ For later publication, load those same bytes and identities rather than rebuild.
 
 The [npm/GitHub starter](templates/npm-github) supplies a complete preparation
 command and application. Its generated JavaScript is the same application used
-to release this repository. The current starter targets the 0.4.2 candidate;
-use that checkout's retained package archives until 0.4.2 is published.
+to release this repository. The current starter includes unreleased APIs;
+install matching archives from this checkout for its core and providers.
 
 ## Inspect progress and recover
 

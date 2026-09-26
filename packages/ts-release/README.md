@@ -1,10 +1,10 @@
 # ts-release
 
 Install the core locally, then add the matching provider packages your application
-uses (for example `@mannyc1/ts-release-npm@0.4.0`):
+uses (for example `@mannyc1/ts-release-npm@0.4.2`):
 
 ```sh
-bun add @mannyc1/ts-release@0.4.0 effect@4.0.0-rc.115
+bun add @mannyc1/ts-release@0.4.2 effect@4.0.0-rc.115
 ```
 
 Run an authored release application with immutable Bundle and Plan inputs and a
@@ -37,6 +37,9 @@ and [recovery guide](https://github.com/mannyc2/ts-release/blob/main/docs/recove
 For installation, package selection and upgrading older automation, see the
 [0.4 migration guide](https://github.com/mannyc2/ts-release/blob/main/docs/migration-0.4.md).
 
+The APIs below require archives built from this **unreleased source checkout**,
+with matching provider archives. They are additional to the 0.4.2 registry package.
+
 Effect applications can compose `runApplicationEffect` from the `node` or `bun`
 entry. It acquires the application once in a scope and preserves the factory's
 typed errors and caller services. To wait for public visibility without publishing:
@@ -65,3 +68,20 @@ a native call that never settles can delay cancellation. Failures remain failure
 instead of becoming `Pending`. The runner refreshes available observers, never
 dispatches publication or completes rejected authentication in this mode, and
 keeps the application's own setup and observation credential policy.
+
+`preflightRelease({ plan })` uses the supplied `Host` to check every unfinished
+request that can be constructed from current durable facts. It checks static
+requests even when ordering dependencies are unfinished. The report separates
+checked request fingerprints, missing-parent deferrals, already-satisfied
+operation IDs and Plan supersession. It neither stores request bodies nor grants
+permission to send; execution still checks live preconditions and journal CAS.
+
+Providers opt in with local `preflight`, and transports with credential-free
+`validate`. npm and GitHub definitions implement this contract with the native
+HTTP transport. Missing capabilities produce explicit unsupported errors for
+unfinished operations. GitHub requests requiring future release/asset facts stay
+deferred; no parent receipt is fabricated. Journal reads may require their own
+credentials, while provider probes, publication credentials and cryptographic
+trust verification remain outside this check. The maintained self-release
+application runs it before an authorized invocation can publish or open local
+npm authentication. Existing `runRelease` calls retain their behavior.

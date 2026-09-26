@@ -25,6 +25,8 @@
 
 ### Effect and engineering boundaries
 
+- Preserve unexpected Catalog renderer defects. Invalid metadata and owned-download
+  refusals retain `catalog-input`; declared release errors retain their fields.
 - Add `runApplicationEffect` to the Node and Bun entries. Application factories
   retain their typed errors and caller service requirements, run lazily in an
   owned scope, and preserve defects. The existing Promise/module runner keeps

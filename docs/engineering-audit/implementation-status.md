@@ -454,3 +454,31 @@ product increments and W7 final closure.
 This increment is local only. The existing direct publication question remains
 pending; no original or descendant branch push, signing or live publication has
 been attempted.
+
+## Catalog failure policy
+
+The next bounded W3/R10 increment is on `codex/standards-continuation`, based on
+`8b80d967fb6ae68aa40daf398e5bce4f86b803d4`. Catalog's private rendering owner now
+preserves unexpected exceptions as defects and local/foreign declared errors as
+typed failures. Its three owned-download refusals and Schema admission retain
+exact fixed `catalog-input` diagnostics. No renderer algorithm, public signature,
+identity, credential, transport or runtime dependency changed.
+
+[The detailed record](catalog-error-policy.md) includes the genuine initial red,
+the initial overstrong Schema-wrapper identity assertion, the corrected final
+assertion's separate baseline control, and final source green (4 tests, 93
+assertions). Independent review found no actionable issue. A serialized batch
+under `/tmp/the-show-full-verification.lock` passed full static checks, all four
+existing native format tests (86 assertions), and the existing packed Catalog
+selector. Its 61 commands passed for seven actual archives, Bun/npm installs,
+strict declarations and Node 22.22.2/Bun 1.3.14 consumers. No new transport or live
+publication check was run. Five qualification inputs have manifest SHA256
+`420f1fe79ee7f25771afb0dad16ccfb03c4a34af1aa694fe9a3eaefc2f92cca6`.
+Original root staging remains byte-identical to the retained snapshot.
+
+Provider primitive prerequisites and candidate write ownership are next; shared
+provider strict classification, application privacy policy, signing/cleanup and
+R32–R35 remain open. The release workflow also needs explicit compiler patching
+in its two `--ignore-scripts` jobs before build; that is a separate CI increment.
+Work continues through independently authorized local slices. This increment
+has not been pushed; no pending publication approval has been retried.

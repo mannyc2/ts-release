@@ -600,3 +600,20 @@ starter. These stages include the still-separate application/observation changes
 they are not claimed as an independent full run of this intermediate commit.
 No live provider or publication action ran. HTTP/SQLite cleanup, R34 preflight
 and final requirement disposition remain subsequent work.
+
+## Self-release error ownership
+
+Following provider commit `6ed3526`, the private self-release admission owner now
+preserves unexpected defects and translates declared/schema refusals to its
+existing fixed subject diagnostic. Its twelve callers explicitly own expected
+policy guards and native UTF-8/URL decoding. Secret-bearing declared errors stay
+redacted at this application boundary. Repository admission uses Schema decoding
+rather than a constructor-only check. Candidate identities, bytes, signing
+approval and dispatch rules remain unchanged.
+
+[Application evidence](self-release-error-policy.md) records the actual initial
+getter-defect failure and unchanged-test green result. Final static checks,
+application cases, generated delivery and isolated installed starter preparation
+passed in the [coordinated profile](continuation-qualification.md). The profile's
+one corrected OpenAI assertion remains separately reported. Observation/executor
+changes are the next local slice; HTTP/SQLite cleanup and preflight remain open.

@@ -105,6 +105,7 @@ class ApplicationInput extends Schema.Class("Release.ApplicationInput")({
 }) {
 }
 var failure = (code, message) => new ReleaseError({ code: `release-application-${code}`, message });
+var isReleaseError = Schema.is(Schema.Struct(ReleaseError.fields));
 var io = (subject, body) => Effect.tryPromise({
   try: body,
   catch: () => failure(subject, `Release ${subject} could not be read or retained`)

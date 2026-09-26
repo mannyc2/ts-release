@@ -25,6 +25,8 @@
 
 ### Effect and engineering boundaries
 
+- Preserve unexpected self-release admission defects while keeping fixed safe
+  diagnostics for malformed retained input and declared policy refusals.
 - Preserve unexpected defects in npm, GitHub, PyPI, MCP and OpenAI admission.
   Known native/schema refusals keep their typed safe diagnostics; malformed
   evidence recovery no longer conceals programming errors.

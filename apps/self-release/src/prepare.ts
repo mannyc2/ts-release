@@ -11,7 +11,9 @@ import {
   NPM_PRINCIPAL,
   PreparationInput,
   SourceIdentity,
+  admissionFailure,
   attempt,
+  decodeText,
   failure,
   io,
   read,
@@ -28,24 +30,26 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
   const input = yield* attempt("preparation-input", () =>
     Schema.decodeUnknownSync(PreparationInput, { onExcessProperty: "error" })(raw),
   )
-  const repository = yield* attempt(
-    "repository",
-    () => new GitHub.Repository({ apiUrl: "https://api.github.com", ...input.repository }),
+  const repository = yield* attempt("repository", () =>
+    Schema.decodeSync(GitHub.Repository)({
+      apiUrl: "https://api.github.com",
+      ...input.repository,
+    }),
   )
   const source = new SourceIdentity({ repository, ...input.source, version: input.version })
   const provenance = input.npm.provenance
   yield* attempt("preparation-policy", () => {
     if (!input.packages.length || input.npm.authorization.principal !== NPM_PRINCIPAL)
-      throw new Error("Expected a nonempty package cohort and its explicit npm principal")
+      throw admissionFailure("preparation-policy")
     if (input.npm.authorization._tag === "TrustedAuthorization" && !provenance)
-      throw new Error("Trusted publishing requires retained provenance")
+      throw admissionFailure("preparation-policy")
     if (provenance) {
       requireNodeProvenance()
       if (
         provenance.source.sourceCommit !== source.commit ||
         provenance.source.repository !== `${repository.owner}/${repository.name}`
       )
-        throw new Error("Provenance must name the selected repository and source")
+        throw admissionFailure("preparation-policy")
     }
     const names = [
       "source.json",
@@ -66,7 +70,7 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
           name === "..",
       )
     )
-      throw new Error("Release asset names must be unique portable file names")
+      throw admissionFailure("preparation-policy")
   })
   const candidateDirectory = resolve(input.candidateDirectory)
   // Refuse replacement: a failed or interrupted preparation remains inspectable.
@@ -102,9 +106,7 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
     return file
   })
   const notesBytes = yield* read(input.notesFile, 1024 * 1024)
-  const notes = yield* attempt("notes", () =>
-    new TextDecoder("utf-8", { fatal: true }).decode(notesBytes),
-  )
+  const notes = yield* attempt("notes", () => decodeText("notes", notesBytes))
   yield* retain("release-notes.md", notesBytes, "text/markdown")
   yield* retain(
     "source.json",

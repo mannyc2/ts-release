@@ -105,11 +105,29 @@ export class ApplicationInput extends Schema.Class<ApplicationInput>("Release.Ap
 
 export const failure = (code: string, message: string) =>
   new ReleaseError({ code: `release-application-${code}`, message })
+export const admissionFailure = (subject: string) =>
+  failure(subject, `Release ${subject} could not be admitted`)
+const isReleaseError = Schema.is(Schema.Struct(ReleaseError.fields))
 export const attempt = <A>(subject: string, body: () => A) =>
-  Effect.try({
-    try: body,
-    catch: () => failure(subject, `Release ${subject} could not be admitted`),
+  Effect.suspend(() => {
+    try {
+      return Effect.succeed(body())
+    } catch (error) {
+      // This application deliberately replaces even declared error fields:
+      // credential/provider failures can contain private native diagnostics.
+      if (error instanceof ReleaseError || isReleaseError(error) || Schema.isSchemaError(error))
+        return Effect.fail(admissionFailure(subject))
+      return Effect.die(error)
+    }
   })
+export const decodeText = (subject: string, bytes: Uint8Array) => {
+  const decoder = new TextDecoder("utf-8", { fatal: true })
+  try {
+    return decoder.decode(bytes)
+  } catch {
+    throw admissionFailure(subject)
+  }
+}
 export const io = <A>(subject: string, body: () => Promise<A>) =>
   Effect.tryPromise({
     try: body,

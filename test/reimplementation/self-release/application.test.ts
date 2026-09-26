@@ -4,15 +4,22 @@ import { chmod, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:f
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
-import { ConfigProvider, Effect, Schema } from "effect"
-import { Host, Plan, createPlan, runRelease, supersedePlan } from "@mannyc1/ts-release"
+import { Cause, ConfigProvider, Effect, Exit, Result, Schema } from "effect"
+import {
+  Host,
+  Plan,
+  ReleaseError,
+  createPlan,
+  runRelease,
+  supersedePlan,
+} from "@mannyc1/ts-release"
 import { runApplicationEffect } from "@mannyc1/ts-release/node"
 import { Bundle } from "@mannyc1/ts-release/bundle"
 import type { CredentialBinding } from "@mannyc1/ts-release/http"
 import * as Npm from "@mannyc1/ts-release-npm"
 import { createApplication, npmCredentials } from "../../../apps/self-release/src/application.js"
 import { NPM_PRINCIPAL, prepareRelease } from "../../../apps/self-release/src/prepare.js"
-import { SourceIdentity, releaseJournalId } from "../../../apps/self-release/src/Model.js"
+import { SourceIdentity, attempt, releaseJournalId } from "../../../apps/self-release/src/Model.js"
 import { pack } from "../npm/fixtures.js"
 
 const workspaces: string[] = []
@@ -86,6 +93,35 @@ const preparedFixture = async () => {
     },
   }
 }
+
+test("application admission preserves defects and projects expected failures without private diagnostics", async () => {
+  const f = await fixture()
+  const exit = await Effect.runPromiseExit(
+    prepareRelease({
+      ...f.input,
+      get title(): string {
+        throw new TypeError("Unexpected application input getter")
+      },
+    }),
+  )
+  assert(Exit.isFailure(exit))
+  expect(Cause.hasDies(exit.cause)).toBe(true)
+  expect(Cause.hasFails(exit.cause)).toBe(false)
+  expect(await Bun.file(join(f.input.candidateDirectory, "bundle.json")).exists()).toBe(false)
+
+  const projected = await Effect.runPromiseExit(
+    attempt("authentication-response", () => {
+      throw new ReleaseError({ code: "private-token", message: "Private SDK token detail" })
+    }),
+  )
+  assert(Exit.isFailure(projected))
+  const error = Cause.findError(projected.cause)
+  expect(Result.isSuccess(error) && error.success).toMatchObject({
+    code: "release-application-authentication-response",
+    message: "Release authentication-response could not be admitted",
+  })
+  expect(Cause.hasDies(projected.cause)).toBe(false)
+})
 
 test("preparation retains original bytes and authors provider-first npm and complete GitHub dependencies", async () => {
   const f = await fixture()

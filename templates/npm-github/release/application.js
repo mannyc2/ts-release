@@ -7,7 +7,7 @@ import { decodeJson, sameData, } from "@mannyc1/ts-release/http";
 import { fileContentOwner, makeGithubTrustedPublisherHost, makeHttpRead, makeHttpTransport, openGitJournal, } from "@mannyc1/ts-release/node";
 import * as GitHub from "@mannyc1/ts-release-github";
 import * as Npm from "@mannyc1/ts-release-npm";
-import { ApplicationInput, GITHUB_PRINCIPAL, NPM_PRINCIPAL, SourceIdentity, attempt, failure, read, releaseJournalId, requireNodeProvenance, sha256, } from "./Model.js";
+import { ApplicationInput, GITHUB_PRINCIPAL, NPM_PRINCIPAL, SourceIdentity, admissionFailure, attempt, decodeText, failure, read, releaseJournalId, requireNodeProvenance, sha256, } from "./Model.js";
 export { ApplicationInput } from "./Model.js";
 const secret = (name) => Config.Redacted(name).pipe(Effect.mapError(() => failure("credential", "An explicitly selected credential is unavailable")));
 /** Public registry observations do not acquire publish authority. Keep this
@@ -50,11 +50,11 @@ export const createApplication = Effect.fn("release.createApplication")(function
     if (sourceFile?._tag !== "OwnedFile" || notesFile?._tag !== "OwnedFile")
         return yield* failure("source", "Release source and notes must be retained Bundle files");
     const sourceBytes = yield* files.read(sourceFile);
-    const source = yield* attempt("source", () => Schema.decodeUnknownSync(SourceIdentity, { onExcessProperty: "error" })(decodeJson(sourceBytes)));
+    const source = yield* attempt("source", () => Schema.decodeUnknownSync(SourceIdentity, { onExcessProperty: "error" })(decodeJson(decodeText("source", sourceBytes))));
     const notesBytes = yield* files.read(notesFile);
-    const notes = yield* attempt("notes", () => new TextDecoder("utf-8", { fatal: true }).decode(notesBytes));
+    const notes = yield* attempt("notes", () => decodeText("notes", notesBytes));
     const planBytes = yield* read(join(candidateDirectory, "plan.json"));
-    const retained = yield* attempt("plan", () => Schema.decodeUnknownSync(Plan, { onExcessProperty: "error" })(decodeJson(planBytes)));
+    const retained = yield* attempt("plan", () => Schema.decodeUnknownSync(Plan, { onExcessProperty: "error" })(decodeJson(decodeText("plan", planBytes))));
     if (retained.planId !== input.planId || retained.bundleId !== input.bundleSha256)
         return yield* failure("plan-identity", "Retained Plan differs from the selected Bundle and Plan identities");
     if (retained.journalId !== releaseJournalId(source))
@@ -65,20 +65,20 @@ export const createApplication = Effect.fn("release.createApplication")(function
             .map((operation) => Schema.decodeUnknownSync(Npm.PublishIntent, { onExcessProperty: "error" })(operation.intent));
         const [first, ...remaining] = npm;
         if (!first || new Set(npm.map((intent) => intent.name)).size !== npm.length)
-            throw new Error("Expected unique npm publications");
+            throw admissionFailure("publication-policy");
         for (const intent of npm) {
             if (intent.version !== source.version || intent.authorization.principal !== NPM_PRINCIPAL)
-                throw new Error("Package version or principal differs");
+                throw admissionFailure("publication-policy");
             if ((intent.authorization._tag === "TrustedAuthorization") !==
                 (input.authentication.mode === "Trusted"))
-                throw new Error("Authentication mode differs from the retained Plan");
+                throw admissionFailure("publication-policy");
             if (!sameData(intent.authorization, first.authorization))
-                throw new Error("npm authorization differs across the cohort");
+                throw admissionFailure("publication-policy");
             if (intent.provenance._tag === "GitHubActionsProvenance" &&
                 (intent.provenance.source.sourceCommit !== source.commit ||
                     intent.provenance.source.repository !==
                         `${source.repository.owner}/${source.repository.name}`))
-                throw new Error("Provenance differs from retained source");
+                throw admissionFailure("publication-policy");
         }
         const tags = [];
         const drafts = [];
@@ -97,7 +97,7 @@ export const createApplication = Effect.fn("release.createApplication")(function
             if (!intent ||
                 !sameData(intent.repository, source.repository) ||
                 intent.principal !== GITHUB_PRINCIPAL)
-                throw new Error("Release operation is outside the selected repository or principal");
+                throw admissionFailure("publication-policy");
             if (intent instanceof GitHub.LightweightTag)
                 tags.push(intent);
             if (intent instanceof GitHub.DraftIntent)
@@ -112,7 +112,7 @@ export const createApplication = Effect.fn("release.createApplication")(function
             drafts.length !== 1 ||
             !draft ||
             draft.body !== notes)
-            throw new Error("Release tag or notes differ from the owned source");
+            throw admissionFailure("publication-policy");
         return [first, ...remaining];
     });
     const hasProvenance = publications.some((intent) => intent.provenance._tag === "GitHubActionsProvenance");
@@ -186,7 +186,13 @@ export const createApplication = Effect.fn("release.createApplication")(function
         supersededPlans.push({ plan: historical, providers: historicalProviders });
     }
     const remote = yield* attempt("journal-remote", () => {
-        const url = new URL(input.journal.remote);
+        let url;
+        try {
+            url = new URL(input.journal.remote);
+        }
+        catch {
+            throw admissionFailure("journal-remote");
+        }
         if (url.protocol === "file:" &&
             !url.hostname &&
             !url.username &&
@@ -201,7 +207,7 @@ export const createApplication = Effect.fn("release.createApplication")(function
             url.search ||
             url.hash ||
             ![path, `${path}.git`].includes(url.pathname))
-            throw new Error("Journal must be a local file remote or the selected GitHub repository");
+            throw admissionFailure("journal-remote");
         return "Github";
     });
     // Admission above is pure with respect to credentials. Open the local npm

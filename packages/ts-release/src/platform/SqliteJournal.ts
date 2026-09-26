@@ -2,6 +2,7 @@ import { Database, SQLiteError } from "bun:sqlite"
 import { mkdirSync } from "node:fs"
 import { dirname } from "node:path"
 import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
 import * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
 import type { ReleaseError } from "../internal/Error.js"
@@ -44,41 +45,39 @@ class SqliteJournal implements JournalStore {
       fail("invalid-data", "Value could not be admitted")
     }
     this.db = sqlite(() => new Database(path, { create: true, strict: true }))
-    try {
-      sqlite(() => {
-        this.db.exec("PRAGMA busy_timeout=10000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")
-        this.db
-          .transaction(() => {
-            const tables = tableNames(
-              this.db
-                .query(
-                  "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
-                )
-                .all(),
+  }
+
+  initialize(): void {
+    sqlite(() => {
+      this.db.exec("PRAGMA busy_timeout=10000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")
+      this.db
+        .transaction(() => {
+          const tables = tableNames(
+            this.db
+              .query(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+              )
+              .all(),
+          )
+          if (tables.length === 0) {
+            this.db.exec(
+              "CREATE TABLE metadata (format TEXT NOT NULL); CREATE TABLE events (journal TEXT NOT NULL, revision INTEGER NOT NULL, event_id TEXT NOT NULL, bytes BLOB NOT NULL, PRIMARY KEY(journal,revision), UNIQUE(journal,event_id))",
             )
-            if (tables.length === 0) {
-              this.db.exec(
-                "CREATE TABLE metadata (format TEXT NOT NULL); CREATE TABLE events (journal TEXT NOT NULL, revision INTEGER NOT NULL, event_id TEXT NOT NULL, bytes BLOB NOT NULL, PRIMARY KEY(journal,revision), UNIQUE(journal,event_id))",
-              )
-              this.db.query("INSERT INTO metadata(format) VALUES(?)").run(FORMAT)
-            } else {
-              if (
-                tables.length !== 2 ||
-                !tables.some((t) => t.name === "metadata") ||
-                !tables.some((t) => t.name === "events")
-              )
-                fail("journal-format", "Database is not a current release journal")
-              const rows = formats(this.db.query("SELECT format FROM metadata").all())
-              if (rows.length !== 1 || rows[0]?.format !== FORMAT)
-                fail("journal-format", "Journal format is not supported")
-            }
-          })
-          .immediate()
-      })
-    } catch (error) {
-      sqlite(() => this.db.close())
-      throw error
-    }
+            this.db.query("INSERT INTO metadata(format) VALUES(?)").run(FORMAT)
+          } else {
+            if (
+              tables.length !== 2 ||
+              !tables.some((t) => t.name === "metadata") ||
+              !tables.some((t) => t.name === "events")
+            )
+              fail("journal-format", "Database is not a current release journal")
+            const rows = formats(this.db.query("SELECT format FROM metadata").all())
+            if (rows.length !== 1 || rows[0]?.format !== FORMAT)
+              fail("journal-format", "Journal format is not supported")
+          }
+        })
+        .immediate()
+    })
   }
 
   read = Effect.fn("ts-release.SqliteJournal.read")((journalId: string) =>
@@ -150,7 +149,15 @@ class SqliteJournal implements JournalStore {
 export const openSqliteJournal = Effect.fn("ts-release.openSqliteJournal")(
   (path: string): Effect.Effect<JournalStore, ReleaseError, Scope.Scope> =>
     Effect.acquireRelease(
-      attempt(() => new SqliteJournal(path)),
+      Effect.gen(function* () {
+        const journal = yield* attempt(() => new SqliteJournal(path))
+        // Failed initialization owns this handle until it closes; preserve both
+        // causes if close itself fails before ordinary scope ownership begins.
+        yield* attempt(() => journal.initialize()).pipe(
+          Effect.onExitIf(Exit.isFailure, () => attempt(() => sqlite(() => journal.db.close()))),
+        )
+        return journal
+      }),
       (journal) => Effect.sync(() => journal.db.close()),
     ),
 )

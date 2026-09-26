@@ -125,40 +125,51 @@ const nativeRequest = (options: Required<HttpExchangeOptions>) =>
     fields: Readonly<Record<string, string>>,
     body: Uint8Array,
   ) {
+    let client: Client | undefined,
+      finished = false,
+      status = 0,
+      length = 0
+    let wireBytes = 0
+    let connection: Socket | undefined,
+      socketClosed = Promise.resolve()
+    const connector = connect({
+      rejectUnauthorized: true,
+      timeout: options.timeoutMilliseconds,
+      allowH2: false,
+    })
+    const chunks: Buffer[] = [],
+      responseHeaders: Record<string, string> = {}
+    Object.setPrototypeOf(responseHeaders, null)
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const cleanup = Effect.gen(function* () {
+      finished = true
+      clearTimeout(timer)
+      // Schedule both shutdowns before either can throw, then join every issued
+      // operation and the pending socket's close signal. Native failures remain
+      // private; onExit combines this fixed failure with any response failure.
+      const settled = yield* Effect.promise(() =>
+        Promise.allSettled([
+          Promise.resolve().then(() =>
+            connection?.destroy(new Error("Native HTTP request closed")),
+          ),
+          socketClosed,
+          Promise.resolve().then(() => client?.destroy()),
+        ]),
+      )
+      if (settled.some((result) => result.status === "rejected"))
+        return yield* reject("http-cleanup", "Native HTTP resources could not be released")
+    })
     return yield* Effect.callback<HttpResponse, ReleaseError>((resume) => {
-      let client: Client | undefined,
-        finished = false,
-        status = 0,
-        length = 0
-      let wireBytes = 0
-      let connection: Socket | undefined,
-        socketClosed = Promise.resolve()
-      const connector = connect({
-        rejectUnauthorized: true,
-        timeout: options.timeoutMilliseconds,
-        allowH2: false,
-      })
-      const chunks: Buffer[] = [],
-        responseHeaders: Record<string, string> = {}
-      Object.setPrototypeOf(responseHeaders, null)
-      const cleanup = async (): Promise<void> => {
-        finished = true
-        clearTimeout(timer)
-        // Client cannot own the connection until secureConnect completes. Also
-        // close the pending socket, emitting a fixed error to clear its timer.
-        connection?.destroy(new Error("Native HTTP request closed"))
-        await Promise.all([socketClosed, client?.destroy().catch(() => {})])
-      }
       const complete = (result: Effect.Effect<HttpResponse, ReleaseError>) => {
         if (finished) return
-        const closed = cleanup()
-        resume(Effect.promise(() => closed).pipe(Effect.andThen(result)))
+        finished = true
+        resume(result)
       }
       const failed = () =>
         complete(reject("http-outcome-unknown", "Native HTTP response was not completely observed"))
       // Native I/O deadline includes DNS/TLS/header/body callbacks; cleanup joins the socket close.
       // @effect-diagnostics-next-line globalTimersInEffect:off
-      const timer = setTimeout(failed, options.timeoutMilliseconds)
+      timer = setTimeout(failed, options.timeoutMilliseconds)
       try {
         client = new ClientConstructor(url.origin, {
           connect: (settings, callback) => {
@@ -273,8 +284,7 @@ const nativeRequest = (options: Required<HttpExchangeOptions>) =>
       } catch {
         failed()
       }
-      return Effect.promise(cleanup)
-    })
+    }).pipe(Effect.onExit(() => cleanup))
   })
 
 /** Capture definition methods once; each owner sees its own bytes. Resolving

@@ -1,6 +1,6 @@
 import { fail } from "node:assert"
 import { expect, onTestFinished, test } from "bun:test"
-import { Schema, Effect, Fiber, Redacted } from "effect"
+import { Schema, Effect, Fiber, Redacted, Cause, Exit, Result } from "effect"
 import { TestClock } from "effect/testing"
 import {
   Host,
@@ -448,6 +448,7 @@ test("browser completion refuses redirects, errors, malformed tokens and unbound
   }
   let canceled = false,
     finishing = false
+  let cleanupDefect: TypeError | undefined
   const root = Effect.runFork(
     Effect.scoped(
       Effect.gen(function* () {
@@ -465,7 +466,13 @@ test("browser completion refuses redirects, errors, malformed tokens and unbound
                 Effect.ensuring(
                   Effect.sync(() => {
                     canceled = true
-                  }),
+                  }).pipe(
+                    Effect.andThen(
+                      Effect.suspend(() =>
+                        cleanupDefect ? Effect.die(cleanupDefect) : Effect.void,
+                      ),
+                    ),
+                  ),
                 ),
               ),
           },
@@ -474,6 +481,19 @@ test("browser completion refuses redirects, errors, malformed tokens and unbound
         const completion = yield* Effect.forkChild(Effect.exit(session.complete(f.operation)))
         yield* TestClock.adjust(20)
         expect((yield* Fiber.join(completion))._tag).toBe("Failure")
+        expect(yield* session.complete(f.operation)).toBe(false)
+        // Deadline settlement must preserve a real cleanup defect, not replace
+        // it with the ordinary authentication-timeout refusal.
+        cleanupDefect = new TypeError("Authentication read cleanup failed")
+        session.capture(f.request, challenge())
+        const failingCleanup = yield* Effect.forkChild(Effect.exit(session.complete(f.operation)))
+        yield* TestClock.adjust(20)
+        const cleanupExit = yield* Fiber.join(failingCleanup)
+        expect(Exit.isFailure(cleanupExit)).toBe(true)
+        if (!Exit.isFailure(cleanupExit)) throw new Error("Expected cleanup defect")
+        const found = Cause.findDefect(cleanupExit.cause)
+        expect(Result.isSuccess(found) && found.success).toBe(cleanupDefect)
+        expect(Cause.hasFails(cleanupExit.cause)).toBe(false)
         expect(yield* session.complete(f.operation)).toBe(false)
       }),
     ).pipe(Effect.provide(TestClock.layer())),

@@ -39,10 +39,14 @@ for (const format of ["sha1", "sha256"] as const)
     await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
+          const cache = yield* Effect.acquireRelease(
+            Effect.sync(() => mkdtempSync(join(tmpdir(), "git-journal-read-ownership-"))),
+            (directory) => Effect.sync(() => rmSync(directory, { recursive: true, force: true })),
+          )
           const runtime = yield* openGitRuntime(processOptions),
             remote = yield* runtime.repository(format),
-            first = yield* openGitJournal(optionsFor(remote.directory, tmpdir(), format)),
-            second = yield* openGitJournal(optionsFor(remote.directory, tmpdir(), format)),
+            first = yield* openGitJournal(optionsFor(remote.directory, cache, format)),
+            second = yield* openGitJournal(optionsFor(remote.directory, cache, format)),
             id = "shared release",
             a = event("a"),
             b = new JournalEvent({ ...event("b"), planId: "different-preparation-plan" })
@@ -69,6 +73,9 @@ for (const format of ["sha1", "sha256"] as const)
               native(remote.directory, ["show", `${journalRef(id)}:event.json`]).toString(),
             ),
           ).toEqual(JSON.parse(canonical(b)))
+          // Completed reads/appends must release fetched object databases while
+          // both journal handles and their application scope remain open.
+          expect([...new Bun.Glob("**/HEAD").scanSync(cache)]).toEqual([])
         }),
       ),
     )

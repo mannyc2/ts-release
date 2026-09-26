@@ -34,8 +34,12 @@ export const makeGitCatalogHost = Effect.fn("ts-release.makeGitCatalogHost")(
       const observeRef: ObserveRef = Effect.fn("git.observeNativeRef")(function* (input) {
         const coordinate = yield* attempt(() => admitCoordinate(input)),
           env = yield* environment(coordinate)
-        const repository = yield* runtime.repository("sha1")
-        return { oid: yield* remoteRef(repository.run, coordinate, env) }
+        return yield* Effect.acquireUseRelease(
+          runtime.repository("sha1"),
+          (repository) =>
+            remoteRef(repository.run, coordinate, env).pipe(Effect.map((oid) => ({ oid }))),
+          (repository) => repository.close,
+        )
       })
       const objects: ObjectBuilder = Object.freeze({
         construct: Effect.fn("git.buildOwnedObjects")(function* (
@@ -46,11 +50,10 @@ export const makeGitCatalogHost = Effect.fn("ts-release.makeGitCatalogHost")(
             read = source.bind(undefined)
           const { remote, ref, principal, scope } = value
           yield* attempt(() => admitCoordinate({ remote, ref, principal, scope }))
-          return yield* construct(
-            (yield* runtime.repository(objectFormat(value.expectedOld))).run,
-            read,
-            value,
-            limit,
+          return yield* Effect.acquireUseRelease(
+            runtime.repository(objectFormat(value.expectedOld)),
+            (repository) => construct(repository.run, read, value, limit),
+            (repository) => repository.close,
           )
         }),
       })
@@ -60,18 +63,24 @@ export const makeGitCatalogHost = Effect.fn("ts-release.makeGitCatalogHost")(
         const { remote, ref, principal, scope, expectedOld } = input
         const coordinate = yield* attempt(() => admitCoordinate({ remote, ref, principal, scope })),
           format = yield* attempt(() => objectFormat(expectedOld))
-        const env = yield* environment(coordinate),
-          repository = yield* runtime.repository(format)
-        if ((yield* fetchRef(repository.run, coordinate, env)) !== expectedOld)
-          return yield* attempt(invalid)
-        yield* checked(repository.run, [
-          "fsck",
-          "--strict",
-          "--no-dangling",
-          "--no-reflogs",
-          expectedOld,
-        ])
-        return yield* exportObjects(repository.run, expectedOld, limit)
+        const env = yield* environment(coordinate)
+        return yield* Effect.acquireUseRelease(
+          runtime.repository(format),
+          (repository) =>
+            Effect.gen(function* () {
+              if ((yield* fetchRef(repository.run, coordinate, env)) !== expectedOld)
+                return yield* attempt(invalid)
+              yield* checked(repository.run, [
+                "fsck",
+                "--strict",
+                "--no-dangling",
+                "--no-reflogs",
+                expectedOld,
+              ])
+              return yield* exportObjects(repository.run, expectedOld, limit)
+            }),
+          (repository) => repository.close,
+        )
       })
       const transport: GitCatalogHost["transport"] = (inputs, otherwise) => {
         const groups = new Map<string, Map<string, Intent>>()

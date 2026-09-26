@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test"
 import { Effect } from "effect"
+import { mkdtempSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import {
   Host,
@@ -20,6 +23,10 @@ for (const format of ["sha1", "sha256"] as const)
     await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
+          const cache = yield* Effect.acquireRelease(
+            Effect.sync(() => mkdtempSync(join(tmpdir(), "git-host-read-ownership-"))),
+            (directory) => Effect.sync(() => rmSync(directory, { recursive: true, force: true })),
+          )
           const runtime = yield* openGitRuntime(processOptions),
             remote = yield* runtime.repository(format)
           const old = seed(remote.directory),
@@ -35,6 +42,7 @@ for (const format of ["sha1", "sha256"] as const)
             native(remote.directory, ["update-ref", coordinate.ref, old])
           const options = {
             ...processOptions,
+            temporaryRoot: cache,
             readContent: content.read,
             credentials: (coordinate: Git.RefCoordinate) =>
               Effect.sync(() => {
@@ -76,6 +84,9 @@ for (const format of ["sha1", "sha256"] as const)
                   ),
                 )
               }
+              // Observation/capture/construction return owned values, so their
+              // native repositories must be gone before this builder closes.
+              expect([...new Bun.Glob("**/HEAD").scanSync(cache)]).toEqual([])
               const [first, ...remaining] = values
               if (first === undefined) throw new Error("Fixture requires a Git intent")
               return [first, ...remaining] satisfies [Git.Intent, ...Git.Intent[]]

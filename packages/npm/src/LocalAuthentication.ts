@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises"
-import { Effect, Redacted } from "effect"
+import { Cause, Effect, Exit, Redacted } from "effect"
 import type { Operation, PreparedRequest, ReleaseError, RequestFacts } from "@mannyc1/ts-release"
 import * as Http from "@mannyc1/ts-release/http"
 import { makeHttpRead } from "@mannyc1/ts-release/node"
@@ -274,14 +274,30 @@ export const makeLocalAuthenticationWith = Effect.fn("npm.makeLocalAuthenticatio
           yield* Effect.sleep(delay)
         }
       })
+      const settlement: { exit?: Exit.Exit<boolean, ReleaseError> } = {}
       return yield* authenticate.pipe(
+        Effect.onExit((exit) =>
+          Effect.sync(() => {
+            settlement.exit = exit
+          }),
+        ),
         Effect.timeoutOrElse({
           duration: selected.timeoutMilliseconds,
-          orElse: () =>
-            Native.reject(
+          orElse: () => {
+            // rc.115 joins the timeout loser but discards its Exit. Keep any
+            // failure or defect produced while its resources settle.
+            const exit = settlement.exit
+            if (
+              exit &&
+              Exit.isFailure(exit) &&
+              (Cause.hasFails(exit.cause) || Cause.hasDies(exit.cause))
+            )
+              return Effect.failCause(exit.cause)
+            return Native.reject(
               "authentication-timeout",
               "npm authentication timed out; rerun to request a fresh challenge",
-            ),
+            )
+          },
         }),
         Effect.ensuring(Effect.sync(() => eraseChallenge(challenge))),
       )

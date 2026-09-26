@@ -25,7 +25,12 @@ export type GitCommand = (
   input?: Uint8Array,
   environment?: GitEnvironment,
 ) => Effect.Effect<GitResult, ReleaseError>
-export type GitRepository = Readonly<{ run: GitCommand; directory: string }>
+export type GitRepository = Readonly<{
+  run: GitCommand
+  directory: string
+  /** Internal owners may release a completed repository before runtime disposal. */
+  close: Effect.Effect<void>
+}>
 export interface GitRuntime {
   readonly maximumOutputBytes: number
   readonly repository: (format: "sha1" | "sha256") => Effect.Effect<GitRepository, ReleaseError>
@@ -149,6 +154,7 @@ export const openGitRuntime = Effect.fn("git.openRuntime")(
           if (format !== "sha1" && format !== "sha256") return yield* error()
           const directory = yield* fileSystem(() => mkdtempSync(join(root, "repository-"))),
             execute = command(options.gitExecutable, directory, options, error)
+          const close = Effect.sync(() => rmSync(directory, { recursive: true, force: true }))
           const run: GitCommand = (args, bytes, environment) =>
             execute(args, bytes, {
               ...base,
@@ -174,8 +180,8 @@ export const openGitRuntime = Effect.fn("git.openRuntime")(
             "--template=",
             `--object-format=${format}`,
             ".",
-          ])
-          return Object.freeze({ directory, run })
+          ]).pipe(Effect.onError(() => close))
+          return Object.freeze({ directory, run, close })
         }),
       })
     }),

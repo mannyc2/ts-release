@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { expect, onTestFinished, test } from "bun:test"
 import { Schema } from "effect"
 import { mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
@@ -125,15 +125,28 @@ for (const runtime of [node, process.execPath]) {
     }, 10_000)
   }
   test(`shared CLI native pipe cancellation and closed output: ${runtime}`, async () => {
-    const child = Bun.spawn(
+    let child: ReturnType<typeof Bun.spawn> | undefined
+    let drained: Promise<[number, string, string]> | undefined
+    let finishing = false
+    onTestFinished(async () => {
+      finishing = true
+      // Python forwards cancellation to its active CLI and joins it before
+      // exiting; killing only Python would leave its native child behind.
+      if (child?.exitCode === null) child.kill("SIGTERM")
+      await drained
+    })
+    const spawned = Bun.spawn(
       ["python3", join(import.meta.dir, "cli-pipes.py"), runtime, cli, application],
       { stdout: "pipe", stderr: "pipe" },
     )
-    const [exit, stdout, stderr] = await Promise.all([
-      child.exited,
-      new Response(child.stdout).text(),
-      new Response(child.stderr).text(),
+    child = spawned
+    drained = Promise.all([
+      spawned.exited,
+      new Response(spawned.stdout).text(),
+      new Response(spawned.stderr).text(),
     ])
+    const [exit, stdout, stderr] = await drained
+    if (finishing) return
     expect({ exit, stderr }).toEqual({ exit: 0, stderr: "" })
     expect(JSON.parse(stdout)).toEqual({ cases: 3, assertions: 13 })
   }, 15_000)

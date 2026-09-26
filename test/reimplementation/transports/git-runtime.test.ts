@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { expect, onTestFinished, test } from "bun:test"
 import { fileURLToPath } from "node:url"
 import { Effect, Cause } from "effect"
 import { tmpdir } from "node:os"
@@ -61,8 +61,19 @@ test("Git catalog and journal sanitize failing, thrown and defective credential 
 
 test("native Git subprocess deadline and interruption close the whole process group on Node and Bun", async () => {
   const node = process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node"
+  let child: ReturnType<typeof Bun.spawn> | undefined
+  let drained: Promise<[string, string, number]> | undefined
+  let finishing = false
+  onTestFinished(async () => {
+    finishing = true
+    // The consumer aborts and joins its scoped native operation on SIGTERM;
+    // that operation owns the deliberately detached Git process group.
+    if (child?.exitCode === null) child.kill("SIGTERM")
+    await drained
+  })
   for (const executable of [node, process.execPath]) {
-    const child = Bun.spawn(
+    if (finishing) return
+    const spawned = Bun.spawn(
       [
         executable,
         fileURLToPath(new URL("./git-process-consumer.mjs", import.meta.url)),
@@ -75,11 +86,16 @@ test("native Git subprocess deadline and interruption close the whole process gr
         env: { ...process.env, TS_RELEASE_SYNTHETIC_CREDENTIAL: "fixture-only-not-inherited" },
       },
     )
-    const [stdout, stderr, code] = await Promise.all([
-      new Response(child.stdout).text(),
-      new Response(child.stderr).text(),
-      child.exited,
+    child = spawned
+    drained = Promise.all([
+      new Response(spawned.stdout).text(),
+      new Response(spawned.stderr).text(),
+      spawned.exited,
     ])
+    const [stdout, stderr, code] = await drained
+    // Bun may already have reported a runner timeout. Only that finished test
+    // skips assertions; ordinary subprocess failures remain observable below.
+    if (finishing) return
     expect({ code, stderr }).toEqual({ code: 0, stderr: "" })
     expect(JSON.parse(stdout)).toMatchObject({ assertions: 18 })
   }

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict"
 import { expect, test } from "bun:test"
 import { randomUUID } from "node:crypto"
 import { mkdtemp, mkdir, readdir, rm } from "node:fs/promises"
@@ -24,7 +25,6 @@ import {
 import {
   AppleTools,
   ApplePreparation,
-  ApplePreparations,
   ReadyToPlan,
   createApplePreparations,
   loadApplePreparations,
@@ -55,7 +55,8 @@ const boundaryError = () =>
 
 test("Apple recovery accepts a different lookup tool while preserving submission and source binding", () =>
   fixture(async (root, { owner, collection }) => {
-    const input = collection.preparations[1]!
+    const input = collection.preparations[1]
+    assert.ok(input)
     const original = appleDoubles()
     const submitted = await run(
       submitPrepared(input, owner, join(root, "work")).pipe(Effect.provide(original.layer)),
@@ -65,7 +66,7 @@ test("Apple recovery accepts a different lookup tool while preserving submission
       name: "xcrun",
       version: "71.0.0",
       path: "/different-runner/bin/xcrun",
-      sha256: Schema.decodeUnknownSync(Artifact.Sha256)("f".repeat(64)),
+      sha256: Schema.decodeSync(Artifact.Sha256)("f".repeat(64)),
     }
     const resumed = appleDoubles(lookupProducer)
     const pending = await run(
@@ -113,10 +114,11 @@ test(
       expect(await run(loadApplePreparations(JSON.parse(JSON.stringify(collection))))).toEqual(
         collection,
       )
-      expect(Object.isFrozen(collection.preparations[0]!.source)).toBe(true)
-      const reordered = await run(
-        createApplePreparations([inputs[5]!, ...inputs.slice(0, 5).reverse()]),
-      )
+      const first = inputs[0],
+        last = inputs[5]
+      assert.ok(first && last)
+      expect(Object.isFrozen(collection.preparations[0]?.source)).toBe(true)
+      const reordered = await run(createApplePreparations([last, ...inputs.slice(0, 5).reverse()]))
       expect(reordered.journalId).not.toBe(collection.journalId)
       for (const value of [
         { ...collection, journalId: "foreign" },
@@ -129,16 +131,15 @@ test(
         { ...collection, preparations: collection.preparations.slice(1) },
         { ...collection, unknown: "no" },
       ])
-        await expect(run(loadApplePreparations(value))).rejects.toBeInstanceOf(ReleaseError)
+        expect(run(loadApplePreparations(value))).rejects.toBeInstanceOf(ReleaseError)
       for (const value of [
         [],
         [inputs[0], inputs[0]],
         [{ ...inputs[0], journalId: "authored" }],
-        [inputs[0], { ...inputs[1], artifactName: inputs[0]!.artifactName.toUpperCase() }],
+        [inputs[0], { ...inputs[1], artifactName: first.artifactName.toUpperCase() }],
       ])
-        await expect(run(createApplePreparations(value as never))).rejects.toBeInstanceOf(
-          ReleaseError,
-        )
+        // @ts-expect-error Deliberately malformed authoring inputs must fail at admission.
+        expect(run(createApplePreparations(value))).rejects.toBeInstanceOf(ReleaseError)
     }),
   30_000,
 )
@@ -148,7 +149,8 @@ test("readonly nested app directories are removed after submit and final adoptio
   try {
     await mkdir(join(root, "work"))
     const { owner, collection } = await makeSources(root, true)
-    const input = collection.preparations[0]!
+    const input = collection.preparations[0]
+    assert.ok(input)
     if (input._tag !== "AppPreparation") throw new Error("Expected app fixture")
     expect(input.source.entries.find((entry) => entry.path === "Contents")).toMatchObject({
       mode: 0o555,
@@ -198,8 +200,7 @@ test(
                   JSON.parse(new TextDecoder().decode(request.body)),
                 )
                 return submitPrepared(input, owner, join(root, "work")).pipe(
-                  Effect.provide(doubles.layer),
-                  Effect.provide(BunServices.layer),
+                  Effect.provide([doubles.layer, BunServices.layer]),
                   Effect.map((receipt) => ({ _tag: "Accepted" as const, receipt })),
                   Effect.mapError(boundaryError),
                 )
@@ -228,20 +229,16 @@ test(
                 },
               }
               for (const [index, scope] of scopes.entries()) {
+                const operation = scope.plan.operations[0]
+                const preparation = collection.preparations[index]
+                assert.ok(operation && preparation)
                 yield* runPreparation(
                   collection,
-                  scope.plan.operations[0]!.operationId,
+                  operation.operationId,
                   { authorize: true },
                   (submission, id) =>
-                    finishPrepared(
-                      collection.preparations[index]!,
-                      submission,
-                      id,
-                      owner,
-                      join(root, "work"),
-                    ).pipe(
-                      Effect.provide(doubles.layer),
-                      Effect.provide(BunServices.layer),
+                    finishPrepared(preparation, submission, id, owner, join(root, "work")).pipe(
+                      Effect.provide([doubles.layer, BunServices.layer]),
                       Effect.tap((evidence) =>
                         Effect.sync(() => {
                           if (evidence instanceof ReadyToPlan) ready.push(evidence)
@@ -268,12 +265,12 @@ test(
       const pending = await stage(false)
       expect(ready).toHaveLength(0)
       expect(
-        pending.preparations.every((report) => report.operations[0]!.status === "Pending"),
+        pending.preparations.every((report) => report.operations[0]?.status === "Pending"),
       ).toBe(true)
       const completed = await stage(true)
       expect(ready).toHaveLength(6)
       expect(
-        completed.preparations.every((report) => report.operations[0]!.status === "Satisfied"),
+        completed.preparations.every((report) => report.operations[0]?.status === "Satisfied"),
       ).toBe(true)
       const outputs = await Promise.all(
         ready.map((item) =>
@@ -314,7 +311,8 @@ test(
 for (const check of ["verifySignature", "validateTicket", "assess"] as const)
   test(`Apple completion refuses failed ${check} before adopting final bytes`, () =>
     fixture(async (root, { owner, collection }) => {
-      const input = collection.preparations[1]!
+      const input = collection.preparations[1]
+      assert.ok(input)
       const native = appleDoubles()
       const submitted = await run(
         submitPrepared(input, owner, join(root, "work")).pipe(Effect.provide(native.layer)),
@@ -333,7 +331,7 @@ for (const check of ["verifySignature", "validateTicket", "assess"] as const)
         [check]: () =>
           Effect.fail(new Tool.InputInvalid({ operation: check, reason: "assurance rejected" })),
       })
-      await expect(
+      expect(
         run(
           finishPrepared(input, submitted, "operation", counting, join(root, "work")).pipe(
             Effect.provide(layer),
@@ -347,7 +345,7 @@ for (const check of ["verifySignature", "validateTicket", "assess"] as const)
 test("Apple v0.8 rejects both retired preparation collection formats", () =>
   fixture(async (_root, { collection }) => {
     for (const version of [1, 2])
-      await expect(
+      expect(
         run(
           loadApplePreparations({
             ...collection,

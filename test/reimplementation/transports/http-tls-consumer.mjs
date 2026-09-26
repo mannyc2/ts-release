@@ -10,20 +10,29 @@ import { makeHttpTransport, makeHttpRead, makeCredentialExchange } from "@mannyc
 const writes = []
 const server = createServer(
   { key: readFileSync(process.argv[2]), cert: readFileSync(process.argv[3]) },
-  async (request, response) => {
+  (request, response) => {
     const chunks = []
-    for await (const chunk of request) chunks.push(chunk)
-    writes.push({
-      method: request.method,
-      path: request.url,
-      authorization: request.headers.authorization,
-      body: Buffer.concat(chunks).toString(),
+    request.on("data", (chunk) => chunks.push(chunk))
+    request.on("error", (error) => {
+      console.error(error)
+      process.exitCode = 1
+      response.destroy(error)
     })
-    if (request.url === "/redirect") response.writeHead(307, { location: "/other" }).end()
-    else
-      response
-        .writeHead(request.url === "/artifact" ? 201 : 200, { "content-type": "application/json" })
-        .end('{"value":"fixture-ephemeral"}')
+    request.on("end", () => {
+      writes.push({
+        method: request.method,
+        path: request.url,
+        authorization: request.headers.authorization,
+        body: Buffer.concat(chunks).toString(),
+      })
+      if (request.url === "/redirect") response.writeHead(307, { location: "/other" }).end()
+      else
+        response
+          .writeHead(request.url === "/artifact" ? 201 : 200, {
+            "content-type": "application/json",
+          })
+          .end('{"value":"fixture-ephemeral"}')
+    })
   },
 )
 server.listen(0, "127.0.0.1")

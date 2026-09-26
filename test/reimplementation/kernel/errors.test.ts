@@ -12,7 +12,6 @@ import {
   canonical,
   reportRelease,
   runRelease,
-  type DispatchStarted,
   type HostShape,
 } from "./kernel.js"
 import {
@@ -31,7 +30,7 @@ for (const candidate of evaluatorNames) {
     let store = new SqliteJournal(path)
     try {
       const codec = Schema.Struct({
-        status: Schema.Number,
+        status: Schema.Finite,
         endpoint: Schema.String,
         requestDigest: Schema.String,
         nativeBody: Schema.String,
@@ -46,7 +45,7 @@ for (const candidate of evaluatorNames) {
             request: { endpoint: string; bodyDigest: string },
             evidence: unknown,
           ) => {
-            const native = evidence as typeof codec.Type
+            const native = Schema.decodeUnknownSync(codec)(evidence)
             return (
               native.endpoint === request.endpoint && native.requestDigest === request.bodyDigest
             )
@@ -99,7 +98,7 @@ for (const candidate of evaluatorNames) {
           .operations[0]?.status,
       ).toBe("Inconclusive")
       expect(sends).toBe(1)
-      await expect(
+      expect(
         runWithHost(
           { ...host, store, providers: [providerFor()] },
           reportRelease({ plan: fixture.plan }),
@@ -141,8 +140,7 @@ for (const candidate of evaluatorNames) {
         },
       }
       const first = runWithHost(host, runRelease({ plan: fixture.plan, authorize: true }))
-      if (failure === "unknown-native")
-        await expect(first).rejects.toThrow("installed versioned codec")
+      if (failure === "unknown-native") expect(first).rejects.toThrow("installed versioned codec")
       else await first
       const snapshot = await Effect.runPromise(fixture.store.read(fixture.plan.journalId))
       expect(
@@ -176,7 +174,8 @@ for (const candidate of evaluatorNames) {
         },
       }
       await runWithHost(host, runRelease({ plan: fixture.plan, authorize: true }))
-      const start = (await startEvents(fixture.store, fixture.plan))[0]!.body as DispatchStarted
+      const start = (await startEvents(fixture.store, fixture.plan))[0]?.body
+      if (start?._tag !== "DispatchStarted") throw new Error("Missing fixture dispatch")
       const event = new JournalEvent({
         format: "ts-release/event/1",
         eventId: "malformed",
@@ -193,7 +192,7 @@ for (const candidate of evaluatorNames) {
         }),
       })
       await Effect.runPromise(fixture.store.append(fixture.plan.journalId, 2, event))
-      await expect(
+      expect(
         runWithHost(fixture.host, runRelease({ plan: fixture.plan, authorize: true })),
       ).rejects.toThrow()
       expect(fixture.sends).toHaveLength(0)

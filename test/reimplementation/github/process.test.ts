@@ -1,4 +1,6 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
+import { Schema } from "effect"
 import { mkdtemp, writeFile, rm, realpath } from "node:fs/promises"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
@@ -15,7 +17,9 @@ test("GitHub protocol HTTP and native Git journal preserve returned IDs across S
   const root = await mkdtemp(join(tmpdir(), "github-process-acceptance-")),
     f = await fixture(3, true),
     sends: string[] = []
-  const gitExecutable = await realpath(Bun.which("git")!),
+  const gitExecutable = await realpath(
+      Bun.which("git") ?? fail('Missing fixture Bun.which("git")'),
+    ),
     node = process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node"
   const initialized = Bun.spawnSync([gitExecutable, "init", "--bare", join(root, "journal.git")], {
     stdout: "pipe",
@@ -31,7 +35,7 @@ test("GitHub protocol HTTP and native Git journal preserve returned IDs across S
       contents: Object.fromEntries(
         f.files.map((file, i) => [
           file.content.sha256,
-          Buffer.from(f.bytes[i]!).toString("base64"),
+          Buffer.from(f.bytes[i] ?? fail("Missing fixture f.bytes[i]")).toString("base64"),
         ]),
       ),
       gitExecutable,
@@ -66,30 +70,34 @@ test("GitHub protocol HTTP and native Git journal preserve returned IDs across S
       }
       sends.push(`${request.method} ${path}`)
       if (path === "/releases/731/assets") {
-        const name = url.searchParams.get("name")!,
+        const name =
+            url.searchParams.get("name") ?? fail('Missing fixture url.searchParams.get("name")'),
           bytes = new Uint8Array(await request.arrayBuffer()),
           index = f.files.findIndex((file) => file.logicalName === name)
-        expect(bytes).toEqual(f.bytes[index]!)
+        expect(bytes).toEqual(f.bytes[index] ?? fail("Missing fixture f.bytes[index]"))
         expect(f.state.assets.some((asset) => asset.name === name)).toBe(false)
         const asset = assetDocument(1001 + index, name, bytes)
         f.state.assets.push(asset)
         return Response.json(asset, { status: 201 })
       }
-      const data = (await request.json()) as Record<string, any>
+      const data = Schema.decodeUnknownSync(Schema.Record(Schema.String, Schema.Unknown))(
+        await request.json(),
+      )
       if (path === "/git/tags") {
+        const object = Schema.decodeUnknownSync(Schema.String)(data.object)
         f.state.object = {
           sha: "b".repeat(40),
           tag: data.tag,
           message: data.message,
           tagger: data.tagger,
           url: `${base}/git/tags/${"b".repeat(40)}`,
-          object: { sha: data.object, type: "commit", url: `${base}/git/commits/${data.object}` },
+          object: { sha: object, type: "commit", url: `${base}/git/commits/${object}` },
         }
         return Response.json(f.state.object, { status: 201 })
       }
       if (path === "/git/refs") {
         expect(data.sha).toBe("b".repeat(40))
-        f.state.ref = refDocument(data.sha, "tag")
+        f.state.ref = refDocument(Schema.decodeUnknownSync(Schema.String)(data.sha), "tag")
         return Response.json(f.state.ref, { status: 201 })
       }
       if (path === "/releases") {
@@ -101,7 +109,7 @@ test("GitHub protocol HTTP and native Git journal preserve returned IDs across S
       if (path === "/releases/731" && request.method === "PATCH") {
         expect(f.state.assets).toHaveLength(3)
         expect(data).toEqual({ draft: false })
-        f.state.releases[0]!.draft = false
+        ;(f.state.releases[0] ?? fail("Missing fixture f.state.releases[0]")).draft = false
         return Response.json(f.state.releases[0])
       }
       return new Response(null, { status: 404 })
@@ -127,30 +135,35 @@ test("GitHub protocol HTTP and native Git journal preserve returned IDs across S
     visible = false
     const hidden = await run(process.execPath, "restart")
     expect(hidden.exitCode, hidden.err).toBe(0)
-    const interim = JSON.parse(hidden.out)
+    const interim = Schema.decodeSync(
+      Schema.fromJsonString(Schema.Struct({ dispatches: Schema.Int, receipts: Schema.Int })),
+    )(hidden.out)
     expect(interim.dispatches).toBe(6)
     expect(interim.receipts).toBe(5)
     expect(f.state.assets).toHaveLength(3)
-    expect(f.state.releases[0]!.draft).toBe(true)
+    expect((f.state.releases[0] ?? fail("Missing fixture f.state.releases[0]")).draft).toBe(true)
     visible = true
     const restored = await run(node, "restart")
     expect(restored.exitCode, restored.err).toBe(0)
-    const final = JSON.parse(restored.out)
-    expect(
-      final.report.operations.every((op: { status: string }) => op.status === "Satisfied"),
-    ).toBe(true)
+    const WorkerReport = Schema.Struct({
+      report: Schema.Struct({ operations: Schema.Array(Schema.Struct({ status: Schema.String })) }),
+      dispatches: Schema.Int,
+      receipts: Schema.Int,
+    })
+    const final = Schema.decodeSync(Schema.fromJsonString(WorkerReport))(restored.out)
+    expect(final.report.operations.every((op) => op.status === "Satisfied")).toBe(true)
     expect(final.dispatches).toBe(7)
     expect(final.receipts).toBe(6)
     const repeated = await run(process.execPath, "restart")
     expect(repeated.exitCode, repeated.err).toBe(0)
     expect(
-      JSON.parse(repeated.out).report.operations.every(
-        (op: { status: string }) => op.status === "Satisfied",
+      Schema.decodeSync(Schema.fromJsonString(WorkerReport))(repeated.out).report.operations.every(
+        (op) => op.status === "Satisfied",
       ),
     ).toBe(true)
     expect(sends).toHaveLength(7)
   } finally {
-    server.stop(true)
+    await server.stop(true)
     await rm(root, { recursive: true, force: true })
   }
 }, 60000)

@@ -6,20 +6,23 @@ import {
   makeCoreGitTransport,
   type Transport,
   type JournalStore,
+  type HostShape,
 } from "@mannyc1/ts-release"
 import { makeFixture, runWithHost, startEvents } from "./fixtures.js"
 
 test("missing credentials or malformed prepared send fail before DispatchStarted", async () => {
+  // @ts-expect-error A malformed native callback must reach the runtime preparation guard.
+  const invalidSend: Transport["send"] = null
   for (const prepare of [
     () =>
       Effect.fail(
         new ReleaseError({ code: "credential-unavailable", message: "Credential unavailable" }),
       ),
-    () => Effect.succeed(null as unknown as Transport["send"]),
+    () => Effect.succeed(invalidSend),
   ]) {
     const f = await makeFixture()
     const host = { ...f.host, transport: { ...f.host.transport, prepare } }
-    await expect(runWithHost(host, runRelease({ plan: f.plan, authorize: true }))).rejects.toThrow()
+    expect(runWithHost(host, runRelease({ plan: f.plan, authorize: true }))).rejects.toThrow()
     expect(await startEvents(f.store, f.plan)).toEqual([])
     expect(f.sends).toEqual([])
   }
@@ -81,7 +84,7 @@ test("prepared sends are discarded on CAS loss and AlreadyRecorded; same-live am
             : { _tag: mode }
         }),
     }
-    const host = {
+    const host: HostShape = {
       ...f.host,
       store,
       transport: {
@@ -161,7 +164,7 @@ test("present noncallable preparation cannot silently select the unprepared send
   for (const malformed of [false, 0, "", null, {}]) {
     const f = await makeFixture()
     let reads = 0
-    const host = {
+    const host: HostShape = {
       ...f.host,
       store: {
         append: f.store.append,
@@ -171,9 +174,10 @@ test("present noncallable preparation cannot silently select the unprepared send
             return yield* f.store.read(id)
           }),
       },
-      transport: { ...f.host.transport, prepare: malformed } as unknown as Transport,
+      // @ts-expect-error Intentionally pass a noncallable capability through the public API.
+      transport: { ...f.host.transport, prepare: malformed },
     }
-    await expect(runWithHost(host, runRelease({ plan: f.plan, authorize: true }))).rejects.toThrow(
+    expect(runWithHost(host, runRelease({ plan: f.plan, authorize: true }))).rejects.toThrow(
       "callable",
     )
     expect(reads).toBe(0)

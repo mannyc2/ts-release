@@ -3,6 +3,10 @@
 Prepare immutable release artifacts, publish through explicit provider adapters,
 and resume partial releases using the same durable journal.
 
+For changes to this repository, start with [Contributing](CONTRIBUTING.md) and
+[the architecture](ARCHITECTURE.md). They define the checked toolchain, ownership
+boundaries and evidence required for a change.
+
 ## Run a release application
 
 Install the 0.4 core and the providers your application uses. An npm/GitHub

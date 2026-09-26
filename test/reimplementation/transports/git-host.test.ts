@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { Effect, Layer } from "effect"
+import { Effect } from "effect"
 import { pathToFileURL } from "node:url"
 import {
   Host,
@@ -76,7 +76,9 @@ for (const format of ["sha1", "sha256"] as const)
                   ),
                 )
               }
-              return values as [Git.Intent, ...Git.Intent[]]
+              const [first, ...remaining] = values
+              if (first === undefined) throw new Error("Fixture requires a Git intent")
+              return [first, ...remaining] satisfies [Git.Intent, ...Git.Intent[]]
             }),
           )
           // Builder scope (including every private native repository) is now gone.
@@ -95,7 +97,7 @@ for (const format of ["sha1", "sha256"] as const)
             uniqueId: () => `native-git-${++serial}`,
           }
           const report = yield* runRelease({ plan, authorize: true }).pipe(
-            Effect.provide(Layer.succeed(Host, application)),
+            Effect.provideService(Host, application),
           )
           expect(report.operations.map((operation) => operation.status)).toEqual([
             "Satisfied",
@@ -114,7 +116,7 @@ for (const format of ["sha1", "sha256"] as const)
           expect(events.filter((event) => event.body._tag === "DispatchStarted")).toHaveLength(3)
           expect(events.filter((event) => event.body._tag === "ReceiptAccepted")).toHaveLength(3)
           yield* runRelease({ plan, authorize: true }).pipe(
-            Effect.provide(Layer.succeed(Host, application)),
+            Effect.provideService(Host, application),
           )
           const resumed = (yield* store.read(plan.journalId)).events
           expect(resumed.filter((event) => event.body._tag === "DispatchStarted")).toHaveLength(3)
@@ -189,8 +191,9 @@ test("native Git preflight admits exact objects and authority before a journal s
             dependencies: [],
           }),
           transport = host.transport([intent])
+        if (transport.prepare === undefined) throw new Error("Git host must provide preparation")
         const before = credentials,
-          send = yield* transport.prepare!(request)
+          send = yield* transport.prepare(request)
         expect(credentials).toBe(before + 1)
         expect(native(remote.directory, ["rev-parse", coordinate.ref]).toString().trim()).toBe(old)
         const altered = yield* makeRequest({
@@ -215,8 +218,11 @@ test("native Git preflight admits exact objects and authority before a journal s
         expect(native(remote.directory, ["rev-parse", coordinate.ref]).toString().trim()).toBe(
           competitor,
         )
-        const damaged = content.stored.get(intent.objectSet.sha256)!
-        damaged[0] = damaged[0]! ^ 1
+        const damaged = content.stored.get(intent.objectSet.sha256)
+        const first = damaged?.[0]
+        if (damaged === undefined || first === undefined)
+          throw new Error("Fixture requires stored object bytes")
+        damaged[0] = first ^ 1
         const plan = yield* createPlan("damaged-git-object-set", [operation]),
           store = new MemoryJournal()
         // Skip observation to reach publication preparation with deliberately damaged owned bytes.
@@ -237,9 +243,7 @@ test("native Git preflight admits exact objects and authority before a journal s
         const count = credentials
         expect(
           (yield* Effect.exit(
-            runRelease({ plan, authorize: true }).pipe(
-              Effect.provide(Layer.succeed(Host, application)),
-            ),
+            runRelease({ plan, authorize: true }).pipe(Effect.provideService(Host, application)),
           ))._tag,
         ).toBe("Failure")
         expect((yield* store.read(plan.journalId)).events).toEqual([])

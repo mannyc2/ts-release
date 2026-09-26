@@ -1,5 +1,6 @@
+import workspace from "../package.json" with { type: "json" }
 import assert from "node:assert/strict"
-import { cp, lstat, mkdir, readFile, readdir, writeFile } from "node:fs/promises"
+import { cp, lstat, mkdir, readdir, writeFile } from "node:fs/promises"
 import { join, resolve } from "node:path"
 import { Effect } from "effect"
 import { readCandidate } from "./prepare-release.js"
@@ -13,7 +14,6 @@ const candidate = await readCandidate(resolve(candidatePath))
 const consumer = resolve(consumerPath)
 await mkdir(consumer)
 await mkdir(join(consumer, "archives"))
-const workspace = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"))
 const dependencies: Record<string, string> = {
   "@mannyc1/ts-release": "",
   effect: workspace.devDependencies.effect,

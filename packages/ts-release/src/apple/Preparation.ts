@@ -70,11 +70,13 @@ export const runPreparation = Effect.fn("apple.runPreparation")(function* (
 ) {
   const runOptions = { ...options }
   const { admitted, host, scopes } = yield* context(inputs)
-  const scope = scopes.find((scope) => scope.plan.operations[0]!.operationId === preparationId)
+  const scope = scopes.find((scope) => scope.plan.operations[0]?.operationId === preparationId)
   if (!scope)
     return yield* reject("preparation-id", "Selected preparation is absent from this collection")
   const plan = scope.plan,
-    input = admitted.preparations[scopes.indexOf(scope)]!
+    input = admitted.preparations[scopes.indexOf(scope)]
+  if (input === undefined)
+    return yield* reject("preparation-id", "Selected preparation is absent from this collection")
   yield* runRelease({ ...runOptions, plan, observe: false }).pipe(Effect.provideService(Host, host))
   const { snapshot } = yield* read(host, plan)
   if (selected(snapshot.events, plan)) return
@@ -168,12 +170,11 @@ const publicationContext = Effect.fn("apple.publicationContext")(function* (
   }))
   const admitted = yield* context(inputs)
   const plan = yield* loadPlan(captured.plan, admitted.host.providers)
-  const publications = admitted.host.journal!.scopes.filter(
-    (scope) => scope._tag === "PublicationScope",
-  )
+  const publications =
+    admitted.host.journal?.scopes.filter((scope) => scope._tag === "PublicationScope") ?? []
   if (
     publications.length !== 1 ||
-    publications[0]!.plan.planId !== plan.planId ||
+    publications[0]?.plan.planId !== plan.planId ||
     plan.journalId !== admitted.admitted.journalId ||
     plan.bundleId !== captured.content.sha256
   )
@@ -200,7 +201,10 @@ export const reportAppleContext = Effect.fn("apple.reportContext")(function* (
     ? yield* publicationContext(inputs, publication.plan, publication.finalBundleContent, owner)
     : undefined
   const admitted = completed ?? (yield* context(inputs))
-  const prefix = completed?.prefix ?? (yield* read(admitted.host, admitted.scopes[0]!.plan))
+  const [initial] = admitted.scopes
+  if (initial === undefined)
+    return yield* reject("preparation-set", "Nonempty Apple preparation inputs required")
+  const prefix = completed?.prefix ?? (yield* read(admitted.host, initial.plan))
   const { revision, events } = prefix.snapshot
   return freeze({
     journalId: admitted.admitted.journalId,

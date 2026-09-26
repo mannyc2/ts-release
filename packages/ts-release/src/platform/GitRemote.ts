@@ -19,10 +19,11 @@ export const remoteRef = Effect.fn("git.remoteRef")(function* (
     if (result.exitCode === 2 && output === "") return null
     if (result.exitCode !== 0) invalid()
     const fields = output.split("\t")
-    if (fields.length !== 2 || fields[1] !== coordinate.ref + "\n") invalid()
-    objectFormat(fields[0]!)
-    if (/^0+$/u.test(fields[0]!)) invalid()
-    return fields[0]!
+    const [oid, ref] = fields
+    if (fields.length !== 2 || ref !== coordinate.ref + "\n" || oid === undefined) return invalid()
+    objectFormat(oid)
+    if (/^0+$/u.test(oid)) invalid()
+    return oid
   })
 })
 export const fetchRef = Effect.fn("git.fetchRef")(function* (

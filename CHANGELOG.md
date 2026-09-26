@@ -23,6 +23,20 @@
 
 ## Unreleased
 
+### Effect and engineering boundaries
+
+- Add `runApplicationEffect` to the Node and Bun entries. Application factories
+  retain their typed errors and caller service requirements, run lazily in an
+  owned scope, and preserve defects. The existing Promise/module runner keeps
+  its 0.4.2 factory-throw diagnostics.
+- Preserve HTTP credential interruption before dispatch. Secret-bearing errors
+  and defects remain redacted, including mixed interruption causes.
+- Treat malformed GitHub tag object types as inconclusive. OpenAI skill discovery
+  no longer includes an undefined skill name for a root-level `SKILL.md`.
+- Enforce a patched Effect compiler, type-aware lint, explicit host compiler
+  closures and package import boundaries. Contributor and agent guidance now
+  records data, resource ownership, diagnostic and verification requirements.
+
 ### npm acknowledgement and host diagnostics
 
 - Accept any 2xx registry reply as npm's acknowledgement of the exact publish.

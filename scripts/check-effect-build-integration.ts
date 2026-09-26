@@ -1,3 +1,4 @@
+import { Schema } from "effect"
 const root = new URL("../", import.meta.url).pathname
 const invoke = async (argv: string[], env: Record<string, string> = {}) => {
   const child = Bun.spawn(argv, {
@@ -12,8 +13,14 @@ const invoke = async (argv: string[], env: Record<string, string> = {}) => {
   return output
 }
 await invoke([process.execPath, "test", "./test/reimplementation/artifacts"])
-const artifacts = JSON.parse(await invoke([process.execPath, "scripts/check-packed-artifacts.ts"]))
-const apple = JSON.parse(
+const artifacts = Schema.decodeSync(
+  Schema.fromJsonString(
+    Schema.StructWithRest(Schema.Struct({ work: Schema.String }), [
+      Schema.Record(Schema.String, Schema.Unknown),
+    ]),
+  ),
+)(await invoke([process.execPath, "scripts/check-packed-artifacts.ts"]))
+const apple: unknown = JSON.parse(
   await invoke([process.execPath, "scripts/check-packed-apple.ts"], {
     TS_RELEASE_PACKED_ARTIFACT_WORK: artifacts.work,
   }),

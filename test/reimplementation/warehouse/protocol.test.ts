@@ -1,3 +1,4 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
 import { Effect, Schema, Redacted } from "effect"
 import { type ProviderContext, makeRequest } from "@mannyc1/ts-release"
@@ -17,7 +18,7 @@ const response = (
 })
 const prepared = async () => {
   const f = await fixture()
-  const intent = f.intents[0]!
+  const intent = f.intents[0] ?? fail("Missing fixture f.intents[0]")
   let current = response(404),
     reads = 0
   const providers = PyPi.definitions({
@@ -33,7 +34,9 @@ const prepared = async () => {
     own: { operation, receipts: [], observations: [] },
     dependencies: [],
   }
-  const request = await Effect.runPromise(providers[0]!.prepare(operation, context))
+  const request = await Effect.runPromise(
+    (providers[0] ?? fail("Missing fixture providers[0]")).prepare(operation, context),
+  )
   const json = () => ({
     meta: { "api-version": "1.4" },
     name: intent.project,
@@ -50,13 +53,28 @@ const prepared = async () => {
   const observe = async (r: HttpResponse, receipts: readonly unknown[] = []) => {
     current = r
     const value = await Effect.runPromise(
-      providers[0]!.observe!(operation, { ...context, own: { ...context.own, receipts } }),
-    )
-    expect(
-      providers[0]!.classifyObservation!(operation, value.evidence, receipts, {
+      (
+        (providers[0] ?? fail("Missing fixture providers[0]")).observe ??
+        fail("Missing fixture providers[0]!.observe")
+      ).call(providers[0] ?? fail("Missing fixture providers[0]"), operation, {
         ...context,
         own: { ...context.own, receipts },
       }),
+    )
+    expect(
+      (
+        (providers[0] ?? fail("Missing fixture providers[0]")).classifyObservation ??
+        fail("Missing fixture providers[0]!.classifyObservation")
+      ).call(
+        providers[0] ?? fail("Missing fixture providers[0]"),
+        operation,
+        value.evidence,
+        receipts,
+        {
+          ...context,
+          own: { ...context.own, receipts },
+        },
+      ),
     ).toBe(value.status)
     return value
   }
@@ -66,7 +84,7 @@ const prepared = async () => {
     operation,
     context,
     request,
-    provider: providers[0]!,
+    provider: providers[0] ?? fail("Missing fixture providers[0]"),
     json,
     observe,
     reads: () => reads,
@@ -92,12 +110,10 @@ test("native upload receipt owns the complete multipart request and excludes raw
     expect(JSON.stringify(result)).not.toContain("untrusted-token")
   }
   const body = new Uint8Array(f.request.body)
-  body[0] = body[0]! ^ 1
+  body[0] = (body[0] ?? fail("Missing fixture body[0]")) ^ 1
   const changed = await Effect.runPromise(makeRequest({ ...f.request.facts, body }))
   expect(f.provider.ownsRequest(changed)).toBe(false)
-  await expect(
-    Effect.runPromise(f.provider.decodeResponse(changed, response(200))),
-  ).rejects.toThrow()
+  expect(Effect.runPromise(f.provider.decodeResponse(changed, response(200)))).rejects.toThrow()
   for (const fields of [
     { endpoint: "https://example.org/upload/" },
     { principal: "different" },
@@ -163,8 +179,12 @@ test("complete two/four-file authoring rejects duplicate coordinates and altered
     expect(() => PyPi.normalizeProject(name)).toThrow()
   expect(await Effect.runPromise(PyPi.author(f.intents))).toHaveLength(4)
   expect(await Effect.runPromise(PyPi.author(f.intents.slice(0, 2)))).toHaveLength(2)
-  await expect(Effect.runPromise(PyPi.author([...f.intents, f.intents[0]!]))).rejects.toThrow()
-  await expect(Effect.runPromise(PyPi.author([]))).rejects.toThrow()
+  expect(
+    Effect.runPromise(
+      PyPi.author([...f.intents, f.intents[0] ?? fail("Missing fixture f.intents[0]")]),
+    ),
+  ).rejects.toThrow()
+  expect(Effect.runPromise(PyPi.author([]))).rejects.toThrow()
   for (const patch of [
     { version: "2.0.0" },
     { project: "other-project" },
@@ -173,9 +193,13 @@ test("complete two/four-file authoring rejects duplicate coordinates and altered
   ]) {
     const intent = Schema.decodeUnknownSync(PyPi.UploadIntent)({ ...f.intent, ...patch })
     const operation = await Effect.runPromise(PyPi.upload(intent))
-    await expect(
+    expect(
       Effect.runPromise(
-        f.provider.observe!(operation, { ...f.context, own: { ...f.context.own, operation } }),
+        (f.provider.observe ?? fail("Missing fixture f.provider.observe")).call(
+          f.provider,
+          operation,
+          { ...f.context, own: { ...f.context.own, operation } },
+        ),
       ),
     ).rejects.toThrow()
     expect(f.reads()).toBe(0)
@@ -205,7 +229,7 @@ test("token and trusted credentials bind exact endpoint, principal, project set 
     issuer: "https://token.actions.githubusercontent.com",
     audience: "pypi",
   })
-  const intent = Schema.decodeUnknownSync(PyPi.UploadIntent)({ ...f.intent, authorization: auth })
+  const intent = Schema.decodeSync(PyPi.UploadIntent)({ ...f.intent, authorization: auth })
   const binding = {
     endpoint: f.endpoint.uploadUrl,
     principal: auth.principal,
@@ -241,7 +265,7 @@ test("token and trusted credentials bind exact endpoint, principal, project set 
     `Basic ${Buffer.from("__token__:minted-fixture").toString("base64")}`,
   )
   for (const patch of [{ principal: "wrong" }, { endpoint: "https://example.org/" }])
-    await expect(
+    expect(
       Effect.runPromise(
         PyPi.authorizeTrusted(
           { authorization: auth, endpoint: selected, binding: { ...binding, ...patch } },
@@ -256,7 +280,7 @@ test("token and trusted credentials bind exact endpoint, principal, project set 
     ["Not_Normalized"],
   ])
     expect(() =>
-      Schema.decodeUnknownSync(PyPi.UploadIntent)({
+      Schema.decodeSync(PyPi.UploadIntent)({
         ...intent,
         authorization: { ...auth, projects },
       }),

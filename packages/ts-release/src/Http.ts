@@ -1,6 +1,6 @@
 export { decodeJson } from "./internal/NativeJson.js"
 export { canonical, compareText, decodeOwned, sameBytes, sameData } from "./internal/Identity.js"
-import { Effect, Redacted, Schema } from "effect"
+import { Effect, Predicate, Redacted, Schema } from "effect"
 import { ReleaseError, attempt as coreAttempt, fail, failure, reject } from "./internal/Error.js"
 import { canonical, decodeOwned } from "./internal/Identity.js"
 import type {
@@ -35,9 +35,8 @@ export const makeDataBoundary = (prefix: string, subject: string) => {
     }
   }
   const object = (value: unknown): Record<string, unknown> => {
-    if (value === null || typeof value !== "object" || Array.isArray(value))
-      return invalid("object")
-    return value as Record<string, unknown>
+    if (!Predicate.isObject(value)) return invalid("object")
+    return value
   }
   const ownOperation = <A, I>(
     codec: Schema.Codec<A, I>,
@@ -78,6 +77,7 @@ export const isPublicText = (value: string, maximum: number, empty = false): boo
   value === value.normalize("NFC") &&
   value.trim() === value &&
   [...value].length <= maximum &&
+  // oxlint-disable-next-line no-control-regex -- Public text must reject literal control characters.
   !/[\u0000-\u001f\u007f]/u.test(value) &&
   !containsSecret(value)
 export const PublicText = (maximum: number, empty = false) =>
@@ -101,7 +101,7 @@ export const publicUrl = (value: string, protocols: readonly string[] = ["https:
 
 /** Native response envelope binds the observed acknowledgement to exact send facts. */
 export class HttpReceipt extends Schema.Class<HttpReceipt>("HttpReceipt")({
-  status: Schema.Number,
+  status: Schema.Finite,
   body: Schema.String,
   endpoint: Schema.String,
   method: Schema.String,
@@ -194,6 +194,8 @@ export type ResolveCredentials = (
 export interface BoundCredentials {
   readonly binding: CredentialBinding
   /** Called only after one exact endpoint/principal/scope match. */
+  // Public callback compatibility includes receiver capture; do not replace with an eager property read.
+  // @effect-diagnostics-next-line lazyEffect:off
   readonly acquire: () => Effect.Effect<CredentialHeaders, ReleaseError>
 }
 /** Explicit application composition; no discovery or provider allowlist. */

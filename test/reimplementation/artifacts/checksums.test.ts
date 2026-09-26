@@ -1,3 +1,4 @@
+import assert from "node:assert/strict"
 import { expect, test } from "bun:test"
 import { execFileSync } from "node:child_process"
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
@@ -31,7 +32,8 @@ test("Bundle-derived checksums match independent GNU bytes, Unicode ordering and
         }),
       )
     }
-    const [a, b, c] = files as [File, File, File]
+    const [a, b, c] = files
+    assert.ok(a && b && c)
     const bundle = await run(finalize(files))
     const entries: ChecksumInput[] = [
       { publicName: "🚀.bin", file: b },
@@ -78,7 +80,7 @@ test("Bundle-derived checksums match independent GNU bytes, Unicode ordering and
       "\\escape",
       "x".repeat(1025),
     ])
-      await expect(run(renderSha256Sums(bundle, [{ publicName: name, file: a }]))).rejects.toThrow()
+      expect(run(renderSha256Sums(bundle, [{ publicName: name, file: a }]))).rejects.toThrow()
     for (const inputs of [
       [
         { publicName: "same", file: a },
@@ -93,13 +95,14 @@ test("Bundle-derived checksums match independent GNU bytes, Unicode ordering and
         { publicName: "two", file: a },
       ],
       [{ publicName: "a", file: new File({ ...a, deliveryMode: 0o755 }) }],
-      [{ publicName: "a", file: { ...a, _tag: "OwnedTree" } as unknown as File }],
+      [{ publicName: "a", file: { ...a, _tag: "OwnedTree" } }],
     ])
-      await expect(run(verifySha256Sums(bundle, inputs, bytes, checkContent))).rejects.toThrow()
-    await expect(
+      // @ts-expect-error Includes a deliberately wrong artifact tag to verify runtime rejection.
+      expect(run(verifySha256Sums(bundle, inputs, bytes, checkContent))).rejects.toThrow()
+    expect(
       run(renderSha256Sums(await run(finalize([b])), [{ publicName: "a", file: a }])),
     ).rejects.toThrow()
-    await expect(
+    expect(
       run(
         renderSha256Sums(new Bundle({ format: "ts-release/bundle/2", artifacts: [a, a] }), entries),
       ),
@@ -109,7 +112,7 @@ test("Bundle-derived checksums match independent GNU bytes, Unicode ordering and
       bytes.slice(1),
       new Uint8Array(bytes.length),
     ])
-      await expect(run(verifySha256Sums(bundle, entries, changed, checkContent))).rejects.toThrow()
+      expect(run(verifySha256Sums(bundle, entries, changed, checkContent))).rejects.toThrow()
     expect(reads).toBe(0)
     const privateDash = new File({ ...a, logicalName: "-" })
     const privateBundle = await run(finalize([privateDash]))
@@ -127,7 +130,7 @@ test("Bundle-derived checksums match independent GNU bytes, Unicode ordering and
     ).toBe(`${a.content.sha256}  -artifact\n`)
     await chmod(join(root, "objects", a.content.sha256), 0o600)
     await writeFile(join(root, "objects", a.content.sha256), "corrupt")
-    await expect(run(verifySha256Sums(bundle, entries, bytes, owner.verify))).rejects.toThrow()
+    expect(run(verifySha256Sums(bundle, entries, bytes, owner.verify))).rejects.toThrow()
     await writeFile(join(native, "\ue000.bin"), "corrupt")
     expect(() =>
       execFileSync("sha256sum", ["--check", "--strict", "SHA256SUMS"], {

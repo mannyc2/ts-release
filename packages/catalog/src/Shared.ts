@@ -9,6 +9,7 @@ export const Text = Schema.String.check(
       value.length > 0 &&
       value.length <= 4096 &&
       value === value.normalize("NFC") &&
+      // oxlint-disable-next-line no-control-regex -- release text excludes controls while retaining valid Unicode scalar values.
       !/[\u0000-\u001f\u007f]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(
         value,
       ),

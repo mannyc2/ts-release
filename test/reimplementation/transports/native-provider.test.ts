@@ -1,7 +1,18 @@
 import { expect, test } from "bun:test"
+import { Schema } from "effect"
 import { join } from "node:path"
 import { nativeServer } from "../warehouse/native-server.js"
 import { nativeGit } from "./git-fixture.js"
+
+const readWorkerResult = Schema.decodeSync(
+  Schema.fromJsonString(
+    Schema.Struct({
+      report: Schema.Struct({ operations: Schema.Array(Schema.Struct({ status: Schema.String })) }),
+      dispatches: Schema.Finite,
+      receipts: Schema.Finite,
+    }),
+  ),
+)
 
 for (const implementation of ["pypiserver", "devpi-server"] as const)
   test(`${implementation}: actual Node/Bun HTTP providers and Git journal survive process loss across runtimes`, async () => {
@@ -44,8 +55,8 @@ for (const implementation of ["pypiserver", "devpi-server"] as const)
       const hidden = await run(process.execPath, "restart")
       expect(hidden.code, hidden.stderr).toBe(0)
       expect(
-        JSON.parse(hidden.stdout).report.operations.some(
-          (operation: { status: string }) => operation.status === "Inconclusive",
+        readWorkerResult(hidden.stdout).report.operations.some(
+          (operation) => operation.status === "Inconclusive",
         ),
       ).toBe(true)
       expect(server.uploads).toHaveLength(4)
@@ -54,11 +65,9 @@ for (const implementation of ["pypiserver", "devpi-server"] as const)
       for (const runtime of [node, process.execPath]) {
         const observed = await run(runtime, "restart")
         expect(observed.code, observed.stderr).toBe(0)
-        const result = JSON.parse(observed.stdout)
+        const result = readWorkerResult(observed.stdout)
         expect(
-          result.report.operations.every(
-            (operation: { status: string }) => operation.status === "Satisfied",
-          ),
+          result.report.operations.every((operation) => operation.status === "Satisfied"),
         ).toBe(true)
         expect(result.dispatches).toBe(4)
         expect(result.receipts).toBe(3)

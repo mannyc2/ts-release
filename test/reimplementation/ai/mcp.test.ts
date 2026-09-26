@@ -1,3 +1,4 @@
+import { fail } from "node:assert"
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Redacted from "effect/Redacted"
@@ -129,9 +130,7 @@ const manifestInput = () =>
       "io.modelcontextprotocol.registry/publisher-provided": { channel: "stable" },
     },
   })
-const makeIntent = (
-  authorization: TokenAuthorization | OidcAuthorization = tokenAuthorization(),
-) =>
+const makeIntent = (authorization: TokenAuthorization | OidcAuthorization = tokenAuthorization()) =>
   new PublishIntent({
     registry: "https://registry.modelcontextprotocol.io",
     manifest: manifestInput(),
@@ -166,34 +165,66 @@ describe("MCP official manifest", () => {
     ])
     expect([
       ...new Set([
-        ...selected.packages!.map((entry) => entry.transport.type),
-        ...selected.remotes!.map((entry) => entry.type),
+        ...(selected.packages ?? fail("Missing fixture selected.packages")).map(
+          (entry) => entry.transport.type,
+        ),
+        ...(selected.remotes ?? fail("Missing fixture selected.remotes")).map(
+          (entry) => entry.type,
+        ),
       ]),
     ]).toEqual(["stdio", "streamable-http", "sse"])
     const first = await Effect.runPromise(render(selected))
-    const second = await Effect.runPromise(validate(new TextDecoder().decode(first)).pipe(Effect.flatMap(render)))
+    const second = await Effect.runPromise(
+      validate(new TextDecoder().decode(first)).pipe(Effect.flatMap(render)),
+    )
     expect(second).toEqual(first)
     expect(new TextDecoder().decode(first).endsWith("\n")).toBe(true)
   })
 
   test("rejects mutable coordinates, unsupported transports, secrets, and duplicate JSON keys", async () => {
-    const latest = Schema.encodeSync(Manifest)(manifestInput()) as any
-    latest.packages[2].identifier = "ghcr.io/acme/release-server:latest"
-    await expect(Effect.runPromise(validate(latest))).rejects.toThrow()
-    const websocket = structuredClone(Schema.encodeSync(Manifest)(manifestInput())) as any
-    websocket.packages[0].transport = { type: "websocket", url: "wss://example.test" }
-    await expect(Effect.runPromise(validate(websocket))).rejects.toThrow()
-    const embedded = structuredClone(Schema.encodeSync(Manifest)(manifestInput())) as any
-    embedded.packages[0].environmentVariables = [
-      { name: "TOKEN", isSecret: true, value: "github_pat_abcdefghijklmnopqrstuvwxyz" },
-    ]
-    await expect(Effect.runPromise(validate(embedded))).rejects.toThrow()
-    await expect(
+    const encoded = Schema.decodeUnknownSync(
+      Schema.StructWithRest(
+        Schema.Struct({
+          packages: Schema.Array(Schema.Record(Schema.String, Schema.Unknown)),
+        }),
+        [Schema.Record(Schema.String, Schema.Unknown)],
+      ),
+    )(Schema.encodeSync(Manifest)(manifestInput()))
+    const packages = encoded.packages ?? fail("Missing fixture packages")
+    const latest = {
+      ...encoded,
+      packages: packages.map((entry, index) =>
+        index === 2 ? { ...entry, identifier: "ghcr.io/acme/release-server:latest" } : entry,
+      ),
+    }
+    expect(Effect.runPromise(validate(latest))).rejects.toThrow()
+    const websocket = {
+      ...encoded,
+      packages: packages.map((entry, index) =>
+        index === 0
+          ? { ...entry, transport: { type: "websocket", url: "wss://example.test" } }
+          : entry,
+      ),
+    }
+    expect(Effect.runPromise(validate(websocket))).rejects.toThrow()
+    const embedded = {
+      ...encoded,
+      packages: packages.map((entry, index) =>
+        index === 0
+          ? {
+              ...entry,
+              environmentVariables: [
+                { name: "TOKEN", isSecret: true, value: "github_pat_abcdefghijklmnopqrstuvwxyz" },
+              ],
+            }
+          : entry,
+      ),
+    }
+    expect(Effect.runPromise(validate(embedded))).rejects.toThrow()
+    expect(
       Effect.runPromise(
         validate(
-          '{"$schema":"' +
-            schemaUrl +
-            '","name":"io.github.acme/a","name":"io.github.acme/b"}',
+          '{"$schema":"' + schemaUrl + '","name":"io.github.acme/a","name":"io.github.acme/b"}',
         ),
       ),
     ).rejects.toThrow()
@@ -203,7 +234,9 @@ describe("MCP official manifest", () => {
 describe("MCP native publication and recovery", () => {
   test("owns one exact POST, accepts exact active facts, and observes without replay", async () => {
     let observed: HttpResponse = response(manifestInput())
-    const definition = definitions({ read: () => Effect.succeed(observed) })[0]!
+    const definition =
+      definitions({ read: () => Effect.succeed(observed) })[0] ??
+      fail("Missing fixture definitions({ read: () => Effect.succeed(observed) })[0]")
     const operation = await Effect.runPromise(publish(makeIntent()))
     const context = { own: { operation, receipts: [], observations: [] }, dependencies: [] }
     const prepared = await Effect.runPromise(definition.prepare(operation, context))
@@ -222,25 +255,66 @@ describe("MCP native publication and recovery", () => {
     ).toBe(false)
     const accepted = await Effect.runPromise(definition.decodeResponse(prepared, observed))
     expect(accepted._tag).toBe("Accepted")
-    const exact = await Effect.runPromise(definition.observe!(operation, context))
+    const exact = await Effect.runPromise(
+      (definition.observe ?? fail("Missing fixture definition.observe")).call(
+        definition,
+        operation,
+        context,
+      ),
+    )
     expect(exact.status).toBe("Satisfied")
 
     const changed = manifestInput()
     observed = response(new Manifest({ ...changed, description: "Different immutable facts." }))
-    expect((await Effect.runPromise(definition.observe!(operation, context))).status).toBe("Conflict")
+    expect(
+      (
+        await Effect.runPromise(
+          (definition.observe ?? fail("Missing fixture definition.observe")).call(
+            definition,
+            operation,
+            context,
+          ),
+        )
+      ).status,
+    ).toBe("Conflict")
     observed = { status: 404, headers: {}, body: json({ error: "not found" }) }
-    expect((await Effect.runPromise(definition.observe!(operation, context))).status).toBe("Pending")
+    expect(
+      (
+        await Effect.runPromise(
+          (definition.observe ?? fail("Missing fixture definition.observe")).call(
+            definition,
+            operation,
+            context,
+          ),
+        )
+      ).status,
+    ).toBe("Pending")
     observed = { status: 503, headers: {}, body: json({ error: "unavailable" }) }
-    expect((await Effect.runPromise(definition.observe!(operation, context))).status).toBe(
-      "Inconclusive",
-    )
+    expect(
+      (
+        await Effect.runPromise(
+          (definition.observe ?? fail("Missing fixture definition.observe")).call(
+            definition,
+            operation,
+            context,
+          ),
+        )
+      ).status,
+    ).toBe("Inconclusive")
     expect(prepared.facts.replay._tag).toBe("None")
   })
 
   test("binds token and OIDC credentials to the exact registry operation", async () => {
-    const definition = definitions({ read: () => Effect.succeed(response(manifestInput())) })[0]!
+    const definition =
+      definitions({ read: () => Effect.succeed(response(manifestInput())) })[0] ??
+      fail(
+        "Missing fixture definitions({ read: () => Effect.succeed(response(manifestInput())) })[0]",
+      )
     const tokenOperation = await Effect.runPromise(publish(makeIntent()))
-    const context = { own: { operation: tokenOperation, receipts: [], observations: [] }, dependencies: [] }
+    const context = {
+      own: { operation: tokenOperation, receipts: [], observations: [] },
+      dependencies: [],
+    }
     const tokenRequest = await Effect.runPromise(definition.prepare(tokenOperation, context))
     expect(
       await Effect.runPromise(
@@ -256,11 +330,17 @@ describe("MCP native publication and recovery", () => {
       ),
     ).toEqual({ authorization: "Bearer registry-token" })
 
-    const authorization = oidcAuthorization(), operation = await Effect.runPromise(publish(makeIntent(authorization)))
+    const authorization = oidcAuthorization(),
+      operation = await Effect.runPromise(publish(makeIntent(authorization)))
     const request = await Effect.runPromise(
-      definition.prepare(operation, { own: { operation, receipts: [], observations: [] }, dependencies: [] }),
+      definition.prepare(operation, {
+        own: { operation, receipts: [], observations: [] },
+        dependencies: [],
+      }),
     )
-    let oidcAudience = "", exchangeUrl = "", exchangeBody = ""
+    let oidcAudience = "",
+      exchangeUrl = "",
+      exchangeBody = ""
     const host: TrustedPublisherHost = {
       oidc: (input) => {
         oidcAudience = input.audience

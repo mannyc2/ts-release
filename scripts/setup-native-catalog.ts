@@ -1,3 +1,4 @@
+import pins from "../test/reimplementation/catalog/native-tools.json" with { type: "json" }
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import { chmod, mkdir, rename, rm, stat } from "node:fs/promises"
@@ -7,9 +8,6 @@ import { join } from "node:path"
 // remains a separate host qualification; no protocol/selector simulation closes it.
 assert.equal(process.platform, "linux", "This portable acceptance setup is Linux-specific")
 assert.equal(process.arch, "x64", "Use the native host setup for another architecture")
-const pins = await Bun.file(
-  new URL("../test/reimplementation/catalog/native-tools.json", import.meta.url),
-).json()
 const exists = (path: string) =>
   stat(path).then(
     () => true,
@@ -50,12 +48,16 @@ for (const source of [pins.homebrew, pins.scoop]) {
   )
 }
 const ps = pins.powershell
-for (const binding of pins.sourceBindings)
+for (const binding of pins.sourceBindings) {
+  assert.ok(binding.owner === "homebrew" || binding.owner === "scoop")
   assert.equal(
-    createHash("sha256").update(await Bun.file(join(pins[binding.owner].directory, binding.path)).bytes()).digest("hex"),
+    createHash("sha256")
+      .update(await Bun.file(join(pins[binding.owner].directory, binding.path)).bytes())
+      .digest("hex"),
     binding.sha256,
     `Native source changed: ${binding.owner}/${binding.path}`,
   )
+}
 await mkdir(ps.directory, { recursive: true })
 const archive = join(ps.directory, ps.filename)
 if (!(await exists(archive))) {
@@ -64,11 +66,25 @@ if (!(await exists(archive))) {
   const pending = `${archive}.partial-${process.pid}`
   try {
     await run([
-      "curl", "--fail", "--location", "--silent", "--show-error",
-      "--connect-timeout", "15", "--max-time", "120",
-      "--output", pending, ps.url,
+      "curl",
+      "--fail",
+      "--location",
+      "--silent",
+      "--show-error",
+      "--connect-timeout",
+      "15",
+      "--max-time",
+      "120",
+      "--output",
+      pending,
+      ps.url,
     ])
-    assert.equal(createHash("sha256").update(await Bun.file(pending).bytes()).digest("hex"), ps.sha256)
+    assert.equal(
+      createHash("sha256")
+        .update(await Bun.file(pending).bytes())
+        .digest("hex"),
+      ps.sha256,
+    )
     await rename(pending, archive)
   } finally {
     await rm(pending, { force: true })

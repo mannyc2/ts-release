@@ -16,6 +16,7 @@ export { canonical, compare }
 export const name = (value: string): boolean =>
   value.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(value)
 export const safePath = (value: string): boolean =>
+  // oxlint-disable-next-line no-control-regex -- package paths reject control characters as part of their wire contract.
   isSafePath(value) && value === value.normalize("NFC") && !/[\u0000-\u001f\u007f]/u.test(value)
 const Name = Schema.String.check(Schema.makeFilter(name))
 const Description = PublicText(1024)
@@ -29,6 +30,7 @@ const Instructions = Schema.String.check(
       normalized.trim().length > 0 &&
       normalized === normalized.normalize("NFC") &&
       [...normalized].length <= 64 * 1024 &&
+      // oxlint-disable-next-line no-control-regex -- instructions reject NUL and DEL without discarding ordinary line breaks.
       !/[\u0000\u007f]/u.test(normalized) &&
       !containsSecret(normalized)
     )
@@ -203,9 +205,11 @@ export const inspectPackage = Effect.fn("openai.inspectPackage")(function* (
     }
     return value
   })
-  const skillNames = [...contents.keys()]
-    .filter((path) => /(?:^|\/)SKILL\.md$/u.test(path))
-    .map((path) => path.split("/").at(-2)!)
+  // A root SKILL.md has no skill directory name; retain its bytes without inventing a name.
+  const skillNames = [...contents.keys()].flatMap((path) => {
+    const parent = path.endsWith("/SKILL.md") ? path.split("/").at(-2) : undefined
+    return parent === undefined ? [] : [parent]
+  })
   return Object.freeze({
     tree,
     manifest: plugin,
@@ -231,8 +235,8 @@ export const packageFiles = Effect.fn("openai.packageFiles")(function* (
         ? [
             {
               path: entry.path,
-              mode: entry.mode as 0o644 | 0o755,
-              bytes: new Uint8Array(inspected.contents.get(entry.path)!),
+              mode: entry.mode === 0o644 ? 0o644 : 0o755,
+              bytes: new Uint8Array(inspected.contents.get(entry.path) ?? []),
             },
           ]
         : [],

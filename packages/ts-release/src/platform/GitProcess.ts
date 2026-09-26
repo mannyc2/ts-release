@@ -29,15 +29,16 @@ export interface GitRuntime {
   readonly maximumOutputBytes: number
   readonly repository: (format: "sha1" | "sha256") => Effect.Effect<GitRepository, ReleaseError>
 }
-const error = () => failure("git-process", "Native Git command did not return complete bounded output")
-const config = (values: Readonly<Record<string, string>>) =>
-  Object.fromEntries([
-    ["GIT_CONFIG_COUNT", String(Object.keys(values).length)],
-    ...Object.entries(values).flatMap(([key, value], index) => [
-      [`GIT_CONFIG_KEY_${index}`, key],
-      [`GIT_CONFIG_VALUE_${index}`, value],
-    ]),
-  ])
+const error = () =>
+  failure("git-process", "Native Git command did not return complete bounded output")
+const config = (values: Readonly<Record<string, string>>): Readonly<Record<string, string>> => {
+  const output: Record<string, string> = { GIT_CONFIG_COUNT: String(Object.keys(values).length) }
+  for (const [index, [key, value]] of Object.entries(values).entries()) {
+    output[`GIT_CONFIG_KEY_${index}`] = key
+    output[`GIT_CONFIG_VALUE_${index}`] = value
+  }
+  return output
+}
 export const credentialEnvironment = (
   input: RefCoordinate,
   credentials: Credentials,
@@ -56,7 +57,9 @@ export const credentialEnvironment = (
       !username ||
       !password ||
       username.length + password.length > 65536 ||
+      // oxlint-disable-next-line no-control-regex -- Basic authentication forbids colon and line/control separators in its username.
       /[:\u0000\r\n]/u.test(username) ||
+      // oxlint-disable-next-line no-control-regex -- Password bytes cannot introduce NUL or another HTTP header line.
       /[\u0000\r\n]/u.test(password)
     )
       throw error()
@@ -131,7 +134,7 @@ export const openGitRuntime = Effect.fn("git.openRuntime")(
       return Object.freeze({
         maximumOutputBytes: options.maximumOutputBytes,
         repository: Effect.fn("git.openRepository")(function* (format: "sha1" | "sha256") {
-          if (format !== "sha1" && format !== "sha256") return yield* Effect.fail(error())
+          if (format !== "sha1" && format !== "sha256") return yield* error()
           const directory = yield* attempt(() => mkdtempSync(join(root, "repository-"))),
             execute = command(options.gitExecutable, directory, options, error)
           const run: GitCommand = (args, bytes, environment) =>

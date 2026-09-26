@@ -1,6 +1,8 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
-import { Effect, Layer } from "effect"
+import { Effect, Schema } from "effect"
 import {
+  Plan,
   createPlan,
   makeRequest,
   runRelease,
@@ -14,6 +16,36 @@ import { definitions, publish, distTag, DistTagIntent } from "../../../packages/
 import { MemoryJournal } from "../kernel/fixtures.js"
 import { pack, accessFor } from "./fixtures.js"
 import { tarballDigests } from "../../../packages/npm/src/Wire.js"
+
+// Preserve every native key while checking only the fields these assertions read.
+const nativeRecord = Schema.Record(Schema.String, Schema.Unknown)
+const decodeDocument = Schema.decodeUnknownSync(
+  Schema.StructWithRest(
+    Schema.Struct({
+      versions: Schema.Record(Schema.String, nativeRecord),
+      _attachments: Schema.Record(
+        Schema.String,
+        Schema.StructWithRest(
+          Schema.Struct({
+            data: Schema.String,
+            length: Schema.Finite,
+          }),
+          [nativeRecord],
+        ),
+      ),
+    }),
+    [nativeRecord],
+  ),
+)
+const decodeStatus = Schema.decodeUnknownSync(Schema.Struct({ status: Schema.Finite }))
+const decodeEvidence = Schema.decodeUnknownSync(
+  Schema.StructWithRest(
+    Schema.Struct({
+      version: nativeRecord,
+    }),
+    [nativeRecord],
+  ),
+)
 
 const response = (status: number, body: unknown = {}) => ({
   status,
@@ -75,35 +107,43 @@ test("native npm PUT preserves exact metadata, scoped URL, attachments and body 
       provenance: false,
     },
   })
-  const request = await Effect.runPromise(f.providers[0]!.prepare(f.operation, f.context))
+  const request = await Effect.runPromise(
+    (f.providers[0] ?? fail("Missing fixture f.providers[0]")).prepare(f.operation, f.context),
+  )
   expect(request.facts.endpoint).toBe("https://registry.npmjs.org/@fixture%2fexample")
   expect(request.facts.replay._tag).toBe("None")
   expect(request.facts.headers).toEqual([["content-type", "application/json"]])
-  const doc = JSON.parse(new TextDecoder().decode(request.body))
-  expect(doc.versions["1.2.3"].dist).toEqual({
+  const doc = decodeDocument(JSON.parse(new TextDecoder().decode(request.body)))
+  expect((doc.versions["1.2.3"] ?? fail("Missing native version")).dist).toEqual({
     custom: "retained",
     ...(({ integrity, shasum }) => ({ integrity, shasum }))(tarballDigests(f.bytes)),
     tarball: "http://registry.npmjs.org/@fixture/example/-/@fixture/example-1.2.3.tgz",
   })
   expect(doc.description).toBe("Native package")
   expect(doc["dist-tags"]).toEqual({ latest: "1.2.3" })
-  const attachment = doc._attachments["@fixture/example-1.2.3.tgz"]
+  const attachment =
+    doc._attachments["@fixture/example-1.2.3.tgz"] ?? fail("Missing native attachment")
   expect(Buffer.from(attachment.data, "base64")).toEqual(Buffer.from(f.bytes))
   expect(attachment.length).toBe(f.bytes.length)
-  expect(f.providers[0]!.ownsRequest(request)).toBe(true)
-  expect(f.providers[1]!.ownsRequest(request)).toBe(false)
+  expect((f.providers[0] ?? fail("Missing fixture f.providers[0]")).ownsRequest(request)).toBe(true)
+  expect((f.providers[1] ?? fail("Missing fixture f.providers[1]")).ownsRequest(request)).toBe(
+    false,
+  )
   for (const patch of [
     { endpoint: request.facts.endpoint + "/other" },
     { principal: "another" },
     { headers: [] },
   ])
     expect(
-      f.providers[0]!.ownsRequest({ facts: { ...request.facts, ...patch }, body: request.body }),
+      (f.providers[0] ?? fail("Missing fixture f.providers[0]")).ownsRequest({
+        facts: { ...request.facts, ...patch },
+        body: request.body,
+      }),
     ).toBe(false)
   // npm documents 200 for a successful publish and answered 201 historically.
   for (const status of [200, 201, 202, 204, 299]) {
     const accepted = await Effect.runPromise(
-      f.providers[0]!.decodeResponse(
+      (f.providers[0] ?? fail("Missing fixture f.providers[0]")).decodeResponse(
         request,
         response(status, { token: "must-never-be-retained" }),
       ),
@@ -111,12 +151,16 @@ test("native npm PUT preserves exact metadata, scoped URL, attachments and body 
     expect(accepted._tag).toBe("Accepted")
     if (accepted._tag !== "Accepted") throw new Error("expected acceptance")
     expect(JSON.stringify(accepted.receipt)).not.toContain("must-never-be-retained")
-    expect((accepted.receipt as { status: number }).status).toBe(status)
-    expect(f.providers[0]!.receiptCorresponds(f.operation, request.facts, accepted.receipt)).toBe(
-      true,
-    )
+    expect(decodeStatus(accepted.receipt).status).toBe(status)
     expect(
-      f.providers[0]!.receiptCorresponds(
+      (f.providers[0] ?? fail("Missing fixture f.providers[0]")).receiptCorresponds(
+        f.operation,
+        request.facts,
+        accepted.receipt,
+      ),
+    ).toBe(true)
+    expect(
+      (f.providers[0] ?? fail("Missing fixture f.providers[0]")).receiptCorresponds(
         f.operation,
         { ...request.facts, bodyDigest: "0".repeat(64) },
         accepted.receipt,
@@ -124,10 +168,12 @@ test("native npm PUT preserves exact metadata, scoped URL, attachments and body 
     ).toBe(false)
   }
   // Every other reply retains only its status, as inconclusive native evidence.
-  const boundary = f.providers[0]!.dispatchError!
+  const boundary =
+    (f.providers[0] ?? fail("Missing fixture f.providers[0]")).dispatchError ??
+    fail("Missing fixture f.providers[0]!.dispatchError")
   for (const status of [300, 400, 401, 403, 409, 500, 503]) {
     const unknown = await Effect.runPromise(
-      f.providers[0]!.decodeResponse(
+      (f.providers[0] ?? fail("Missing fixture f.providers[0]")).decodeResponse(
         request,
         response(status, { token: "must-never-be-retained" }),
       ),
@@ -146,14 +192,19 @@ test("native npm PUT preserves exact metadata, scoped URL, attachments and body 
     ).toBe(false)
     expect(
       boundary.corresponds(f.operation, request.facts, {
-        ...(unknown.nativeError as object),
+        ...Schema.decodeUnknownSync(nativeRecord)(unknown.nativeError),
         status: 200,
       }),
     ).toBe(false)
   }
   const altered: PreparedRequest = { facts: request.facts, body: new Uint8Array([0]) }
-  await expect(
-    Effect.runPromise(f.providers[0]!.decodeResponse(altered, response(201))),
+  expect(
+    Effect.runPromise(
+      (f.providers[0] ?? fail("Missing fixture f.providers[0]")).decodeResponse(
+        altered,
+        response(201),
+      ),
+    ),
   ).rejects.toThrow()
 })
 
@@ -171,8 +222,13 @@ test("native npm rejects manifest/intent disagreement before registry I/O", asyn
     { publishConfig: { directory: "dist" } },
   ]) {
     const f = await fixture(manifest)
-    await expect(
-      Effect.runPromise(f.providers[0]!.observe!(f.operation, f.context)),
+    expect(
+      Effect.runPromise(
+        (
+          (f.providers[0] ?? fail("Missing fixture f.providers[0]")).observe ??
+          fail("Missing fixture f.providers[0]!.observe")
+        ).call(f.providers[0] ?? fail("Missing fixture f.providers[0]"), f.operation, f.context),
+      ),
     ).rejects.toThrow()
     expect(f.reads()).toBe(0)
   }
@@ -182,29 +238,52 @@ test("version and tag facets classify independently with strict bounded native e
   const f = await fixture()
   const observe = async (body: unknown, status = 200) => {
     f.set(response(status, body))
-    const value = await Effect.runPromise(f.providers[0]!.observe!(f.operation, f.context))
-    expect(f.providers[0]!.classifyObservation!(f.operation, value.evidence, [], f.context)).toBe(
-      value.status,
+    const value = await Effect.runPromise(
+      (
+        (f.providers[0] ?? fail("Missing fixture f.providers[0]")).observe ??
+        fail("Missing fixture f.providers[0]!.observe")
+      ).call(f.providers[0] ?? fail("Missing fixture f.providers[0]"), f.operation, f.context),
     )
+    expect(
+      (
+        (f.providers[0] ?? fail("Missing fixture f.providers[0]")).classifyObservation ??
+        fail("Missing fixture f.providers[0]!.classifyObservation")
+      ).call(
+        f.providers[0] ?? fail("Missing fixture f.providers[0]"),
+        f.operation,
+        value.evidence,
+        [],
+        f.context,
+      ),
+    ).toBe(value.status)
     return value
   }
   expect((await observe(f.metadata())).status).toBe("Satisfied")
   const moved = await observe(f.metadata("1.2.3", "1.0.0"))
   expect(moved.status).toBe("Conflict")
-  expect((moved.evidence as { version: { _tag: string } }).version._tag).toBe("VersionFacts")
+  expect(decodeEvidence(moved.evidence).version._tag).toBe("VersionFacts")
   expect((await observe({ ...f.metadata(), "dist-tags": {} })).status).toBe("Pending")
   expect((await observe({ ...f.metadata(), versions: {} })).status).toBe("Absent")
   expect((await observe(f.metadata("2.0.0"))).status).toBe("Conflict")
   const changed = f.metadata()
-  changed.versions["1.2.3"]!.dist.shasum = "0".repeat(40)
+  ;(changed.versions["1.2.3"] ?? fail('Missing fixture changed.versions["1.2.3"]')).dist.shasum =
+    "0".repeat(40)
   expect((await observe(changed)).status).toBe("Conflict")
   const missing = f.metadata()
-  delete (missing.versions["1.2.3"]!.dist as Partial<{ integrity: string }>).integrity
+  delete (
+    (missing.versions["1.2.3"] ?? fail('Missing fixture missing.versions["1.2.3"]'))
+      .dist as Partial<{ integrity: string }>
+  ).integrity
   expect((await observe(missing)).status).toBe("Inconclusive")
   expect((await observe({}, 404)).status).toBe("Absent")
   expect((await observe({ token: "secret-response" }, 500)).status).toBe("Inconclusive")
   f.set({ status: 200, headers: {}, body: new TextEncoder().encode('{"name":"a","name":"b"}') })
-  const malformed = await Effect.runPromise(f.providers[0]!.observe!(f.operation, f.context))
+  const malformed = await Effect.runPromise(
+    (
+      (f.providers[0] ?? fail("Missing fixture f.providers[0]")).observe ??
+      fail("Missing fixture f.providers[0]!.observe")
+    ).call(f.providers[0] ?? fail("Missing fixture f.providers[0]"), f.operation, f.context),
+  )
   expect(malformed.status).toBe("Inconclusive")
   expect(JSON.stringify(malformed.evidence)).not.toContain('"name":"b"')
 })
@@ -220,20 +299,32 @@ test("native dist-tag sends only the JSON version and accepts a 2xx acknowledgem
   })
   const op = await Effect.runPromise(distTag(input))
   const request = await Effect.runPromise(
-    f.providers[1]!.prepare(op, { ...f.context, own: { ...f.context.own, operation: op } }),
+    (f.providers[1] ?? fail("Missing fixture f.providers[1]")).prepare(op, {
+      ...f.context,
+      own: { ...f.context.own, operation: op },
+    }),
   )
   expect(new TextDecoder().decode(request.body)).toBe('"1.2.3"')
   expect(request.facts.endpoint).toBe(
     "https://registry.npmjs.org/-/package/@fixture%2fexample/dist-tags/next",
   )
-  expect(f.providers[1]!.ownsRequest(request)).toBe(true)
+  expect((f.providers[1] ?? fail("Missing fixture f.providers[1]")).ownsRequest(request)).toBe(true)
   for (const status of [200, 201, 202, 204, 299]) {
     const accepted = await Effect.runPromise(
-      f.providers[1]!.decodeResponse(request, response(status)),
+      (f.providers[1] ?? fail("Missing fixture f.providers[1]")).decodeResponse(
+        request,
+        response(status),
+      ),
     )
     expect(accepted._tag).toBe("Accepted")
     if (accepted._tag === "Accepted")
-      expect(f.providers[1]!.receiptCorresponds(op, request.facts, accepted.receipt)).toBe(true)
+      expect(
+        (f.providers[1] ?? fail("Missing fixture f.providers[1]")).receiptCorresponds(
+          op,
+          request.facts,
+          accepted.receipt,
+        ),
+      ).toBe(true)
   }
 })
 
@@ -252,32 +343,31 @@ test("lost native response and moved tag never resend a package PUT after a fres
   }
   const run = () =>
     Effect.runPromise(
-      runRelease({ plan: JSON.parse(JSON.stringify(plan)), authorize: true }).pipe(
-        Effect.provide(
-          Layer.succeed(Host, {
-            providers: definitions({
-              ...f.access,
-              read: () => Effect.succeed(response(200, f.metadata("1.2.3", "1.0.0"))),
-            }),
-            store,
-            transport,
-            now: Date.now,
-            uniqueId: () => crypto.randomUUID(),
+      runRelease({
+        plan: Schema.decodeUnknownSync(Plan)(JSON.parse(JSON.stringify(plan))),
+        authorize: true,
+      }).pipe(
+        Effect.provideService(Host, {
+          providers: definitions({
+            ...f.access,
+            read: () => Effect.succeed(response(200, f.metadata("1.2.3", "1.0.0"))),
           }),
-        ),
-      ),
-    )
-  const initial = await Effect.runPromise(
-    runRelease({ plan, authorize: true }).pipe(
-      Effect.provide(
-        Layer.succeed(Host, {
-          providers: f.providers,
           store,
           transport,
           now: Date.now,
           uniqueId: () => crypto.randomUUID(),
         }),
       ),
+    )
+  const initial = await Effect.runPromise(
+    runRelease({ plan, authorize: true }).pipe(
+      Effect.provideService(Host, {
+        providers: f.providers,
+        store,
+        transport,
+        now: Date.now,
+        uniqueId: () => crypto.randomUUID(),
+      }),
     ),
   )
   expect(initial.operations[0]?.status).toBe("Inconclusive")
@@ -291,9 +381,9 @@ test("lost native response and moved tag never resend a package PUT after a fres
 
 test("native admission rejects a self-consistent digest for a substituted package body", async () => {
   const f = await fixture(),
-    provider = f.providers[0]!
+    provider = f.providers[0] ?? fail("Missing fixture f.providers[0]")
   const request = await Effect.runPromise(provider.prepare(f.operation, f.context))
-  const document = JSON.parse(new TextDecoder().decode(request.body))
+  const document = decodeDocument(JSON.parse(new TextDecoder().decode(request.body)))
   for (const altered of [
     { ...document, name: "wrong-package" },
     { ...document, access: "restricted" },
@@ -305,30 +395,44 @@ test("native admission rejects a self-consistent digest for a substituted packag
       makeRequest({ ...request.facts, body: Buffer.from(JSON.stringify(altered)) }),
     )
     expect(provider.ownsRequest(changed)).toBe(false)
-    await expect(
-      Effect.runPromise(provider.decodeResponse(changed, response(201))),
-    ).rejects.toThrow()
+    expect(Effect.runPromise(provider.decodeResponse(changed, response(201)))).rejects.toThrow()
   }
 })
 
 test("native digest intent mismatch rejects before reads; observations cannot invent expected hashes", async () => {
   const f = await fixture(),
-    provider = f.providers[0]!
+    provider = f.providers[0] ?? fail("Missing fixture f.providers[0]")
   const operation = await Effect.runPromise(publish({ ...f.publication, shasum: "0".repeat(40) }))
-  await expect(
+  expect(
     Effect.runPromise(
-      provider.observe!(operation, { ...f.context, own: { ...f.context.own, operation } }),
+      (provider.observe ?? fail("Missing fixture provider.observe")).call(provider, operation, {
+        ...f.context,
+        own: { ...f.context.own, operation },
+      }),
     ),
   ).rejects.toThrow("native digests")
   expect(f.reads()).toBe(0)
   f.set(response(200, f.metadata()))
-  const observed = await Effect.runPromise(provider.observe!(f.operation, f.context))
-  const evidence = JSON.parse(JSON.stringify(observed.evidence))
+  const observed = await Effect.runPromise(
+    (provider.observe ?? fail("Missing fixture provider.observe")).call(
+      provider,
+      f.operation,
+      f.context,
+    ),
+  )
+  const evidence = decodeEvidence(JSON.parse(JSON.stringify(observed.evidence)))
   expect(() =>
-    provider.classifyObservation!(f.operation, { ...evidence, status: 404 }, [], f.context),
+    (provider.classifyObservation ?? fail("Missing fixture provider.classifyObservation")).call(
+      provider,
+      f.operation,
+      { ...evidence, status: 404 },
+      [],
+      f.context,
+    ),
   ).toThrow("status")
   expect(() =>
-    provider.classifyObservation!(
+    (provider.classifyObservation ?? fail("Missing fixture provider.classifyObservation")).call(
+      provider,
       f.operation,
       {
         ...evidence,
@@ -346,7 +450,15 @@ test("native digest intent mismatch rejects before reads; observations cannot in
     ),
   ).toThrow()
   const altered = { ...evidence, version: { ...evidence.version, shasum: "0".repeat(40) } }
-  expect(provider.classifyObservation!(f.operation, altered, [], f.context)).toBe("Conflict")
+  expect(
+    (provider.classifyObservation ?? fail("Missing fixture provider.classifyObservation")).call(
+      provider,
+      f.operation,
+      altered,
+      [],
+      f.context,
+    ),
+  ).toBe("Conflict")
 })
 
 test("a new dist-tag operation can move an existing tag; later drift cannot resend it", async () => {
@@ -373,14 +485,15 @@ test("a new dist-tag operation can move an existing tag; later drift cannot rese
         Effect.gen(function* () {
           sends++
           f.set(response(200, f.metadata()))
-          return yield* f.providers[1]!.decodeResponse(request, response(204))
+          return yield* (f.providers[1] ?? fail("Missing fixture f.providers[1]")).decodeResponse(
+            request,
+            response(204),
+          )
         }),
     },
   }
   const run = () =>
-    Effect.runPromise(
-      runRelease({ plan, authorize: true }).pipe(Effect.provide(Layer.succeed(Host, host))),
-    )
+    Effect.runPromise(runRelease({ plan, authorize: true }).pipe(Effect.provideService(Host, host)))
   expect((await run()).operations[0]?.status).toBe("Satisfied")
   expect(sends).toBe(1)
   f.set(response(200, f.metadata("1.2.3", "1.0.0")))
@@ -413,7 +526,9 @@ test("any 2xx acknowledgement satisfies the publish and its dependent dist-tag i
     transport: {
       send: (request: PreparedRequest) =>
         Effect.gen(function* () {
-          const owner = f.providers.find((provider) => provider.ownsRequest(request))!
+          const owner =
+            f.providers.find((provider) => provider.ownsRequest(request)) ??
+            fail("Missing fixture f.providers.find((provider) => provider.ownsRequest(request))")
           const status = owner === f.providers[0] ? 200 : 204
           statuses.push(status)
           return yield* owner.decodeResponse(request, response(status, { success: true }))
@@ -421,16 +536,14 @@ test("any 2xx acknowledgement satisfies the publish and its dependent dist-tag i
     },
   }
   const report = await Effect.runPromise(
-    runRelease({ plan, authorize: true }).pipe(Effect.provide(Layer.succeed(Host, host))),
+    runRelease({ plan, authorize: true }).pipe(Effect.provideService(Host, host)),
   )
   expect(report.operations.map((operation) => operation.status)).toEqual(["Satisfied", "Satisfied"])
   expect(statuses).toEqual([200, 204])
   const events = (await Effect.runPromise(store.read(plan.journalId))).events
   expect(
     events.flatMap((event) =>
-      event.body._tag === "ReceiptAccepted"
-        ? [(event.body.receipt as { status: number }).status]
-        : [],
+      event.body._tag === "ReceiptAccepted" ? [decodeStatus(event.body.receipt).status] : [],
     ),
   ).toEqual([200, 204])
 })
@@ -449,7 +562,7 @@ test("an unacknowledged registry status is journaled as native evidence and neve
       send: (request: PreparedRequest) =>
         Effect.gen(function* () {
           sends++
-          return yield* f.providers[0]!.decodeResponse(
+          return yield* (f.providers[0] ?? fail("Missing fixture f.providers[0]")).decodeResponse(
             request,
             response(503, { token: "secret-response" }),
           )
@@ -457,9 +570,7 @@ test("an unacknowledged registry status is journaled as native evidence and neve
     },
   }
   const run = () =>
-    Effect.runPromise(
-      runRelease({ plan, authorize: true }).pipe(Effect.provide(Layer.succeed(Host, host))),
-    )
+    Effect.runPromise(runRelease({ plan, authorize: true }).pipe(Effect.provideService(Host, host)))
   expect((await run()).operations[0]?.status).toBe("Inconclusive")
   const events = (await Effect.runPromise(store.read(plan.journalId))).events
   expect(

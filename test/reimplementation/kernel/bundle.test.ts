@@ -86,8 +86,8 @@ test("buffer ownership, content collisions, symlinks and byte limits fail withou
     const stored = join(root, "objects", content.sha256)
     await chmod(stored, 0o600)
     await writeFile(stored, new Uint8Array([3, 2, 1]))
-    await expect(Effect.runPromise(owner.verify(content))).rejects.toThrow()
-    await expect(Effect.runPromise(owner.putOwned(new Uint8Array([1, 2, 3])))).rejects.toThrow()
+    expect(Effect.runPromise(owner.verify(content))).rejects.toThrow()
+    expect(Effect.runPromise(owner.putOwned(new Uint8Array([1, 2, 3])))).rejects.toThrow()
     expect(
       (await readdir(join(root, "objects"))).filter((name) => name.startsWith(".copy-")),
     ).toEqual([])
@@ -95,13 +95,11 @@ test("buffer ownership, content collisions, symlinks and byte limits fail withou
     const outside = join(root, "outside")
     await writeFile(outside, new Uint8Array([1, 2, 3]))
     await symlink(outside, stored)
-    await expect(Effect.runPromise(owner.read(content))).rejects.toThrow()
-    await expect(
+    expect(Effect.runPromise(owner.read(content))).rejects.toThrow()
+    expect(
       Effect.runPromise(owner.read(new Content({ bytes: 536870913, sha256: content.sha256 }))),
     ).rejects.toThrow()
-    await expect(
-      Effect.runPromise(owner.read({ ...content, sha256: "../outside" } as Content)),
-    ).rejects.toThrow()
+    expect(Effect.runPromise(owner.read({ ...content, sha256: "../outside" }))).rejects.toThrow()
   }))
 
 test("bundle wire data rejects retired, extra, noncanonical and duplicate identities before content IO", () =>
@@ -125,15 +123,15 @@ test("bundle wire data rejects retired, extra, noncanonical and duplicate identi
       encoded.replace('"format":', '"format":"ts-release/bundle/2","format":'),
       encoded.replace("artifact.txt", "e\u0301.txt"),
     ])
-      await expect(
+      expect(
         Effect.runPromise(loadBundle(counting, new TextEncoder().encode(text))),
       ).rejects.toThrow()
     // A format 1 Bundle names the effect-build 0.6 model; it is refused by name, not by accident.
     const retired = encoded.replace("ts-release/bundle/2", "ts-release/bundle/1")
-    await expect(
+    expect(
       Effect.runPromise(loadBundle(counting, new TextEncoder().encode(retired))),
     ).rejects.toThrow("ts-release/bundle/1 records effect-build 0.6 identities")
-    await expect(Effect.runPromise(finalize([file, file]))).rejects.toThrow()
+    expect(Effect.runPromise(finalize([file, file]))).rejects.toThrow()
     expect(verifications).toBe(0)
   }))
 
@@ -170,18 +168,18 @@ test("tree metadata preserves the upstream manifest identity and rejects unsafe 
       "file/child",
     ]) {
       const changed = withLink(target)
-      await expect(
+      expect(
         Effect.runPromise(
           loadBundle(counting, encodeBundle(new Bundle({ ...value, artifacts: [changed] }))),
         ),
       ).rejects.toThrow()
-      await expect(Effect.runPromise(finalize([changed]))).rejects.toThrow()
+      expect(Effect.runPromise(finalize([changed]))).rejects.toThrow()
     }
     const forged = Schema.decodeUnknownSync(Bundle)({
       ...Schema.encodeSync(Bundle)(value),
       artifacts: [{ ...Schema.encodeSync(Bundle)(value).artifacts[0], sha256: "0".repeat(64) }],
     })
-    await expect(Effect.runPromise(loadBundle(counting, encodeBundle(forged)))).rejects.toThrow(
+    expect(Effect.runPromise(loadBundle(counting, encodeBundle(forged)))).rejects.toThrow(
       "recorded tree identity",
     )
     expect(verifications).toBe(0)
@@ -210,8 +208,8 @@ test("tree links expand before parent traversal and upstream entry order is pres
       treeEntries.symlink("d", "."),
       treeEntries.symlink("s", "d/.."),
     ])
-    await expect(Effect.runPromise(finalize([links]))).rejects.toThrow("escapes tree")
-    await expect(
+    expect(Effect.runPromise(finalize([links]))).rejects.toThrow("escapes tree")
+    expect(
       Effect.runPromise(
         loadBundle(owner, encodeBundle(new Bundle({ ...bundle, artifacts: [links] }))),
       ),

@@ -1,3 +1,4 @@
+import { fail } from "node:assert"
 import { describe, expect, test } from "bun:test"
 import { createHash } from "node:crypto"
 import { mkdtemp, rm } from "node:fs/promises"
@@ -5,7 +6,6 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import { Host, createPlan, runRelease } from "@mannyc1/ts-release"
 import * as Git from "@mannyc1/ts-release/git"
@@ -56,7 +56,11 @@ const compare = (left: string, right: string): number => {
   const a = [...left],
     b = [...right]
   for (let index = 0; index < Math.min(a.length, b.length); index++) {
-    const selected = a[index]!.codePointAt(0)! - b[index]!.codePointAt(0)!
+    const selected =
+      ((a[index] ?? fail("Missing fixture a[index]")).codePointAt(0) ??
+        fail("Missing fixture a[index]!.codePointAt(0)")) -
+      ((b[index] ?? fail("Missing fixture b[index]")).codePointAt(0) ??
+        fail("Missing fixture b[index]!.codePointAt(0)"))
     if (selected) return selected
   }
   return a.length - b.length
@@ -69,7 +73,7 @@ const treeFrom = (rendered: readonly RenderedFile[]) => {
       directories.add(parts.slice(0, length).join("/"))
   }
   // Decode through the installed package's class so equality holds against its outputs.
-  return Schema.decodeUnknownSync(Tree)(
+  return Schema.decodeSync(Tree)(
     ownedTree("release-auditor-plugin", [
       ...[...directories].map((path) => treeEntries.directory(path)),
       ...rendered.map((file) => treeEntries.file(file.path, content(file.bytes), file.mode)),
@@ -128,7 +132,9 @@ describe("OpenAI skills-only plugin", () => {
       "skills/release-audit/SKILL.md",
       "skills/release-audit/references/evidence.md",
     ])
-    expect(new TextDecoder().decode(rendered[0]!.bytes)).toBe(
+    expect(
+      new TextDecoder().decode((rendered[0] ?? fail("Missing fixture rendered[0]")).bytes),
+    ).toBe(
       '{"description":"Audit release evidence without inventing publication success.","name":"release-auditor","skills":"./skills/","version":"1.0.0"}\n',
     )
     expect(await Effect.runPromise(validatePackage(tree, readContent))).toEqual(tree)
@@ -145,18 +151,25 @@ describe("OpenAI skills-only plugin", () => {
         files: [
           ...input.skill.files,
           new SkillFile({
-            ...input.skill.files[0]!,
+            ...(input.skill.files[0] ?? fail("Missing fixture input.skill.files[0]")),
             path: "REFERENCES/evidence.md",
           }),
         ],
       }),
     })
-    await expect(Effect.runPromise(files(collision, readContent))).rejects.toThrow()
+    expect(Effect.runPromise(files(collision, readContent))).rejects.toThrow()
     const { tree } = await makePlugin(),
-      changed = structuredClone(Schema.encodeSync(Tree)(tree)) as any
-    changed.entries.find((entry: any) => entry.kind === "file").sha256 = "0".repeat(64)
-    await expect(
-      Effect.runPromise(validatePackage(Schema.decodeUnknownSync(Tree)(changed), readContent)),
+      encoded = Schema.encodeSync(Tree)(tree)
+    const selected =
+      encoded.entries.find((entry) => entry.kind === "file") ?? fail("Missing fixture file")
+    const changed = {
+      ...encoded,
+      entries: encoded.entries.map((entry) =>
+        entry === selected ? { ...entry, sha256: "0".repeat(64) } : entry,
+      ),
+    }
+    expect(
+      Effect.runPromise(validatePackage(Schema.decodeSync(Tree)(changed), readContent)),
     ).rejects.toThrow()
   })
 })
@@ -281,19 +294,19 @@ describe("OpenAI marketplace and human submission handoff", () => {
             const store = yield* openSqliteJournal(join(directory, "journal.sqlite"))
             let serial = 0
             const report = yield* runRelease({ plan, authorize: true, maxDispatches: 1 }).pipe(
-              Effect.provide(
-                Layer.succeed(Host, {
-                  providers: [
-                    Git.definition({ readContent: contents.read, observeRef: host.observeRef }),
-                  ],
-                  transport: host.transport([intent]),
-                  store,
-                  now: () => 1000,
-                  uniqueId: () => `openai-marketplace-${++serial}`,
-                }),
-              ),
+              Effect.provideService(Host, {
+                providers: [
+                  Git.definition({ readContent: contents.read, observeRef: host.observeRef }),
+                ],
+                transport: host.transport([intent]),
+                store,
+                now: () => 1000,
+                uniqueId: () => `openai-marketplace-${++serial}`,
+              }),
             )
-            expect(report.operations[0]!.status).toBe("Satisfied")
+            expect(
+              (report.operations[0] ?? fail("Missing fixture report.operations[0]")).status,
+            ).toBe("Satisfied")
             expect(
               native(repository.directory, [
                 "show",
@@ -325,7 +338,7 @@ describe("OpenAI marketplace and human submission handoff", () => {
     )
     const logoBytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
       logoContent = content(logoBytes)
-    const logo = Schema.decodeUnknownSync(File)({
+    const logo = Schema.decodeSync(File)({
       _tag: "OwnedFile",
       logicalName: "release-auditor-logo.png",
       content: logoContent,
@@ -355,14 +368,8 @@ describe("OpenAI marketplace and human submission handoff", () => {
         "Audit this release report and list missing evidence.",
         "Compare these outcomes with the immutable bundle.",
       ],
-      positiveTests: [1, 2, 3, 4, 5].map(positive) as [
-        PositiveTest,
-        PositiveTest,
-        PositiveTest,
-        PositiveTest,
-        PositiveTest,
-      ],
-      negativeTests: [1, 2, 3].map(negative) as [NegativeTest, NegativeTest, NegativeTest],
+      positiveTests: [positive(1), positive(2), positive(3), positive(4), positive(5)],
+      negativeTests: [negative(1), negative(2), negative(3)],
       releaseNotes: "Initial skills-only public submission handoff.",
       attestations: new Attestations({
         developerIdentityVerified: true,
@@ -378,10 +385,13 @@ describe("OpenAI marketplace and human submission handoff", () => {
     expect(result.status).toBe("validated-handoff-human-submission-required")
     expect(document).toContain("validated-handoff-human-submission-required")
     expect(document).not.toContain('"status":"published"')
-    await expect(
+    const malformed: unknown = { ...input, positiveTests: input.positiveTests.slice(1) }
+    expect(
       Effect.runPromise(
         submission(
-          { ...input, positiveTests: input.positiveTests.slice(1) } as unknown as Submission,
+          // Deliberately bypass the fixed tuple contract to exercise runtime rejection.
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          malformed as Submission,
           { bundle, readContent },
         ),
       ),
@@ -425,7 +435,7 @@ test("preserves an existing multi-skill plugin, manifest metadata, binary assets
   expect(result).toEqual([...rendered].sort((a, b) => compare(a.path, b.path)))
   expect(await Effect.runPromise(validatePackage(tree, readContent))).toEqual(tree)
   const dangling = treeFrom(rendered.filter((file) => file.path !== ".mcp.json"))
-  await expect(Effect.runPromise(validatePackage(dangling, readContent))).rejects.toThrow()
+  expect(Effect.runPromise(validatePackage(dangling, readContent))).rejects.toThrow()
   const portable = treeFrom([
     {
       path: "plugin.json",
@@ -489,16 +499,21 @@ test("pins new Git marketplace sources and preserves unrelated entries and selec
     }
     const result = await Effect.runPromise(marketplace(input, readContent))
     expect(result.document.plugins.slice(0, 3)).toEqual(existing.plugins.slice(0, 3))
-    expect(result.document.plugins[3]!.source).toEqual(source)
-    expect(result.document.plugins[3]!.policy).toEqual(existing.plugins[3]!.policy)
+    expect(
+      (result.document.plugins[3] ?? fail("Missing fixture result.document.plugins[3]")).source,
+    ).toEqual(source)
+    expect(
+      (result.document.plugins[3] ?? fail("Missing fixture result.document.plugins[3]")).policy,
+    ).toEqual((existing.plugins[3] ?? fail("Missing fixture existing.plugins[3]")).policy)
     for (const invalid of [
       { ...source, sha: undefined },
       { ...source, sha: "main" },
       { ...source, ref: "main" },
       { ...source, url: "https://github.com/example/tools.git?token=x" },
     ]) {
-      await expect(
-        Effect.runPromise(marketplace({ ...input, source: invalid as any }, readContent)),
+      expect(
+        // Deliberately pass malformed coordinates through the typed runtime boundary.
+        Effect.runPromise(marketplace({ ...input, source: invalid }, readContent)),
       ).rejects.toThrow()
     }
   }

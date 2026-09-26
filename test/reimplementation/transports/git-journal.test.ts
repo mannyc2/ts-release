@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { Effect } from "effect"
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -136,8 +136,10 @@ test("native journal admits an exact 1MiB event, rejects +1 and detects foreign 
 // A disposable executable schedules actual Git pushes at the process boundary.
 // It never replaces the journal or fabricates Git stdout.
 const wrapper = (root: string, mode: "first" | "second" | "lost") => {
+  const selectedBun = Bun.which("bun")
+  if (selectedBun === null) throw new Error("Native Git journal fixtures require Bun")
   const path = join(root, `git-${mode}`),
-    bun = realpathSync(Bun.which("bun")!)
+    bun = realpathSync(selectedBun)
   writeFileSync(
     path,
     `#!${bun}\nimport { existsSync, writeFileSync } from 'node:fs';
@@ -225,7 +227,9 @@ test("lost native journal push responses allow same-live exact readback once and
             "DispatchStarted",
             "ReceiptAccepted",
           ])
-          expect(yield* restart.append(fixture.plan.journalId, 0, history.events[0]!)).toEqual({
+          const first = history.events[0]
+          if (first === undefined) throw new Error("Expected retained dispatch event")
+          expect(yield* restart.append(fixture.plan.journalId, 0, first)).toEqual({
             _tag: "AlreadyRecorded",
             revision: 1,
           })

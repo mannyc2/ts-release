@@ -26,7 +26,7 @@ export type Intent =
   | Model.AssetIntent
   | Model.PublishIntent
 export const kindOf = (operation: Operation): Kind => {
-  const kind = (Object.keys(descriptors) as Kind[]).find(
+  const kind = (["lightweight", "object", "ref", "draft", "asset", "publish"] as const).find(
     (key) =>
       descriptors[key].definitionId === operation.definitionId && operation.intentVersion === "1",
   )
@@ -73,7 +73,7 @@ export const validatePlan = (operations: readonly Operation[]): void => {
   const intents = new Map(selected.map((operation) => [operation.operationId, intentOf(operation)]))
   const coordinates = new Set<string>()
   for (const operation of selected) {
-    const intent = intents.get(operation.operationId)!,
+    const intent = intents.get(operation.operationId) ?? invalid("definition"),
       kind = kindOf(operation)
     for (const id of required(intent)) {
       const dependency = intents.get(id)

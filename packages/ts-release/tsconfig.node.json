@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "ESNext.Disposable"],
+    "types": ["node"],
+    "noEmit": true
+  },
+  "files": ["src/Node.ts", "src/Apple.ts", "src/bin/ts-release.ts", "../../types/node-compat.d.ts"],
+  "include": []
+}

@@ -4,6 +4,8 @@ import { findPackageJSON } from "node:module"
 import { pathToFileURL } from "node:url"
 
 /** The launcher's own configuration failures carry a code like a ReleaseError. */
+// The standalone Action cannot bundle Effect; it loads the application's one core instance below.
+// @effect-diagnostics-next-line extendsNativeError:off
 class ActionError extends Error {
   constructor(
     readonly code: string,
@@ -15,6 +17,7 @@ class ActionError extends Error {
 }
 const bounded = (text: string): string =>
   text
+    // oxlint-disable-next-line eslint/no-control-regex -- Control bytes must not enter workflow logs.
     .replace(/[\u0000-\u001f\u007f-\u009f]+/gu, " ")
     .trim()
     .slice(0, 512)
@@ -22,21 +25,19 @@ const bounded = (text: string): string =>
  * contract. Any other failure is named only; its message, paths and native
  * output never reach the job log. */
 const describeFailure = (cause: unknown): string => {
-  const value = cause as { _tag?: unknown; code?: unknown; message?: unknown } | null
+  const value = typeof cause === "object" && cause !== null ? cause : {}
+  const tag = "_tag" in value ? value._tag : undefined
+  const code = "code" in value ? value.code : undefined
+  const message = "message" in value ? value.message : undefined
   if (
-    (cause instanceof ActionError || value?._tag === "ReleaseError") &&
-    typeof value?.code === "string" &&
-    typeof value.message === "string"
+    (cause instanceof ActionError || tag === "ReleaseError") &&
+    typeof code === "string" &&
+    typeof message === "string"
   )
-    return `${bounded(value.code)}: ${bounded(value.message)}`
-  const name =
-    typeof value?._tag === "string"
-      ? value._tag
-      : cause instanceof Error
-        ? cause.name
-        : typeof cause
-  const code = typeof value?.code === "string" ? ` ${value.code}` : ""
-  return `${bounded(`${name}${code}`) || "unknown"} (only a ReleaseError's code and message are printed)`
+    return `${bounded(code)}: ${bounded(message)}`
+  const name = typeof tag === "string" ? tag : cause instanceof Error ? cause.name : typeof cause
+  const diagnosticCode = typeof code === "string" ? ` ${code}` : ""
+  return `${bounded(`${name}${diagnosticCode}`) || "unknown"} (only a ReleaseError's code and message are printed)`
 }
 
 const required = (environment: NodeJS.ProcessEnv, name: string): string => {
@@ -69,11 +70,42 @@ const runActionEnvironment = async (environment: NodeJS.ProcessEnv = process.env
       "action-install",
       "Install @mannyc1/ts-release in the application workspace",
     )
-  const manifest = JSON.parse(await readFile(manifestPath, "utf8"))
-  const entry = resolve(dirname(manifestPath), manifest.exports["./node"].import)
-  const { runApplication, runInterruptibleProcess } = (await import(
-    pathToFileURL(entry).href
-  )) as typeof import("@mannyc1/ts-release/node")
+  const manifest: unknown = JSON.parse(await readFile(manifestPath, "utf8"))
+  const exports =
+    typeof manifest === "object" && manifest !== null && "exports" in manifest
+      ? manifest.exports
+      : undefined
+  const node =
+    typeof exports === "object" && exports !== null && "./node" in exports
+      ? exports["./node"]
+      : undefined
+  if (
+    typeof node !== "object" ||
+    node === null ||
+    !("import" in node) ||
+    typeof node.import !== "string"
+  )
+    throw new ActionError("action-install", "Installed ts-release must expose its Node entry")
+  const entry = resolve(dirname(manifestPath), node.import)
+  const loaded: unknown = await import(pathToFileURL(entry).href)
+  if (
+    typeof loaded !== "object" ||
+    loaded === null ||
+    !("runApplication" in loaded) ||
+    typeof loaded.runApplication !== "function" ||
+    !("runInterruptibleProcess" in loaded) ||
+    typeof loaded.runInterruptibleProcess !== "function"
+  )
+    throw new ActionError(
+      "action-install",
+      "Installed ts-release must expose its application runner",
+    )
+  // The trusted application's installed ABI is exercised by check:packed-action; a second bundled kernel breaks authority identity.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- JavaScript module loading cannot infer the installed core's checked function signatures.
+  const { runApplication, runInterruptibleProcess } = loaded as Pick<
+    typeof import("@mannyc1/ts-release/node"),
+    "runApplication" | "runInterruptibleProcess"
+  >
   return runInterruptibleProcess(async (signal, exitCode) => {
     try {
       let input: unknown

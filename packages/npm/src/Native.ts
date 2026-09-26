@@ -25,8 +25,10 @@ export const readManifest = (bytes: Uint8Array): Record<string, unknown> => {
   const manifests = entries.filter(
     (entry) => entry.kind === "file" && entry.path === "package/package.json",
   )
-  if (manifests.length !== 1 || manifests[0]!.body.length > 1024 * 1024) invalid("tar-manifest")
-  return object(parseJson(manifests[0]!.body))
+  const [manifest] = manifests
+  if (manifests.length !== 1 || manifest === undefined || manifest.body.length > 1024 * 1024)
+    return invalid("tar-manifest")
+  return object(parseJson(manifest.body))
 }
 
 export const captureArtifacts = (access: ArtifactAccess) =>

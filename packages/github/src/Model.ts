@@ -4,10 +4,12 @@ import { File } from "@mannyc1/ts-release/bundle"
 const bounded = (maximum: number) =>
   Schema.String.check(
     Schema.isMaxLength(maximum),
+    // oxlint-disable-next-line no-control-regex -- durable text rejects NUL and lone surrogate code points.
     Schema.makeFilter((s) => s === s.normalize("NFC") && !/[\u0000\ud800-\udfff]/u.test(s)),
   )
 export const text = bounded(2048).check(
   Schema.isMinLength(1),
+  // oxlint-disable-next-line no-control-regex -- GitHub coordinates cannot contain native control characters.
   Schema.makeFilter((s) => s.trim() === s && !/[\u0000-\u001f\u007f]/u.test(s)),
 )
 export const oid = Schema.String.check(Schema.isPattern(/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u))
@@ -19,7 +21,7 @@ export const tagName = text.check(
   Schema.makeFilter(
     (s) =>
       s !== "@" &&
-      !/[ ~^:?*\[\\]/u.test(s) &&
+      !/[ ~^:?*[\\]/u.test(s) &&
       !s.includes("@{") &&
       !s.includes("..") &&
       s
@@ -83,7 +85,7 @@ export class AssetIntent extends Schema.Class<AssetIntent>("GitHubAssetIntent")(
   file: File,
   publicName: text.check(
     Schema.isMaxLength(255),
-    Schema.makeFilter((s) => !/[\/\\]/u.test(s) && s !== "." && s !== ".."),
+    Schema.makeFilter((s) => !/[/\\]/u.test(s) && s !== "." && s !== ".."),
   ),
   mediaType: text.check(Schema.isPattern(/^[A-Za-z0-9!#$&^_.+-]+\/[A-Za-z0-9!#$&^_.+-]+$/u)),
   principal: text,

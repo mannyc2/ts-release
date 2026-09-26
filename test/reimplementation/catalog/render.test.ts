@@ -1,3 +1,4 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
 import { Effect, Schema } from "effect"
 import { Bundle, File } from "@mannyc1/ts-release/bundle"
@@ -16,7 +17,7 @@ test("Homebrew has all four exact owned cells; Scoop has native x64/arm64 select
     expect(ruby.split(download.url)).toHaveLength(2)
     expect(cell).toMatch(/^(darwin|linux)-(x64|arm64)$/u)
   }
-  const json = JSON.parse(
+  const json: unknown = JSON.parse(
     new TextDecoder().decode(await Effect.runPromise(Scoop.render(f.manifest, f.bundle))),
   )
   expect(json).toEqual({
@@ -25,8 +26,14 @@ test("Homebrew has all four exact owned cells; Scoop has native x64/arm64 select
     license: "MIT",
     bin: "bin/tool.exe",
     architecture: {
-      "64bit": { url: f.archives["windows-x64"].url, hash: f.files[4]!.content.sha256 },
-      arm64: { url: f.archives["windows-arm64"].url, hash: f.files[5]!.content.sha256 },
+      "64bit": {
+        url: f.archives["windows-x64"].url,
+        hash: (f.files[4] ?? fail("Missing fixture f.files[4]")).content.sha256,
+      },
+      arm64: {
+        url: f.archives["windows-arm64"].url,
+        hash: (f.files[5] ?? fail("Missing fixture f.files[5]")).content.sha256,
+      },
     },
   })
   expect(ruby).toContain('bin.install "bin/tool"')
@@ -35,19 +42,31 @@ test("Homebrew has all four exact owned cells; Scoop has native x64/arm64 select
 
 test("renderers refuse absent, substituted or ambiguously named owned files and contradictory URL identities", async () => {
   const f = fixture()
-  for (const artifacts of [[], f.files.slice(1), [...f.files, f.files[0]!]])
-    await expect(
+  for (const artifacts of [
+    [],
+    f.files.slice(1),
+    [...f.files, f.files[0] ?? fail("Missing fixture f.files[0]")],
+  ])
+    expect(
       Effect.runPromise(
         Homebrew.render(f.formula, new Bundle({ format: "ts-release/bundle/2", artifacts })),
       ),
     ).rejects.toThrow("could not be admitted")
   for (const change of [
-    { content: { ...f.files[0]!.content, sha256: "0".repeat(64) } },
+    {
+      content: {
+        ...(f.files[0] ?? fail("Missing fixture f.files[0]")).content,
+        sha256: "0".repeat(64),
+      },
+    },
     { deliveryMode: 493 },
     { producedBy: { name: "other", version: "fixture" } },
   ]) {
-    const changed = Schema.decodeUnknownSync(File)({ ...f.files[0]!, ...change })
-    await expect(
+    const changed = Schema.decodeSync(File)({
+      ...(f.files[0] ?? fail("Missing fixture f.files[0]")),
+      ...change,
+    })
+    expect(
       Effect.runPromise(
         Homebrew.render(
           {
@@ -62,7 +81,7 @@ test("renderers refuse absent, substituted or ambiguously named owned files and 
       ),
     ).rejects.toThrow("could not be admitted")
   }
-  await expect(
+  expect(
     Effect.runPromise(
       Scoop.render(
         {
@@ -86,7 +105,7 @@ test("native input boundaries reject invalid selectors, URLs, identifiers, paths
     "https://example.com/tool.zip#fragment",
     "https://EXAMPLE.com/tool.zip",
   ])
-    await expect(
+    expect(
       Effect.runPromise(
         Scoop.render(
           {
@@ -101,7 +120,7 @@ test("native input boundaries reject invalid selectors, URLs, identifiers, paths
       ),
     ).rejects.toThrow("Catalog metadata or exact owned download could not be admitted")
   for (const className of ["Tool;raise", "lower", "Tool\nOther", "Tool::Other", "BEGIN", "END"])
-    await expect(
+    expect(
       Effect.runPromise(Homebrew.render({ ...f.formula, className }, f.bundle)),
     ).rejects.toThrow("could not be admitted")
   for (const executable of [
@@ -117,26 +136,28 @@ test("native input boundaries reject invalid selectors, URLs, identifiers, paths
     "bin/tool'quote",
     "bin/tool.\u0000secret",
   ])
-    await expect(
+    expect(
       Effect.runPromise(Scoop.render({ ...f.manifest, executable }, f.bundle)),
     ).rejects.toThrow("could not be admitted")
   for (const version of ["1.0 beta", "1/2", "", "nightly", "NIGHTLY", "Nightly"])
-    await expect(
-      Effect.runPromise(Scoop.render({ ...f.manifest, version }, f.bundle)),
-    ).rejects.toThrow("could not be admitted")
+    expect(Effect.runPromise(Scoop.render({ ...f.manifest, version }, f.bundle))).rejects.toThrow(
+      "could not be admitted",
+    )
   const { "linux-arm64": _, ...missing } = f.formula.archives
-  await expect(
+  expect(
     Effect.runPromise(
-      Homebrew.render({ ...f.formula, archives: missing } as Homebrew.Formula, f.bundle),
+      // @ts-expect-error Deliberately omit a required cell to exercise runtime admission.
+      Homebrew.render({ ...f.formula, archives: missing }, f.bundle),
     ),
   ).rejects.toThrow("could not be admitted")
-  await expect(
+  expect(
     Effect.runPromise(
       Scoop.render(
         {
           ...f.manifest,
+          // @ts-expect-error Deliberately pass an unsupported cell to runtime admission.
           archives: { ...f.manifest.archives, "windows-ia32": f.archives["windows-x64"] },
-        } as Scoop.Manifest,
+        },
         f.bundle,
       ),
     ),

@@ -54,7 +54,7 @@ export const decodeFacts = (scope: BoundScope, value: unknown): NativeFacts => {
     return assetFacts(
       value,
       intent.repository,
-      (parentFacts(scope, intent.draftOperation, "draft") as Model.ReleaseFacts).tag,
+      parentFacts(scope, intent.draftOperation, "draft").tag,
     )
   return releaseFacts(value, intent.repository)
 }
@@ -72,11 +72,7 @@ export const matches = (scope: BoundScope, facts: NativeFacts): boolean => {
   if (
     facts instanceof Model.AssetFacts &&
     (!(intent instanceof Model.AssetIntent) ||
-      !assetUrls(
-        facts,
-        intent.repository,
-        (parentFacts(scope, intent.draftOperation, "draft") as Model.ReleaseFacts).tag,
-      ))
+      !assetUrls(facts, intent.repository, parentFacts(scope, intent.draftOperation, "draft").tag))
   )
     return false
   if (intent instanceof Model.AnnotatedTag)
@@ -101,9 +97,7 @@ export const matches = (scope: BoundScope, facts: NativeFacts): boolean => {
       facts instanceof Model.RefFacts &&
       facts.ref === `refs/tags/${intent.tag}` &&
       facts.objectType === "tag" &&
-      facts.objectOid ===
-        (parentFacts(scope, intent.annotatedTagOperation, "object") as Model.AnnotatedTagFacts)
-          .objectOid
+      facts.objectOid === parentFacts(scope, intent.annotatedTagOperation, "object").objectOid
     )
   if (intent instanceof Model.DraftIntent)
     return (
@@ -122,7 +116,7 @@ export const matches = (scope: BoundScope, facts: NativeFacts): boolean => {
       facts.bytes === intent.file.content.bytes &&
       (facts.sha256 === null || facts.sha256 === intent.file.content.sha256)
     )
-  const parent = parentFacts(scope, intent.draftOperation, "draft") as Model.ReleaseFacts
+  const parent = parentFacts(scope, intent.draftOperation, "draft")
   return (
     facts instanceof Model.ReleaseFacts &&
     sameData({ ...facts, draft: true }, { ...parent, draft: true })
@@ -173,7 +167,8 @@ export const classifyObservation = (
   if (evidence.observedCommit !== null && evidence.observedCommit !== scope.targetCommit)
     return "Conflict"
   if (intent instanceof Model.AssetIntent) {
-    const facts = evidence.facts as Model.AssetFacts
+    const facts = evidence.facts
+    if (!(facts instanceof Model.AssetFacts)) return "Conflict"
     if (
       evidence.downloadedSha256 !== null &&
       evidence.downloadedSha256 !== intent.file.content.sha256
@@ -189,7 +184,7 @@ export const classifyObservation = (
       const status = classifyAssets(scope, evidence.assets, context)
       return status !== "Satisfied"
         ? status
-        : (evidence.facts as Model.ReleaseFacts).draft
+        : evidence.facts instanceof Model.ReleaseFacts && evidence.facts.draft
           ? receipts.length
             ? "Conflict"
             : "Absent"
@@ -204,8 +199,8 @@ export const classifyAssets = (
   context: ProviderContext,
 ): ObservationStatus => {
   const intent = intentOf(scope.operation)
-  if (!(intent instanceof Model.PublishIntent)) invalid("publish-assets")
-  const publish = intent as Model.PublishIntent
+  if (!(intent instanceof Model.PublishIntent)) return invalid("publish-assets")
+  const publish = intent
   if (
     assets.length !== publish.assetOperations.length ||
     new Set(assets.map((a) => a.facts.assetId)).size !== assets.length ||
@@ -215,14 +210,15 @@ export const classifyAssets = (
   let status: ObservationStatus = "Satisfied"
   for (const id of publish.assetOperations) {
     const dependency = context.dependencies.find((d) => d.operation.operationId === id)
-    if (!dependency) invalid("publish-dependency")
-    const operation = dependency!.operation,
+    if (!dependency) return invalid("publish-dependency")
+    const operation = dependency.operation,
       assetScope = bindScope(operation, {
-        own: dependency!,
+        own: dependency,
         dependencies: context.dependencies,
       })
-    const expected = intentOf(operation) as Model.AssetIntent,
-      actual = assets.find((a) => a.facts.storedName === expected.publicName),
+    const expected = intentOf(operation)
+    if (!(expected instanceof Model.AssetIntent)) return invalid("publish-dependency")
+    const actual = assets.find((a) => a.facts.storedName === expected.publicName),
       recorded = scope.parents.find((p) => p.operationId === id)?.facts
     if (
       !actual ||

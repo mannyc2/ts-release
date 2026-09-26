@@ -1,5 +1,6 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
-import { Effect, Layer, Redacted } from "effect"
+import { Schema, Effect, Redacted } from "effect"
 import {
   Host,
   createPlan,
@@ -34,7 +35,7 @@ const fixture = async () => {
   const operation = await Effect.runPromise(publish(f.publication))
   const providers = definitions({ ...f.access, read: () => Effect.succeed(response(404)) })
   const request = await Effect.runPromise(
-    providers[0]!.prepare(operation, {
+    (providers[0] ?? fail("Missing fixture providers[0]")).prepare(operation, {
       own: { operation, receipts: [], observations: [] },
       dependencies: [],
     }),
@@ -45,13 +46,19 @@ const config = `//registry.npmjs.org/:_authToken=${loginToken}\n`
 
 test("only the exact native OTP rejection is admitted, independently of ephemeral browser URLs", async () => {
   const f = await fixture(),
-    provider = f.providers[0]!
+    provider = f.providers[0] ?? fail("Missing fixture f.providers[0]")
   const rejected = await Effect.runPromise(provider.decodeResponse(f.request, challenge()))
   expect(rejected._tag).toBe("RejectedBeforeCommit")
   if (rejected._tag !== "RejectedBeforeCommit") throw new Error("rejection fixture")
-  expect(provider.rejection!.corresponds(f.operation, f.request.facts, rejected.proof)).toBe(true)
   expect(
-    provider.rejection!.corresponds(
+    (provider.rejection ?? fail("Missing fixture provider.rejection")).corresponds(
+      f.operation,
+      f.request.facts,
+      rejected.proof,
+    ),
+  ).toBe(true)
+  expect(
+    (provider.rejection ?? fail("Missing fixture provider.rejection")).corresponds(
       f.operation,
       { ...f.request.facts, bodyDigest: "0".repeat(64) },
       rejected.proof,
@@ -87,7 +94,7 @@ test("only the exact native OTP rejection is admitted, independently of ephemera
   ).toBeUndefined()
   const owned = await Effect.runPromise(authorizationBinding(f.request.facts))
   expect(owned).toEqual({ authorization: f.authorization, packageName: f.publication.name })
-  await expect(
+  expect(
     Effect.runPromise(authorizationBinding({ ...f.request.facts, principal: "foreign" })),
   ).rejects.toThrow()
 })
@@ -166,30 +173,34 @@ for (const lostResponse of [false, true])
                       expect(headers["npm-otp"]).toBeUndefined()
                       const native = challenge()
                       session.capture(actual, native)
-                      return yield* providers[0]!.decodeResponse(actual, native)
+                      return yield* (
+                        providers[0] ?? fail("Missing fixture providers[0]")
+                      ).decodeResponse(actual, native)
                     }
                     expect(headers["npm-otp"]).toBe(otp)
                     if (lostResponse)
                       return { _tag: "Unknown" as const, reason: "authenticated response was lost" }
                     visible = true
-                    return yield* providers[0]!.decodeResponse(actual, response(201))
+                    return yield* (
+                      providers[0] ?? fail("Missing fixture providers[0]")
+                    ).decodeResponse(actual, response(201))
                   })
               }),
           }
           const run = () =>
             runRelease({ plan, authorize: true }).pipe(
-              Effect.provide(
-                Layer.succeed(Host, {
-                  providers,
-                  store,
-                  transport,
-                  now: Date.now,
-                  uniqueId: () => crypto.randomUUID(),
-                }),
-              ),
+              Effect.provideService(Host, {
+                providers,
+                store,
+                transport,
+                now: Date.now,
+                uniqueId: () => crypto.randomUUID(),
+              }),
             )
           const rejected = yield* run()
-          expect(rejected.operations[0]!.status).toBe("Rejected")
+          expect(
+            (rejected.operations[0] ?? fail("Missing fixture rejected.operations[0]")).status,
+          ).toBe("Rejected")
           expect(sends).toBe(1)
           expect(
             (yield* store.read(plan.journalId)).events.some(
@@ -199,7 +210,12 @@ for (const lostResponse of [false, true])
           expect(
             yield* session.complete({
               ...f.operation,
-              intent: { ...(f.operation.intent as object), name: "different" },
+              intent: {
+                ...(yield* Schema.decodeUnknownEffect(Schema.Record(Schema.String, Schema.Unknown))(
+                  f.operation.intent,
+                )),
+                name: "different",
+              },
             }),
           ).toBe(false)
           expect(yield* session.complete(f.operation)).toBe(true)
@@ -213,15 +229,23 @@ for (const lostResponse of [false, true])
             ],
           ).toBeUndefined()
           const published = yield* run()
-          expect(published.operations[0]!.status).toBe(lostResponse ? "Inconclusive" : "Satisfied")
+          expect(
+            (published.operations[0] ?? fail("Missing fixture published.operations[0]")).status,
+          ).toBe(lostResponse ? "Inconclusive" : "Satisfied")
           expect(sends).toBe(2)
           expect(yield* session.complete(f.operation)).toBe(false)
           expect((yield* session.credentials(f.request.facts))["npm-otp"]).toBeUndefined()
           if (lostResponse) {
-            expect((yield* run()).operations[0]!.status).toBe("Inconclusive")
+            expect(
+              ((yield* run()).operations[0] ?? fail("Missing fixture (yield* run()).operations[0]"))
+                .status,
+            ).toBe("Inconclusive")
             expect(sends).toBe(2)
             visible = true
-            expect((yield* run()).operations[0]!.status).toBe("Satisfied")
+            expect(
+              ((yield* run()).operations[0] ?? fail("Missing fixture (yield* run()).operations[0]"))
+                .status,
+            ).toBe("Satisfied")
             expect(sends).toBe(2)
           }
           const events = (yield* store.read(plan.journalId)).events
@@ -238,7 +262,7 @@ for (const lostResponse of [false, true])
     )
     expect(polls).toBe(2)
     expect(notices).toEqual([authUrl])
-    await expect(Effect.runPromise(result.credentials(f.request.facts))).rejects.toThrow("closed")
+    expect(Effect.runPromise(result.credentials(f.request.facts))).rejects.toThrow("closed")
   }, 10000)
 
 test("local credentials require explicit literal registry config and PUT body identity", async () => {
@@ -252,7 +276,7 @@ test("local credentials require explicit literal registry config and PUT body id
     '//registry.npmjs.org/:_authToken="quoted"',
     "x".repeat(65537),
   ])
-    await expect(
+    expect(
       Effect.runPromise(
         Effect.scoped(
           makeLocalAuthenticationWith(
@@ -329,26 +353,32 @@ test("a fresh scoped session requests a fresh challenge after a durable rejectio
                   sends++
                   const native = headers["npm-otp"] === otp ? response(201) : challenge()
                   session.capture(actual, native)
-                  return yield* f.providers[0]!.decodeResponse(actual, native)
+                  return yield* (
+                    f.providers[0] ?? fail("Missing fixture f.providers[0]")
+                  ).decodeResponse(actual, native)
                 })
             }),
         }
         const run = () =>
           runRelease({ plan, authorize: true }).pipe(
-            Effect.provide(
-              Layer.succeed(Host, {
-                providers: f.providers,
-                store,
-                transport,
-                now: Date.now,
-                uniqueId: () => crypto.randomUUID(),
-              }),
-            ),
+            Effect.provideService(Host, {
+              providers: f.providers,
+              store,
+              transport,
+              now: Date.now,
+              uniqueId: () => crypto.randomUUID(),
+            }),
           )
-        expect((yield* run()).operations[0]!.status).toBe("Rejected")
+        expect(
+          ((yield* run()).operations[0] ?? fail("Missing fixture (yield* run()).operations[0]"))
+            .status,
+        ).toBe("Rejected")
         if (finish) {
           expect(yield* session.complete(f.operation)).toBe(true)
-          expect((yield* run()).operations[0]!.status).toBe("Satisfied")
+          expect(
+            ((yield* run()).operations[0] ?? fail("Missing fixture (yield* run()).operations[0]"))
+              .status,
+          ).toBe("Satisfied")
         }
       }),
     )

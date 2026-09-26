@@ -63,7 +63,8 @@ export const createApplication = Effect.fn("release.createApplication")(function
         const npm = retained.operations
             .filter((operation) => operation.definitionId === "npm.publish")
             .map((operation) => Schema.decodeUnknownSync(Npm.PublishIntent, { onExcessProperty: "error" })(operation.intent));
-        if (!npm.length || new Set(npm.map((intent) => intent.name)).size !== npm.length)
+        const [first, ...remaining] = npm;
+        if (!first || new Set(npm.map((intent) => intent.name)).size !== npm.length)
             throw new Error("Expected unique npm publications");
         for (const intent of npm) {
             if (intent.version !== source.version || intent.authorization.principal !== NPM_PRINCIPAL)
@@ -71,7 +72,7 @@ export const createApplication = Effect.fn("release.createApplication")(function
             if ((intent.authorization._tag === "TrustedAuthorization") !==
                 (input.authentication.mode === "Trusted"))
                 throw new Error("Authentication mode differs from the retained Plan");
-            if (!sameData(intent.authorization, npm[0].authorization))
+            if (!sameData(intent.authorization, first.authorization))
                 throw new Error("npm authorization differs across the cohort");
             if (intent.provenance._tag === "GitHubActionsProvenance" &&
                 (intent.provenance.source.sourceCommit !== source.commit ||
@@ -102,13 +103,17 @@ export const createApplication = Effect.fn("release.createApplication")(function
             if (intent instanceof GitHub.DraftIntent)
                 drafts.push(intent);
         }
+        const tag = tags[0];
+        const draft = drafts[0];
         if (tags.length !== 1 ||
-            tags[0].tag !== `v${source.version}` ||
-            tags[0].commit !== source.commit ||
+            !tag ||
+            tag.tag !== `v${source.version}` ||
+            tag.commit !== source.commit ||
             drafts.length !== 1 ||
-            drafts[0].body !== notes)
+            !draft ||
+            draft.body !== notes)
             throw new Error("Release tag or notes differ from the owned source");
-        return npm;
+        return [first, ...remaining];
     });
     const hasProvenance = publications.some((intent) => intent.provenance._tag === "GitHubActionsProvenance");
     if (hasProvenance) {

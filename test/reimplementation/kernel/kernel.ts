@@ -48,11 +48,7 @@ export const runRelease = (options: FaultOptions) =>
             .send(request)
             .pipe(
               Effect.tap(() =>
-                dispatch
-                  ? checkpoint("after-send", dispatch).pipe(
-                      Effect.catch((error) => Effect.die(error)),
-                    )
-                  : Effect.void,
+                dispatch ? checkpoint("after-send", dispatch).pipe(Effect.orDie) : Effect.void,
               ),
             ),
       },

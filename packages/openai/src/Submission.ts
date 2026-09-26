@@ -11,6 +11,7 @@ const narrative = (value: string, maximum = 8192): boolean =>
   value === value.normalize("NFC") &&
   value.trim() === value &&
   [...value].length <= maximum &&
+  // oxlint-disable-next-line no-control-regex -- human submission narratives reject NUL and DEL.
   !/[\u0000\u007f]/u.test(value) &&
   !containsSecret(value)
 const unique = (values: readonly string[]): boolean => new Set(values).size === values.length
@@ -95,7 +96,7 @@ export const submission = Effect.fn("openai.submission")(function* (
   const entries = selected.marketplace.plugins.filter(
     (entry) => entry.name === plugin.manifest.name,
   )
-  if (entries.length !== 1 || entries[0]!.category !== selected.value.listing.category)
+  if (entries.length !== 1 || entries[0]?.category !== selected.value.listing.category)
     return yield* reject("openai-submission", "Marketplace does not contain the listed plugin")
   yield* selected.artifacts.read(selected.value.listing.logo)
   const status = "validated-handoff-human-submission-required" as const

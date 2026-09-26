@@ -36,6 +36,7 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw) {
         if (new Set(names).size !== names.length ||
             names.some((name) => name.length > 255 ||
                 name !== name.normalize("NFC") ||
+                // oxlint-disable-next-line eslint/no-control-regex -- Asset names must exclude path separators and control bytes.
                 /[/\\\u0000-\u001f\u007f]/u.test(name) ||
                 name === "." ||
                 name === ".."))
@@ -68,7 +69,7 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw) {
     const notesBytes = yield* read(input.notesFile, 1024 * 1024);
     const notes = yield* attempt("notes", () => new TextDecoder("utf-8", { fatal: true }).decode(notesBytes));
     yield* retain("release-notes.md", notesBytes, "text/markdown");
-    yield* retain("source.json", new TextEncoder().encode(JSON.stringify(Schema.encodeSync(SourceIdentity)(source))), "application/json");
+    yield* retain("source.json", new TextEncoder().encode(JSON.stringify(yield* Schema.encodeEffect(SourceIdentity)(source).pipe(Effect.orDie))), "application/json");
     const packages = [];
     for (const entry of input.packages) {
         const file = yield* retain(entry.publicName, yield* read(entry.archiveFile, 512 * 1024 * 1024), "application/octet-stream");
@@ -150,15 +151,19 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw) {
         principal: GITHUB_PRINCIPAL,
     }));
     const assets = [];
-    for (const file of files)
+    for (const file of files) {
+        const mediaType = mediaTypes.get(file.logicalName);
+        if (mediaType === undefined)
+            return yield* Effect.die(new Error("Retained asset media type is absent"));
         assets.push(yield* GitHub.uploadAsset(new GitHub.AssetIntent({
             repository,
             draftOperation: draft.operationId,
             file,
             publicName: file.logicalName,
-            mediaType: mediaTypes.get(file.logicalName),
+            mediaType,
             principal: GITHUB_PRINCIPAL,
         })));
+    }
     const publication = yield* GitHub.publish(new GitHub.PublishIntent({
         repository,
         draftOperation: draft.operationId,

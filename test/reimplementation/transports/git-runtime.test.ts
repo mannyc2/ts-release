@@ -71,7 +71,7 @@ test("public Node and Bun Git host/journal entries execute native SHA1/SHA256 re
       child.exited,
     ])
     expect({ code, stderr }).toEqual({ code: 0, stderr: "" })
-    expect(JSON.parse(stdout).assertions).toBe(15)
+    expect(JSON.parse(stdout)).toMatchObject({ assertions: 15 })
   }
 }, 30000)
 
@@ -97,6 +97,6 @@ test("native Git subprocess deadline and interruption close the whole process gr
       child.exited,
     ])
     expect({ code, stderr }).toEqual({ code: 0, stderr: "" })
-    expect(JSON.parse(stdout).assertions).toBe(18)
+    expect(JSON.parse(stdout)).toMatchObject({ assertions: 18 })
   }
 }, 30000)

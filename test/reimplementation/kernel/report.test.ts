@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { Effect, Layer, Schema } from "effect"
+import { Effect, Schema } from "effect"
 import { File, finalize, encodeBundle } from "../../../packages/ts-release/src/Bundle.js"
 import { Content } from "../../../packages/ts-release/src/internal/ArtifactModel.js"
 import {
@@ -21,7 +21,7 @@ test("acceptance.K01 local projection resolves multi-provider facts to one Bundl
     bytes: bytes.byteLength,
     sha256: await Effect.runPromise(sha256(bytes)),
   })
-  const file = Schema.decodeUnknownSync(File)({
+  const file = Schema.decodeSync(File)({
     _tag: "OwnedFile",
     logicalName: "fixture.txt",
     content,
@@ -67,7 +67,7 @@ test("acceptance.K01 local projection resolves multi-provider facts to one Bundl
     },
   }
   const run = <A, E>(effect: Effect.Effect<A, E, Host>) =>
-    Effect.runPromise(effect.pipe(Effect.provide(Layer.succeed(Host, host))))
+    Effect.runPromise(effect.pipe(Effect.provideService(Host, host)))
   const falseHost = {
     ...host,
     machine: () => ({
@@ -92,7 +92,7 @@ test("acceptance.K01 local projection resolves multi-provider facts to one Bundl
     }),
   }
   const independentlyDerived = await Effect.runPromise(
-    reportFinalizedRelease(bundle, plan).pipe(Effect.provide(Layer.succeed(Host, falseHost))),
+    reportFinalizedRelease(bundle, plan).pipe(Effect.provideService(Host, falseHost)),
   )
   expect(independentlyDerived.superseded).toBe(false)
   expect(independentlyDerived.operations.map((operation) => operation.status)).toEqual([
@@ -121,7 +121,8 @@ test("acceptance.K01 local projection resolves multi-provider facts to one Bundl
   for (const operation of report.operations) {
     const canonical = report.plan.operations.find(
       (item) => item.operationId === operation.operationId,
-    )!
+    )
+    if (!canonical) throw new Error("Missing planned fixture operation")
     expect(providers.map((provider) => provider.definitionId)).toContain(canonical.definitionId)
     expect(operation.receipts).toBe(1)
   }
@@ -130,5 +131,5 @@ test("acceptance.K01 local projection resolves multi-provider facts to one Bundl
   ).toHaveLength(1)
   expect(Object.isFrozen(report.journal.events)).toBe(true)
   const other = await Effect.runPromise(finalize([]))
-  await expect(run(reportFinalizedRelease(other, plan))).rejects.toThrow("differs")
+  expect(run(reportFinalizedRelease(other, plan))).rejects.toThrow("differs")
 })

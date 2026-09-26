@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect"
+import { Effect, Predicate, Schema } from "effect"
 
 /** A failure to admit or execute a release operation. */
 export class ReleaseError extends Schema.TaggedError<ReleaseError>()("ReleaseError", {
@@ -22,29 +22,25 @@ export const attempt = <A>(body: () => A): Effect.Effect<A, ReleaseError> =>
 
 const bounded = (text: string): string =>
   text
+    // oxlint-disable-next-line no-control-regex -- Host diagnostics deliberately remove control characters.
     .replace(/[\u0000-\u001f\u007f-\u009f]+/gu, " ")
     .trim()
     .slice(0, 512)
-const isReleaseErrorLike = (
-  cause: unknown,
-): cause is { readonly _tag: "ReleaseError"; readonly code: string; readonly message: string } =>
-  typeof cause === "object" &&
-  cause !== null &&
-  (cause as { _tag?: unknown })._tag === "ReleaseError" &&
-  typeof (cause as { code?: unknown }).code === "string" &&
-  typeof (cause as { message?: unknown }).message === "string"
+const isReleaseErrorLike = Schema.is(
+  Schema.TaggedStruct("ReleaseError", { code: Schema.String, message: Schema.String }),
+)
 /** One bounded line for host diagnostics. A ReleaseError's code and message are
  * the typed failure contract and are printed. Any other value is named only, so
  * defect text, paths and native output never reach process logs. */
 export const describeFailure = (cause: unknown): string => {
   if (isReleaseErrorLike(cause)) return `${bounded(cause.code)}: ${bounded(cause.message)}`
-  const value = cause as { _tag?: unknown; code?: unknown } | null
   const name =
-    typeof value?._tag === "string"
-      ? value._tag
+    Predicate.hasProperty(cause, "_tag") && typeof cause._tag === "string"
+      ? cause._tag
       : cause instanceof Error
         ? cause.name
         : typeof cause
-  const code = typeof value?.code === "string" ? ` ${value.code}` : ""
+  const code =
+    Predicate.hasProperty(cause, "code") && typeof cause.code === "string" ? ` ${cause.code}` : ""
   return `${bounded(`${name}${code}`) || "unknown"} (only a ReleaseError's code and message are printed)`
 }

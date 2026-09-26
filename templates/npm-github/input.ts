@@ -1,3 +1,5 @@
+import { Schema } from "effect"
+import { CandidateIdentity, SigstoreSeeds } from "./ReleaseMetadata.js"
 import assert from "node:assert/strict"
 import { appendFile, readFile, writeFile } from "node:fs/promises"
 import { join, resolve } from "node:path"
@@ -10,7 +12,9 @@ assert.ok(
 )
 assert.ok(approval === undefined || approval === "--execute")
 const directory = resolve(candidate)
-const identity = JSON.parse(await readFile(join(directory, "identity.json"), "utf8"))
+const identity = Schema.decodeSync(Schema.fromJsonString(CandidateIdentity))(
+  await readFile(join(directory, "identity.json"), "utf8"),
+)
 const remote = process.env.TS_RELEASE_JOURNAL_REMOTE
 assert.ok(remote, "Set an explicit TS_RELEASE_JOURNAL_REMOTE shared across runners")
 const gitExecutable = Bun.which("git")
@@ -28,7 +32,9 @@ if (mode === "Local")
   )
 let sigstore
 if (mode === "Trusted") {
-  const seeds = JSON.parse(await readFile(resolve("node_modules/@sigstore/tuf/seeds.json"), "utf8"))
+  const seeds = Schema.decodeSync(Schema.fromJsonString(SigstoreSeeds))(
+    await readFile(resolve("node_modules/@sigstore/tuf/seeds.json"), "utf8"),
+  )
   const tufRootPath = resolve(`${destination}.trust-root.json`)
   await writeFile(
     tufRootPath,
@@ -59,21 +65,21 @@ const input = {
   ...(process.env.TS_RELEASE_SUPERSEDED_CANDIDATES
     ? {
         supersededCandidates: await Promise.all(
-          (JSON.parse(process.env.TS_RELEASE_SUPERSEDED_CANDIDATES) as string[]).map(
-            async (directory) => {
-              assert.equal(typeof directory, "string")
-              const identity = JSON.parse(
-                await readFile(join(resolve(directory), "identity.json"), "utf8"),
-              )
-              assert.match(identity.planId, /^[a-f0-9]{64}$/u)
-              assert.match(identity.bundleSha256, /^[a-f0-9]{64}$/u)
-              return {
-                candidateDirectory: resolve(directory),
-                planId: identity.planId,
-                bundleSha256: identity.bundleSha256,
-              }
-            },
-          ),
+          Schema.decodeSync(Schema.fromJsonString(Schema.Array(Schema.String)))(
+            process.env.TS_RELEASE_SUPERSEDED_CANDIDATES,
+          ).map(async (directory) => {
+            assert.equal(typeof directory, "string")
+            const identity = Schema.decodeSync(Schema.fromJsonString(CandidateIdentity))(
+              await readFile(join(resolve(directory), "identity.json"), "utf8"),
+            )
+            assert.match(identity.planId, /^[a-f0-9]{64}$/u)
+            assert.match(identity.bundleSha256, /^[a-f0-9]{64}$/u)
+            return {
+              candidateDirectory: resolve(directory),
+              planId: identity.planId,
+              bundleSha256: identity.bundleSha256,
+            }
+          }),
         ),
       }
     : {}),

@@ -91,7 +91,7 @@ test("C08: configured request mismatch is rejected before observation on an empt
   ]) {
     const operation = await Effect.runPromise(createOperation(base, { ...expected, ...mismatch }))
     const plan = await Effect.runPromise(createPlan("c08-owned-fixture", [operation]))
-    await expect(runWithHost(host, runRelease({ plan, authorize: true }))).rejects.toThrow()
+    expect(runWithHost(host, runRelease({ plan, authorize: true }))).rejects.toThrow()
     expect(await Effect.runPromise(store.read(plan.journalId))).toEqual({ revision: 0, events: [] })
     expect(observations).toBe(0)
     expect(dispatches).toBe(0)

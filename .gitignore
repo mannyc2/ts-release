@@ -8,7 +8,6 @@ node_modules/
 .repos/
 .release/
 plans/
-AGENTS.md
 .tmp-*
 .env*
 !.env.example

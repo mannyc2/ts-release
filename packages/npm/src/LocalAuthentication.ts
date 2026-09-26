@@ -93,11 +93,13 @@ const configToken = (contents: string): Redacted.Redacted<string> => {
       const match = /^[ \t]*\/\/registry\.npmjs\.org\/:_authToken[ \t]*=[ \t]*(.*?)[ \t]*$/u.exec(
         line,
       )
-      return match ? [match[1]!] : []
+      const value = match?.[1]
+      return value === undefined ? [] : [value]
     })
-  if (values.length !== 1 || /["'\s]|\$\{/u.test(values[0]!))
+  const [value] = values
+  if (values.length !== 1 || value === undefined || /["'\s]|\$\{/u.test(value))
     return Native.invalid("local-authentication-config")
-  const token = Redacted.make(values[0]!)
+  const token = Redacted.make(value)
   Http.credentialToken(token, () => Native.invalid("local-authentication-config"))
   return token
 }

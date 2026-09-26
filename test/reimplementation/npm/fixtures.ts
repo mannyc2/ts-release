@@ -30,7 +30,7 @@ export const pack = (manifest: Record<string, unknown>) => {
   }
 }
 export const artifact = (name: string, bytes: Uint8Array) =>
-  Schema.decodeUnknownSync(File)({
+  Schema.decodeSync(File)({
     _tag: "OwnedFile",
     logicalName: name,
     content: new Content({

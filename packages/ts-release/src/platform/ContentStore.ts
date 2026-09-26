@@ -1,4 +1,5 @@
 import * as Effect from "effect/Effect"
+import * as Predicate from "effect/Predicate"
 import { createHash, randomUUID } from "node:crypto"
 import { constants } from "node:fs"
 import { chmod, link, mkdir, open, unlink, type FileHandle } from "node:fs/promises"
@@ -77,7 +78,7 @@ export const fileContentOwner = (directory: string): ContentOwner => {
       try {
         await link(temporary, join(directory, expected.sha256))
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error
+        if (!Predicate.hasProperty(error, "code") || error.code !== "EEXIST") throw error
       }
       // An existing name is never accepted as proof of its contents.
       await withOwned(expected, (input) => scan(input, expected))

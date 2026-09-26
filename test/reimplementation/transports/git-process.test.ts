@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { Effect, Redacted } from "effect"
-import { existsSync, realpathSync } from "node:fs"
+import { existsSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { createHash } from "node:crypto"
 import {
@@ -9,7 +9,7 @@ import {
   openGitRuntime,
 } from "../../../packages/ts-release/src/platform/GitProcess.js"
 
-const gitExecutable = realpathSync(Bun.which("git")!)
+import { nativeGit as gitExecutable } from "./git-fixture.js"
 const options = {
   gitExecutable,
   temporaryRoot: tmpdir(),
@@ -71,12 +71,12 @@ test("native credential configuration retains hooks/TLS/redirect protection with
             ["http.sslVerify", "true"],
             ["credential.helper", ""],
             [`http.${remote}.extraHeader`, "Authorization: Bearer fixture-native-git-token"],
-          ]) {
+          ] as const) {
             expect(
               text(
-                yield* checked(repository.run, ["config", "--get", name!], undefined, environment),
+                yield* checked(repository.run, ["config", "--get", name], undefined, environment),
               ),
-            ).toBe(expected!)
+            ).toBe(expected)
           }
           const hooks = text(
             yield* checked(
@@ -104,7 +104,7 @@ test("native credential configuration retains hooks/TLS/redirect protection with
 })
 
 test("native output bounds fail with a fixed diagnostic; Git credentials reject wrong transport and malformed values", async () => {
-  await expect(
+  expect(
     Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {

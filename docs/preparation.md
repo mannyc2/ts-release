@@ -42,6 +42,22 @@ The hook is called at most once per operation per invocation, never during
 observation or an unauthorized run. An explicit `maxDispatches` covers all
 continuations. Unknown outcomes never invoke it or grant another dispatch.
 
+Effect hosts can compose `runApplicationEffect(createApplication, input, mode)`
+from the `node` or `bun` subpath. The returned Effect owns the application scope
+and preserves factory errors and service requirements, adding
+`ReleaseError | AdoptionError` for interpretation and Bundle admission. Provide
+factory layers around it and execute at your host boundary; the caller owns the
+runtime, logging and interruption policy. This additive API is available in this
+source checkout, not the already-published 0.4.2 package.
+
+The existing `runApplication(path, input, signal, mode)` remains the Promise
+adapter. It preserves 0.4.2 construction-throw behavior: a synchronously thrown
+`ReleaseError` from the same core instance remains that failure, while other
+factory throws become the safe `invalid-data` failure. The new Effect entrypoint
+instead defers synchronous factory throws as defects. Return `Effect.fail(error)`
+for an expected factory failure. Both entrypoints share admission, execution and
+scoped cleanup; neither changes publication authority or retained identities.
+
 Use Node for native Sigstore signing and verification. Bun remains supported for
 package management, scripts, tests and token-based publication. Bun 1.3.14 fails
 the native Sigstore trust-root signature check; the native provenance adapters

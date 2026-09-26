@@ -36,12 +36,11 @@ export const author = Effect.fn("npm.author")(function* (input: {
     else operations.push(yield* publish(candidate.publication))
   }
   for (const move of moves) {
-    const related = operations.filter(
-      (operation) =>
-        operation.definitionId === publishDescriptor.definitionId &&
-        (operation.intent as Model.PublishIntent).name === move.name &&
-        (operation.intent as Model.PublishIntent).version === move.version,
-    )
+    const related = operations.filter((operation) => {
+      if (operation.definitionId !== publishDescriptor.definitionId) return false
+      const intent = Native.own(Model.publishCodec, operation.intent)
+      return intent.name === move.name && intent.version === move.version
+    })
     operations.push(
       yield* distTag(
         move,
@@ -103,7 +102,9 @@ export const definitions = (
             )
             return publishBody(intent, tarball, provenance)
           })
-          yield* verifyProvenance!({
+          if (verifyProvenance === undefined)
+            return yield* Native.reject("npm-provenance", "Provenance verifier is required")
+          yield* verifyProvenance({
             source: Native.own(Model.ProvenanceSource, provenanceSource),
             bundleBytes: new Uint8Array(provenance),
           })

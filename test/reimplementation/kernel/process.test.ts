@@ -3,8 +3,9 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 import { SqliteJournal } from "./sqlite-fixture.js"
-import { canonical, createOperation, createPlan, type ReleaseReport } from "./kernel.js"
+import { canonical, createOperation, createPlan } from "./kernel.js"
 import { providerFor } from "./fixtures.js"
 
 const worker = resolve(import.meta.dir, "process-runner.ts")
@@ -67,7 +68,19 @@ for (const candidate of evaluatorNames)
           const second = launch(freshWorkspace, "none", "true")
           expect(await second.exited).toBe(0)
           expect(await new Response(second.stderr).text()).toBe("")
-          const report = JSON.parse(await new Response(second.stdout).text()) as ReleaseReport
+          const report = Schema.decodeSync(
+            Schema.fromJsonString(
+              Schema.Struct({
+                operations: Schema.Array(
+                  Schema.Struct({
+                    status: Schema.String,
+                    dispatches: Schema.Int,
+                    receipts: Schema.Int,
+                  }),
+                ),
+              }),
+            ),
+          )(await new Response(second.stdout).text())
           expect(report.operations[0]).toMatchObject({
             status: fault === "after-send" ? "Satisfied" : "Inconclusive",
             dispatches: 1,
@@ -79,7 +92,7 @@ for (const candidate of evaluatorNames)
           expect(await third.exited).toBe(0)
           expect(sends).toBe(fault === "after-send" ? 1 : 0)
         } finally {
-          server.stop(true)
+          await server.stop(true)
           rmSync(directory, { recursive: true, force: true })
         }
       })

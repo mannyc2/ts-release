@@ -18,7 +18,7 @@ export class FinalizedReport extends Schema.Class<FinalizedReport>("ts-release/F
   supersededPlans: Schema.optionalKey(Schema.Array(Plan)),
   journal: Schema.Struct({
     journalId: Schema.String,
-    revision: Schema.Number,
+    revision: Schema.Finite,
     events: Schema.Array(JournalEvent),
   }),
   superseded: Schema.Boolean,
@@ -34,9 +34,9 @@ export class FinalizedReport extends Schema.Class<FinalizedReport>("ts-release/F
         "Rejected",
         "Superseded",
       ]),
-      dispatches: Schema.Number,
-      receipts: Schema.Number,
-      observations: Schema.Number,
+      dispatches: Schema.Finite,
+      receipts: Schema.Finite,
+      observations: Schema.Finite,
     }),
   ),
 }) {}

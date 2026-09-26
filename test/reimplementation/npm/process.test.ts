@@ -1,8 +1,29 @@
+import * as Schema from "effect/Schema"
 import { expect, test } from "bun:test"
 import { mkdtemp, writeFile, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pack } from "./fixtures.js"
+
+const decodeWorker = Schema.decodeUnknownSync(
+  Schema.StructWithRest(
+    Schema.Struct({
+      report: Schema.StructWithRest(
+        Schema.Struct({
+          operations: Schema.Array(
+            Schema.StructWithRest(Schema.Struct({ status: Schema.String }), [
+              Schema.Record(Schema.String, Schema.Unknown),
+            ]),
+          ),
+        }),
+        [Schema.Record(Schema.String, Schema.Unknown)],
+      ),
+      dispatches: Schema.Finite,
+      receipts: Schema.Finite,
+    }),
+    [Schema.Record(Schema.String, Schema.Unknown)],
+  ),
+)
 
 test("real HTTP protocol double and SQLite survive SIGKILL after npm commit without resending", async () => {
   const root = await mkdtemp(join(tmpdir(), "npm-process-acceptance-"))
@@ -21,7 +42,9 @@ test("real HTTP protocol double and SQLite survive SIGKILL after npm commit with
         expect(request.headers.get("authorization")).toBe("Bearer credential-fixture")
         expect(request.headers.get("content-type")).toBe("application/json")
         sends++
-        document = (await request.json()) as Record<string, unknown>
+        document = Schema.decodeUnknownSync(Schema.Record(Schema.String, Schema.Unknown))(
+          await request.json(),
+        )
         return Response.json({ ok: true }, { status: 201 })
       }
       if (!visible) return new Response(null, { status: 404 })
@@ -50,21 +73,21 @@ test("real HTTP protocol double and SQLite survive SIGKILL after npm commit with
     expect(sends).toBe(1)
     const unknown = await run("restart")
     expect(unknown.exitCode, unknown.err).toBe(0)
-    expect(JSON.parse(unknown.out).report.operations[0].status).toBe("Inconclusive")
+    expect(decodeWorker(JSON.parse(unknown.out)).report.operations[0]?.status).toBe("Inconclusive")
     visible = true
     const observed = await run("restart")
     expect(observed.exitCode, observed.err).toBe(0)
-    expect(JSON.parse(observed.out).report.operations[0].status).toBe("Satisfied")
+    expect(decodeWorker(JSON.parse(observed.out)).report.operations[0]?.status).toBe("Satisfied")
     moved = true
     const conflict = await run("restart")
     expect(conflict.exitCode, conflict.err).toBe(0)
-    const result = JSON.parse(conflict.out)
-    expect(result.report.operations[0].status).toBe("Conflict")
+    const result = decodeWorker(JSON.parse(conflict.out))
+    expect(result.report.operations[0]?.status).toBe("Conflict")
     expect(result.dispatches).toBe(1)
     expect(result.receipts).toBe(0)
     expect(sends).toBe(1)
   } finally {
-    server.stop(true)
+    await server.stop(true)
     await rm(root, { recursive: true, force: true })
   }
 }, 20000)

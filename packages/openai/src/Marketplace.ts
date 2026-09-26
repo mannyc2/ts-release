@@ -129,9 +129,10 @@ export const marketplace = Effect.fn("openai.marketplace")(function* (
     })
     return marketplaceDocument(document)
   })
+  const encoded = yield* Schema.encodeEffect(Marketplace)(selected).pipe(Effect.orDie)
   return Object.freeze({
     path: ".agents/plugins/marketplace.json" as const,
     document: selected,
-    bytes: new TextEncoder().encode(`${canonical(Schema.encodeSync(Marketplace)(selected))}\n`),
+    bytes: new TextEncoder().encode(`${canonical(encoded)}\n`),
   })
 })

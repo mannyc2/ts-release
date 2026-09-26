@@ -3,11 +3,14 @@ import { attempt, fail, failure } from "./Error.js"
 
 /** Unicode scalar order equals UTF-8 byte order for admitted strings. */
 export const compareText = (left: string, right: string): number => {
-  const a = [...left],
-    b = [...right]
-  for (let index = 0; index < Math.min(a.length, b.length); index++) {
-    const difference = a[index]!.codePointAt(0)! - b[index]!.codePointAt(0)!
-    if (difference) return difference
+  // String iteration yields complete nonempty code points, including lone surrogates.
+  const a = Array.from(left, (character) => character.codePointAt(0) ?? 0)
+  const b = Array.from(right, (character) => character.codePointAt(0) ?? 0)
+  for (const [index, point] of a.entries()) {
+    const other = b[index]
+    if (other === undefined) break
+    const difference = point - other
+    if (difference !== 0) return difference
   }
   return a.length - b.length
 }
@@ -31,10 +34,12 @@ export const canonical = (input: unknown): string => {
     active.add(value)
     const array = Array.isArray(value)
     const keys = Reflect.ownKeys(value).filter((key) => !(array && key === "length"))
+    const fields = new Map<string, unknown>()
     for (const key of keys) {
-      const descriptor = Object.getOwnPropertyDescriptor(value, key)!
-      if (typeof key !== "string" || !descriptor.enumerable || !("value" in descriptor))
+      const descriptor = Object.getOwnPropertyDescriptor(value, key)
+      if (typeof key !== "string" || !descriptor?.enumerable || !("value" in descriptor))
         fail("hidden-data", "Canonical data cannot contain symbols, hidden properties or accessors")
+      fields.set(key, descriptor.value)
     }
     let encoded: string
     if (array) {
@@ -42,14 +47,14 @@ export const canonical = (input: unknown): string => {
         fail("invalid-json-array", "Arrays must be dense and contain only indexed elements")
       encoded = `[${value.map(visit).join(",")}]`
     } else {
-      const prototype = Object.getPrototypeOf(value)
-      const constructor =
+      const prototype: unknown = Object.getPrototypeOf(value)
+      const constructor: unknown =
         prototype && Object.getOwnPropertyDescriptor(prototype, "constructor")?.value
       if (prototype !== null && prototype !== Object.prototype && !Schema.isSchema(constructor))
         fail("invalid-json-object", "Only plain records and Schema classes are canonical data")
-      encoded = `{${(keys as string[])
+      encoded = `{${[...fields.keys()]
         .sort()
-        .map((key) => `${visit(key)}:${visit(Object.getOwnPropertyDescriptor(value, key)!.value)}`)
+        .map((key) => `${visit(key)}:${visit(fields.get(key))}`)
         .join(",")}}`
     }
     active.delete(value)

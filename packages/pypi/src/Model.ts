@@ -8,7 +8,7 @@ export const project = text.check(
   Schema.isMaxLength(200),
 )
 export const normalizeProject = (name: string) =>
-  Schema.decodeUnknownSync(project)(name.toLowerCase().replace(/[-_.]+/gu, "-"))
+  Schema.decodeSync(project)(name.toLowerCase().replace(/[-_.]+/gu, "-"))
 export const version = text.check(
   Schema.isPattern(
     /^(?:[0-9]+!)?[0-9]+(?:\.[0-9]+)*(?:(?:a|b|rc)[0-9]+)?(?:\.post[0-9]+)?(?:\.dev[0-9]+)?(?:\+[a-z0-9]+(?:\.[a-z0-9]+)*)?$/u,

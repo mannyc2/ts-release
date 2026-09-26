@@ -74,7 +74,8 @@ const selected = (evidence: OperationEvidence): Parent => {
   return (
     latest.find((c) => c.facts instanceof Model.ReleaseFacts && !c.facts.draft) ??
     latest.find((c) => c.facts instanceof Model.AssetFacts && c.facts.sha256 !== null) ??
-    latest[0]!
+    latest[0] ??
+    invalid("parent-evidence")
   )
 }
 export const bindScope = (operation: Operation, context: ProviderContext): BoundScope => {
@@ -110,11 +111,10 @@ export const bindScope = (operation: Operation, context: ProviderContext): Bound
     parents: parents.sort((a, b) => (a.operationId < b.operationId ? -1 : 1)),
   })
 }
-export const parentFacts = <K extends Kind>(
-  scope: BoundScope,
-  id: string,
-  kind: K,
-): NativeFacts => {
+export function parentFacts(scope: BoundScope, id: string, kind: "draft"): Model.ReleaseFacts
+export function parentFacts(scope: BoundScope, id: string, kind: "object"): Model.AnnotatedTagFacts
+export function parentFacts(scope: BoundScope, id: string, kind: Kind): NativeFacts
+export function parentFacts(scope: BoundScope, id: string, kind: Kind): NativeFacts {
   const facts = scope.parents.find((parent) => parent.operationId === id)?.facts
   if (
     !facts ||

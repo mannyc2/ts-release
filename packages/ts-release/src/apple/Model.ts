@@ -117,9 +117,12 @@ export const loadApplePreparations = Effect.fn("apple.loadPreparations")(functio
     return decodeOwned(ApplePreparations, value)
   })
   const inputs = decoded.preparations.map(({ journalId: _, ...input }) => input)
-  const expected = yield* createApplePreparations(
-    inputs as [ApplePreparationInput, ...ApplePreparationInput[]],
-  )
+  const [first, ...remaining] = inputs
+  if (first === undefined)
+    return yield* attempt(() =>
+      fail("preparation-set", "Nonempty Apple preparation inputs required"),
+    )
+  const expected = yield* createApplePreparations([first, ...remaining])
   yield* attempt(() => {
     if (canonical(decoded) !== canonical(expected))
       fail("preparation-root", "Apple preparation collection differs from its derived root")

@@ -98,7 +98,7 @@ export const openGitJournal = Effect.fn("ts-release.openGitJournal")(
           const seen = new Set<string>()
           for (const row of rows) {
             const fields = row.split(" "),
-              commit = fields[0]!
+              commit = fields[0] ?? invalid()
             if (
               objectFormat(commit) !== options.format ||
               fields.length !== (parent ? 2 : 1) ||
@@ -197,7 +197,7 @@ export const openGitJournal = Effect.fn("ts-release.openGitJournal")(
               _tag: witness.startsWith("=\t") ? "AlreadyRecorded" : "Appended",
               revision: expectedRevision + 1,
             }
-          }).pipe(Effect.catch(() => Effect.succeed({ _tag: "AmbiguousStorageOutcome" as const })))
+          }).pipe(Effect.orElseSucceed(() => ({ _tag: "AmbiguousStorageOutcome" as const })))
         },
       )
       return Object.freeze({ read, append })

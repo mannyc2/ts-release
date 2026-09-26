@@ -57,7 +57,6 @@ for (const owner of owners) {
   ])
   archives.push({ owner, archive, sha256: hash(await readFile(archive)) })
 }
-const archiveByOwner = Object.fromEntries(archives.map(({ owner, archive }) => [owner, archive]))
 const producer = join(work, "producer")
 await mkdir(producer)
 await writeFile(
@@ -103,19 +102,12 @@ for (const manager of ["bun", "npm"]) {
       private: true,
       type: "module",
       dependencies: {
-        "@mannyc1/ts-release": `file:${archives[0]!.archive}`,
-        "@mannyc1/ts-release-npm": `file:${archives[1]!.archive}`,
-        ...(includePyPi ? { "@mannyc1/ts-release-pypi": `file:${archives[2]!.archive}` } : {}),
-        ...(includeGithub ? { "@mannyc1/ts-release-github": `file:${archives[3]!.archive}` } : {}),
-        ...(includeCatalog
-          ? { "@mannyc1/ts-release-catalog": `file:${archives[4]!.archive}` }
-          : {}),
-        ...(includeAi
-          ? {
-              "@mannyc1/ts-release-mcp": `file:${archiveByOwner.mcp}`,
-              "@mannyc1/ts-release-openai": `file:${archiveByOwner.openai}`,
-            }
-          : {}),
+        ...Object.fromEntries(
+          archives.map(({ owner, archive }) => [
+            `@mannyc1/${owner === "ts-release" ? owner : `ts-release-${owner}`}`,
+            `file:${archive}`,
+          ]),
+        ),
         effect: "4.0.0-rc.115",
         typescript: "6.0.3",
       },
@@ -302,10 +294,10 @@ void [gitHost, gitOptions, journalOptions, readHttp, exchange, Git.prepare, Git.
       runtimes.push(JSON.parse(await run(cwd, [runtime, "ai-consumer.mjs"])))
   if (includeTransports)
     for (const runtime of [node, process.execPath]) {
+      const git = Bun.which("git")
+      assert.ok(git, "Native transport acceptance requires Git")
       runtimes.push(
-        JSON.parse(
-          await run(cwd, [runtime, "git-native-consumer.mjs", await realpath(Bun.which("git")!)]),
-        ),
+        JSON.parse(await run(cwd, [runtime, "git-native-consumer.mjs", await realpath(git)])),
       )
       runtimes.push(JSON.parse(await run(cwd, [runtime, "http-wire-consumer.mjs"])))
       runtimes.push(

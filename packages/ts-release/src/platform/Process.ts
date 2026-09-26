@@ -19,7 +19,7 @@ export const command = <E>(
     const selected = yield* Effect.try({
       try: () => {
         if (!args.length || args.some((arg) => typeof arg !== "string" || arg.includes("\0")))
-          throw error()
+          return undefined
         return {
           args: [...args],
           body: input === undefined ? undefined : new Uint8Array(input),
@@ -28,6 +28,7 @@ export const command = <E>(
       },
       catch: error,
     })
+    if (selected === undefined) return yield* Effect.fail(error())
     return yield* Effect.callback<ProcessResult, E>((resume) => {
       let child: ReturnType<typeof spawn> | undefined,
         finished = false,
@@ -56,9 +57,11 @@ export const command = <E>(
         if (bytes > options.maximumOutputBytes) stop()
         else if (capture) chunks.push(Buffer.from(chunk))
       }
+      // Native process deadline shares the close callback and joins OS shutdown in the finalizer.
+      // @effect-diagnostics-next-line globalTimersInEffect:off
       const timer = setTimeout(stop, options.timeoutMilliseconds)
       try {
-        child = spawn(executable, selected.args, {
+        const owned = spawn(executable, selected.args, {
           cwd: directory,
           env: selected.env,
           shell: false,
@@ -66,12 +69,13 @@ export const command = <E>(
           windowsHide: true,
           stdio: ["pipe", "pipe", "pipe"],
         })
-        closed = new Promise<void>((resolve) => child!.once("close", () => resolve()))
-        child.on("error", stop)
-        child.stdin!.on("error", stop)
-        child.stdout!.on("data", (chunk: Buffer) => output(chunk, true))
-        child.stderr!.on("data", output)
-        child.on("close", (code) => {
+        child = owned
+        closed = new Promise<void>((resolve) => owned.once("close", () => resolve()))
+        owned.on("error", stop)
+        owned.stdin.on("error", stop)
+        owned.stdout.on("data", (chunk: Buffer) => output(chunk, true))
+        owned.stderr.on("data", output)
+        owned.on("close", (code) => {
           finished = true
           clearTimeout(timer)
           resume(
@@ -80,7 +84,7 @@ export const command = <E>(
               : Effect.succeed({ exitCode: code, stdout: new Uint8Array(Buffer.concat(chunks)) }),
           )
         })
-        child.stdin!.end(selected.body)
+        owned.stdin.end(selected.body)
       } catch {
         stop()
         clearTimeout(timer)

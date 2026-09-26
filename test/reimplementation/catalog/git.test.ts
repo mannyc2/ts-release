@@ -1,5 +1,6 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
-import { Effect, Layer } from "effect"
+import { Effect, Schema } from "effect"
 import { mkdtemp, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
@@ -19,7 +20,9 @@ import {
   processOptions,
   seed,
 } from "../transports/git-fixture.js"
-import { fixture } from "./fixtures.js"
+import { fixture, HomebrewOracle } from "./fixtures.js"
+
+const brew = process.env.TS_RELEASE_ACCEPTANCE_BREW ?? "/tmp/ts-release-native-homebrew/bin/brew"
 
 for (const family of ["homebrew", "scoop"] as const)
   for (const count of [1, 2])
@@ -59,7 +62,11 @@ for (const family of ["homebrew", "scoop"] as const)
                 )
                 const files = paths.map(
                   (path, i) =>
-                    new Git.FileEdit({ path, mode: "100644", content: contents.put(bytes[i]!) }),
+                    new Git.FileEdit({
+                      path,
+                      mode: "100644",
+                      content: contents.put(bytes[i] ?? fail("Missing fixture bytes[i]")),
+                    }),
                 )
                 const options = {
                   ...processOptions,
@@ -105,20 +112,18 @@ for (const family of ["homebrew", "scoop"] as const)
                         authorize: true,
                         maxDispatches: 1,
                       }).pipe(
-                        Effect.provide(
-                          Layer.succeed(Host, {
-                            providers: [
-                              Git.definition({
-                                readContent: contents.read,
-                                observeRef: host.observeRef,
-                              }),
-                            ],
-                            transport: host.transport([intent]),
-                            store,
-                            now: () => 1000,
-                            uniqueId: () => `catalog-${++serial}`,
-                          }),
-                        ),
+                        Effect.provideService(Host, {
+                          providers: [
+                            Git.definition({
+                              readContent: contents.read,
+                              observeRef: host.observeRef,
+                            }),
+                          ],
+                          transport: host.transport([intent]),
+                          store,
+                          now: () => 1000,
+                          uniqueId: () => `catalog-${++serial}`,
+                        }),
                       )
                       const events = (yield* store.read(plan.journalId)).events
                       expect(
@@ -128,7 +133,10 @@ for (const family of ["homebrew", "scoop"] as const)
                         events.filter((event) => event.body._tag === "ReceiptAccepted"),
                       ).toHaveLength(0)
                       if (!loseAcknowledgement)
-                        expect(report.operations[0]!.status).toBe("Satisfied")
+                        expect(
+                          (report.operations[0] ?? fail("Missing fixture report.operations[0]"))
+                            .status,
+                        ).toBe("Satisfied")
                       expect(
                         native(repository.directory, ["rev-parse", coordinate.ref])
                           .toString()
@@ -137,7 +145,7 @@ for (const family of ["homebrew", "scoop"] as const)
                       for (const [i, path] of paths.entries()) {
                         expect(
                           native(repository.directory, ["show", `${coordinate.ref}:${path}`]),
-                        ).toEqual(Buffer.from(bytes[i]!))
+                        ).toEqual(Buffer.from(bytes[i] ?? fail("Missing fixture bytes[i]")))
                         if (loseAcknowledgement && family === "homebrew") {
                           const nativePath = join(directory, `tool${i}.rb`)
                           yield* Effect.promise(() =>
@@ -146,10 +154,11 @@ for (const family of ["homebrew", "scoop"] as const)
                               native(repository.directory, ["show", `${coordinate.ref}:${path}`]),
                             ),
                           )
-                          const loaded = JSON.parse(
+                          const loaded = yield* Schema.decodeEffect(
+                            Schema.fromJsonString(HomebrewOracle),
+                          )(
                             execFileSync(
-                              process.env.TS_RELEASE_ACCEPTANCE_BREW ??
-                                "/tmp/ts-release-native-homebrew/bin/brew",
+                              brew,
                               ["ruby", join(import.meta.dir, "homebrew-oracle.rb"), nativePath],
                               {
                                 env: {
@@ -165,9 +174,7 @@ for (const family of ["homebrew", "scoop"] as const)
                           )
                           expect(loaded.cells).toHaveLength(4)
                           expect(
-                            loaded.cells.every(
-                              (cell: { version: string }) => cell.version === f.formula.version,
-                            ),
+                            loaded.cells.every((cell) => cell.version === f.formula.version),
                           ).toBe(true)
                         }
                       }

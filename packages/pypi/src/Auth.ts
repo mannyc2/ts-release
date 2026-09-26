@@ -66,7 +66,7 @@ export const authorizeTrusted = Effect.fn("pypi.authorizeTrusted")(function* (
   return yield* attempt(() => {
     if (response.status !== 200 || response.body.length > 128 * 1024) invalid("oidc-response")
     const data = object(Http.decodeJson(response.body))
-    if (typeof data.token !== "string") invalid("oidc-token")
-    return basic("__token__", Redacted.make(data.token as string))
+    if (typeof data.token !== "string") return invalid("oidc-token")
+    return basic("__token__", Redacted.make(data.token))
   })
 })

@@ -1,4 +1,5 @@
 import * as Effect from "effect/Effect"
+import * as Cause from "effect/Cause"
 import { validateHeaderName, validateHeaderValue } from "node:http"
 import type { Client, buildConnector } from "undici"
 import type { Socket } from "node:net"
@@ -8,16 +9,23 @@ import type { Socket } from "node:net"
 import NativeClient from "undici/lib/dispatcher/client.js"
 // @ts-expect-error Same exact-version adapter for Undici's native TCP/TLS connector.
 import nativeConnector from "undici/lib/core/connect.js"
+// oxlint-disable-next-line typescript/no-unsafe-assignment -- Pinned Undici 8.10.1 native entry implements its public Client ABI; native transport acceptance covers this bridge.
 const ClientConstructor: typeof Client = NativeClient
 // connect.js returns the pending socket before secureConnect; the public type
 // discards that return. Own it so interruption can close an unfinished handshake.
+// oxlint-disable-next-line typescript/no-unsafe-assignment -- Pinned Undici 8.10.1 connector returns the owned pending socket; real TLS cancellation checks cover this adapter contract.
 const connect: (
   options: Parameters<typeof buildConnector>[0],
 ) => (options: buildConnector.Options, callback: buildConnector.Callback) => Socket =
   nativeConnector
 import { canonical } from "../internal/Identity.js"
 import { ReleaseError, attempt, fail, reject } from "../internal/Error.js"
-import { verifyProviderContracts, verifyRequest, type Transport } from "../Provider.js"
+import {
+  verifyProviderContracts,
+  verifyRequest,
+  type PreparedRequest,
+  type Transport,
+} from "../Provider.js"
 import { publicUrl } from "../Http.js"
 import type { CredentialExchange, Headers, HttpExchangeOptions } from "../Http.js"
 import type { HttpRead, HttpReadOptions, HttpResponse, HttpTransportOptions } from "../Http.js"
@@ -41,7 +49,8 @@ const limits = (input: HttpExchangeOptions) => {
   return { timeoutMilliseconds, maximumResponseBytes, maximumWireResponseBytes }
 }
 const headers = (pairs: Headers): Record<string, string> => {
-  const output: Record<string, string> = Object.create(null)
+  const output: Record<string, string> = {}
+  Object.setPrototypeOf(output, null)
   for (const [name, value] of pairs) {
     validateHeaderName(name)
     validateHeaderValue(name, value)
@@ -79,7 +88,13 @@ const authorize = Effect.fn("http.authorize")(function* (
       }),
     ),
   ).pipe(
-    Effect.catchCause(() => reject("http-credentials", "HTTP credentials could not be acquired")),
+    Effect.catchCause((cause) =>
+      // Credential failures and defects can contain secrets. Preserve cancellation
+      // without retaining the secret-bearing remainder of a mixed Cause.
+      Cause.hasInterrupts(cause)
+        ? Effect.interrupt
+        : reject("http-credentials", "HTTP credentials could not be acquired"),
+    ),
   )
   return yield* attempt(() => {
     const live = headers(Object.entries(secret))
@@ -114,7 +129,8 @@ const nativeRequest = (options: Required<HttpExchangeOptions>) =>
         allowH2: false,
       })
       const chunks: Buffer[] = [],
-        responseHeaders: Record<string, string> = Object.create(null)
+        responseHeaders: Record<string, string> = {}
+      Object.setPrototypeOf(responseHeaders, null)
       const cleanup = async (): Promise<void> => {
         finished = true
         clearTimeout(timer)
@@ -130,11 +146,13 @@ const nativeRequest = (options: Required<HttpExchangeOptions>) =>
       }
       const failed = () =>
         complete(reject("http-outcome-unknown", "Native HTTP response was not completely observed"))
+      // Native I/O deadline includes DNS/TLS/header/body callbacks; cleanup joins the socket close.
+      // @effect-diagnostics-next-line globalTimersInEffect:off
       const timer = setTimeout(failed, options.timeoutMilliseconds)
       try {
         client = new ClientConstructor(url.origin, {
           connect: (settings, callback) => {
-            connection = connector(settings, (error, socket) => {
+            const pending = connector(settings, (error, socket) => {
               if (error || !socket) {
                 callback(error, socket)
                 return
@@ -154,9 +172,8 @@ const nativeRequest = (options: Required<HttpExchangeOptions>) =>
               socket.once("close", () => socket.off("data", count))
               callback(null, socket)
             })
-            socketClosed = new Promise<void>((resolve) =>
-              connection!.once("close", () => resolve()),
-            )
+            connection = pending
+            socketClosed = new Promise<void>((resolve) => pending.once("close", () => resolve()))
           },
           pipelining: 0,
           allowH2: false,
@@ -194,8 +211,12 @@ const nativeRequest = (options: Required<HttpExchangeOptions>) =>
                 return
               }
               for (let index = 0; index < raw.length; index += 2) {
-                const field = raw[index]!,
-                  bytes = raw[index + 1]!
+                const field = raw[index],
+                  bytes = raw[index + 1]
+                if (field === undefined || bytes === undefined) {
+                  failed()
+                  return
+                }
                 const name = (
                     typeof field === "string" ? field : field.toString("latin1")
                   ).toLowerCase(),
@@ -278,7 +299,9 @@ export const makeHttpTransport = (options: HttpTransportOptions): Transport => {
       const copy = yield* verifyRequest(request)
       if (yield* attempt(() => provider.ownsRequest(copy) === true)) owners.push(provider)
     }
-    if (owners.length !== 1) return yield* attempt(() => invalid("request-owner"))
+    const [owner] = owners
+    if (owners.length !== 1 || owner === undefined)
+      return yield* attempt(() => invalid("request-owner"))
     const fields = yield* authorize(
       resolve,
       url,
@@ -288,17 +311,17 @@ export const makeHttpTransport = (options: HttpTransportOptions): Transport => {
       request.facts.method,
       request.facts.bodyDigest,
     )
-    return Effect.fn("http.sendPrepared")(function* (actual) {
+    return Effect.fn("http.sendPrepared")(function* (actual: PreparedRequest) {
       const verified = yield* verifyRequest(actual)
       if (canonical(verified.facts) !== key)
         return yield* attempt(() => invalid("prepared-binding"))
       const response = yield* native(url, request.facts.method, fields, request.body)
-      return yield* owners[0]!.decodeResponse(request, response)
+      return yield* owner.decodeResponse(request, response)
     })
   })
   return Object.freeze({
     prepare,
-    send: Effect.fn("http.send")(function* (request) {
+    send: Effect.fn("http.send")(function* (request: PreparedRequest) {
       return yield* (yield* prepare(request))(request)
     }),
   })

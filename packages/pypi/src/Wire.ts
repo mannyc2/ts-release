@@ -86,7 +86,8 @@ export const ownsRequest = (request: PreparedRequest) => {
     )
       return false
     const intent = readScope(facts.scope),
-      boundary = facts.headers[1]![1].split("boundary=")[1]!
+      boundary = facts.headers[1]?.[1].split("boundary=")[1]
+    if (boundary === undefined) return false
     const end = Buffer.from(`\r\n--${boundary}--\r\n`),
       start = bytes.length - end.length - intent.distribution.content.bytes
     if (start < 0 || !Buffer.from(bytes.subarray(bytes.length - end.length)).equals(end))

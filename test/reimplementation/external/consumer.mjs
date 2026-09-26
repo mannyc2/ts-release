@@ -3,7 +3,7 @@ import { createHash } from "node:crypto"
 import { createServer } from "node:https"
 import { once } from "node:events"
 import { spawn, execFileSync } from "node:child_process"
-import { mkdir, mkdtemp, readFile, writeFile, appendFile, rm } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, writeFile, rm } from "node:fs/promises"
 import { join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 import { Effect, Schema } from "effect"
@@ -14,7 +14,6 @@ import * as Git from "@mannyc1/ts-release/git"
 import {
   Upload,
   Opaque,
-  Intent,
   intentCodec,
   encodeIntent,
   intentCanonicalVersion,
@@ -59,9 +58,7 @@ const check = (name, actual, expected) => {
 }
 const readLines = async (path) =>
   (await readFile(path, "utf8")).trim().split("\n").filter(Boolean).map(JSON.parse)
-const server = createServer(
-  { cert: await readFile(process.argv[2]), key: await readFile(process.argv[3]) },
-  async (request, response) => {
+const handle = async (request, response) => {
     const row = rows.get(request.url)
     if (!row) return response.writeHead(404).end()
     const chunks = []
@@ -106,6 +103,11 @@ const server = createServer(
         state: row.ackState ?? (row.pending ? "pending" : "created"),
       }),
     )
+  }
+const server = createServer(
+  { cert: await readFile(process.argv[2]), key: await readFile(process.argv[3]) },
+  (request, response) => {
+    void handle(request, response).catch((cause) => response.destroy(cause instanceof Error ? cause : new Error("External fixture request failed")))
   },
 )
 server.listen(0, "127.0.0.1")
@@ -181,7 +183,7 @@ const launch = async (input) => {
       try {
         resolve({ code, signal, stdout, stderr, report: stdout ? JSON.parse(stdout) : null })
       } catch (error) {
-        reject(error)
+        reject(error instanceof Error ? error : new Error("External CLI returned invalid JSON"))
       }
     })
   })
@@ -290,8 +292,8 @@ try {
     "fresh operation-local credentials for both instances",
     (await readLines(acquisitions))
       .filter((row) => row.generation === 2)
-      .map((row) => row.principal)
-      .sort(),
+      .map((row) => { assert.equal(typeof row.principal, "string"); return String(row.principal) })
+      .sort((a, b) => a.localeCompare(b)),
     ["production", "staging"],
   )
 

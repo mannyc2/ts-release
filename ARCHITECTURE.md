@@ -15,5 +15,6 @@ OpenAI marketplace files all use the same Git prepare/update machinery, object
 verification, conditional push and journal recovery. No separate catalog engine
 is needed. Apple preparation retains its scoped journal and native evidence.
 
-See [the retained decisions](docs/design-decisions.md),
+See [the engineering contract](CONTRIBUTING.md),
+[the retained decisions](docs/design-decisions.md),
 [application contract](docs/preparation.md) and [recovery](docs/recovery.md).

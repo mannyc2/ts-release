@@ -1,24 +1,18 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
-import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs"
-import { join } from "node:path"
-import { tmpdir } from "node:os"
-import { createHash } from "node:crypto"
 import { gzipSync, gunzipSync } from "node:zlib"
 import { Effect, Schema } from "effect"
-import { File, Content } from "@mannyc1/ts-release/bundle"
 import {
   PublicPackage,
   PrivatePackage,
   PublishIntent,
-  TokenAuthorization,
-  NoProvenance,
   author,
   DistTagIntent,
   publish,
 } from "../../../packages/npm/src/index.js"
 import { parseJson, readManifest } from "../../../packages/npm/src/Native.js"
 
-import { pack, artifact, intent } from "./fixtures.js"
+import { pack, intent } from "./fixtures.js"
 
 test("npm reads the actual Bun tarball package manifest and rejects changed native bytes", () => {
   const bytes = pack({
@@ -34,7 +28,7 @@ test("npm reads the actual Bun tarball package manifest and rejects changed nati
     files: ["index.js"],
   })
   const tar = new Uint8Array(gunzipSync(bytes))
-  tar[1] = tar[1]! ^ 1
+  tar[1] = (tar[1] ?? fail("Missing fixture tar[1]")) ^ 1
   expect(() => readManifest(gzipSync(tar))).toThrow("checksum")
   expect(() => readManifest(bytes.subarray(0, bytes.length - 12))).toThrow()
 })
@@ -84,7 +78,9 @@ test("npm three public workspaces remain three coordinates and private omission 
   )
   expect(mixed.operations).toHaveLength(2)
   expect(
-    mixed.operations.every((operation) => (operation.intent as PublishIntent).name !== c.name),
+    mixed.operations.every(
+      (operation) => Schema.decodeUnknownSync(PublishIntent)(operation.intent).name !== c.name,
+    ),
   ).toBe(true)
   expect(mixed.omittedPrivate.map((item) => item.name)).toEqual([c.name])
 })
@@ -101,15 +97,18 @@ test("npm tag movement derives its publication dependency; unsafe authoring reje
   const result = await Effect.runPromise(
     author({ packages: [new PublicPackage({ publication })], tagMoves: [move] }),
   )
-  expect(result.operations[1]?.dependsOn).toEqual([result.operations[0]!.operationId])
-  await expect(
-    Effect.runPromise(publish(intent("@fixture/example", "1.3.0-beta.1"))),
-  ).rejects.toThrow()
+  expect(result.operations[1]?.dependsOn).toEqual([
+    (result.operations[0] ?? fail("Missing fixture result.operations[0]")).operationId,
+  ])
+  expect(Effect.runPromise(publish(intent("@fixture/example", "1.3.0-beta.1")))).rejects.toThrow()
   const next = await Effect.runPromise(publish(intent("@fixture/example", "1.3.0-beta.1", "next")))
   expect(next.definitionId).toBe("npm.publish")
-  await expect(
+  const restricted: unknown = { ...publication, access: "restricted" }
+  expect(
     Effect.runPromise(
-      publish({ ...publication, access: "restricted" } as unknown as PublishIntent),
+      // Deliberately bypass the public access literal to exercise runtime rejection.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      publish(restricted as PublishIntent),
     ),
   ).rejects.toThrow()
 })

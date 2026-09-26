@@ -1,6 +1,6 @@
-import { Effect, Schema } from "effect"
+import { Array as Arr, Effect, Schema } from "effect"
 import { ReleaseError, attempt, fail, reject } from "./Error.js"
-import { verifyRequest, type Transport } from "../Provider.js"
+import { verifyRequest, type PreparedRequest, type Transport } from "../Provider.js"
 import { RequestFacts } from "./ReleaseModel.js"
 import { canonical } from "./Identity.js"
 
@@ -82,6 +82,7 @@ export const assertTransportBinding = (transport: Transport, facts: RequestFacts
     /^0+$/u.test(desiredNew)
   )
     fail("git-oid", "Conditional Git request requires full native object IDs")
+  // oxlint-disable-next-line no-control-regex -- A Git endpoint must be one literal argument without whitespace or controls.
   if (!facts.endpoint || facts.endpoint.startsWith("-") || /[\u0000-\u0020]/u.test(facts.endpoint))
     fail("git-endpoint", "Git endpoint must be one literal argument")
 }
@@ -93,13 +94,12 @@ export const pushWitness = (
   desiredNew: string,
 ): string | undefined => {
   if (result.exitCode !== 0 || result.stdout.length > 65536) return
-  const updates = result.stdout.split("\n").filter((line) => /^[ *+=!\-]\t/u.test(line))
-  if (updates.length !== 1) return
-  const line = updates[0]!,
-    fields = line.split("\t")
-  if (fields.length !== 3 || fields[1] !== `${desiredNew}:${ref}`) return
-  const flag = fields[0],
-    summary = fields[2]!
+  const updates = result.stdout.split("\n").filter((line) => /^[ *+=!-]\t/u.test(line))
+  const [line] = updates
+  if (updates.length !== 1 || line === undefined) return
+  const fields = line.split("\t")
+  const [flag, target, summary] = fields
+  if (fields.length !== 3 || target !== `${desiredNew}:${ref}` || summary === undefined) return
   if (flag === "=" && summary === "[up to date]") return line
   if (
     flag === "*" &&
@@ -110,8 +110,10 @@ export const pushWitness = (
   const range = /^([0-9a-f]{4,64})(\.{2,3})([0-9a-f]{4,64})( \(forced update\))?$/u.exec(summary)
   if (
     range &&
-    expectedOld.startsWith(range[1]!) &&
-    desiredNew.startsWith(range[3]!) &&
+    range[1] !== undefined &&
+    range[3] !== undefined &&
+    expectedOld.startsWith(range[1]) &&
+    desiredNew.startsWith(range[3]) &&
     ((flag === " " && range[2] === ".." && !range[4]) ||
       (flag === "+" && range[2] === "..." && range[4]))
   )
@@ -127,8 +129,9 @@ export function makeCoreGitTransport(
   input: CoreGitOptions | readonly [CoreGitOptions, ...CoreGitOptions[]],
   otherwise?: Transport,
 ): Transport {
-  const options = Array.isArray(input) ? input : [input as CoreGitOptions]
-  const source = Array.isArray(input) ? otherwise : (input as CoreGitOptions).otherwise
+  const multiple = Arr.isArray<typeof input>(input)
+  const options = multiple ? input : [input]
+  const source = multiple ? otherwise : input.otherwise
   const fallback = source && captureTransport(source)
   if (options.length === 0)
     fail("git-bindings", "Conditional Git needs at least one authority binding")
@@ -141,7 +144,7 @@ export function makeCoreGitTransport(
     const key = authorityKey(principal, scope)
     if (typeof execute !== "function" || (prepare !== undefined && typeof prepare !== "function"))
       fail("git-bindings", "Git execution and any preparation must be callable")
-    if (bindings.has(key) || (Array.isArray(input) && option.otherwise !== undefined))
+    if (bindings.has(key) || (multiple && option.otherwise !== undefined))
       fail(
         "git-bindings",
         "Conditional Git bindings must be unique and use only the common fallback",
@@ -161,13 +164,18 @@ export function makeCoreGitTransport(
       const selected = yield* verifyRequest(request)
       if (selected.facts.replay._tag === "GitCas") {
         yield* attempt(() => assertTransportBinding(transport, selected.facts))
-        const owned = bindings.get(authorityKey(selected.facts.principal, selected.facts.scope))!
+        const owned = bindings.get(authorityKey(selected.facts.principal, selected.facts.scope))
+        if (owned === undefined)
+          return yield* reject(
+            "transport-authority",
+            "Request authority differs from the captured Git credentials",
+          )
         const { ref, expectedOld, desiredNew } = selected.facts.replay
         const args = conditionalArguments(selected.facts.endpoint, ref, expectedOld, desiredNew)
         const execute = owned.prepare ? yield* owned.prepare(args) : owned.execute
         if (typeof execute !== "function")
           return yield* reject("git-bindings", "Prepared Git execution must be callable")
-        return Effect.fn("ts-release.coreConditionalGit")(function* (actual) {
+        return Effect.fn("ts-release.coreConditionalGit")(function* (actual: PreparedRequest) {
           const checked = yield* verifyRequest(actual)
           if (canonical(checked.facts) !== canonical(selected.facts))
             return yield* reject("git-request", "Prepared Git request changed before execution")
@@ -181,7 +189,7 @@ export function makeCoreGitTransport(
                 _tag: "Accepted" as const,
                 receipt: new GitReceipt({ kind: "git-push", ref, desiredNew, porcelain }),
               }
-        }) as Transport["send"]
+        })
       }
       if (!fallback)
         return yield* reject("unsupported-transport", "No ordinary transport was installed")
@@ -192,7 +200,10 @@ export function makeCoreGitTransport(
         if (fallback) return yield* fallback.send(request)
         return yield* reject("unsupported-transport", "No ordinary transport was installed")
       }
-      return yield* (yield* transport.prepare!(request))(request)
+      const prepare = transport.prepare
+      if (prepare === undefined)
+        return yield* reject("git-bindings", "Conditional Git preparation is unavailable")
+      return yield* (yield* prepare(request))(request)
     }),
   }
   mechanisms.set(transport, bindings)

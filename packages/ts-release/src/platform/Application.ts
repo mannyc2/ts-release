@@ -4,8 +4,8 @@ import type * as Scope from "effect/Scope"
 import { resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 import { Host, captureHost, type HostShape } from "../internal/Host.js"
-import type { OwnedBundle } from "../internal/ArtifactModel.js"
-import { attempt, fail, failure, type ReleaseError } from "../internal/Error.js"
+import type { AdoptionError, OwnedBundle } from "../internal/ArtifactModel.js"
+import { attempt, fail, failure, ReleaseError } from "../internal/Error.js"
 import type { Operation, RunOptions } from "../internal/ReleaseModel.js"
 import { FinalizedReport, reportFinalizedRelease } from "../internal/FinalizedReport.js"
 import { observeRelease, runRelease } from "../Release.js"
@@ -20,9 +20,9 @@ export interface Application {
    * Called at most once per operation per invocation, never in observe mode. */
   readonly onRejected?: (operation: Operation) => Effect.Effect<boolean, ReleaseError>
 }
-export type CreateApplication = (
+export type CreateApplication<E = ReleaseError, R = never> = (
   input: unknown,
-) => Effect.Effect<Application, ReleaseError, Scope.Scope>
+) => Effect.Effect<Application, E, R | Scope.Scope>
 /** Own process signal listeners and liveness for exactly one asynchronous main. */
 export const runInterruptibleProcess = async <A>(
   main: (signal: AbortSignal, exitCode: () => 0 | 130 | 143) => Promise<A>,
@@ -44,8 +44,121 @@ export const runInterruptibleProcess = async <A>(
   }
 }
 
-/** This explicit path selects trusted application code. Neither Plan nor Journal
- * data can choose an import. The application supplies its complete host layers. */
+/** Interpret an acquired application with one captured host and authorization. */
+const executeApplication = Effect.fn("ts-release.executeApplication")(function* (
+  app: Application,
+  mode: "run" | "observe",
+) {
+  const options = { ...app.options }
+  const onRejected = yield* attempt(() => {
+    if (app.onRejected !== undefined && typeof app.onRejected !== "function")
+      fail("application-rejection", "Application rejection handler must be callable")
+    return app.onRejected?.bind(app)
+  })
+  const host = yield* attempt(() => captureHost(app.host))
+  return yield* Effect.gen(function* () {
+    // Admit the complete Bundle/Plan/Journal binding before dispatch, then keep
+    // these owned inputs across the run. Reports never grant dispatch authority.
+    const admitted = yield* reportFinalizedRelease(app.bundle, options.plan)
+    if (mode === "observe") yield* observeRelease({ plan: admitted.plan })
+    else yield* runRelease({ ...options, plan: admitted.plan })
+    let report = yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
+    const initialDispatches = admitted.operations.reduce((sum, item) => sum + item.dispatches, 0)
+    const handled = new Set<string>()
+    while (mode === "run" && options.authorize && onRejected) {
+      const used =
+        report.operations.reduce((sum, item) => sum + item.dispatches, 0) - initialDispatches
+      const remaining =
+        options.maxDispatches === undefined ? undefined : options.maxDispatches - used
+      if (remaining !== undefined && remaining <= 0) break
+      const rejected = report.operations.filter((item) => item.status === "Rejected")
+      if (rejected.length === 0 || rejected.some((item) => handled.has(item.operationId))) break
+      let ready = true
+      for (const item of rejected) {
+        handled.add(item.operationId)
+        const operation = admitted.plan.operations.find(
+          (operation) => operation.operationId === item.operationId,
+        )
+        if (operation === undefined)
+          return yield* failure(
+            "application-operation",
+            "Rejected operation is absent from the admitted Plan",
+          )
+        if (!(yield* Effect.suspend(() => onRejected(operation)))) {
+          ready = false
+          break
+        }
+      }
+      if (!ready) break
+      // Re-enter the public interpreter with the original Plan and journal.
+      // The hook supplies live credentials, never a send permit or replay.
+      yield* runRelease({
+        ...options,
+        plan: admitted.plan,
+        ...(remaining === undefined ? {} : { maxDispatches: remaining }),
+      })
+      report = yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
+    }
+    return report
+  }).pipe(Effect.provideService(Host, host))
+})
+
+/** Acquire and interpret an application in one scope. The caller supplies any
+ * factory services or layers and owns execution, interruption and logging.
+ * Factory failures retain their typed error; construction bugs remain defects. */
+export const runApplicationEffect = <E = never, R = never>(
+  createApplication: CreateApplication<E, R>,
+  input: unknown,
+  mode: "run" | "observe" = "run",
+): Effect.Effect<FinalizedReport, E | ReleaseError | AdoptionError, Exclude<R, Scope.Scope>> =>
+  Effect.scoped(
+    Effect.suspend((): Effect.Effect<Application, E | ReleaseError, R | Scope.Scope> => {
+      const application = createApplication(input)
+      return Effect.isEffect(application)
+        ? application
+        : Effect.fail(
+            failure("application-effect", "createApplication must return a scoped Effect"),
+          )
+    }).pipe(Effect.flatMap((app) => executeApplication(app, mode))),
+  )
+
+/** The legacy Promise adapter selects a trusted module and preserves its
+ * published factory-throw normalization at this framework boundary only. */
+const loadApplication = Effect.fnUntraced(function* (
+  applicationPath: string,
+  input: unknown,
+): Effect.fn.Return<Application, ReleaseError, Scope.Scope> {
+  const loaded: unknown = yield* Effect.tryPromise({
+    try: () => import(pathToFileURL(resolve(applicationPath)).href),
+    catch: () => failure("application-load", "Application module could not be loaded"),
+  })
+  const factory = yield* Effect.try({
+    try: () => {
+      if (
+        typeof loaded !== "object" ||
+        loaded === null ||
+        !("createApplication" in loaded) ||
+        typeof loaded.createApplication !== "function"
+      )
+        return fail("application-export", "Application must export createApplication(input)")
+      const effect: unknown = Reflect.apply(loaded.createApplication, loaded, [input])
+      if (!Effect.isEffect(effect))
+        return fail("application-effect", "createApplication must return a scoped Effect")
+      // Trusted application code owns the dynamic module's E/R contract; the host
+      // admits only Effect values and scopes them. The runtime cannot inspect E/R.
+      // @effect-diagnostics-next-line anyUnknownInErrorContext:off
+      return effect as ReturnType<CreateApplication> // oxlint-disable-line typescript/no-unsafe-type-assertion -- Trusted dynamic module contract checked above.
+    },
+    catch: (error) =>
+      error instanceof ReleaseError
+        ? error
+        : failure("invalid-data", "Value could not be admitted"),
+  })
+  return yield* factory
+})
+
+/** Promise adapter for a trusted module path. Effect applications can instead
+ * compose runApplicationEffect without starting a nested runtime. */
 export const runApplication = (
   applicationPath: string,
   input: unknown,
@@ -54,77 +167,9 @@ export const runApplication = (
 ): Promise<FinalizedReport> =>
   Effect.runPromise(
     Effect.scoped(
-      Effect.gen(function* () {
-        const loaded: unknown = yield* Effect.tryPromise({
-          try: () => import(pathToFileURL(resolve(applicationPath)).href),
-          catch: () => failure("application-load", "Application module could not be loaded"),
-        })
-        const factory = yield* attempt(() => {
-          if (
-            typeof loaded !== "object" ||
-            loaded === null ||
-            !("createApplication" in loaded) ||
-            typeof loaded.createApplication !== "function"
-          )
-            fail("application-export", "Application must export createApplication(input)")
-          const effect: unknown = loaded.createApplication(input)
-          if (!Effect.isEffect(effect))
-            fail("application-effect", "createApplication must return a scoped Effect")
-          return effect as ReturnType<CreateApplication>
-        })
-        const app = yield* factory
-        const options = { ...app.options }
-        const onRejected = yield* attempt(() => {
-          if (app.onRejected !== undefined && typeof app.onRejected !== "function")
-            fail("application-rejection", "Application rejection handler must be callable")
-          return app.onRejected?.bind(app)
-        })
-        const host = yield* attempt(() => captureHost(app.host))
-        return yield* Effect.gen(function* () {
-          // Admit the complete Bundle/Plan/Journal binding before dispatch, then keep
-          // these owned inputs across the run. Reports never grant dispatch authority.
-          const admitted = yield* reportFinalizedRelease(app.bundle, options.plan)
-          if (mode === "observe") yield* observeRelease({ plan: admitted.plan })
-          else yield* runRelease({ ...options, plan: admitted.plan })
-          let report = yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
-          const initialDispatches = admitted.operations.reduce(
-            (sum, item) => sum + item.dispatches,
-            0,
-          )
-          const handled = new Set<string>()
-          while (mode === "run" && options.authorize && onRejected) {
-            const used =
-              report.operations.reduce((sum, item) => sum + item.dispatches, 0) - initialDispatches
-            const remaining =
-              options.maxDispatches === undefined ? undefined : options.maxDispatches - used
-            if (remaining !== undefined && remaining <= 0) break
-            const rejected = report.operations.filter((item) => item.status === "Rejected")
-            if (rejected.length === 0 || rejected.some((item) => handled.has(item.operationId)))
-              break
-            let ready = true
-            for (const item of rejected) {
-              handled.add(item.operationId)
-              const operation = admitted.plan.operations.find(
-                (operation) => operation.operationId === item.operationId,
-              )!
-              if (!(yield* Effect.suspend(() => onRejected(operation)))) {
-                ready = false
-                break
-              }
-            }
-            if (!ready) break
-            // Re-enter the public interpreter with the original Plan and journal.
-            // The hook supplies live credentials, never a send permit or replay.
-            yield* runRelease({
-              ...options,
-              plan: admitted.plan,
-              ...(remaining === undefined ? {} : { maxDispatches: remaining }),
-            })
-            report = yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
-          }
-          return report
-        }).pipe(Effect.provideService(Host, host))
-      }),
+      loadApplication(applicationPath, input).pipe(
+        Effect.flatMap((app) => executeApplication(app, mode)),
+      ),
     ).pipe(Effect.provideService(Logger.LogToStderr, true)),
     { signal },
   )

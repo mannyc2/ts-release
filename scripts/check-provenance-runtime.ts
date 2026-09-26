@@ -1,3 +1,4 @@
+import { Schema } from "effect"
 import assert from "node:assert/strict"
 
 // Offline native-crypto gate: compilation and stubbed verification missed this
@@ -26,5 +27,8 @@ const [code, stdout, stderr] = await Promise.all([
   new Response(child.stderr).text(),
 ])
 assert.equal(code, 0, `Native provenance runtime failed trust-root verification\n${stderr}`)
-assert.equal(JSON.parse(stdout).sigstoreTrustRootVerified, true)
+const report = Schema.decodeSync(
+  Schema.fromJsonString(Schema.Struct({ sigstoreTrustRootVerified: Schema.Boolean })),
+)(stdout)
+assert.equal(report.sigstoreTrustRootVerified, true)
 console.log(stdout.trim())

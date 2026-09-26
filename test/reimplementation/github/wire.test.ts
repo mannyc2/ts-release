@@ -1,3 +1,4 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
 import { Effect, Schema } from "effect"
 import { makeRequest, type ProviderContext } from "@mannyc1/ts-release"
@@ -48,7 +49,7 @@ async function fixture() {
       "https://uploads.github.com/repos/owner/repo/releases/123/assets{?name,label}",
   })
   const bytes = new TextEncoder().encode("owned asset bytes")
-  const file = Schema.decodeUnknownSync(File)({
+  const file = Schema.decodeSync(File)({
     _tag: "OwnedFile",
     logicalName: "asset.bin",
     content: { bytes: bytes.length, sha256: sha256(bytes) },
@@ -114,18 +115,22 @@ test("exact wire admission rejects changed method, endpoint, bytes, headers and 
   for (const facts of [
     { ...request.facts, method: "PUT" },
     { ...request.facts, endpoint: request.facts.endpoint.replace("123", "124") },
-    { ...request.facts, headers: [...request.facts.headers, ["authorization", "fixture"]] },
+    {
+      ...request.facts,
+      headers: [...request.facts.headers, ["authorization", "fixture"] as const],
+    },
     { ...request.facts, bodyDigest: "f".repeat(64) },
   ])
-    expect(ownsRequest({ facts: facts as typeof request.facts, body: request.body })).toBe(false)
+    expect(ownsRequest({ facts, body: request.body })).toBe(false)
   expect(ownsRequest({ ...request, body: new Uint8Array([0]) })).toBe(false)
   const conflicting = {
     ...f.context,
     dependencies: [
       {
-        ...f.context.dependencies[0]!,
+        ...(f.context.dependencies[0] ?? fail("Missing fixture f.context.dependencies[0]")),
         receipts: [
-          ...f.context.dependencies[0]!.receipts,
+          ...(f.context.dependencies[0] ?? fail("Missing fixture f.context.dependencies[0]"))
+            .receipts,
           { request: f.draftRequest.facts, status: 201, facts: { ...f.facts, releaseId: "124" } },
         ],
       },
@@ -140,7 +145,7 @@ test("published-parent observation cannot authorize an asset write through a sta
     ...f.context,
     dependencies: [
       {
-        ...f.context.dependencies[0]!,
+        ...(f.context.dependencies[0] ?? fail("Missing fixture f.context.dependencies[0]")),
         observations: [
           {
             status: "Satisfied",
@@ -161,9 +166,10 @@ test("published-parent observation cannot authorize an asset write through a sta
     ...context,
     dependencies: [
       {
-        ...context.dependencies[0]!,
+        ...(context.dependencies[0] ?? fail("Missing fixture context.dependencies[0]")),
         observations: [
-          ...context.dependencies[0]!.observations,
+          ...(context.dependencies[0] ?? fail("Missing fixture context.dependencies[0]"))
+            .observations,
           {
             status: "Satisfied",
             evidence: { _tag: "Present", scope: f.draftRequest.facts.scope, facts: f.facts },

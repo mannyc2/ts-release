@@ -1,3 +1,4 @@
+import { fail } from "node:assert"
 import { Effect, Redacted, Schema } from "effect"
 import { createPlan, type HostShape, type PreparedRequest } from "@mannyc1/ts-release"
 import { Bundle, File, type ArtifactAccess } from "@mannyc1/ts-release/bundle"
@@ -68,7 +69,7 @@ export async function fixture(count = 3, annotated = false) {
       new TextEncoder().encode(`asset bytes ${i}`),
     ),
     files = bytes.map((value, i) =>
-      Schema.decodeUnknownSync(File)({
+      Schema.decodeSync(File)({
         _tag: "OwnedFile",
         logicalName: `asset${i}.bin`,
         content: { bytes: value.length, sha256: sha256(value) },
@@ -81,7 +82,12 @@ export async function fixture(count = 3, annotated = false) {
     bundle: new Bundle({ format: "ts-release/bundle/2", artifacts: files }),
     readContent: (content) =>
       Effect.sync(() =>
-        bytes[files.findIndex((file) => file.content.sha256 === content.sha256)]!.slice(),
+        (
+          bytes[files.findIndex((file) => file.content.sha256 === content.sha256)] ??
+          fail(
+            "Missing fixture bytes[files.findIndex((file) => file.content.sha256 === content.sha256)]",
+          )
+        ).slice(),
       ),
   }
   const tag = await Effect.runPromise(
@@ -194,7 +200,7 @@ export async function fixture(count = 3, annotated = false) {
           ? {
               status: 200,
               headers: { "content-type": "application/octet-stream" },
-              body: bytes[i]!,
+              body: bytes[i] ?? fail("Missing fixture bytes[i]"),
             }
           : response(404)
       }
@@ -224,12 +230,19 @@ export async function fixture(count = 3, annotated = false) {
           })
           state.sends.push(request)
           const url = new URL(request.facts.endpoint),
-            path = url.pathname.replace("/repos/owner/repo", ""),
-            data = path.endsWith("/assets")
-              ? null
-              : JSON.parse(new TextDecoder().decode(request.body))
+            path = url.pathname.replace("/repos/owner/repo", "")
           let result: HttpResponse
           if (path === "/git/tags") {
+            const data = yield* Schema.decodeEffect(
+              Schema.fromJsonString(
+                Schema.Struct({
+                  tag: Schema.String,
+                  message: Schema.String,
+                  tagger: Schema.Unknown,
+                  object: Schema.String,
+                }),
+              ),
+            )(new TextDecoder().decode(request.body)).pipe(Effect.orDie)
             state.object = {
               sha: "b".repeat(40),
               tag: data.tag,
@@ -244,6 +257,9 @@ export async function fixture(count = 3, annotated = false) {
             }
             result = response(201, state.object)
           } else if (path === "/git/refs") {
+            const data = yield* Schema.decodeEffect(
+              Schema.fromJsonString(Schema.Struct({ sha: Schema.String })),
+            )(new TextDecoder().decode(request.body)).pipe(Effect.orDie)
             state.ref = refDocument(data.sha, annotated ? "tag" : "commit")
             result = response(201, state.ref)
           } else if (path === "/releases") {
@@ -252,22 +268,25 @@ export async function fixture(count = 3, annotated = false) {
           } else if (path === "/releases/731/assets") {
             const asset = assetDocument(
               1001 + state.assets.length,
-              url.searchParams.get("name")!,
+              url.searchParams.get("name") ?? fail('Missing fixture url.searchParams.get("name")'),
               request.body,
-              state.releases[0]!.draft,
+              (state.releases[0] ?? fail("Missing fixture state.releases[0]")).draft,
             )
             state.assets.push(asset)
             result = response(201, asset)
           } else if (path === "/releases/731" && request.facts.method === "PATCH") {
-            state.releases[0]!.draft = false
+            ;(state.releases[0] ?? fail("Missing fixture state.releases[0]")).draft = false
             for (const asset of state.assets) asset.browser_download_url = downloadUrl(asset.name)
             result = response(200, state.releases[0])
           } else throw new Error(`Unexpected fixture send: ${request.facts.endpoint}`)
-          if (state.lost === owners[0]!.definitionId) {
+          if (state.lost === (owners[0] ?? fail("Missing fixture owners[0]")).definitionId) {
             state.lost = ""
             return { _tag: "Unknown" as const, reason: "Fixture response lost after native commit" }
           }
-          return yield* owners[0]!.decodeResponse(request, result)
+          return yield* (owners[0] ?? fail("Missing fixture owners[0]")).decodeResponse(
+            request,
+            result,
+          )
         }),
     },
   }

@@ -85,6 +85,7 @@ export const uploadFields = (input: Map<string, string[]>, metadataVersion: stri
         invalid("metadata-value-bound")
       switch (key) {
         case "summary":
+          // oxlint-disable-next-line no-control-regex -- core metadata Summary is one line, including Unicode line separators.
           if (/[\n\r\v\f\u001c-\u001e\u0085\u2028\u2029]/u.test(value)) invalid("metadata-summary")
           break
         case "dynamic":
@@ -108,7 +109,7 @@ export const uploadFields = (input: Map<string, string[]>, metadataVersion: stri
           const names = value.matchAll(/;\s*([^\s=;]+)\s*=\s*(?:"(?:[^"\\]|\\.)*"|[^;]*)/gu)
           const seen = new Set<string>()
           for (const match of names) {
-            const name = match[1]!.toLowerCase()
+            const name = (match[1] ?? invalid("metadata-description-parameter")).toLowerCase()
             if (seen.has(name)) invalid("metadata-description-parameter")
             seen.add(name)
           }
@@ -119,8 +120,9 @@ export const uploadFields = (input: Map<string, string[]>, metadataVersion: stri
             if (name !== `${field}*` || parameters[field] !== undefined)
               invalid("metadata-description-parameter")
             const parts = /^([^']*)'[^']*'(.*)$/u.exec(encoded)
-            if (!parts) invalid("metadata-description-parameter")
-            parameters[field] = decodeURIComponent(parts![2]!)
+            const encodedValue = parts?.[2]
+            if (encodedValue === undefined) return invalid("metadata-description-parameter")
+            parameters[field] = decodeURIComponent(encodedValue)
           }
           if (
             !["text/plain", "text/x-rst", "text/markdown"].includes(type) ||
@@ -148,11 +150,11 @@ export const uploadFields = (input: Map<string, string[]>, metadataVersion: stri
         case "import-name":
         case "import-namespace": {
           if (key === "import-name" && values.length === 1 && value === "") break
-          const [name, option, ...extra] = value.split(";")
+          const [name = "", option, ...extra] = value.split(";")
           if (
             extra.length ||
             (option !== undefined && option.trimStart() !== "private") ||
-            name!
+            name
               .trimEnd()
               .split(".")
               .some(

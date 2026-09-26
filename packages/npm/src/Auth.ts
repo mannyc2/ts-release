@@ -165,7 +165,7 @@ export const validateProvenance = (
     verification = Native.object(value.verificationMaterial),
     entries = verification.tlogEntries
   base64(envelope.payload)
-  base64(Native.object((envelope.signatures as Array<unknown>)[0]).sig)
+  base64(Native.object(Native.own(Schema.Array(Schema.Unknown), envelope.signatures)[0]).sig)
   base64(Native.object(verification.certificate).rawBytes)
   if (!Array.isArray(entries)) return Native.invalid("sigstore-transparency")
   for (const [index, entry] of bundle.verificationMaterial.tlogEntries.entries()) {
@@ -178,7 +178,7 @@ export const validateProvenance = (
       raw.canonicalizedBody,
       Native.object(raw.logId).keyId,
       rawProof.rootHash,
-      ...(rawProof.hashes as Array<unknown>),
+      ...Native.own(Schema.Array(Schema.Unknown), rawProof.hashes),
     ].forEach(base64)
     if (
       !proof ||
@@ -268,6 +268,7 @@ export const makeSigstoreVerifier = (input: SigstoreTrustOptions): Model.VerifyP
     yield* nativeSigstoreRuntime
     const signer = yield* Effect.tryPromise({
       try: () =>
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- validateProvenance admits this exact raw JSON with bundleFromJSON; preserve its canonical representation for the pinned SDK.
         Sigstore.verify(bundle as Sigstore.Bundle, {
           certificateIssuer: "https://token.actions.githubusercontent.com",
           certificateIdentityURI: identity,
@@ -328,14 +329,14 @@ const admitStatementSource = (bytes: Uint8Array, source: Model.ProvenanceSource)
     typeof sha512 !== "string" ||
     !/^[0-9a-f]{128}$/u.test(sha512)
   )
-    Native.invalid("statement-subject")
+    return Native.invalid("statement-subject")
   const purl = String(subject.name).slice(8),
     delimiter = purl.lastIndexOf("@")
   const packageName = Native.own(Model.name, purl.slice(0, delimiter).replace(/^%40/u, "@")),
     packageVersion = Native.own(Model.version, purl.slice(delimiter + 1))
   const expected = statementWithDigest(
     { name: packageName, version: packageVersion, source },
-    sha512 as string,
+    sha512,
   )
   if (!Buffer.from(expected).equals(bytes)) Native.invalid("statement-source")
 }

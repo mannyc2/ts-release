@@ -1,11 +1,14 @@
+import { fail } from "node:assert"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { Effect, Layer, Redacted } from "effect"
+import { Effect, Redacted } from "effect"
 import { Host, createPlan, runRelease, type Transport, ReleaseError } from "@mannyc1/ts-release"
 import { openSqliteJournal } from "@mannyc1/ts-release/bun"
 import { publish, definitions, authorizeToken } from "../../../packages/npm/src/index.js"
 import { accessFor } from "./fixtures.js"
-const [root, origin, mode] = process.argv.slice(2) as [string, string, string]
+const [root, origin, mode] = process.argv.slice(2)
+if (root === undefined || origin === undefined || mode === undefined)
+  fail("Missing worker arguments")
 const bytes = new Uint8Array(readFileSync(join(root, "package.tgz"))),
   { publication, access } = accessFor(bytes)
 const native = (url: string) => `${origin}${new URL(url).pathname}`
@@ -18,6 +21,8 @@ const providers = definitions({
   ...access,
   read: (request) =>
     Effect.tryPromise({
+      // Native process fixture exercises the real fetch boundary.
+      // @effect-diagnostics-next-line globalFetchInEffect:off
       try: async () => response(await fetch(native(request.url), { method: request.method })),
       catch: () =>
         new ReleaseError({ code: "test-read", message: "HTTP protocol double unavailable" }),
@@ -33,6 +38,8 @@ const send =
       const r = yield* Effect.tryPromise({
         try: async () =>
           response(
+            // Native process fixture exercises the real fetch boundary.
+            // @effect-diagnostics-next-line globalFetchInEffect:off
             await fetch(native(request.facts.endpoint), {
               method: request.facts.method,
               headers: { ...Object.fromEntries(request.facts.headers), ...headers },
@@ -42,14 +49,17 @@ const send =
         catch: () => new ReleaseError({ code: "test-http", message: "HTTP write outcome unknown" }),
       })
       if (mode === "kill-after-commit") process.kill(process.pid, "SIGKILL")
-      return yield* providers[0]!.decodeResponse(request, r)
+      return yield* (providers[0] ?? fail("Missing fixture providers[0]")).decodeResponse(
+        request,
+        r,
+      )
     })
 const transport: Transport = {
   send: () =>
     Effect.fail(new ReleaseError({ code: "unprepared", message: "Credentials were not prepared" })),
   prepare: (request) =>
     Effect.gen(function* () {
-      if (!providers[0]!.ownsRequest(request))
+      if (!(providers[0] ?? fail("Missing fixture providers[0]")).ownsRequest(request))
         return yield* new ReleaseError({ code: "unowned", message: "Native request differs" })
       if (publication.authorization._tag !== "TokenAuthorization")
         return yield* new ReleaseError({ code: "test-auth", message: "Unexpected authorization" })
@@ -66,15 +76,13 @@ const report = await Effect.runPromise(
     Effect.gen(function* () {
       const store = yield* openSqliteJournal(join(root, "journal.sqlite"))
       const report = yield* runRelease({ plan, authorize: true }).pipe(
-        Effect.provide(
-          Layer.succeed(Host, {
-            store,
-            providers,
-            transport,
-            now: Date.now,
-            uniqueId: () => crypto.randomUUID(),
-          }),
-        ),
+        Effect.provideService(Host, {
+          store,
+          providers,
+          transport,
+          now: Date.now,
+          uniqueId: () => crypto.randomUUID(),
+        }),
       )
       const snapshot = yield* store.read(plan.journalId)
       return {

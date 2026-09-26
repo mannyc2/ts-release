@@ -186,25 +186,30 @@ export const definitions = (dependencies: {
         if (!ownsRequest(request))
           return yield* Model.reject("mcp-response-binding", "MCP response request is invalid")
         if (result.status !== 200) return unknown("MCP Registry did not acknowledge publication")
-        try {
-          const value = response(result.body),
-            selected = readScope(request.facts.scope),
-            metadata = official(value)
-          if (metadata.status !== "active" || !sameData(value.server, selected.manifest))
-            return unknown("MCP Registry returned different publication facts")
-          return {
-            _tag: "Accepted" as const,
-            receipt: new Receipt({
-              request: request.facts,
-              status: 200,
-              server: value.server,
-              registryStatus: "active",
-              isLatest: metadata.isLatest,
-            }),
-          }
-        } catch {
-          return unknown("MCP Registry returned an unreadable publication response")
-        }
+        return yield* Effect.try({
+          try: () => {
+            const value = response(result.body),
+              selected = readScope(request.facts.scope),
+              metadata = official(value)
+            if (metadata.status !== "active" || !sameData(value.server, selected.manifest))
+              return unknown("MCP Registry returned different publication facts")
+            return {
+              _tag: "Accepted" as const,
+              receipt: new Receipt({
+                request: request.facts,
+                status: 200,
+                server: value.server,
+                registryStatus: "active",
+                isLatest: metadata.isLatest,
+              }),
+            }
+          },
+          catch: () => undefined,
+        }).pipe(
+          Effect.orElseSucceed(() =>
+            unknown("MCP Registry returned an unreadable publication response"),
+          ),
+        )
       }),
       observe: Effect.fn("mcp.observe")(function* (operation) {
         const request = yield* prepare(operation),
@@ -221,25 +226,28 @@ export const definitions = (dependencies: {
         else if (result.status !== 200)
           evidence = inconclusive(request.facts, result.status, "http-status")
         else {
-          try {
-            const value = response(result.body),
-              metadata = official(value)
-            if (
-              value.server.name !== selected.manifest.name ||
-              value.server.version !== selected.manifest.version
-            )
-              evidence = inconclusive(request.facts, 200, "coordinate-mismatch")
-            else if (!sameData(value.server, selected.manifest))
-              evidence = new Conflict({ request: request.facts, observed: value.server })
-            else
-              evidence = new Exact({
-                request: request.facts,
-                server: value.server,
-                registryStatus: metadata.status,
-              })
-          } catch {
-            evidence = inconclusive(request.facts, 200, "malformed-response")
-          }
+          evidence = yield* Effect.try({
+            try: () => {
+              const value = response(result.body),
+                metadata = official(value)
+              if (
+                value.server.name !== selected.manifest.name ||
+                value.server.version !== selected.manifest.version
+              )
+                return inconclusive(request.facts, 200, "coordinate-mismatch")
+              else if (!sameData(value.server, selected.manifest))
+                return new Conflict({ request: request.facts, observed: value.server })
+              else
+                return new Exact({
+                  request: request.facts,
+                  server: value.server,
+                  registryStatus: metadata.status,
+                })
+            },
+            catch: () => undefined,
+          }).pipe(
+            Effect.orElseSucceed(() => inconclusive(request.facts, 200, "malformed-response")),
+          )
         }
         return { evidence, status: classifyObservation(operation, evidence, []) }
       }),

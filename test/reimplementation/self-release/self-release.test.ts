@@ -1,16 +1,17 @@
+import assert from "node:assert/strict"
+import evals from "../../../apps/ts-release-agents/evals/cases.json" with { type: "json" }
 import { beforeAll, expect, test } from "bun:test"
 import { createHash } from "node:crypto"
 import { chmod, cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
-import { Effect, Schema } from "effect"
+import { Effect, Schema, type Layer } from "effect"
 import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as Artifact from "effect-build/Artifact"
 import { ReleaseError, createPlan, type Operation } from "@mannyc1/ts-release"
 import * as Git from "@mannyc1/ts-release/git"
 import {
-  Bundle,
   encodeBundle,
   finalize,
   type Artifact as OwnedArtifact,
@@ -19,7 +20,7 @@ import {
   type ReadContent,
 } from "@mannyc1/ts-release/bundle"
 import { adoptFile, adoptTree } from "@mannyc1/ts-release/effect-build"
-import { fileContentOwner, makeGitCatalogHost } from "@mannyc1/ts-release/node"
+import { fileContentOwner, makeGitCatalogHost, FinalizedReport } from "@mannyc1/ts-release/node"
 import * as Npm from "@mannyc1/ts-release-npm"
 import * as PyPi from "@mannyc1/ts-release-pypi"
 import * as GitHub from "@mannyc1/ts-release-github"
@@ -42,8 +43,9 @@ const application = join(root, "apps/self-release/dist/rehearsal.js")
 const packageOwners = ["ts-release", "catalog", "github", "mcp", "npm", "openai", "pypi"]
 const producedBy = { name: "ts-release/self-release-input", version: "fixture" }
 const sha256 = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex")
-const runNode = <A, E, R>(effect: Effect.Effect<A, E, R>): Promise<A> =>
-  Effect.runPromise(effect.pipe(Effect.provide(NodeServices.layer)) as Effect.Effect<A, E, never>)
+const runNode = <A, E>(
+  effect: Effect.Effect<A, E, Layer.Success<typeof NodeServices.layer>>,
+): Promise<A> => Effect.runPromise(effect.pipe(Effect.provide(NodeServices.layer)))
 
 beforeAll(async () => {
   const child = Bun.spawn([process.execPath, "run", "build:delivery"], {
@@ -186,7 +188,6 @@ test("real producers assemble one non-mutating seven-package self-release plan",
       readContent,
     ),
   )
-  const evals = await Bun.file(join(root, "apps/ts-release-agents/evals/cases.json")).json()
   const submission = new OpenAi.Submission({
     plugin,
     marketplace: marketplace.document,
@@ -204,12 +205,12 @@ test("real producers assemble one non-mutating seven-package self-release plan",
       logo,
     }),
     starterPrompts: ["Rehearse this release without dispatching any operation."],
-    positiveTests: evals.positiveTests.map(
-      (row: OpenAi.PositiveTest) => new OpenAi.PositiveTest(row),
-    ) as OpenAi.Submission["positiveTests"],
-    negativeTests: evals.negativeTests.map(
-      (row: OpenAi.NegativeTest) => new OpenAi.NegativeTest(row),
-    ) as OpenAi.Submission["negativeTests"],
+    positiveTests: Schema.decodeUnknownSync(OpenAi.Submission.fields.positiveTests)(
+      evals.positiveTests,
+    ),
+    negativeTests: Schema.decodeUnknownSync(OpenAi.Submission.fields.negativeTests)(
+      evals.negativeTests,
+    ),
     releaseNotes: "Initial explicit application and durable journal release skill.",
     attestations: new OpenAi.Attestations({
       developerIdentityVerified: true,
@@ -225,17 +226,14 @@ test("real producers assemble one non-mutating seven-package self-release plan",
   const marketplaceFile = await publishFile(marketplace.path, marketplace.bytes)
   const handoffFile = await publishFile("openai-submission.json", handoff.bytes)
 
-  const downloads = [
-    packageFiles.get("ts-release")!,
-    packageFiles.get("catalog")!,
-    packageFiles.get("github")!,
-    packageFiles.get("mcp")!,
-    packageFiles.get("npm")!,
-    packageFiles.get("openai")!,
-  ].map((file) => ({
-    file,
-    url: `https://github.com/mannyc2/ts-release/releases/download/v${version}/${file.logicalName}`,
-  }))
+  const download = (owner: string) => {
+    const file = packageFiles.get(owner)
+    assert.ok(file, `Missing retained package ${owner}`)
+    return {
+      file,
+      url: `https://github.com/mannyc2/ts-release/releases/download/v${version}/${file.logicalName}`,
+    }
+  }
   const formula = new Homebrew.Formula({
     className: "TsRelease",
     description: "Deterministic TypeScript release automation",
@@ -244,10 +242,10 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     version,
     executable: "bin/ts-release",
     archives: {
-      "darwin-x64": new Homebrew.Download(downloads[0]!),
-      "darwin-arm64": new Homebrew.Download(downloads[1]!),
-      "linux-x64": new Homebrew.Download(downloads[2]!),
-      "linux-arm64": new Homebrew.Download(downloads[3]!),
+      "darwin-x64": new Homebrew.Download(download("ts-release")),
+      "darwin-arm64": new Homebrew.Download(download("catalog")),
+      "linux-x64": new Homebrew.Download(download("github")),
+      "linux-arm64": new Homebrew.Download(download("mcp")),
     },
   })
   const scoop = new Scoop.Manifest({
@@ -256,8 +254,8 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     license: "MIT",
     executable: "bin/ts-release.exe",
     archives: {
-      "windows-x64": new Scoop.Download(downloads[4]!),
-      "windows-arm64": new Scoop.Download(downloads[5]!),
+      "windows-x64": new Scoop.Download(download("npm")),
+      "windows-arm64": new Scoop.Download(download("openai")),
     },
   })
   const downloadableBundle = await Effect.runPromise(finalize(owned))
@@ -276,7 +274,8 @@ test("real producers assemble one non-mutating seven-package self-release plan",
   const candidates: Npm.PublicPackage[] = []
   const tagMoves: Npm.DistTagIntent[] = []
   for (const packageOwner of packageOwners) {
-    const tarball = packageFiles.get(packageOwner)!
+    const tarball = packageFiles.get(packageOwner)
+    assert.ok(tarball, `Missing retained package ${packageOwner}`)
     const metadata = await Effect.runPromise(Npm.inspectTarball(tarball, access))
     const publication = new Npm.PublishIntent({
       registry: "https://registry.npmjs.org/",
@@ -549,11 +548,11 @@ test("real producers assemble one non-mutating seven-package self-release plan",
   const first = await run(node, join(work, "journal-cache-node"))
   expect(first.exit).toBe(2)
   expect(first.stderr).toContain("ts-release --observe")
-  const report = JSON.parse(first.stdout)
+  const report = Schema.decodeSync(Schema.fromJsonString(FinalizedReport))(first.stdout)
   expect(report.plan.planId).toBe(prepared.plan.planId)
   expect(report.journal).toEqual({ journalId: prepared.plan.journalId, revision: 0, events: [] })
   expect(report.operations.map((operation: { status: string }) => operation.status)).toEqual(
-    Array(28).fill("Unattempted"),
+    Array.from({ length: 28 }, () => "Unattempted"),
   )
   const second = await run(process.execPath, join(work, "journal-cache-bun"))
   expect(second.exit).toBe(2)
@@ -566,7 +565,7 @@ test("real producers assemble one non-mutating seven-package self-release plan",
     createPlan(
       prepared.plan.bundleId,
       operations.map((operation) =>
-        operation.operationId === git[0]!.operationId ? wrongCatalog : operation,
+        operation.operationId === git[0]?.operationId ? wrongCatalog : operation,
       ),
     ),
   )

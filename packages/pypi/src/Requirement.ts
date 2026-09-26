@@ -20,6 +20,7 @@ export const specifiers = (value: string) => {
   }
 }
 export const requirement = (value: string) => {
+  // oxlint-disable-next-line no-control-regex -- a requirement cannot contain NUL or line breaks.
   if (value.length > 16384 || /[\r\n\u0000]/u.test(value)) invalid("metadata-requirement")
   let rest = value.trim()
   const take = (pattern: RegExp) => {

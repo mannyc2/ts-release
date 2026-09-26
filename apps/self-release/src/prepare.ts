@@ -60,6 +60,7 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
         (name) =>
           name.length > 255 ||
           name !== name.normalize("NFC") ||
+          // oxlint-disable-next-line eslint/no-control-regex -- Asset names must exclude path separators and control bytes.
           /[/\\\u0000-\u001f\u007f]/u.test(name) ||
           name === "." ||
           name === "..",
@@ -105,7 +106,9 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
   yield* retain("release-notes.md", notesBytes, "text/markdown")
   yield* retain(
     "source.json",
-    new TextEncoder().encode(JSON.stringify(Schema.encodeSync(SourceIdentity)(source))),
+    new TextEncoder().encode(
+      JSON.stringify(yield* Schema.encodeEffect(SourceIdentity)(source).pipe(Effect.orDie)),
+    ),
     "application/json",
   )
   const packages: Array<{ file: File; metadata: Npm.PackageMetadata }> = []
@@ -221,7 +224,10 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
     }),
   )
   const assets: Operation[] = []
-  for (const file of files)
+  for (const file of files) {
+    const mediaType = mediaTypes.get(file.logicalName)
+    if (mediaType === undefined)
+      return yield* Effect.die(new Error("Retained asset media type is absent"))
     assets.push(
       yield* GitHub.uploadAsset(
         new GitHub.AssetIntent({
@@ -229,11 +235,12 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
           draftOperation: draft.operationId,
           file,
           publicName: file.logicalName,
-          mediaType: mediaTypes.get(file.logicalName)!,
+          mediaType,
           principal: GITHUB_PRINCIPAL,
         }),
       ),
     )
+  }
   const publication = yield* GitHub.publish(
     new GitHub.PublishIntent({
       repository,

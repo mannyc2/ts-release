@@ -16,6 +16,7 @@ export const registerArchivePath = (
     !path ||
     path.length > 1024 ||
     path !== path.normalize("NFC") ||
+    // oxlint-disable-next-line no-control-regex -- Archive paths reject native separators and control bytes.
     /[\\:\u0000-\u001f\u007f]/u.test(path) ||
     path.split("/").some((part) => !part || part === "." || part === "..") ||
     seen.has(key) ||

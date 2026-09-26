@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { Effect } from "effect"
+import { Effect, Schema } from "effect"
 import { rmSync } from "node:fs"
 import { CommitInput, FileEdit } from "../../../packages/ts-release/src/Git.js"
 import { canonical } from "../../../packages/ts-release/src/internal/Identity.js"
@@ -39,7 +39,7 @@ for (const format of ["sha1", "sha256"] as const) {
               mode: "100755",
               content: content.put("#!/bin/sh\nexit 0\n"),
             }),
-          ]
+          ] as const
           const input = new CommitInput({
             remote: "https://github.com/fixture/catalog.git",
             ref: "refs/heads/main",
@@ -126,7 +126,7 @@ for (const format of ["sha1", "sha256"] as const) {
               content.read,
               expectedOld,
               built.desiredNew,
-              [files[0]!],
+              [files[0]],
               limit,
             ),
           )
@@ -136,7 +136,7 @@ for (const format of ["sha1", "sha256"] as const) {
               content.read,
               expectedOld,
               built.desiredNew,
-              [files[0]!, new FileEdit({ ...files[1]!, mode: "100644" })],
+              [files[0], new FileEdit({ ...files[1], mode: "100644" })],
               limit,
             ),
           )
@@ -150,12 +150,22 @@ for (const format of ["sha1", "sha256"] as const) {
               limit,
             ),
           )
-          const duplicate = JSON.parse(Buffer.from(built.objectSetBytes).toString())
-          duplicate.objects.push(duplicate.objects.at(-1))
+          // Decode the native fixture output before constructing corrupt variants.
+          const encoded = yield* Schema.decodeEffect(
+            Schema.fromJsonString(
+              Schema.Struct({
+                schemaVersion: Schema.String,
+                objects: Schema.NonEmptyArray(
+                  Schema.Struct({ type: Schema.String, bytesBase64: Schema.String }),
+                ),
+              }),
+            ),
+          )(Buffer.from(built.objectSetBytes).toString())
+          const duplicate = { ...encoded, objects: [...encoded.objects, encoded.objects[0]] }
           yield* rejects(
             importObjects(restart.run, Buffer.from(canonical(duplicate)), format, limit),
           )
-          const extra = JSON.parse(Buffer.from(built.objectSetBytes).toString())
+          const extra = { ...encoded, objects: [...encoded.objects] }
           extra.objects.push({
             type: "blob",
             bytesBase64: Buffer.from("unreachable injected object").toString("base64"),
@@ -182,8 +192,11 @@ for (const format of ["sha1", "sha256"] as const) {
               built.objectSetBytes.length - 1,
             ),
           )
-          const damaged = content.stored.get(files[0]!.content.sha256)!
-          damaged[0] = damaged[0]! ^ 1
+          const damaged = content.stored.get(files[0].content.sha256)
+          const first = damaged?.[0]
+          if (damaged === undefined || first === undefined)
+            throw new Error("Fixture requires stored object bytes")
+          damaged[0] = first ^ 1
           yield* rejects(
             verifyManagedCommit(
               restart.run,

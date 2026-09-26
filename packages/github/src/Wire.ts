@@ -28,11 +28,7 @@ export const nativeRequest = (scope: BoundScope, bytes?: Uint8Array) => {
       tagger: intent.tagger,
     })
   } else if (intent instanceof Model.AnnotatedRef) {
-    const parent = parentFacts(
-      scope,
-      intent.annotatedTagOperation,
-      "object",
-    ) as Model.AnnotatedTagFacts
+    const parent = parentFacts(scope, intent.annotatedTagOperation, "object")
     if (parent.tag !== intent.tag || parent.targetOid !== scope.targetCommit)
       invalid("annotated-parent")
     endpoint = `${base}/git/refs`
@@ -49,7 +45,7 @@ export const nativeRequest = (scope: BoundScope, bytes?: Uint8Array) => {
       generate_release_notes: false,
     })
   } else {
-    const parent = parentFacts(scope, intent.draftOperation, "draft") as Model.ReleaseFacts
+    const parent = parentFacts(scope, intent.draftOperation, "draft")
     if (
       !sameUrl(
         parent.uploadUrlTemplate,

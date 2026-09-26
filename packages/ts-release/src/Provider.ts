@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect"
+import { Effect, Predicate, Schema } from "effect"
 import { CoreDispatchError, CoreUndecodableReceipt } from "./internal/ReleaseModel.js"
 import { ObservationRecorded, Operation, RequestFacts } from "./internal/ReleaseModel.js"
 import type { JournalEvent, ObservationStatus, Plan } from "./internal/ReleaseModel.js"
@@ -147,13 +147,15 @@ export type Author<A> = (
 export const requestFingerprint = (facts: RequestFacts) =>
   hashCanonical("ts-release/request/1", facts)
 export const makeRequest = Effect.fn("ts-release.makeRequest")(function* (
-  input: Omit<typeof RequestFacts.Type, "bodyDigest" | "byteLength"> & {
+  input: Omit<RequestFacts, "bodyDigest" | "byteLength"> & {
     readonly body: Uint8Array
   },
 ) {
   const { body, fields } = yield* attempt(() => {
-    const { body: _, ...fields } = input
-    return { body: new Uint8Array(input.body), fields: copyData(fields) as typeof fields }
+    const { body, ...fields } = input
+    const captured = copyData(fields)
+    if (!Predicate.isObject(captured)) fail("request-facts", "Request facts must be an object")
+    return { body: new Uint8Array(body), fields: captured }
   })
   const bodyDigest = yield* sha256(body)
   const facts = yield* attempt(() =>
@@ -257,24 +259,34 @@ export const verifyProviderContracts = (
         "Native receipt codec, classification, correspondence and prepare are mandatory",
       )
     canonical(provider.receiptVersion)
-    const observation = [
-      provider.observe,
-      provider.observationVersion,
-      provider.observationCodec,
-      provider.classifyObservation,
-    ]
+    const { observe, observationVersion, observationCodec, classifyObservation } = provider
+    let observation: Pick<
+      ProviderDefinition,
+      "observe" | "observationVersion" | "observationCodec" | "classifyObservation"
+    > = {}
     if (
-      observation.some((value) => value !== undefined) &&
-      (!isFunction(provider.observe) ||
-        !isFunction(provider.classifyObservation) ||
-        !isVersion(provider.observationVersion) ||
-        !Schema.isSchema(provider.observationCodec))
-    )
-      fail(
-        "missing-observation-codec",
-        "Observation requires a complete callable operation, native codec and classifier",
+      [observe, observationVersion, observationCodec, classifyObservation].some(
+        (value) => value !== undefined,
       )
-    if (provider.observationVersion !== undefined) canonical(provider.observationVersion)
+    ) {
+      if (
+        !isFunction(observe) ||
+        !isFunction(classifyObservation) ||
+        !isVersion(observationVersion) ||
+        !Schema.isSchema(observationCodec)
+      )
+        fail(
+          "missing-observation-codec",
+          "Observation requires a complete callable operation, native codec and classifier",
+        )
+      canonical(observationVersion)
+      observation = {
+        observationVersion,
+        observationCodec,
+        classifyObservation: classifyObservation.bind(provider),
+        observe: observe.bind(provider),
+      }
+    }
     captured.push(
       Object.freeze({
         contract: provider.contract,
@@ -287,12 +299,7 @@ export const verifyProviderContracts = (
         receiptCorresponds: provider.receiptCorresponds.bind(provider),
         classifyReceipt: provider.classifyReceipt.bind(provider),
         prepare: provider.prepare.bind(provider),
-        ...(provider.observe && {
-          observationVersion: provider.observationVersion!,
-          observationCodec: provider.observationCodec!,
-          classifyObservation: provider.classifyObservation!.bind(provider),
-          observe: provider.observe.bind(provider),
-        }),
+        ...observation,
         ...(rejection && { rejection }),
         ...(dispatchError && { dispatchError }),
       }),

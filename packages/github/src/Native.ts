@@ -42,10 +42,12 @@ export const responseJson = (response: HttpResponse, maximumBytes = 1024 * 1024)
   const type = Object.entries(response.headers).filter(
     ([name]) => name.toLowerCase() === "content-type",
   )
+  const contentType = type[0]?.[1]
   if (
     response.body.length > maximumBytes ||
     type.length !== 1 ||
-    !/^(?:application\/json|application\/vnd\.github\+json)(?:\s*;|$)/iu.test(type[0]![1])
+    contentType === undefined ||
+    !/^(?:application\/json|application\/vnd\.github\+json)(?:\s*;|$)/iu.test(contentType)
   )
     invalid("json-response")
   return decodeJson(response.body)

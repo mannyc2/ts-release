@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { Effect, Layer, Schema } from "effect"
+import { Effect, Schema } from "effect"
 import * as Release from "../../../packages/ts-release/src/index.js"
 import { canonical } from "../../../packages/ts-release/src/internal/Identity.js"
 
@@ -64,7 +64,7 @@ async function fixture() {
 const run = <A>(
   host: Release.HostShape,
   effect: Effect.Effect<A, Release.ReleaseError, Release.Host>,
-) => Effect.runPromise(effect.pipe(Effect.provide(Layer.succeed(Release.Host, host))))
+) => Effect.runPromise(effect.pipe(Effect.provideService(Release.Host, host)))
 
 test("factory and loaded plans own deeply immutable data", async () => {
   const input = { nested: { value: 1 } }
@@ -73,13 +73,18 @@ test("factory and loaded plans own deeply immutable data", async () => {
   input.nested.value = 2
   expect(operation.intent).toEqual({ nested: { value: 1 } })
   expect(Object.isFrozen(plan.operations[0]?.intent)).toBe(true)
+  const nestedIntent = Schema.is(Schema.Struct({ nested: Schema.Struct({ value: Schema.Finite }) }))
+  const intent = plan.operations[0]?.intent
+  if (!nestedIntent(intent)) throw new Error("Missing nested fixture intent")
   expect(() => {
-    ;(plan.operations[0]!.intent as typeof input).nested.value = 3
+    Object.assign(intent.nested, { value: 3 })
   }).toThrow()
-  const encoded = JSON.parse(canonical(plan))
+  const encoded = structuredClone(Schema.encodeSync(Release.Plan)(plan))
   const loaded = await Effect.runPromise(Release.loadPlan(encoded, [provider]))
-  encoded.operations[0].intent.nested.value = 4
-  expect(loaded.operations[0]!.intent).toEqual({ nested: { value: 1 } })
+  const encodedIntent = encoded.operations[0]?.intent
+  if (!nestedIntent(encodedIntent)) throw new Error("Missing encoded fixture intent")
+  Object.assign(encodedIntent.nested, { value: 4 })
+  expect(loaded.operations[0]?.intent).toEqual({ nested: { value: 1 } })
   expect(Object.isFrozen(loaded)).toBe(true)
 })
 
@@ -98,19 +103,18 @@ test("identity rejects hidden properties and accessors before evaluating getters
     Object.defineProperty([1], "hidden", { value: () => {} }),
   ]
   for (const intent of values)
-    await expect(Effect.runPromise(Release.createOperation(provider, intent))).rejects.toThrow(
-      "hidden",
-    )
+    expect(Effect.runPromise(Release.createOperation(provider, intent))).rejects.toThrow("hidden")
   expect(getterCalls).toBe(0)
 })
 
 test("unknown scopes cannot bypass the single-publication rule", async () => {
   const f = await fixture()
-  const host = {
+  const host: Release.HostShape = {
     ...f.host,
+    // @ts-expect-error Exercise admission of a deliberately invalid runtime scope.
     journal: { journalId: f.plan.journalId, scopes: [{ _tag: "InvalidScope", plan: f.plan }] },
-  } as unknown as Release.HostShape
-  await expect(run(host, Release.runRelease({ plan: f.plan, authorize: true }))).rejects.toThrow(
+  }
+  expect(run(host, Release.runRelease({ plan: f.plan, authorize: true }))).rejects.toThrow(
     "scope kind",
   )
   expect(f.calls).toEqual({ reads: 0, appends: 0, sends: 0 })
@@ -130,11 +134,12 @@ test("malformed provider capabilities reject before storage or transport", async
     { rejection: { version: "1", codec: Schema.Unknown, corresponds: true } },
   ]) {
     const f = await fixture()
-    const host = {
+    const host: Release.HostShape = {
       ...f.host,
+      // @ts-expect-error Deliberately corrupt a capability at the runtime admission boundary.
       providers: [{ ...provider, ...patch }],
-    } as unknown as Release.HostShape
-    await expect(run(host, Release.runRelease({ plan: f.plan, authorize: true }))).rejects.toThrow()
+    }
+    expect(run(host, Release.runRelease({ plan: f.plan, authorize: true }))).rejects.toThrow()
     expect(f.calls).toEqual({ reads: 0, appends: 0, sends: 0 })
   }
 })
@@ -153,13 +158,12 @@ test("native codec versions are nonempty canonical strings before any effects", 
       { dispatchError: { version, codec: Schema.Unknown, corresponds: () => true } },
     ]) {
       const f = await fixture()
-      const host = {
+      const host: Release.HostShape = {
         ...f.host,
+        // @ts-expect-error Non-string versions must reach the runtime admission boundary.
         providers: [{ ...provider, ...patch }],
-      } as unknown as Release.HostShape
-      await expect(
-        run(host, Release.runRelease({ plan: f.plan, authorize: true })),
-      ).rejects.toThrow()
+      }
+      expect(run(host, Release.runRelease({ plan: f.plan, authorize: true }))).rejects.toThrow()
       expect(f.calls).toEqual({ reads: 0, appends: 0, sends: 0 })
     }
   }
@@ -193,8 +197,10 @@ test("a store cannot change the recorded endpoint before dispatch", async () => 
   }
   await run(host, Release.runRelease({ plan: f.plan, authorize: true }))
   expect(endpoints).toEqual(["example:destination"])
-  const start = f.events.find((event) => event.body._tag === "DispatchStarted")!
-  expect(start.body._tag === "DispatchStarted" && start.body.request.endpoint).toBe(endpoints[0]!)
+  const start = f.events.find((event) => event.body._tag === "DispatchStarted")
+  const [endpoint] = endpoints
+  if (endpoint === undefined) throw new Error("Missing fixture send")
+  expect(start?.body._tag === "DispatchStarted" && start.body.request.endpoint).toBe(endpoint)
 })
 
 test("receipt facts own their bytes and keep one immutable identity across append retries", async () => {
@@ -222,7 +228,8 @@ test("receipt facts own their bytes and keep one immutable identity across appen
   await run(host, Release.runRelease({ plan: f.plan, authorize: true }))
   expect(attempts).toHaveLength(2)
   expect(attempts[0]).toBe(attempts[1])
-  const accepted = f.events.find((event) => event.body._tag === "ReceiptAccepted")!
+  const accepted = f.events.find((event) => event.body._tag === "ReceiptAccepted")
+  if (!accepted) throw new Error("Missing accepted receipt fixture event")
   expect(accepted.body._tag === "ReceiptAccepted" && accepted.body.receipt).toEqual({ ok: true })
   expect(receipt.ok).toBe(false)
   expect(Object.isFrozen(accepted.body)).toBe(true)
@@ -231,7 +238,14 @@ test("receipt facts own their bytes and keep one immutable identity across appen
 test("a mutable store snapshot cannot change during asynchronous history admission", async () => {
   const f = await fixture()
   await run(f.host, Release.runRelease({ plan: f.plan, authorize: true }))
-  const stored = JSON.parse(canonical({ revision: f.events.length, events: f.events }))
+  const stored = structuredClone({
+    revision: f.events.length,
+    events: f.events.map((event) => Schema.encodeSync(Release.JournalEvent)(event)),
+  })
+  const [started, received] = stored.events
+  if (started?.body._tag !== "DispatchStarted" || received?.body._tag !== "ReceiptAccepted")
+    throw new Error("Missing dispatch and receipt fixture events")
+  const request = started.body.request
   const host: Release.HostShape = {
     ...f.host,
     store: {
@@ -239,15 +253,15 @@ test("a mutable store snapshot cannot change during asynchronous history admissi
       read: () =>
         Effect.sync(() => {
           queueMicrotask(() => {
-            stored.events[0].body.request.endpoint = "example:altered"
-            stored.events[1].body.status = "Pending"
+            Object.assign(request, { endpoint: "example:altered" })
+            Object.assign(received.body, { status: "Pending" })
           })
           return stored
         }),
     },
   }
   const report = await run(host, Release.reportRelease({ plan: f.plan }))
-  expect(stored.events[1].body.status).toBe("Pending")
+  expect(received.body.status).toBe("Pending")
   expect(report.operations[0]?.status).toBe("Satisfied")
 })
 
@@ -350,17 +364,18 @@ test("generic transport diagnostics are fixed and never persist a secret", async
 test("invalid clock, dispatch limit and truthy authorization reject without effects", async () => {
   for (const value of [-1, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
     const f = await fixture()
-    await expect(
+    expect(
       run(f.host, Release.runRelease({ plan: f.plan, authorize: true, maxDispatches: value })),
     ).rejects.toThrow("Dispatch limit")
-    await expect(
+    expect(
       run({ ...f.host, now: () => value }, Release.runRelease({ plan: f.plan, authorize: true })),
     ).rejects.toThrow("Host time")
     expect(f.calls).toEqual({ reads: 0, appends: 0, sends: 0 })
   }
   const f = await fixture()
-  await expect(
-    run(f.host, Release.runRelease({ plan: f.plan, authorize: "false" as unknown as boolean })),
+  expect(
+    // @ts-expect-error Verify truthiness does not grant runtime publication authorization.
+    run(f.host, Release.runRelease({ plan: f.plan, authorize: "false" })),
   ).rejects.toThrow("booleans")
   expect(f.calls.sends).toBe(0)
 })
@@ -380,7 +395,9 @@ test("request capture owns Node Buffer bytes and nested facts before asynchronou
   }
   const pending = Effect.runPromise(Release.makeRequest(input))
   bytes[0] = 122
-  headers[0]![1] = "changed"
+  const [header] = headers
+  if (!header) throw new Error("Missing fixture header")
+  header[1] = "changed"
   const prepared = await pending
   expect(new TextDecoder().decode(prepared.body)).toBe("abc")
   expect(prepared.facts.headers).toEqual([["content-type", "text/plain"]])

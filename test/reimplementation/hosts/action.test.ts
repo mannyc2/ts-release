@@ -1,3 +1,6 @@
+import assert from "node:assert/strict"
+import { Schema } from "effect"
+import { FinalizedReport } from "@mannyc1/ts-release/node"
 import { beforeAll, expect, test } from "bun:test"
 import { mkdtemp, readFile, symlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
@@ -8,7 +11,8 @@ const root = resolve(import.meta.dir, "../../..")
 const node =
   process.env.TS_RELEASE_HTTP_PEER_NODE ??
   "/home/cjpher/.local/share/fnm/node-versions/v22.22.2/installation/bin/node"
-const git = Bun.which("git")!
+const git = Bun.which("git")
+assert.ok(git, "Action tests require Git")
 const launcher = join(root, "apps/action/dist/launcher.cjs")
 const application = join(import.meta.dir, "action-application.mjs")
 
@@ -73,7 +77,7 @@ test("packed node Action uses one explicit shared journal and survives a fresh r
   }
   const first = await spawnAction(work, { ...base, cacheDirectory: join(work, "cache-a") })
   expect({ exit: first.exit, stderr: first.stderr }).toEqual({ exit: 0, stderr: "" })
-  const report = JSON.parse(first.stdout)
+  const report = Schema.decodeSync(Schema.fromJsonString(FinalizedReport))(first.stdout)
   expect(report.operations.map((row: { status: string }) => row.status)).toEqual(["Satisfied"])
   expect(report.journal.revision).toBe(2)
   expect(first.output).toBe(

@@ -1,7 +1,28 @@
+import * as Schema from "effect/Schema"
 import { expect, test } from "bun:test"
 import { join } from "node:path"
 import { writeFile } from "node:fs/promises"
 import { nativeServer, pythonBin, command } from "./native-server.js"
+
+const decodeWorker = Schema.decodeUnknownSync(
+  Schema.StructWithRest(
+    Schema.Struct({
+      report: Schema.StructWithRest(
+        Schema.Struct({
+          operations: Schema.Array(
+            Schema.StructWithRest(Schema.Struct({ status: Schema.String }), [
+              Schema.Record(Schema.String, Schema.Unknown),
+            ]),
+          ),
+        }),
+        [Schema.Record(Schema.String, Schema.Unknown)],
+      ),
+      dispatches: Schema.Finite,
+      receipts: Schema.Finite,
+    }),
+    [Schema.Record(Schema.String, Schema.Unknown)],
+  ),
+)
 
 for (const implementation of ["pypiserver", "devpi-server"] as const) {
   for (const count of [2, 4] as const) {
@@ -27,21 +48,15 @@ for (const implementation of ["pypiserver", "devpi-server"] as const) {
         server.hide(true)
         const hidden = await run("restart")
         expect(hidden.code, hidden.stderr).toBe(0)
-        const uncertain = JSON.parse(hidden.stdout)
-        expect(
-          uncertain.report.operations.some(
-            (op: { status: string }) => op.status === "Inconclusive",
-          ),
-        ).toBe(true)
+        const uncertain = decodeWorker(JSON.parse(hidden.stdout))
+        expect(uncertain.report.operations.some((op) => op.status === "Inconclusive")).toBe(true)
         expect(server.uploads).toHaveLength(count)
         expect(new Set(server.uploads.map((u) => u.filename)).size).toBe(count)
         server.hide(false)
         const observed = await run("restart")
         expect(observed.code, observed.stderr).toBe(0)
-        const result = JSON.parse(observed.stdout)
-        expect(
-          result.report.operations.every((op: { status: string }) => op.status === "Satisfied"),
-        ).toBe(true)
+        const result = decodeWorker(JSON.parse(observed.stdout))
+        expect(result.report.operations.every((op) => op.status === "Satisfied")).toBe(true)
         expect(result.dispatches).toBe(count)
         expect(result.receipts).toBe(count - 1)
         expect(result.sends).toBe(0)

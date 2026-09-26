@@ -43,7 +43,7 @@ export const ownedTree = (
   rootMode = 0o755,
 ): Tree => {
   const sorted = [...entries].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
-  return Schema.decodeUnknownSync(Tree)({
+  return Schema.decodeSync(Tree)({
     _tag: "OwnedTree",
     logicalName,
     bytes: sorted.reduce((total, entry) => total + entry.bytes, 0),

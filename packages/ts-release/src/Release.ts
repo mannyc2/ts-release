@@ -57,11 +57,8 @@ export const appendFact = Effect.fn("ts-release.appendFact")(function* (
 })
 const appendBody = (host: HostShape, plan: Plan, body: EventBody) =>
   appendFact(host, plan, eventFor(host, plan, body))
-const appendObservation = (
-  host: HostShape,
-  plan: Plan,
-  body: Omit<typeof ObservationRecorded.Type, "_tag">,
-) => appendBody(host, plan, new ObservationRecorded(body))
+const appendObservation = (host: HostShape, plan: Plan, body: Omit<ObservationRecorded, "_tag">) =>
+  appendBody(host, plan, new ObservationRecorded(body))
 const recordObservation = Effect.fn("ts-release.recordObservation")(function* (
   host: HostShape,
   plan: Plan,
@@ -69,7 +66,10 @@ const recordObservation = Effect.fn("ts-release.recordObservation")(function* (
   provider: ProviderDefinition,
   snapshot: Snapshot,
 ) {
-  const observation = yield* provider.observe!(
+  const { observe, observationVersion } = provider
+  if (observe === undefined || observationVersion === undefined)
+    return yield* reject("invalid-data", "Value could not be admitted")
+  const observation = yield* observe(
     operation,
     yield* attempt(() => evidenceContext(plan, operation, snapshot.events)),
   )
@@ -78,7 +78,7 @@ const recordObservation = Effect.fn("ts-release.recordObservation")(function* (
     evidenceKind: "Observation",
     status: observation.status,
     evidence: observation.evidence,
-    evidenceVersion: provider.observationVersion!,
+    evidenceVersion: observationVersion,
     observedAt: host.now(),
   })
 })
@@ -97,7 +97,8 @@ export const observeRelease = Effect.fn("ts-release.observeRelease")(function* (
   // Validate all history and definitions before the first provider effect.
   yield* read(host, plan)
   for (const operation of plan.operations) {
-    const provider = host.providers.find((item) => item.definitionId === operation.definitionId)!
+    const provider = host.providers.find((item) => item.definitionId === operation.definitionId)
+    if (provider === undefined) return yield* reject("invalid-data", "Value could not be admitted")
     if (!provider.observe) continue
     const prefix = yield* read(host, plan)
     yield* recordObservation(host, plan, operation, provider, prefix.snapshot)
@@ -136,7 +137,9 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
         continue
       progressed = true
       visited.add(operation.operationId)
-      const provider = host.providers.find((item) => item.definitionId === operation.definitionId)!
+      const provider = host.providers.find((item) => item.definitionId === operation.definitionId)
+      if (provider === undefined)
+        return yield* reject("invalid-data", "Value could not be admitted")
       if (options.observe !== false && provider.observe) {
         yield* recordObservation(host, plan, operation, provider, current.snapshot)
         current = yield* read(host, plan)
@@ -246,10 +249,10 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
           )
         } else {
           // The remote may have committed; keep the attempt uncertain and retain only a bounded, credential-free diagnostic.
-          let diagnostic: Uint8Array | null = null
-          try {
-            diagnostic = new TextEncoder().encode(canonical(result.receipt))
-          } catch {}
+          const diagnostic = yield* Effect.try({
+            try: () => new TextEncoder().encode(canonical(result.receipt)),
+            catch: () => null,
+          }).pipe(Effect.orElseSucceed(() => null))
           const evidence = new CoreUndecodableReceipt({
             code: "undecodable-receipt",
             message: "Committed response could not be admitted by the installed provider",
@@ -305,7 +308,10 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
           evidenceKind: "DispatchError",
           dispatchId,
           status: "Inconclusive",
-          evidenceVersion: native ? provider.dispatchError!.version : "core-dispatch-error/1",
+          evidenceVersion:
+            native && provider.dispatchError
+              ? provider.dispatchError.version
+              : "core-dispatch-error/1",
           evidence,
           observedAt: host.now(),
         })

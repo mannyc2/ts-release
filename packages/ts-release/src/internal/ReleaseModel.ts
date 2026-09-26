@@ -50,7 +50,7 @@ export class DispatchStarted extends Schema.TaggedClass<DispatchStarted>()("Disp
   dispatchId: Schema.String,
   request: RequestFacts,
   fingerprint: Schema.String,
-  startedAt: Schema.Number,
+  startedAt: Schema.Finite,
   basis: DispatchBasis,
 }) {}
 export class DispatchRejectedBeforeCommit extends Schema.TaggedClass<DispatchRejectedBeforeCommit>()(
@@ -84,7 +84,7 @@ export class ObservationRecorded extends Schema.TaggedClass<ObservationRecorded>
     status: ObservationStatus,
     evidenceVersion: Schema.String,
     evidence: Schema.Unknown,
-    observedAt: Schema.Number,
+    observedAt: Schema.Finite,
   },
 ) {}
 export class RiskAccepted extends Schema.TaggedClass<RiskAccepted>()("RiskAccepted", {
@@ -93,7 +93,7 @@ export class RiskAccepted extends Schema.TaggedClass<RiskAccepted>()("RiskAccept
   fingerprint: Schema.String,
   priorDispatchIds: Schema.Array(Schema.String),
   principal: Schema.String,
-  expiresAt: Schema.Number,
+  expiresAt: Schema.Finite,
 }) {}
 export class PlanSuperseded extends Schema.TaggedClass<PlanSuperseded>()("PlanSuperseded", {
   reason: Schema.String,

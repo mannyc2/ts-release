@@ -14,8 +14,9 @@ import { fileContentOwner, makeGitCatalogHost, FinalizedReport } from "@mannyc1/
 // Only the acknowledgement boundary is controlled, after native Git has committed.
 const root = resolve(import.meta.dir, "..")
 const work = await mkdtemp(join(tmpdir(), "ts-release-installed-workflow-"))
-const git = Bun.which("git")!
-const node = process.env.TS_RELEASE_ACCEPTANCE_NODE ?? Bun.which("node")!
+const git = Bun.which("git")
+const node = process.env.TS_RELEASE_ACCEPTANCE_NODE ?? Bun.which("node")
+assert.ok(git && node, "Installed workflow requires Git and Node")
 assert.ok(git && node, "Git and supported Node are required")
 const run = async (cwd: string, argv: string[], env: Record<string, string> = {}) => {
   const child = Bun.spawn(argv, {
@@ -191,7 +192,11 @@ ${pause ? "else " : ""}{process.stdout.write(result.stdout);process.stderr.write
       publisherGit: wrapper,
       authorize: true,
     }
-    const invoke = async (cache: string, observe = false, interrupt = false) => {
+    const invoke = async (
+      cache: string,
+      observe = false,
+      interrupt = false,
+    ): Promise<FinalizedReport | null> => {
       const selected = { ...input, cacheDirectory: join(directory, cache) },
         inputFile = join(directory, "input.json")
       await writeFile(inputFile, JSON.stringify(selected))

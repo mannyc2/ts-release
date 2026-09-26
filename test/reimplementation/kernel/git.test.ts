@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 import {
   GitCas,
   GitReceipt,
@@ -49,7 +50,7 @@ for (const candidate of evaluatorNames)
           receiptVersion: "git-push/1",
           receiptCodec: GitReceipt,
           receiptCorresponds: (_operation: Operation, request: RequestFacts, native: unknown) => {
-            const receipt = native as GitReceipt
+            const receipt = Schema.decodeUnknownSync(GitReceipt)(native)
             return (
               request.replay._tag === "GitCas" &&
               receipt.ref === request.replay.ref &&

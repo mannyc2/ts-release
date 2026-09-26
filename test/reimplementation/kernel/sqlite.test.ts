@@ -60,7 +60,7 @@ test("legacy SQLite data rejects without initialization or migration", async () 
     const db = new Database(path, { create: true })
     db.exec("CREATE TABLE legacy(value TEXT); INSERT INTO legacy VALUES('preserved')")
     db.close()
-    await expect(Effect.runPromise(Effect.scoped(openSqliteJournal(path)))).rejects.toThrow(
+    expect(Effect.runPromise(Effect.scoped(openSqliteJournal(path)))).rejects.toThrow(
       "current release journal",
     )
     const retained = new Database(path, { readonly: true })

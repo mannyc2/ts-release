@@ -6,7 +6,7 @@ import type { HttpProviderDefinition, HttpRead } from "@mannyc1/ts-release/http"
 import * as Model from "./Model.js"
 import { descriptors, intentOf, kindOf, validatePlan, type Intent } from "./Graph.js"
 import { bindScope, readScope } from "./Binding.js"
-import { attempt, invalid, matches, ownOperation, responseObject } from "./Native.js"
+import { attempt, invalid, matches, own, ownOperation, responseObject } from "./Native.js"
 import { nativeRequest, ownsRequest, requestCorresponds } from "./Wire.js"
 import { NativeFailure, Observation, Receipt, decodeFacts } from "./Evidence.js"
 import { classifyObservation, failureCorresponds, receiptCorresponds } from "./Evidence.js"
@@ -72,17 +72,20 @@ export const definitions = (
             status = kindOf(scope.operation) === "publish" ? 200 : 201
           let kind: NativeFailure["kind"] = "http-status"
           if (response.status === status) {
-            try {
-              const receipt = new Receipt({
+            let receipt: Receipt | undefined
+            const admitted = matches(() => {
+              const candidate = new Receipt({
                 request: request.facts,
                 status,
                 facts: decodeFacts(scope, responseObject(response)),
               })
-              if (receiptCorresponds(scope.operation, request.facts, receipt))
-                return { _tag: "Accepted" as const, receipt }
+              if (receiptCorresponds(scope.operation, request.facts, candidate)) receipt = candidate
+              return true
+            })
+            if (!admitted) kind = "malformed-native"
+            else {
+              if (receipt !== undefined) return { _tag: "Accepted" as const, receipt }
               kind = "different-native"
-            } catch {
-              kind = "malformed-native"
             }
           }
           return {
@@ -90,7 +93,7 @@ export const definitions = (
             reason: "GitHub did not acknowledge the exact native operation",
             nativeError: new NativeFailure({
               request: request.facts,
-              status: response.status,
+              status: own(NativeFailure.fields.status, response.status),
               kind,
             }),
           }

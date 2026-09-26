@@ -333,12 +333,12 @@ and native fixture stayed unchanged. The stopped log is
 
 The resumed locked batch passed, in order:
 
-| Check | Exit and evidence |
-| --- | --- |
-| `bun run check` | 0; `/tmp/ts-release-native-settlement-check-final.log`. Formatting, patched compiler, build, strict lint, root/host types, 95-file/664-edge import policy and 15 package entries passed. |
-| `bun run build:delivery` | 0; `/tmp/ts-release-native-settlement-delivery.log`. Refreshed generated starter Model and bundled input. |
-| Direct final read-lifecycle test | 0; 1 test/1 assertion, `/tmp/ts-release-native-settlement-read-final.log`. Repeated because the wrapper changed. |
-| `bun run check:packed-npm` | 0; `/tmp/ts-release-native-settlement-packed-npm.log`. Actual core/npm archives passed Bun/npm installation, strict declarations, optional-peer absence and existing behavior under Node22.22.2/Bun1.3.14. |
+| Check                            | Exit and evidence                                                                                                                                                                                          |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run check`                  | 0; `/tmp/ts-release-native-settlement-check-final.log`. Formatting, patched compiler, build, strict lint, root/host types, 95-file/664-edge import policy and 15 package entries passed.                   |
+| `bun run build:delivery`         | 0; `/tmp/ts-release-native-settlement-delivery.log`. Refreshed generated starter Model and bundled input.                                                                                                  |
+| Direct final read-lifecycle test | 0; 1 test/1 assertion, `/tmp/ts-release-native-settlement-read-final.log`. Repeated because the wrapper changed.                                                                                           |
+| `bun run check:packed-npm`       | 0; `/tmp/ts-release-native-settlement-packed-npm.log`. Actual core/npm archives passed Bun/npm installation, strict declarations, optional-peer absence and existing behavior under Node22.22.2/Bun1.3.14. |
 
 The existing `check:native-npm-sigstore` separately passed with Node22.22.2:
 authentic verification, all four existing rejection controls, and the new
@@ -581,3 +581,22 @@ Node-engine claim. No actual Fulcio/Rekor request, successful signing, full gate
 or installed archive was exercised. Those source/proof/doc paths alone are in
 this local signing commit; concurrent provider, application, observation and
 executor edits remain separate and await integrated qualification.
+
+## Strict provider admission
+
+Following signing commit `a7043878ef964dac1ebcff6e3a2569471c5dc0e9`, the five
+provider families now classify expected native/schema/domain refusals at their
+owners before sharing a strict HTTP data boundary. Known release errors retain
+identity/fields; unexpected callback, getter and parser-algorithm failures remain
+defects. MCP/GitHub malformed-evidence fallbacks retain Unknown/Inconclusive for
+expected input. Credential and SDK privacy projections remain intentional.
+
+[Provider implementation](provider-error-policy-implementation.md) records each
+translation, the three genuine initial failing controls, the later MCP malformed
+response control and the corrected OpenAI assertion. [Coordinated qualification](continuation-qualification.md)
+records static success, 354 passing behavior cases plus the separately repaired
+assertion, all seven installed provider archives, Action/workflow and refreshed
+starter. These stages include the still-separate application/observation changes;
+they are not claimed as an independent full run of this intermediate commit.
+No live provider or publication action ran. HTTP/SQLite cleanup, R34 preflight
+and final requirement disposition remain subsequent work.

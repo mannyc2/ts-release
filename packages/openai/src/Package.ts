@@ -94,7 +94,8 @@ export const files = Effect.fn("openai.files")(function* (
   readContent: ReadContent,
 ) {
   const selected = yield* attempt("openai-package", () => {
-    if (typeof readContent !== "function") throw new Error("OpenAI content reader is unavailable")
+    if (typeof readContent !== "function")
+      throw failure("openai-package", "OpenAI value could not be admitted")
     return own(PluginInputCodec, input)
   })
   const rendered: RenderedFile[] = [
@@ -186,12 +187,19 @@ export const inspectPackage = Effect.fn("openai.inspectPackage")(function* (
   const bytes = contents.get(manifestPath)
   if (!bytes) return yield* reject("openai-tree", "plugin.json is missing")
   const plugin = yield* attempt("openai-manifest", () => {
-    const value = own(PluginManifest, decodeJson(bytes))
+    const decoder = new TextDecoder("utf-8", { fatal: true })
+    let text: string
+    try {
+      text = decoder.decode(bytes)
+    } catch {
+      throw failure("openai-manifest", "OpenAI value could not be admitted")
+    }
+    const value = own(PluginManifest, decodeJson(text))
     if (
       manifestPath === "plugin.json" &&
       value.$schema !== "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
     )
-      throw new Error("Root plugin.json must declare the Agent Plugins 1.0 schema")
+      throw failure("openai-manifest", "OpenAI value could not be admitted")
     for (const field of ["skills", "mcpServers", "apps", "hooks"]) {
       const selected = value[field]
       if (typeof selected !== "string") continue
@@ -201,7 +209,7 @@ export const inspectPackage = Effect.fn("openai.inspectPackage")(function* (
         !safePath(path) ||
         !paths.some((candidate) => candidate === path || candidate.startsWith(path + "/"))
       )
-        throw new Error(`Plugin ${field} must reference bundled contents`)
+        throw failure("openai-manifest", "OpenAI value could not be admitted")
     }
     return value
   })

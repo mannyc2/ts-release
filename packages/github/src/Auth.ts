@@ -1,5 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Redacted from "effect/Redacted"
+import * as Schema from "effect/Schema"
+import { ReleaseError } from "@mannyc1/ts-release"
 import { bearerCredentials, publicUrl, type CredentialBinding } from "@mannyc1/ts-release/http"
 import type { CredentialHeaders } from "@mannyc1/ts-release/http"
 import { Repository } from "./Model.js"
@@ -32,8 +34,13 @@ export const authorizeToken = Effect.fn("github.authorizeToken")(function* (inpu
     let allowed = false
     try {
       allowed = binding.endpoint === nativeRequest(scope).endpoint
-    } catch {
-      /* Published parents still permit exact read routes. */
+    } catch (error) {
+      // Only a published parent is expected while probing an exact read route.
+      if (
+        !Schema.is(Schema.Struct(ReleaseError.fields))(error) ||
+        error.code !== "github-asset-parent-published"
+      )
+        throw error
     }
     if (
       url.origin === repository.apiUrl &&

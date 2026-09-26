@@ -509,8 +509,17 @@ test("pins new Git marketplace sources and preserves unrelated entries and selec
     ]) {
       expect(
         // Deliberately pass malformed coordinates through the typed runtime boundary.
-        Effect.runPromise(marketplace({ ...input, source: invalid }, readContent)),
-      ).rejects.toThrow()
+        await Effect.runPromise(
+          Effect.flip(marketplace({ ...input, source: invalid }, readContent)),
+        ),
+      ).toMatchObject(
+        invalid.sha === undefined
+          ? {
+              code: "invalid-json",
+              message: "Only canonical JSON values and safe integers are allowed",
+            }
+          : { code: "openai-marketplace", message: "OpenAI value could not be admitted" },
+      )
     }
   }
 })

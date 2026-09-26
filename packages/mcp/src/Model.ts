@@ -350,6 +350,14 @@ export const {
   ownRequest,
   matches,
 } = makeDataBoundary("mcp", "MCP")
+export const text = (bytes: Uint8Array, code: string): string => {
+  const decoder = new TextDecoder("utf-8", { fatal: true })
+  try {
+    return decoder.decode(bytes)
+  } catch {
+    throw failure(code, "MCP value could not be admitted")
+  }
+}
 export const manifest = (input: unknown): Manifest =>
   own(ManifestCodec, typeof input === "string" ? decodeJson(input) : input)
 export const intent = (input: unknown): PublishIntent => own(PublishIntentCodec, input)

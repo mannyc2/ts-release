@@ -26,27 +26,27 @@ export const authenticationChallenge = (
   request: PreparedRequest,
   response: Http.HttpResponse,
 ): AuthenticationChallenge | undefined => {
-  try {
-    if (!Evidence.isAuthenticationRejection(response) || response.body.length > 65536)
-      return undefined
+  let challenge: AuthenticationChallenge | undefined
+  Native.matches(() => {
+    if (!Evidence.isAuthenticationRejection(response) || response.body.length > 65536) return false
     const owned = Native.ownRequest(request),
       scope = Native.readScope(owned.facts.scope)
     if (
       scope.intent.authorization._tag !== "TokenAuthorization" ||
       !Evidence.ownsRequest(scope.definitionId, owned)
     )
-      return undefined
+      return false
     const body = Native.object(Native.parseJson(response.body))
     const authUrl = challengeUrl(body.authUrl, "https://www.npmjs.com")
     const doneUrl = challengeUrl(body.doneUrl, "https://registry.npmjs.org")
-    return Object.freeze({
+    challenge = Object.freeze({
       request: owned.facts,
       authUrl: Redacted.make(authUrl),
       doneUrl: Redacted.make(doneUrl),
     })
-  } catch {
-    return undefined
-  }
+    return true
+  })
+  return challenge
 }
 export interface LocalAuthenticationOptions {
   readonly authorization: Model.TokenAuthorization

@@ -1,4 +1,4 @@
-import { fail } from "node:assert"
+import { fail, throws } from "node:assert"
 import { expect, test } from "bun:test"
 import { createHash } from "node:crypto"
 import oracle from "./fixtures/native-oracle.json" with { type: "json" }
@@ -51,7 +51,13 @@ test("metadata semantic admission matches native Twine positive and negative con
   for (const row of oracle.cases) {
     const bytes = Buffer.from(row.archiveBase64, "base64")
     expect(createHash("sha256").update(bytes).digest("hex")).toBe(row.sha256)
-    if (!row.accepted) expect(() => inspect(oracle.filename, bytes), row.case).toThrow()
+    if (row.case === "invalid-mime-syntax")
+      throws(() => inspect(oracle.filename, bytes), {
+        _tag: "ReleaseError",
+        code: "pypi-data",
+        message: "Python index data could not be admitted",
+      })
+    else if (!row.accepted) expect(() => inspect(oracle.filename, bytes), row.case).toThrow()
     else {
       const result = inspect(oracle.filename, bytes)
       const fields = (row.fields ?? fail("Missing accepted native fields"))

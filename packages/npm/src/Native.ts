@@ -3,7 +3,7 @@ import * as Model from "./Model.js"
 import { createHash } from "node:crypto"
 import { gunzipSync } from "node:zlib"
 import { readTarBytes, verifiedArtifacts, type ArtifactAccess } from "@mannyc1/ts-release/bundle"
-import { decodeJson as parseJson, makeDataBoundary } from "@mannyc1/ts-release/http"
+import { decodeJson, makeDataBoundary } from "@mannyc1/ts-release/http"
 
 export const { failure, invalid, reject, attempt, matches, object, own, ownOperation, ownRequest } =
   makeDataBoundary("npm", "npm")
@@ -11,7 +11,16 @@ export const digest = (algorithm: string, bytes: Uint8Array) =>
   createHash(algorithm).update(bytes).digest("hex")
 export const encode = (input: unknown) => new TextEncoder().encode(JSON.stringify(input))
 
-export { decodeJson as parseJson } from "@mannyc1/ts-release/http"
+export const text = (bytes: Uint8Array): string => {
+  const decoder = new TextDecoder("utf-8", { fatal: true })
+  try {
+    return decoder.decode(bytes)
+  } catch {
+    return invalid("data")
+  }
+}
+export const parseJson = (input: string | Uint8Array): unknown =>
+  decodeJson(typeof input === "string" ? input : text(input))
 /** Native package metadata is extracted from the exact bounded owned tarball. */
 export const readManifest = (bytes: Uint8Array): Record<string, unknown> => {
   let tar: Uint8Array

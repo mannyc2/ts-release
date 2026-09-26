@@ -64,7 +64,7 @@ export const authorizeOidc = Effect.fn("mcp.authorizeOidc")(function* (
   if (response.status !== 200)
     return yield* Model.reject("mcp-oidc-exchange", "MCP Registry rejected the OIDC exchange")
   const value = yield* Model.attempt("mcp-oidc-response", () =>
-    Model.own(Exchange, Http.decodeJson(response.body)),
+    Model.own(Exchange, Http.decodeJson(Model.text(response.body, "mcp-oidc-response"))),
   )
   const now = Math.floor((yield* Clock.currentTimeMillis) / 1000)
   return yield* Model.attempt("mcp-oidc-response", () => {

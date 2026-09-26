@@ -1,6 +1,7 @@
 import { fail } from "node:assert"
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
+import { Cause, Exit, Result } from "effect"
 import * as Redacted from "effect/Redacted"
 import * as Schema from "effect/Schema"
 import type { HttpResponse, TrustedPublisherHost } from "@mannyc1/ts-release/http"
@@ -253,6 +254,37 @@ describe("MCP native publication and recovery", () => {
         body: prepared.body,
       }),
     ).toBe(false)
+    const validResponse = observed
+    observed = { status: 200, headers: {}, body: json({}) }
+    expect((await Effect.runPromise(definition.decodeResponse(prepared, observed)))._tag).toBe(
+      "Unknown",
+    )
+    expect(
+      (
+        await Effect.runPromise(
+          (definition.observe ?? fail("Missing fixture definition.observe")).call(
+            definition,
+            operation,
+            context,
+          ),
+        )
+      ).status,
+    ).toBe("Inconclusive")
+    observed = validResponse
+    const defect = new TypeError("MCP response body getter defect")
+    const failed = await Effect.runPromiseExit(
+      definition.decodeResponse(prepared, {
+        status: 200,
+        headers: {},
+        get body(): Uint8Array {
+          throw defect
+        },
+      }),
+    )
+    if (!Exit.isFailure(failed)) fail("Expected response decoder defect")
+    const died = Cause.findDie(failed.cause)
+    if (!Result.isSuccess(died)) fail("Expected response decoder to die")
+    expect(died.success.defect).toBe(defect)
     const accepted = await Effect.runPromise(definition.decodeResponse(prepared, observed))
     expect(accepted._tag).toBe("Accepted")
     const exact = await Effect.runPromise(

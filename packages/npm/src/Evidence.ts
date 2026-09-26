@@ -206,54 +206,62 @@ export const observeResponse = (
     version = new Absent({})
     tag = new Absent({})
   } else if (response.status >= 200 && response.status < 300) {
-    try {
+    const admitted = matches(() => {
       if (response.body.length > 1024 * 1024) invalid("metadata-bound")
       const metadata = object(parseJson(response.body))
       const packageName = own(Model.name, metadata.name)
-      try {
-        const tags = object(metadata["dist-tags"]),
-          tagName = "initialTag" in scope.intent ? scope.intent.initialTag : scope.intent.tag,
-          raw = Object.hasOwn(tags, tagName) ? tags[tagName] : undefined
-        tag =
-          raw === undefined ? new Absent({}) : new TagValue({ version: own(Model.version, raw) })
-      } catch {
+      if (
+        !matches(() => {
+          const tags = object(metadata["dist-tags"]),
+            tagName = "initialTag" in scope.intent ? scope.intent.initialTag : scope.intent.tag,
+            raw = Object.hasOwn(tags, tagName) ? tags[tagName] : undefined
+          tag =
+            raw === undefined ? new Absent({}) : new TagValue({ version: own(Model.version, raw) })
+          return true
+        })
+      )
         tag = unavailable("malformed-tag")
-      }
       if (packageName !== scope.intent.name) version = new DifferentPackage({ name: packageName })
       else {
         const versions = object(metadata.versions)
         if (!Object.hasOwn(versions, scope.intent.version)) version = new Absent({})
         else {
-          try {
-            const selected = object(versions[scope.intent.version]),
-              dist = object(selected.dist)
-            const name = own(Model.name, selected.name),
-              nativeVersion = own(Model.version, selected.version)
-            try {
-              version = new VersionFacts({
-                name,
-                version: nativeVersion,
-                integrity: own(integrity, dist.integrity),
-                shasum: own(hex(40), dist.shasum),
-              })
-            } catch {
-              version = unavailable("incomplete-digests")
-            }
-          } catch {
+          if (
+            !matches(() => {
+              const selected = object(versions[scope.intent.version]),
+                dist = object(selected.dist)
+              const name = own(Model.name, selected.name),
+                nativeVersion = own(Model.version, selected.version)
+              if (
+                !matches(() => {
+                  version = new VersionFacts({
+                    name,
+                    version: nativeVersion,
+                    integrity: own(integrity, dist.integrity),
+                    shasum: own(hex(40), dist.shasum),
+                  })
+                  return true
+                })
+              )
+                version = unavailable("incomplete-digests")
+              return true
+            })
+          )
             version = unavailable("malformed-version")
-          }
         }
       }
       if (scope.definitionId === "npm.dist-tag" && packageName !== scope.intent.name)
         tag = unavailable("malformed-package")
-    } catch {
+      return true
+    })
+    if (!admitted) {
       version = unavailable("malformed-package")
       tag = unavailable("malformed-package")
     }
   }
   return new RegistryObservation({
     request,
-    status: response.status,
+    status: own(RegistryObservation.fields.status, response.status),
     version: scope.definitionId === "npm.dist-tag" ? new NotApplicable({}) : version,
     tag,
   })

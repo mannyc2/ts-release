@@ -25,6 +25,9 @@
 
 ### Effect and engineering boundaries
 
+- Preserve unexpected defects in npm, GitHub, PyPI, MCP and OpenAI admission.
+  Known native/schema refusals keep their typed safe diagnostics; malformed
+  evidence recovery no longer conceals programming errors.
 - Preserve unexpected Catalog renderer defects. Invalid metadata and owned-download
   refusals retain `catalog-input`; declared release errors retain their fields.
 - Add `runApplicationEffect` to the Node and Bun entries. Application factories

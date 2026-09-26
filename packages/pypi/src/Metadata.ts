@@ -1,5 +1,5 @@
 import { readTar, readZip } from "./Archive.js"
-import { invalid, own, MAX_BYTES } from "./Native.js"
+import { invalid, own, MAX_BYTES, text as decodeText } from "./Native.js"
 import * as Model from "./Model.js"
 
 import { uploadFields } from "./MetadataFields.js"
@@ -8,7 +8,7 @@ import { uploadFields } from "./MetadataFields.js"
  * Required coordinates and every upload field come from these owned archive bytes. */
 const headers = (bytes: Uint8Array) => {
   if (bytes.length > 1024 * 1024) return invalid("metadata-bound")
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes).replaceAll("\r\n", "\n")
+  const text = decodeText(bytes).replaceAll("\r\n", "\n")
   // oxlint-disable-next-line no-control-regex -- reject NUL and bare CR in RFC822 metadata.
   if (/[\u0000\r]/u.test(text)) invalid("metadata-text")
   const split = text.indexOf("\n\n"),

@@ -1,5 +1,5 @@
 import { PublishIntent } from "./Model.js"
-import { encode, invalid, object, readManifest, digest } from "./Native.js"
+import { encode, invalid, object, readManifest, digest, text } from "./Native.js"
 import { type NativeScope, parseJson } from "./Native.js"
 import { statement, validateProvenance } from "./Auth.js"
 
@@ -47,7 +47,7 @@ export const publishBody = (
   if (provenance !== undefined)
     attachments[`${intent.name}-${intent.version}.sigstore`] = {
       content_type: "application/vnd.dev.sigstore.bundle.v0.3+json",
-      data: new TextDecoder("utf-8", { fatal: true }).decode(provenance),
+      data: text(provenance),
       length: provenance.byteLength,
     }
   const document: Record<string, unknown> = {

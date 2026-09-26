@@ -74,11 +74,16 @@ export const authorizeTrusted = Effect.fn("npm.authorizeTrusted")(function* (
   })
   if (response.status !== 201)
     return yield* Native.reject("npm-oidc-exchange", "npm OIDC exchange was not accepted")
-  const value = yield* Native.attempt(() =>
-    Schema.decodeUnknownSync(ExchangeResponse)(
-      JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(response.body)),
-    ),
-  )
+  const value = yield* Native.attempt(() => {
+    const text = Native.text(response.body)
+    let raw: unknown
+    try {
+      raw = JSON.parse(text)
+    } catch {
+      return Native.invalid("data")
+    }
+    return Schema.decodeUnknownSync(ExchangeResponse)(raw)
+  })
   // Like npm's own client, consume the freshly exchanged opaque token. The
   // registry owns its lifetime; diagnostic metadata is not an authorization
   // contract. Acquire per request, never cache or retain the credential.
@@ -151,7 +156,13 @@ export const validateProvenance = (
   if (bytes.length > 1024 * 1024) return Native.invalid("sigstore-bound")
   const value = Native.object(Native.parseJson(bytes))
   if (!Buffer.from(Native.encode(value)).equals(bytes)) Native.invalid("sigstore-encoding")
-  const bundle = NativeSigstore.bundleFromJSON(value)
+  let bundle: ReturnType<typeof NativeSigstore.bundleFromJSON>
+  // The pinned protobuf converter can reject malformed JSON before ValidationError.
+  try {
+    bundle = NativeSigstore.bundleFromJSON(value)
+  } catch {
+    return Native.invalid("data")
+  }
   if (
     bundle.mediaType !== NativeSigstore.BUNDLE_V03_MEDIA_TYPE ||
     !NativeSigstore.isBundleWithDsseEnvelope(bundle) ||
@@ -260,7 +271,14 @@ export const makeSigstoreVerifier = (input: SigstoreTrustOptions): Model.VerifyP
   return Effect.fn("npm.verifySigstoreProvenance")(function* (input) {
     const { source, bundle } = yield* Native.attempt(() => {
       const source = Native.own(Model.ProvenanceSource, input.source),
-        { bundle, payload } = validateProvenance(new Uint8Array(input.bundleBytes))
+        supplied = input.bundleBytes
+      let bytes: Uint8Array
+      try {
+        bytes = new Uint8Array(supplied)
+      } catch {
+        return Native.invalid("data")
+      }
+      const { bundle, payload } = validateProvenance(bytes)
       admitStatementSource(payload, source)
       return { source, bundle }
     })

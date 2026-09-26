@@ -1,7 +1,14 @@
 export { decodeJson } from "./internal/NativeJson.js"
 export { canonical, compareText, decodeOwned, sameBytes, sameData } from "./internal/Identity.js"
 import { Effect, Predicate, Redacted, Schema } from "effect"
-import { ReleaseError, attempt as coreAttempt, fail, failure, reject } from "./internal/Error.js"
+import {
+  ReleaseError,
+  attempt as coreAttempt,
+  fail,
+  failure,
+  reject,
+  isReleaseErrorLike,
+} from "./internal/Error.js"
 import { canonical, decodeOwned } from "./internal/Identity.js"
 import type {
   ProviderDefinition,
@@ -14,24 +21,30 @@ import { Operation, RequestFacts } from "./internal/ReleaseModel.js"
 export const makeDataBoundary = (prefix: string, subject: string) => {
   const invalid = (code: string): never =>
     fail(`${prefix}-${code}`, `${subject} ${code.replaceAll("-", " ")} could not be admitted`)
-  const tryBody = <A>(body: () => A, code?: string) =>
-    Effect.try({
-      try: body,
-      catch: (cause) =>
-        cause instanceof ReleaseError
-          ? cause
-          : failure(
-              code ?? `${prefix}-data`,
-              `${subject} ${code ? "value" : "data"} could not be admitted`,
-            ),
+  const tryBody = <A>(body: () => A, code?: string): Effect.Effect<A, ReleaseError> =>
+    Effect.suspend(() => {
+      try {
+        return Effect.succeed(body())
+      } catch (cause) {
+        if (cause instanceof ReleaseError) return Effect.fail(cause)
+        if (isReleaseErrorLike(cause)) return Effect.fail(failure(cause.code, cause.message))
+        if (Schema.isSchemaError(cause))
+          return reject(
+            code ?? `${prefix}-data`,
+            `${subject} ${code ? "value" : "data"} could not be admitted`,
+          )
+        return Effect.die(cause)
+      }
     })
   const attempt = <A>(body: () => A) => tryBody(body)
   const admit = <A>(code: string, body: () => A) => tryBody(body, code)
   const matches = (body: () => boolean): boolean => {
     try {
       return body()
-    } catch {
-      return false
+    } catch (cause) {
+      if (cause instanceof ReleaseError || isReleaseErrorLike(cause) || Schema.isSchemaError(cause))
+        return false
+      throw cause
     }
   }
   const object = (value: unknown): Record<string, unknown> => {

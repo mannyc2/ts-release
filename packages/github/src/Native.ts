@@ -50,7 +50,15 @@ export const responseJson = (response: HttpResponse, maximumBytes = 1024 * 1024)
     !/^(?:application\/json|application\/vnd\.github\+json)(?:\s*;|$)/iu.test(contentType)
   )
     invalid("json-response")
-  return decodeJson(response.body)
+  const bytes = response.body,
+    decoder = new TextDecoder("utf-8", { fatal: true })
+  let text: string
+  try {
+    text = decoder.decode(bytes)
+  } catch {
+    return invalid("data")
+  }
+  return decodeJson(text)
 }
 export const responseObject = (response: HttpResponse): Record<string, unknown> =>
   object(responseJson(response))
@@ -144,8 +152,13 @@ export const assetFacts = (
 export const assetUrls = (facts: Model.AssetFacts, repository: Model.Repository, tag: string) => {
   const download = publicUrl(facts.downloadUrl)
   if (!download) return false
-  const path = decodeURIComponent(download.pathname),
-    prefix = `/${repository.owner}/${repository.name}/`,
+  let path: string
+  try {
+    path = decodeURIComponent(download.pathname)
+  } catch {
+    return invalid("data")
+  }
+  const prefix = `/${repository.owner}/${repository.name}/`,
     remainder = path.slice(prefix.length)
   // GitHub serves a draft's assets under an `untagged-<hex>` placeholder until the
   // release is published. The asset stays bound by its API id and stored name.

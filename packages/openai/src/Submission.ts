@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect"
 import { Bundle, File, Tree, verifiedArtifacts } from "@mannyc1/ts-release/bundle"
 import type { ArtifactAccess } from "@mannyc1/ts-release/bundle"
-import { attempt, canonical, inspectPackage, name, own, reject } from "./Package.js"
+import { attempt, failure, canonical, inspectPackage, name, own, reject } from "./Package.js"
 import { Marketplace, marketplaceDocument } from "./Marketplace.js"
 import { containsSecret, PublicText, publicUrl } from "@mannyc1/ts-release/http"
 
@@ -89,7 +89,7 @@ export const submission = Effect.fn("openai.submission")(function* (
       bundle = own(Bundle, access.bundle)
     const artifacts = verifiedArtifacts({ bundle, readContent }, 10 * 1024 * 1024)
     if (!artifacts.has(value.plugin) || !artifacts.has(value.listing.logo))
-      throw new Error("OpenAI plugin or logo is not an exact owned Bundle member")
+      throw failure("openai-submission", "OpenAI value could not be admitted")
     return { value, marketplace, artifacts }
   })
   const plugin = yield* inspectPackage(selected.value.plugin, readContent)

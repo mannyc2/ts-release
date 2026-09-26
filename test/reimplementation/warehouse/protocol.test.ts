@@ -1,6 +1,6 @@
-import { fail } from "node:assert"
+import { fail, throws } from "node:assert"
 import { expect, test } from "bun:test"
-import { Effect, Schema, Redacted } from "effect"
+import { Cause, Effect, Exit, Result, Schema, Redacted } from "effect"
 import { type ProviderContext, makeRequest } from "@mannyc1/ts-release"
 import type { HttpResponse, TrustedPublisherHost } from "@mannyc1/ts-release/http"
 import * as PyPi from "@mannyc1/ts-release-pypi"
@@ -109,6 +109,17 @@ test("native upload receipt owns the complete multipart request and excludes raw
     expect(result._tag).toBe("Unknown")
     expect(JSON.stringify(result)).not.toContain("untrusted-token")
   }
+  const defect = new TypeError("request body getter defect")
+  throws(
+    () =>
+      f.provider.ownsRequest({
+        facts: f.request.facts,
+        get body(): Uint8Array {
+          throw defect
+        },
+      }),
+    (error: unknown) => error === defect,
+  )
   const body = new Uint8Array(f.request.body)
   body[0] = (body[0] ?? fail("Missing fixture body[0]")) ^ 1
   const changed = await Effect.runPromise(makeRequest({ ...f.request.facts, body }))
@@ -258,6 +269,24 @@ test("token and trusted credentials bind exact endpoint, principal, project set 
   }
   const selected = f.endpoint
   if (selected._tag === "Compatible") throw new Error("official endpoint fixture")
+  const defect = new TypeError("trusted exchange getter defect")
+  const failed = await Effect.runPromiseExit(
+    PyPi.authorizeTrusted(
+      { authorization: auth, endpoint: selected, binding },
+      {
+        oidc: host.oidc,
+        get exchange(): TrustedPublisherHost["exchange"] {
+          throw defect
+        },
+      },
+    ),
+  )
+  if (!Exit.isFailure(failed)) fail("Expected trusted host capture defect")
+  const died = Cause.findDie(failed.cause)
+  if (!Result.isSuccess(died)) fail("Expected trusted host capture to die")
+  expect(died.success.defect).toBe(defect)
+  expect(oidc).toBe(0)
+  expect(exchange).toBe(0)
   const credentials = await Effect.runPromise(
     PyPi.authorizeTrusted({ authorization: auth, endpoint: selected, binding }, host),
   )

@@ -198,14 +198,12 @@ test("trusted npm exchange captures package and methods before OIDC", async () =
   // Registry metadata is not durable authority. npm's own client consumes the
   // new token without requiring created/expires fields or a timestamp format.
   const exchange = (value: unknown) =>
-    Effect.runPromise(
-      authorizeTrusted(
-        { ...selected, packageName: f.publication.name },
-        {
-          oidc: () => Effect.succeed(Redacted.make("identity-token")),
-          exchange: () => Effect.succeed({ status: 201, headers: {}, body: encode(value) }),
-        },
-      ),
+    authorizeTrusted(
+      { ...selected, packageName: f.publication.name },
+      {
+        oidc: () => Effect.succeed(Redacted.make("identity-token")),
+        exchange: () => Effect.succeed({ status: 201, headers: {}, body: encode(value) }),
+      },
     )
   for (const metadata of [
     {},
@@ -215,7 +213,11 @@ test("trusted npm exchange captures package and methods before OIDC", async () =
     { additionalRegistryMetadata: true },
     { additionalRegistryMetadata: { fractionalValue: 1.5 } },
   ]) {
-    expect(await exchange({ token_type: "oidc", token: "registry-token", ...metadata })).toEqual({
+    expect(
+      await Effect.runPromise(
+        exchange({ token_type: "oidc", token: "registry-token", ...metadata }),
+      ),
+    ).toEqual({
       authorization: "Bearer registry-token",
     })
   }
@@ -227,7 +229,13 @@ test("trusted npm exchange captures package and methods before OIDC", async () =
     { token_type: "oidc", token: 123 },
     { token_type: "oidc", token: "x".repeat(65537) },
   ])
-    expect(exchange(invalid)).rejects.toThrow()
+    expect(await Effect.runPromise(Effect.flip(exchange(invalid)))).toMatchObject({
+      _tag: "ReleaseError",
+      code:
+        invalid.token_type === "oidc" && typeof invalid.token === "string"
+          ? "npm-credential-token"
+          : "npm-data",
+    })
 })
 
 test("provenance creation owns exact statement bytes and rejects callback payload substitution", async () => {

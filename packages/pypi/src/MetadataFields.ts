@@ -105,7 +105,13 @@ export const uploadFields = (input: Map<string, string[]>, metadataVersion: stri
           if (!projectName.test(value)) invalid("metadata-extra")
           break
         case "description-content-type": {
-          const { type, parameters } = contentType(value)
+          let parsed: ReturnType<typeof contentType>
+          try {
+            parsed = contentType(value)
+          } catch {
+            return invalid("data")
+          }
+          const { type, parameters } = parsed
           const names = value.matchAll(/;\s*([^\s=;]+)\s*=\s*(?:"(?:[^"\\]|\\.)*"|[^;]*)/gu)
           const seen = new Set<string>()
           for (const match of names) {
@@ -122,7 +128,11 @@ export const uploadFields = (input: Map<string, string[]>, metadataVersion: stri
             const parts = /^([^']*)'[^']*'(.*)$/u.exec(encoded)
             const encodedValue = parts?.[2]
             if (encodedValue === undefined) return invalid("metadata-description-parameter")
-            parameters[field] = decodeURIComponent(encodedValue)
+            try {
+              parameters[field] = decodeURIComponent(encodedValue)
+            } catch {
+              return invalid("data")
+            }
           }
           if (
             !["text/plain", "text/x-rst", "text/markdown"].includes(type) ||

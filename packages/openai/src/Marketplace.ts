@@ -1,7 +1,16 @@
 import { Effect, Schema } from "effect"
 import type { Tree, ReadContent } from "@mannyc1/ts-release/bundle"
 import { isPublicText as publicText, PublicText, publicUrl } from "@mannyc1/ts-release/http"
-import { attempt, canonical, compare, inspectPackage, name, own, safePath } from "./Package.js"
+import {
+  attempt,
+  failure,
+  canonical,
+  compare,
+  inspectPackage,
+  name,
+  own,
+  safePath,
+} from "./Package.js"
 
 export const sourcePath = (value: string): boolean =>
   value.startsWith("./") && value.length > 2 && safePath(value.slice(2))
@@ -90,19 +99,19 @@ export const marketplace = Effect.fn("openai.marketplace")(function* (
   const plugin = yield* inspectPackage(input.plugin, readContent)
   const selected = yield* attempt("openai-marketplace", () => {
     if (
-      !publicText(input.marketplaceName, 128) ||
-      !publicText(input.displayName, 128) ||
-      !publicText(input.category, 64)
+      !publicText(Schema.decodeSync(Schema.String)(input.marketplaceName), 128) ||
+      !publicText(Schema.decodeSync(Schema.String)(input.displayName), 128) ||
+      !publicText(Schema.decodeSync(Schema.String)(input.category), 64)
     )
-      throw new Error("OpenAI marketplace input is invalid")
+      throw failure("openai-marketplace", "OpenAI value could not be admitted")
     if ((input.source === undefined) === (input.sourcePath === undefined))
-      throw new Error("Choose exactly one marketplace source or local sourcePath")
+      throw failure("openai-marketplace", "OpenAI value could not be admitted")
     const source = own(
       MarketplaceSource,
       input.source ?? { source: "local", path: input.sourcePath },
     )
     if (source.source !== "local" && (!source.sha || source.ref !== undefined))
-      throw new Error("New Git marketplace references require an exact commit sha, without ref")
+      throw failure("openai-marketplace", "OpenAI value could not be admitted")
     const entries = new Map(
       (input.existing === null ? [] : marketplaceDocument(input.existing).plugins).map((entry) => [
         entry.name,

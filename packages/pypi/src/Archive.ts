@@ -1,15 +1,7 @@
 import { gunzipSync, inflateRawSync, crc32 } from "node:zlib"
 import { readTarBytes, registerArchivePath } from "@mannyc1/ts-release/bundle"
-import { invalid, MAX_BYTES } from "./Native.js"
+import { invalid, MAX_BYTES, text } from "./Native.js"
 
-const text = (bytes: Uint8Array) => {
-  const decoder = new TextDecoder("utf-8", { fatal: true })
-  try {
-    return decoder.decode(bytes)
-  } catch {
-    return invalid("data")
-  }
-}
 const register = (seen: Set<string>, name: string) => {
   registerArchivePath(seen, name, name.endsWith("/"), () => invalid("archive-path"))
 }

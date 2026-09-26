@@ -146,7 +146,7 @@ export const definitions = (
       decodeResponse: Effect.fn("npm.decodeResponse")(function* (request, response) {
         const selected = yield* Native.attempt(() => ({
           ...Native.ownRequest(request),
-          status: response.status,
+          status: Native.own(Evidence.NativeFailure.fields.status, response.status),
         }))
         if (!Evidence.ownsRequest(descriptor.definitionId, selected))
           return yield* Native.reject(

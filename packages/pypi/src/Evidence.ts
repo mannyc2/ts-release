@@ -1,9 +1,9 @@
 import * as Schema from "effect/Schema"
 import { ErrorCodes, parse, type DefaultTreeAdapterTypes as Tree } from "parse5"
 import { RequestFacts, type Operation, type ObservationStatus } from "@mannyc1/ts-release"
-import { decodeJson, sameData, type HttpResponse } from "@mannyc1/ts-release/http"
+import { sameData, type HttpResponse } from "@mannyc1/ts-release/http"
 import { requestMatches } from "./Wire.js"
-import { invalid, object, own, readScope } from "./Native.js"
+import { invalid, matches, object, own, readScope, parseJson, text } from "./Native.js"
 import * as Model from "./Model.js"
 
 const sha256 = Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/u))
@@ -79,20 +79,28 @@ export const classifyObservation = (
     return "Conflict"
   return facet.sha256 === null ? "Inconclusive" : "Satisfied"
 }
+const filenameFrom = (url: URL): string => {
+  const component = url.pathname.split("/").at(-1) ?? ""
+  try {
+    return decodeURIComponent(component)
+  } catch {
+    return invalid("data")
+  }
+}
 const fileUrl = (input: unknown, base: string, filename: string) => {
   if (typeof input !== "string") return invalid("simple-file-url")
-  const url = new URL(input, base)
-  if (
-    url.protocol !== "https:" ||
-    url.username ||
-    url.password ||
-    decodeURIComponent(url.pathname.split("/").at(-1) ?? "") !== filename
-  )
+  let url: URL
+  try {
+    url = new URL(input, base)
+  } catch {
+    return invalid("data")
+  }
+  if (url.protocol !== "https:" || url.username || url.password || filenameFrom(url) !== filename)
     invalid("simple-file-url")
   return url
 }
 const jsonFacet = (intent: Model.UploadIntent, body: Uint8Array) => {
-  const page = object(decodeJson(body)),
+  const page = object(parseJson(body)),
     meta = object(page.meta)
   if (
     typeof meta["api-version"] !== "string" ||
@@ -135,7 +143,7 @@ const jsonFacet = (intent: Model.UploadIntent, body: Uint8Array) => {
   return selected ?? new Absent({})
 }
 const htmlFacet = (intent: Model.UploadIntent, body: Uint8Array) => {
-  const document = parse(new TextDecoder("utf-8", { fatal: true }).decode(body), {
+  const document = parse(text(body), {
     onParseError: (error) => {
       if (error.code === ErrorCodes.duplicateAttribute) invalid("simple-html-attribute")
     },
@@ -153,10 +161,14 @@ const htmlFacet = (intent: Model.UploadIntent, body: Uint8Array) => {
   const baseElements = elements.filter((node) => node.tagName === "base" && attrs(node).has("href"))
   if (baseElements.length > 1) invalid("simple-html-base")
   const [baseElement] = baseElements
-  const base = new URL(
-    baseElement === undefined ? "" : (attrs(baseElement).get("href") ?? ""),
-    `${intent.endpoint.simpleUrl}${intent.project}/`,
-  ).href
+  const baseInput = baseElement === undefined ? "" : (attrs(baseElement).get("href") ?? ""),
+    projectUrl = `${intent.endpoint.simpleUrl}${intent.project}/`
+  let base: string
+  try {
+    base = new URL(baseInput, projectUrl).href
+  } catch {
+    return invalid("data")
+  }
   const versions = elements.filter(
     (node) => node.tagName === "meta" && attrs(node).get("name") === "pypi:repository-version",
   )
@@ -172,7 +184,7 @@ const htmlFacet = (intent: Model.UploadIntent, body: Uint8Array) => {
     const name = content(node).trim(),
       attributes = attrs(node)
     const url = fileUrl(attributes.get("href"), base, name)
-    const filename = decodeURIComponent(url.pathname.split("/").at(-1) ?? "")
+    const filename = filenameFrom(url)
     if (seen.has(filename)) invalid("simple-filename")
     seen.add(filename)
     if (filename !== intent.filename) continue
@@ -192,7 +204,7 @@ export const observeResponse = (request: RequestFacts, response: HttpResponse) =
   let facet: SimpleObservation["facet"] = new Unavailable({ reason: "http-status" })
   if (code === 404) facet = new Absent({})
   else if (code === 200) {
-    try {
+    const admitted = matches(() => {
       if (response.body.length > 1024 * 1024) invalid("simple-bound")
       const contentTypes = Object.entries(response.headers).filter(
         ([key]) => key.toLowerCase() === "content-type",
@@ -207,9 +219,9 @@ export const observeResponse = (request: RequestFacts, response: HttpResponse) =
           : ["text/html", "application/vnd.pypi.simple.v1+html"].includes(type)
             ? htmlFacet(intent, response.body)
             : invalid("simple-content-type")
-    } catch {
-      facet = new Unavailable({ reason: "malformed-simple" })
-    }
+      return true
+    })
+    if (!admitted) facet = new Unavailable({ reason: "malformed-simple" })
   }
   return new SimpleObservation({ request, status: code, facet })
 }

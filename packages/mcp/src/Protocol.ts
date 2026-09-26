@@ -92,7 +92,8 @@ const Response = Schema.Struct({
   _meta: Schema.Struct({ "io.modelcontextprotocol.registry/official": Official }),
 })
 type Response = typeof Response.Type
-const response = (body: Uint8Array): Response => Model.own(Response, decodeJson(body))
+const response = (body: Uint8Array): Response =>
+  Model.own(Response, decodeJson(Model.text(body, "mcp-response")))
 const official = (value: Response) => value._meta["io.modelcontextprotocol.registry/official"]
 
 class Receipt extends Schema.Class<Receipt>("Mcp.PublishReceipt")({
@@ -186,25 +187,22 @@ export const definitions = (dependencies: {
         if (!ownsRequest(request))
           return yield* Model.reject("mcp-response-binding", "MCP response request is invalid")
         if (result.status !== 200) return unknown("MCP Registry did not acknowledge publication")
-        return yield* Effect.try({
-          try: () => {
-            const value = response(result.body),
-              selected = readScope(request.facts.scope),
-              metadata = official(value)
-            if (metadata.status !== "active" || !sameData(value.server, selected.manifest))
-              return unknown("MCP Registry returned different publication facts")
-            return {
-              _tag: "Accepted" as const,
-              receipt: new Receipt({
-                request: request.facts,
-                status: 200,
-                server: value.server,
-                registryStatus: "active",
-                isLatest: metadata.isLatest,
-              }),
-            }
-          },
-          catch: () => undefined,
+        return yield* Model.attempt("mcp-response", () => {
+          const value = response(result.body),
+            selected = readScope(request.facts.scope),
+            metadata = official(value)
+          if (metadata.status !== "active" || !sameData(value.server, selected.manifest))
+            return unknown("MCP Registry returned different publication facts")
+          return {
+            _tag: "Accepted" as const,
+            receipt: new Receipt({
+              request: request.facts,
+              status: 200,
+              server: value.server,
+              registryStatus: "active",
+              isLatest: metadata.isLatest,
+            }),
+          }
         }).pipe(
           Effect.orElseSucceed(() =>
             unknown("MCP Registry returned an unreadable publication response"),
@@ -226,25 +224,22 @@ export const definitions = (dependencies: {
         else if (result.status !== 200)
           evidence = inconclusive(request.facts, result.status, "http-status")
         else {
-          evidence = yield* Effect.try({
-            try: () => {
-              const value = response(result.body),
-                metadata = official(value)
-              if (
-                value.server.name !== selected.manifest.name ||
-                value.server.version !== selected.manifest.version
-              )
-                return inconclusive(request.facts, 200, "coordinate-mismatch")
-              else if (!sameData(value.server, selected.manifest))
-                return new Conflict({ request: request.facts, observed: value.server })
-              else
-                return new Exact({
-                  request: request.facts,
-                  server: value.server,
-                  registryStatus: metadata.status,
-                })
-            },
-            catch: () => undefined,
+          evidence = yield* Model.attempt("mcp-response", () => {
+            const value = response(result.body),
+              metadata = official(value)
+            if (
+              value.server.name !== selected.manifest.name ||
+              value.server.version !== selected.manifest.version
+            )
+              return inconclusive(request.facts, 200, "coordinate-mismatch")
+            else if (!sameData(value.server, selected.manifest))
+              return new Conflict({ request: request.facts, observed: value.server })
+            else
+              return new Exact({
+                request: request.facts,
+                server: value.server,
+                registryStatus: metadata.status,
+              })
           }).pipe(
             Effect.orElseSucceed(() => inconclusive(request.facts, 200, "malformed-response")),
           )

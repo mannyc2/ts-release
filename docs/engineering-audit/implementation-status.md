@@ -1,4 +1,60 @@
-# First implementation milestone
+# Implementation status
+
+## Current result — 2026-09-26
+
+The bounded W0–W7 implementation and owner review are complete locally on
+`codex/standards-continuation`, based on the selected published 0.4.2 main.
+[All 36 requirements](requirements-status.md) now have an explicit implementation,
+enforcement or compatibility/native exception. [All 41 inventoried capability
+shapes](final-capability-disposition.md) have an owner and disposition. This does
+not assert every supported operating system/runtime or live release has run.
+
+The research covers four verified adopters from a 46-repository census, with
+multiple incidents per repository, and all 86 Browserbase/Reactor clauses from
+their CONTRIBUTING/AGENTS/inherited instruction chains. See the
+[adopter audit](../adoption-audit/README.md), [peer standards audit](README.md),
+[requirements](requirements.md) and [incident-to-plan mapping](incident-to-plan.md).
+The historical source ledgers and plans remain snapshots rather than being
+rewritten to imply the implementations already existed.
+
+The final change provides the enforced Effect/compiler/import/contributor
+standards, owner-based schema/error policy, scoped composable execution and
+native settlement/cleanup. Adopter-facing work adds bounded observation without
+resend, retained-candidate execution with repaired archives, and actual npm/GitHub
+request preflight before the maintained authorized factory opens publication
+credentials. Git repositories from completed reads/builds are disposed during
+long sessions; failed cleanup stays observable. Maintained documentation
+separates the published 0.4.2 baseline from these unreleased checkout APIs.
+
+**Final qualification passed:** `bun run check`; **356 tests, zero failures,
+3,808 assertions**; eight-entry packed core and all seven provider archives with
+native transports; packed Action; ordinary/interrupted installed CLI/Action
+workflows; fresh installed starter; and refreshed physical repaired-executor
+admission of the unchanged original 0.4.1 candidate. The exact Linux/Node22/Bun
+inputs, archive hashes, stopped/corrected earlier stages and finite historical
+limits are in [final qualification](final-qualification.md).
+
+The remaining improvement ideas are specific and optional: consumer-owned
+exact-source CI reuse (the maintained workflow instead qualifies fresh or resumes
+an explicit digest-bound candidate), and simplifying Sigstore root bootstrap
+after a fresh-cache native signed-bundle proof. Existing Bundle/adoption/graph/
+starter owners cover archive handoff; no new generic release facade is justified.
+A historical dispatched successor is unavailable, so interrupted recovery of
+that particular old candidate remains unproven. Successful live signing,
+privileged hosted publication and other operating systems/runtime versions also
+remain separate qualification profiles.
+
+The final source commits are `6789c03` (native lifetime/fixture ownership) and
+`8fdfd49` (request preflight and maintained adoption docs), following the already
+recorded observation/executor commit `8d5bba`.
+
+All implementation descendants remain local. The only pushed checkpoint is the
+separately approved `ec25cbe0d29e72e0fe545bc33a3c3badc4a6c25f` on
+`codex/effect-patterns-refactor`. No release, merge, version bump or further push
+is part of this result. Original staged architecture work and local Effect
+research checkout are preserved.
+
+## Chronological first implementation milestone
 
 This is the implementation record for `codex/engineering-standards`, based on
 published 0.4.2 main, `fa50ce368c50e9a28a2e57f667d454374e7b209c`. The adjacent audits
@@ -83,7 +139,7 @@ edges. Both TypeScript 6 and the qualified TypeScript 7 confirmed this. The olde
 inventory's runtime-cycle method excluded inline all-type imports, so its empty
 cycle list alone was incomplete evidence; the current checker corrects that.
 
-## Remaining work
+## Historical remaining work at the first milestone
 
 - **W3:** provider `makeDataBoundary.attempt`/`admit`/`matches` still normalize
   unexpected exceptions. Core `attempt` is repaired in the subsequent increment

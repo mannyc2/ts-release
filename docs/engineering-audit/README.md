@@ -1,6 +1,6 @@
 # ts-release engineering audit and revised plan
 
-> Historical engineering research snapshot, captured on 2026-09-26 before the current implementation milestone. Baseline findings, counts and proposed work describe that captured state; they are not current completion claims. See [current implementation status](implementation-status.md) for the bounded milestone, actual verification and remaining work. These are task research documents, excluded from published packages.
+> Historical engineering research snapshot, captured on 2026-09-26 before the current implementation milestone. Baseline findings, counts and proposed work describe that captured state; they are not current completion claims. See [current implementation status](implementation-status.md) for the implementation, actual verification and explicit limits. These are task research documents, excluded from published packages.
 
 The previous review was too narrow. Three useful lifecycle/composition fixes and
 a passing behavioral suite did not establish adoption of the other repositories'
@@ -10,6 +10,10 @@ architecture rules, package boundaries and source-bound acceptance. That system
 is the subject of this audit.
 
 ## Read the result
+
+[Current implementation](implementation-status.md), [requirement disposition](requirements-status.md)
+and [final qualification](final-qualification.md) describe the completed local
+refactor and its finite limits. The sections below retain the research snapshot.
 
 1. [Requirements](requirements.md): 36 proposed ts-release requirements, with
    peer provenance and explicit adoption/exception decisions.
@@ -32,28 +36,28 @@ per-project rule, packaged-example, cleanup-failure and shared-build obligations
 
 ## Principal corrections to the earlier approach
 
-| Earlier assumption or omission | Evidence from this audit | Consequence for the plan |
-| --- | --- | --- |
-| Adding Effect.fn, scopes and one composable runner amounts to adopting standards. | Both peers enforce diagnostic/lint/compiler and dependency rules beyond those changes. | Establish and enforce a contributor contract before calling the migration complete; W1/W2. |
-| Existing notes already provide the standards entrypoint. | No ts-release CONTRIBUTING exists. The prior local AGENTS file is ignored by `.gitignore:11` and absent from tracked source. | Ship a deliberate tracked agent/contributor guide; do not rely on local ignored instructions. |
-| A strict TypeScript pass is enough for Effect code quality. | No Effect diagnostic or type-aware lint gate exists in the audited ts-release baseline; peer rules are blocking and tool patch state matters. | Qualify tools and actual rule execution, classify/fix diagnostics, retain narrow exceptions; W1. |
-| Existing import checks prove the intended architecture. | The checker globally ignores computed imports, does not enforce internal policy direction or reject runtime cycles, and tests are outside its source graph. | Extend the existing checker and per-host compiler closures; do not create a parallel architecture framework. |
-| The new runner solves failure-versus-defect handling. | Shared `attempt` still maps an unexpected TypeError to ReleaseError; shared `matches` turns it into false. Both were reproduced directly. | Audit and repair shared decoder/error boundaries by vertical slice, retaining privacy exceptions; W3. |
-| Schema-backed durable values mean external parsing is consistently schema-first. | Known remote object handling still includes manual shape discovery; assertion and unknown boundaries need owners. | Decode structured data where meaning is owned; preserve necessary canonical/lexical parsing and mutable input capture. |
-| More tests establish better adoption. | Both peer guidance chains prioritize test necessity, real workflow evidence and failure-first isolation. Prior additions include fs module interception and wall-clock sleeps needing review. | Review each proof obligation before retaining/adding machinery. Existing expensive failure protection is not deleted mechanically; W0/W2/W5. |
-| Published peer main is the only relevant normative source. | Reactor's local AGENTS, architecture/testing skills and modified CONTRIBUTING carry additional current instructions and differ from main. | Record local hashes/snapshots separately from commit permalinks and distinguish proposed policy from actual implementation. |
-| Native adapters should all be retained or all be replaced by platform services. | Peers prefer existing capabilities but preserve real native/framework boundaries. ts-release has exact-wire/no-replay/process and Action-instance constraints. | Evaluate each capability and required behavior. Keep justified exceptions; no blanket wrapper or runtime replacement. |
-| The incident backlog should become a larger regression matrix. | Historical failures overlap, several fixes already shipped, and current public APIs already support part of the proposed adoption path. | Map each finding to an existing owner and strongest proof; product increments target surviving friction, not duplicated features. |
+| Earlier assumption or omission                                                    | Evidence from this audit                                                                                                                                                                      | Consequence for the plan                                                                                                                     |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Adding Effect.fn, scopes and one composable runner amounts to adopting standards. | Both peers enforce diagnostic/lint/compiler and dependency rules beyond those changes.                                                                                                        | Establish and enforce a contributor contract before calling the migration complete; W1/W2.                                                   |
+| Existing notes already provide the standards entrypoint.                          | No ts-release CONTRIBUTING exists. The prior local AGENTS file is ignored by `.gitignore:11` and absent from tracked source.                                                                  | Ship a deliberate tracked agent/contributor guide; do not rely on local ignored instructions.                                                |
+| A strict TypeScript pass is enough for Effect code quality.                       | No Effect diagnostic or type-aware lint gate exists in the audited ts-release baseline; peer rules are blocking and tool patch state matters.                                                 | Qualify tools and actual rule execution, classify/fix diagnostics, retain narrow exceptions; W1.                                             |
+| Existing import checks prove the intended architecture.                           | The checker globally ignores computed imports, does not enforce internal policy direction or reject runtime cycles, and tests are outside its source graph.                                   | Extend the existing checker and per-host compiler closures; do not create a parallel architecture framework.                                 |
+| The new runner solves failure-versus-defect handling.                             | Shared `attempt` still maps an unexpected TypeError to ReleaseError; shared `matches` turns it into false. Both were reproduced directly.                                                     | Audit and repair shared decoder/error boundaries by vertical slice, retaining privacy exceptions; W3.                                        |
+| Schema-backed durable values mean external parsing is consistently schema-first.  | Known remote object handling still includes manual shape discovery; assertion and unknown boundaries need owners.                                                                             | Decode structured data where meaning is owned; preserve necessary canonical/lexical parsing and mutable input capture.                       |
+| More tests establish better adoption.                                             | Both peer guidance chains prioritize test necessity, real workflow evidence and failure-first isolation. Prior additions include fs module interception and wall-clock sleeps needing review. | Review each proof obligation before retaining/adding machinery. Existing expensive failure protection is not deleted mechanically; W0/W2/W5. |
+| Published peer main is the only relevant normative source.                        | Reactor's local AGENTS, architecture/testing skills and modified CONTRIBUTING carry additional current instructions and differ from main.                                                     | Record local hashes/snapshots separately from commit permalinks and distinguish proposed policy from actual implementation.                  |
+| Native adapters should all be retained or all be replaced by platform services.   | Peers prefer existing capabilities but preserve real native/framework boundaries. ts-release has exact-wire/no-replay/process and Action-instance constraints.                                | Evaluate each capability and required behavior. Keep justified exceptions; no blanket wrapper or runtime replacement.                        |
+| The incident backlog should become a larger regression matrix.                    | Historical failures overlap, several fixes already shipped, and current public APIs already support part of the proposed adoption path.                                                       | Map each finding to an existing owner and strongest proof; product increments target surviving friction, not duplicated features.            |
 
 ## Scope and reproducibility
 
 Remote main was rechecked during the research pass on 2026-09-26:
 
-| Repository | Published main read | Additional local authority |
-| --- | --- | --- |
-| ts-release | `fa50ce368c50e9a28a2e57f667d454374e7b209c`, 0.4.2 | Prior three-component patch in `.effect-pattern-refactor`; original architecture-program index preserved. |
-| effect-agent-browserbase | `7e93054494ee491dbf2a1f66a083d99da846fd3e` | Clean local `1f9efc74135434f4f54a390c11f88a4ec9a42bcf`; source ledger distinguishes changed implementation from unchanged normative docs. Pinned upstream guidance is part of its instruction chain. |
-| reactor-effect-client | `f821a9084cf51e9aac591388db0788cb90501bf0` | Local `b7e7448ae40af80b80258e1b638bf0277bdd1c65` plus uncommitted/untracked instructions/config. Local installed Effect rc.115 differs from main's rc.117 policy. |
+| Repository               | Published main read                               | Additional local authority                                                                                                                                                                           |
+| ------------------------ | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ts-release               | `fa50ce368c50e9a28a2e57f667d454374e7b209c`, 0.4.2 | Prior three-component patch in `.effect-pattern-refactor`; original architecture-program index preserved.                                                                                            |
+| effect-agent-browserbase | `7e93054494ee491dbf2a1f66a083d99da846fd3e`        | Clean local `1f9efc74135434f4f54a390c11f88a4ec9a42bcf`; source ledger distinguishes changed implementation from unchanged normative docs. Pinned upstream guidance is part of its instruction chain. |
+| reactor-effect-client    | `f821a9084cf51e9aac591388db0788cb90501bf0`        | Local `b7e7448ae40af80b80258e1b638bf0277bdd1c65` plus uncommitted/untracked instructions/config. Local installed Effect rc.115 differs from main's rc.117 policy.                                    |
 
 The ts-release inventory enumerates all **95 production TypeScript files** in
 the seven package source trees and Action/self-release applications, totaling
@@ -128,7 +132,7 @@ the previous refactor/reports and the initial requirements draft, with an explic
 `CHECKPOINT.md`; it is not an approved standards implementation. Later research
 documents were then local. This directory now preserves that research alongside the later implementation milestone; [current implementation status](implementation-status.md) owns its qualification and remaining work.
 
-## Current decisions and remaining implementation
+## Current decisions and implementation
 
 The [requirement status ledger](requirements-status.md) maps R01–R36 to current
 evidence and specific remaining owners. Use it with the implementation record;
@@ -153,6 +157,18 @@ the historical gap inventory above is not a current completion report.
   and shared structural provenance, retaining the existing checks and explicit
   cryptographic-trust limits.
 
-Registry visibility, repaired-executor recovery and whole-release request
-preflight remain the leading adopter product increments. Their motivating
-incidents and acceptance criteria remain in [the incident mapping](incident-to-plan.md).
+The leading adopter increments now have concrete implementations:
+[bounded observation](bounded-observation.md),
+[retained candidate / repaired executor](retained-executor.md) and
+[whole-release request preflight](request-preflight-implementation.md).
+Their motivating incidents remain in [the historical mapping](incident-to-plan.md).
+The [final capability disposition](final-capability-disposition.md) covers all
+41 inventoried capability shapes, including justified native/API exceptions.
+
+The last ownership corrections are documented at their actual owners:
+[HTTP and SQLite cleanup](native-cleanup-lifecycle.md),
+[completed Git repository lifetimes](git-repository-lifetimes.md),
+[native process fixture cancellation](native-process-test-lifecycle.md) and
+[CLI pipe fixture cancellation](cli-pipe-test-lifecycle.md).
+Use [the current requirement ledger](requirements-status.md) for completion and
+qualification limits; the historical inventories are not a new backlog.

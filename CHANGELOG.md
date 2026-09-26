@@ -23,6 +23,19 @@
 
 ## Unreleased
 
+### Effect application composition and resource ownership
+
+- Export `runApplicationEffect` from the Node and Bun subpaths. Effect hosts can
+  supply their own layers and runtime while retaining factory errors, service
+  requirements and scoped cleanup. The existing Promise adapter shares the
+  interpreter; synchronous factory throws now remain defects.
+- Scope file-content handles and temporary paths. Interruption waits for the
+  current native operation to settle, joins cleanup, and stops further work.
+- Preserve HTTP credential cancellation while redacting credential failures and
+  defects. Mixed causes containing interruption remain cancellation.
+- Document the Browserbase and Reactor Effect reviews and the standards adopted
+  from them, including their known exceptions.
+
 ### npm acknowledgement and host diagnostics
 
 - Accept any 2xx registry reply as npm's acknowledgement of the exact publish.

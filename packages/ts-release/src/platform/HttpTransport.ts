@@ -1,4 +1,5 @@
 import * as Effect from "effect/Effect"
+import * as Cause from "effect/Cause"
 import { validateHeaderName, validateHeaderValue } from "node:http"
 import type { Client, buildConnector } from "undici"
 import type { Socket } from "node:net"
@@ -79,7 +80,13 @@ const authorize = Effect.fn("http.authorize")(function* (
       }),
     ),
   ).pipe(
-    Effect.catchCause(() => reject("http-credentials", "HTTP credentials could not be acquired")),
+    Effect.catchCause((cause) =>
+      // Credential callbacks can contain secrets in either failures or defects.
+      // Redact those values, but cancellation must remain cancellation.
+      Cause.hasInterrupts(cause)
+        ? Effect.interrupt
+        : reject("http-credentials", "HTTP credentials could not be acquired"),
+    ),
   )
   return yield* attempt(() => {
     const live = headers(Object.entries(secret))

@@ -11,6 +11,7 @@ export {
   FinalizedReport,
   runInterruptibleProcess,
   runApplication,
+  runApplicationEffect,
 } from "./Node.js"
 export type {
   GitJournalOptions,

@@ -16,7 +16,13 @@ import {
 } from "@mannyc1/ts-release"
 import { HttpReceipt, corresponds } from "@mannyc1/ts-release/http"
 import { File, finalize, encodeBundle, loadBundle } from "@mannyc1/ts-release/bundle"
-import { fileContentOwner, runApplication, FinalizedReport } from "@mannyc1/ts-release/node"
+import {
+  fileContentOwner,
+  runApplication,
+  runApplicationEffect,
+  FinalizedReport,
+} from "@mannyc1/ts-release/node"
+import { createApplication } from "./application.mjs"
 
 const contentDirectory = await mkdtemp(join(tmpdir(), "packed-content-"))
 try {
@@ -119,6 +125,14 @@ assert.deepEqual(
   Schema.decodeUnknownSync(FinalizedReport)(JSON.parse(JSON.stringify(applicationReport))),
   applicationReport,
 )
+const effectLifecycle = []
+const applicationEffect = runApplicationEffect(createApplication, {
+  application: { bundle, host, options: { plan, authorize: true } },
+  lifecycle: effectLifecycle,
+})
+assert.deepEqual(effectLifecycle, [])
+assert.deepEqual(await Effect.runPromise(applicationEffect), applicationReport)
+assert.deepEqual(effectLifecycle, ["acquire", "release"])
 assert.equal(sends, 1)
 assert.equal(events.length, 2)
 console.log(

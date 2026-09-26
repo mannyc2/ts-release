@@ -94,11 +94,11 @@ for (const manager of ["bun", "npm"] as const) {
     "./http":
       'import { HttpReceipt, corresponds } from "@mannyc1/ts-release/http"; export { HttpReceipt, corresponds };',
     "./bun":
-      'import { openSqliteJournal, runApplication, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/bun"; export { openSqliteJournal, runApplication, FinalizedReport }; export type { Application, CreateApplication };',
+      'import { openSqliteJournal, runApplication, runApplicationEffect, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/bun"; export { openSqliteJournal, runApplication, runApplicationEffect, FinalizedReport }; export type { Application, CreateApplication };',
     "./bundle":
       'import { Bundle, finalize, loadBundle } from "@mannyc1/ts-release/bundle"; export { Bundle, finalize, loadBundle };',
     "./node":
-      'import { fileContentOwner, runApplication, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/node"; export { fileContentOwner, runApplication, FinalizedReport }; export type { Application, CreateApplication };',
+      'import { fileContentOwner, runApplication, runApplicationEffect, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/node"; export { fileContentOwner, runApplication, runApplicationEffect, FinalizedReport }; export type { Application, CreateApplication };',
   }
   for (const [entry, source] of Object.entries(declarations)) {
     await writeFile(join(cwd, "consumer.ts"), source)

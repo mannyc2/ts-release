@@ -1,7 +1,17 @@
 import { expect, test } from "bun:test"
-import { Effect, Schema } from "effect"
-import { runApplication, FinalizedReport } from "../../../packages/ts-release/src/Bun.js"
-import { finalize, encodeBundle } from "../../../packages/ts-release/src/Bundle.js"
+import { Cause, Context, Deferred, Effect, Exit, Fiber, Layer, Result, Schema } from "effect"
+import {
+  runApplication,
+  runApplicationEffect,
+  FinalizedReport,
+  type Application,
+  type CreateApplication,
+} from "../../../packages/ts-release/src/Bun.js"
+import {
+  finalize,
+  encodeBundle,
+  type AdoptionError,
+} from "../../../packages/ts-release/src/Bundle.js"
 import {
   createOperation,
   createPlan,
@@ -57,6 +67,140 @@ async function fixture() {
   }
   return { application, lifecycle: [] as string[], sends: () => sends }
 }
+
+class ApplicationFixture extends Context.Service<ApplicationFixture, Application>()(
+  "ts-release/test/ApplicationFixture",
+) {}
+class FixtureError extends Schema.TaggedError<FixtureError>()("FixtureError", {
+  message: Schema.String,
+}) {}
+type Equal<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false
+
+test("Effect application is lazy, composes factory layers and observes without dispatch", async () => {
+  const input = await fixture()
+  let constructions = 0
+  const create: CreateApplication<FixtureError, ApplicationFixture> = () => {
+    constructions++
+    return Effect.gen(function* () {
+      const app = yield* ApplicationFixture
+      yield* Effect.acquireRelease(
+        Effect.sync(() => input.lifecycle.push("acquire")),
+        () => Effect.sync(() => input.lifecycle.push("release")),
+      )
+      return app
+    })
+  }
+  const operation = runApplicationEffect(create, undefined, "observe")
+  const errorIsExact: Equal<
+    Effect.Error<typeof operation>,
+    FixtureError | ReleaseError | AdoptionError
+  > = true
+  const contextIsExact: Equal<Effect.Services<typeof operation>, ApplicationFixture> = true
+  expect([errorIsExact, contextIsExact]).toEqual([true, true])
+  expect(constructions).toBe(0)
+  expect(input.lifecycle).toEqual([])
+  const report = await Effect.runPromise(
+    operation.pipe(
+      Effect.provide(
+        Layer.effect(
+          ApplicationFixture,
+          Effect.acquireRelease(
+            Effect.sync(() => {
+              input.lifecycle.push("layer-acquire")
+              return input.application
+            }),
+            () => Effect.sync(() => input.lifecycle.push("layer-release")),
+          ),
+        ),
+      ),
+    ),
+  )
+  expect(constructions).toBe(1)
+  expect(input.lifecycle).toEqual(["layer-acquire", "acquire", "release", "layer-release"])
+  expect(input.sends()).toBe(0)
+  expect(report.plan).toEqual(input.application.options.plan)
+  expect(report.operations[0]?.dispatches).toBe(0)
+})
+
+for (const kind of ["failure", "defect"] as const) {
+  test(`Effect application preserves its factory ${kind} and closes acquired resources`, async () => {
+    const input = await fixture()
+    const problem =
+      kind === "failure" ? new FixtureError({ message: "failed" }) : new TypeError("bug")
+    const create: CreateApplication<FixtureError> = () =>
+      Effect.gen(function* () {
+        yield* Effect.acquireRelease(
+          Effect.sync(() => input.lifecycle.push("acquire")),
+          () => Effect.sync(() => input.lifecycle.push("release")),
+        )
+        return yield* problem instanceof FixtureError ? Effect.fail(problem) : Effect.die(problem)
+      })
+    const result = await Effect.runPromiseExit(runApplicationEffect(create, undefined))
+    expect(Exit.isFailure(result)).toBe(true)
+    if (Exit.isFailure(result)) {
+      const found =
+        kind === "failure" ? Cause.findError(result.cause) : Cause.findDefect(result.cause)
+      expect(Result.isSuccess(found) && found.success).toBe(problem)
+      expect(Cause.hasFails(result.cause)).toBe(kind === "failure")
+      expect(Cause.hasDies(result.cause)).toBe(kind === "defect")
+    }
+    expect(input.lifecycle).toEqual(["acquire", "release"])
+    expect(input.sends()).toBe(0)
+  })
+}
+
+test("Effect application defers construction throws and preserves the defect through caller cleanup", async () => {
+  const input = await fixture()
+  const defect = new TypeError("factory construction failed")
+  const create: CreateApplication = () => {
+    input.lifecycle.push("construct")
+    throw defect
+  }
+  const operation = runApplicationEffect(create, undefined)
+  expect(input.lifecycle).toEqual([])
+  const result = await Effect.runPromiseExit(
+    Effect.scoped(
+      Effect.gen(function* () {
+        yield* Effect.addFinalizer(() => Effect.sync(() => input.lifecycle.push("caller-release")))
+        return yield* operation
+      }),
+    ),
+  )
+  expect(Exit.isFailure(result)).toBe(true)
+  if (Exit.isFailure(result)) {
+    const found = Cause.findDefect(result.cause)
+    expect(Result.isSuccess(found) && found.success).toBe(defect)
+    expect(Cause.hasFails(result.cause)).toBe(false)
+  }
+  expect(input.lifecycle).toEqual(["construct", "caller-release"])
+  expect(input.sends()).toBe(0)
+})
+
+test("interrupting an Effect application joins its acquisition finalizers", async () => {
+  const input = await fixture()
+  const result = await Effect.runPromise(
+    Effect.gen(function* () {
+      const entered = yield* Deferred.make<void>()
+      const create: CreateApplication<never> = () =>
+        Effect.gen(function* () {
+          yield* Effect.acquireRelease(
+            Effect.sync(() => input.lifecycle.push("acquire")),
+            () => Effect.sync(() => input.lifecycle.push("release")),
+          )
+          yield* Deferred.succeed(entered, undefined)
+          return yield* Effect.never
+        })
+      const fiber = yield* runApplicationEffect(create, undefined).pipe(Effect.forkChild)
+      yield* Deferred.await(entered)
+      yield* Fiber.interrupt(fiber)
+      expect(input.lifecycle).toEqual(["acquire", "release"])
+      return yield* Fiber.await(fiber)
+    }),
+  )
+  expect(Exit.isFailure(result) && Cause.hasInterruptsOnly(result.cause)).toBe(true)
+  expect(input.sends()).toBe(0)
+})
 
 test("application emits the complete derived report and closes its scope", async () => {
   const input = await fixture()

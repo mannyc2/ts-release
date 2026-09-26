@@ -116,6 +116,9 @@ broader multi-provider preparation fixture is named `rehearsal.ts`.
 
 Read [design decisions](docs/design-decisions.md) for the recovery rationale and
 [plugin distribution](docs/skill-distribution.md) for catalog delivery.
+The [Effect standards](docs/effect-standards.md) document service composition,
+scoped ownership, interruption, callback types, and the consumer patterns adopted
+by this checkout.
 
 Upgrading from 0.3.1? Follow the [0.4 migration guide](docs/migration-0.4.md).
 Maintainers can prepare and publish the complete seven-package release using the

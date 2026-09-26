@@ -1,0 +1,142 @@
+# effect-agent-browserbase adoption audit
+
+Audited 2026-09-26. The initial consumer checkout was `b104a6be677b3d71dd7733115206ee56210d5aa2`, one local commit ahead of live `main`. A final GitHub check verified live `main` at [`7e93054494ee491dbf2a1f66a083d99da846fd3e`](https://github.com/mannyc2/effect-agent-browserbase/commit/7e93054494ee491dbf2a1f66a083d99da846fd3e), dated 2026-09-25 13:45:52 UTC. All `tools/`, workflows, repository documentation and release manifests are byte-identical between those commits; the local-only change concerns Browserbase usage examples and their runtime tests. Current-source links below use the verified live commit. The pins, line counts and documentation-drift findings therefore also apply to live main.
+
+Release implementation history, retained local Git journal/preparation refs, and live GitHub issues, PR metadata and Actions logs were inspected. The consumer checkout was not modified and no publication was attempted.
+
+This repository encountered **three distinct production defects in ts-release 0.4.0**: OIDC response decoding rejected successful authentication, the npm provider rejected successful asynchronous acknowledgements, and the CLI concealed the underlying failure. It also exposed separate integration costs: a large custom prepared-artifact store, duplicated release admission work, expensive validation orchestration, and manually maintained release-status documentation.
+
+The three engine defects were addressed by ts-release 0.4.1 and adopted in [consumer PR #65](https://github.com/mannyc2/effect-agent-browserbase/pull/65). They are regression requirements, not a claim that the same defects remain in current ts-release. Further opportunities below are distinguished from observed failures.
+
+## Adoption and observed release history
+
+The original adoption was [PR #35](https://github.com/mannyc2/effect-agent-browserbase/pull/35), merged on 2026-09-21 at 19:52 UTC as [`eb84d313`](https://github.com/mannyc2/effect-agent-browserbase/commit/eb84d313782c726a9a517f5affb61f50fb4cb32f). It replaced a direct publisher because a lost upload response followed by a registry 404 could cause that publisher to resend. The native npm provider plus durable Git journal was adopted specifically to preserve dispatch history across runners and stop absence from authorizing replay. This motivating flaw belongs to the previous consumer publisher, not ts-release.
+
+Initial versions were `@mannyc1/ts-release@0.4.0`, `@mannyc1/ts-release-npm@0.4.0`, and `effect@4.0.0-rc.115`. Current inspected pins are aligned ts-release packages at **0.4.1**, still with Effect rc.115. The isolated host uses **Node 22.22.2**, while the library's acceptance uses Node 24.14.1 and Bun 1.4.2. These are separate runtime boundaries. [Pinned manifest](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/package.json), [runtime configuration](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/src/config.ts#L8), [runbook](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/docs/RELEASING.md#L22).
+
+| Date, UTC | Consumer release / change | Evidence and outcome |
+| --- | --- | --- |
+| Sep 21 | Native 0.4.0 adoption | PR #35 merged. Native recovery tests passed even in the [initial overall failed CI run](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/35633700317); the separate unpaid-acceptance job failed. That overall failure is not evidence of a ts-release defect. |
+| Sep 21 | Release workflow acceleration | [PR #41](https://github.com/mannyc2/effect-agent-browserbase/pull/41) added reuse of exact-source full acceptance and changed a two-dispatch release procedure into one dispatch plus environment approval. |
+| Sep 22, 02:12 and 03:29 | `0.1.0-beta.103`, engine 0.4.0 | Both [run 35678639253](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/35678639253) and [run 35683317066](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/35683317066) failed. OIDC response rejected before upload; the tag remains unreleased. |
+| Sep 22, 04:10 | Patched engine | [PR #62](https://github.com/mannyc2/effect-agent-browserbase/pull/62) merged at `164a687a`, advancing the consumer to beta.104 and applying the upstream OIDC fix as a Bun patch to npm provider 0.4.0. |
+| Sep 22, 04:25–04:33 | `0.1.0-beta.104`, patched 0.4.0 | [First](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/35686839118) and [second](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/35687074515) dispatch failed with exit 2; [third](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/35687249221) succeeded. Two packages required three workflow dispatches. |
+| Sep 22, 15:49 | Unpatched engine 0.4.1 | [PR #65](https://github.com/mannyc2/effect-agent-browserbase/pull/65), merged as `e0df1e8c`, removed the patch and closed issue #63. |
+| Sep 23, 00:58 | `0.2.0-beta.0`, three-package graph | [Run 35804339098](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/35804339098) succeeded; all three journals contain accepted HTTP 202 receipts. |
+| Sep 25, 00:23 / 01:16 / 06:28 | `0.2.0-beta.1`, `.2`, `.3` | [Run 36077348733](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/36077348733), [run 36081327118](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/36081327118), and [run 36103014236](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/36103014236) succeeded. Each three-package journal contains one accepted HTTP 202 receipt per member. |
+
+The live GitHub `actions/runs?event=workflow_dispatch&per_page=100` result had 23 entries total, including all nine `npm release` runs in the table. Thus the four later releases each have one observed workflow dispatch in that listing. Run creation times above are not asserted to be npm public-visibility times.
+
+## Confirmed engine incidents
+
+### BB-1 — successful OIDC exchange rejected because timestamp metadata was treated as authorization
+
+**Observed:** `v0.1.0-beta.103` prepared and signed its archives, then failed before an npm upload. The registry returned HTTP 201 with an npm token, but 0.4.0 required `created` and `expires` fields to parse as dates and satisfy a lifetime check around the runner's clock. The successful exchange was rejected when that metadata did not satisfy the parser. [Consumer PR #62](https://github.com/mannyc2/effect-agent-browserbase/pull/62) describes the reconstructed cause and links [upstream fix #39](https://github.com/mannyc2/ts-release/pull/39).
+
+**Independent evidence:** the first publisher job's log ends at `2026-09-22T02:14:14Z` with the generic application-failed message and exit 1. Its exact source was `f4950bf401ce048992192bc8d7316c8a5a60ab52`. The retained journal contains **two `ObservationRecorded/Absent` events for effect-browserbase, and no `DispatchStarted` events** across the two attempts. See [first observation](https://github.com/mannyc2/effect-agent-browserbase/blob/f9fcfa8ff61a9d0ec77d362209c34a6877c9201d/event.json) and [second observation](https://github.com/mannyc2/effect-agent-browserbase/blob/ba1a530102e8ebf0bb7a42b2f19624b569ae15cb/event.json). The journal supports the no-upload conclusion but does not retain the credential exchange; that root cause comes from the incident PR and upstream diagnosis.
+
+**Consumer cost and workaround:** abandoned release tag beta.103, repeated dispatch, manual root-cause reconstruction, version bump to beta.104, and a temporary Bun patched dependency. [`73c3d6d7`](https://github.com/mannyc2/effect-agent-browserbase/commit/73c3d6d7c3fb6f066c543e5ae760865ad82d79a0) added the patch removing the two metadata fields and lifetime rejection while retaining the supported token path.
+
+**Status:** fixed upstream; consumer patch removed by [`030e1913`](https://github.com/mannyc2/effect-agent-browserbase/commit/030e1913673479a38f46dc6058e7c5ad2434f051), merged through PR #65. Subsequent authorized release runs succeeded with 0.4.1.
+
+**Improvement implication:** preserve this as a wire-contract regression. Test successful exchange variants against realistic redacted fixtures, distinguish credential-bearing fields from optional descriptive metadata, and classify credential rejection clearly. Offline publication recovery tests alone do not exercise real OIDC exchange contracts.
+
+### BB-2 — asynchronous publish acknowledgement became an uncertain dispatch
+
+**Observed:** beta.104 needed three workflow dispatches for two packages. Provider 0.4.0 accepted only HTTP 201 as acknowledgement. The registry accepted uploads asynchronously, but the provider classified the reply as unverifiable. The consumer's [issue #63](https://github.com/mannyc2/effect-agent-browserbase/issues/63), opened 2026-09-22 04:34 UTC, reports roughly 100 seconds before public visibility and describes the exact-201 condition.
+
+**Independent evidence:** the first and second publisher logs end at 04:26:56 and 04:30:45 with incomplete-publication guidance and exit 2. The durable journal records:
+
+| Order | Package | Native evidence |
+| --- | --- | --- |
+| 1 | effect-browserbase beta.104 | [Dispatch started](https://github.com/mannyc2/effect-agent-browserbase/blob/b89a3626e7d93214c229171428b3afda452ffb98/event.json), then [DispatchError / Inconclusive](https://github.com/mannyc2/effect-agent-browserbase/blob/425beb05bbbd427a4e254c7cde79f8b9bff7a32c/event.json) with `outcome-unknown`. |
+| 2 | effect-browserbase beta.104 | [Exact registry observation satisfied it](https://github.com/mannyc2/effect-agent-browserbase/blob/1477d78fe83b768c3f0c55f34d1f0c777bf1d5de/event.json). |
+| 3 | effect-agent-browserbase beta.104 | [Dispatch started](https://github.com/mannyc2/effect-agent-browserbase/blob/4677e4cd90a6197d0959cc9ef9b60f1d7422a40f/event.json), then [DispatchError / Inconclusive](https://github.com/mannyc2/effect-agent-browserbase/blob/115ae5c0692ed0e494b09b01b94f26683c90709b/event.json). |
+| 4 | effect-agent-browserbase beta.104 | [Exact registry observation satisfied it](https://github.com/mannyc2/effect-agent-browserbase/blob/d2969f74ba6e1b39d2acfab4e307473e009cc3fd/event.json); final workflow succeeded. |
+
+The retained dispatch-error events do not include the original rejected HTTP response status, so this audit does not infer that status from the journal. **Later 0.4.1 releases provide direct evidence of HTTP 202**, for example [beta.0's first receipt](https://github.com/mannyc2/effect-agent-browserbase/blob/1f0fffc091310dc4ed8c1c5d8492722dee82e6b6/event.json) and [beta.3's last receipt](https://github.com/mannyc2/effect-agent-browserbase/blob/bfa74aa04192c6a2fd2e7ca80045ef96867fc312/event.json). Testing only the HTTP 200 mentioned in the runbook would miss that observed variant.
+
+**What worked:** recovery preserved the original signed preparation and native Plan. Each package has exactly one `DispatchStarted`; reruns observed completion before releasing its dependents. There is no duplicate upload in the retained journal. The repeated workflow dispatches were an operational workaround, not replay of the unresolved PUT.
+
+**Status:** [upstream PR #40](https://github.com/mannyc2/ts-release/pull/40), shipped in 0.4.1 and adopted in PR #65, accepted successful 2xx acknowledgement. Four subsequent three-package releases completed in one observed dispatch each.
+
+**Improvement implication:** retain real 200/201/202 contract cases and make acknowledgement versus public visibility explicit in reports. Offer bounded observation when callers need installability or tag visibility, while preserving the rule that absence cannot authorize a resend. An accepted asynchronous request and an independently observed registry version are different evidence; whether both need separate public statuses is a design question, not an assertion that these later releases failed.
+
+### BB-3 — generic CLI failure obscured the real release error
+
+**Observed:** [issue #63](https://github.com/mannyc2/effect-agent-browserbase/issues/63) identifies `CommandLine.js` catching application failures and replacing their causes with generic guidance about the application module, input file, and journal access. The beta.103 [publisher log](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/35678639253/job/106590602537) independently confirms the generic message and exit 1, with no OIDC-specific cause.
+
+**Cost:** operators had to read journal state and engine source to distinguish a rejected authentication response from an application-loading, input, or Git access problem. This amplified BB-1 rather than causing an additional npm mutation. The issue suggested logging the local application's typed `ReleaseError` before the CLI discarded it; the chosen resolution was upstream instead.
+
+**Status:** consumer PR #65 explicitly records that engine 0.4.1 now prints the failing `ReleaseError` code and message. Issue #63 is closed as completed at 2026-09-22 15:49:59 UTC. This audit did not deliberately trigger a new production failure to test that diagnostic path.
+
+**Improvement implication:** preserve typed, credential-safe failure context throughout application loading, credential exchange, preparation, transport and journal persistence. Machine-readable failure results should survive failure before a normal publication report exists. Exit status and recovery advice should identify the failed phase and whether dispatch ever started, without including raw credentials or token responses.
+
+## Consumer integration findings
+
+### BB-4 — evidence reuse could block the full-validation fallback
+
+This was **a concrete defect found during pre-merge review of consumer orchestration**, not a recorded production ts-release failure. [PR #41](https://github.com/mannyc2/effect-agent-browserbase/pull/41) and fix [`c9918556`](https://github.com/mannyc2/effect-agent-browserbase/commit/c9918556fd4c5ee0d84b25d50c9160d42e716aff) document both causes:
+
+1. Full, focused-library, and documentation CI profiles all used the same acceptance-artifact naming pattern. The selector admitted a successful exact-commit run without checking its profile. A routine merge therefore yielded the wrong artifact, and verification rejected it with `Wrong acceptance profile`.
+2. Failed reuse caused GitHub's default job-success condition to skip the full build. An optimization prevented release instead of falling back.
+
+The fix requires the full-only digest step to have succeeded, treats lookup/download/verification failure as a reuse miss, and explicitly allows the full job to run when reuse fails. It added tests for focused profiles, missing step evidence and fallback. This is resolved in the inspected source: [selection](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release-reuse.mjs#L36), [workflow fallback](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/.github/workflows/publish.yml#L138), [tests](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/test/release-reuse.test.mjs#L66).
+
+**Product opportunity:** provide a maintained integration example or typed validation-evidence receipt carrying source, profile/stages, artifact identities and digests, with tested fallback behavior. A successful CI job or matching filename is not sufficient release evidence. Keep repository-specific acceptance policy configurable.
+
+### BB-5 — release validation was repeated for approximately an hour
+
+[PR #41](https://github.com/mannyc2/effect-agent-browserbase/pull/41) reports the prior procedure used two dispatches, each repeating a roughly 30-minute full gate, even when main had already validated the exact candidate. The consumer solved this with one dispatch plus protected-environment approval, and reuse of still-retained full-acceptance and release-host artifacts from the exact commit. PR runs are excluded because they validate merge candidates. Reuse rechecks source, full stage inventory and digests, then publishes those exact archives.
+
+This is historical **workflow friction**, not an engine algorithm defect. The desired reusable pattern is “prepare and verify once, approve the concrete candidate, execute the retained bytes.” Existing production logs show all five beta.103/beta.104 attempts successfully reused validation artifacts; their failures occurred later in the engine.
+
+### BB-6 — hand-maintained status prose trails authoritative release evidence
+
+At inspected HEAD, [STATUS](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/docs/STATUS.md#L3) and [RELEASING](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/docs/RELEASING.md#L5) list releases through beta.2. Live [beta.3 workflow 36103014236](https://github.com/mannyc2/effect-agent-browserbase/actions/runs/36103014236) succeeded on Sep 25, and its retained journal contains three accepted 202 receipts. The audit uses that stronger evidence rather than treating the prose as current publication truth. Registry availability was not independently probed in this audit.
+
+**Product opportunity:** a report or optional documentation generator could render a release ledger with source, package versions, preparation/journal references, workflow run, per-member outcome and observed visibility. Generating such data should not implicitly publish documentation or change source branches.
+
+The stale `latest` dist-tags reported by issue #63 are a related **release-policy fact, not an engine defect**: beta.102 had been published directly, while the adopted workflow deliberately moves `beta`. The runbook also records first-publication name reservations for the later graph. A preview should make old and intended dist-tags visible rather than assuming that a successful prerelease updates `latest`. [Dist-tag policy](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/docs/RELEASING.md#L52).
+
+## How this consumer uses ts-release
+
+The current release set is `effect-browser`, `effect-browserbase`, and `effect-agent-browser`. Both latter packages require the shared browser peer; the plan deliberately serializes the entire ordered set. ts-release remains isolated under `tools/release`, with its own frozen Bun lockfile and Effect version rather than becoming a public runtime dependency.
+
+1. Consumer-specific staging packs the complete coordinated set once and writes a version-2 `release-set.json`. It includes source SHA, coordinated version, framework version, release channel, names and archive identities. Whole-set verification rejects absent/reordered/mixed-source members. [Runbook](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/docs/RELEASING.md#L68).
+2. Read-only CI tests, builds and archives the release host plus its frozen dependencies. The archive is extracted again and its relocated application import and native CLI are smoke-tested. The privileged job verifies the archive hash and executes it without installing dependencies or running package lifecycle scripts. [Packaging script](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/scripts/pack.mjs#L8), [publisher](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/.github/workflows/publish.yml#L150).
+3. `Schema.Class` admits release input; host validation requires the enabled GitHub-hosted, exact repository/tag/SHA workflow identity before reading credentials or state. [Configuration](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/src/config.ts#L17), [runtime boundary](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/src/application.ts#L126).
+4. The host initializes Sigstore trust from the frozen `@sigstore/tuf` dependency's seed, verifies the candidate, restores an existing preparation or signs all members, and retains preparation before any npm upload. [Trust and preparation](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/src/application.ts#L41).
+5. Preparation uses native `fileContentOwner`, Bundle, `Npm.inspectTarball`, `Npm.createProvenance`, `PublishIntent`, `Npm.publish`, and `createPlan`. Every operation depends on all preceding members, beyond the minimum package graph. [Operation construction](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/src/prepared.ts#L182).
+6. A custom immutable Git branch stores Bundle, Plan and exactly their content-addressed bytes. The current three-member set permits nine files, with 128 MiB/file and 512 MiB total bounds. Conditional branch creation handles races; restoration reads flat Git objects without checking out remote paths. [Snapshot/restore](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/src/prepared.ts#L286), [custom store](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/src/state.ts#L230).
+7. Loading reconstructs the expected Plan from retained receipt/provenance and checks structural equality. It explicitly calls every native provider's `prepare` before live publication, so all provenance is admitted before the first member uploads. [Retained-plan admission](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/src/prepared.ts#L348).
+8. The shipped CLI owns execution, interruption, JSON reports and exit codes. `openGitJournal` supplies durable execution history in a separate branch. Npm credentials are supplied per operation with native GitHub OIDC authorization. `authorize: false` plus `--observe` restores existing state but refuses to create new preparation. [Application](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/src/application.ts#L127), [observation procedure](https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/docs/RELEASING.md#L58).
+
+This is substantial consumer infrastructure: **981 lines across four release-host source files**, **808 lines across three release test files**, plus a **233-line workflow**, **147-line reuse selector** and its **113-line test file** at inspected HEAD. Those counts include policy and validation that should remain consumer-owned; they are not an estimate of deletable code.
+
+## Improvement candidates from implementation evidence
+
+These are design opportunities against the consumer's pinned 0.4.1 integration. Check current ts-release capabilities before converting them into new implementation tasks.
+
+| Candidate | Concrete motivation | Suggested boundary / acceptance condition |
+| --- | --- | --- |
+| Prepared-release storage API and reference adapter | Native journaling exists, but the consumer maintains a 313-line custom Git snapshot store and separate snapshot/restore logic. | A serializable preparation containing native identities and bytes, immutable create-if-absent persistence, bounded restore, exact content membership, and no secret persistence. Support storage independently of execution journals. Test restart on a fresh runner and competing creators. |
+| Supported external-tarball / release-set adoption helper | The consumer already has canonical packed archives and a receipt; it reconstructs intents and repeats identity checks manually. | Accept already-tested tarballs, caller-declared source and release group, preserve the exact bytes, inspect identities, declare ordering, and return a reviewable Bundle/Plan. Keep custom export/dependency policy in a callback or consumer layer. |
+| Whole-plan preflight before the first write | The consumer invokes each provider's `prepare` itself to reject any invalid member's provenance before uploading earlier members. | A documented native preflight path should validate every member without obtaining npm credentials or dispatching writes, while preserving native provider validation at execution. |
+| Trusted-publishing bootstrap helper | The application derives host identity and manually resolves and extracts `@sigstore/tuf/seeds.json`. | Provide a supported default trust-initialization path and a typed host-context helper, leaving repository/tag/environment policy explicit. Avoid making consumers depend on transitive dependency file layouts. |
+| Reusable GitHub prepare/approve/publish example | BB-4 and BB-5 show both correctness and speed problems in bespoke workflow orchestration. | Demonstrate exact-source evidence reuse, frozen host artifacts, meaningful human approval after preparation, safe fallback, retained bytes/journal, and distinct observation/resume actions. |
+| Recovery diagnostics and release ledger | BB-3 forced source/journal archaeology; BB-6 shows documentation drift. | Explain failed phase, original preparation identity, dispatch state and allowed next action; distinguish accepted from independently observed. Produce a stable machine-readable report even for pre-execution failures where possible. |
+| Published conformance fixtures | Offline recovery suites passed while real OIDC and acknowledgement contracts failed. | Reusable redacted exchange/registry fixtures covering optional metadata, 200/201/202, delayed visibility, lost responses and exact observations. Assert one native dispatch per operation across restarts. |
+| Explicit ordering and group semantics | Current application serializes all three members, despite a graph where two depend only on the shared browser. | Distinguish package dependencies from deliberate release order; preview both and clearly state that npm provides no atomic multi-package transaction. |
+| Observation as an accessible workflow action | Current workflow input is only `publish`; the runbook's observation path requires assembling the same input and host identity manually. | Example workflow or CLI assistance should make read-only observation/recovery accessible using the original preparation, while refusing absent-state regeneration. This is usability analysis; no observed failed observation attempt was found. |
+
+The strongest patterns to retain are artifact identity as data, a separate approval boundary, immutable original preparation, native interruption/exit handling, exact-observation recovery, and no resend on absence. The beta.104 incident is production evidence that the durable no-replay design worked even when provider acknowledgement handling was wrong.
+
+## Evidence limits
+
+- Live evidence inspected: issue #63 and its empty comment list; PR #35/#62/#65 comments and PR #35/#41/#62/#65 metadata; the full 23-entry manual-run listing; beta.103 first-run jobs/logs and all three beta.104 publisher jobs/logs. Later run success is verified from the live listing and supported by retained journal receipts.
+- The exact source of every journal link was read from immutable local Git objects. Journal commit timestamps are normalized to 1970; incident chronology comes from event timestamps and Actions records, not those commit dates.
+- No credential payload was retrieved or reproduced. The OIDC response shape diagnosis relies on the consumer incident record and linked upstream fix; journal evidence independently establishes no upload.
+- Approximately 100 seconds to public visibility is the original issue author's observation, not remeasured here. Accepted 202 receipts prove acknowledgement under the engine's contract, not an independent check of current npm visibility.
+- Existing tests and their historical CI outcomes were reviewed; tests were not rerun for this documentation-only audit. Offline suites explicitly exclude live npm permissions, OIDC exchange and Sigstore signing.
+- No current npm account settings, branch protections, first-publication permissions, or registry dist-tags were changed or independently validated. Their documented requirements are integration context, not newly discovered failures.

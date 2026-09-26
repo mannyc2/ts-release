@@ -1,0 +1,638 @@
+{
+  "auditedAt": "2026-09-26",
+  "scope": "Accessible mannyc2 repositories and local /mnt/models/dev checkouts; adopter history June–September 2026",
+  "workspaceHead": "9b14c6c14aec5c5a41b2cb0f98d6f1c63bca4d3d",
+  "tsReleaseRemoteHead": "fa50ce368c50e9a28a2e57f667d454374e7b209c",
+  "verifiedConsumerHeads": {
+    "mannyc2/effect-agent-browserbase": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+    "mannyc2/reactor-effect-client": "f821a9084cf51e9aac591388db0788cb90501bf0",
+    "mannyc2/effect-build": "25e0053ab5a2c7c8477050b1cc483a266ed78670",
+    "mannyc2/nyc-transit-kit": "9fbc3c11c66d6e4e9ec47f52a4ea936e99e375cd"
+  },
+  "discovery": {
+    "githubRepositoryQuery": "user:mannyc2",
+    "returnedRepositoryCount": 46,
+    "returnedRepositories": [
+      "mannyc2/CSC311_Producer_Consumer_Lab",
+      "mannyc2/DataSimpleStoreDemo",
+      "mannyc2/DefiLlama-Discord",
+      "mannyc2/Extras",
+      "mannyc2/Girlfrens",
+      "mannyc2/Senior-Project-cloudflare",
+      "mannyc2/StableDiscord",
+      "mannyc2/bcs377-hackathon",
+      "mannyc2/better-auth-tempo",
+      "mannyc2/bun-doctor",
+      "mannyc2/bus-priority-impact-studio",
+      "mannyc2/cabal-workers",
+      "mannyc2/claude-skills",
+      "mannyc2/cloudflare-proxy",
+      "mannyc2/damm-v2-sdk",
+      "mannyc2/dynamic-bonding-curve-sdk",
+      "mannyc2/effect-agent-browserbase",
+      "mannyc2/effect-build",
+      "mannyc2/erc404",
+      "mannyc2/final-project",
+      "mannyc2/generative-town",
+      "mannyc2/grip",
+      "mannyc2/homebrew-ts-release",
+      "mannyc2/hp-printer-app",
+      "mannyc2/instruction-parser",
+      "mannyc2/liche",
+      "mannyc2/mannyc2.github.io",
+      "mannyc2/memebank",
+      "mannyc2/mta-wiki",
+      "mannyc2/nyc-transit-kit",
+      "mannyc2/nycustodianexam",
+      "mannyc2/ocr-benchmark",
+      "mannyc2/open-design-cli",
+      "mannyc2/pi-agent-effect",
+      "mannyc2/plato-wiki",
+      "mannyc2/quiz-app",
+      "mannyc2/reactor-effect-client",
+      "mannyc2/recover-deterministic-architecture",
+      "mannyc2/scoop-ts-release",
+      "mannyc2/set-visualizer",
+      "mannyc2/solana-txn-parser",
+      "mannyc2/solclash",
+      "mannyc2/straussian-llm-wiki-private-archive",
+      "mannyc2/the-show",
+      "mannyc2/ts-release",
+      "mannyc2/watchify-app"
+    ],
+    "localScan": "rg of package/release/workflow/source/docs files under /mnt/models/dev; excluded dependencies, Git internals, research checkouts and binary outputs; duplicate worktrees collapsed",
+    "codeSearchLimitation": "GitHub code search returned only reactor-effect-client despite separately verified matches in other repositories; not treated as a complete census",
+    "commitSearch": "\"ts-release\" author:mannyc2",
+    "issueSearch": "user:mannyc2 \"ts-release\""
+  },
+  "confirmedAdopters": [
+    "mannyc2/effect-agent-browserbase",
+    "mannyc2/reactor-effect-client",
+    "mannyc2/effect-build",
+    "mannyc2/nyc-transit-kit"
+  ],
+  "exclusions": [
+    {
+      "repository": "mannyc2/plato-wiki",
+      "reason": "Explicitly assessed and deferred adoption; neither release/build library is a dependency."
+    },
+    {
+      "repository": "audint-kit (local)",
+      "reason": "SPEC describes future binary distribution following nyc-transit-kit; no implemented adoption found."
+    },
+    {
+      "repository": "mannyc2/homebrew-ts-release",
+      "reason": "Distribution output repository for ts-release itself, not an independent adopter; manifest remains 0.0.7."
+    },
+    {
+      "repository": "mannyc2/scoop-ts-release",
+      "reason": "Distribution output repository for ts-release itself, not an independent adopter; manifest remains 0.0.7."
+    },
+    {
+      "repository": "mannyc2/liche",
+      "reason": "Inspected manifest/tree uses its own @liche/releases; search result is not evidence of ts-release adoption."
+    },
+    {
+      "repository": "mannyc2/open-design-cli",
+      "reason": "Manifest has no ts-release; release-beta workflow is a placeholder."
+    },
+    {
+      "repository": "mannyc2/bun-doctor",
+      "reason": "Prototype manifest has no ts-release; no release integration in inspected tree."
+    },
+    {
+      "repository": "mannyc2/pi-agent-effect",
+      "reason": "Manifest has no ts-release; no release integration in inspected tree."
+    },
+    {
+      "repository": "other local text matches",
+      "reason": "Unrelated results-release strings, corpus content, dependency records, and duplicate worktrees."
+    }
+  ],
+  "nycTransitKit": {
+    "head": "9fbc3c11c66d6e4e9ec47f52a4ea936e99e375cd",
+    "issuesAndPrsReturned": 7,
+    "workflowRunCount": 54,
+    "workflowRuns": [
+      {
+        "id": 28753111564,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28753111564",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-07-05T20:00:26Z",
+        "headSha": "9fbc3c11c66d6e4e9ec47f52a4ea936e99e375cd",
+        "attempt": 1
+      },
+      {
+        "id": 28753111552,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28753111552",
+        "name": "Release",
+        "conclusion": "success",
+        "createdAt": "2026-07-05T20:00:26Z",
+        "headSha": "9fbc3c11c66d6e4e9ec47f52a4ea936e99e375cd",
+        "attempt": 1
+      },
+      {
+        "id": 28753066435,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28753066435",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-07-05T19:58:53Z",
+        "headSha": "3b5fd30ebb7d743cf2ecb566950051cf8d6ec54b",
+        "attempt": 1
+      },
+      {
+        "id": 28753066394,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28753066394",
+        "name": "Release Plan",
+        "conclusion": "success",
+        "createdAt": "2026-07-05T19:58:53Z",
+        "headSha": "3b5fd30ebb7d743cf2ecb566950051cf8d6ec54b",
+        "attempt": 1
+      },
+      {
+        "id": 28750528843,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28750528843",
+        "name": "Release",
+        "conclusion": "success",
+        "createdAt": "2026-07-05T18:25:01Z",
+        "headSha": "a1586b33e1b7fe8db34b7e65867650f495e638f6",
+        "attempt": 1
+      },
+      {
+        "id": 28750477383,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28750477383",
+        "name": "Release",
+        "conclusion": "failure",
+        "createdAt": "2026-07-05T18:23:04Z",
+        "headSha": "a1586b33e1b7fe8db34b7e65867650f495e638f6",
+        "attempt": 1
+      },
+      {
+        "id": 28750356624,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28750356624",
+        "name": "Release",
+        "conclusion": "failure",
+        "createdAt": "2026-07-05T18:18:37Z",
+        "headSha": "a1586b33e1b7fe8db34b7e65867650f495e638f6",
+        "attempt": 1
+      },
+      {
+        "id": 28750356621,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28750356621",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-07-05T18:18:37Z",
+        "headSha": "a1586b33e1b7fe8db34b7e65867650f495e638f6",
+        "attempt": 1
+      },
+      {
+        "id": 28750305815,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28750305815",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-07-05T18:16:43Z",
+        "headSha": "7c5a271a96ac76cee0a5003959071a3f0ea162b6",
+        "attempt": 1
+      },
+      {
+        "id": 28750305806,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28750305806",
+        "name": "Release Plan",
+        "conclusion": "success",
+        "createdAt": "2026-07-05T18:16:43Z",
+        "headSha": "7c5a271a96ac76cee0a5003959071a3f0ea162b6",
+        "attempt": 1
+      },
+      {
+        "id": 28741728687,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28741728687",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-07-05T13:04:15Z",
+        "headSha": "8ea2c166f8b75539fd1333dfa1dd2cb115f672e6",
+        "attempt": 1
+      },
+      {
+        "id": 28741728685,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28741728685",
+        "name": "Release",
+        "conclusion": "success",
+        "createdAt": "2026-07-05T13:04:15Z",
+        "headSha": "8ea2c166f8b75539fd1333dfa1dd2cb115f672e6",
+        "attempt": 1
+      },
+      {
+        "id": 28671355494,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28671355494",
+        "name": "Release",
+        "conclusion": "success",
+        "createdAt": "2026-07-03T15:59:34Z",
+        "headSha": "72ccde70de6856d16719aa62247a4deab9c7fe2b",
+        "attempt": 1
+      },
+      {
+        "id": 28671355488,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28671355488",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-07-03T15:59:34Z",
+        "headSha": "72ccde70de6856d16719aa62247a4deab9c7fe2b",
+        "attempt": 1
+      },
+      {
+        "id": 28671281553,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28671281553",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-07-03T15:57:53Z",
+        "headSha": "c34af5b57bd309c59dbba259d2893d195ffe6e9a",
+        "attempt": 1
+      },
+      {
+        "id": 28671281513,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28671281513",
+        "name": "Release Plan",
+        "conclusion": "success",
+        "createdAt": "2026-07-03T15:57:53Z",
+        "headSha": "c34af5b57bd309c59dbba259d2893d195ffe6e9a",
+        "attempt": 1
+      },
+      {
+        "id": 28664409528,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28664409528",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-07-03T13:42:25Z",
+        "headSha": "8c2b2f674f1294fba6737c2e26db00046f038ec1",
+        "attempt": 1
+      },
+      {
+        "id": 28664409511,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28664409511",
+        "name": "Release",
+        "conclusion": "success",
+        "createdAt": "2026-07-03T13:42:25Z",
+        "headSha": "8c2b2f674f1294fba6737c2e26db00046f038ec1",
+        "attempt": 1
+      },
+      {
+        "id": 28642636424,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28642636424",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-07-03T06:23:47Z",
+        "headSha": "7e4a76ff45e41b127fbfae398bc38e9b4eb49777",
+        "attempt": 1
+      },
+      {
+        "id": 28642636415,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28642636415",
+        "name": "Release Plan",
+        "conclusion": "success",
+        "createdAt": "2026-07-03T06:23:46Z",
+        "headSha": "7e4a76ff45e41b127fbfae398bc38e9b4eb49777",
+        "attempt": 1
+      },
+      {
+        "id": 28466165520,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28466165520",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-30T18:14:09Z",
+        "headSha": "e0f2ebe514955e9e375ddec894da231ca1cda25c",
+        "attempt": 1
+      },
+      {
+        "id": 28466165516,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28466165516",
+        "name": "Release",
+        "conclusion": "success",
+        "createdAt": "2026-06-30T18:14:09Z",
+        "headSha": "e0f2ebe514955e9e375ddec894da231ca1cda25c",
+        "attempt": 1
+      },
+      {
+        "id": 28466050336,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28466050336",
+        "name": "Release Plan",
+        "conclusion": "success",
+        "createdAt": "2026-06-30T18:12:15Z",
+        "headSha": "44631658264ed4629ce0ccb7aaa2f10545acca67",
+        "attempt": 1
+      },
+      {
+        "id": 28466050331,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28466050331",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-30T18:12:15Z",
+        "headSha": "44631658264ed4629ce0ccb7aaa2f10545acca67",
+        "attempt": 1
+      },
+      {
+        "id": 28382265752,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28382265752",
+        "name": "Release",
+        "conclusion": "success",
+        "createdAt": "2026-06-29T15:11:03Z",
+        "headSha": "82e3a698bb2048f01d089f2a7545da38a906edf9",
+        "attempt": 2
+      },
+      {
+        "id": 28382265691,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28382265691",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-29T15:11:03Z",
+        "headSha": "82e3a698bb2048f01d089f2a7545da38a906edf9",
+        "attempt": 1
+      },
+      {
+        "id": 28382161278,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28382161278",
+        "name": "Release Plan",
+        "conclusion": "success",
+        "createdAt": "2026-06-29T15:09:30Z",
+        "headSha": "819b681cf28382558bd28d84fade6c971a879bd2",
+        "attempt": 1
+      },
+      {
+        "id": 28382160911,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28382160911",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-29T15:09:29Z",
+        "headSha": "819b681cf28382558bd28d84fade6c971a879bd2",
+        "attempt": 1
+      },
+      {
+        "id": 28381744415,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28381744415",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-29T15:03:16Z",
+        "headSha": "00ef1fc208762f37538de52fe25d36df26cd535e",
+        "attempt": 1
+      },
+      {
+        "id": 28381744285,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28381744285",
+        "name": "Release",
+        "conclusion": "failure",
+        "createdAt": "2026-06-29T15:03:16Z",
+        "headSha": "00ef1fc208762f37538de52fe25d36df26cd535e",
+        "attempt": 1
+      },
+      {
+        "id": 28373780881,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28373780881",
+        "name": "Release",
+        "conclusion": "success",
+        "createdAt": "2026-06-29T12:59:17Z",
+        "headSha": "89c4cbb2962b78d239c76e2e4e1aa74585a67800",
+        "attempt": 1
+      },
+      {
+        "id": 28373780880,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/28373780880",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-29T12:59:17Z",
+        "headSha": "89c4cbb2962b78d239c76e2e4e1aa74585a67800",
+        "attempt": 1
+      },
+      {
+        "id": 27977510114,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27977510114",
+        "name": "Release",
+        "conclusion": "success",
+        "createdAt": "2026-06-22T19:12:51Z",
+        "headSha": "6d95668ee60e944e26938d89f872ad41bb0f25d5",
+        "attempt": 1
+      },
+      {
+        "id": 27977510107,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27977510107",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-22T19:12:51Z",
+        "headSha": "6d95668ee60e944e26938d89f872ad41bb0f25d5",
+        "attempt": 1
+      },
+      {
+        "id": 27977420476,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27977420476",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-22T19:11:11Z",
+        "headSha": "e2c517a562e946acc8139031aa6c83334def85a8",
+        "attempt": 1
+      },
+      {
+        "id": 27977420410,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27977420410",
+        "name": "Release",
+        "conclusion": "failure",
+        "createdAt": "2026-06-22T19:11:11Z",
+        "headSha": "e2c517a562e946acc8139031aa6c83334def85a8",
+        "attempt": 1
+      },
+      {
+        "id": 27976460653,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27976460653",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-22T18:54:36Z",
+        "headSha": "9b8878d6980ca64876883296aba2979be3ba07fd",
+        "attempt": 1
+      },
+      {
+        "id": 27974394017,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27974394017",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-22T18:18:55Z",
+        "headSha": "91320bcef71d79ca7416b77467a311298444e9a5",
+        "attempt": 1
+      },
+      {
+        "id": 27884272665,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27884272665",
+        "name": "Release Dry Run",
+        "conclusion": "success",
+        "createdAt": "2026-06-20T21:22:59Z",
+        "headSha": "f271c5a397e973aa3bd3ba60fb562e34820a3b64",
+        "attempt": 1
+      },
+      {
+        "id": 27883173593,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27883173593",
+        "name": "Release Dry Run",
+        "conclusion": "success",
+        "createdAt": "2026-06-20T20:36:54Z",
+        "headSha": "f271c5a397e973aa3bd3ba60fb562e34820a3b64",
+        "attempt": 1
+      },
+      {
+        "id": 27883142725,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27883142725",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-20T20:35:37Z",
+        "headSha": "f271c5a397e973aa3bd3ba60fb562e34820a3b64",
+        "attempt": 1
+      },
+      {
+        "id": 27882978486,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27882978486",
+        "name": "Release Dry Run",
+        "conclusion": "success",
+        "createdAt": "2026-06-20T20:28:58Z",
+        "headSha": "273c96bd7e3250ec9fa0099aa1e69b8aea88c973",
+        "attempt": 1
+      },
+      {
+        "id": 27882974479,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27882974479",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-20T20:28:47Z",
+        "headSha": "273c96bd7e3250ec9fa0099aa1e69b8aea88c973",
+        "attempt": 1
+      },
+      {
+        "id": 27882929221,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27882929221",
+        "name": "Release Dry Run",
+        "conclusion": "failure",
+        "createdAt": "2026-06-20T20:26:49Z",
+        "headSha": "2a49e1e8371ffa1acba8bf5376d06795194af94f",
+        "attempt": 1
+      },
+      {
+        "id": 27882925039,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27882925039",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-20T20:26:38Z",
+        "headSha": "2a49e1e8371ffa1acba8bf5376d06795194af94f",
+        "attempt": 1
+      },
+      {
+        "id": 27882877635,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27882877635",
+        "name": "Release Dry Run",
+        "conclusion": "failure",
+        "createdAt": "2026-06-20T20:24:41Z",
+        "headSha": "58f9ad696bf523a371baff7ecf4d7e1529270280",
+        "attempt": 1
+      },
+      {
+        "id": 27882832797,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27882832797",
+        "name": "Release Dry Run",
+        "conclusion": "failure",
+        "createdAt": "2026-06-20T20:22:49Z",
+        "headSha": "58f9ad696bf523a371baff7ecf4d7e1529270280",
+        "attempt": 1
+      },
+      {
+        "id": 27882801828,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27882801828",
+        "name": "Release Dry Run",
+        "conclusion": "success",
+        "createdAt": "2026-06-20T20:21:33Z",
+        "headSha": "58f9ad696bf523a371baff7ecf4d7e1529270280",
+        "attempt": 1
+      },
+      {
+        "id": 27882800201,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27882800201",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-20T20:21:29Z",
+        "headSha": "58f9ad696bf523a371baff7ecf4d7e1529270280",
+        "attempt": 1
+      },
+      {
+        "id": 27882743536,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27882743536",
+        "name": "Release Dry Run",
+        "conclusion": "failure",
+        "createdAt": "2026-06-20T20:19:12Z",
+        "headSha": "8db6d8b87c3406e094b866d6634fe6d2ae7e3129",
+        "attempt": 1
+      },
+      {
+        "id": 27882737053,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27882737053",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-20T20:18:56Z",
+        "headSha": "8db6d8b87c3406e094b866d6634fe6d2ae7e3129",
+        "attempt": 1
+      },
+      {
+        "id": 27691870743,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27691870743",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-17T13:18:30Z",
+        "headSha": "c7139a0bcf2855bd79dcb1b4975ac7dc4c11c1d2",
+        "attempt": 1
+      },
+      {
+        "id": 27690394749,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27690394749",
+        "name": "Release Dry Run",
+        "conclusion": "failure",
+        "createdAt": "2026-06-17T12:53:50Z",
+        "headSha": "5a60242ee790539caeace4113e1271d632f3856c",
+        "attempt": 1
+      },
+      {
+        "id": 27690317813,
+        "url": "https://github.com/mannyc2/nyc-transit-kit/actions/runs/27690317813",
+        "name": "CI",
+        "conclusion": "success",
+        "createdAt": "2026-06-17T12:52:32Z",
+        "headSha": "5a60242ee790539caeace4113e1271d632f3856c",
+        "attempt": 1
+      }
+    ],
+    "examinedLogs": [
+      {
+        "jobId": 85248287606,
+        "status": "available"
+      },
+      {
+        "jobId": 85248526975,
+        "status": "available"
+      },
+      {
+        "jobId": 84085876539,
+        "status": "available"
+      }
+    ],
+    "unavailableLogs": [
+      {
+        "jobId": 82798616456,
+        "status": "HTTP 410"
+      },
+      {
+        "jobId": 82512987753,
+        "status": "HTTP 410"
+      },
+      {
+        "jobId": 82513458102,
+        "status": "HTTP 410"
+      },
+      {
+        "jobId": 81899598648,
+        "status": "HTTP 410"
+      }
+    ]
+  },
+  "actionsPerformed": "Read-only GitHub/source/history inspection and documentation writes in ts-release. No release executions or consumer modifications."
+}

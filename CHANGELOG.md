@@ -34,6 +34,9 @@
 - Join issued native content operations before interruption completes. File
   handles close before immutable installation, and owned temporary files are
   removed on failure or interruption. Cleanup failures remain observable.
+- Join self-release file reads through handle closure and issued native Sigstore
+  verification through SDK settlement before interruption completes. Native calls
+  that never settle can still delay cancellation.
 - Preserve defects thrown by complete-plan provider validators. Intentional
   `ReleaseError` refusals retain their fields across package constructors; schema
   refusals retain safe admission diagnostics before any external operation.

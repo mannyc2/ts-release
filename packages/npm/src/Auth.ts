@@ -266,6 +266,8 @@ export const makeSigstoreVerifier = (input: SigstoreTrustOptions): Model.VerifyP
     })
     const identity = `^${`${source.serverUrl}/${source.repository}/${source.workflow}@${source.workflowRef}`.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}$`
     yield* nativeSigstoreRuntime
+    // The pinned SDK has no cancellation API. Join its issued TUF/cache work
+    // before restoring interruption; a stuck native call still delays cleanup.
     const signer = yield* Effect.tryPromise({
       try: () =>
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- validateProvenance admits this exact raw JSON with bundleFromJSON; preserve its canonical representation for the pinned SDK.
@@ -279,7 +281,7 @@ export const makeSigstoreVerifier = (input: SigstoreTrustOptions): Model.VerifyP
         }),
       catch: () =>
         Native.failure("npm-sigstore-verify", "Sigstore native trust verification failed"),
-    })
+    }).pipe(Effect.uninterruptible)
     // Fulcio's verified DER UTF8 extensions bind the signed source to its CI
     // identity, including the immutable commit and exact workflow invocation.
     yield* Native.attempt(() => {

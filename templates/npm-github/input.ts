@@ -6,6 +6,8 @@ import { Schema as Schema3 } from "effect";
 import { Schema as Schema2 } from "effect";
 
 // apps/self-release/src/Model.ts
+import { constants } from "fs";
+import { open } from "fs/promises";
 import { Effect, Schema } from "effect";
 import { ReleaseError } from "@mannyc1/ts-release";
 import * as GitHub from "@mannyc1/ts-release-github";
@@ -102,6 +104,22 @@ class ApplicationInput extends Schema.Class("Release.ApplicationInput")({
   timeoutMilliseconds: Schema.optionalKey(positive)
 }) {
 }
+var failure = (code, message) => new ReleaseError({ code: `release-application-${code}`, message });
+var io = (subject, body) => Effect.tryPromise({
+  try: body,
+  catch: () => failure(subject, `Release ${subject} could not be read or retained`)
+});
+var readIo = (body) => io("file", body).pipe(Effect.uninterruptible);
+var fileFailure = () => failure("file", "Release file could not be read or retained");
+var read = Effect.fn("release.read")((path, maximumBytes = 32 * 1024 * 1024) => Effect.acquireUseRelease(readIo(() => open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)), (handle) => Effect.gen(function* () {
+  const stat = yield* readIo(() => handle.stat());
+  if (!stat.isFile() || stat.size > maximumBytes)
+    return yield* fileFailure();
+  const bytes = yield* readIo(() => handle.readFile());
+  if (bytes.length !== stat.size)
+    return yield* fileFailure();
+  return new Uint8Array(bytes);
+}), (handle) => readIo(() => handle.close())));
 
 // scripts/ReleaseMetadata.ts
 var CandidateIdentity = Schema2.Struct({

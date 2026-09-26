@@ -90,6 +90,11 @@ OIDC identity, zero write retries, production trust services and exact signed so
 bindings. Supply explicit TUF root/cache paths and timeout. Signature trust is the
 responsibility of an explicitly supplied `VerifyProvenance` implementation.
 
+Once native verification starts, interruption waits for the SDK to settle its
+TUF/cache work. The pinned SDK has no cancellation API; a stuck native call can
+delay interruption, and its per-fetch timeout is not an overall verification
+deadline. Valid cache writes are retained.
+
 Actual native Sigstore verification is currently qualified locally under Node22.22.2.
 Bun1.3.14 fails the pinned client's TUF ECDSA root verification. The native Sigstore
 adapters therefore fail with `npm-sigstore-runtime` when invoked under Bun; use

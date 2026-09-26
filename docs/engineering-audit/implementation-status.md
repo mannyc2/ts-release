@@ -268,3 +268,137 @@ The full behavior command was repeated because its build ownership and selected
 test cases changed. These are correctness results, not a speed benchmark or a
 new all-host/full-distribution qualification claim. This increment adds no
 production code, public API, test case, dependency or publication authority.
+
+## Native settlement repairs and bounded qualification
+
+Current checkout: `/mnt/models/dev/ts-release/.native-settlement`, branch
+`codex/native-settlement`, based on qualified retention commit
+`5227a01f5dbcc722ff5c9971f72106cf2e8fcdee`. This bounded W4/R12 increment has
+passed the affected static, native, installed-package and generated-starter
+checks below. It does not complete all standards or product requirements.
+
+Two existing owners now join issued noncancellable work:
+
+- Self-release `Model.read` brackets its actual FileHandle and masks only each
+  native open/stat/read/close operation. It preserves numeric flags, size checks,
+  owned bytes and the fixed file refusal. [Evidence](self-release-read-lifecycle.md).
+- npm `makeSigstoreVerifier` masks its existing SDK verification Promise until
+  settlement. Trust/source checks, retry/timeout configuration, supported runtime,
+  safe error projection and signing remain unchanged.
+  [Evidence](native-sigstore-settlement.md).
+
+Both necessary regressions failed against the unchanged baseline before the
+source repairs. Both focused greens passed: the file owner remained pending
+until read delivery and handle closure; the real Sigstore SDK authenticated the
+existing fixture and removed all five actual TUF temporary directories before
+the interrupted Effect exited. The SDK helper changed after red only for
+formatting and a JSDoc Promise annotation; the file proof was byte-identical.
+The native SDK proof is part of the existing explicit native profile, with no
+network added to the ordinary Bun suite. No signing or publication occurred.
+
+Pinned npm and self-release compilation passed with the patched compiler
+(`check:toolchain`, then each affected build project), exit 0; log
+`/tmp/ts-release-native-settlement-target-build.log`. Targeted strict lint passed
+for both source/proof owners. Existing npm authentication and self-release
+application behavior were selected using:
+
+```sh
+bun test ./test/reimplementation/npm/auth.test.ts ./test/reimplementation/self-release/application.test.ts
+```
+
+The sandboxed command exited 1: 15 passed, two native Git-journal scenarios
+failed. Rerunning only those same two scenarios outside the sandbox, with no
+source change, exited 0: 2 passed, 9 filtered, 19 assertions. Thus all 17 selected
+scenarios have passing results, but no single uninterrupted selected-suite pass
+is claimed. Raw logs are
+`/tmp/ts-release-native-settlement-selected-behavior.log` and
+`/tmp/ts-release-native-settlement-git-behavior.log`. Exact Bun 1.3.14 and Node
+22.22.2 paths remain those recorded by the owner evidence. An independent
+read-only review found no blocking correctness defect and confirmed the stated
+cause/teardown limits; it ran no additional gates.
+
+Full gates initially waited for the coordinator's required lock path. The
+coordinator subsequently supplied `/tmp/the-show-full-verification.lock`, and
+the integrator acquired that exact path with nonblocking `flock`; no substitute
+lock was used. All full-gate compiler/build/test children ran inside their held
+batch, and the lock was released after the children exited.
+
+The first static check stopped at TS2345 in the new Bun test wrapper: its stored
+spawn type widened stderr to include a file descriptor. Keeping the inferred
+`const spawned` for the stream, then assigning the teardown handle, fixed the
+type without a cast, suppression or changed assertion. The final wrapper differs
+from the initially byte-identical red/green only by this later repair; source
+and native fixture stayed unchanged. The stopped log is
+`/tmp/ts-release-native-settlement-check.log`.
+
+The resumed locked batch passed, in order:
+
+| Check | Exit and evidence |
+| --- | --- |
+| `bun run check` | 0; `/tmp/ts-release-native-settlement-check-final.log`. Formatting, patched compiler, build, strict lint, root/host types, 95-file/664-edge import policy and 15 package entries passed. |
+| `bun run build:delivery` | 0; `/tmp/ts-release-native-settlement-delivery.log`. Refreshed generated starter Model and bundled input. |
+| Direct final read-lifecycle test | 0; 1 test/1 assertion, `/tmp/ts-release-native-settlement-read-final.log`. Repeated because the wrapper changed. |
+| `bun run check:packed-npm` | 0; `/tmp/ts-release-native-settlement-packed-npm.log`. Actual core/npm archives passed Bun/npm installation, strict declarations, optional-peer absence and existing behavior under Node22.22.2/Bun1.3.14. |
+
+The existing `check:native-npm-sigstore` separately passed with Node22.22.2:
+authentic verification, all four existing rejection controls, and the new
+isolated lifecycle child. It ran against the targeted compiled npm before the
+lock path arrived; this narrow command does not build or pack. Full regeneration
+left `Auth.js` byte-identical, SHA256
+`a3164b34759256d4b14fda689702bc03c89ed889cacae6b822e9b98fb618bf75`.
+The unchanged native witness was therefore reused. Log:
+`/tmp/ts-release-native-settlement-sigstore-profile.log`; native receipt:
+`.release/checks/native-sigstore.json`.
+
+Generated `release/Model.js` matches compiled application Model byte for byte,
+SHA256 `bd9d8b7e648df5a6050eba6049ca78f5c5d43e561134b0161ea03730f5b97a49`.
+Bun retains the named read definition in `input.ts` (SHA256
+`75c90c4b0f62e078649f052a321bcb15635062cd4d02912df6d688a8d17881c6`).
+Independent review confirmed the added native operations remain deferred;
+the existing input command never calls `read`, and no workspace-relative import
+was introduced.
+
+A second bounded batch held the same lock for one isolated starter consumer.
+It copied the actual generated starter, installed the current core/npm archives
+plus the built GitHub archive with Bun, checked physical package resolution and
+byte equality with current dist, then ran Node `prepare.mjs` on the existing
+packed fixture archive and the documented Bun `input:release` without
+`--execute`. All commands exited 0. Actual Bundle/Plan bytes and retained/input
+identities agree, and authorization is false. No inherited publishing
+credentials, journal access, signing, observation or publication was used.
+
+The existing temporary-probe approach is retained instead of adding a committed
+test: `/tmp/ts-release-current-starter-F4pFW4/qualification.json` contains exact
+commands, raw results, resolutions and hashes, SHA256
+`895a8a9348ff1ac4e47ba6b08b88b289a43609163069823c3b5f26c10c07c151`.
+Its summary log is `/tmp/ts-release-native-settlement-starter.log`.
+Core/npm archive hashes are in [Sigstore qualification](native-sigstore-settlement.md#integrator-qualification);
+GitHub's archive is
+`b02ec589dc3fe2e7148be4fada2bb81397443fb9149513f75968cae8d0ffbe71`.
+
+The ordinary full suite, unchanged catalog/Action/kernel profiles and retained
+distribution were not rerun: the selected existing scenarios cover affected
+application/auth behavior, while this isolated starter exercises the actual
+changed generated application. Catalog installed-workflow and packed Action
+use fixture applications and cannot replace that evidence. These results do
+not qualify other hosts/engine versions, live providers or Bun native Sigstore.
+Original root staging remains byte-identical to the retained snapshot.
+
+The ten changed runtime, proof, generated-delivery and maintained guide inputs
+are frozen in `/tmp/ts-release-native-settlement-final-inputs.json`, SHA256
+`e96f95c2803cf687c9ddcfbc42be3ba79453663754be7017009c982895ab441a`.
+Research/status documents are excluded from that manifest to avoid a
+self-referential hash; Git records them with the same bounded increment.
+
+Remaining implementation includes provider/application broad helper policies,
+the shared preparation `mkdir` and Bundle/Plan writes, native signing's separate
+approval/settlement policy, HTTP/SQLite cleanup outcome ownership, and the R26
+private credential-fixture import. These successful-native interruption proofs
+do not establish arbitrary native body/cleanup failure combinations. A native
+call that never settles can still delay cancellation. R32–R35 product increments
+and W7 all-host/final migration closure remain open.
+
+New-branch publication is independently blocked: automatic approval review
+rejected it because direct user approval covered only the earlier checkpoint
+destination. The existing approval question remains pending. This slice has not
+been pushed, and that rejection has not been retried or bypassed.

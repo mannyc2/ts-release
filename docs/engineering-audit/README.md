@@ -138,9 +138,11 @@ the historical gap inventory above is not a current completion report.
   inventories native/parser and successful-fallback owners before tightening the
   shared provider helpers, with existing codes and proof gaps.
 - [Native lifetime prerequisites](native-lifetime-prerequisites.md) traces the
-  actual application file and Sigstore/TUF work that interruption currently
-  detaches, and defines bounded repairs and necessary proof without claiming a
-  reproduced leak.
+  application file and Sigstore/TUF work identified before implementation.
+  [File-read evidence](self-release-read-lifecycle.md) and
+  [Sigstore evidence](native-sigstore-settlement.md) now record actual premature
+  completion failures, focused repairs and bounded native/installed
+  qualification; see [implementation status](implementation-status.md).
 - [Core/host test retention](test-retention-core.md) and
   [provider/artifact test retention](test-retention-providers.md) review all 58
   current test-file bodies, identify actual stronger proof, and state unread

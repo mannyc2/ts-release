@@ -9,6 +9,7 @@ export {
   makeCredentialExchange,
   fileContentOwner,
   FinalizedReport,
+  BoundedObservationOptions,
   runInterruptibleProcess,
   runApplication,
   runApplicationEffect,
@@ -18,6 +19,7 @@ export type {
   GitCatalogHost,
   GitCatalogHostOptions,
   Application,
+  ApplicationMode,
   CreateApplication,
 } from "./Node.js"
 export { openSqliteJournal } from "./platform/SqliteJournal.js"

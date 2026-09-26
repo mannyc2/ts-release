@@ -1,5 +1,6 @@
-import { expect, test } from "bun:test"
-import { Cause, Effect, Exit, Result, Schema } from "effect"
+import { expect, onTestFinished, test } from "bun:test"
+import { Cause, Deferred, Effect, Exit, Fiber, Result, Schema } from "effect"
+import { TestClock } from "effect/testing"
 import * as Runtime from "../../../packages/ts-release/src/Bun.js"
 import { runApplication, FinalizedReport } from "../../../packages/ts-release/src/Bun.js"
 import { finalize, encodeBundle } from "../../../packages/ts-release/src/Bundle.js"
@@ -11,6 +12,7 @@ import {
 } from "../../../packages/ts-release/src/index.js"
 import { sha256 } from "../../../packages/ts-release/src/internal/Identity.js"
 import { MemoryJournal, providerFor } from "./fixtures.js"
+import { createApplication } from "./application-fixture.js"
 
 const path = `${import.meta.dir}/application-fixture.ts`
 async function fixture() {
@@ -58,6 +60,127 @@ async function fixture() {
   }
   return { application, lifecycle: [] as string[], sends: () => sends }
 }
+
+// Receipts cannot certify visibility; real observation work must consume the
+// elapsed budget and settle before the one application scope is released.
+test("bounded observation charges provider work and resumes visibility without publication", async () => {
+  const input = await fixture()
+  const acknowledged = await runApplication(path, input)
+  expect(acknowledged.operations[0]?.status).toBe("Satisfied")
+  input.lifecycle.length = 0
+  let observations = 0,
+    canceled = false,
+    visible = false,
+    authentication = 0,
+    finishing = false
+  let cleanupDefect: TypeError | undefined
+  input.application.onRejected = () =>
+    Effect.sync(() => {
+      authentication++
+      return true
+    })
+  const mode = {
+    mode: "observe" as const,
+    definitionIds: ["fixture.http"],
+    budgetMilliseconds: 100,
+    initialDelayMilliseconds: 10,
+    maximumDelayMilliseconds: 20,
+  }
+  const root = Effect.runFork(
+    Effect.gen(function* () {
+      let started = yield* Deferred.make<void>()
+      const provider = providerFor(() => ({
+        status: visible ? "Satisfied" : "Absent",
+        evidence: { visible },
+      }))
+      input.application.host.providers = [provider]
+      yield* Runtime.runApplicationEffect(() => createApplication(input), input, "observe")
+      input.lifecycle.length = 0
+      input.application.host.providers = [
+        {
+          ...provider,
+          observe: () =>
+            Effect.gen(function* () {
+              observations++
+              yield* Deferred.succeed(started, undefined)
+              if (!visible)
+                return yield* Effect.never.pipe(
+                  Effect.ensuring(
+                    Effect.sync(() => {
+                      canceled = true
+                    }).pipe(
+                      Effect.andThen(
+                        Effect.suspend(() =>
+                          cleanupDefect ? Effect.die(cleanupDefect) : Effect.void,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              return {
+                status: visible ? ("Satisfied" as const) : ("Absent" as const),
+                evidence: { visible },
+              }
+            }),
+        },
+      ]
+      const observing = yield* Effect.forkChild(
+        Runtime.runApplicationEffect(() => createApplication(input), input, mode),
+      )
+      // Also release the baseline, which completes without attempting observation.
+      yield* Effect.raceFirst(Deferred.await(started), Fiber.join(observing).pipe(Effect.asVoid))
+      yield* TestClock.adjust(100)
+      const pending = yield* Fiber.join(observing)
+      expect(pending).toHaveProperty("visibility.status", "Pending")
+      expect(pending).toHaveProperty("visibility.elapsedMilliseconds", 100)
+      expect(pending).toHaveProperty("visibility.operations.0.status", "Pending")
+      expect(pending).toHaveProperty("visibility.operations.0.lastObservation.status", "Absent")
+      expect(pending.operations[0]?.status).toBe("Satisfied")
+      expect(observations).toBe(1)
+      expect(canceled).toBe(true)
+      expect(input.lifecycle).toEqual(["acquire", "release"])
+      visible = true
+      const resumed = yield* Runtime.runApplicationEffect(
+        () => createApplication(input),
+        input,
+        mode,
+      )
+      expect(resumed).toHaveProperty("visibility.status", "Satisfied")
+      expect(resumed).toHaveProperty("visibility.operations.0.lastObservation.status", "Satisfied")
+      expect(resumed.plan).toEqual(acknowledged.plan)
+      expect(resumed.bundle).toEqual(acknowledged.bundle)
+      expect(
+        resumed.journal.events.filter((event) => event.body._tag === "DispatchStarted"),
+      ).toHaveLength(1)
+      expect(input.sends()).toBe(1)
+      expect(authentication).toBe(0)
+      expect(input.lifecycle).toEqual(["acquire", "release", "acquire", "release"])
+      // rc.115 timeoutOption joins the losing fiber but discards its Exit;
+      // cleanup defects must not become a successful visibility report.
+      visible = false
+      cleanupDefect = new TypeError("Observation cleanup failed")
+      started = yield* Deferred.make<void>()
+      const interruptedCleanup = yield* Effect.forkChild(
+        Effect.exit(Runtime.runApplicationEffect(() => createApplication(input), input, mode)),
+      )
+      yield* Deferred.await(started)
+      yield* TestClock.adjust(100)
+      const cleanupExit = yield* Fiber.join(interruptedCleanup)
+      expect(Exit.isFailure(cleanupExit)).toBe(true)
+      if (!Exit.isFailure(cleanupExit)) throw new Error("Expected cleanup defect")
+      const found = Cause.findDefect(cleanupExit.cause)
+      expect(Result.isSuccess(found) && found.success).toBe(cleanupDefect)
+      expect(Cause.hasFails(cleanupExit.cause)).toBe(false)
+      expect(input.sends()).toBe(1)
+    }).pipe(Effect.provide(TestClock.layer())),
+  )
+  onTestFinished(async () => {
+    finishing = true
+    await Effect.runPromise(Fiber.interrupt(root))
+  })
+  const exit = await Effect.runPromise(Fiber.await(root))
+  if (!finishing) await Effect.runPromise(exit)
+})
 
 // Preserve the published 0.4.2 adapter while the new Effect entrypoint keeps defects.
 test("Promise application preserves its legacy factory-throw projection", async () => {

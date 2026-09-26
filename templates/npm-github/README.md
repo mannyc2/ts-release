@@ -64,6 +64,13 @@ create input that cannot publish. Observe mode never dispatches publication,
 even with authorized input; it records observations in the shared journal. Exit
 code 2 means incomplete progress, which is expected before first publication.
 The verifier repeats only observations, allowing delayed registry visibility.
+It reuses one acquired application and charges provider reads, journal work and
+pauses to a five-minute monotonic budget. Set `TS_RELEASE_OBSERVATION_BUDGET_MS`
+to change that budget. Initial admission and joined cleanup can add time.
+On timeout it prints the Plan, journal revision and last observations, then exits
+2; rerun with the original candidate to continue. Accepted receipts alone do not
+prove visibility. The verifier refuses older executors missing its policy Schema
+before loading the application.
 
 To use an interactive local npm login, run `npm login`, select the npm user config
 explicitly with `NPM_CONFIG_USERCONFIG`, and use `Local` instead of `Token` when
@@ -95,8 +102,9 @@ response shape, never tokens or raw credential responses.
 
 The repository's [release workflow](../../.github/workflows/release.yml) shows the
 complete preparation, attestation, retained-artifact and publication jobs. It
-installs the exact retained packages before invoking the Action launcher under
-the pinned, qualified Node runtime. For your own
+installs its reviewed checkout's executor packages before invoking the Action
+launcher under the pinned, qualified Node runtime. Publication still uses the
+original retained bytes and provenance. For your own
 workflow, pin the Action to a reviewed commit, set `application` to
 `release-tools/release/application.js`, and pass the complete input JSON to the
 Action's `input` field. The input helper emits `application-input` to

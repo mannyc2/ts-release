@@ -36,3 +36,32 @@ See the [application guide](https://github.com/mannyc2/ts-release/blob/main/docs
 and [recovery guide](https://github.com/mannyc2/ts-release/blob/main/docs/recovery.md).
 For installation, package selection and upgrading older automation, see the
 [0.4 migration guide](https://github.com/mannyc2/ts-release/blob/main/docs/migration-0.4.md).
+
+Effect applications can compose `runApplicationEffect` from the `node` or `bun`
+entry. It acquires the application once in a scope and preserves the factory's
+typed errors and caller services. To wait for public visibility without publishing:
+
+```ts
+const report =
+  yield *
+  runApplicationEffect(createApplication, input, {
+    mode: "observe",
+    definitionIds: ["npm.publish", "github.publish"],
+    budgetMilliseconds: 300_000,
+    initialDelayMilliseconds: 1_000,
+    maximumDelayMilliseconds: 10_000,
+  })
+```
+
+`BoundedObservationOptions` is also exported as a runtime Schema. This explicit
+mode adds `report.visibility` with `Pending`, `Conflict` or `Satisfied`, selected
+operation IDs, and references to their latest durable observation events.
+Acknowledgements alone do not establish public visibility. Ordinary `"run"` and
+single-sweep `"observe"` calls keep their existing report shape.
+
+The budget includes provider/journal work and backoff after initial admission.
+Cleanup and issued native work are joined, so elapsed time can exceed the budget;
+a native call that never settles can delay cancellation. Failures remain failures
+instead of becoming `Pending`. The runner refreshes available observers, never
+dispatches publication or completes rejected authentication in this mode, and
+keeps the application's own setup and observation credential policy.

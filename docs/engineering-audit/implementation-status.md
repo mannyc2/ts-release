@@ -617,3 +617,31 @@ application cases, generated delivery and isolated installed starter preparation
 passed in the [coordinated profile](continuation-qualification.md). The profile's
 one corrected OpenAI assertion remains separately reported. Observation/executor
 changes are the next local slice; HTTP/SQLite cleanup and preflight remain open.
+
+## Bounded observation and retained executor selection
+
+Following self-release admission commit `084a9b9`, Node/Bun runners now admit
+an explicit bounded observation policy. One acquired application refreshes
+native observations with monotonic budget/backoff and derives safe pending,
+conflict or satisfied visibility from the journal. Timeout settlement preserves
+failures/defects; no observation result authorizes resend. Legacy string modes
+and ordinary report shape remain intact. The maintained verifier uses this API
+and refuses an older executor before input/application access.
+
+The self-release installer separately selects current built executor archives
+with `--executor=checkout`, without altering retained publication bytes. Workflow
+attempts retain exact executor/archive/helper receipts under attempt-specific
+artifact names. The actual original signed 0.4.1 candidate was admitted by an
+isolated installation of all seven current packages. Its real superseded
+26-operation Plan and complete two-event history stopped every publication
+capability in a deliberately incapable adapter; candidate bytes stayed unchanged.
+Its lack of historical dispatches is an explicit limit, not a recovery success.
+
+[Observation evidence](bounded-observation.md), [retained executor proof](retained-executor.md)
+and [coordinated qualification](continuation-qualification.md) record genuine
+baseline failures, fixture corrections, exact installed/archive identities and
+all stopped stages. The initial historical probe's empty captured stdout was
+corrected at its temporary result transport; no runtime assertion was weakened.
+No push, live publication, signing or hosted workflow was performed. R34 request
+preflight, HTTP/SQLite cleanup and final capability disposition remain active
+local work, with no additional publication approval implied.

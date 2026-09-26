@@ -21,16 +21,20 @@ sign and publish that candidate. Concurrent workflow runs are serialized.
 2. **Attest** restores those archives, obtains hosted identity, signs provenance
    under Node, and creates the final Bundle/Plan without publishing packages or
    releases. It retains `ts-release-signed-candidate` before the next job starts.
-3. **Publish** verifies the retained Bundle/Plan digests, installs the exact
-   retained packages, and invokes the committed Action launcher with the shared
+3. **Publish** verifies the retained Bundle/Plan digests, installs the reviewed
+   checkout's executor packages, and invokes the committed Action launcher with the shared
    application under the same pinned Node used by the Sigstore checks. Native
    npm providers publish the six providers before the core; GitHub finalization
    depends on the complete npm cohort and its exact release assets. A final
    read-only check waits for matching public registry and GitHub observations.
 
 npm acceptance and public registry visibility are distinct. A successful native
-acknowledgement is journaled; the verifier allows 31 observations with ten-second
-pauses for cache propagation. It never repeats publication. The cohort is not an
+acknowledgement is journaled; the verifier uses a five-minute monotonic observation
+budget with ten-second pauses for cache propagation. Provider and journal work
+consume the budget. Initial candidate admission and joined cleanup can add time.
+Set `TS_RELEASE_OBSERVATION_BUDGET_MS` to change the budget. A pending result keeps
+the Plan, journal revision and last observation references for continuation.
+It never repeats publication. The cohort is not an
 atomic batch, and partial progress remains in the shared journal.
 
 Configure npm trusted publishing for **each** of the seven existing package names:
@@ -58,6 +62,11 @@ SHA256 digests of its `bundle.json` and `plan.json` files. The latter is the fil
 digest, not the Plan ID. `candidate_sha` selects the current workflow commit;
 the retained Bundle keeps the original release source identity. Restoration
 skips preparation and attestation and verifies both digests before installation.
+The executor uses the selected checkout's built packages, while publication still
+uses the original retained archives and provenance. The installed `executor.json`
+records archive/application hashes and checkout identity separately from candidate
+identity. Unsupported historical formats or provider intent versions still fail
+ordinary admission; selecting a newer executor never rewrites them.
 
 The Publish job checks every npm trusted-publisher credential before the first
 publication. Its diagnostics identify OIDC verification and npm exchange stages,
@@ -134,10 +143,12 @@ recorded before a new attempt. A missing response cannot be treated as a rejecte
 write. Use `Token` plus an explicitly supplied `NPM_TOKEN` for unattended token
 publication. These modes do not claim hosted provenance.
 
-To run visibility verification with the exact retained packages:
+To run visibility verification with the reviewed current executor and the exact
+retained publication candidate:
 
 ```sh
-bun scripts/install-release-runtime.ts .release/candidate .release/local-runtime
+bun run build:delivery
+bun scripts/install-release-runtime.ts .release/candidate .release/local-runtime --executor=checkout
 node .release/local-runtime/verify.mjs .release/local-runtime/application.js .release/local-input.json
 ```
 
@@ -145,3 +156,7 @@ Keep the same candidate and input for continuation. Changing only the local
 cache is safe; replacing the Plan or journal is not recovery. The broad
 multi-provider `apps/self-release/src/rehearsal.ts` remains a preparation fixture,
 separate from the npm/GitHub production application.
+
+Omitting `--executor=checkout` retains the previous installer selection: runtime
+packages come from the candidate. The bounded verifier requires the new policy
+export and refuses older executors at module load, before application execution.

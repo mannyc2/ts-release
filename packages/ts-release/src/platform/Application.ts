@@ -1,5 +1,11 @@
 import * as Effect from "effect/Effect"
+import * as Clock from "effect/Clock"
+import * as Cause from "effect/Cause"
+import * as Duration from "effect/Duration"
+import * as Exit from "effect/Exit"
 import * as Logger from "effect/Logger"
+import * as Option from "effect/Option"
+import * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
 import { resolve } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -9,8 +15,34 @@ import { attempt, fail, failure, ReleaseError } from "../internal/Error.js"
 import type { Operation, RunOptions } from "../internal/ReleaseModel.js"
 import { FinalizedReport, reportFinalizedRelease } from "../internal/FinalizedReport.js"
 import { observeRelease, runRelease } from "../Release.js"
+import { decodeOwned } from "../internal/Identity.js"
 
 export { FinalizedReport }
+const positiveMilliseconds = Schema.Int.check(Schema.isGreaterThan(0))
+export const BoundedObservationOptions = Schema.Struct({
+  mode: Schema.Literal("observe"),
+  definitionIds: Schema.Array(Schema.String.check(Schema.isMinLength(1))).check(
+    Schema.isMinLength(1),
+  ),
+  budgetMilliseconds: positiveMilliseconds,
+  initialDelayMilliseconds: positiveMilliseconds,
+  maximumDelayMilliseconds: positiveMilliseconds,
+})
+/** Invocation-only observation policy. The budget includes provider/journal
+ * work and backoff after initial admission; settlement and cleanup are joined. */
+export type BoundedObservationOptions = typeof BoundedObservationOptions.Type
+export type ApplicationMode = "run" | "observe" | BoundedObservationOptions
+
+const captureMode = Effect.fnUntraced(function* (mode: ApplicationMode) {
+  if (mode === "run" || mode === "observe") return mode
+  const policy = yield* attempt(() => decodeOwned(BoundedObservationOptions, mode))
+  if (
+    policy.initialDelayMilliseconds > policy.maximumDelayMilliseconds ||
+    new Set(policy.definitionIds).size !== policy.definitionIds.length
+  )
+    return yield* failure("application-observation", "Observation policy is invalid")
+  return policy
+})
 export interface Application {
   readonly bundle: OwnedBundle
   readonly host: HostShape
@@ -44,10 +76,116 @@ export const runInterruptibleProcess = async <A>(
   }
 }
 
+type Visibility = NonNullable<FinalizedReport["visibility"]>
+const latestVisibility = (report: FinalizedReport, selected: ReadonlySet<string>) => {
+  const latest = new Map<string, NonNullable<Visibility["operations"][number]["lastObservation"]>>()
+  for (const event of report.journal.events) {
+    const { body } = event
+    if (
+      event.planId === report.plan.planId &&
+      body._tag === "ObservationRecorded" &&
+      body.evidenceKind === "Observation" &&
+      selected.has(body.operationId)
+    )
+      latest.set(body.operationId, {
+        eventId: event.eventId,
+        status: body.status,
+        observedAt: body.observedAt,
+      })
+  }
+  const operations: Visibility["operations"] = [...selected].map((operationId) => {
+    const lastObservation = latest.get(operationId)
+    return {
+      operationId,
+      status:
+        lastObservation?.status === "Satisfied" || lastObservation?.status === "Conflict"
+          ? lastObservation.status
+          : "Pending",
+      ...(lastObservation && { lastObservation }),
+    }
+  })
+  const status: Visibility["status"] = operations.some((item) => item.status === "Conflict")
+    ? "Conflict"
+    : operations.every((item) => item.status === "Satisfied")
+      ? "Satisfied"
+      : "Pending"
+  return { status, operations }
+}
+
+/** Reuse the acquired application; every sweep still admits fresh durable
+ * history. Observation evidence cannot reach the dispatch interpreter. */
+const observeApplication = Effect.fn("ts-release.observeApplication")(function* (
+  admitted: FinalizedReport,
+  policy: BoundedObservationOptions,
+) {
+  const selected = new Set(
+    admitted.plan.operations
+      .filter((operation) => policy.definitionIds.includes(operation.definitionId))
+      .map((operation) => operation.operationId),
+  )
+  if (
+    selected.size === 0 ||
+    policy.definitionIds.some(
+      (id) => !admitted.plan.operations.some((operation) => operation.definitionId === id),
+    )
+  )
+    return yield* failure(
+      "application-observation",
+      "Observation selection is absent from the Plan",
+    )
+  const start = yield* Clock.monotonicTimeNanos
+  const deadline = start + BigInt(policy.budgetMilliseconds) * 1_000_000n
+  let delay = BigInt(policy.initialDelayMilliseconds) * 1_000_000n
+  const maximumDelay = BigInt(policy.maximumDelayMilliseconds) * 1_000_000n
+  let report = admitted
+  while (true) {
+    let remaining = deadline - (yield* Clock.monotonicTimeNanos)
+    if (remaining <= 0n) break
+    const settlement: { exit?: Exit.Exit<FinalizedReport, ReleaseError | AdoptionError> } = {}
+    const refreshed = yield* observeRelease({ plan: admitted.plan }).pipe(
+      Effect.andThen(reportFinalizedRelease(admitted.bundle, admitted.plan)),
+      Effect.onExit((exit) =>
+        Effect.sync(() => {
+          settlement.exit = exit
+        }),
+      ),
+      Effect.timeoutOption(Duration.nanos(remaining)),
+    )
+    if (Option.isNone(refreshed)) {
+      // rc.115 joins the timeout loser but discards its Exit. Preserve any
+      // failure/defect produced during settlement, including composite causes.
+      const exit = settlement.exit
+      if (exit && Exit.isFailure(exit) && (Cause.hasFails(exit.cause) || Cause.hasDies(exit.cause)))
+        return yield* Effect.failCause(exit.cause)
+      // An append may have settled during cancellation. Reconcile its real
+      // history after joined interruption; a failed read remains a failure.
+      report = yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
+      break
+    }
+    report = refreshed.value
+    if (latestVisibility(report, selected).status !== "Pending") break
+    remaining = deadline - (yield* Clock.monotonicTimeNanos)
+    if (remaining <= 0n) break
+    yield* Effect.sleep(Duration.nanos(delay < remaining ? delay : remaining))
+    delay = delay * 2n < maximumDelay ? delay * 2n : maximumDelay
+  }
+  const elapsedMilliseconds = Number(((yield* Clock.monotonicTimeNanos) - start) / 1_000_000n)
+  return yield* attempt(() =>
+    decodeOwned(FinalizedReport, {
+      ...report,
+      visibility: {
+        ...latestVisibility(report, selected),
+        elapsedMilliseconds,
+        budgetMilliseconds: policy.budgetMilliseconds,
+      },
+    }),
+  )
+})
+
 /** Interpret an acquired application with one captured host and authorization. */
 const executeApplication = Effect.fn("ts-release.executeApplication")(function* (
   app: Application,
-  mode: "run" | "observe",
+  mode: ApplicationMode,
 ) {
   const options = { ...app.options }
   const onRejected = yield* attempt(() => {
@@ -60,6 +198,7 @@ const executeApplication = Effect.fn("ts-release.executeApplication")(function* 
     // Admit the complete Bundle/Plan/Journal binding before dispatch, then keep
     // these owned inputs across the run. Reports never grant dispatch authority.
     const admitted = yield* reportFinalizedRelease(app.bundle, options.plan)
+    if (typeof mode !== "string") return yield* observeApplication(admitted, mode)
     if (mode === "observe") yield* observeRelease({ plan: admitted.plan })
     else yield* runRelease({ ...options, plan: admitted.plan })
     let report = yield* reportFinalizedRelease(admitted.bundle, admitted.plan)
@@ -109,17 +248,23 @@ const executeApplication = Effect.fn("ts-release.executeApplication")(function* 
 export const runApplicationEffect = <E = never, R = never>(
   createApplication: CreateApplication<E, R>,
   input: unknown,
-  mode: "run" | "observe" = "run",
+  mode: ApplicationMode = "run",
 ): Effect.Effect<FinalizedReport, E | ReleaseError | AdoptionError, Exclude<R, Scope.Scope>> =>
   Effect.scoped(
-    Effect.suspend((): Effect.Effect<Application, E | ReleaseError, R | Scope.Scope> => {
-      const application = createApplication(input)
-      return Effect.isEffect(application)
-        ? application
-        : Effect.fail(
-            failure("application-effect", "createApplication must return a scoped Effect"),
-          )
-    }).pipe(Effect.flatMap((app) => executeApplication(app, mode))),
+    Effect.gen(function* () {
+      const selected = yield* captureMode(mode)
+      const app = yield* Effect.suspend(
+        (): Effect.Effect<Application, E | ReleaseError, R | Scope.Scope> => {
+          const application = createApplication(input)
+          return Effect.isEffect(application)
+            ? application
+            : Effect.fail(
+                failure("application-effect", "createApplication must return a scoped Effect"),
+              )
+        },
+      )
+      return yield* executeApplication(app, selected)
+    }),
   )
 
 /** The legacy Promise adapter selects a trusted module and preserves its
@@ -163,13 +308,14 @@ export const runApplication = (
   applicationPath: string,
   input: unknown,
   signal?: AbortSignal,
-  mode: "run" | "observe" = "run",
+  mode: ApplicationMode = "run",
 ): Promise<FinalizedReport> =>
   Effect.runPromise(
     Effect.scoped(
-      loadApplication(applicationPath, input).pipe(
-        Effect.flatMap((app) => executeApplication(app, mode)),
-      ),
+      Effect.gen(function* () {
+        const selected = yield* captureMode(mode)
+        return yield* executeApplication(yield* loadApplication(applicationPath, input), selected)
+      }),
     ).pipe(Effect.provideService(Logger.LogToStderr, true)),
     { signal },
   )

@@ -110,11 +110,11 @@ for (const manager of ["bun", "npm"] as const) {
     "./http":
       'import { HttpReceipt, corresponds } from "@mannyc1/ts-release/http"; export { HttpReceipt, corresponds };',
     "./bun":
-      'import { openSqliteJournal, runApplication, runApplicationEffect, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/bun"; export { openSqliteJournal, runApplication, runApplicationEffect, FinalizedReport }; export type { Application, CreateApplication };',
+      'import { openSqliteJournal, runApplication, runApplicationEffect, BoundedObservationOptions, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/bun"; export { openSqliteJournal, runApplication, runApplicationEffect, BoundedObservationOptions, FinalizedReport }; export type { Application, CreateApplication };',
     "./bundle":
       'import { Bundle, finalize, loadBundle } from "@mannyc1/ts-release/bundle"; export { Bundle, finalize, loadBundle };',
     "./node":
-      'import { fileContentOwner, runApplication, runApplicationEffect, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/node"; export { fileContentOwner, runApplication, runApplicationEffect, FinalizedReport }; export type { Application, CreateApplication };',
+      'import { fileContentOwner, runApplication, runApplicationEffect, BoundedObservationOptions, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/node"; export { fileContentOwner, runApplication, runApplicationEffect, BoundedObservationOptions, FinalizedReport }; export type { Application, CreateApplication };',
   }
   for (const [entry, source] of Object.entries(declarations)) {
     // The adapter must preserve an external factory's error/service inference while consuming Scope.
@@ -124,12 +124,14 @@ for (const manager of ["bun", "npm"] as const) {
         ? `
 import type * as Effect from "effect/Effect";
 import type * as Scope from "effect/Scope";
+import * as Schema from "effect/Schema";
 import type { ReleaseError } from "@mannyc1/ts-release";
 import type { AdoptionError } from "@mannyc1/ts-release/bundle";
 interface FactoryError { readonly _tag: "FactoryError" }
 interface FactoryService { readonly _tag: "FactoryService" }
 declare const factory: (input: unknown) => Effect.Effect<Application, FactoryError, FactoryService | Scope.Scope>;
-const composed = runApplicationEffect(factory, null);
+const mode = Schema.decodeSync(BoundedObservationOptions)({ mode: "observe", definitionIds: ["npm.publish"], budgetMilliseconds: 1000, initialDelayMilliseconds: 10, maximumDelayMilliseconds: 100 });
+const composed = runApplicationEffect(factory, null, mode);
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
 export type FactoryErrorPreserved = Assert<Equal<Effect.Error<typeof composed>, FactoryError | ReleaseError | AdoptionError>>;

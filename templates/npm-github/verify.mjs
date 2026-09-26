@@ -1,44 +1,50 @@
 import { readFile } from "node:fs/promises"
-import { setTimeout } from "node:timers/promises"
-import { runApplication, runInterruptibleProcess } from "@mannyc1/ts-release/node"
+import { Schema } from "effect"
+import {
+  BoundedObservationOptions,
+  runApplication,
+  runInterruptibleProcess,
+} from "@mannyc1/ts-release/node"
 
 // Registry acceptance can precede public visibility. Refresh only native provider
 // observations; no iteration can dispatch a publication or authorize a retry.
 const [application, inputFile] = process.argv.slice(2)
 const input = JSON.parse(await readFile(inputFile, "utf8"))
+// Importing the policy Schema also refuses an older executor before invocation;
+// old runners do not understand the bounded observation mode object.
+const policy = Schema.decodeUnknownSync(BoundedObservationOptions)({
+  mode: "observe",
+  definitionIds: ["npm.publish", "github.publish"],
+  budgetMilliseconds: Number(process.env.TS_RELEASE_OBSERVATION_BUDGET_MS ?? 300000),
+  initialDelayMilliseconds: 10000,
+  maximumDelayMilliseconds: 10000,
+})
 process.exitCode = await runInterruptibleProcess(async (signal, exitCode) => {
   try {
-    for (let attempt = 0; attempt < 31; attempt++) {
-      const report = await runApplication(application, input, signal, "observe")
-      const required = report.plan.operations.filter((operation) =>
-        ["npm.publish", "github.publish"].includes(operation.definitionId),
+    const report = await runApplication(application, { ...input, authorize: false }, signal, policy)
+    const { visibility } = report
+    if (!visibility) throw new Error("Executor did not return bounded observation state")
+    if (visibility.status === "Conflict")
+      throw new Error("Published content conflicts with the retained release")
+    if (visibility.status === "Satisfied") {
+      console.log(
+        JSON.stringify({
+          planId: report.plan.planId,
+          journalRevision: report.journal.revision,
+          status: "publication-visible",
+          operations: visibility.operations.length,
+        }),
       )
-      if (required.length === 0)
-        throw new Error("Visibility verification requires a nonempty release")
-      const observed = new Map()
-      for (const event of report.journal.events) {
-        if (
-          event.planId === report.plan.planId &&
-          event.body._tag === "ObservationRecorded" &&
-          event.body.evidenceKind === "Observation"
-        )
-          observed.set(event.body.operationId, event.body.status)
-      }
-      if (required.some((operation) => observed.get(operation.operationId) === "Conflict"))
-        throw new Error("Published content conflicts with the retained release")
-      if (required.every((operation) => observed.get(operation.operationId) === "Satisfied")) {
-        console.log(
-          JSON.stringify({
-            planId: report.plan.planId,
-            journalRevision: report.journal.revision,
-            status: "publication-visible",
-            operations: required.length,
-          }),
-        )
-        return 0
-      }
-      if (attempt < 30) await setTimeout(10000, undefined, { signal })
+      return 0
     }
+    console.log(
+      JSON.stringify({
+        planId: report.plan.planId,
+        journalRevision: report.journal.revision,
+        status: "publication-pending",
+        visibility,
+      }),
+    )
     process.stderr.write(
       "Publication visibility is unconfirmed. Retain the original Bundle, Plan and journal; continue observation before any further publication.\n",
     )

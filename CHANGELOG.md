@@ -23,6 +23,17 @@
 
 ## Unreleased
 
+### Recovery and public visibility
+
+- Add bounded observation to Node/Bun application runners. One acquired application
+  refreshes durable native observations with an elapsed-time budget and backoff;
+  reports distinguish Pending, Conflict and Satisfied with event references.
+- The maintained npm/GitHub verifier uses that observation mode and refuses older
+  executors before invocation. Cleanup failures remain failures when a budget expires.
+- Allow the self-release installer to select a repaired checkout's executor while
+  retaining the original publication Bundle, Plan, content and provenance. Workflow
+  attempts retain exact executor archives and their receipt separately.
+
 ### Effect and engineering boundaries
 
 - Preserve unexpected self-release admission defects while keeping fixed safe

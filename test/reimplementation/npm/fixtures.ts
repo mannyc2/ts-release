@@ -6,7 +6,41 @@ import { Schema } from "effect"
 import { File, Content, Bundle, type ArtifactAccess } from "@mannyc1/ts-release/bundle"
 import { Effect } from "effect"
 import { tarballDigests } from "../../../packages/npm/src/Wire.js"
+import { encode } from "../../../packages/npm/src/Native.js"
 import { PublishIntent, TokenAuthorization, NoProvenance } from "../../../packages/npm/src/index.js"
+
+// Structural witness only: these bytes deliberately have no signature trust.
+export const structuralBundle = (payload: Uint8Array) =>
+  encode({
+    mediaType: "application/vnd.dev.sigstore.bundle.v0.3+json",
+    dsseEnvelope: {
+      payloadType: "application/vnd.in-toto+json",
+      payload: Buffer.from(payload).toString("base64"),
+      signatures: [{ sig: "AA==" }],
+    },
+    verificationMaterial: {
+      certificate: { rawBytes: "AA==" },
+      tlogEntries: [
+        {
+          canonicalizedBody: "AA==",
+          logId: { keyId: "AA==" },
+          integratedTime: "1",
+          logIndex: "0",
+          kindVersion: { kind: "dsse", version: "0.0.1" },
+          inclusionProof: {
+            logIndex: "0",
+            treeSize: "1",
+            hashes: [],
+            rootHash: Buffer.alloc(32).toString("base64"),
+            checkpoint: {
+              envelope: `untrusted-fixture\n1\n${Buffer.alloc(32).toString("base64")}\n\n`,
+            },
+          },
+        },
+      ],
+    },
+  })
+
 export const pack = (manifest: Record<string, unknown>) => {
   const directory = mkdtempSync(join(tmpdir(), "npm-native-pack-"))
   try {

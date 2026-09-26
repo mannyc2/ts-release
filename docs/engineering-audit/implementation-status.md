@@ -402,3 +402,55 @@ New-branch publication is independently blocked: automatic approval review
 rejected it because direct user approval covered only the earlier checkpoint
 destination. The existing approval question remains pending. This slice has not
 been pushed, and that rejection has not been retried or bypassed.
+
+## Credential fixture ownership
+
+Branch `codex/credential-fixture-ownership`, isolated checkout
+`/mnt/models/dev/ts-release/.credential-fixture-ownership`, starts at
+`fc7d1412a75509f48f39f0e551affe7432ee2432`. This bounded W5 increment closes the
+R26 private npm import/request-double exception identified by the retention
+review. It changes three test/fixture files plus these research records.
+
+The existing npm structural-envelope helper moves into its shared fixture owner
+without duplication. Self-release now authors the expected provenance statement
+through public `createProvenance`, supplies both exact owned artifacts, and uses
+actual public provider preparation. The explicit Attest/VerifyProvenance ports
+still provide structural/credential-policy coverage only. Registry reads and
+journal/transport writes are forbidden; all original 201/401, one-read,
+one-exchange, zero-write, diagnostic-shape and secret-redaction assertions remain
+unchanged. No test case, production export or weaker authorization scenario was
+introduced. [Ownership and proof details](credential-fixture-ownership.md).
+
+The existing static check and selected npm-auth/self-release-credential tests ran
+sequentially under `flock -n /tmp/the-show-full-verification.lock`. Both exited
+0: static formatting, compiler/build, lint, types, imports and entries passed;
+behavior passed **9 tests, 0 failures, 67 assertions across 2 files** in one
+uninterrupted selected run. Raw logs:
+`/tmp/ts-release-credential-fixture-check.log` and
+`/tmp/ts-release-credential-fixture-behavior.log`.
+Frozen installation required leaving the sandbox after temporary/cache access
+failures, with no dependency or toolchain change. Independent read-only review
+found no blocking issue and ran no duplicate checks.
+
+The three changed test/fixture inputs are recorded in
+`/tmp/ts-release-credential-fixture-inputs.json`, SHA256
+`d8fa89ff597712e7cbc82dd61aab02c776c2d938effd16f93db952a08dc88bda`.
+Production, dependencies, scripts and generated delivery are unchanged from
+qualified fc7d141; its bounded packed npm/native SDK/isolated starter evidence
+remains applicable. No new native network, delivery-generation, full-suite or
+distribution run was warranted. Original root staging remains untouched.
+
+Independent plan work remains. The next bounded W3 owner is Catalog's separate
+`Shared.renderBytes` admission/failure policy: its catch still converts every
+exception to `catalog-input`, while `downloads` has explicit expected raw-Error
+refusals. Inventory those renderer callers and translate their expected refusals
+before preserving unexpected defects, using the existing catalog rendering
+checks first. Preserve the fixed code/message and exact owned-download rules;
+no catalog regression, implementation or qualification is claimed here.
+The five-provider shared-helper prerequisites, application helpers, candidate
+writes, signing and HTTP/SQLite cleanup remain separate work, as do R32–R35
+product increments and W7 final closure.
+
+This increment is local only. The existing direct publication question remains
+pending; no original or descendant branch push, signing or live publication has
+been attempted.

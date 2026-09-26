@@ -20,7 +20,7 @@ import {
 } from "../../../packages/npm/src/index.js"
 import { scopeFor, readScope, endpointFor, encode } from "../../../packages/npm/src/Native.js"
 import { statement, validateProvenance } from "../../../packages/npm/src/Auth.js"
-import { artifact, accessFor, pack } from "./fixtures.js"
+import { artifact, accessFor, pack, structuralBundle } from "./fixtures.js"
 
 const source = () =>
   new ProvenanceSource({
@@ -47,37 +47,6 @@ const trusted = () =>
     workflowRef: "refs/heads/main",
     issuer: "https://token.actions.githubusercontent.com",
     audience: "npm:registry.npmjs.org",
-  })
-// Structural witness only: these bytes deliberately have no signature trust.
-const structuralBundle = (payload: Uint8Array) =>
-  encode({
-    mediaType: "application/vnd.dev.sigstore.bundle.v0.3+json",
-    dsseEnvelope: {
-      payloadType: "application/vnd.in-toto+json",
-      payload: Buffer.from(payload).toString("base64"),
-      signatures: [{ sig: "AA==" }],
-    },
-    verificationMaterial: {
-      certificate: { rawBytes: "AA==" },
-      tlogEntries: [
-        {
-          canonicalizedBody: "AA==",
-          logId: { keyId: "AA==" },
-          integratedTime: "1",
-          logIndex: "0",
-          kindVersion: { kind: "dsse", version: "0.0.1" },
-          inclusionProof: {
-            logIndex: "0",
-            treeSize: "1",
-            hashes: [],
-            rootHash: Buffer.alloc(32).toString("base64"),
-            checkpoint: {
-              envelope: `untrusted-fixture\n1\n${Buffer.alloc(32).toString("base64")}\n\n`,
-            },
-          },
-        },
-      ],
-    },
   })
 const fixture = () => {
   const bytes = pack({ name: "@fixture/example", version: "1.2.3" })

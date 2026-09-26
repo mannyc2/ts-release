@@ -178,6 +178,11 @@ and runtime selection; they do not replace those remaining requirements.
 
 ## Credential fixture follow-up (static review on f2266bd)
 
+The historical pending exception below is now repaired in the subsequent
+[credential fixture increment](credential-fixture-ownership.md), based on
+fc7d141. Its public preparation path and existing nine-case qualification are
+recorded there; the following assessment preserves the original planning state.
+
 **Explicit R26/R27 ownership exception, retained in this consolidation slice:**
 `self-release/credentials.test.js:7` still imports npm's private `Native.js`.
 The following pending repair is not complete, and this review does not claim

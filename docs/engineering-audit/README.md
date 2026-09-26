@@ -148,6 +148,10 @@ the historical gap inventory above is not a current completion report.
   current test-file bodies, identify actual stronger proof, and state unread
   supporting-fixture and host limits. They support selective consolidation,
   not removal based on test counts.
+- [Credential fixture ownership](credential-fixture-ownership.md) closes the
+  recorded private npm import exception using actual public request preparation
+  and shared structural provenance, retaining the existing checks and explicit
+  cryptographic-trust limits.
 
 Registry visibility, repaired-executor recovery and whole-release request
 preflight remain the leading adopter product increments. Their motivating

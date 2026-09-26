@@ -65,6 +65,14 @@ export const canonical = (input: unknown): string => {
 
 /** Copy only admitted data; never retain caller aliases behind durable identities. */
 export const copyData = (input: unknown): unknown => JSON.parse(canonical(input))
+/** Own native byte storage without exposing detached-buffer diagnostics. */
+export const copyBytes = (input: Uint8Array): Uint8Array => {
+  try {
+    return new Uint8Array(input)
+  } catch {
+    return fail("invalid-data", "Value could not be admitted")
+  }
+}
 export const sameData = (left: unknown, right: unknown): boolean =>
   canonical(left) === canonical(right)
 export const sameBytes = (left: Uint8Array, right: Uint8Array): boolean =>
@@ -81,7 +89,12 @@ export const decodeOwned = <A, I>(codec: Schema.Codec<A, I>, input: unknown): A 
   freeze(Schema.decodeUnknownSync(codec, { onExcessProperty: "error" })(copyData(input)))
 
 export const parseCanonical = (text: string): unknown => {
-  const value: unknown = JSON.parse(text)
+  let value: unknown
+  try {
+    value = JSON.parse(text)
+  } catch {
+    return fail("invalid-data", "Value could not be admitted")
+  }
   if (canonical(value) !== text)
     fail("noncanonical-json", "Input must be exact canonical JSON, without duplicate keys")
   return value

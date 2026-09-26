@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect"
 import { captureDescriptor, type ProviderDescriptor, verifyDescriptor } from "./Provider.js"
-import { ReleaseError, attempt, fail, isReleaseErrorLike, reject } from "./internal/Error.js"
+import { attempt, fail, reject } from "./internal/Error.js"
 import { canonical, hashCanonical, copyData, decodeOwned, freeze } from "./internal/Identity.js"
 import { Operation, Plan } from "./internal/ReleaseModel.js"
 import type { Scope } from "./Journal.js"
@@ -118,19 +118,10 @@ export const loadPlan = Effect.fn("ts-release.loadPlan")(function* (
   }
   const rebuilt = yield* createPlan(plan.bundleId, plan.operations, plan.journalId)
   if (rebuilt.planId !== plan.planId) return yield* reject("plan-identity", "Plan ID mismatch")
-  yield* Effect.suspend(() => {
-    try {
-      for (const provider of definitions.values()) {
-        if (provider.validatePlan?.(rebuilt.operations) !== undefined)
-          fail("plan-validation", "Complete-plan admission must finish synchronously")
-      }
-      return Effect.void
-    } catch (error) {
-      if (error instanceof ReleaseError) return Effect.fail(error)
-      if (isReleaseErrorLike(error))
-        return Effect.fail(new ReleaseError({ code: error.code, message: error.message }))
-      if (Schema.isSchemaError(error)) return reject("invalid-data", "Value could not be admitted")
-      return Effect.die(error)
+  yield* attempt(() => {
+    for (const provider of definitions.values()) {
+      if (provider.validatePlan?.(rebuilt.operations) !== undefined)
+        fail("plan-validation", "Complete-plan admission must finish synchronously")
     }
   })
   return freeze(plan)

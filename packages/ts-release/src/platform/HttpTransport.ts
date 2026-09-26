@@ -18,8 +18,8 @@ const connect: (
   options: Parameters<typeof buildConnector>[0],
 ) => (options: buildConnector.Options, callback: buildConnector.Callback) => Socket =
   nativeConnector
-import { canonical } from "../internal/Identity.js"
-import { ReleaseError, attempt, fail, reject } from "../internal/Error.js"
+import { canonical, copyBytes } from "../internal/Identity.js"
+import { ReleaseError, attempt, fail, failure, reject } from "../internal/Error.js"
 import {
   verifyProviderContracts,
   verifyRequest,
@@ -52,11 +52,15 @@ const headers = (pairs: Headers): Record<string, string> => {
   const output: Record<string, string> = {}
   Object.setPrototypeOf(output, null)
   for (const [name, value] of pairs) {
-    validateHeaderName(name)
-    validateHeaderValue(name, value)
+    if (typeof value !== "string") invalid("headers")
+    try {
+      validateHeaderName(name)
+      validateHeaderValue(name, value)
+    } catch {
+      fail("invalid-data", "Value could not be admitted")
+    }
     const key = name.toLowerCase()
     if (
-      typeof value !== "string" ||
       key in output ||
       /^(host|content-length|transfer-encoding|connection|upgrade|expect|trailer|te|proxy-authorization)$/u.test(
         key,
@@ -96,8 +100,14 @@ const authorize = Effect.fn("http.authorize")(function* (
         : reject("http-credentials", "HTTP credentials could not be acquired"),
     ),
   )
+  // Returned credential objects can run getters during enumeration. Their
+  // failures may themselves be typed errors containing secret text.
+  const entries = yield* Effect.try({
+    try: () => Object.entries(secret),
+    catch: () => failure("invalid-data", "Value could not be admitted"),
+  })
   return yield* attempt(() => {
-    const live = headers(Object.entries(secret))
+    const live = headers(entries)
     if (Object.keys(live).length && url.protocol !== "https:") invalid("credential-tls")
     for (const name of Object.keys(live)) if (name in durable) invalid("credential-collision")
     return Object.freeze({ ...durable, ...live })
@@ -365,13 +375,24 @@ export const makeHttpRead = (options: HttpReadOptions): HttpRead => {
 export const makeCredentialExchange = (options: HttpExchangeOptions): CredentialExchange => {
   const native = nativeRequest(limits(options))
   return Effect.fn("http.exchange")(function* (input) {
+    // Capture live secret values before safe policy admission; do not preserve
+    // errors thrown by input getters or native byte-copy hooks.
+    const captured = yield* Effect.try({
+      try: () => ({
+        url: input.url,
+        fields: Object.entries(input.headers),
+        body: copyBytes(input.body),
+      }),
+      catch: () => failure("invalid-data", "Value could not be admitted"),
+    })
     const selected = yield* attempt(() => {
-      const url = endpoint(input.url)
+      if (typeof captured.url !== "string") invalid("endpoint")
+      const url = endpoint(captured.url)
       if (url.protocol !== "https:") invalid("credential-tls")
       return {
         url,
-        fields: headers(Object.entries(input.headers)),
-        body: new Uint8Array(input.body),
+        fields: headers(captured.fields),
+        body: captured.body,
       }
     })
     return yield* native(selected.url, "POST", selected.fields, selected.body)

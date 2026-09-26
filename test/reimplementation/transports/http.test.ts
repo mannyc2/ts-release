@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url"
 import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { Effect, Schema } from "effect"
+import { Cause, Effect, Exit, Schema } from "effect"
 import {
   Host,
   NoReplay,
@@ -305,7 +305,10 @@ test("native wire admission rejects ambiguous endpoints, headers, replay and bod
     { headers: [["x-test", "bad\r\nheader"]] },
   ] satisfies Partial<Parameters<typeof makeRequest>[0]>[]) {
     const request = await Effect.runPromise(requestFor(url, extra))
-    expect(Effect.runPromise(transport.prepare(request))).rejects.toThrow()
+    const exit = await Effect.runPromiseExit(transport.prepare(request))
+    if (!Exit.isFailure(exit)) throw new Error("Invalid native request was admitted")
+    expect(Cause.hasFails(exit.cause)).toBe(true)
+    expect(Cause.hasDies(exit.cause)).toBe(false)
   }
   expect(secrets).toBe(0)
 })
@@ -319,7 +322,13 @@ test("live headers cannot collide, change framing, use cleartext, or leak throug
   ]) {
     const url = "https://fixture.invalid/artifact",
       f = await fixture(url, { credentials: () => Effect.succeed(live) })
-    expect(f.run()).rejects.toThrow()
+    const exit = await runWithHost(
+      f.host,
+      Effect.exit(runRelease({ plan: f.plan, authorize: true })),
+    )
+    if (!Exit.isFailure(exit)) throw new Error("Invalid live headers were admitted")
+    expect(Cause.hasFails(exit.cause)).toBe(true)
+    expect(Cause.hasDies(exit.cause)).toBe(false)
     expect(await startEvents(f.store, f.plan)).toHaveLength(0)
   }
   const f = await fixture("https://fixture.invalid/artifact", {

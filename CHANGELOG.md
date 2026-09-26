@@ -37,6 +37,11 @@
 - Preserve defects thrown by complete-plan provider validators. Intentional
   `ReleaseError` refusals retain their fields across package constructors; schema
   refusals retain safe admission diagnostics before any external operation.
+- Preserve programming defects across core admission and receipt classification.
+  Native/parser owners keep expected refusals typed; a classifier defect after
+  dispatch leaves the journal unresolved without permitting an ordinary resend.
+  Errors thrown while enumerating returned credentials no longer expose private
+  messages, including messages carried by a typed release error.
 - Bundle the npm/GitHub starter input helper's workspace dependencies, so its
   documented input command runs from an isolated installation.
 - Treat malformed GitHub tag object types as inconclusive. OpenAI skill discovery

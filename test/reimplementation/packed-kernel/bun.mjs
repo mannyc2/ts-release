@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { Effect } from "effect"
+import { Cause, Effect, Exit, Result } from "effect"
 import { JournalEvent, PlanSuperseded } from "@mannyc1/ts-release"
 import { openSqliteJournal } from "@mannyc1/ts-release/bun"
 
@@ -24,7 +24,12 @@ await Effect.runPromise(
     }),
   ),
 )
-assert.equal(await Effect.runPromise(Effect.isFailure(closedStore.read("journal"))), true)
+const closed = await Effect.runPromiseExit(closedStore.read("journal"))
+assert.equal(
+  Exit.isFailure(closed) &&
+    Result.getOrUndefined(Cause.findDefect(closed.cause)) instanceof RangeError,
+  true,
+)
 await Effect.runPromise(
   Effect.scoped(
     Effect.gen(function* () {

@@ -85,9 +85,10 @@ cycle list alone was incomplete evidence; the current checker corrects that.
 
 ## Remaining work
 
-- **W3:** shared `attempt`/`matches` still normalize unexpected exceptions. Repair
-  them by caller-visible slice while retaining privacy and Promise compatibility.
-  Passing static diagnostics does not establish this semantic error policy.
+- **W3:** provider `makeDataBoundary.attempt`/`admit`/`matches` still normalize
+  unexpected exceptions. Core `attempt` is repaired in the subsequent increment
+  below. Continue by caller-visible slice while retaining privacy and Promise
+  compatibility; static diagnostics alone do not establish the semantic policy.
 - **W4:** the ContentStore acquisition/write interruption repair is completed in
   the subsequent increment below. The checkpoint's broad instrumentation matrix
   was deliberately not copied. Other capability-inventory decisions and native
@@ -170,3 +171,37 @@ The [core error-policy prerequisite inventory](core-error-policy-prerequisites.m
 now identifies each native/parser owner that needs local failure translation
 before narrowing shared `attempt`. It also records credential privacy and
 post-dispatch ambiguity contracts that a global replacement must preserve.
+
+## Strict core error classification
+
+Branch `codex/core-error-policy` starts at
+`f82f4a19656fdd2f0c7629f0715895365182b3e9`. Shared core admission now preserves
+programming defects, known release-error fields across package constructors and
+safe schema refusals. Native JSON/UTF-8, file/SQLite, HTTP header and OIDC owners
+classify expected native rejection locally. Plan's separate strict validator
+classifier is deduplicated. A receipt-classifier defect after dispatch leaves
+unresolved history without authorizing ordinary resend; malformed receipt data
+still records the existing durable undecodable evidence.
+
+Returned-credential getters previously leaked private text through typed errors;
+the reproduced leak is now projected safely. Non-string headers are rejected
+before coercion (`undefined` changes from `invalid-data` to `http-headers`).
+Using a SQLite journal after its owning scope closes is a defect, reflected in
+the existing installed consumer's closure assertion. Full native compatibility
+decisions, failing evidence and limits are in the
+[implementation record](core-error-policy-implementation.md).
+
+Final static checks passed, followed by 358 behavior tests (3,769 assertions),
+packed core under both installers, seven-package catalog/native consumers,
+packed Action, and installed CLI/Action ordinary/interrupted workflows. The
+aggregate initially stopped on the old closed-store typed-failure expectation;
+after correcting that existing assertion, packed core and all remaining stages
+passed. No uninterrupted aggregate pass is claimed. Runtime source stayed frozen
+through qualification and Effect/platform remain rc.115.
+
+Provider/application-local broad helpers, self-release and Sigstore lifetime
+joining, HTTP/SQLite cleanup classification, complete test-retention review and
+final W7 closure remain open. R32–R34 product improvements remain separate work.
+These local commits have not been pushed to the new implementation branch; the
+earlier checkpoint approval does not satisfy the automatic review's direct
+approval requirement for that destination.

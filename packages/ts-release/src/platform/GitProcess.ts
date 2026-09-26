@@ -1,10 +1,11 @@
 import * as Effect from "effect/Effect"
 import * as Cause from "effect/Cause"
+import * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
 import { command, type ProcessResult } from "./Process.js"
 import { accessSync, constants, mkdtempSync, realpathSync, rmSync, lstatSync } from "node:fs"
 import { dirname, isAbsolute, join, delimiter } from "node:path"
-import { ReleaseError, attempt, failure, reject } from "../internal/Error.js"
+import { ReleaseError, attempt, fail, failure, reject } from "../internal/Error.js"
 import { admitCoordinate, type Credentials, type RefCoordinate } from "../internal/GitCatalog.js"
 import * as Redacted from "effect/Redacted"
 
@@ -31,6 +32,12 @@ export interface GitRuntime {
 }
 const error = () =>
   failure("git-process", "Native Git command did not return complete bounded output")
+// Only synchronous filesystem operations enter this native adapter.
+const fileSystem = <A>(body: () => A): Effect.Effect<A, ReleaseError> =>
+  Effect.try({
+    try: body,
+    catch: () => failure("invalid-data", "Value could not be admitted"),
+  })
 const config = (values: Readonly<Record<string, string>>): Readonly<Record<string, string>> => {
   const output: Record<string, string> = { GIT_CONFIG_COUNT: String(Object.keys(values).length) }
   for (const [index, [key, value]] of Object.entries(values).entries()) {
@@ -89,10 +96,10 @@ export const resolveGitCredentials = Effect.fn("git.resolveCredentials")(functio
 export const openGitRuntime = Effect.fn("git.openRuntime")(
   (input: GitProcessOptions): Effect.Effect<GitRuntime, ReleaseError, Scope.Scope> =>
     Effect.gen(function* () {
-      const options = yield* attempt(() => {
+      const selected = yield* attempt(() => {
         const selected = {
-          gitExecutable: input.gitExecutable,
-          temporaryRoot: input.temporaryRoot,
+          gitExecutable: Schema.decodeSync(Schema.String)(input.gitExecutable),
+          temporaryRoot: Schema.decodeSync(Schema.String)(input.temporaryRoot),
           timeoutMilliseconds: input.timeoutMilliseconds,
           maximumOutputBytes: input.maximumOutputBytes,
         }
@@ -104,14 +111,19 @@ export const openGitRuntime = Effect.fn("git.openRuntime")(
           )
         )
           throw error()
-        const executable = realpathSync(selected.gitExecutable),
-          root = realpathSync(selected.temporaryRoot)
-        if (!lstatSync(executable).isFile() || !lstatSync(root).isDirectory()) throw error()
-        accessSync(executable, constants.X_OK)
-        return { ...selected, gitExecutable: executable, temporaryRoot: root }
+        return selected
       })
+      const gitExecutable = yield* fileSystem(() => realpathSync(selected.gitExecutable))
+      const temporaryRoot = yield* fileSystem(() => realpathSync(selected.temporaryRoot))
+      if (
+        !(yield* fileSystem(() => lstatSync(gitExecutable).isFile())) ||
+        !(yield* fileSystem(() => lstatSync(temporaryRoot).isDirectory()))
+      )
+        return yield* error()
+      yield* fileSystem(() => accessSync(gitExecutable, constants.X_OK))
+      const options = { ...selected, gitExecutable, temporaryRoot }
       const root = yield* Effect.acquireRelease(
-        attempt(() => mkdtempSync(join(options.temporaryRoot, "ts-release-git-"))),
+        fileSystem(() => mkdtempSync(join(options.temporaryRoot, "ts-release-git-"))),
         (directory) => Effect.sync(() => rmSync(directory, { recursive: true, force: true })),
       )
       const base = Object.freeze({
@@ -135,7 +147,7 @@ export const openGitRuntime = Effect.fn("git.openRuntime")(
         maximumOutputBytes: options.maximumOutputBytes,
         repository: Effect.fn("git.openRepository")(function* (format: "sha1" | "sha256") {
           if (format !== "sha1" && format !== "sha256") return yield* error()
-          const directory = yield* attempt(() => mkdtempSync(join(root, "repository-"))),
+          const directory = yield* fileSystem(() => mkdtempSync(join(root, "repository-"))),
             execute = command(options.gitExecutable, directory, options, error)
           const run: GitCommand = (args, bytes, environment) =>
             execute(args, bytes, {
@@ -179,8 +191,13 @@ export const checked = Effect.fn("git.checkedCommand")(function* (
     return yield* reject("git-command", "Native Git rejected the prepared operation")
   return result.stdout
 })
-export const nativeText = (bytes: Uint8Array): string =>
-  new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+export const nativeText = (bytes: Uint8Array): string => {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+  } catch {
+    return fail("invalid-data", "Value could not be admitted")
+  }
+}
 export const checkedText = Effect.fn("git.checkedText")(function* (
   run: GitCommand,
   args: readonly string[],

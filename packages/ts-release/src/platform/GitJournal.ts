@@ -5,7 +5,7 @@ import { createHash } from "node:crypto"
 import { mkdirSync } from "node:fs"
 import type { AppendResult, JournalStore } from "../Journal.js"
 import type { JournalEvent } from "../internal/ReleaseModel.js"
-import { type ReleaseError, attempt, fail, reject } from "../internal/Error.js"
+import { type ReleaseError, attempt, fail, failure, reject } from "../internal/Error.js"
 import { canonical } from "../internal/Identity.js"
 import { conditionalArguments, pushWitness } from "../internal/GitAuthority.js"
 import { admitCoordinate, objectFormat, type Credentials } from "../internal/GitCatalog.js"
@@ -64,7 +64,6 @@ export const openGitJournal = Effect.fn("ts-release.openGitJournal")(
         })
         if (format !== "sha1" && format !== "sha256") invalid()
         const credentials = input.credentials.bind(input)
-        mkdirSync(cacheDirectory, { recursive: true, mode: 0o700 })
         return {
           coordinate,
           format,
@@ -74,6 +73,10 @@ export const openGitJournal = Effect.fn("ts-release.openGitJournal")(
           timeoutMilliseconds,
           maximumOutputBytes,
         }
+      })
+      yield* Effect.try({
+        try: () => mkdirSync(options.temporaryRoot, { recursive: true, mode: 0o700 }),
+        catch: () => failure("invalid-data", "Value could not be admitted"),
       })
       const runtime = yield* openGitRuntime(options),
         limit = runtime.maximumOutputBytes

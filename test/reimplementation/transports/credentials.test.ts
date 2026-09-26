@@ -41,6 +41,36 @@ test("credential interruption stays interrupted and redacted before dispatch adm
   expect((await Effect.runPromise(fixture.store.read(fixture.plan.journalId))).events).toEqual([])
 })
 
+test("returned credential getters cannot expose private typed errors before dispatch", async () => {
+  const secret = "returned-credential-private-regression-marker"
+  const provider = {
+    ...providerFor(),
+    ownsRequest: () => true,
+    decodeResponse: () => Effect.die(new Error("Credentials must prevent native dispatch")),
+  }
+  const fixture = await makeFixture(provider)
+  const transport = makeHttpTransport({
+    providers: [provider],
+    timeoutMilliseconds: 100,
+    maximumResponseBytes: 100,
+    credentials: () =>
+      Effect.succeed({
+        get authorization(): string {
+          throw new ReleaseError({ code: "private-code", message: secret })
+        },
+      }),
+  })
+  const exit = await runWithHost(
+    { ...fixture.host, transport },
+    Effect.exit(runRelease({ plan: fixture.plan, authorize: true })),
+  )
+  if (!Exit.isFailure(exit)) throw new Error("Credential getter unexpectedly admitted dispatch")
+  expect(Cause.hasFails(exit.cause)).toBe(true)
+  expect(Cause.hasDies(exit.cause)).toBe(false)
+  expect(String(exit.cause)).not.toContain(secret)
+  expect((await Effect.runPromise(fixture.store.read(fixture.plan.journalId))).events).toEqual([])
+})
+
 const request: OidcTokenRequest = {
   issuer: "https://token.actions.githubusercontent.com",
   audience: "sigstore",

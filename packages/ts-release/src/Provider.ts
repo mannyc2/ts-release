@@ -3,7 +3,7 @@ import { CoreDispatchError, CoreUndecodableReceipt } from "./internal/ReleaseMod
 import { ObservationRecorded, Operation, RequestFacts } from "./internal/ReleaseModel.js"
 import type { JournalEvent, ObservationStatus, Plan } from "./internal/ReleaseModel.js"
 import { ReleaseError, attempt, fail, reject } from "./internal/Error.js"
-import { canonical, copyData, decodeOwned, freeze } from "./internal/Identity.js"
+import { canonical, copyBytes, copyData, decodeOwned, freeze } from "./internal/Identity.js"
 import { hashCanonical, sha256 } from "./internal/Identity.js"
 
 /** Provider contract version spoken by this kernel. A definition built against another contract is rejected at Host verification, whatever the installer resolved. */
@@ -157,7 +157,7 @@ export const makeRequest = Effect.fn("ts-release.makeRequest")(function* (
     const { body, ...fields } = input
     const captured = copyData(fields)
     if (!Predicate.isObject(captured)) fail("request-facts", "Request facts must be an object")
-    return { body: new Uint8Array(body), fields: captured }
+    return { body: copyBytes(body), fields: captured }
   })
   const bodyDigest = yield* sha256(body)
   const facts = yield* attempt(() =>
@@ -170,7 +170,7 @@ export const verifyRequest = Effect.fn("ts-release.verifyRequest")(function* (
 ) {
   const { facts, body } = yield* attempt(() => ({
     facts: decodeOwned(RequestFacts, request.facts),
-    body: new Uint8Array(request.body),
+    body: copyBytes(request.body),
   }))
   if (facts.byteLength !== String(body.byteLength) || facts.bodyDigest !== (yield* sha256(body)))
     return yield* reject("request-bytes", "Prepared bytes do not match recorded facts")

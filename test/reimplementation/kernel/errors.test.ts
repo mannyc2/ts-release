@@ -2,7 +2,10 @@ import { expect, test } from "bun:test"
 import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
 import { SqliteJournal } from "./sqlite-fixture.js"
 import {
@@ -22,6 +25,62 @@ import {
   startEvents,
   measureStore,
 } from "./fixtures.js"
+
+test("receipt classifier defects leave the dispatch unresolved without authorizing resend", async () => {
+  const defect = new TypeError("Receipt classifier implementation failed")
+  const fixture = await makeFixture({
+    ...providerFor(),
+    classifyReceipt: () => {
+      throw defect
+    },
+  })
+  const exit = await runWithHost(
+    fixture.host,
+    Effect.exit(runRelease({ plan: fixture.plan, authorize: true })),
+  )
+  if (!Exit.isFailure(exit)) throw new Error("Expected receipt classifier defect")
+  const found = Cause.findDefect(exit.cause)
+  expect(Result.isSuccess(found) && found.success).toBe(defect)
+  expect(
+    (await Effect.runPromise(fixture.store.read(fixture.plan.journalId))).events.map(
+      (event) => event.body._tag,
+    ),
+  ).toEqual(["DispatchStarted"])
+  const restarted = await runWithHost(
+    { ...fixture.host, providers: [providerFor()] },
+    runRelease({ plan: fixture.plan, authorize: true }),
+  )
+  expect(restarted.operations[0]?.status).toBe("Inconclusive")
+  expect(fixture.sends).toHaveLength(1)
+})
+
+test("malformed accepted receipts retain durable undecodable evidence without resend", async () => {
+  const fixture = await makeFixture()
+  const host: HostShape = {
+    ...fixture.host,
+    transport: {
+      send: (request) =>
+        fixture.host.transport
+          .send(request)
+          .pipe(Effect.as({ _tag: "Accepted", receipt: null } as const)),
+    },
+  }
+  await runWithHost(host, runRelease({ plan: fixture.plan, authorize: true }))
+  expect(
+    (await Effect.runPromise(fixture.store.read(fixture.plan.journalId))).events[1]?.body,
+  ).toMatchObject({
+    _tag: "ObservationRecorded",
+    evidenceKind: "DispatchError",
+    evidenceVersion: "core-undecodable-receipt/1",
+    evidence: { code: "undecodable-receipt" },
+  })
+  const restarted = await runWithHost(
+    fixture.host,
+    runRelease({ plan: fixture.plan, authorize: true }),
+  )
+  expect(restarted.operations[0]?.status).toBe("Inconclusive")
+  expect(fixture.sends).toHaveLength(1)
+})
 
 for (const candidate of evaluatorNames) {
   test(`${candidate}: exact versioned native error survives SQLite close/reopen and remains inconclusive`, async () => {

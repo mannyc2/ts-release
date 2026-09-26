@@ -9,6 +9,16 @@ import { decodeJson } from "../internal/NativeJson.js"
 
 const issuer = "https://token.actions.githubusercontent.com"
 const invalid = (): never => fail("github-oidc", "GitHub workload identity could not be verified")
+const decodeOidcJson = (bytes: Uint8Array): unknown => {
+  const decoder = new TextDecoder("utf-8", { fatal: true })
+  let text: string
+  try {
+    text = decoder.decode(bytes)
+  } catch {
+    return fail("invalid-data", "Value could not be admitted")
+  }
+  return decodeJson(text)
+}
 const decode = <A, I>(codec: Schema.Codec<A, I>, value: unknown): A => {
   const decoded = Schema.decodeUnknownResult(codec)(value)
   return Result.isFailure(decoded) ? invalid() : decoded.success
@@ -81,8 +91,8 @@ export const verifyGithubToken = (
   const request = decodeOwned(Request, input)
   if (typeof token !== "string" || token.length > 64 * 1024) invalid()
   const [rawHeader, rawClaims, signature] = decode(TokenParts, token.split("."))
-  const header = decode(Header, decodeJson(base64url(rawHeader))),
-    claims = decode(Claims, decodeJson(base64url(rawClaims)))
+  const header = decode(Header, decodeOidcJson(base64url(rawHeader))),
+    claims = decode(Claims, decodeOidcJson(base64url(rawClaims)))
   const matches = decode(KeySet, jwks).keys.filter((key) => key.kid === header.kid)
   const [selected] = matches
   if (matches.length !== 1 || selected === undefined) return invalid()
@@ -90,14 +100,24 @@ export const verifyGithubToken = (
   const modulus = base64url(key.n)
   if (modulus.length < 256 || modulus.length > 1024 || modulus[0] === 0) invalid()
   base64url(key.e)
-  const publicKey = createPublicKey({
-    key: { kty: "RSA", n: key.n, e: key.e },
-    format: "jwk",
-  })
-  if (
-    !verify("RSA-SHA256", Buffer.from(`${rawHeader}.${rawClaims}`), publicKey, base64url(signature))
-  )
-    invalid()
+  let publicKey: ReturnType<typeof createPublicKey>
+  try {
+    publicKey = createPublicKey({
+      key: { kty: "RSA", n: key.n, e: key.e },
+      format: "jwk",
+    })
+  } catch {
+    return fail("invalid-data", "Value could not be admitted")
+  }
+  const signed = Buffer.from(`${rawHeader}.${rawClaims}`),
+    signatureBytes = base64url(signature)
+  let verified: boolean
+  try {
+    verified = verify("RSA-SHA256", signed, publicKey, signatureBytes)
+  } catch {
+    return fail("invalid-data", "Value could not be admitted")
+  }
+  if (!verified) invalid()
   if (!Number.isSafeInteger(now) || now < 0) invalid()
   const seconds = Math.floor(now / 1000)
   if (
@@ -179,6 +199,7 @@ export const makeGithubOidcTokenSource = (options: HttpExchangeOptions): OidcTok
     }
     const rawUrl = yield* readEnvironment("ACTIONS_ID_TOKEN_REQUEST_URL")
     const url = yield* attempt(() => {
+      if (!URL.canParse(rawUrl)) fail("invalid-data", "Value could not be admitted")
       const url = new URL(rawUrl)
       // GitHub.com runner service endpoint, independent of the JWT issuer URL.
       // Refuse a substituted origin before reading the runner request token.
@@ -213,7 +234,7 @@ export const makeGithubOidcTokenSource = (options: HttpExchangeOptions): OidcTok
     })
     const token = yield* attempt(() => {
       if (response.status !== 200) invalid()
-      return decode(TokenResponse, decodeJson(response.body)).value
+      return decode(TokenResponse, decodeOidcJson(response.body)).value
     })
     const keys = yield* publicRead({
       url: `${issuer}/.well-known/jwks`,
@@ -225,7 +246,12 @@ export const makeGithubOidcTokenSource = (options: HttpExchangeOptions): OidcTok
     const now = yield* Clock.currentTimeMillis
     yield* attempt(() => {
       if (keys.status !== 200) invalid()
-      verifyGithubToken(token, decodeJson(keys.body), { ...request, expectedClaims: claims }, now)
+      verifyGithubToken(
+        token,
+        decodeOidcJson(keys.body),
+        { ...request, expectedClaims: claims },
+        now,
+      )
     })
     return Redacted.make(token)
   })

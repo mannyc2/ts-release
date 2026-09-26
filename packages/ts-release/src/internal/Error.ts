@@ -11,13 +11,19 @@ export function fail(code: string, message: string): never {
 export const failure = (code: string, message: string) => new ReleaseError({ code, message })
 export const reject = (code: string, message: string): Effect.Effect<never, ReleaseError> =>
   Effect.fail(failure(code, message))
+/** Interpret synchronous domain admission. Native adapters classify their own
+ * operational failures; unexpected callback and implementation errors are defects. */
 export const attempt = <A>(body: () => A): Effect.Effect<A, ReleaseError> =>
-  Effect.try({
-    try: body,
-    catch: (error) =>
-      error instanceof ReleaseError
-        ? error
-        : new ReleaseError({ code: "invalid-data", message: "Value could not be admitted" }),
+  Effect.suspend(() => {
+    try {
+      return Effect.succeed(body())
+    } catch (error) {
+      if (error instanceof ReleaseError) return Effect.fail(error)
+      if (isReleaseErrorLike(error))
+        return Effect.fail(new ReleaseError({ code: error.code, message: error.message }))
+      if (Schema.isSchemaError(error)) return reject("invalid-data", "Value could not be admitted")
+      return Effect.die(error)
+    }
   })
 
 const bounded = (text: string): string =>

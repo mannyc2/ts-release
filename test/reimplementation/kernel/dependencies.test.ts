@@ -267,6 +267,25 @@ test("complete-graph validator defects remain defects before external actions", 
   expect(Result.isSuccess(found) && found.success.defect).toBe(defect)
 })
 
+test("host machine defects remain defects before credentials or publication", async () => {
+  const f = await fixture()
+  const defect = new TypeError("Host machine implementation failed")
+  const exit = await runWithHost(
+    {
+      ...f.host,
+      machine: () => {
+        throw defect
+      },
+    },
+    Effect.exit(Release.runRelease({ plan: f.plan, authorize: true })),
+  )
+  expect(f.calls).toMatchObject({ credentials: 0, sends: 0, observations: 0 })
+  expect(f.store.journals.size).toBe(0)
+  if (!Exit.isFailure(exit)) throw new Error("Expected host machine defect")
+  const found = Cause.findDefect(exit.cause)
+  expect(Result.isSuccess(found) && found.success).toBe(defect)
+})
+
 test("a valid parent change during credential preparation prevents a stale child CAS and send", async () => {
   const f = await fixture()
   const host: Release.HostShape = {

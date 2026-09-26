@@ -482,3 +482,24 @@ R32–R35 remain open. The release workflow also needs explicit compiler patchin
 in its two `--ignore-scripts` jobs before build; that is a separate CI increment.
 Work continues through independently authorized local slices. This increment
 has not been pushed; no pending publication approval has been retried.
+
+## Explicit compiler patching in release CI
+
+Following Catalog commit `d7837c5ddbf4196e3e79f5cd9984263ebc00e734`, both the
+attestation and publication jobs now run the existing `bun run prepare` between
+`bun install --frozen-lockfile --ignore-scripts` and `bun run build`. A fresh
+ignored-script install would otherwise leave stock TypeScript, which the new
+build guard correctly refuses. The preparation job's ordinary frozen install
+already invokes the hook. Dependency lifecycle scripts remain disabled in the
+other two jobs; workflow approval, permissions and candidate selection are
+unchanged. CONTRIBUTING documents the same explicit-install contract.
+
+The existing patch command and toolchain guard exited 0 under the shared lock;
+log `/tmp/ts-release-ci-explicit-patch.log` explicitly reports an already-patched
+compiler and version `7.0.2+effect-tsgo.0.45.0`. This is an idempotent invocation,
+not a new clean-install proof. The prior milestone's actual ignored-script/stock
+compiler negative control remains the evidence for the failure mode. Prettier
+checked the workflow and contributor guide successfully. No new test/configuration
+mirror, full profile, hosted workflow, signing or publication was run. Provider
+and self-release agents are editing separate owners; this local CI commit stages
+only the workflow, contributor guide and this status record.

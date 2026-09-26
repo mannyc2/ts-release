@@ -35,7 +35,10 @@ Patched TypeScript owns typechecking, declarations and Effect diagnostics. The
 only: TypeScript 7 no longer provides that JavaScript compiler API. Installed
 Apple fixture transpilation uses Bun's transpiler.
 It is not a second diagnostic engine. Installation without lifecycle scripts must
-not silently make stock compiler success an acceptable check.
+not silently make stock compiler success an acceptable check. After
+`bun install --frozen-lockfile --ignore-scripts`, run `bun run prepare` explicitly
+before build or verification. The attestation and publication jobs use this order
+while keeping dependency lifecycle scripts disabled.
 
 Warnings configured as blocking remain blocking. Fix a finding at its semantic
 owner. An unavoidable suppression names a narrow foreign/runtime contract and

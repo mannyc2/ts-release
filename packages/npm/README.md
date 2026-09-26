@@ -105,3 +105,10 @@ public declarations pass fresh Bun and npm consumers. Live npm/OIDC execution
 through these provider APIs remains separate from publishing this package itself.
 See the repository's release runbook for seven-package distribution and the
 installed CLI/Action checks.
+
+Issued native Sigstore attestation is joined before cancellation can finish.
+If the SDK rejects during pending cancellation, its fixed `npm-sigstore-sign`
+failure remains observable; token-bearing SDK text is never copied into it.
+A successful remote operation may still be unretained after cancellation, and
+an SDK promise that never settles can delay cancellation. This does not authorize
+retrying an uncertain attestation.

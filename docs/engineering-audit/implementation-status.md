@@ -554,3 +554,30 @@ independently reproduced; the one real Bundle-write interruption covers the
 shared per-issued-operation pattern. Source remains local and original staging
 is untouched. Signing settlement and self-release privacy/error classification
 remain separate next slices, with R32–R35 and W7 still open.
+
+## Native signing settlement
+
+Following candidate-write commit `17d491dfc0cbcbdb0653c233cc2981091c0dc321`, npm
+now masks only the already-issued native Sigstore attestation promise. Signing
+approval, token acquisition, fixed failure projection, retry:0, subsequent verify
+and candidate retention are unchanged. A stuck SDK call can delay cancellation;
+joining does not establish rollback or permission to retry an unknown outcome.
+
+[The proof record](native-sigstore-signing-settlement.md) uses SDK 5's actual
+malformed synthetic-token rejection before any network call. Its original
+baseline genuinely completed interruption too early. The first after-fix run
+proved joining but exposed a mistaken interruption-only assertion: rc.115 gives
+the settled typed SDK failure precedence. Corrected assertions require the safe
+failure, zero defects/token disclosure, joined work and zero network attempts.
+The corrected fixture failed against identical original Auth/SDK bytes in the
+preserved baseline checkout, then passed current compiled code. This later
+baseline control is documented separately from the initial pre-edit red.
+
+Pinned npm compilation and toolchain checks exited 0 under the shared lock.
+Corrected direct Node 22.22.2 proof and Bun wrapper passed. An extra integrator
+wrapper invocation omitted the explicit Node path and was correctly refused
+because the environment's `node` launched Bun; this is recorded without a new
+Node-engine claim. No actual Fulcio/Rekor request, successful signing, full gate
+or installed archive was exercised. Those source/proof/doc paths alone are in
+this local signing commit; concurrent provider, application, observation and
+executor edits remain separate and await integrated qualification.

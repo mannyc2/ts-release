@@ -41,6 +41,8 @@
   that never settle can still delay cancellation.
 - Join issued self-release candidate-directory and Bundle/Plan writes before
   cancellation completes, retaining partial candidates for inspection.
+- Join issued native Sigstore attestation before cancellation can finish. SDK
+  rejection keeps its fixed safe diagnostic; remote outcomes may remain unknown.
 - Preserve defects thrown by complete-plan provider validators. Intentional
   `ReleaseError` refusals retain their fields across package constructors; schema
   refusals retain safe admission diagnostics before any external operation.

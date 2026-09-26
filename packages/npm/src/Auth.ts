@@ -385,6 +385,8 @@ export const makeSigstoreAttester = (input: {
       bearer(token)
       return Redacted.value(token)
     })
+    // The SDK cannot cancel an issued attestation. Join it before restoring
+    // interruption; remote outcomes can remain unknown and native calls can hang.
     const bundle = yield* Effect.tryPromise({
       try: () =>
         Sigstore.attest(Buffer.from(payload), "application/vnd.in-toto+json", {
@@ -397,7 +399,7 @@ export const makeSigstoreAttester = (input: {
           timeout,
         }),
       catch: () => Native.failure("npm-sigstore-sign", "Sigstore attestation outcome is unknown"),
-    })
+    }).pipe(Effect.uninterruptible)
     const bundleBytes = Native.encode(bundle)
     yield* verify({ source, bundleBytes })
     return { bundleBytes }

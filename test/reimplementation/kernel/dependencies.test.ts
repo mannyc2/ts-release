@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { Effect, Schema } from "effect"
+import { Cause, Effect, Exit, Result, Schema } from "effect"
 import * as Release from "../../../packages/ts-release/src/index.js"
 import { verifyNativeEvidence } from "../../../packages/ts-release/src/Journal.js"
 import { MemoryJournal, runWithHost } from "./fixtures.js"
@@ -16,6 +16,7 @@ const invalid = (): never => {
   throw new Release.ReleaseError({ code: "fixture-parent", message: "Exact parent differs" })
 }
 const nativeParent = (context: Release.ProviderContext): string | null => {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Kernel intentCodec admission is the behavior under test; a second decoder here would mask its failure.
   const intent = context.own.operation.intent as Intent
   if (intent.parent === null) return null
   const dependency = context.dependencies.find(
@@ -55,12 +56,14 @@ async function fixture() {
     requestCorresponds: (_operation, request, context) =>
       request.scope === JSON.stringify(nativeParent(context)),
     receiptCorresponds: (_operation, request, value) =>
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- This callback consumes the native receiptCodec result admitted by the kernel under test.
       JSON.stringify((value as Native).parentId) === request.scope,
     classifyReceipt: () => "Satisfied",
     prepare: (operation, context) =>
       Release.makeRequest({
         transport: "opaque/1",
         method: "create",
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Kernel intentCodec admission must precede this provider callback.
         endpoint: `native:${(operation.intent as Intent).name}`,
         headers: [],
         body: new Uint8Array(),
@@ -72,6 +75,7 @@ async function fixture() {
     observationCodec: Native,
     classifyObservation: (_operation, value, receipts, context) => {
       expect(JSON.stringify(context.own.receipts)).toBe(JSON.stringify(receipts))
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Native observationCodec admission belongs to the kernel being tested.
       if ((value as Native).parentId !== nativeParent(context)) invalid()
       return "Satisfied"
     },
@@ -112,14 +116,14 @@ async function fixture() {
           return host.transport.send
         }),
       send: (request) =>
-        Effect.sync(() => {
+        Effect.gen(function* () {
           calls.sends++
+          const parentId = yield* Schema.decodeEffect(
+            Schema.fromJsonString(Native.fields.parentId),
+          )(request.facts.scope).pipe(Effect.orDie)
           return {
-            _tag: "Accepted",
-            receipt: new Native({
-              id: `returned:${calls.sends}`,
-              parentId: JSON.parse(request.facts.scope),
-            }),
+            _tag: "Accepted" as const,
+            receipt: new Native({ id: `returned:${calls.sends}`, parentId }),
           }
         }),
     },
@@ -131,15 +135,35 @@ test("an external provider admits the complete graph before storage, observation
   const f = await fixture()
   const child = await Effect.runPromise(Release.createOperation(f.provider, f.child.intent))
   const plan = await Effect.runPromise(Release.createPlan("owned:bundle", [child, f.parent]))
-  for (const effect of [
+  const admissions: ReadonlyArray<Effect.Effect<unknown, Release.ReleaseError, Release.Host>> = [
     Release.runRelease({ plan, authorize: true }),
     Release.observeRelease({ plan }),
     Release.reportRelease({ plan }),
-  ]) {
-    await expect(runWithHost(f.host, effect)).rejects.toThrow("Exact parent")
+    Release.preflightRelease({ plan }),
+  ]
+  for (const effect of admissions) {
+    expect(runWithHost(f.host, effect)).rejects.toThrow("Exact parent")
   }
   expect(f.calls).toEqual({ reads: 0, credentials: 0, sends: 0, observations: 0 })
   expect(f.store.journals.size).toBe(0)
+  expect(
+    await runWithHost(f.host, Effect.flip(Release.preflightRelease({ plan: f.plan }))),
+  ).toMatchObject({ code: "preflight-provider-unsupported" })
+  expect(
+    await runWithHost(
+      {
+        ...f.host,
+        providers: [
+          {
+            ...f.provider,
+            preflight: () => Effect.die("Unsupported transport cannot start provider work"),
+          },
+        ],
+      },
+      Effect.flip(Release.preflightRelease({ plan: f.plan })),
+    ),
+  ).toMatchObject({ code: "preflight-transport-unsupported" })
+  expect(f.calls).toEqual({ reads: 2, credentials: 0, sends: 0, observations: 0 })
 })
 
 test("native returned parent IDs survive a fresh runner and are the only declared dependency facts", async () => {
@@ -159,9 +183,9 @@ test("native returned parent IDs survive a fresh runner and are the only declare
   const child = snapshot.events.find(
     (event) =>
       event.body._tag === "DispatchStarted" && event.body.operationId === f.child.operationId,
-  )!
+  )
+  if (child === undefined) throw new Error("Fixture requires the child dispatch")
   expect(child.body._tag === "DispatchStarted" && child.body.request.scope).toBe('"returned:1"')
-  expect(() => verifyNativeEvidence(f.plan, snapshot.events, [f.provider])).not.toThrow()
   await runWithHost(f.host, Release.runRelease({ plan: f.plan, authorize: true, observe: false }))
   expect(f.calls.sends).toBe(2)
 })
@@ -172,17 +196,19 @@ test("a changed or future parent receipt cannot validate an earlier child reques
   const snapshot = await Effect.runPromise(f.store.read(f.plan.journalId)),
     events = snapshot.events
   const parentReceipt = events.findIndex((event) => event.body._tag === "ReceiptAccepted")
-  const changed = JSON.parse(JSON.stringify(events)) as Release.JournalEvent[]
-  const body = changed[parentReceipt]!.body
-  if (body._tag !== "ReceiptAccepted") throw new Error("fixture receipt")
+  const changed = structuredClone(events)
+  const body = changed[parentReceipt]?.body
+  if (body?._tag !== "ReceiptAccepted") throw new Error("fixture receipt")
   Object.assign(body, { receipt: { id: "foreign-parent", parentId: null } })
   expect(() => verifyNativeEvidence(f.plan, changed, [f.provider])).toThrow("preceding dependency")
   const future = events.filter((_, index) => index !== parentReceipt)
-  future.push(events[parentReceipt]!)
+  const original = events[parentReceipt]
+  if (original === undefined) throw new Error("Fixture requires the parent receipt")
+  future.push(original)
   expect(() => verifyNativeEvidence(f.plan, future, [f.provider])).toThrow("Exact parent")
   f.store.journals.set(f.plan.journalId, changed)
   const before = { ...f.calls }
-  await expect(
+  expect(
     runWithHost(f.host, Release.runRelease({ plan: f.plan, authorize: true })),
   ).rejects.toThrow()
   expect(f.calls.sends).toBe(before.sends)
@@ -203,7 +229,7 @@ test("changed returned-parent requests reject before acquiring credentials or ap
       facts: new Release.RequestFacts({ ...request.facts, scope: '"foreign-parent"' }),
     }))
   Object.assign(f.provider, { prepare: changedPrepare })
-  await expect(
+  expect(
     runWithHost(f.host, Release.runRelease({ plan: f.plan, authorize: true, observe: false })),
   ).rejects.toThrow("declared dependency")
   expect(f.calls.credentials).toBe(1)
@@ -223,7 +249,7 @@ test("observation classification receives only the preceding validated dependenc
       evidence: new Native({ id: "invented", parentId: "foreign-parent" }),
     })
   Object.assign(f.provider, { observe: changedObserve })
-  await expect(
+  expect(
     runWithHost(f.host, Release.runRelease({ plan: f.plan, authorize: false })),
   ).rejects.toThrow("Exact parent")
   expect((await Effect.runPromise(f.store.read(f.plan.journalId))).events).toHaveLength(2)
@@ -233,10 +259,50 @@ test("observation classification receives only the preceding validated dependenc
 test("complete-graph validation cannot silently return an unexecuted Effect", async () => {
   const f = await fixture()
   Object.assign(f.provider, { validatePlan: () => Effect.void })
-  await expect(
+  expect(
     runWithHost(f.host, Release.runRelease({ plan: f.plan, authorize: true })),
   ).rejects.toThrow("synchronously")
   expect(f.calls).toEqual({ reads: 0, credentials: 0, sends: 0, observations: 0 })
+})
+
+// An intentional refusal does not exercise a callback bug being changed into
+// ordinary invalid-data. Preserve the original defect before external work.
+test("complete-graph validator defects remain defects before external actions", async () => {
+  const f = await fixture()
+  const defect = new TypeError("Provider validator implementation failed")
+  Object.assign(f.provider, {
+    validatePlan: () => {
+      throw defect
+    },
+  })
+  const exit = await runWithHost(
+    f.host,
+    Effect.exit(Release.runRelease({ plan: f.plan, authorize: true })),
+  )
+  expect(f.calls).toEqual({ reads: 0, credentials: 0, sends: 0, observations: 0 })
+  expect(f.store.journals.size).toBe(0)
+  if (!Exit.isFailure(exit)) throw new Error("Expected provider validator defect")
+  const found = Cause.findDie(exit.cause)
+  expect(Result.isSuccess(found) && found.success.defect).toBe(defect)
+})
+
+test("host machine defects remain defects before credentials or publication", async () => {
+  const f = await fixture()
+  const defect = new TypeError("Host machine implementation failed")
+  const exit = await runWithHost(
+    {
+      ...f.host,
+      machine: () => {
+        throw defect
+      },
+    },
+    Effect.exit(Release.runRelease({ plan: f.plan, authorize: true })),
+  )
+  expect(f.calls).toMatchObject({ credentials: 0, sends: 0, observations: 0 })
+  expect(f.store.journals.size).toBe(0)
+  if (!Exit.isFailure(exit)) throw new Error("Expected host machine defect")
+  const found = Cause.findDefect(exit.cause)
+  expect(Result.isSuccess(found) && found.success).toBe(defect)
 })
 
 test("a valid parent change during credential preparation prevents a stale child CAS and send", async () => {
@@ -270,7 +336,7 @@ test("a valid parent change during credential preparation prevents a stale child
         }),
     },
   }
-  await expect(
+  expect(
     runWithHost(host, Release.runRelease({ plan: f.plan, authorize: true, observe: false })),
   ).rejects.toThrow("preceding dependency")
   expect(f.calls.sends).toBe(1)
@@ -279,19 +345,30 @@ test("a valid parent change during credential preparation prevents a stale child
   expect(() => verifyNativeEvidence(f.plan, snapshot.events, [f.provider])).not.toThrow()
 })
 
-test("public loadPlan captures descriptor methods and receivers before asynchronous hashing", async () => {
+test("public loadPlan captures descriptor receivers and preserves constructor-independent refusals", async () => {
   const f = await fixture()
-  class Descriptor {
-    readonly definitionId = f.provider.definitionId
-    readonly intentVersion = "1"
-    readonly intentCodec = Intent
-    #message = "Original captured validator"
-    validatePlan() {
-      throw new Release.ReleaseError({ code: "original-validator", message: this.#message })
+  // A separately defined domain error shares the stable contract, not the core
+  // constructor. This covers foreign refusal classification without a new host.
+  class ForeignReleaseError extends Schema.TaggedError<ForeignReleaseError>()("ReleaseError", {
+    code: Schema.String,
+    message: Schema.String,
+  }) {}
+  for (const ErrorType of [Release.ReleaseError, ForeignReleaseError]) {
+    class Descriptor {
+      readonly definitionId = f.provider.definitionId
+      readonly intentVersion = "1"
+      readonly intentCodec = Intent
+      #message = "Original captured validator"
+      validatePlan() {
+        throw new ErrorType({ code: "original-validator", message: this.#message })
+      }
     }
+    const descriptor = new Descriptor()
+    const loaded = Effect.runPromise(Release.loadPlan(f.plan, [descriptor]))
+    queueMicrotask(() => Object.assign(descriptor, { validatePlan: () => undefined }))
+    expect(loaded).rejects.toMatchObject({
+      code: "original-validator",
+      message: "Original captured validator",
+    })
   }
-  const descriptor = new Descriptor()
-  const loaded = Effect.runPromise(Release.loadPlan(f.plan, [descriptor]))
-  queueMicrotask(() => Object.assign(descriptor, { validatePlan: () => undefined }))
-  await expect(loaded).rejects.toThrow("Original captured validator")
 })

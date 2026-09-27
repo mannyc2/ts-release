@@ -2,7 +2,7 @@ import { fail } from "./Error.js"
 const invalid = (code: string): never => fail(code, "Native JSON could not be admitted")
 const tokenize = (text: string): string[] => {
   const tokens: string[] = []
-  const simple = /[\t\n\r ]+|true|false|null|-?(?:0|[1-9][0-9]*)|[{}\[\]:,]/uy
+  const simple = /[\t\n\r ]+|true|false|null|-?(?:0|[1-9][0-9]*)|[{}[\]:,]/uy
   let at = 0
   while (at < text.length) {
     if (text[at] === '"') {
@@ -44,7 +44,8 @@ export const decodeJson = (input: string | Uint8Array): unknown => {
   const next = () => (token = tokens[++at] ?? "")
   const string = () => {
     if (!token.startsWith('"')) return invalid("json-string")
-    const value = JSON.parse(token) as string
+    const value: unknown = JSON.parse(token)
+    if (typeof value !== "string") return invalid("json-string")
     if (
       value !== value.normalize("NFC") ||
       /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(value)

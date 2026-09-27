@@ -135,7 +135,8 @@ class TransitionMachine implements Machine {
       return { _tag: "Finish", status }
     const definition = this.plan.operations.find(
       (operation) => operation.operationId === operationId,
-    )!
+    )
+    if (!definition) fail("unknown-operation", "Operation does not belong to the plan")
     if (definition.dependsOn.some((dependency) => this.status(dependency) !== "Satisfied"))
       return { _tag: "Finish", status: "Pending" }
     if (!candidate) return { _tag: "PrepareDispatch" }
@@ -285,12 +286,14 @@ class TransitionMachine implements Machine {
           return body._tag === "ReceiptAccepted"
             ? { _tag: "Accepted", start: attempt.start, status: body.status }
             : { _tag: "NonCommit", start: attempt.start }
-        }) as [Attempt, ...Attempt[]]
+        })
+        const [first, ...remaining] = updated
+        if (!first) fail("unknown-dispatch", "Evidence targets an empty attempt history")
         operations.set(id, {
           ...state,
           selected:
             state.selected || (body._tag === "ReceiptAccepted" && body.status === "Satisfied"),
-          attempts: { _tag: "Attempted", entries: updated },
+          attempts: { _tag: "Attempted", entries: [first, ...remaining] },
         })
         break
       }

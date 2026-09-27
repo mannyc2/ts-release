@@ -92,7 +92,8 @@ const Response = Schema.Struct({
   _meta: Schema.Struct({ "io.modelcontextprotocol.registry/official": Official }),
 })
 type Response = typeof Response.Type
-const response = (body: Uint8Array): Response => Model.own(Response, decodeJson(body))
+const response = (body: Uint8Array): Response =>
+  Model.own(Response, decodeJson(Model.text(body, "mcp-response")))
 const official = (value: Response) => value._meta["io.modelcontextprotocol.registry/official"]
 
 class Receipt extends Schema.Class<Receipt>("Mcp.PublishReceipt")({
@@ -186,7 +187,7 @@ export const definitions = (dependencies: {
         if (!ownsRequest(request))
           return yield* Model.reject("mcp-response-binding", "MCP response request is invalid")
         if (result.status !== 200) return unknown("MCP Registry did not acknowledge publication")
-        try {
+        return yield* Model.attempt("mcp-response", () => {
           const value = response(result.body),
             selected = readScope(request.facts.scope),
             metadata = official(value)
@@ -202,9 +203,11 @@ export const definitions = (dependencies: {
               isLatest: metadata.isLatest,
             }),
           }
-        } catch {
-          return unknown("MCP Registry returned an unreadable publication response")
-        }
+        }).pipe(
+          Effect.orElseSucceed(() =>
+            unknown("MCP Registry returned an unreadable publication response"),
+          ),
+        )
       }),
       observe: Effect.fn("mcp.observe")(function* (operation) {
         const request = yield* prepare(operation),
@@ -221,25 +224,25 @@ export const definitions = (dependencies: {
         else if (result.status !== 200)
           evidence = inconclusive(request.facts, result.status, "http-status")
         else {
-          try {
+          evidence = yield* Model.attempt("mcp-response", () => {
             const value = response(result.body),
               metadata = official(value)
             if (
               value.server.name !== selected.manifest.name ||
               value.server.version !== selected.manifest.version
             )
-              evidence = inconclusive(request.facts, 200, "coordinate-mismatch")
+              return inconclusive(request.facts, 200, "coordinate-mismatch")
             else if (!sameData(value.server, selected.manifest))
-              evidence = new Conflict({ request: request.facts, observed: value.server })
+              return new Conflict({ request: request.facts, observed: value.server })
             else
-              evidence = new Exact({
+              return new Exact({
                 request: request.facts,
                 server: value.server,
                 registryStatus: metadata.status,
               })
-          } catch {
-            evidence = inconclusive(request.facts, 200, "malformed-response")
-          }
+          }).pipe(
+            Effect.orElseSucceed(() => inconclusive(request.facts, 200, "malformed-response")),
+          )
         }
         return { evidence, status: classifyObservation(operation, evidence, []) }
       }),

@@ -1,4 +1,5 @@
 // External evaluator witness: M2 built from the kernel's PUBLIC exports only (no kernel-private import).
+import * as Arr from "effect/Array"
 import {
   AcceptedRisk,
   Initial,
@@ -135,7 +136,9 @@ class TransitionMachine implements Machine {
       return { _tag: "Finish", status }
     const definition = this.plan.operations.find(
       (operation) => operation.operationId === operationId,
-    )!
+    )
+    if (definition === undefined)
+      return fail("unknown-operation", "Operation is not registered in this plan")
     if (definition.dependsOn.some((dependency) => this.status(dependency) !== "Satisfied"))
       return { _tag: "Finish", status: "Pending" }
     if (!candidate) return { _tag: "PrepareDispatch" }
@@ -274,7 +277,7 @@ class TransitionMachine implements Machine {
         const [id, state] = owner
         if (state.attempts._tag !== "Attempted")
           fail("unknown-dispatch", "Evidence targets an unattempted operation")
-        const updated = state.attempts.entries.map((attempt): Attempt => {
+        const updated = Arr.map(state.attempts.entries, (attempt): Attempt => {
           if (attempt.start.dispatchId !== body.dispatchId) return attempt
           const target = body._tag === "ReceiptAccepted" ? "Accepted" : "NonCommit"
           if (attempt._tag !== "Open")
@@ -285,7 +288,7 @@ class TransitionMachine implements Machine {
           return body._tag === "ReceiptAccepted"
             ? { _tag: "Accepted", start: attempt.start, status: body.status }
             : { _tag: "NonCommit", start: attempt.start }
-        }) as [Attempt, ...Attempt[]]
+        })
         operations.set(id, {
           ...state,
           selected:

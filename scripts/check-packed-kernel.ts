@@ -1,3 +1,6 @@
+import { Schema } from "effect"
+import { PackageExports } from "./ReleaseMetadata.js"
+import manifest from "../packages/ts-release/package.json" with { type: "json" }
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import { mkdtemp, mkdir, lstat, readFile, writeFile } from "node:fs/promises"
@@ -42,7 +45,6 @@ await command(join(root, "packages/ts-release"), [
   join(work, "kernel.tgz"),
 ])
 const archive = join(work, "kernel.tgz")
-const manifest = await Bun.file(join(root, "packages/ts-release/package.json")).json()
 const consumers = []
 for (const manager of ["bun", "npm"] as const) {
   const cwd = join(work, manager)
@@ -55,7 +57,7 @@ for (const manager of ["bun", "npm"] as const) {
         private: true,
         type: "module",
         dependencies: { "@mannyc1/ts-release": `file:${archive}`, effect: "4.0.0-rc.115" },
-        devDependencies: { typescript: "6.0.3" },
+        devDependencies: { typescript: "7.0.2", "@effect/tsgo": "0.45.0" },
       },
       null,
       2,
@@ -67,6 +69,16 @@ for (const manager of ["bun", "npm"] as const) {
       ? [process.execPath, "install", "--ignore-scripts"]
       : ["npm", "install", "--ignore-scripts", "--no-audit", "--no-fund"],
   )
+  await command(cwd, [
+    process.execPath,
+    "node_modules/@effect/tsgo/dist/effect-tsgo.cjs",
+    "patch",
+    "--typescript",
+  ])
+  const compiler = (
+    await command(cwd, [process.execPath, "node_modules/typescript/bin/tsc", "--version"])
+  ).trim()
+  assert.equal(compiler, "Version 7.0.2+effect-tsgo.0.45.0")
   const installed = join(cwd, "node_modules/@mannyc1/ts-release")
   assert.equal((await lstat(installed)).isSymbolicLink(), false)
   for (const optional of ["@effect/platform-node", "@effect/platform-bun", "effect-build-apple"])
@@ -75,9 +87,13 @@ for (const manager of ["bun", "npm"] as const) {
       false,
       optional,
     )
-  const effect = await Bun.file(join(cwd, "node_modules/effect/package.json")).json()
+  const effect = Schema.decodeSync(
+    Schema.fromJsonString(Schema.Struct({ version: Schema.String })),
+  )(await Bun.file(join(cwd, "node_modules/effect/package.json")).text())
   assert.equal(effect.version, "4.0.0-rc.115")
-  const packed = await Bun.file(join(installed, "package.json")).json()
+  const packed = Schema.decodeSync(Schema.fromJsonString(PackageExports))(
+    await Bun.file(join(installed, "package.json")).text(),
+  )
   assert.deepEqual(packed.exports, manifest.exports)
   const bytes: Record<string, string> = {}
   for await (const path of new Bun.Glob("**/*").scan({
@@ -90,18 +106,39 @@ for (const manager of ["bun", "npm"] as const) {
     bytes[path] = hash(actual)
   }
   const declarations = {
-    ".": 'import { Plan, createOperation } from "@mannyc1/ts-release"; export { Plan, createOperation };',
+    ".": 'import { Plan, createOperation, preflightRelease, type PreflightReport, type RequestPreflight } from "@mannyc1/ts-release"; export { Plan, createOperation, preflightRelease }; export type { PreflightReport, RequestPreflight };',
     "./http":
       'import { HttpReceipt, corresponds } from "@mannyc1/ts-release/http"; export { HttpReceipt, corresponds };',
     "./bun":
-      'import { openSqliteJournal, runApplication, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/bun"; export { openSqliteJournal, runApplication, FinalizedReport }; export type { Application, CreateApplication };',
+      'import { openSqliteJournal, runApplication, runApplicationEffect, BoundedObservationOptions, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/bun"; export { openSqliteJournal, runApplication, runApplicationEffect, BoundedObservationOptions, FinalizedReport }; export type { Application, CreateApplication };',
     "./bundle":
       'import { Bundle, finalize, loadBundle } from "@mannyc1/ts-release/bundle"; export { Bundle, finalize, loadBundle };',
     "./node":
-      'import { fileContentOwner, runApplication, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/node"; export { fileContentOwner, runApplication, FinalizedReport }; export type { Application, CreateApplication };',
+      'import { fileContentOwner, runApplication, runApplicationEffect, BoundedObservationOptions, FinalizedReport, type Application, type CreateApplication } from "@mannyc1/ts-release/node"; export { fileContentOwner, runApplication, runApplicationEffect, BoundedObservationOptions, FinalizedReport }; export type { Application, CreateApplication };',
   }
   for (const [entry, source] of Object.entries(declarations)) {
-    await writeFile(join(cwd, "consumer.ts"), source)
+    // The adapter must preserve an external factory's error/service inference while consuming Scope.
+    // Compile this at the installed public boundary; runtime booleans cannot prove those equalities.
+    const inference =
+      entry === "./node" || entry === "./bun"
+        ? `
+import type * as Effect from "effect/Effect";
+import type * as Scope from "effect/Scope";
+import * as Schema from "effect/Schema";
+import type { ReleaseError } from "@mannyc1/ts-release";
+import type { AdoptionError } from "@mannyc1/ts-release/bundle";
+interface FactoryError { readonly _tag: "FactoryError" }
+interface FactoryService { readonly _tag: "FactoryService" }
+declare const factory: (input: unknown) => Effect.Effect<Application, FactoryError, FactoryService | Scope.Scope>;
+const mode = Schema.decodeSync(BoundedObservationOptions)({ mode: "observe", definitionIds: ["npm.publish"], budgetMilliseconds: 1000, initialDelayMilliseconds: 10, maximumDelayMilliseconds: 100 });
+const composed = runApplicationEffect(factory, null, mode);
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type Assert<T extends true> = T;
+export type FactoryErrorPreserved = Assert<Equal<Effect.Error<typeof composed>, FactoryError | ReleaseError | AdoptionError>>;
+export type FactoryServicePreserved = Assert<Equal<Effect.Services<typeof composed>, FactoryService>>;
+`
+        : ""
+    await writeFile(join(cwd, "consumer.ts"), source + inference)
     await writeFile(
       join(cwd, "tsconfig.json"),
       JSON.stringify({
@@ -133,6 +170,7 @@ for (const manager of ["bun", "npm"] as const) {
     manager,
     cwd,
     nodeVersion,
+    compiler,
     effect: effect.version,
     optionalPeersAbsent: true,
     entries: Object.keys(declarations),

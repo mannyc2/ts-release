@@ -1,7 +1,8 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
 import { Effect, Schema } from "effect"
 import { makeRequest, type ProviderContext } from "@mannyc1/ts-release"
-import { File } from "@mannyc1/ts-release/bundle"
+import { Bundle, File } from "@mannyc1/ts-release/bundle"
 import * as GitHub from "../../../packages/github/src/index.js"
 import { bindScope, readScope } from "../../../packages/github/src/Binding.js"
 import {
@@ -48,7 +49,7 @@ async function fixture() {
       "https://uploads.github.com/repos/owner/repo/releases/123/assets{?name,label}",
   })
   const bytes = new TextEncoder().encode("owned asset bytes")
-  const file = Schema.decodeUnknownSync(File)({
+  const file = Schema.decodeSync(File)({
     _tag: "OwnedFile",
     logicalName: "asset.bin",
     content: { bytes: bytes.length, sha256: sha256(bytes) },
@@ -78,7 +79,30 @@ async function fixture() {
       },
     ],
   }
-  return { repository, draft, draftContext, draftRequest, facts, bytes, asset, context }
+  const providers = GitHub.definitions({
+    bundle: new Bundle({ format: "ts-release/bundle/2", artifacts: [file] }),
+    readContent: () => Effect.succeed(bytes),
+    read: () => Effect.die("Local request preflight cannot probe GitHub"),
+  })
+  const draftPreflight = providers.find(
+    (provider) => provider.definitionId === "github.draft",
+  )?.preflight
+  const assetPreflight = providers.find(
+    (provider) => provider.definitionId === "github.asset",
+  )?.preflight
+  if (!draftPreflight || !assetPreflight) throw new Error("Fixture requires native local preflight")
+  return {
+    repository,
+    draft,
+    draftContext,
+    draftRequest,
+    facts,
+    bytes,
+    asset,
+    context,
+    draftPreflight,
+    assetPreflight,
+  }
 }
 test("GitHub wire uses exact JSON or owned binary bodies and the returned parent upload template", async () => {
   const f = await fixture(),
@@ -105,6 +129,22 @@ test("GitHub wire uses exact JSON or owned binary bodies and the returned parent
     generate_release_notes: false,
   })
   expect(ownsRequest(f.draftRequest)).toBe(true)
+  expect(await Effect.runPromise(f.draftPreflight(f.draft, f.draftContext))).toEqual({
+    _tag: "Prepared",
+    request: f.draftRequest,
+  })
+  expect(
+    await Effect.runPromise(
+      f.assetPreflight(f.asset, {
+        ...f.context,
+        dependencies: [{ operation: f.draft, receipts: [], observations: [] }],
+      }),
+    ),
+  ).toEqual({ _tag: "Deferred", dependencies: [f.draft.operationId] })
+  expect(await Effect.runPromise(f.assetPreflight(f.asset, f.context))).toEqual({
+    _tag: "Prepared",
+    request,
+  })
 })
 test("exact wire admission rejects changed method, endpoint, bytes, headers and foreign parent evidence", async () => {
   const f = await fixture(),
@@ -114,24 +154,33 @@ test("exact wire admission rejects changed method, endpoint, bytes, headers and 
   for (const facts of [
     { ...request.facts, method: "PUT" },
     { ...request.facts, endpoint: request.facts.endpoint.replace("123", "124") },
-    { ...request.facts, headers: [...request.facts.headers, ["authorization", "fixture"]] },
+    {
+      ...request.facts,
+      headers: [...request.facts.headers, ["authorization", "fixture"] as const],
+    },
     { ...request.facts, bodyDigest: "f".repeat(64) },
   ])
-    expect(ownsRequest({ facts: facts as typeof request.facts, body: request.body })).toBe(false)
+    expect(ownsRequest({ facts, body: request.body })).toBe(false)
   expect(ownsRequest({ ...request, body: new Uint8Array([0]) })).toBe(false)
   const conflicting = {
     ...f.context,
     dependencies: [
       {
-        ...f.context.dependencies[0]!,
+        ...(f.context.dependencies[0] ?? fail("Missing fixture f.context.dependencies[0]")),
         receipts: [
-          ...f.context.dependencies[0]!.receipts,
+          ...(f.context.dependencies[0] ?? fail("Missing fixture f.context.dependencies[0]"))
+            .receipts,
           { request: f.draftRequest.facts, status: 201, facts: { ...f.facts, releaseId: "124" } },
         ],
       },
     ],
   }
   expect(() => bindScope(f.asset, conflicting)).toThrow("parent evidence")
+  expect(
+    await Effect.runPromise(Effect.flip(f.assetPreflight(f.asset, conflicting))),
+  ).toMatchObject({
+    code: "github-parent-evidence",
+  })
   expect(() => bindScope(f.asset, { ...f.context, dependencies: [] })).toThrow("undeclared parent")
 })
 test("published-parent observation cannot authorize an asset write through a stale draft receipt", async () => {
@@ -140,7 +189,7 @@ test("published-parent observation cannot authorize an asset write through a sta
     ...f.context,
     dependencies: [
       {
-        ...f.context.dependencies[0]!,
+        ...(f.context.dependencies[0] ?? fail("Missing fixture f.context.dependencies[0]")),
         observations: [
           {
             status: "Satisfied",
@@ -161,9 +210,10 @@ test("published-parent observation cannot authorize an asset write through a sta
     ...context,
     dependencies: [
       {
-        ...context.dependencies[0]!,
+        ...(context.dependencies[0] ?? fail("Missing fixture context.dependencies[0]")),
         observations: [
-          ...context.dependencies[0]!.observations,
+          ...(context.dependencies[0] ?? fail("Missing fixture context.dependencies[0]"))
+            .observations,
           {
             status: "Satisfied",
             evidence: { _tag: "Present", scope: f.draftRequest.facts.scope, facts: f.facts },

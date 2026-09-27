@@ -38,7 +38,8 @@ const privateWorkspace = Effect.fn("apple.privateWorkspace")(function* (
     Effect.gen(function* () {
       const pending = [root]
       while (pending.length) {
-        const current = pending.pop()!
+        const current = pending.pop()
+        if (current === undefined) break
         yield* fs.chmod(current, 0o700)
         for (const name of yield* fs.readDirectory(current)) {
           const entry = path.join(current, name)

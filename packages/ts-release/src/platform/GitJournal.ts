@@ -5,12 +5,13 @@ import { createHash } from "node:crypto"
 import { mkdirSync } from "node:fs"
 import type { AppendResult, JournalStore } from "../Journal.js"
 import type { JournalEvent } from "../internal/ReleaseModel.js"
-import { type ReleaseError, attempt, fail, reject } from "../internal/Error.js"
+import { type ReleaseError, attempt, fail, failure, reject } from "../internal/Error.js"
 import { canonical } from "../internal/Identity.js"
 import { conditionalArguments, pushWitness } from "../internal/GitAuthority.js"
 import { admitCoordinate, objectFormat, type Credentials } from "../internal/GitCatalog.js"
 import type { RefCoordinate } from "../internal/GitCatalog.js"
 import { checked, resolveGitCredentials, openGitRuntime } from "./GitProcess.js"
+import type { GitEnvironment, GitRepository } from "./GitProcess.js"
 import { fetchRef, remoteRef } from "./GitRemote.js"
 import { EVENT_BYTES, encodeEvent, readEvent } from "./StoreCodec.js"
 
@@ -64,7 +65,6 @@ export const openGitJournal = Effect.fn("ts-release.openGitJournal")(
         })
         if (format !== "sha1" && format !== "sha256") invalid()
         const credentials = input.credentials.bind(input)
-        mkdirSync(cacheDirectory, { recursive: true, mode: 0o700 })
         return {
           coordinate,
           format,
@@ -75,15 +75,26 @@ export const openGitJournal = Effect.fn("ts-release.openGitJournal")(
           maximumOutputBytes,
         }
       })
+      yield* Effect.try({
+        try: () => mkdirSync(options.temporaryRoot, { recursive: true, mode: 0o700 }),
+        catch: () => failure("invalid-data", "Value could not be admitted"),
+      })
       const runtime = yield* openGitRuntime(options),
         limit = runtime.maximumOutputBytes
-      const snapshot = Effect.fn("git.readJournalSnapshot")(function* (journalId: string) {
+      const select = Effect.fnUntraced(function* (journalId: string) {
         const coordinate = yield* attempt(() =>
           admitCoordinate({ ...options.coordinate, ref: journalRef(journalId) }),
         )
         const env = yield* resolveGitCredentials(options.credentials, coordinate)
-        const repository = yield* runtime.repository(options.format),
-          run = repository.run
+        return { coordinate, env }
+      })
+      const snapshot = Effect.fn("git.readJournalSnapshot")(function* (
+        journalId: string,
+        selected: { readonly coordinate: RefCoordinate; readonly env: GitEnvironment },
+        repository: GitRepository,
+      ) {
+        const { coordinate, env } = selected
+        const run = repository.run
         const advertised = yield* remoteRef(run, coordinate, env)
         let head: string | null = null
         const events: JournalEvent[] = []
@@ -98,7 +109,7 @@ export const openGitJournal = Effect.fn("ts-release.openGitJournal")(
           const seen = new Set<string>()
           for (const row of rows) {
             const fields = row.split(" "),
-              commit = fields[0]!
+              commit = fields[0] ?? invalid()
             if (
               objectFormat(commit) !== options.format ||
               fields.length !== (parent ? 2 : 1) ||
@@ -134,8 +145,15 @@ export const openGitJournal = Effect.fn("ts-release.openGitJournal")(
         return { coordinate, env, run, head, events, revision: events.length }
       })
       const read: JournalStore["read"] = Effect.fn("git.readJournal")(function* (journalId) {
-        const { revision, events } = yield* snapshot(journalId)
-        return { revision, events }
+        const selected = yield* select(journalId)
+        return yield* Effect.acquireUseRelease(
+          runtime.repository(options.format),
+          (repository) =>
+            snapshot(journalId, selected, repository).pipe(
+              Effect.map(({ revision, events }) => ({ revision, events })),
+            ),
+          (repository) => repository.close,
+        )
       })
       const append: JournalStore["append"] = Effect.fn("git.appendJournal")(
         function* (journalId, expectedRevision, input) {
@@ -143,61 +161,74 @@ export const openGitJournal = Effect.fn("ts-release.openGitJournal")(
             if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) invalid()
             return encodeEvent(input, journalId)
           })
-          const event = yield* attempt(() => readEvent(bytes)),
-            current = yield* snapshot(journalId)
-          const existing = current.events.findIndex((known) => known.eventId === event.eventId)
-          if (existing >= 0) {
-            if (canonical(current.events[existing]) !== canonical(event))
-              return yield* reject("event-id-conflict", "Event ID has different facts")
-            return { _tag: "AlreadyRecorded", revision: existing + 1 }
-          }
-          if (current.revision !== expectedRevision)
-            return { _tag: "RevisionMismatch", revision: current.revision }
-          if (
-            current.events.reduce(
-              (sum, known) => sum + encodeEvent(known, journalId).length,
-              bytes.length,
-            ) > limit
+          const event = yield* attempt(() => readEvent(bytes))
+          const selected = yield* select(journalId)
+          return yield* Effect.acquireUseRelease(
+            runtime.repository(options.format),
+            (repository) =>
+              Effect.gen(function* (): Effect.fn.Return<AppendResult, ReleaseError> {
+                const current = yield* snapshot(journalId, selected, repository)
+                const existing = current.events.findIndex(
+                  (known) => known.eventId === event.eventId,
+                )
+                if (existing >= 0) {
+                  if (canonical(current.events[existing]) !== canonical(event))
+                    return yield* reject("event-id-conflict", "Event ID has different facts")
+                  return { _tag: "AlreadyRecorded", revision: existing + 1 }
+                }
+                if (current.revision !== expectedRevision)
+                  return { _tag: "RevisionMismatch", revision: current.revision }
+                if (
+                  current.events.reduce(
+                    (sum, known) => sum + encodeEvent(known, journalId).length,
+                    bytes.length,
+                  ) > limit
+                )
+                  return yield* attempt(invalid)
+                const { run, coordinate, env, head } = current
+                const blob = (yield* checkedText(
+                  run,
+                  ["hash-object", "-t", "blob", "-w", "--stdin"],
+                  bytes,
+                )).trim()
+                const tree = (yield* checkedText(
+                  run,
+                  ["mktree"],
+                  Buffer.from(`100644 blob ${blob}\tevent.json\n`),
+                )).trim()
+                const commit = (yield* checkedText(
+                  run,
+                  ["commit-tree", tree, ...(head ? ["-p", head] : [])],
+                  Buffer.from("ts-release journal event\n"),
+                  identity,
+                )).trim()
+                const old = head ?? "0".repeat(options.format === "sha1" ? 40 : 64)
+                return yield* Effect.gen(function* (): Effect.fn.Return<
+                  AppendResult,
+                  ReleaseError
+                > {
+                  const result = yield* run(
+                    conditionalArguments(coordinate.remote, coordinate.ref, old, commit),
+                    undefined,
+                    env,
+                  )
+                  const witness = yield* attempt(() =>
+                    pushWitness(
+                      { exitCode: result.exitCode, stdout: text(result.stdout) },
+                      coordinate.ref,
+                      old,
+                      commit,
+                    ),
+                  )
+                  if (witness === undefined) return { _tag: "AmbiguousStorageOutcome" }
+                  return {
+                    _tag: witness.startsWith("=\t") ? "AlreadyRecorded" : "Appended",
+                    revision: expectedRevision + 1,
+                  }
+                }).pipe(Effect.orElseSucceed(() => ({ _tag: "AmbiguousStorageOutcome" as const })))
+              }),
+            (repository) => repository.close,
           )
-            return yield* attempt(invalid)
-          const { run, coordinate, env, head } = current
-          const blob = (yield* checkedText(
-            run,
-            ["hash-object", "-t", "blob", "-w", "--stdin"],
-            bytes,
-          )).trim()
-          const tree = (yield* checkedText(
-            run,
-            ["mktree"],
-            Buffer.from(`100644 blob ${blob}\tevent.json\n`),
-          )).trim()
-          const commit = (yield* checkedText(
-            run,
-            ["commit-tree", tree, ...(head ? ["-p", head] : [])],
-            Buffer.from("ts-release journal event\n"),
-            identity,
-          )).trim()
-          const old = head ?? "0".repeat(options.format === "sha1" ? 40 : 64)
-          return yield* Effect.gen(function* (): Effect.fn.Return<AppendResult, ReleaseError> {
-            const result = yield* run(
-              conditionalArguments(coordinate.remote, coordinate.ref, old, commit),
-              undefined,
-              env,
-            )
-            const witness = yield* attempt(() =>
-              pushWitness(
-                { exitCode: result.exitCode, stdout: text(result.stdout) },
-                coordinate.ref,
-                old,
-                commit,
-              ),
-            )
-            if (witness === undefined) return { _tag: "AmbiguousStorageOutcome" }
-            return {
-              _tag: witness.startsWith("=\t") ? "AlreadyRecorded" : "Appended",
-              revision: expectedRevision + 1,
-            }
-          }).pipe(Effect.catch(() => Effect.succeed({ _tag: "AmbiguousStorageOutcome" as const })))
         },
       )
       return Object.freeze({ read, append })

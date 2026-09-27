@@ -96,30 +96,48 @@ export class ApplicationInput extends Schema.Class("Release.ApplicationInput")({
 }) {
 }
 export const failure = (code, message) => new ReleaseError({ code: `release-application-${code}`, message });
-export const attempt = (subject, body) => Effect.try({
-    try: body,
-    catch: () => failure(subject, `Release ${subject} could not be admitted`),
+export const admissionFailure = (subject) => failure(subject, `Release ${subject} could not be admitted`);
+const isReleaseError = Schema.is(Schema.Struct(ReleaseError.fields));
+export const attempt = (subject, body) => Effect.suspend(() => {
+    try {
+        return Effect.succeed(body());
+    }
+    catch (error) {
+        // This application deliberately replaces even declared error fields:
+        // credential/provider failures can contain private native diagnostics.
+        if (error instanceof ReleaseError || isReleaseError(error) || Schema.isSchemaError(error))
+            return Effect.fail(admissionFailure(subject));
+        return Effect.die(error);
+    }
 });
+export const decodeText = (subject, bytes) => {
+    const decoder = new TextDecoder("utf-8", { fatal: true });
+    try {
+        return decoder.decode(bytes);
+    }
+    catch {
+        throw admissionFailure(subject);
+    }
+};
 export const io = (subject, body) => Effect.tryPromise({
     try: body,
     catch: () => failure(subject, `Release ${subject} could not be read or retained`),
 });
 export const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
-export const read = (path, maximumBytes = 32 * 1024 * 1024) => io("file", async () => {
-    const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
-    try {
-        const stat = await handle.stat();
-        if (!stat.isFile() || stat.size > maximumBytes)
-            throw new Error("Invalid release input file");
-        const bytes = await handle.readFile();
-        if (bytes.length !== stat.size)
-            throw new Error("Release input file changed");
-        return new Uint8Array(bytes);
-    }
-    finally {
-        await handle.close();
-    }
-});
+// Join each issued native operation before closing its handle. A native call
+// that never settles can delay interruption; the workflow stays interruptible
+// between calls.
+const readIo = (body) => io("file", body).pipe(Effect.uninterruptible);
+const fileFailure = () => failure("file", "Release file could not be read or retained");
+export const read = Effect.fn("release.read")((path, maximumBytes = 32 * 1024 * 1024) => Effect.acquireUseRelease(readIo(() => open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)), (handle) => Effect.gen(function* () {
+    const stat = yield* readIo(() => handle.stat());
+    if (!stat.isFile() || stat.size > maximumBytes)
+        return yield* fileFailure();
+    const bytes = yield* readIo(() => handle.readFile());
+    if (bytes.length !== stat.size)
+        return yield* fileFailure();
+    return new Uint8Array(bytes);
+}), (handle) => readIo(() => handle.close())));
 export const requireNodeProvenance = () => {
     const major = Number(process.versions.node.split(".")[0]);
     if (process.versions.bun || major < 22)

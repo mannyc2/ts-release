@@ -1,21 +1,28 @@
-import { Effect, Schema } from "effect"
+import { Effect, Predicate, Schema } from "effect"
 import { CoreDispatchError, CoreUndecodableReceipt } from "./internal/ReleaseModel.js"
 import { ObservationRecorded, Operation, RequestFacts } from "./internal/ReleaseModel.js"
 import type { JournalEvent, ObservationStatus, Plan } from "./internal/ReleaseModel.js"
 import { ReleaseError, attempt, fail, reject } from "./internal/Error.js"
-import { canonical, copyData, decodeOwned, freeze } from "./internal/Identity.js"
+import { canonical, copyBytes, copyData, decodeOwned, freeze } from "./internal/Identity.js"
 import { hashCanonical, sha256 } from "./internal/Identity.js"
 
 /** Provider contract version spoken by this kernel. A definition built against another contract is rejected at Host verification, whatever the installer resolved. */
 export const PROVIDER_CONTRACT = "ts-release/provider/1" as const
 /** Transport owns actual sends; prepare and durable values contain no callback. */
 export type PreparedRequest = Readonly<{ facts: RequestFacts; body: Uint8Array }>
+/** Invocation-only local preparation. Deferred names only declared dependencies
+ * whose real receipt/observation facts do not exist yet; it is not a send permit. */
+export type RequestPreflight =
+  | { readonly _tag: "Prepared"; readonly request: PreparedRequest }
+  | { readonly _tag: "Deferred"; readonly dependencies: ReadonlyArray<string> }
 export type SendResult =
   | { readonly _tag: "Accepted"; readonly receipt: unknown }
   | { readonly _tag: "RejectedBeforeCommit"; readonly proof: unknown }
   | { readonly _tag: "Unknown"; readonly reason: string; readonly nativeError?: unknown }
 export interface Transport {
   readonly send: (request: PreparedRequest) => Effect.Effect<SendResult, ReleaseError>
+  /** Admit the exact native wire request without credentials or a send closure. */
+  readonly validate?: (request: PreparedRequest) => Effect.Effect<void, ReleaseError>
   /** Resolve ephemeral credentials before the journal uncertainty boundary.
    * The returned send has no dispatch permission; only fresh core CAS grants it. */
   readonly prepare?: (request: PreparedRequest) => Effect.Effect<Transport["send"], ReleaseError>
@@ -40,7 +47,9 @@ export interface ProviderDefinition {
   readonly definitionId: string
   readonly intentVersion: string
   readonly intentCodec: Schema.Codec<unknown, unknown>
-  /** Pure complete-graph admission, before storage, reads, credentials or sends. */
+  /** Pure synchronous complete-graph admission, before storage, reads, credentials
+   * or sends. Throw ReleaseError for a domain refusal; unexpected exceptions are
+   * defects. A schema refusal becomes the safe invalid-data failure. */
   readonly validatePlan?: (operations: ReadonlyArray<Operation>) => void
   /** Pure binding to already-validated declared dependency evidence. No dispatch permission. */
   readonly requestCorresponds?: (
@@ -74,6 +83,13 @@ export interface ProviderDefinition {
     operation: Operation,
     context: ProviderContext,
   ) => Effect.Effect<PreparedRequest, ReleaseError>
+  /** Construct the exact local request or identify absent real parent facts.
+   * Read owned artifacts, but never resolve publication credentials, probe a
+   * remote provider, or perform cryptographic trust-network verification. */
+  readonly preflight?: (
+    operation: Operation,
+    context: ProviderContext,
+  ) => Effect.Effect<RequestPreflight, ReleaseError>
   readonly observe?: (
     operation: Operation,
     context: ProviderContext,
@@ -147,13 +163,15 @@ export type Author<A> = (
 export const requestFingerprint = (facts: RequestFacts) =>
   hashCanonical("ts-release/request/1", facts)
 export const makeRequest = Effect.fn("ts-release.makeRequest")(function* (
-  input: Omit<typeof RequestFacts.Type, "bodyDigest" | "byteLength"> & {
+  input: Omit<RequestFacts, "bodyDigest" | "byteLength"> & {
     readonly body: Uint8Array
   },
 ) {
   const { body, fields } = yield* attempt(() => {
-    const { body: _, ...fields } = input
-    return { body: new Uint8Array(input.body), fields: copyData(fields) as typeof fields }
+    const { body, ...fields } = input
+    const captured = copyData(fields)
+    if (!Predicate.isObject(captured)) fail("request-facts", "Request facts must be an object")
+    return { body: copyBytes(body), fields: captured }
   })
   const bodyDigest = yield* sha256(body)
   const facts = yield* attempt(() =>
@@ -166,7 +184,7 @@ export const verifyRequest = Effect.fn("ts-release.verifyRequest")(function* (
 ) {
   const { facts, body } = yield* attempt(() => ({
     facts: decodeOwned(RequestFacts, request.facts),
-    body: new Uint8Array(request.body),
+    body: copyBytes(request.body),
   }))
   if (facts.byteLength !== String(body.byteLength) || facts.bodyDigest !== (yield* sha256(body)))
     return yield* reject("request-bytes", "Prepared bytes do not match recorded facts")
@@ -250,31 +268,42 @@ export const verifyProviderContracts = (
       ![provider.receiptCorresponds, provider.classifyReceipt, provider.prepare].every(
         isFunction,
       ) ||
-      (provider.requestCorresponds !== undefined && !isFunction(provider.requestCorresponds))
+      (provider.requestCorresponds !== undefined && !isFunction(provider.requestCorresponds)) ||
+      (provider.preflight !== undefined && !isFunction(provider.preflight))
     )
       fail(
         "missing-receipt-codec",
         "Native receipt codec, classification, correspondence and prepare are mandatory",
       )
     canonical(provider.receiptVersion)
-    const observation = [
-      provider.observe,
-      provider.observationVersion,
-      provider.observationCodec,
-      provider.classifyObservation,
-    ]
+    const { observe, observationVersion, observationCodec, classifyObservation } = provider
+    let observation: Pick<
+      ProviderDefinition,
+      "observe" | "observationVersion" | "observationCodec" | "classifyObservation"
+    > = {}
     if (
-      observation.some((value) => value !== undefined) &&
-      (!isFunction(provider.observe) ||
-        !isFunction(provider.classifyObservation) ||
-        !isVersion(provider.observationVersion) ||
-        !Schema.isSchema(provider.observationCodec))
-    )
-      fail(
-        "missing-observation-codec",
-        "Observation requires a complete callable operation, native codec and classifier",
+      [observe, observationVersion, observationCodec, classifyObservation].some(
+        (value) => value !== undefined,
       )
-    if (provider.observationVersion !== undefined) canonical(provider.observationVersion)
+    ) {
+      if (
+        !isFunction(observe) ||
+        !isFunction(classifyObservation) ||
+        !isVersion(observationVersion) ||
+        !Schema.isSchema(observationCodec)
+      )
+        fail(
+          "missing-observation-codec",
+          "Observation requires a complete callable operation, native codec and classifier",
+        )
+      canonical(observationVersion)
+      observation = {
+        observationVersion,
+        observationCodec,
+        classifyObservation: classifyObservation.bind(provider),
+        observe: observe.bind(provider),
+      }
+    }
     captured.push(
       Object.freeze({
         contract: provider.contract,
@@ -287,12 +316,8 @@ export const verifyProviderContracts = (
         receiptCorresponds: provider.receiptCorresponds.bind(provider),
         classifyReceipt: provider.classifyReceipt.bind(provider),
         prepare: provider.prepare.bind(provider),
-        ...(provider.observe && {
-          observationVersion: provider.observationVersion!,
-          observationCodec: provider.observationCodec!,
-          classifyObservation: provider.classifyObservation!.bind(provider),
-          observe: provider.observe.bind(provider),
-        }),
+        ...(provider.preflight && { preflight: provider.preflight.bind(provider) }),
+        ...observation,
         ...(rejection && { rejection }),
         ...(dispatchError && { dispatchError }),
       }),

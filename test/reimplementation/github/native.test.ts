@@ -1,3 +1,4 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
 import { Repository } from "../../../packages/github/src/Model.js"
 import {
@@ -39,7 +40,9 @@ test("native URL binding accepts GitHub's case-insensitive repository coordinate
   const mixed = new Repository({ ...repository, owner: "MannyC2", name: "TS-Release" })
   expect(() => releaseFacts(release, mixed)).not.toThrow()
   expect(() => refFacts(ref, mixed)).not.toThrow()
-  expect(() => assetFacts(release.assets[0]!, mixed, "v0.3.0")).not.toThrow()
+  expect(() =>
+    assetFacts(release.assets[0] ?? fail("Missing fixture release.assets[0]"), mixed, "v0.3.0"),
+  ).not.toThrow()
   for (const upload_url of [
     release.upload_url.replace("uploads.github.com", "uploads.github.com.evil.invalid"),
     release.upload_url.replace("380698559", "380698558"),
@@ -49,7 +52,7 @@ test("native URL binding accepts GitHub's case-insensitive repository coordinate
     expect(() => releaseFacts({ ...release, upload_url }, repository)).toThrow()
 })
 test("native missing digests and starter states remain distinct from malformed and conflicting data", () => {
-  const asset = release.assets[0]!
+  const asset = release.assets[0] ?? fail("Missing fixture release.assets[0]")
   expect(assetFacts({ ...asset, digest: null }, repository, "v0.3.0").sha256).toBeNull()
   expect(
     assetFacts({ ...asset, state: "starter", size: 0, digest: null }, repository, "v0.3.0").state,

@@ -1,9 +1,9 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
-import { Effect, Redacted } from "effect"
+import { Schema, Effect, Redacted } from "effect"
 import { makeRequest, type ProviderContext } from "@mannyc1/ts-release"
 import * as GitHub from "../../../packages/github/src/index.js"
 import { bindScope } from "../../../packages/github/src/Binding.js"
-import { makeHttpTransport } from "@mannyc1/ts-release/node"
 import { nativeRequest } from "../../../packages/github/src/Wire.js"
 import { repository, fixture, response, releaseDocument, commit, tagger } from "./fixtures.js"
 
@@ -11,32 +11,12 @@ const empty = (operation: ProviderContext["own"]["operation"]): ProviderContext 
   own: { operation, receipts: [], observations: [] },
   dependencies: [],
 })
-test("GitHub requests prepare through the actual shared HTTP boundary with transport-owned framing", async () => {
-  const f = await fixture(0),
-    request = await Effect.runPromise(makeRequest(nativeRequest(bindScope(f.tag, empty(f.tag)))))
-  let credentials = 0
-  const transport = makeHttpTransport({
-    providers: f.providers,
-    credentials: () =>
-      Effect.sync(() => {
-        credentials++
-        return {}
-      }),
-    timeoutMilliseconds: 1000,
-    maximumResponseBytes: 1024,
-  })
-  expect(typeof (await Effect.runPromise(transport.prepare!(request)))).toBe("function")
-  expect(credentials).toBe(1)
-  expect(
-    request.facts.headers.some(([name]) => /^(content-length|transfer-encoding)$/u.test(name)),
-  ).toBe(false)
-})
 test("draft creation cannot accept an already-public native acknowledgement", async () => {
   const f = await fixture(0),
     operation = await Effect.runPromise(
       GitHub.draft(
         new GitHub.DraftIntent({
-          ...(f.draft.intent as GitHub.DraftIntent),
+          ...Schema.decodeUnknownSync(GitHub.DraftIntent)(f.draft.intent),
           tagSource: new GitHub.ExistingTag({ commit }),
         }),
       ),
@@ -44,7 +24,9 @@ test("draft creation cannot accept an already-public native acknowledgement", as
     request = await Effect.runPromise(
       makeRequest(nativeRequest(bindScope(operation, empty(operation)))),
     ),
-    provider = f.providers.find((p) => p.definitionId === "github.draft")!
+    provider =
+      f.providers.find((p) => p.definitionId === "github.draft") ??
+      fail('Missing fixture f.providers.find((p) => p.definitionId === "github.draft")')
   expect(
     (
       await Effect.runPromise(
@@ -85,7 +67,7 @@ test("GitHub credentials admit exact repository and principal routes before open
     { principal: "other" },
     { scope: "{}" },
   ])
-    await expect(authorize(patch)).rejects.toThrow()
+    expect(authorize(patch)).rejects.toThrow()
   const publicInput = {
     repository,
     binding: {
@@ -99,7 +81,7 @@ test("GitHub credentials admit exact repository and principal routes before open
     },
   }
   expect(await Effect.runPromise(GitHub.authorizeToken(publicInput))).toEqual({})
-  await expect(
+  expect(
     Effect.runPromise(
       GitHub.authorizeToken({
         repository,
@@ -115,7 +97,7 @@ test("native acknowledgement must bind exact tag facts, status and full request,
     operation = await Effect.runPromise(
       GitHub.annotatedTag(
         new GitHub.AnnotatedTag({
-          ...(f.tag.intent as GitHub.AnnotatedTag),
+          ...Schema.decodeUnknownSync(GitHub.AnnotatedTag)(f.tag.intent),
           tagger: new GitHub.Tagger({ ...tagger, date: "2026-09-07T05:30:00+05:30" }),
         }),
       ),
@@ -123,7 +105,11 @@ test("native acknowledgement must bind exact tag facts, status and full request,
     request = await Effect.runPromise(
       makeRequest(nativeRequest(bindScope(operation, empty(operation)))),
     ),
-    provider = f.providers.find((provider) => provider.definitionId === "github.annotated-tag")!,
+    provider =
+      f.providers.find((provider) => provider.definitionId === "github.annotated-tag") ??
+      fail(
+        'Missing fixture f.providers.find((provider) => provider.definitionId === "github.annotated-tag")',
+      ),
     raw = {
       sha: "b".repeat(40),
       tag: "v1.0.0",

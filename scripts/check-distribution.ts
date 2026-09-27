@@ -1,3 +1,6 @@
+import { SourceIdentity } from "../apps/self-release/src/Model.js"
+import { CandidateIdentity, PackageExports } from "./ReleaseMetadata.js"
+import workspace from "../package.json" with { type: "json" }
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import { cp, lstat, mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises"
@@ -5,7 +8,7 @@ import { tmpdir } from "node:os"
 import { basename, join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 import { Effect, Schema } from "effect"
-import { ReleaseError } from "@mannyc1/ts-release"
+import { ReleaseError, Plan } from "@mannyc1/ts-release"
 import { loadBundle } from "@mannyc1/ts-release/bundle"
 import { fileContentOwner, FinalizedReport } from "@mannyc1/ts-release/node"
 import * as Npm from "@mannyc1/ts-release-npm"
@@ -24,10 +27,14 @@ const work = await mkdtemp(join(tmpdir(), "ts-release-installed-"))
 const consumer = join(work, "consumer")
 await mkdir(join(consumer, "archives"), { recursive: true })
 const sha256 = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex")
-const identity = JSON.parse(await readFile(join(directory, "identity.json"), "utf8"))
+const identity = Schema.decodeSync(Schema.fromJsonString(CandidateIdentity))(
+  await readFile(join(directory, "identity.json"), "utf8"),
+)
 const retainedBytes = await readFile(join(directory, "bundle.json"))
 assert.equal(sha256(retainedBytes), identity.bundleSha256)
-const retainedPlan = JSON.parse(await readFile(join(directory, "plan.json"), "utf8"))
+const retainedPlan = Schema.decodeSync(Schema.fromJsonString(Plan))(
+  await readFile(join(directory, "plan.json"), "utf8"),
+)
 assert.equal(retainedPlan.planId, identity.planId)
 assert.equal(retainedPlan.bundleId, identity.bundleSha256)
 const owner = fileContentOwner(join(directory, "content"))
@@ -78,13 +85,15 @@ const expectedNames = [
   "ts-release-pypi",
 ].map((name) => `@mannyc1/${name}`)
 assert.deepEqual(packages.map((entry) => entry.name).sort(), expectedNames.sort())
-const version = packages[0]!.version
+const firstPackage = packages[0]
+assert.ok(firstPackage, "Retained distribution has no packages")
+const version = firstPackage.version
 assert.ok(packages.every((entry) => entry.version === version))
 const sourceFile = bundle.artifacts.find(
   (artifact) => artifact._tag === "OwnedFile" && artifact.logicalName === "source.json",
 )
 assert.ok(sourceFile?._tag === "OwnedFile")
-const source = JSON.parse(
+const source = Schema.decodeSync(Schema.fromJsonString(SourceIdentity))(
   new TextDecoder().decode(await Effect.runPromise(owner.read(sourceFile.content))),
 )
 assert.match(source.commit, /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u)
@@ -101,14 +110,12 @@ const run = async (argv: string[]) => {
   assert.equal(exit, 0, stdout + stderr)
   return stdout
 }
-const workspace = JSON.parse(await readFile(join(root, "package.json"), "utf8"))
 await writeFile(
   join(consumer, "package.json"),
   JSON.stringify({
     private: true,
     type: "module",
     dependencies: {
-      "@mannyc1/ts-release": `file:${packages.find((entry) => entry.name === "@mannyc1/ts-release")!.archiveFile}`,
       effect: workspace.devDependencies.effect,
       ...Object.fromEntries(packages.map((entry) => [entry.name, `file:${entry.archiveFile}`])),
     },
@@ -125,7 +132,7 @@ await run([
 const imports = []
 for (const entry of packages) {
   assert.equal((await lstat(join(consumer, "node_modules", entry.name))).isSymbolicLink(), false)
-  const installed = JSON.parse(
+  const installed = Schema.decodeSync(Schema.fromJsonString(PackageExports))(
     await readFile(join(consumer, "node_modules", entry.name, "package.json"), "utf8"),
   )
   assert.equal(installed.version, version)
@@ -206,7 +213,9 @@ for (const scenario of ["ordinary", "npm-response-loss", "github-response-loss"]
   )
   // The real preparer constructs a token-mode fixture Plan; a Trusted Publisher
   // Plan is never given fixture tokens or rewritten after preparation.
-  const prepared = JSON.parse(await run([node, "prepare-fixture.mjs", preparationFile]))
+  const prepared = Schema.decodeSync(Schema.fromJsonString(CandidateIdentity))(
+    await run([node, "prepare-fixture.mjs", preparationFile]),
+  )
   const originalBundle = await readFile(join(candidateDirectory, "bundle.json"))
   const originalPlan = await readFile(join(candidateDirectory, "plan.json"))
   assert.equal(sha256(originalBundle), prepared.bundleSha256)
@@ -219,7 +228,11 @@ for (const scenario of ["ordinary", "npm-response-loss", "github-response-loss"]
       assets.set(artifact.logicalName, await Effect.runPromise(fixtureOwner.read(artifact.content)))
   }
   assert.equal(assets.size, 9)
-  for (const entry of packages) assert.equal(sha256(assets.get(entry.publicName)!), entry.sha256)
+  for (const entry of packages) {
+    const archive = assets.get(entry.publicName)
+    assert.ok(archive, "Retained package archive is absent")
+    assert.equal(sha256(archive), entry.sha256)
+  }
   const expectedOperations = 7 + 1 + 1 + assets.size + 1
   const journal = join(scenarioDirectory, "journal.git")
   await run([git, "init", "--bare", "--initial-branch=main", journal])
@@ -334,14 +347,15 @@ for (const scenario of ["ordinary", "npm-response-loss", "github-response-loss"]
       } finally {
         clearTimeout(deadline)
       }
-      peer.hide(interrupted.subject)
+      const interruptedSubject = interrupted.subject
+      peer.hide(interruptedSubject)
       first.child.kill("SIGKILL")
       assert.notEqual((await first.result)[0], 0)
       paused.resume()
       const recoveredEntrypoint = isNpm ? "action" : "cli"
       await finish(await invoke(recoveredEntrypoint), 2)
       assert.equal(
-        peer.mutations.filter((mutation) => mutation.subject === interrupted!.subject).length,
+        peer.mutations.filter((mutation) => mutation.subject === interruptedSubject).length,
         1,
         "Hidden committed publication must not be resent",
       )
@@ -350,17 +364,27 @@ for (const scenario of ["ordinary", "npm-response-loss", "github-response-loss"]
     }
     const npmWrites = peer.mutations.filter((mutation) => mutation.host === "registry.npmjs.org")
     assert.equal(npmWrites.length, 7)
-    const publishedNames = npmWrites.map(
-      (mutation) => JSON.parse(new TextDecoder().decode(mutation.body)).name as string,
+    const documents = npmWrites.map((mutation) =>
+      Schema.decodeSync(
+        Schema.fromJsonString(
+          Schema.Struct({
+            name: Schema.String,
+            _attachments: Schema.Record(Schema.String, Schema.Struct({ data: Schema.String })),
+          }),
+        ),
+      )(new TextDecoder().decode(mutation.body)),
     )
+    const publishedNames = documents.map((document) => document.name)
     assert.deepEqual([...publishedNames].sort(), expectedNames)
-    for (const mutation of npmWrites) {
-      const document = JSON.parse(new TextDecoder().decode(mutation.body))
-      const publication = packages.find((entry) => entry.name === document.name)!
-      const attachments = Object.values(document._attachments) as { data: string }[]
+    for (const document of documents) {
+      const publication = packages.find((entry) => entry.name === document.name)
+      assert.ok(publication, "Published package was not retained")
+      const attachments = Object.values(document._attachments)
       assert.equal(attachments.length, 1)
+      const attachment = attachments[0]
+      assert.ok(attachment, "Published package has no attachment")
       assert.deepEqual(
-        new Uint8Array(Buffer.from(attachments[0]!.data, "base64")),
+        new Uint8Array(Buffer.from(attachment.data, "base64")),
         assets.get(publication.publicName),
         `Published ${publication.name} must equal its retained archive`,
       )
@@ -380,12 +404,18 @@ for (const scenario of ["ordinary", "npm-response-loss", "github-response-loss"]
       assets.size,
     )
     for (const upload of uploads) {
-      const name = new URL(upload.path, "https://uploads.github.com").searchParams.get("name")!
+      const name = new URL(upload.path, "https://uploads.github.com").searchParams.get("name")
+      assert.ok(name, "Uploaded asset must have a name")
       assert.ok(assets.has(name))
       assert.deepEqual(upload.body, assets.get(name), `Uploaded ${name} must equal retained bytes`)
     }
-    assert.equal(peer.mutations.at(-1)!.method, "PATCH")
-    assert.equal(JSON.parse(new TextDecoder().decode(peer.mutations.at(-1)!.body)).draft, false)
+    const finalMutation = peer.mutations.at(-1)
+    assert.ok(finalMutation, "Publication must finalize the release")
+    assert.equal(finalMutation.method, "PATCH")
+    const finalRequest = Schema.decodeSync(
+      Schema.fromJsonString(Schema.Struct({ draft: Schema.Boolean })),
+    )(new TextDecoder().decode(finalMutation.body))
+    assert.equal(finalRequest.draft, false)
     assert.equal(peer.mutations.length, expectedOperations)
     assert.equal(
       completed.journal.events.filter((event) => event.body._tag === "DispatchStarted").length,
@@ -445,7 +475,11 @@ for (const scenario of ["ordinary", "npm-response-loss", "github-response-loss"]
       ])
       active.delete(verifier)
       assert.equal(exit, 0, stdout + stderr)
-      const verification = JSON.parse(stdout)
+      const verification = Schema.decodeSync(
+        Schema.fromJsonString(
+          Schema.Struct({ status: Schema.String, operations: Schema.Int, planId: Schema.String }),
+        ),
+      )(stdout)
       assert.equal(verification.status, "publication-visible")
       assert.equal(verification.operations, 8)
       assert.equal(verification.planId, prepared.planId)

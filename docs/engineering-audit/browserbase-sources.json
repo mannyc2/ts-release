@@ -1,0 +1,1262 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-09-26",
+  "repository": "mannyc2/effect-agent-browserbase",
+  "repositoryPath": "/mnt/models/dev/effect-agent-browserbase",
+  "mainRevision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+  "mainVerification": {
+    "method": "GitHub connector GET /repos/mannyc2/effect-agent-browserbase/commits/main",
+    "result": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+    "shellLsRemoteInitialFailure": "sandbox DNS unavailable; connector succeeded; root subsequently independently verified ls-remote"
+  },
+  "localRevision": "1f9efc74135434f4f54a390c11f88a4ec9a42bcf",
+  "localBranch": "codex/shared-capture-recording",
+  "localStatus": "",
+  "localAheadOfMainCommits": 2,
+  "changedPathsFromMain": [
+    "README.md",
+    "docs/STATUS.md",
+    "packages/browser/README.md",
+    "packages/browser/package.json",
+    "packages/browser/src/Capture.ts",
+    "packages/browser/src/CaptureData.ts",
+    "packages/browser/src/CaptureEvidence.ts",
+    "packages/browser/src/Errors.ts",
+    "packages/browser/src/Recording.ts",
+    "packages/browser/src/RecordingData.ts",
+    "packages/browser/src/RecordingFfmpeg.ts",
+    "packages/browser/src/index.ts",
+    "packages/browser/src/internal/browser/Association.ts",
+    "packages/browser/src/internal/browser/Session.ts",
+    "packages/browser/src/internal/capture/Evidence.ts",
+    "packages/browser/src/internal/capture/Source.ts",
+    "packages/browser/test/capture-schema.test.ts",
+    "packages/browser/test/owner-capture.test.ts",
+    "packages/browser/test/owner-native-failure.test.ts",
+    "packages/browser/vite.config.ts",
+    "packages/browserbase/examples/record-video.ts",
+    "packages/browserbase/test/native/video.test.ts"
+  ],
+  "trackedInstructionEntries": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md"
+  ],
+  "upstreamRevision": "bcc2bb75d83f40c87ff511c6572fd87e14e1d87c",
+  "requirementIds": [
+    "BB-S01",
+    "BB-S02",
+    "BB-S03",
+    "BB-S04",
+    "BB-S05",
+    "BB-S06",
+    "BB-S07",
+    "BB-S08",
+    "BB-S09",
+    "BB-S10",
+    "BB-S11",
+    "BB-S12",
+    "BB-S13",
+    "BB-S14",
+    "BB-S15",
+    "BB-S16",
+    "BB-S17",
+    "BB-S18",
+    "BB-S19",
+    "BB-S20",
+    "BB-S21",
+    "BB-S22",
+    "BB-S23",
+    "BB-S24",
+    "BB-S25",
+    "BB-S26",
+    "BB-S27",
+    "BB-S28",
+    "BB-S29",
+    "BB-S30",
+    "BB-S31",
+    "BB-S32",
+    "BB-S33",
+    "BB-S34",
+    "BB-S35",
+    "BB-S36"
+  ],
+  "scope": "Normative instructions, policy/enforcement mapping, selected implementation checks. Not exhaustive runtime bug audit.",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "c4451a5deb5c3c2c03e3f6bd6eeb8c24997ed9fb",
+      "sha256": "a1a019590601d2426bf8ac427610c0b29e1343eed317bfa4696b9911333d8ef0",
+      "lineCount": 39,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          39
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/AGENTS.md"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "cf48b4c7d66e76c95ead8919fb5203bbab77178b",
+      "sha256": "acd2c97beb68d9e9a63a75cb5015f441281bcc69e046315263896a6f374ac00b",
+      "lineCount": 118,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          118
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/CONTRIBUTING.md"
+    },
+    {
+      "path": "CLAUDE.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "aad1f4ee10d81faa97f7a913406b9126b9b9f5c6",
+      "sha256": "f85a0afb2dc10a7e5780f00a2459e46677f6fd83416035599e193ac525661da0",
+      "lineCount": 2,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          2
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/CLAUDE.md"
+    },
+    {
+      "path": "README.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "82b9be2e1449f71736c183ee01f7addab3c3155c",
+      "sha256": "a198b25f8b7b867d555cd0ff338c109f9bf46de6ebbb2f8c5155ce4e44e935ec",
+      "lineCount": 124,
+      "localMatchesPinnedSource": false,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          124
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/README.md"
+    },
+    {
+      "path": "SECURITY.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "babb60b176e0c5639e300529dbe66478ce98f2e1",
+      "sha256": "7c36c28ccde483fd8551e38b338497d81ebe853a9a570494798cd7078e645367",
+      "lineCount": 23,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          23
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/SECURITY.md"
+    },
+    {
+      "path": "lint/.oxlintrc.json",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "b93b870731baf6480d6f68f85af1683d1fa25a38",
+      "sha256": "62365d0791ce0255ed861a6e45234ca0a91142b5ba39c0e17b4419a5480e1e9c",
+      "lineCount": 200,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          200
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/lint/.oxlintrc.json"
+    },
+    {
+      "path": "package.json",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "18581ce6c4870aebb51a12dcb2159bb8890b47a6",
+      "sha256": "da34a49d4241323c2bded2bc168d3bd19cf0169fd8e448c8c1b5a08c04c4e2d3",
+      "lineCount": 6,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          6
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/package.json"
+    },
+    {
+      "path": "packages/browser/package.json",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "c3c30fe5f9d51543e780150f30ec30f04e8480e7",
+      "sha256": "4c3e5f4817a8239bded11984b9572326dff157368dc1dd4774f33825da0922a8",
+      "lineCount": 61,
+      "localMatchesPinnedSource": false,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          61
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browser/package.json"
+    },
+    {
+      "path": "packages/browserbase/package.json",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "6b279f3b254ade90fa6adfcb32f783b1a23c72e2",
+      "sha256": "d45a754559d24995dbed8ebc547348beb29dfb7ac76b3501f3d07c156deb0b9c",
+      "lineCount": 74,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          74
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browserbase/package.json"
+    },
+    {
+      "path": "packages/agent-browser/package.json",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "442ae56da28f1a99bfad9e2ce46ba1045b89cdfc",
+      "sha256": "ef1df2679ec1af3be5b8b258bc2dc9164fd1745739d1dd81718013d15d57b242",
+      "lineCount": 53,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          53
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/agent-browser/package.json"
+    },
+    {
+      "path": "packages/browser/tsconfig.json",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "64bc90422604da600b9be6c36f2e9c1dc520f09d",
+      "sha256": "01b8e0e91a46525852ef6df301b93f4172833ebc1293f5104fa2bb07d7dbd3be",
+      "lineCount": 17,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          17
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browser/tsconfig.json"
+    },
+    {
+      "path": "packages/browserbase/tsconfig.json",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "f60f18224d5ab59e99f4e43a0996223cc3d8159c",
+      "sha256": "e754c745bd265d6b75a5c69d89de4fcd2e9bfd7b7572869a5ec2c122b1ebe1e9",
+      "lineCount": 17,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          17
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browserbase/tsconfig.json"
+    },
+    {
+      "path": "packages/agent-browser/tsconfig.json",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "22950ec411c5c57896d4146acfdae4e7b2a233ab",
+      "sha256": "018ea0da0b95a731fc2f99a421ee95c3499cc63dbfac040977379d611bb90966",
+      "lineCount": 15,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          15
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/agent-browser/tsconfig.json"
+    },
+    {
+      "path": "tools/release/package.json",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "1102bd3f3b83aa9419be2d456dd8c4e95914373d",
+      "sha256": "904048c057f77ac4862ca1f9fb5ac4ebf96d2e4087d25331ab2f56ffb991ce07",
+      "lineCount": 21,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          21
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/package.json"
+    },
+    {
+      "path": "tools/release/tsconfig.json",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "6b6b1b2b7f0de40517a7bb281aa0ed7875fc9bdc",
+      "sha256": "fb4d28e270e66fc251c29c4c3345a8ca2a02688995e042373b6afac58d9ec524",
+      "lineCount": 17,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          17
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/tsconfig.json"
+    },
+    {
+      "path": "tools/release/README.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "c0a2966c617d90cf6f3f1e9058bbbe12507bc449",
+      "sha256": "2e24ee93004cca39fb8d4b86366b6ba990e4dde95088a53e93fb4396b7b8453c",
+      "lineCount": 47,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          47
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/release/README.md"
+    },
+    {
+      "path": "docs/RELEASING.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "17de9a8aae62f44d21b4599931e68032285ff916",
+      "sha256": "de7249aa56e45c7f59c461cda37aff3c6df5f49ce34d26495fb994c9d3b4daf0",
+      "lineCount": 74,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          74
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/docs/RELEASING.md"
+    },
+    {
+      "path": "docs/HOSTED.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "45d0b89ae054ed5903858a9bdb69e8aedacb29e0",
+      "sha256": "853eee62615cb27832c254a29eda8289037444a8b36030186d1785d174fed29d",
+      "lineCount": 129,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          129
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/docs/HOSTED.md"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "92349a5e8829b50436c0fa0c4411b1d8125e1eb8",
+      "sha256": "ccdd7fa77731fc593d92b4b6b11c731ab63f275fcc5cdf220ff887db5cd03f61",
+      "lineCount": 226,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          226
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/.github/workflows/ci.yml"
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "76a47626f691623db3af0247e06424c516021041",
+      "sha256": "a0f2873d0d4b79b261514f8cf136963cce68adb39920c8f1cbb41bafbdd2b998",
+      "lineCount": 12,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          12
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/.github/pull_request_template.md"
+    },
+    {
+      "path": ".github/CODEOWNERS",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "39ed3c77188475a87ab25799426877ab7dd69dea",
+      "sha256": "a64c68e755db5d720743c0ff4253ff4d06a0d0d7395572df8445ba23daf0b640",
+      "lineCount": 2,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          2
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/.github/CODEOWNERS"
+    },
+    {
+      "path": "tools/test/lint-policy.test.mjs",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "c1725963b4d0426dce5a50fa1e9d076e1a6b03a1",
+      "sha256": "841efe51bf3d17431d2b9f2416c8aa336f9554ce04aa5d48979cec55df3d0462",
+      "lineCount": 134,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          134
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/test/lint-policy.test.mjs"
+    },
+    {
+      "path": "tools/run-acceptance.sh",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "41ba31bf403be64de3c716793dc48010772255f1",
+      "sha256": "8bee39978441919565146e60f96f06a0d4f9dfe15eab1d5cbe5d0411017fa97f",
+      "lineCount": 210,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          210
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/run-acceptance.sh"
+    },
+    {
+      "path": "tools/ci-evidence.mjs",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "7a150ce70b1e162bb73e3f23167846573ae9fddc",
+      "sha256": "32a346717c19133ffb82be99c6922b16dcff6e82d80a27f17364a3fc4ebed2f4",
+      "lineCount": 65,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          65
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/ci-evidence.mjs"
+    },
+    {
+      "path": "tools/ci-plan.mjs",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "a76d7ebeb940e9c2102b6a44d2028cea2e1186cf",
+      "sha256": "ec2e27f6b18d018d826ac05f04698af0eb743dc91b810c23527197772030d5d5",
+      "lineCount": 97,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          97
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/ci-plan.mjs"
+    },
+    {
+      "path": "tools/verify-declaration-exports.mjs",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "93afd1fb38a7af045af8db93b27ce5c4b91729ef",
+      "sha256": "e3c3576ff3022a50f9e794b1c6a9517dbfd302616d6e64010fdc42716bd36604",
+      "lineCount": 80,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          80
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/verify-declaration-exports.mjs"
+    },
+    {
+      "path": "packages/browserbase/src/Account.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "2311d7bdb0e3c359ed515c18694cc87f36462bd8",
+      "sha256": "40c1a8a314957361b3fcf8b7633800a8c5858e34d56fc28cff3f7a548f9dac56",
+      "lineCount": 72,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          72
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browserbase/src/Account.ts"
+    },
+    {
+      "path": "packages/browserbase/src/Client.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "722a8863722bb4a9d916c724e05188ddd76d4a67",
+      "sha256": "2366a6aa6c2c47b4e726ebb65325f92fbe13ea1dbdebad09d1b346f7420ebd45",
+      "lineCount": 106,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          106
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browserbase/src/Client.ts"
+    },
+    {
+      "path": "packages/browserbase/src/Projects.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "f0af168750e46e59e01ce2b7e67de21245914626",
+      "sha256": "ca7296ed2d82f3bb0beb863dd5cf2c04ccb4d99331871d6cacdf94f4436bc096",
+      "lineCount": 96,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          96
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browserbase/src/Projects.ts"
+    },
+    {
+      "path": "packages/browser/src/Testing.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "47b4fe867c16a0619eebb37b94db6832c516f1c4",
+      "sha256": "6424952c4cf4960e0d79085288ae211d4d96164c804513c4e286ac9e3e5fd78e",
+      "lineCount": 206,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          206
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browser/src/Testing.ts"
+    },
+    {
+      "path": "packages/browser/test/workflow-types.test.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "6254e873305abda4aaf229c44f299488886b873e",
+      "sha256": "9835c6a6ae2b61c681263dd99f52ed8030a4bc154de546aa887145290cda50dc",
+      "lineCount": 89,
+      "localMatchesPinnedSource": true,
+      "coverage": "full document/configuration read",
+      "readRanges": [
+        [
+          1,
+          89
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browser/test/workflow-types.test.ts"
+    },
+    {
+      "path": "packages/browser/README.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "75b86195b9c9e856879796f5cf60b1bdf99b47b3",
+      "sha256": "c84f3dc459d607e28e7425446bf6103e4fc82c6b0640ca33dc622c6cb8dbb3b2",
+      "lineCount": 826,
+      "localMatchesPinnedSource": false,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          160
+        ],
+        [
+          680,
+          815
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browser/README.md"
+    },
+    {
+      "path": "packages/browserbase/README.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "7cf19c2eb61ab342bd83baa2acffe9f97521a738",
+      "sha256": "d64293968fd07328a0521f369b8c24ef1d0b5885bcf2d5265f1bfe2f6b99b570",
+      "lineCount": 318,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          180
+        ],
+        [
+          260,
+          318
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browserbase/README.md"
+    },
+    {
+      "path": "packages/agent-browser/README.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "bbf88fa4f03cd0539898b07866b33700cfcf01a6",
+      "sha256": "d9554c15db104beec2b02efc91c44d5e8ced33b55cecc8e8b369cfaf2be375a4",
+      "lineCount": 476,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          90
+        ],
+        [
+          269,
+          296
+        ],
+        [
+          365,
+          476
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/agent-browser/README.md"
+    },
+    {
+      "path": "docs/STATUS.md",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "9055482973356c82be848ae22edf2f896dc888c6",
+      "sha256": "e80d09eb267d5006027e8af383384483dc71537ae5ce3601d2727700aeae8e7e",
+      "lineCount": 236,
+      "localMatchesPinnedSource": false,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          236
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/docs/STATUS.md",
+      "localReadRanges": [
+        [
+          1,
+          250
+        ]
+      ],
+      "note": "Current local STATUS was read; newer capture/recording section differs from main. It is context, not normative authority."
+    },
+    {
+      "path": "upstream.patch",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "6909af67f826e61197f2eb6dacb5092775accac5",
+      "sha256": "2f3baa8c32e2b81e1b1351a3eab1ae57e0559e8d5c267bfd8dd4c22f74345e95",
+      "lineCount": 441,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          275,
+          288
+        ],
+        [
+          342,
+          383
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/upstream.patch"
+    },
+    {
+      "path": "packages/browser/src/Browser.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "97b2d10745c8b7b46d301c1d606a48270c95485b",
+      "sha256": "00cbefd4253094ac6342e09728aa56eac80c7c818b1f3d657014e5ae6e507265",
+      "lineCount": 298,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          154,
+          298
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browser/src/Browser.ts"
+    },
+    {
+      "path": "packages/browserbase/src/internal/http/Transport.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "04c97d89f060aa4a2ed69b44ee8a35cfa3912867",
+      "sha256": "5976c39afd812053b2dd9abe4aad51c07280e06336aa1a46a5637f8944acf511",
+      "lineCount": 674,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          210
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browserbase/src/internal/http/Transport.ts"
+    },
+    {
+      "path": "packages/browserbase/src/Errors.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "656b8c57bfcfd2800e95dd1826500ef9880f4cef",
+      "sha256": "85336103d6f7631ab3cad506cbb29a407b41e37d2ad37131a60e91e85a6375ea",
+      "lineCount": 202,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          110
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browserbase/src/Errors.ts"
+    },
+    {
+      "path": "packages/browserbase/src/Testing.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "39b1c64f95130f231bf9e0f2c3134a629dd44be2",
+      "sha256": "dfde698c0ea37c944ed2c8ffd9b79fa125995137773a4303a4509c89d4f4a382",
+      "lineCount": 323,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          110,
+          235
+        ],
+        [
+          265,
+          323
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browserbase/src/Testing.ts"
+    },
+    {
+      "path": "packages/browser/test/fixtures/ScriptedOwner.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "463e6e7cf8321b4225eedeeb06a24a293ec05fd2",
+      "sha256": "1844f3f748405bc3a003b72af06b592e511aea8e7865f6c1376d7adb8b1687e7",
+      "lineCount": 277,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          180
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browser/test/fixtures/ScriptedOwner.ts"
+    },
+    {
+      "path": "packages/agent-browser/src/Adapter.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "eae5963e37d76cf159d9f92eeb507aec2f87da39",
+      "sha256": "fdccb4a230a0b91aa7ec2beafba7d9ff96926eb0040e8a35c7d9e9843b711c7d",
+      "lineCount": 299,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          190
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/agent-browser/src/Adapter.ts"
+    },
+    {
+      "path": "packages/agent-browser/src/internal/tools/Definitions.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "b6e6374f40ecf71b7dbc70e5092cb24f6da934d7",
+      "sha256": "07791701108e00e58ff707b5fe3a2b15cb7d1a5cb46766eb4855252cac7e3213",
+      "lineCount": 326,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          293,
+          326
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/agent-browser/src/internal/tools/Definitions.ts"
+    },
+    {
+      "path": "packages/browser/src/internal/browser/Session.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "d47052d93087b94886067e37364134e25e854610",
+      "sha256": "df6d45030259b2589250e084494664e4f6697335b9063fd62997832ded3c78d5",
+      "lineCount": 1903,
+      "localMatchesPinnedSource": false,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          395,
+          425
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browser/src/internal/browser/Session.ts"
+    },
+    {
+      "path": "packages/browser/src/internal/testing/Engine.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "a73cf8e2272ffa16b79ce77d34218bde19f83dff",
+      "sha256": "283311f272eb2b4db0d1545f7ac739aab2118aca6790030ad08b4013280b06f3",
+      "lineCount": 1992,
+      "localMatchesPinnedSource": true,
+      "coverage": "inventory/line count only",
+      "readRanges": [],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/browser/src/internal/testing/Engine.ts"
+    },
+    {
+      "path": "packages/agent-browser/src/internal/tools/Handlers.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "18cdf4cc5445676af8d2f24271d244efdfa7c3c5",
+      "sha256": "d1815d4fd3f2923a7aa4e204301a64b3faac5e05d3ed7eb8ec8841a1f07dd15a",
+      "lineCount": 530,
+      "localMatchesPinnedSource": true,
+      "coverage": "inventory/line count only",
+      "readRanges": [],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/agent-browser/src/internal/tools/Handlers.ts"
+    },
+    {
+      "path": "packages/agent-browser/src/internal/tools/Host.ts",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "fde297ded634bc4a3ff8a692433a779804a50197",
+      "sha256": "d0ea422016ad86ef8a9b57be2843c98b9d3c9c5f130159ac868cf28d2b360463",
+      "lineCount": 459,
+      "localMatchesPinnedSource": true,
+      "coverage": "inventory/line count only",
+      "readRanges": [],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/packages/agent-browser/src/internal/tools/Host.ts"
+    },
+    {
+      "path": "tools/test/maintenance.test.mjs",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "b9fb73881e6b7c8ad3725019518c3877f74f275b",
+      "sha256": "738672070af31ec15176f446d4a75f72dd6d8696ae9f03666adcde63dddf0999",
+      "lineCount": 127,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          127
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/test/maintenance.test.mjs"
+    },
+    {
+      "path": "tools/test/generic-package.test.mjs",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "9be51293334f70043dafea16425c6c2dc239a834",
+      "sha256": "d71df2f4d1a0aee8303b932c0c829ea28362b30e040fe719b1666eff1b28fc10",
+      "lineCount": 175,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          145
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/test/generic-package.test.mjs"
+    },
+    {
+      "path": "tools/verify-consumer.mjs",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "0c98feaabf6185e04e4b87d6d05a0b91ff58ea04",
+      "sha256": "a566dc2e55a08cecff3dda8cc8e96fdfa98747c9043c567a99c4adb97455ec8e",
+      "lineCount": 310,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          145
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/verify-consumer.mjs"
+    },
+    {
+      "path": "tools/packed-consumers.mjs",
+      "source": "browserbase",
+      "revision": "7e93054494ee491dbf2a1f66a083d99da846fd3e",
+      "gitBlob": "008afb99e465e88dcebe5ca37bf78419c595ef77",
+      "sha256": "743e08076579a1b18d75eb3344120fb0b359410202bb643b525c27b9f1ce7efa",
+      "lineCount": 410,
+      "localMatchesPinnedSource": true,
+      "coverage": "selected contract/enforcement ranges; not complete feature audit",
+      "readRanges": [
+        [
+          1,
+          410
+        ]
+      ],
+      "url": "https://github.com/mannyc2/effect-agent-browserbase/blob/7e93054494ee491dbf2a1f66a083d99da846fd3e/tools/packed-consumers.mjs"
+    },
+    {
+      "path": "AGENTS.md",
+      "source": "pinned upstream effect-agent",
+      "revision": "bcc2bb75d83f40c87ff511c6572fd87e14e1d87c",
+      "sha256": "78cab78676b49f43738dbd9fcb5bf04622de5b19ecb8222511d509e140705fc5",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/AGENTS.md",
+      "localSha256": "78cab78676b49f43738dbd9fcb5bf04622de5b19ecb8222511d509e140705fc5",
+      "localMatchesPinnedSource": true,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          200
+        ]
+      ],
+      "note": null,
+      "url": "https://github.com/danieljvdm/effect-agent/blob/bcc2bb75d83f40c87ff511c6572fd87e14e1d87c/AGENTS.md"
+    },
+    {
+      "path": ".agents/skills/simplify/SKILL.md",
+      "source": "pinned upstream effect-agent",
+      "revision": "bcc2bb75d83f40c87ff511c6572fd87e14e1d87c",
+      "sha256": "0ed2715a93843330c533efa0b018a98999ec190042ee3c29ec623b0392459773",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/.agents/skills/simplify/SKILL.md",
+      "localSha256": "0ed2715a93843330c533efa0b018a98999ec190042ee3c29ec623b0392459773",
+      "localMatchesPinnedSource": true,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          38
+        ]
+      ],
+      "note": null,
+      "url": "https://github.com/danieljvdm/effect-agent/blob/bcc2bb75d83f40c87ff511c6572fd87e14e1d87c/.agents/skills/simplify/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/testing/SKILL.md",
+      "source": "pinned upstream effect-agent",
+      "revision": "bcc2bb75d83f40c87ff511c6572fd87e14e1d87c",
+      "sha256": "85a9b789639eb7915bc138b0071abb959031ca0b457c0ac9463a84b3bd119f28",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/.agents/skills/testing/SKILL.md",
+      "localSha256": "85a9b789639eb7915bc138b0071abb959031ca0b457c0ac9463a84b3bd119f28",
+      "localMatchesPinnedSource": true,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          38
+        ]
+      ],
+      "note": null,
+      "url": "https://github.com/danieljvdm/effect-agent/blob/bcc2bb75d83f40c87ff511c6572fd87e14e1d87c/.agents/skills/testing/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/testing/references/selection.md",
+      "source": "pinned upstream effect-agent",
+      "revision": "bcc2bb75d83f40c87ff511c6572fd87e14e1d87c",
+      "sha256": "6c3c929162e70544df97db474022370123acf489a476a50412e6ac7c21d6b476",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/.agents/skills/testing/references/selection.md",
+      "localSha256": "6c3c929162e70544df97db474022370123acf489a476a50412e6ac7c21d6b476",
+      "localMatchesPinnedSource": true,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          87
+        ]
+      ],
+      "note": null,
+      "url": "https://github.com/danieljvdm/effect-agent/blob/bcc2bb75d83f40c87ff511c6572fd87e14e1d87c/.agents/skills/testing/references/selection.md"
+    },
+    {
+      "path": ".agents/skills/testing/references/test-design.md",
+      "source": "pinned upstream effect-agent",
+      "revision": "bcc2bb75d83f40c87ff511c6572fd87e14e1d87c",
+      "sha256": "ad5ee753fa37b5c31991d47250b249deaee8e09509ac6579d2caf4b6c6d19b45",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/.agents/skills/testing/references/test-design.md",
+      "localSha256": "ad5ee753fa37b5c31991d47250b249deaee8e09509ac6579d2caf4b6c6d19b45",
+      "localMatchesPinnedSource": true,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          27
+        ]
+      ],
+      "note": null,
+      "url": "https://github.com/danieljvdm/effect-agent/blob/bcc2bb75d83f40c87ff511c6572fd87e14e1d87c/.agents/skills/testing/references/test-design.md"
+    },
+    {
+      "path": ".agents/skills/testing/references/tdd.md",
+      "source": "pinned upstream effect-agent",
+      "revision": "bcc2bb75d83f40c87ff511c6572fd87e14e1d87c",
+      "sha256": "aa4bf7fbe91a3a7bf84fe71b704daff65da7f9c7cb5adfc307e4bc4242352da6",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/.agents/skills/testing/references/tdd.md",
+      "localSha256": "aa4bf7fbe91a3a7bf84fe71b704daff65da7f9c7cb5adfc307e4bc4242352da6",
+      "localMatchesPinnedSource": true,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          31
+        ]
+      ],
+      "note": null,
+      "url": "https://github.com/danieljvdm/effect-agent/blob/bcc2bb75d83f40c87ff511c6572fd87e14e1d87c/.agents/skills/testing/references/tdd.md"
+    },
+    {
+      "path": ".agents/skills/testing/references/e2e.md",
+      "source": "pinned upstream effect-agent",
+      "revision": "bcc2bb75d83f40c87ff511c6572fd87e14e1d87c",
+      "sha256": "0e01d40e57c326570a67e68766740ccf90deb69b2f8ba7d4678a87416c7529ac",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/.agents/skills/testing/references/e2e.md",
+      "localSha256": "0e01d40e57c326570a67e68766740ccf90deb69b2f8ba7d4678a87416c7529ac",
+      "localMatchesPinnedSource": true,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          59
+        ]
+      ],
+      "note": null,
+      "url": "https://github.com/danieljvdm/effect-agent/blob/bcc2bb75d83f40c87ff511c6572fd87e14e1d87c/.agents/skills/testing/references/e2e.md"
+    },
+    {
+      "path": "docs/TOOLCHAIN.md",
+      "source": "pinned upstream effect-agent",
+      "revision": "bcc2bb75d83f40c87ff511c6572fd87e14e1d87c",
+      "sha256": "c26b24fdcf0fc5a32934a52cbf28f062514d80c38015b593bf7bbe4d138d911d",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/docs/TOOLCHAIN.md",
+      "localSha256": "6f17f764054e1ff69c01312f10429b6dbf5dbdea71b72a0cdd6a2d1b1c66aebc",
+      "localMatchesPinnedSource": false,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          619
+        ]
+      ],
+      "note": "TOOLCHAIN has Browserbase integration patch; cite inherited upstream export conventions and Browserbase-owned overrides separately",
+      "url": "https://github.com/danieljvdm/effect-agent/blob/bcc2bb75d83f40c87ff511c6572fd87e14e1d87c/docs/TOOLCHAIN.md"
+    },
+    {
+      "path": "tsconfig.base.json",
+      "source": "pinned upstream effect-agent",
+      "revision": "bcc2bb75d83f40c87ff511c6572fd87e14e1d87c",
+      "sha256": "dc6a5f2415bbaa23b6694aaa65e648e2931d5d50bc1f7481118a1532ba845265",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/tsconfig.base.json",
+      "localSha256": "dc6a5f2415bbaa23b6694aaa65e648e2931d5d50bc1f7481118a1532ba845265",
+      "localMatchesPinnedSource": true,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          52
+        ]
+      ],
+      "note": null,
+      "url": "https://github.com/danieljvdm/effect-agent/blob/bcc2bb75d83f40c87ff511c6572fd87e14e1d87c/tsconfig.base.json"
+    },
+    {
+      "path": "AGENTS.md",
+      "source": "installed npm package effect",
+      "version": "4.0.0-rc.117",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/effect/AGENTS.md",
+      "realPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/.bun/effect@4.0.0-rc.117/node_modules/effect/AGENTS.md",
+      "sha256": "e155acab559b29e0a54acd0f5d8d4b7a428268ba6eb1aba4d62b4876d6b1a78e",
+      "lineCount": 410,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          410
+        ]
+      ]
+    },
+    {
+      "path": "package.json",
+      "source": "installed npm package effect",
+      "version": "4.0.0-rc.117",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/effect/package.json",
+      "realPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/.bun/effect@4.0.0-rc.117/node_modules/effect/package.json",
+      "sha256": "5e3b27a25a53fa0b799fe2667d39b2f5371a15a8c69d21af58e9823557111e1b",
+      "lineCount": 93,
+      "coverage": "package identity metadata",
+      "readRanges": [
+        [
+          1,
+          93
+        ]
+      ]
+    },
+    {
+      "path": "ai-docs/src/01_effect/03_services/20_layer-composition.ts",
+      "source": "installed npm package effect",
+      "version": "4.0.0-rc.117",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/effect/ai-docs/src/01_effect/03_services/20_layer-composition.ts",
+      "realPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/.bun/effect@4.0.0-rc.117/node_modules/effect/ai-docs/src/01_effect/03_services/20_layer-composition.ts",
+      "sha256": "402cee519ad2939437486a115e258a132bc92a5953de49765799efc458eff865",
+      "lineCount": 70,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          70
+        ]
+      ]
+    },
+    {
+      "path": "ai-docs/src/01_effect/05_resources/10_acquire-release.ts",
+      "source": "installed npm package effect",
+      "version": "4.0.0-rc.117",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/effect/ai-docs/src/01_effect/05_resources/10_acquire-release.ts",
+      "realPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/.bun/effect@4.0.0-rc.117/node_modules/effect/ai-docs/src/01_effect/05_resources/10_acquire-release.ts",
+      "sha256": "6cd5dcbbe32336f321415fc2ecb42bcb65948af609c9499ad7b77b8a7abc271d",
+      "lineCount": 105,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          105
+        ]
+      ]
+    },
+    {
+      "path": "ai-docs/src/09_testing/10_effect-tests.ts",
+      "source": "installed npm package effect",
+      "version": "4.0.0-rc.117",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/effect/ai-docs/src/09_testing/10_effect-tests.ts",
+      "realPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/.bun/effect@4.0.0-rc.117/node_modules/effect/ai-docs/src/09_testing/10_effect-tests.ts",
+      "sha256": "5439c9ff70f98a7765dd982eaeac57d80ad75231c8616f9ba5a8672a346a785b",
+      "lineCount": 55,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          55
+        ]
+      ]
+    },
+    {
+      "path": "ai-docs/src/09_testing/20_layer-tests.ts",
+      "source": "installed npm package effect",
+      "version": "4.0.0-rc.117",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/effect/ai-docs/src/09_testing/20_layer-tests.ts",
+      "realPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/.bun/effect@4.0.0-rc.117/node_modules/effect/ai-docs/src/09_testing/20_layer-tests.ts",
+      "sha256": "f1f277ce839e237e4b6b0fdedf913470e50554c8fbaa4edc0fb95257dda6b444",
+      "lineCount": 138,
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          138
+        ]
+      ]
+    },
+    {
+      "path": "oxlint-presets/recommended.json",
+      "source": "installed npm package @effect/tsgo",
+      "version": "0.45.0",
+      "localPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/@effect/tsgo/oxlint-presets/recommended.json",
+      "realPath": "/mnt/models/dev/effect-agent-browserbase/.work/bootstrap-issue-capture/tree/node_modules/.bun/@effect+tsgo@0.45.0/node_modules/@effect/tsgo/oxlint-presets/recommended.json",
+      "sha256": "72f755c1f2987a1097eec2eb9295ee993b28210278a0d01a9283b9ae820c36d4",
+      "coverage": "full read",
+      "readRanges": [
+        [
+          1,
+          108
+        ]
+      ]
+    }
+  ],
+  "verification": [
+    {
+      "command": "env npm_config_offline=true /home/cjpher/.local/share/fnm/node-versions/v24.14.1/installation/bin/node --test tools/test/lint-policy.test.mjs",
+      "cwd": "/mnt/models/dev/effect-agent-browserbase",
+      "testedRevision": "1f9efc74135434f4f54a390c11f88a4ec9a42bcf",
+      "exitCode": 0,
+      "testsPassed": 6,
+      "testsFailed": 0,
+      "note": "First sandbox attempt failed spawnSync git EPERM; approved read-only retry outside sandbox passed. Only policy-alignment tests; not full lint or acceptance."
+    }
+  ],
+  "limits": [
+    "No fresh full/library/native/packed acceptance execution.",
+    "No certification of remote branch protections, environment settings or current CI success.",
+    "Product-specific browser feature documentation read only where relevant to standards/ownership/testing.",
+    "No new replay of previously reported ContextCoordination defect.",
+    "Source/range inventory identifies read targets; no blanket claim all implementation conforms."
+  ],
+  "mutations": "Only requested audit Markdown and JSON ledger in ts-release; consumer repository unchanged."
+}

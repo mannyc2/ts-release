@@ -89,7 +89,9 @@ for (const format of ["zip", "tar.gz"]) {
     ["traversal", ["../escape", "safe"]],
     ["duplicate", ["same", "same"]],
   ]) {
-    const outfile = join(producer, `rejected-${label}.${format}`)
+    assert.equal(typeof label, "string")
+    const name = String(label)
+    const outfile = join(producer, `rejected-${name}.${format}`)
     await assert.rejects(
       run(
         archive[format]({
@@ -100,7 +102,7 @@ for (const format of ["zip", "tar.gz"]) {
       { _tag: "InputInvalid" },
     )
     await assert.rejects(stat(outfile), { code: "ENOENT" })
-    checks.push(`${format} ${label} typed rejection and no publication`)
+    checks.push(`${format} ${name} typed rejection and no publication`)
   }
 }
 const repository = join(producer, "repository")

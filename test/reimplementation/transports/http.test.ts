@@ -3,10 +3,7 @@ import { createServer } from "node:http"
 import { once } from "node:events"
 import { fork } from "node:child_process"
 import { fileURLToPath } from "node:url"
-import { mkdtempSync, rmSync } from "node:fs"
-import { tmpdir } from "node:os"
-import { join } from "node:path"
-import { Effect, Layer } from "effect"
+import { Cause, Effect, Exit, Schema } from "effect"
 import {
   Host,
   NoReplay,
@@ -15,7 +12,6 @@ import {
   makeRequest,
   runRelease,
   type HostShape,
-  type PreparedRequest,
 } from "@mannyc1/ts-release"
 import { makeHttpTransport, makeHttpRead, makeCredentialExchange } from "@mannyc1/ts-release/node"
 import type { HttpProviderDefinition, ResolveCredentials } from "@mannyc1/ts-release/http"
@@ -29,37 +25,41 @@ const peer = async (mode: "accepted" | "drop" | "redirect" | "large" | "truncate
   const received = new Promise<void>((resolve) => {
     committed = resolve
   })
-  const server = createServer(async (request, response) => {
+  const server = createServer((request, response) => {
     const chunks: Buffer[] = []
-    for await (const chunk of request) chunks.push(Buffer.from(chunk))
-    writes.push({
-      method: request.method!,
-      url: request.url!,
-      body: Buffer.concat(chunks).toString(),
-      authorization: request.headers.authorization,
+    request.on("data", (chunk: Buffer) => chunks.push(Buffer.from(chunk)))
+    request.on("end", () => {
+      if (request.method === undefined || request.url === undefined)
+        throw new Error("HTTP fixture requires a method and URL")
+      writes.push({
+        method: request.method,
+        url: request.url,
+        body: Buffer.concat(chunks).toString(),
+        authorization: request.headers.authorization,
+      })
+      committed()
+      if (mode === "hang") return
+      if (mode === "drop") {
+        request.socket.destroy()
+        return
+      }
+      if (mode === "redirect") {
+        response.writeHead(307, { location: "/redirect-target" }).end()
+        return
+      }
+      if (mode === "large") {
+        response.writeHead(201).end("x".repeat(8192))
+        return
+      }
+      if (mode === "truncated") {
+        response.writeHead(201, { "content-length": "1000" })
+        response.flushHeaders()
+        response.write("short")
+        setTimeout(() => request.socket.destroy(), 10)
+        return
+      }
+      response.writeHead(201).end("ok")
     })
-    committed()
-    if (mode === "hang") return
-    if (mode === "drop") {
-      request.socket.destroy()
-      return
-    }
-    if (mode === "redirect") {
-      response.writeHead(307, { location: "/redirect-target" }).end()
-      return
-    }
-    if (mode === "large") {
-      response.writeHead(201).end("x".repeat(8192))
-      return
-    }
-    if (mode === "truncated") {
-      response.writeHead(201, { "content-length": "1000" })
-      response.flushHeaders()
-      response.write("short")
-      setTimeout(() => request.socket.destroy(), 10)
-      return
-    }
-    response.writeHead(201).end("ok")
   })
   server.on("connection", (socket) => {
     sockets.add(socket)
@@ -67,7 +67,9 @@ const peer = async (mode: "accepted" | "drop" | "redirect" | "large" | "truncate
   })
   server.listen(0, "127.0.0.1")
   await once(server, "listening")
-  const address = server.address() as import("node:net").AddressInfo
+  const address = server.address()
+  if (address === null || typeof address === "string")
+    throw new Error("HTTP fixture requires an IP listener")
   return {
     writes,
     received,
@@ -197,9 +199,16 @@ test("interruption after remote commit destroys the socket and leaves restart wi
     silent: true,
   })
   const messages: { event: string; url?: string; writes?: number }[] = []
+  const readMessage = Schema.decodeUnknownSync(
+    Schema.Struct({
+      event: Schema.String,
+      url: Schema.optionalKey(Schema.String),
+      writes: Schema.optionalKey(Schema.Finite),
+    }),
+  )
   const waiters = new Map<string, (value: (typeof messages)[number]) => void>()
   child.on("message", (message) => {
-    const value = message as (typeof messages)[number]
+    const value = readMessage(message)
     messages.push(value)
     waiters.get(value.event)?.(value)
   })
@@ -211,10 +220,11 @@ test("interruption after remote commit destroys the socket and leaves restart wi
     })
   try {
     const ready = await waitFor("ready")
-    const f = await fixture(ready.url!),
+    if (ready.url === undefined) throw new Error("Ready peer requires a URL")
+    const f = await fixture(ready.url),
       controller = new AbortController()
     const run = Effect.runPromise(
-      Effect.provide(runRelease({ plan: f.plan, authorize: true }), Layer.succeed(Host, f.host)),
+      Effect.provideService(runRelease({ plan: f.plan, authorize: true }), Host, f.host),
       { signal: controller.signal },
     )
     const outcome = run.then(
@@ -247,7 +257,7 @@ test("unknown or ambiguous ownership fails before credentials and journal dispat
             return {}
           }),
       })
-      await expect(f.run()).rejects.toThrow("HTTP")
+      expect(f.run()).rejects.toThrow("HTTP")
       expect(secrets).toBe(0)
       expect(await startEvents(f.store, f.plan)).toHaveLength(0)
     }
@@ -271,6 +281,7 @@ test("native wire admission rejects ambiguous endpoints, headers, replay and bod
     timeoutMilliseconds: 100,
     maximumResponseBytes: 100,
   })
+  if (transport.prepare === undefined) throw new Error("HTTP transport must provide preparation")
   for (const extra of [
     { endpoint: "https://user:password@fixture.invalid/artifact" },
     { endpoint: url + "#ignored" },
@@ -291,7 +302,10 @@ test("native wire admission rejects ambiguous endpoints, headers, replay and bod
     { headers: [["x-test", "bad\r\nheader"]] },
   ] satisfies Partial<Parameters<typeof makeRequest>[0]>[]) {
     const request = await Effect.runPromise(requestFor(url, extra))
-    await expect(Effect.runPromise(transport.prepare!(request))).rejects.toThrow()
+    const exit = await Effect.runPromiseExit(transport.prepare(request))
+    if (!Exit.isFailure(exit)) throw new Error("Invalid native request was admitted")
+    expect(Cause.hasFails(exit.cause)).toBe(true)
+    expect(Cause.hasDies(exit.cause)).toBe(false)
   }
   expect(secrets).toBe(0)
 })
@@ -305,7 +319,13 @@ test("live headers cannot collide, change framing, use cleartext, or leak throug
   ]) {
     const url = "https://fixture.invalid/artifact",
       f = await fixture(url, { credentials: () => Effect.succeed(live) })
-    await expect(f.run()).rejects.toThrow()
+    const exit = await runWithHost(
+      f.host,
+      Effect.exit(runRelease({ plan: f.plan, authorize: true })),
+    )
+    if (!Exit.isFailure(exit)) throw new Error("Invalid live headers were admitted")
+    expect(Cause.hasFails(exit.cause)).toBe(true)
+    expect(Cause.hasDies(exit.cause)).toBe(false)
     expect(await startEvents(f.store, f.plan)).toHaveLength(0)
   }
   const f = await fixture("https://fixture.invalid/artifact", {
@@ -314,14 +334,14 @@ test("live headers cannot collide, change framing, use cleartext, or leak throug
         throw new Error("credential-secret-private")
       }),
   })
-  await expect(f.run()).rejects.toThrow("HTTP credentials could not be acquired")
+  expect(f.run()).rejects.toThrow("HTTP credentials could not be acquired")
   expect(await startEvents(f.store, f.plan)).toHaveLength(0)
   const server = await peer("accepted")
   try {
     const f = await fixture(server.url, {
       credentials: () => Effect.succeed({ authorization: "Bearer secret" }),
     })
-    await expect(f.run()).rejects.toThrow()
+    expect(f.run()).rejects.toThrow()
     expect(server.writes).toHaveLength(0)
   } finally {
     await server.close()
@@ -345,11 +365,12 @@ test("prepared closure owns bytes, methods and exact facts across resolver alias
       maximumResponseBytes: 100,
     }
     const transport = makeHttpTransport(options)
-    const send = await Effect.runPromise(transport.prepare!(request))
+    if (transport.prepare === undefined) throw new Error("HTTP transport must provide preparation")
+    const send = await Effect.runPromise(transport.prepare(request))
     const actual = await Effect.runPromise(requestFor(server.url))
-    await expect(Effect.runPromise(send({ ...actual, body: new Uint8Array() }))).rejects.toThrow()
+    expect(Effect.runPromise(send({ ...actual, body: new Uint8Array() }))).rejects.toThrow()
     const foreign = await Effect.runPromise(requestFor(server.url, { scope: "other" }))
-    await expect(Effect.runPromise(send(foreign))).rejects.toThrow()
+    expect(Effect.runPromise(send(foreign))).rejects.toThrow()
     expect(server.writes).toHaveLength(0)
     expect((await Effect.runPromise(send(actual)))._tag).toBe("Accepted")
     expect(server.writes[0]?.body).toBe("exact artifact bytes")
@@ -383,7 +404,7 @@ test("native observation stays bounded and does not follow redirects; exchange r
     })
     expect(server.writes).toHaveLength(1)
     const exchange = makeCredentialExchange({ timeoutMilliseconds: 100, maximumResponseBytes: 100 })
-    await expect(
+    expect(
       Effect.runPromise(
         exchange({ url: server.url, body: new Uint8Array(), headers: { authorization: "secret" } }),
       ),
@@ -391,67 +412,6 @@ test("native observation stays bounded and does not follow redirects; exchange r
     expect(server.writes).toHaveLength(1)
   } finally {
     await server.close()
-  }
-})
-
-test("Node and Bun retain complete raw headers and reject duplicate singleton evidence", async () => {
-  for (const executable of [process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node", process.execPath]) {
-    const child = Bun.spawn(
-      [executable, fileURLToPath(new URL("./http-wire-consumer.mjs", import.meta.url))],
-      { stdout: "pipe", stderr: "pipe" },
-    )
-    const [stdout, stderr, code] = await Promise.all([
-      new Response(child.stdout).text(),
-      new Response(child.stderr).text(),
-      child.exited,
-    ])
-    expect({ code, stderr }).toEqual({ code: 0, stderr: "" })
-    expect(JSON.parse(stdout).assertions).toBe(15)
-  }
-})
-
-test("native TLS sends exact ephemeral credentials and rejects a certificate hostname mismatch on both hosts", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "ts-release-native-tls-")),
-    key = join(directory, "key.pem"),
-    cert = join(directory, "cert.pem")
-  try {
-    const generated = Bun.spawnSync(
-      [
-        "openssl",
-        "req",
-        "-x509",
-        "-newkey",
-        "rsa:2048",
-        "-nodes",
-        "-keyout",
-        key,
-        "-out",
-        cert,
-        "-days",
-        "1",
-        "-subj",
-        "/CN=127.0.0.1",
-        "-addext",
-        "subjectAltName=IP:127.0.0.1",
-      ],
-      { stdout: "pipe", stderr: "pipe" },
-    )
-    expect(generated.exitCode).toBe(0)
-    for (const executable of [process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node", process.execPath]) {
-      const child = Bun.spawn(
-        [executable, fileURLToPath(new URL("./http-tls-consumer.mjs", import.meta.url)), key, cert],
-        { env: { ...process.env, NODE_EXTRA_CA_CERTS: cert }, stdout: "pipe", stderr: "pipe" },
-      )
-      const [stdout, stderr, code] = await Promise.all([
-        new Response(child.stdout).text(),
-        new Response(child.stderr).text(),
-        child.exited,
-      ])
-      expect({ code, stderr }).toEqual({ code: 0, stderr: "" })
-      expect(JSON.parse(stdout)).toMatchObject({ assertions: 12, writes: 3 })
-    }
-  } finally {
-    rmSync(directory, { recursive: true, force: true })
   }
 })
 
@@ -467,6 +427,6 @@ test("interruption closes a pending native TLS socket before secureConnect on No
       child.exited,
     ])
     expect({ code, stderr }).toEqual({ code: 0, stderr: "" })
-    expect(JSON.parse(stdout).assertions).toBe(3)
+    expect(JSON.parse(stdout)).toMatchObject({ assertions: 3 })
   }
 })

@@ -1,3 +1,5 @@
+import { Schema } from "effect"
+import manifest from "../packages/ts-release/package.json" with { type: "json" }
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import { mkdtemp, mkdir, readFile, writeFile, lstat } from "node:fs/promises"
@@ -60,9 +62,7 @@ await writeFile(
       files: ["dist"],
       exports: { ".": { types: "./dist/index.d.ts", import: "./dist/index.js" } },
       peerDependencies: {
-        "@mannyc1/ts-release": JSON.parse(
-          await readFile(join(root, "packages/ts-release/package.json"), "utf8"),
-        ).version,
+        "@mannyc1/ts-release": manifest.version,
         effect: ">=4.0.0-rc.115 <4.1.0-0",
       },
       devDependencies: {
@@ -224,7 +224,13 @@ for (const manager of ["bun", "npm"]) {
     const output = await run(cwd, [runtime, "consumer.mjs", certificate, key], {
       NODE_EXTRA_CA_CERTS: certificate,
     })
-    outcomes.push({ manager, runtime, result: JSON.parse(output) })
+    outcomes.push({
+      manager,
+      runtime,
+      result: Schema.decodeSync(
+        Schema.fromJsonString(Schema.Record(Schema.String, Schema.Unknown)),
+      )(output),
+    })
   }
 }
 assert.equal(hash(await readFile(core)), coreHash)

@@ -1,6 +1,5 @@
 import * as Effect from "effect/Effect"
 import type * as Scope from "effect/Scope"
-import type { Transport } from "../Provider.js"
 import { type ReadContent, readVerifiedContent } from "../internal/Content.js"
 import { type ReleaseError, attempt } from "../internal/Error.js"
 import { canonical, decodeOwned } from "../internal/Identity.js"
@@ -8,6 +7,7 @@ import { authorityKey, conditionalArguments } from "../internal/GitAuthority.js"
 import { makeCoreGitTransport, type CoreGitOptions } from "../internal/GitAuthority.js"
 import { CommitInput, admitCoordinate, invalid } from "../internal/GitCatalog.js"
 import { objectFormat, ownIntent, type Intent } from "../internal/GitCatalog.js"
+import type { GitCatalogHost } from "../internal/GitCatalog.js"
 import type { Credentials, ObjectBuilder, ObserveRef } from "../internal/GitCatalog.js"
 import type { RefCoordinate } from "../internal/GitCatalog.js"
 import { checked, nativeText as text, openGitRuntime } from "./GitProcess.js"
@@ -16,14 +16,7 @@ import { construct, exportObjects, importObjects, verifyGraph } from "./GitObjec
 import { verifyManagedCommit } from "./GitObjects.js"
 import { fetchRef, remoteRef } from "./GitRemote.js"
 
-export interface GitCatalogHost {
-  readonly objects: ObjectBuilder
-  readonly captureBase: (
-    input: RefCoordinate & { readonly expectedOld: string },
-  ) => Effect.Effect<Uint8Array, ReleaseError>
-  readonly observeRef: ObserveRef
-  readonly transport: (intents: readonly [Intent, ...Intent[]], otherwise?: Transport) => Transport
-}
+export type { GitCatalogHost } from "../internal/GitCatalog.js"
 export interface GitCatalogHostOptions extends GitProcessOptions {
   readonly readContent: ReadContent
   readonly credentials: (input: RefCoordinate) => Effect.Effect<Credentials, ReleaseError>
@@ -41,20 +34,26 @@ export const makeGitCatalogHost = Effect.fn("ts-release.makeGitCatalogHost")(
       const observeRef: ObserveRef = Effect.fn("git.observeNativeRef")(function* (input) {
         const coordinate = yield* attempt(() => admitCoordinate(input)),
           env = yield* environment(coordinate)
-        const repository = yield* runtime.repository("sha1")
-        return { oid: yield* remoteRef(repository.run, coordinate, env) }
+        return yield* Effect.acquireUseRelease(
+          runtime.repository("sha1"),
+          (repository) =>
+            remoteRef(repository.run, coordinate, env).pipe(Effect.map((oid) => ({ oid }))),
+          (repository) => repository.close,
+        )
       })
       const objects: ObjectBuilder = Object.freeze({
-        construct: Effect.fn("git.buildOwnedObjects")(function* (input, source) {
+        construct: Effect.fn("git.buildOwnedObjects")(function* (
+          input: CommitInput,
+          source: ReadContent,
+        ) {
           const value = yield* attempt(() => decodeOwned(CommitInput, input)),
             read = source.bind(undefined)
           const { remote, ref, principal, scope } = value
           yield* attempt(() => admitCoordinate({ remote, ref, principal, scope }))
-          return yield* construct(
-            (yield* runtime.repository(objectFormat(value.expectedOld))).run,
-            read,
-            value,
-            limit,
+          return yield* Effect.acquireUseRelease(
+            runtime.repository(objectFormat(value.expectedOld)),
+            (repository) => construct(repository.run, read, value, limit),
+            (repository) => repository.close,
           )
         }),
       })
@@ -64,18 +63,24 @@ export const makeGitCatalogHost = Effect.fn("ts-release.makeGitCatalogHost")(
         const { remote, ref, principal, scope, expectedOld } = input
         const coordinate = yield* attempt(() => admitCoordinate({ remote, ref, principal, scope })),
           format = yield* attempt(() => objectFormat(expectedOld))
-        const env = yield* environment(coordinate),
-          repository = yield* runtime.repository(format)
-        if ((yield* fetchRef(repository.run, coordinate, env)) !== expectedOld)
-          return yield* attempt(invalid)
-        yield* checked(repository.run, [
-          "fsck",
-          "--strict",
-          "--no-dangling",
-          "--no-reflogs",
-          expectedOld,
-        ])
-        return yield* exportObjects(repository.run, expectedOld, limit)
+        const env = yield* environment(coordinate)
+        return yield* Effect.acquireUseRelease(
+          runtime.repository(format),
+          (repository) =>
+            Effect.gen(function* () {
+              if ((yield* fetchRef(repository.run, coordinate, env)) !== expectedOld)
+                return yield* attempt(invalid)
+              yield* checked(repository.run, [
+                "fsck",
+                "--strict",
+                "--no-dangling",
+                "--no-reflogs",
+                expectedOld,
+              ])
+              return yield* exportObjects(repository.run, expectedOld, limit)
+            }),
+          (repository) => repository.close,
+        )
       })
       const transport: GitCatalogHost["transport"] = (inputs, otherwise) => {
         const groups = new Map<string, Map<string, Intent>>()
@@ -91,7 +96,9 @@ export const makeGitCatalogHost = Effect.fn("ts-release.makeGitCatalogHost")(
           groups.set(key, group)
         }
         const bindings = [...groups.values()].map((group): CoreGitOptions => {
-          const { principal, scope } = group.values().next().value!
+          const first = group.values().next().value
+          if (first === undefined) throw new Error("Git intent group must be nonempty")
+          const { principal, scope } = first
           const prepare: NonNullable<CoreGitOptions["prepare"]> = Effect.fn(
             "git.prepareNativePush",
           )(function* (args) {
@@ -135,8 +142,9 @@ export const makeGitCatalogHost = Effect.fn("ts-release.makeGitCatalogHost")(
             }),
           }
         })
-        if (!bindings.length) invalid()
-        return makeCoreGitTransport(bindings as [CoreGitOptions, ...CoreGitOptions[]], otherwise)
+        const [first, ...remaining] = bindings
+        if (first === undefined) return invalid()
+        return makeCoreGitTransport([first, ...remaining], otherwise)
       }
       return Object.freeze({ objects, captureBase, observeRef, transport })
     }),

@@ -78,7 +78,9 @@ export const verifyNativeEvidence = (
     if (!operation) fail("unknown-operation", "Evidence references an unknown operation")
     return {
       operation,
-      provider: providers.find((item) => item.definitionId === operation.definitionId)!,
+      provider:
+        providers.find((item) => item.definitionId === operation.definitionId) ??
+        fail("invalid-data", "Value could not be admitted"),
     }
   }
   const dispatched = (dispatchId: string, kind: string) => {
@@ -86,8 +88,7 @@ export const verifyNativeEvidence = (
     if (!start) fail(`unassociated-${kind}`, `${kind} has no preceding dispatch`)
     return { start, ...definition(start.operationId) }
   }
-  for (let index = 0; index < events.length; index++) {
-    const { body } = events[index]!
+  for (const [index, { body }] of events.entries()) {
     if (body._tag === "DispatchStarted") {
       const { operation, provider } = definition(body.operationId)
       assertRequestCorresponds(
@@ -131,7 +132,7 @@ export const verifyNativeEvidence = (
       const { operation, provider } = definition(body.operationId)
       const evidence = decodeObservationEvidence(provider, body)
       if (body.evidenceKind === "DispatchError") {
-        const start = starts.get(body.dispatchId!)
+        const start = body.dispatchId === undefined ? undefined : starts.get(body.dispatchId)
         if (!start || start.operationId !== operation.operationId)
           fail(
             "error-correspondence",
@@ -139,11 +140,11 @@ export const verifyNativeEvidence = (
           )
         if (
           !isCoreErrorVersion(body.evidenceVersion) &&
-          !provider.dispatchError!.corresponds(operation, start.request, evidence)
+          !provider.dispatchError?.corresponds(operation, start.request, evidence)
         )
           fail("error-correspondence", "Native dispatch error differs from the exact request")
       } else if (
-        provider.classifyObservation!(
+        provider.classifyObservation?.(
           operation,
           evidence,
           receipts.get(operation.operationId) ?? [],

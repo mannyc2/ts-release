@@ -34,7 +34,19 @@ for (const name of await readdir(resolve(root, "apps/self-release/dist"))) {
   if (name.endsWith(".js") && name !== "rehearsal.js")
     await copyFile(resolve(root, "apps/self-release/dist", name), resolve(starter, name))
 }
-await copyFile(
-  resolve(root, "scripts/release-input.ts"),
-  resolve(root, "templates/npm-github/input.ts"),
-)
+// Include the input helper's workspace schemas while resolving package imports
+// from the adopter's installation, just like the generated release application.
+const input = await Bun.build({
+  entrypoints: [resolve(root, "scripts/release-input.ts")],
+  outdir: resolve(root, "templates/npm-github"),
+  naming: "input.ts",
+  target: "bun",
+  format: "esm",
+  packages: "external",
+  minify: false,
+  sourcemap: "none",
+})
+if (!input.success) {
+  for (const log of input.logs) console.error(log)
+  process.exit(1)
+}

@@ -74,11 +74,16 @@ export const authorizeTrusted = Effect.fn("npm.authorizeTrusted")(function* (
   })
   if (response.status !== 201)
     return yield* Native.reject("npm-oidc-exchange", "npm OIDC exchange was not accepted")
-  const value = yield* Native.attempt(() =>
-    Schema.decodeUnknownSync(ExchangeResponse)(
-      JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(response.body)),
-    ),
-  )
+  const value = yield* Native.attempt(() => {
+    const text = Native.text(response.body)
+    let raw: unknown
+    try {
+      raw = JSON.parse(text)
+    } catch {
+      return Native.invalid("data")
+    }
+    return Schema.decodeUnknownSync(ExchangeResponse)(raw)
+  })
   // Like npm's own client, consume the freshly exchanged opaque token. The
   // registry owns its lifetime; diagnostic metadata is not an authorization
   // contract. Acquire per request, never cache or retain the credential.
@@ -151,7 +156,13 @@ export const validateProvenance = (
   if (bytes.length > 1024 * 1024) return Native.invalid("sigstore-bound")
   const value = Native.object(Native.parseJson(bytes))
   if (!Buffer.from(Native.encode(value)).equals(bytes)) Native.invalid("sigstore-encoding")
-  const bundle = NativeSigstore.bundleFromJSON(value)
+  let bundle: ReturnType<typeof NativeSigstore.bundleFromJSON>
+  // The pinned protobuf converter can reject malformed JSON before ValidationError.
+  try {
+    bundle = NativeSigstore.bundleFromJSON(value)
+  } catch {
+    return Native.invalid("data")
+  }
   if (
     bundle.mediaType !== NativeSigstore.BUNDLE_V03_MEDIA_TYPE ||
     !NativeSigstore.isBundleWithDsseEnvelope(bundle) ||
@@ -165,7 +176,7 @@ export const validateProvenance = (
     verification = Native.object(value.verificationMaterial),
     entries = verification.tlogEntries
   base64(envelope.payload)
-  base64(Native.object((envelope.signatures as Array<unknown>)[0]).sig)
+  base64(Native.object(Native.own(Schema.Array(Schema.Unknown), envelope.signatures)[0]).sig)
   base64(Native.object(verification.certificate).rawBytes)
   if (!Array.isArray(entries)) return Native.invalid("sigstore-transparency")
   for (const [index, entry] of bundle.verificationMaterial.tlogEntries.entries()) {
@@ -178,7 +189,7 @@ export const validateProvenance = (
       raw.canonicalizedBody,
       Native.object(raw.logId).keyId,
       rawProof.rootHash,
-      ...(rawProof.hashes as Array<unknown>),
+      ...Native.own(Schema.Array(Schema.Unknown), rawProof.hashes),
     ].forEach(base64)
     if (
       !proof ||
@@ -260,14 +271,24 @@ export const makeSigstoreVerifier = (input: SigstoreTrustOptions): Model.VerifyP
   return Effect.fn("npm.verifySigstoreProvenance")(function* (input) {
     const { source, bundle } = yield* Native.attempt(() => {
       const source = Native.own(Model.ProvenanceSource, input.source),
-        { bundle, payload } = validateProvenance(new Uint8Array(input.bundleBytes))
+        supplied = input.bundleBytes
+      let bytes: Uint8Array
+      try {
+        bytes = new Uint8Array(supplied)
+      } catch {
+        return Native.invalid("data")
+      }
+      const { bundle, payload } = validateProvenance(bytes)
       admitStatementSource(payload, source)
       return { source, bundle }
     })
     const identity = `^${`${source.serverUrl}/${source.repository}/${source.workflow}@${source.workflowRef}`.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}$`
     yield* nativeSigstoreRuntime
+    // The pinned SDK has no cancellation API. Join its issued TUF/cache work
+    // before restoring interruption; a stuck native call still delays cleanup.
     const signer = yield* Effect.tryPromise({
       try: () =>
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- validateProvenance admits this exact raw JSON with bundleFromJSON; preserve its canonical representation for the pinned SDK.
         Sigstore.verify(bundle as Sigstore.Bundle, {
           certificateIssuer: "https://token.actions.githubusercontent.com",
           certificateIdentityURI: identity,
@@ -278,7 +299,7 @@ export const makeSigstoreVerifier = (input: SigstoreTrustOptions): Model.VerifyP
         }),
       catch: () =>
         Native.failure("npm-sigstore-verify", "Sigstore native trust verification failed"),
-    })
+    }).pipe(Effect.uninterruptible)
     // Fulcio's verified DER UTF8 extensions bind the signed source to its CI
     // identity, including the immutable commit and exact workflow invocation.
     yield* Native.attempt(() => {
@@ -328,14 +349,14 @@ const admitStatementSource = (bytes: Uint8Array, source: Model.ProvenanceSource)
     typeof sha512 !== "string" ||
     !/^[0-9a-f]{128}$/u.test(sha512)
   )
-    Native.invalid("statement-subject")
+    return Native.invalid("statement-subject")
   const purl = String(subject.name).slice(8),
     delimiter = purl.lastIndexOf("@")
   const packageName = Native.own(Model.name, purl.slice(0, delimiter).replace(/^%40/u, "@")),
     packageVersion = Native.own(Model.version, purl.slice(delimiter + 1))
   const expected = statementWithDigest(
     { name: packageName, version: packageVersion, source },
-    sha512 as string,
+    sha512,
   )
   if (!Buffer.from(expected).equals(bytes)) Native.invalid("statement-source")
 }
@@ -382,6 +403,8 @@ export const makeSigstoreAttester = (input: {
       bearer(token)
       return Redacted.value(token)
     })
+    // The SDK cannot cancel an issued attestation. Join it before restoring
+    // interruption; remote outcomes can remain unknown and native calls can hang.
     const bundle = yield* Effect.tryPromise({
       try: () =>
         Sigstore.attest(Buffer.from(payload), "application/vnd.in-toto+json", {
@@ -394,7 +417,7 @@ export const makeSigstoreAttester = (input: {
           timeout,
         }),
       catch: () => Native.failure("npm-sigstore-sign", "Sigstore attestation outcome is unknown"),
-    })
+    }).pipe(Effect.uninterruptible)
     const bundleBytes = Native.encode(bundle)
     yield* verify({ source, bundleBytes })
     return { bundleBytes }

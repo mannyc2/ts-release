@@ -1,3 +1,4 @@
+import { Schema } from "effect"
 import { expect, test } from "bun:test"
 import { resolve } from "node:path"
 
@@ -13,5 +14,8 @@ test("external packed providers compose with the installed kernel/CLI under fres
     new Response(child.stderr).text(),
   ])
   expect({ exit, stderr }).toEqual({ exit: 0, stderr: "" })
-  expect(JSON.parse(stdout).consumers).toBe(4)
+  const result = Schema.decodeSync(Schema.fromJsonString(Schema.Struct({ consumers: Schema.Int })))(
+    stdout,
+  )
+  expect(result.consumers).toBe(4)
 }, 240_000)

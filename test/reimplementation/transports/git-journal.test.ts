@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { Effect } from "effect"
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -39,10 +39,14 @@ for (const format of ["sha1", "sha256"] as const)
     await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
+          const cache = yield* Effect.acquireRelease(
+            Effect.sync(() => mkdtempSync(join(tmpdir(), "git-journal-read-ownership-"))),
+            (directory) => Effect.sync(() => rmSync(directory, { recursive: true, force: true })),
+          )
           const runtime = yield* openGitRuntime(processOptions),
             remote = yield* runtime.repository(format),
-            first = yield* openGitJournal(optionsFor(remote.directory, tmpdir(), format)),
-            second = yield* openGitJournal(optionsFor(remote.directory, tmpdir(), format)),
+            first = yield* openGitJournal(optionsFor(remote.directory, cache, format)),
+            second = yield* openGitJournal(optionsFor(remote.directory, cache, format)),
             id = "shared release",
             a = event("a"),
             b = new JournalEvent({ ...event("b"), planId: "different-preparation-plan" })
@@ -69,6 +73,9 @@ for (const format of ["sha1", "sha256"] as const)
               native(remote.directory, ["show", `${journalRef(id)}:event.json`]).toString(),
             ),
           ).toEqual(JSON.parse(canonical(b)))
+          // Completed reads/appends must release fetched object databases while
+          // both journal handles and their application scope remain open.
+          expect([...new Bun.Glob("**/HEAD").scanSync(cache)]).toEqual([])
         }),
       ),
     )
@@ -136,8 +143,10 @@ test("native journal admits an exact 1MiB event, rejects +1 and detects foreign 
 // A disposable executable schedules actual Git pushes at the process boundary.
 // It never replaces the journal or fabricates Git stdout.
 const wrapper = (root: string, mode: "first" | "second" | "lost") => {
+  const selectedBun = Bun.which("bun")
+  if (selectedBun === null) throw new Error("Native Git journal fixtures require Bun")
   const path = join(root, `git-${mode}`),
-    bun = realpathSync(Bun.which("bun")!)
+    bun = realpathSync(selectedBun)
   writeFileSync(
     path,
     `#!${bun}\nimport { existsSync, writeFileSync } from 'node:fs';
@@ -225,7 +234,9 @@ test("lost native journal push responses allow same-live exact readback once and
             "DispatchStarted",
             "ReceiptAccepted",
           ])
-          expect(yield* restart.append(fixture.plan.journalId, 0, history.events[0]!)).toEqual({
+          const first = history.events[0]
+          if (first === undefined) throw new Error("Expected retained dispatch event")
+          expect(yield* restart.append(fixture.plan.journalId, 0, first)).toEqual({
             _tag: "AlreadyRecorded",
             revision: 1,
           })

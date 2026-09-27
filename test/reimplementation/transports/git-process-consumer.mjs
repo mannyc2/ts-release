@@ -5,6 +5,16 @@ import { join } from "node:path"
 import { Effect } from "effect"
 import { openGitRuntime, checked } from "../../../packages/ts-release/dist/platform/GitProcess.js"
 
+let stopping = false
+let activeController
+let activeOperation
+const stop = () => {
+  stopping = true
+  activeController?.abort()
+}
+// Register before acquiring fixture resources. A latched stop also prevents
+// another iteration from starting after the runner finishes its test.
+process.on("SIGTERM", stop)
 const root = mkdtempSync(join(tmpdir(), "git-process-consumer-")),
   executable = join(root, "git-process-fixture")
 const [nativeGit, node] = process.argv.slice(2)
@@ -45,8 +55,10 @@ const live = (pid) => {
 }
 try {
   for (const mode of ["timeout", "interrupt"]) {
+    if (stopping) break
     rmSync(marker, { force: true })
     const controller = new AbortController()
+    activeController = controller
     let directory, pids
     const operation = Effect.runPromise(
       Effect.scoped(
@@ -75,11 +87,14 @@ try {
       () => "unexpected-success",
       () => "stopped",
     )
+    activeOperation = operation
     const deadline = Date.now() + 4000
     while (!existsSync(marker)) {
+      if (stopping) break
       if (Date.now() > deadline) throw new Error("Process fixture did not start")
       await new Promise((resolve) => setTimeout(resolve, 5))
     }
+    if (stopping) break
     pids = JSON.parse(readFileSync(marker, "utf8"))
     if (mode === "interrupt") controller.abort()
     equal(await operation, "stopped")
@@ -88,6 +103,12 @@ try {
     equal(live(pids.child), false)
   }
 } finally {
-  rmSync(root, { recursive: true, force: true })
+  stop()
+  try {
+    await activeOperation
+  } finally {
+    process.off("SIGTERM", stop)
+    rmSync(root, { recursive: true, force: true })
+  }
 }
 process.stdout.write(JSON.stringify({ assertions, runtime: process.version }) + "\n")

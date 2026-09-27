@@ -2,7 +2,8 @@ import { Effect } from "effect"
 import { Content } from "../../../packages/ts-release/src/Bundle.js"
 import { fileContentOwner } from "../../../packages/ts-release/src/Node.js"
 
-const [directory, sha256] = process.argv.slice(2) as [string, string]
+const [directory, sha256] = process.argv.slice(2)
+if (!directory || !sha256) throw new Error("Missing content worker arguments")
 const owner = fileContentOwner(directory)
 const content = new Content({ bytes: 1, sha256 })
 const source = { path: `${directory}/${sha256}`, bytes: 1, sha256 }

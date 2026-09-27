@@ -1,5 +1,8 @@
 import assert from "node:assert/strict"
 import { readFile, writeFile } from "node:fs/promises"
+import { execFile } from "node:child_process"
+import { promisify } from "node:util"
+import { fileURLToPath } from "node:url"
 import { Effect } from "effect"
 import { ProvenanceSource, makeSigstoreVerifier } from "@mannyc1/ts-release-npm"
 const [fixturePath, sourcePath, rootPath, cachePath, resultPath] = process.argv.slice(2)
@@ -51,6 +54,19 @@ await assert.rejects(
   ),
 )
 controls.push("statement-source-admission")
+// Native settlement has its own isolated instrumentation and fresh cache. This
+// watchdog bounds a failed fixture; it is not interruption timing evidence.
+await promisify(execFile)(
+  process.execPath,
+  [
+    fileURLToPath(new URL("./native-sigstore-lifecycle.mjs", import.meta.url)),
+    fixturePath,
+    sourcePath,
+    rootPath,
+    `${cachePath}-settlement`,
+  ],
+  { timeout: 60000, killSignal: "SIGKILL" },
+)
 await writeFile(
   resultPath,
   JSON.stringify({ runtime: process.version, verified: true, rejectedControls: controls }) + "\n",

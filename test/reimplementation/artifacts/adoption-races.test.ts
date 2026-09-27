@@ -1,3 +1,4 @@
+import { Schema } from "effect"
 import { expect, test } from "bun:test"
 import { join } from "node:path"
 
@@ -19,7 +20,13 @@ for (const runtime of [process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node", process.
       ])
       expect(result).toBe(0)
       expect(await stderr).toBe("")
-      const evidence = JSON.parse(await stdout)
+      const evidence = Schema.decodeSync(
+        Schema.fromJsonString(
+          Schema.Struct({
+            cells: Schema.Array(Schema.Struct({ kind: Schema.String, status: Schema.String })),
+          }),
+        ),
+      )(await stdout)
       expect(
         evidence.cells.map((cell: { kind: string; status: string }) => [cell.kind, cell.status]),
       ).toEqual([

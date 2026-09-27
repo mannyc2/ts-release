@@ -12,6 +12,8 @@ const hosts = new Set(["registry.npmjs.org", "api.github.com", "uploads.github.c
 const refused = () => {
   throw new Error("Native release fixture refused an unlisted network destination")
 }
+// Capture the original method; Reflect.apply below supplies each actual socket receiver.
+// oxlint-disable-next-line typescript/unbound-method
 const socketConnect = net.Socket.prototype.connect
 net.Socket.prototype.connect = function (...args) {
   const first = Array.isArray(args[0]) ? args[0][0] : args[0]

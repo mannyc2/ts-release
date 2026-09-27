@@ -1,4 +1,6 @@
 import assert from "node:assert/strict"
+import { Schema } from "effect"
+import type { IncomingMessage, ServerResponse } from "node:http"
 import { createHash } from "node:crypto"
 import { once } from "node:events"
 import { mkdtemp, readFile, rm } from "node:fs/promises"
@@ -55,14 +57,13 @@ export const npmBrowserChallenge = {
   doneUrl: "https://registry.npmjs.org/-/v1/done/fixture-browser-challenge",
 } as const
 const sha256 = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex")
-const object = (value: unknown): Document => {
-  assert.ok(value && typeof value === "object" && !Array.isArray(value), "Expected native object")
-  return value as Document
-}
-const string = (value: unknown): string => {
-  assert.equal(typeof value, "string", "Expected native string")
-  return value as string
-}
+const object = Schema.decodeUnknownSync(Schema.Record(Schema.String, Schema.Unknown))
+const string = Schema.decodeUnknownSync(Schema.String)
+export const NpmPublication = Schema.Struct({
+  name: Schema.String,
+  "dist-tags": Schema.Record(Schema.String, Schema.String),
+  _attachments: Schema.Record(Schema.String, Schema.Struct({ data: Schema.String })),
+})
 const json = (bytes: Uint8Array): unknown => JSON.parse(new TextDecoder().decode(bytes))
 
 /** Native HTTPS protocol peer, not a replacement provider or transport. */
@@ -169,8 +170,8 @@ export async function startNativeReleasePeer(
   const npm = (request: NativeRequest, url: URL): Reply => {
     const tagRoute = /^\/-\/package\/(.+)\/dist-tags\/([^/]+)$/u.exec(url.pathname)
     if (tagRoute) {
-      const name = decodeURIComponent(tagRoute[1]!),
-        tag = decodeURIComponent(tagRoute[2]!)
+      const name = decodeURIComponent(string(tagRoute[1])),
+        tag = decodeURIComponent(string(tagRoute[2]))
       const state = packages.get(name)
       if (request.method === "GET")
         return state?.tags[tag] ? { status: 200, document: state.tags[tag] } : { status: 404 }
@@ -207,7 +208,9 @@ export async function startNativeReleasePeer(
     const versions = object(document.versions),
       attachments = object(document._attachments)
     assert.equal(Object.keys(versions).length, 1)
-    const [version, metadata] = Object.entries(versions)[0]!
+    const entry = Object.entries(versions)[0]
+    assert.ok(entry)
+    const [version, metadata] = entry
     const native = object(metadata),
       dist = object(native.dist)
     const attachment = object(Object.values(attachments)[0])
@@ -239,7 +242,7 @@ export async function startNativeReleasePeer(
     const route = /^\/repos\/([^/]+)\/([^/]+)(.*)$/u.exec(url.pathname)
     assert.ok(route, "Unknown GitHub route")
     const repository = `${route[1]}/${route[2]}`,
-      path = route[3]!
+      path = string(route[3])
     const base = `https://api.github.com/repos/${repository}`
     const state = repositories.get(repository) ?? {
       refs: new Map<string, Document>(),
@@ -287,7 +290,7 @@ export async function startNativeReleasePeer(
       if (release && visible(releaseSubject(string(release.document.tag_name))))
         return {
           status: 200,
-          document: releaseRoute![2] ? rendered(release).assets : rendered(release),
+          document: releaseRoute?.[2] ? rendered(release).assets : rendered(release),
         }
       const assetRoute = /^\/releases\/assets\/(\d+)$/u.exec(path)
       if (assetRoute)
@@ -304,7 +307,7 @@ export async function startNativeReleasePeer(
     }
     if (request.host === "uploads.github.com") {
       assert.equal(request.method, "POST")
-      assert.ok(release && releaseRoute![2], "Asset parent must exist")
+      assert.ok(release && releaseRoute?.[2], "Asset parent must exist")
       assert.equal(release.document.draft, true, "Asset parent must still be a draft")
       const name = url.searchParams.get("name")
       assert.ok(name, "Asset name is required")
@@ -339,10 +342,18 @@ export async function startNativeReleasePeer(
         message: input.message,
         tagger: input.tagger,
         url: `${base}/git/tags/${sha}`,
-        object: { sha: input.object, type: "commit", url: `${base}/git/commits/${input.object}` },
+        object: {
+          sha: input.object,
+          type: "commit",
+          url: `${base}/git/commits/${string(input.object)}`,
+        },
       }
       state.tags.set(sha, document)
-      return { status: 201, document, subject: `github:${repository}:tag-object:${input.tag}` }
+      return {
+        status: 201,
+        document,
+        subject: `github:${repository}:tag-object:${string(input.tag)}`,
+      }
     }
     if (path === "/git/refs" && request.method === "POST") {
       const ref = string(input.ref)
@@ -379,7 +390,7 @@ export async function startNativeReleasePeer(
       state.releases.set(id, { document, assets: new Map() })
       return { status: 201, document, subject: releaseSubject(tag) }
     }
-    if (release && !releaseRoute![2] && request.method === "PATCH") {
+    if (release && !releaseRoute?.[2] && request.method === "PATCH") {
       assert.deepEqual(input, { draft: false })
       release.document.draft = false
       return {
@@ -391,69 +402,79 @@ export async function startNativeReleasePeer(
     throw new Error("Unexpected native GitHub mutation")
   }
 
+  const handle = async (incoming: IncomingMessage, response: ServerResponse) => {
+    try {
+      const chunks: Buffer[] = []
+      for await (const chunk of incoming) {
+        const bytes: unknown = chunk
+        assert.ok(bytes instanceof Uint8Array)
+        chunks.push(Buffer.from(bytes))
+      }
+      const host = incoming.headers.host ?? ""
+      assert.ok(["registry.npmjs.org", "api.github.com", "uploads.github.com"].includes(host))
+      const authorization = incoming.headers.authorization
+      const headers = Object.fromEntries(
+        Object.entries(incoming.headers).filter(
+          ([name]) => !/^(authorization|cookie|x-api-key|x-auth-token|npm-otp)$/u.test(name),
+        ),
+      )
+      const request: NativeRequest = {
+        host,
+        method: incoming.method ?? "",
+        path: incoming.url ?? "",
+        headers,
+        body: new Uint8Array(Buffer.concat(chunks)),
+        authenticated: typeof authorization === "string" && authorization.length > 0,
+      }
+      requests.push(request)
+      const url = new URL(request.path, `https://${host}`)
+      const reply =
+        host === "registry.npmjs.org"
+          ? ((await browserAuthentication(
+              request,
+              url,
+              authorization,
+              incoming.headers["npm-otp"],
+            )) ?? npm(request, url))
+          : github(request, url)
+      if (reply.subject) {
+        const mutation = Object.freeze({
+          ...request,
+          subject: reply.subject,
+          status: reply.status,
+        })
+        mutations.push(mutation)
+        if (
+          pause &&
+          !pause.used &&
+          reply.status >= 200 &&
+          reply.status < 300 &&
+          pause.predicate(mutation)
+        ) {
+          pause.used = true
+          pause.notify(mutation)
+          await pause.gate
+        }
+      }
+      response.writeHead(reply.status, {
+        "content-type": reply.contentType ?? "application/json",
+        ...reply.headers,
+      })
+      response.end(reply.bytes ?? JSON.stringify(reply.document ?? {}))
+    } catch (cause) {
+      // Fixed diagnostics never retain credentials or provider body contents.
+      failures.push(cause instanceof Error ? cause.name : "unknown")
+      if (!response.headersSent) response.writeHead(500, { "content-type": "application/json" })
+      response.end('{"error":"native fixture request rejected"}')
+    }
+  }
   const server = createServer(
     { key: await readFile(key), cert: await readFile(certificate) },
-    async (incoming, response) => {
-      try {
-        const chunks: Buffer[] = []
-        for await (const chunk of incoming) chunks.push(Buffer.from(chunk))
-        const host = incoming.headers.host ?? ""
-        assert.ok(["registry.npmjs.org", "api.github.com", "uploads.github.com"].includes(host))
-        const authorization = incoming.headers.authorization
-        const headers = Object.fromEntries(
-          Object.entries(incoming.headers).filter(
-            ([name]) => !/^(authorization|cookie|x-api-key|x-auth-token|npm-otp)$/u.test(name),
-          ),
-        )
-        const request: NativeRequest = {
-          host,
-          method: incoming.method ?? "",
-          path: incoming.url ?? "",
-          headers,
-          body: new Uint8Array(Buffer.concat(chunks)),
-          authenticated: typeof authorization === "string" && authorization.length > 0,
-        }
-        requests.push(request)
-        const url = new URL(request.path, `https://${host}`)
-        const reply =
-          host === "registry.npmjs.org"
-            ? ((await browserAuthentication(
-                request,
-                url,
-                authorization,
-                incoming.headers["npm-otp"],
-              )) ?? npm(request, url))
-            : github(request, url)
-        if (reply.subject) {
-          const mutation = Object.freeze({
-            ...request,
-            subject: reply.subject,
-            status: reply.status,
-          })
-          mutations.push(mutation)
-          if (
-            pause &&
-            !pause.used &&
-            reply.status >= 200 &&
-            reply.status < 300 &&
-            pause.predicate(mutation)
-          ) {
-            pause.used = true
-            pause.notify(mutation)
-            await pause.gate
-          }
-        }
-        response.writeHead(reply.status, {
-          "content-type": reply.contentType ?? "application/json",
-          ...reply.headers,
-        })
-        response.end(reply.bytes ?? JSON.stringify(reply.document ?? {}))
-      } catch (cause) {
-        // Fixed diagnostics never retain credentials or provider body contents.
+    (incoming, response) => {
+      void handle(incoming, response).catch((cause: unknown) => {
         failures.push(cause instanceof Error ? cause.name : "unknown")
-        if (!response.headersSent) response.writeHead(500, { "content-type": "application/json" })
-        response.end('{"error":"native fixture request rejected"}')
-      }
+        response.destroy()
+      })
     },
   )
   server.listen(0, "127.0.0.1")

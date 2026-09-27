@@ -116,6 +116,7 @@ const identityEnvironment = (input: CommitInput): GitEnvironment => {
     const zone = /^([+-])(\d\d)(\d\d)$/u.exec(value.timezone)
     if (
       !value.name ||
+      // oxlint-disable-next-line no-control-regex -- Git identity fields cannot contain separators or control bytes.
       /[<>\u0000-\u001f\u007f]/u.test(value.name) ||
       !/^[^<>\s@]+@[^<>\s@]+$/u.test(value.email) ||
       !/^(0|[1-9][0-9]*)$/u.test(value.timestamp) ||
@@ -170,8 +171,8 @@ const graftTrees = Effect.fn("git.graftTrees")(function* (
 ) {
   const ancestors = ancestorPaths(paths)
   for (const path of ancestors) {
-    if (entries.has(path) && !entries.get(path)!.startsWith("040000 tree "))
-      return yield* attempt(invalid)
+    const entry = entries.get(path)
+    if (entry !== undefined && !entry.startsWith("040000 tree ")) return yield* attempt(invalid)
   }
   const directories = [...ancestors].sort((a, b) => b.split("/").length - a.split("/").length)
   directories.push("")
@@ -214,7 +215,7 @@ export const verifyManagedCommit = Effect.fn("git.verifyManagedCommit")(function
     if (managed.has(path)) continue
     if (ancestors.has(path)) {
       if (
-        (before.has(path) && !before.get(path)!.startsWith("040000 tree ")) ||
+        (before.has(path) && !before.get(path)?.startsWith("040000 tree ")) ||
         !after.get(path)?.startsWith("040000 tree ")
       )
         return yield* attempt(invalid)

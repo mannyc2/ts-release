@@ -1,3 +1,4 @@
+import assert from "node:assert/strict"
 import { expect, test } from "bun:test"
 import { randomUUID } from "node:crypto"
 import { mkdir, mkdtemp, rm } from "node:fs/promises"
@@ -41,8 +42,12 @@ test("Apple captures dispatch capabilities before asynchronous input admission",
   const root = await mkdtemp("/tmp/ts-release-apple-capture-")
   try {
     const { inputs } = await makeSources(root)
-    const collection = await run(createApplePreparations([inputs[1]!]))
+    const source = inputs[1]
+    assert.ok(source)
+    const collection = await run(createApplePreparations([source]))
     const scopes = await run(preparationScopes(collection))
+    const operation = scopes[0]?.plan.operations[0]
+    assert.ok(operation)
     const calls = { original: 0, replacement: 0 }
     const host = {
       store: new MemoryJournal(),
@@ -59,11 +64,8 @@ test("Apple captures dispatch capabilities before asynchronous input admission",
       journal: { journalId: collection.journalId, scopes },
     }
     const running = run(
-      runPreparation(
-        collection,
-        scopes[0]!.plan.operations[0]!.operationId,
-        { authorize: true },
-        () => Effect.fail(error()),
+      runPreparation(collection, operation.operationId, { authorize: true }, () =>
+        Effect.fail(error()),
       ).pipe(Effect.provideService(Host, host)),
     )
     host.transport.send = () =>
@@ -82,10 +84,14 @@ test("a lost Apple submit response stays Inconclusive across SQLite reopen witho
   try {
     await mkdir(join(root, "work"))
     const { owner, inputs } = await makeSources(root)
-    const collection = await run(createApplePreparations([inputs[1]!]))
-    const input = collection.preparations[0]!,
+    const source = inputs[1]
+    assert.ok(source)
+    const collection = await run(createApplePreparations([source]))
+    const input = collection.preparations[0],
       scopes = await run(preparationScopes(collection))
-    const id = scopes[0]!.plan.operations[0]!.operationId
+    const operation = scopes[0]?.plan.operations[0]
+    assert.ok(input && operation)
+    const id = operation.operationId
     const doubles = appleDoubles()
     let completions = 0,
       acquired = 0
@@ -96,8 +102,7 @@ test("a lost Apple submit response stays Inconclusive across SQLite reopen witho
             const store = yield* openSqliteJournal(join(root, "journal.sqlite"))
             const send = () =>
               submitPrepared(input, owner, join(root, "work")).pipe(
-                Effect.provide(doubles.layer),
-                Effect.provide(BunServices.layer),
+                Effect.provide([doubles.layer, BunServices.layer]),
                 Effect.map((receipt) => ({
                   _tag: "Unknown" as const,
                   reason: "Protocol fixture discarded the submit response",
@@ -135,7 +140,7 @@ test("a lost Apple submit response stays Inconclusive across SQLite reopen witho
           }),
         ),
       )
-      expect(report.preparations[0]!.operations[0]!.status).toBe("Inconclusive")
+      expect(report.preparations[0]?.operations[0]?.status).toBe("Inconclusive")
       expect(
         report.nativeFacts.filter((event) => event.body._tag === "DispatchStarted"),
       ).toHaveLength(1)
@@ -157,7 +162,9 @@ test("publication requires every selected Apple output and accepts additional ex
   try {
     await mkdir(join(root, "work"))
     const { owner, inputs } = await makeSources(root)
-    const collection = await run(createApplePreparations([inputs[0]!, inputs[1]!]))
+    const [first, second] = inputs
+    assert.ok(first && second)
+    const collection = await run(createApplePreparations([first, second]))
     const scopes = await run(preparationScopes(collection)),
       doubles = appleDoubles(),
       store = new MemoryJournal()
@@ -170,8 +177,7 @@ test("publication requires every selected Apple output and accepts additional ex
         owner,
         join(root, "work"),
       ).pipe(
-        Effect.provide(doubles.layer),
-        Effect.provide(BunServices.layer),
+        Effect.provide([doubles.layer, BunServices.layer]),
         Effect.map((receipt) => ({ _tag: "Accepted" as const, receipt })),
         Effect.mapError(error),
       )
@@ -184,31 +190,24 @@ test("publication requires every selected Apple output and accepts additional ex
       journal: { journalId: collection.journalId, scopes },
     }
     const ready: ReadyToPlan[] = []
-    for (const [index, scope] of scopes.entries())
+    for (const [index, scope] of scopes.entries()) {
+      const operation = scope.plan.operations[0]
+      const preparation = collection.preparations[index]
+      assert.ok(operation && preparation)
       await run(
-        runPreparation(
-          collection,
-          scope.plan.operations[0]!.operationId,
-          { authorize: true },
-          (submission, id) =>
-            finishPrepared(
-              collection.preparations[index]!,
-              submission,
-              id,
-              owner,
-              join(root, "work"),
-            ).pipe(
-              Effect.provide(doubles.layer),
-              Effect.provide(BunServices.layer),
-              Effect.tap((value) =>
-                Effect.sync(() => {
-                  if (value instanceof ReadyToPlan) ready.push(value)
-                }),
-              ),
-              Effect.mapError(error),
+        runPreparation(collection, operation.operationId, { authorize: true }, (submission, id) =>
+          finishPrepared(preparation, submission, id, owner, join(root, "work")).pipe(
+            Effect.provide([doubles.layer, BunServices.layer]),
+            Effect.tap((value) =>
+              Effect.sync(() => {
+                if (value instanceof ReadyToPlan) ready.push(value)
+              }),
             ),
+            Effect.mapError(error),
+          ),
         ).pipe(Effect.provideService(Host, host)),
       )
+    }
     const outputs = (
       await Promise.all(
         ready.map((item) =>
@@ -220,7 +219,9 @@ test("publication requires every selected Apple output and accepts additional ex
         ),
       )
     ).flatMap((bundle) => bundle.artifacts)
-    const extra = await run(finalize([{ ...outputs[1]!, logicalName: "other-file.txt" }]))
+    const [firstOutput, secondOutput] = outputs
+    assert.ok(firstOutput && secondOutput)
+    const extra = await run(finalize([{ ...secondOutput, logicalName: "other-file.txt" }]))
     const publication = async (artifacts: readonly OwnedArtifact[]) => {
       const bundle = await run(finalize(artifacts)),
         content = await run(owner.putOwned(encodeBundle(bundle))),
@@ -242,9 +243,9 @@ test("publication requires every selected Apple output and accepts additional ex
         ),
       ),
     ).toHaveLength(2)
-    for (const artifacts of [outputs.slice(1), [outputs[0]!, ...extra.artifacts]]) {
+    for (const artifacts of [outputs.slice(1), [firstOutput, ...extra.artifacts]]) {
       const incomplete = await publication(artifacts)
-      await expect(
+      expect(
         run(
           validateApplePublication(collection, incomplete.plan, incomplete.content, owner).pipe(
             Effect.provideService(Host, incomplete.host),
@@ -253,14 +254,14 @@ test("publication requires every selected Apple output and accepts additional ex
       ).rejects.toMatchObject({ code: "prepared-output-binding" })
     }
     const foreign = await run(createPlan(full.content.sha256, [], "other-journal"))
-    await expect(
+    expect(
       run(
         validateApplePublication(collection, foreign, full.content, owner).pipe(
           Effect.provideService(Host, full.withPlan(foreign)),
         ),
       ),
     ).rejects.toMatchObject({ code: "final-bundle-binding" })
-    await expect(
+    expect(
       run(
         validateApplePublication(collection, full.plan, { ...full.content, bytes: 0 }, owner).pipe(
           Effect.provideService(Host, full.host),
@@ -274,7 +275,7 @@ test("publication requires every selected Apple output and accepts additional ex
         scopes: [{ _tag: "PublicationScope", plan: full.plan }],
       },
     }
-    await expect(
+    expect(
       run(
         validateApplePublication(collection, full.plan, full.content, owner).pipe(
           Effect.provideService(Host, missingScope),

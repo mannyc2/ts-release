@@ -1,3 +1,4 @@
+import "./check-toolchain.js"
 import { readdir, rm } from "node:fs/promises"
 import { resolve } from "node:path"
 

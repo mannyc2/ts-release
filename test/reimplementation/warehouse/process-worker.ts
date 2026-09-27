@@ -1,14 +1,23 @@
+import { fail } from "node:assert"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { Effect, Layer, Redacted, Schema } from "effect"
+import { Effect, Redacted, Schema } from "effect"
 import { Host, ReleaseError, createPlan, runRelease, type Transport } from "@mannyc1/ts-release"
 import { openSqliteJournal } from "@mannyc1/ts-release/bun"
 import * as PyPi from "@mannyc1/ts-release-pypi"
 import { fixture } from "./fixtures.js"
 
-const [root, mode] = process.argv.slice(2) as [string, string]
-const config = JSON.parse(readFileSync(join(root, "worker.json"), "utf8"))
-const endpoint = Schema.decodeUnknownSync(PyPi.Endpoint)(config.endpoint)
+const [root, mode] = process.argv.slice(2)
+if (root === undefined || mode === undefined) fail("Missing worker arguments")
+const config = Schema.decodeUnknownSync(
+  Schema.Struct({
+    endpoint: PyPi.Endpoint,
+    username: Schema.String,
+    password: Schema.String,
+    filenames: Schema.Array(Schema.String),
+  }),
+)(JSON.parse(readFileSync(join(root, "worker.json"), "utf8")))
+const endpoint = Schema.decodeSync(PyPi.Endpoint)(config.endpoint)
 const f = await fixture(endpoint)
 const authorization = new PyPi.TokenAuthorization({
   principal: "fixture",
@@ -16,7 +25,7 @@ const authorization = new PyPi.TokenAuthorization({
 })
 const selected = f.intents
   .filter((intent) => config.filenames.includes(intent.filename))
-  .map((intent) => Schema.decodeUnknownSync(PyPi.UploadIntent)({ ...intent, authorization }))
+  .map((intent) => Schema.decodeSync(PyPi.UploadIntent)({ ...intent, authorization }))
 const response = async (r: Response) => ({
   status: r.status,
   headers: Object.fromEntries(r.headers),
@@ -29,6 +38,8 @@ const providers = PyPi.definitions({
     Effect.tryPromise({
       try: async () =>
         response(
+          // Native process fixture exercises the real fetch boundary.
+          // @effect-diagnostics-next-line globalFetchInEffect:off
           await fetch(request.url, {
             method: request.method,
             headers: Object.fromEntries(request.headers),
@@ -46,7 +57,7 @@ const transport: Transport = {
     Effect.fail(new ReleaseError({ code: "unprepared", message: "Credentials must be prepared" })),
   prepare: (request) =>
     Effect.gen(function* () {
-      if (!providers[0]!.ownsRequest(request))
+      if (!(providers[0] ?? fail("Missing fixture providers[0]")).ownsRequest(request))
         return yield* new ReleaseError({ code: "unowned", message: "Native request differs" })
       const credentials = yield* PyPi.authorizeToken({
         authorization,
@@ -59,6 +70,8 @@ const transport: Transport = {
           const result = yield* Effect.tryPromise({
             try: async () =>
               response(
+                // Native process fixture exercises the real fetch boundary.
+                // @effect-diagnostics-next-line globalFetchInEffect:off
                 await fetch(prepared.facts.endpoint, {
                   method: prepared.facts.method,
                   headers: { ...Object.fromEntries(prepared.facts.headers), ...credentials },
@@ -73,7 +86,10 @@ const transport: Transport = {
           sends++
           if (mode === "kill-after-two-commits" && sends === 2 && result.status === 200)
             process.kill(process.pid, "SIGKILL")
-          return yield* providers[0]!.decodeResponse(prepared, result)
+          return yield* (providers[0] ?? fail("Missing fixture providers[0]")).decodeResponse(
+            prepared,
+            result,
+          )
         })
     }),
 }
@@ -85,15 +101,13 @@ const result = await Effect.runPromise(
     Effect.gen(function* () {
       const store = yield* openSqliteJournal(join(root, "journal.sqlite"))
       const report = yield* runRelease({ plan, authorize: true }).pipe(
-        Effect.provide(
-          Layer.succeed(Host, {
-            store,
-            providers,
-            transport,
-            now: Date.now,
-            uniqueId: () => crypto.randomUUID(),
-          }),
-        ),
+        Effect.provideService(Host, {
+          store,
+          providers,
+          transport,
+          now: Date.now,
+          uniqueId: () => crypto.randomUUID(),
+        }),
       )
       const snapshot = yield* store.read(plan.journalId)
       return {

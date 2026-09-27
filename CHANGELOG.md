@@ -23,6 +23,76 @@
 
 ## Unreleased
 
+### Recovery and public visibility
+
+- Add bounded observation to Node/Bun application runners. One acquired application
+  refreshes durable native observations with an elapsed-time budget and backoff;
+  reports distinguish Pending, Conflict and Satisfied with event references.
+- The maintained npm/GitHub verifier uses that observation mode and refuses older
+  executors before invocation. Cleanup failures remain failures when a budget expires.
+- Allow the self-release installer to select a repaired checkout's executor while
+  retaining the original publication Bundle, Plan, content and provenance. Workflow
+  attempts retain exact executor archives and their receipt separately.
+
+### Request admission and resource ownership
+
+- Add explicit whole-release request preflight for npm/GitHub. The maintained
+  authorized application checks every locally resolvable unfinished request
+  before publication credentials or dispatch; real missing parent facts remain
+  deferred. Completed and superseded operations need no new write request.
+- Expose credential-free HTTP wire validation through the same admission path
+  used by execution. Preflight reports carry facts and fingerprints, never bodies
+  or dispatch permission. The credential diagnostic retains the safe wire-refusal
+  code when application creation fails.
+- Preserve HTTP body and cleanup failures together while joining client/socket
+  shutdown; preserve SQLite initialization and close failures together.
+- Release completed Git journal and builder repositories during long application
+  sessions. Prepared sends retain the repositories they still need.
+- Preserve failed authentication cleanup when its elapsed budget expires.
+  Native process and CLI pipe tests now join owned children on runner teardown;
+  pipe backpressure uses native readiness rather than a fixed delay.
+
+### Effect and engineering boundaries
+
+- Preserve unexpected self-release admission defects while keeping fixed safe
+  diagnostics for malformed retained input and declared policy refusals.
+- Preserve unexpected defects in npm, GitHub, PyPI, MCP and OpenAI admission.
+  Known native/schema refusals keep their typed safe diagnostics; malformed
+  evidence recovery no longer conceals programming errors.
+- Preserve unexpected Catalog renderer defects. Invalid metadata and owned-download
+  refusals retain `catalog-input`; declared release errors retain their fields.
+- Add `runApplicationEffect` to the Node and Bun entries. Application factories
+  retain their typed errors and caller service requirements, run lazily in an
+  owned scope, and preserve defects. The existing Promise/module runner keeps
+  its 0.4.2 factory-throw diagnostics.
+- Preserve HTTP credential interruption before dispatch. Secret-bearing errors
+  and defects remain redacted, including mixed interruption causes.
+- Join issued native content operations before interruption completes. File
+  handles close before immutable installation, and owned temporary files are
+  removed on failure or interruption. Cleanup failures remain observable.
+- Join self-release file reads through handle closure and issued native Sigstore
+  verification through SDK settlement before interruption completes. Native calls
+  that never settle can still delay cancellation.
+- Join issued self-release candidate-directory and Bundle/Plan writes before
+  cancellation completes, retaining partial candidates for inspection.
+- Join issued native Sigstore attestation before cancellation can finish. SDK
+  rejection keeps its fixed safe diagnostic; remote outcomes may remain unknown.
+- Preserve defects thrown by complete-plan provider validators. Intentional
+  `ReleaseError` refusals retain their fields across package constructors; schema
+  refusals retain safe admission diagnostics before any external operation.
+- Preserve programming defects across core admission and receipt classification.
+  Native/parser owners keep expected refusals typed; a classifier defect after
+  dispatch leaves the journal unresolved without permitting an ordinary resend.
+  Errors thrown while enumerating returned credentials no longer expose private
+  messages, including messages carried by a typed release error.
+- Bundle the npm/GitHub starter input helper's workspace dependencies, so its
+  documented input command runs from an isolated installation.
+- Treat malformed GitHub tag object types as inconclusive. OpenAI skill discovery
+  no longer includes an undefined skill name for a root-level `SKILL.md`.
+- Enforce a patched Effect compiler, type-aware lint, explicit host compiler
+  closures and package import boundaries. Contributor and agent guidance now
+  records data, resource ownership, diagnostic and verification requirements.
+
 ### npm acknowledgement and host diagnostics
 
 - Accept any 2xx registry reply as npm's acknowledgement of the exact publish.

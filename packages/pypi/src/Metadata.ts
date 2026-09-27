@@ -1,5 +1,5 @@
 import { readTar, readZip } from "./Archive.js"
-import { invalid, own, MAX_BYTES } from "./Native.js"
+import { invalid, own, MAX_BYTES, text as decodeText } from "./Native.js"
 import * as Model from "./Model.js"
 
 import { uploadFields } from "./MetadataFields.js"
@@ -8,15 +8,16 @@ import { uploadFields } from "./MetadataFields.js"
  * Required coordinates and every upload field come from these owned archive bytes. */
 const headers = (bytes: Uint8Array) => {
   if (bytes.length > 1024 * 1024) return invalid("metadata-bound")
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes).replaceAll("\r\n", "\n")
+  const text = decodeText(bytes).replaceAll("\r\n", "\n")
+  // oxlint-disable-next-line no-control-regex -- reject NUL and bare CR in RFC822 metadata.
   if (/[\u0000\r]/u.test(text)) invalid("metadata-text")
   const split = text.indexOf("\n\n"),
     fields = new Map<string, string[]>()
   let key: string | undefined
   for (const line of (split < 0 ? text : text.slice(0, split)).trimEnd().split("\n")) {
     if (/^[ \t]/u.test(line)) {
-      if (key === undefined) invalid("metadata-fold")
-      const values = fields.get(key!)!
+      if (key === undefined) return invalid("metadata-fold")
+      const values = fields.get(key) ?? invalid("metadata-fold")
       values[values.length - 1] += "\n" + line
       continue
     }
@@ -43,12 +44,12 @@ export const inspect = (filename: string, bytes: Uint8Array) => {
     wheel ? /^[^/]+\.dist-info\/METADATA$/u.test(name) : /^[^/]+\/PKG-INFO$/u.test(name),
   )
   if (candidates.length !== 1) return invalid("metadata-member")
-  const [member, raw] = candidates[0]!,
+  const [member, raw] = candidates[0] ?? invalid("metadata-member"),
     fields = headers(raw)
   const required = (key: string) => {
     const values = fields.get(key)
     if (values?.length !== 1) return invalid("metadata-required")
-    return values[0]!
+    return values[0] ?? invalid("metadata-required")
   }
   const name = required("name")
   if (!/^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/u.test(name)) invalid("metadata-name")
@@ -58,38 +59,48 @@ export const inspect = (filename: string, bytes: Uint8Array) => {
   let pythonTag = "source"
   if (wheel) {
     const parts = filename.slice(0, -4).split("-")
+    const [distribution, fileVersion, build] = parts
     if (
       ![5, 6].includes(parts.length) ||
-      Model.normalizeProject(parts[0]!) !== project ||
-      parts[1] !== version ||
-      (parts.length === 6 && !/^[0-9][A-Za-z0-9_]*$/u.test(parts[2]!))
+      distribution === undefined ||
+      Model.normalizeProject(distribution) !== project ||
+      fileVersion !== version ||
+      (parts.length === 6 && (build === undefined || !/^[0-9][A-Za-z0-9_]*$/u.test(build)))
     )
       invalid("wheel-filename")
     const [py, abi, platform] = parts.slice(-3)
-    if (![py, abi, platform].every((tag) => /^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*$/u.test(tag!)))
-      invalid("wheel-tag")
-    pythonTag = py!
+    if (
+      py === undefined ||
+      abi === undefined ||
+      platform === undefined ||
+      ![py, abi, platform].every((tag) => /^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*$/u.test(tag))
+    )
+      return invalid("wheel-tag")
+    pythonTag = py
     const directory = member.slice(0, -"METADATA".length)
     if (directory !== `${parts[0]}-${version}.dist-info/`) invalid("wheel-metadata-directory")
     const wheelBytes = files.get(`${directory}WHEEL`)
     if (!wheelBytes) return invalid("wheel-description")
     const info = headers(wheelBytes),
       tags = info.get("tag") ?? []
-    const expected = py!
+    const expected = py
       .split(".")
       .flatMap((p) =>
-        abi!.split(".").flatMap((a) => platform!.split(".").map((s) => `${p}-${a}-${s}`)),
+        abi.split(".").flatMap((a) => platform.split(".").map((s) => `${p}-${a}-${s}`)),
       )
+    const wheelVersions = info.get("wheel-version"),
+      wheelVersion = wheelVersions?.[0]
     if (
-      info.get("wheel-version")?.length !== 1 ||
-      !/^1\.[0-9]+$/u.test(info.get("wheel-version")![0]!) ||
+      wheelVersions?.length !== 1 ||
+      wheelVersion === undefined ||
+      !/^1\.[0-9]+$/u.test(wheelVersion) ||
       tags.length !== expected.length ||
       new Set(tags).size !== tags.length ||
       expected.some((tag) => !tags.includes(tag))
     )
       invalid("wheel-description-tags")
   } else {
-    const root = member.split("/")[0]!,
+    const root = member.split("/")[0] ?? invalid("sdist-filename"),
       stem = filename.replace(/\.(?:tar\.gz|zip)$/u, "")
     if (
       root !== stem ||

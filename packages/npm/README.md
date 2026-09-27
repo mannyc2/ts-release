@@ -2,7 +2,7 @@
 
 Native npm publication, dist-tag updates, scoped authentication and GitHub Actions
 provenance for explicitly composed ts-release applications. Install this package
-with the matching `@mannyc1/ts-release@0.4.0` core and `effect@4.0.0-rc.115`.
+with the matching `@mannyc1/ts-release@0.4.2` core and `effect@4.0.0-rc.115`.
 
 `inspectTarball(file, artifacts)` reads the exact owned Bundle member and returns
 package metadata plus native SHA-512 integrity and SHA-1 shasum. Put those hashes
@@ -90,6 +90,11 @@ OIDC identity, zero write retries, production trust services and exact signed so
 bindings. Supply explicit TUF root/cache paths and timeout. Signature trust is the
 responsibility of an explicitly supplied `VerifyProvenance` implementation.
 
+Once native verification starts, interruption waits for the SDK to settle its
+TUF/cache work. The pinned SDK has no cancellation API; a stuck native call can
+delay interruption, and its per-fetch timeout is not an overall verification
+deadline. Valid cache writes are retained.
+
 Actual native Sigstore verification is currently qualified locally under Node22.22.2.
 Bun1.3.14 fails the pinned client's TUF ECDSA root verification. The native Sigstore
 adapters therefore fail with `npm-sigstore-runtime` when invoked under Bun; use
@@ -100,3 +105,10 @@ public declarations pass fresh Bun and npm consumers. Live npm/OIDC execution
 through these provider APIs remains separate from publishing this package itself.
 See the repository's release runbook for seven-package distribution and the
 installed CLI/Action checks.
+
+Issued native Sigstore attestation is joined before cancellation can finish.
+If the SDK rejects during pending cancellation, its fixed `npm-sigstore-sign`
+failure remains observable; token-bearing SDK text is never copied into it.
+A successful remote operation may still be unretained after cancellation, and
+an SDK promise that never settles can delay cancellation. This does not authorize
+retrying an uncertain attestation.

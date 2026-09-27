@@ -1,3 +1,5 @@
+import { Schema } from "effect"
+import { SigstoreSeeds } from "./ReleaseMetadata.js"
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import { mkdtemp } from "node:fs/promises"
@@ -11,10 +13,6 @@ const fixturePath = join(
   "../test/reimplementation/npm/fixtures/sigstore-5.0.0-attestations.json",
 )
 const fixtureBytes = new Uint8Array(await Bun.file(fixturePath).arrayBuffer())
-const fixture = JSON.parse(new TextDecoder().decode(fixtureBytes))
-const bundle = fixture.attestations.find(
-  (entry: { predicateType: string }) => entry.predicateType === "https://slsa.dev/provenance/v1",
-).bundle
 const source = new ProvenanceSource({
   format: "npm-github-actions-provenance-source/v1",
   serverUrl: "https://github.com",
@@ -32,9 +30,9 @@ const source = new ProvenanceSource({
   repositoryVisibility: "public",
 })
 const work = await mkdtemp(join(tmpdir(), "ts-release-native-sigstore-"))
-const seeds = await Bun.file(
-  join(import.meta.dir, "../node_modules/@sigstore/tuf/seeds.json"),
-).json()
+const seeds = Schema.decodeSync(Schema.fromJsonString(SigstoreSeeds))(
+  await Bun.file(join(import.meta.dir, "../node_modules/@sigstore/tuf/seeds.json")).text(),
+)
 await Bun.$`mkdir -p ${import.meta.dir + "/../.release/checks"}`
 
 const root = Buffer.from(seeds["https://tuf-repo-cdn.sigstore.dev"]["root.json"], "base64")
@@ -62,7 +60,11 @@ const [exit, stdout, stderr] = await Promise.all([
   new Response(child.stderr).text(),
 ])
 assert.equal(exit, 0, `${stdout}\n${stderr}`)
-const result = await Bun.file(resultPath).json()
+const result = Schema.decodeSync(
+  Schema.fromJsonString(
+    Schema.Struct({ runtime: Schema.String, rejectedControls: Schema.Unknown }),
+  ),
+)(await Bun.file(resultPath).text())
 const receipt = {
   format: "ts-release/native-npm-sigstore/1",
   checkedAt: new Date().toISOString(),

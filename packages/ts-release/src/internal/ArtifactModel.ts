@@ -11,6 +11,7 @@ export const LogicalName = Schema.String.check(
   Schema.makeFilter((name) => {
     if (name !== name.normalize("NFC")) return "logical names must be NFC"
     if ([...name].length > 1024) return "logical names are at most 1024 characters"
+    // oxlint-disable-next-line no-control-regex -- Portable artifact names deliberately exclude controls.
     if (/[\u0000-\u001f\u007f]/u.test(name)) return "logical names contain no control characters"
     return Layout.pathIssue(name)
   }),

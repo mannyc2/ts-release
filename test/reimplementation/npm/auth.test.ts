@@ -1,3 +1,4 @@
+import { fail } from "node:assert"
 import type { TrustedPublisherHost } from "@mannyc1/ts-release/http"
 import { expect, test } from "bun:test"
 import { Effect, Redacted } from "effect"
@@ -19,7 +20,7 @@ import {
 } from "../../../packages/npm/src/index.js"
 import { scopeFor, readScope, endpointFor, encode } from "../../../packages/npm/src/Native.js"
 import { statement, validateProvenance } from "../../../packages/npm/src/Auth.js"
-import { artifact, accessFor, pack } from "./fixtures.js"
+import { artifact, accessFor, pack, structuralBundle } from "./fixtures.js"
 
 const source = () =>
   new ProvenanceSource({
@@ -46,37 +47,6 @@ const trusted = () =>
     workflowRef: "refs/heads/main",
     issuer: "https://token.actions.githubusercontent.com",
     audience: "npm:registry.npmjs.org",
-  })
-// Structural witness only: these bytes deliberately have no signature trust.
-const structuralBundle = (payload: Uint8Array) =>
-  encode({
-    mediaType: "application/vnd.dev.sigstore.bundle.v0.3+json",
-    dsseEnvelope: {
-      payloadType: "application/vnd.in-toto+json",
-      payload: Buffer.from(payload).toString("base64"),
-      signatures: [{ sig: "AA==" }],
-    },
-    verificationMaterial: {
-      certificate: { rawBytes: "AA==" },
-      tlogEntries: [
-        {
-          canonicalizedBody: "AA==",
-          logId: { keyId: "AA==" },
-          integratedTime: "1",
-          logIndex: "0",
-          kindVersion: { kind: "dsse", version: "0.0.1" },
-          inclusionProof: {
-            logIndex: "0",
-            treeSize: "1",
-            hashes: [],
-            rootHash: Buffer.alloc(32).toString("base64"),
-            checkpoint: {
-              envelope: `untrusted-fixture\n1\n${Buffer.alloc(32).toString("base64")}\n\n`,
-            },
-          },
-        },
-      ],
-    },
   })
 const fixture = () => {
   const bytes = pack({ name: "@fixture/example", version: "1.2.3" })
@@ -140,7 +110,7 @@ test("token authorization binds exact origin, scope and authorization mode befor
     { ...binding, principal: "different" },
     { ...binding, scope: binding.scope + " " },
   ])
-    await expect(
+    expect(
       Effect.runPromise(
         authorizeToken({
           authorization: f.publication.authorization,
@@ -149,7 +119,7 @@ test("token authorization binds exact origin, scope and authorization mode befor
         }),
       ),
     ).rejects.toThrow()
-  await expect(
+  expect(
     Effect.runPromise(
       authorizeToken({
         authorization: f.publication.authorization,
@@ -191,6 +161,8 @@ test("trusted npm exchange captures package and methods before OIDC", async () =
           "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/%40fixture%2Fexample",
         )
         expect(request.headers).toEqual({ authorization: "Bearer identity-token" })
+        // Native credential fixture must describe wall-clock token validity.
+        // @effect-diagnostics-next-line globalDateInEffect:off
         const now = Date.now()
         return {
           status: 201,
@@ -198,7 +170,9 @@ test("trusted npm exchange captures package and methods before OIDC", async () =
           body: encode({
             token_type: "oidc",
             token: "registry-token",
+            // @effect-diagnostics-next-line globalDateInEffect:off
             created: new Date(now - 1000).toISOString(),
+            // @effect-diagnostics-next-line globalDateInEffect:off
             expires: new Date(now + 60000).toISOString(),
           }),
         }
@@ -209,7 +183,7 @@ test("trusted npm exchange captures package and methods before OIDC", async () =
   })
   expect(calls).toBe(1)
   for (const status of [200, 400, 500])
-    await expect(
+    expect(
       Effect.runPromise(
         authorizeTrusted(
           { ...selected, packageName: f.publication.name },
@@ -224,14 +198,12 @@ test("trusted npm exchange captures package and methods before OIDC", async () =
   // Registry metadata is not durable authority. npm's own client consumes the
   // new token without requiring created/expires fields or a timestamp format.
   const exchange = (value: unknown) =>
-    Effect.runPromise(
-      authorizeTrusted(
-        { ...selected, packageName: f.publication.name },
-        {
-          oidc: () => Effect.succeed(Redacted.make("identity-token")),
-          exchange: () => Effect.succeed({ status: 201, headers: {}, body: encode(value) }),
-        },
-      ),
+    authorizeTrusted(
+      { ...selected, packageName: f.publication.name },
+      {
+        oidc: () => Effect.succeed(Redacted.make("identity-token")),
+        exchange: () => Effect.succeed({ status: 201, headers: {}, body: encode(value) }),
+      },
     )
   for (const metadata of [
     {},
@@ -241,7 +213,11 @@ test("trusted npm exchange captures package and methods before OIDC", async () =
     { additionalRegistryMetadata: true },
     { additionalRegistryMetadata: { fractionalValue: 1.5 } },
   ]) {
-    expect(await exchange({ token_type: "oidc", token: "registry-token", ...metadata })).toEqual({
+    expect(
+      await Effect.runPromise(
+        exchange({ token_type: "oidc", token: "registry-token", ...metadata }),
+      ),
+    ).toEqual({
       authorization: "Bearer registry-token",
     })
   }
@@ -253,7 +229,13 @@ test("trusted npm exchange captures package and methods before OIDC", async () =
     { token_type: "oidc", token: 123 },
     { token_type: "oidc", token: "x".repeat(65537) },
   ])
-    await expect(exchange(invalid)).rejects.toThrow()
+    expect(await Effect.runPromise(Effect.flip(exchange(invalid)))).toMatchObject({
+      _tag: "ReleaseError",
+      code:
+        invalid.token_type === "oidc" && typeof invalid.token === "string"
+          ? "npm-credential-token"
+          : "npm-data",
+    })
 })
 
 test("provenance creation owns exact statement bytes and rejects callback payload substitution", async () => {
@@ -272,7 +254,7 @@ test("provenance creation owns exact statement bytes and rejects callback payloa
     }),
   )
   expect(created.bytes).toEqual(f.provenance)
-  await expect(
+  expect(
     Effect.runPromise(
       createProvenance(input, {
         ...f.access,
@@ -308,7 +290,7 @@ test("loaded structural provenance needs an explicit native trust verifier befor
       return { status: 404, headers: {}, body: encode({}) }
     })
   const absent = definitions({ ...f.access, read })
-  await expect(Effect.runPromise(loadPlan(plan, absent))).rejects.toThrow()
+  expect(Effect.runPromise(loadPlan(plan, absent))).rejects.toThrow()
   const context: ProviderContext = {
     own: { operation, receipts: [], observations: [] },
     dependencies: [],
@@ -325,9 +307,14 @@ test("loaded structural provenance needs an explicit native trust verifier befor
         })
       }),
   })
-  await expect(Effect.runPromise(rejecting[0]!.observe!(operation, context))).rejects.toThrow(
-    "signature",
-  )
+  expect(
+    Effect.runPromise(
+      (
+        (rejecting[0] ?? fail("Missing fixture rejecting[0]")).observe ??
+        fail("Missing fixture rejecting[0]!.observe")
+      ).call(rejecting[0] ?? fail("Missing fixture rejecting[0]"), operation, context),
+    ),
+  ).rejects.toThrow("signature")
   expect(verified).toBe(1)
   expect(reads).toBe(0)
   // Positive port conformance is deliberately not a native cryptographic witness.
@@ -341,8 +328,10 @@ test("loaded structural provenance needs an explicit native trust verifier befor
         bundleBytes[0] = 0
       }),
   })
-  const prepared = await Effect.runPromise(accepting[0]!.prepare(operation, context))
-  expect(accepting[0]!.ownsRequest(prepared)).toBe(true)
+  const prepared = await Effect.runPromise(
+    (accepting[0] ?? fail("Missing fixture accepting[0]")).prepare(operation, context),
+  )
+  expect((accepting[0] ?? fail("Missing fixture accepting[0]")).ownsRequest(prepared)).toBe(true)
 })
 
 test("Sigstore rejects unrelated source and empty identity without reaching ambient signing", async () => {
@@ -372,14 +361,14 @@ test("Sigstore rejects unrelated source and empty identity without reaching ambi
         return Redacted.make("")
       }),
   })
-  await expect(
+  expect(
     Effect.runPromise(
       attest({ payloadType: "application/vnd.in-toto+json", payload: encode({ unrelated: true }) }),
     ),
   ).rejects.toThrow()
   expect(oidcCalls).toBe(0)
   const otherSource = new ProvenanceSource({ ...source(), runId: "999" })
-  await expect(
+  expect(
     Effect.runPromise(
       attest({
         payloadType: "application/vnd.in-toto+json",
@@ -388,7 +377,7 @@ test("Sigstore rejects unrelated source and empty identity without reaching ambi
     ),
   ).rejects.toThrow("source")
   expect(oidcCalls).toBe(0)
-  await expect(
+  expect(
     Effect.runPromise(attest({ payloadType: "application/vnd.in-toto+json", payload: f.payload })),
   ).rejects.toThrow(process.versions.bun ? "require supported Node.js" : "credential token")
   expect(oidcCalls).toBe(process.versions.bun ? 0 : 1)
@@ -402,7 +391,7 @@ test("native Sigstore verification reports the unqualified Bun runtime before TU
     tufCachePath: "/fixture/not-written-cache",
     timeoutMilliseconds: 1,
   })
-  await expect(
+  expect(
     Effect.runPromise(verify({ source: source(), bundleBytes: f.provenance })),
   ).rejects.toThrow("require supported Node.js")
 })

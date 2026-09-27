@@ -1,10 +1,13 @@
+import assert from "node:assert/strict"
+import { Schema } from "effect"
+import { JournalEvent } from "@mannyc1/ts-release"
 import { expect, test } from "bun:test"
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { pack } from "../npm/fixtures.js"
-import { startNativeReleasePeer } from "./native-peer.js"
+import { NpmPublication, startNativeReleasePeer } from "./native-peer.js"
 
 const node =
   process.env.TS_RELEASE_ACCEPTANCE_NODE ?? process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node"
@@ -26,11 +29,18 @@ const spawn = (peer: Peer, mode: string, input?: string, trust = true) => {
 const run = async (peer: Peer, mode: string, input?: string) => {
   const result = await spawn(peer, mode, input).output
   expect(result.exit, result.stderr).toBe(0)
-  return JSON.parse(result.stdout)
+  return Schema.decodeSync(Schema.fromJsonString(Schema.Unknown))(result.stdout)
 }
+const reportResult = Schema.Struct({
+  report: Schema.Struct({ operations: Schema.Array(Schema.Struct({ status: Schema.String })) }),
+  journal: Schema.Struct({ events: Schema.Array(JournalEvent) }),
+})
+const runReport = async (peer: Peer, mode: string, input: string) =>
+  Schema.decodeUnknownSync(reportResult)(await run(peer, mode, input))
 const fixture = async () => {
   const root = await mkdtemp(join(tmpdir(), "ts-release-native-consumer-"))
-  const gitExecutable = Bun.which("git")!
+  const gitExecutable = Bun.which("git")
+  assert.ok(gitExecutable)
   const journal = join(root, "journal.git")
   const initialize = Bun.spawn([gitExecutable, "init", "--bare", "--quiet", journal], {
     stdout: "pipe",
@@ -90,10 +100,10 @@ test("public npm/GitHub providers execute exact native HTTPS bytes through the r
   const peer = await startNativeReleasePeer(),
     f = await fixture()
   try {
-    const before = await run(peer, "observe", await f.input())
+    const before = await runReport(peer, "observe", await f.input())
     expect(before.report.operations).toHaveLength(5)
     expect(peer.mutations).toHaveLength(0)
-    const result = await run(peer, "release", await f.input())
+    const result = await runReport(peer, "release", await f.input())
     expect(
       result.report.operations.every((entry: { status: string }) => entry.status === "Satisfied"),
     ).toBe(true)
@@ -105,20 +115,25 @@ test("public npm/GitHub providers execute exact native HTTPS bytes through the r
       ["uploads.github.com", "POST"],
       ["api.github.com", "PATCH"],
     ])
-    const npm = JSON.parse(new TextDecoder().decode(peer.mutations[0]!.body))
+    const [publication, tag, , asset] = peer.mutations
+    assert.ok(publication && tag && asset)
+    const npm = Schema.decodeSync(Schema.fromJsonString(NpmPublication))(
+      new TextDecoder().decode(publication.body),
+    )
     expect(npm.name).toBe("@other-scope/native-harness")
     expect(npm["dist-tags"].latest).toBe("2.3.4")
-    expect(peer.mutations[0]!.path).toBe("/@other-scope%2fnative-harness")
-    const attachment = Object.values(npm._attachments)[0] as { data: string }
+    expect(publication.path).toBe("/@other-scope%2fnative-harness")
+    const attachment = Object.values(npm._attachments)[0]
+    assert.ok(attachment)
     expect(Buffer.from(attachment.data, "base64")).toEqual(await readFile(f.tarball))
-    expect(peer.mutations[3]!.body).toEqual(new Uint8Array(await readFile(f.tarball)))
-    expect(JSON.parse(new TextDecoder().decode(peer.mutations[1]!.body))).toEqual({
+    expect(asset.body).toEqual(new Uint8Array(await readFile(f.tarball)))
+    expect(JSON.parse(new TextDecoder().decode(tag.body))).toEqual({
       ref: "refs/tags/v2.3.4",
       sha: "d".repeat(40),
     })
     expect(peer.mutations.every((entry) => entry.authenticated)).toBe(true)
     expect(peer.requests.every((entry) => !("authorization" in entry.headers))).toBe(true)
-    const repeated = await run(peer, "release", await f.input())
+    const repeated = await runReport(peer, "release", await f.input())
     expect(
       repeated.report.operations.every((entry: { status: string }) => entry.status === "Satisfied"),
     ).toBe(true)
@@ -158,13 +173,13 @@ for (const subject of [
       child.kill("SIGKILL")
       expect((await pending.output).exit).not.toBe(0)
       pause.resume()
-      const hidden = await run(peer, "release", await f.input())
+      const hidden = await runReport(peer, "release", await f.input())
       expect(
         hidden.report.operations.some((entry: { status: string }) => entry.status !== "Satisfied"),
       ).toBe(true)
       expect(peer.mutations.filter((entry) => entry.subject === subject)).toHaveLength(1)
       peer.reveal(subject)
-      const complete = await run(peer, "release", await f.input())
+      const complete = await runReport(peer, "release", await f.input())
       expect(
         complete.report.operations.every(
           (entry: { status: string }) => entry.status === "Satisfied",
@@ -181,7 +196,7 @@ for (const subject of [
           (entry: { body: { _tag: string } }) => entry.body._tag === "ReceiptAccepted",
         ),
       ).toHaveLength(4)
-      await run(peer, "release", await f.input())
+      await runReport(peer, "release", await f.input())
       expect(peer.mutations).toHaveLength(5)
       expect(peer.failures).toEqual([])
     } finally {

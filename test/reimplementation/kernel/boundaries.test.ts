@@ -20,10 +20,10 @@ import {
   parseCanonical,
   reportRelease,
   runRelease,
-  type DispatchStarted,
   type HostShape,
 } from "./kernel.js"
 import {
+  FixtureIntent,
   evaluatorNames,
   makeFixture,
   providerFor,
@@ -62,7 +62,7 @@ for (const candidate of evaluatorNames) {
   test(`${candidate}: provider-forged core Git labels cannot grant a transport replay mechanism`, async () => {
     const fixture = await makeFixture(undefined, candidate)
     const provider = {
-      ...fixture.host.providers[0]!,
+      ...fixture.provider,
       prepare: () =>
         makeRequest({
           transport: "core.git/1",
@@ -79,7 +79,7 @@ for (const candidate of evaluatorNames) {
           }),
         }),
     }
-    await expect(
+    expect(
       runWithHost(
         { ...fixture.host, providers: [provider] },
         runRelease({ plan: fixture.plan, authorize: true }),
@@ -91,7 +91,7 @@ for (const candidate of evaluatorNames) {
 
   test(`${candidate}: authentication header material never enters durable facts; credential identity drift invalidates risk`, async () => {
     const fixture = await makeFixture(undefined, candidate)
-    const base = fixture.host.providers[0]!
+    const base = fixture.provider
     const original = await Effect.runPromise(
       base.prepare(fixture.operation, {
         own: { operation: fixture.operation, receipts: [], observations: [] },
@@ -105,7 +105,7 @@ for (const candidate of evaluatorNames) {
         body: original.body,
       }),
     )
-    await expect(
+    expect(
       runWithHost(
         { ...fixture.host, providers: [{ ...base, prepare: () => Effect.succeed(sensitive) }] },
         runRelease({ plan: fixture.plan, authorize: true }),
@@ -125,7 +125,8 @@ for (const candidate of evaluatorNames) {
       },
     }
     await runWithHost(host, runRelease({ plan: fixture.plan, authorize: true }))
-    const start = (await startEvents(fixture.store, fixture.plan))[0]!.body as DispatchStarted
+    const start = (await startEvents(fixture.store, fixture.plan))[0]?.body
+    if (start?._tag !== "DispatchStarted") throw new Error("Fixture requires a dispatch start")
     await runWithHost(
       host,
       acceptRisk({
@@ -172,14 +173,15 @@ for (const candidate of evaluatorNames) {
           } as const),
       },
     }
-    await expect(
+    expect(
       runWithHost(badHost, runRelease({ plan: fixture.plan, authorize: true })),
     ).rejects.toThrow("exact dispatched request")
     expect(
       (await runWithHost(fixture.host, reportRelease({ plan: fixture.plan }))).operations[0]
         ?.status,
     ).toBe("Inconclusive")
-    const start = (await startEvents(fixture.store, fixture.plan))[0]!.body as DispatchStarted
+    const start = (await startEvents(fixture.store, fixture.plan))[0]?.body
+    if (start?._tag !== "DispatchStarted") throw new Error("Fixture requires a dispatch start")
     const badVersion = new JournalEvent({
       format: "ts-release/event/1",
       eventId: "bad-version",
@@ -193,7 +195,7 @@ for (const candidate of evaluatorNames) {
       }),
     })
     await Effect.runPromise(fixture.store.append(fixture.plan.journalId, 1, badVersion))
-    await expect(
+    expect(
       runWithHost(fixture.host, runRelease({ plan: fixture.plan, authorize: true })),
     ).rejects.toThrow("is not the installed")
     expect(fixture.sends).toHaveLength(0)
@@ -201,7 +203,7 @@ for (const candidate of evaluatorNames) {
       providerFor(() => ({ status: "Satisfied", evidence: { visible: false } })),
       candidate,
     )
-    await expect(
+    expect(
       runWithHost(observation.host, runRelease({ plan: observation.plan, authorize: true })),
     ).rejects.toThrow("classification")
     expect(
@@ -212,7 +214,7 @@ for (const candidate of evaluatorNames) {
   test(`${candidate}: publication root is immutable and preparation/publication preserve a single global CAS revision`, async () => {
     const fixture = await makeFixture(undefined, candidate)
     const preparation = await Effect.runPromise(
-      createPreparationScope(fixture.host.providers[0]!, fixture.operation.intent, "shared-root"),
+      createPreparationScope(fixture.provider, fixture.operation.intent, "shared-root"),
     )
     const publication = await Effect.runPromise(
       createPlan("final-bundle", [fixture.operation], "shared-root"),
@@ -245,13 +247,16 @@ for (const candidate of evaluatorNames) {
           return fixture.store.read(id)
         },
       },
-      journal: { ...host.journal!, journalId: "foreign-root" },
+      journal: {
+        journalId: "foreign-root",
+        scopes: [preparation, { _tag: "PublicationScope", plan: publication }],
+      },
     }
-    await expect(
-      runWithHost(moved, runRelease({ plan: publication, authorize: true })),
-    ).rejects.toThrow("another journal")
+    expect(runWithHost(moved, runRelease({ plan: publication, authorize: true }))).rejects.toThrow(
+      "another journal",
+    )
     expect(reads).toBe(0)
-    await expect(
+    expect(
       runWithHost(
         {
           ...host,
@@ -289,7 +294,7 @@ for (const candidate of evaluatorNames) {
             }),
         },
       }
-      await expect(
+      expect(
         runWithHost(host, runRelease({ plan: fixture.plan, authorize: true })),
       ).rejects.toThrow()
       expect(
@@ -315,7 +320,7 @@ for (const candidate of evaluatorNames) {
     let reads = 0,
       appends = 0,
       prepares = 0
-    const base = fixture.host.providers[0]!
+    const base = fixture.provider
     const host: HostShape = {
       ...fixture.host,
       store: {
@@ -349,10 +354,10 @@ for (const candidate of evaluatorNames) {
       },
     }
     for (const plan of [first, second]) {
-      await expect(runWithHost(host, runRelease({ plan, authorize: true }))).rejects.toThrow(
+      expect(runWithHost(host, runRelease({ plan, authorize: true }))).rejects.toThrow(
         "at most one publication plan",
       )
-      await expect(runWithHost(host, reportRelease({ plan }))).rejects.toThrow(
+      expect(runWithHost(host, reportRelease({ plan }))).rejects.toThrow(
         "at most one publication plan",
       )
     }
@@ -364,14 +369,17 @@ for (const candidate of evaluatorNames) {
 
   test(`${candidate}: two concrete preparations and one publication share every global CAS revision`, async () => {
     const fixture = await makeFixture(undefined, candidate)
-    const provider = fixture.host.providers[0]!
+    const provider = fixture.provider
     const first = await Effect.runPromise(
       createPreparationScope(provider, fixture.operation.intent, "multiple-preparations"),
     )
     const second = await Effect.runPromise(
       createPreparationScope(
         provider,
-        { ...(fixture.operation.intent as object), coordinate: "package-2" },
+        {
+          ...Schema.decodeUnknownSync(FixtureIntent)(fixture.operation.intent),
+          coordinate: "package-2",
+        },
         "multiple-preparations",
       ),
     )

@@ -327,7 +327,7 @@ export class PublishIntent extends Schema.Class<PublishIntent>("Mcp.PublishInten
   authorization: Authorization,
 }) {}
 const intentIssue = (intent: PublishIntent): string | undefined => {
-  const namespace = intent.manifest.name.split("/")[0]!
+  const namespace = intent.manifest.name.split("/")[0] ?? ""
   if (intent.authorization._tag === "TokenAuthorization")
     return intent.authorization.namespace === namespace
       ? undefined
@@ -350,6 +350,14 @@ export const {
   ownRequest,
   matches,
 } = makeDataBoundary("mcp", "MCP")
+export const text = (bytes: Uint8Array, code: string): string => {
+  const decoder = new TextDecoder("utf-8", { fatal: true })
+  try {
+    return decoder.decode(bytes)
+  } catch {
+    throw failure(code, "MCP value could not be admitted")
+  }
+}
 export const manifest = (input: unknown): Manifest =>
   own(ManifestCodec, typeof input === "string" ? decodeJson(input) : input)
 export const intent = (input: unknown): PublishIntent => own(PublishIntentCodec, input)
@@ -359,5 +367,7 @@ export const validate = Effect.fn("mcp.validate")((input: unknown) =>
 )
 export const render = Effect.fn("mcp.render")(function* (input: Manifest) {
   const selected = yield* validate(input)
-  return new TextEncoder().encode(`${canonical(Schema.encodeSync(ManifestCodec)(selected))}\n`)
+  const encoded = yield* Schema.encodeEffect(ManifestCodec)(selected).pipe(Effect.orDie)
+  const bytes: Uint8Array<ArrayBuffer> = new TextEncoder().encode(`${canonical(encoded)}\n`)
+  return bytes
 })

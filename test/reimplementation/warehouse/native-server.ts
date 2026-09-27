@@ -1,3 +1,5 @@
+import * as Schema from "effect/Schema"
+import build from "./fixtures/build.json" with { type: "json" }
 import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
@@ -28,12 +30,14 @@ const freePort = () =>
   })
 export const nativeServer = async (implementation: "pypiserver" | "devpi-server", count: 2 | 4) => {
   const root = await mkdtemp(join(tmpdir(), `ts-release-${implementation}-${count}-`))
-  const versions = JSON.parse(
-    await command([
-      join(pythonBin, "python"),
-      "-c",
-      "import importlib.metadata,json; print(json.dumps({n:importlib.metadata.version(n) for n in ['pypiserver','devpi-server','pip']}))",
-    ]),
+  const versions = Schema.decodeUnknownSync(Schema.Record(Schema.String, Schema.String))(
+    JSON.parse(
+      await command([
+        join(pythonBin, "python"),
+        "-c",
+        "import importlib.metadata,json; print(json.dumps({n:importlib.metadata.version(n) for n in ['pypiserver','devpi-server','pip']}))",
+      ]),
+    ),
   )
   if (versions.pypiserver !== "2.4.1" || versions["devpi-server"] !== "6.20.3")
     throw new Error("Native server version drift")
@@ -92,7 +96,8 @@ export const nativeServer = async (implementation: "pypiserver" | "devpi-server"
         request.headers.get("content-type")?.startsWith("multipart/")
       ) {
         const form = await new Response(body, { headers: request.headers }).formData()
-        const file = form.get("content") as File
+        const file = form.get("content")
+        if (!(file instanceof File)) throw new Error("Missing native upload file")
         uploads.push({ filename: file.name, status: native.status, bytes: file.size })
       }
       const outgoing = new Headers(native.headers)
@@ -102,7 +107,7 @@ export const nativeServer = async (implementation: "pypiserver" | "devpi-server"
   })
   let child: ReturnType<typeof Bun.spawn> | undefined
   const close = async () => {
-    gateway.stop(true)
+    await gateway.stop(true)
     if (child) {
       child.kill()
       await child.exited
@@ -180,15 +185,18 @@ export const nativeServer = async (implementation: "pypiserver" | "devpi-server"
     }
     const endpoint = new PyPi.Compatible({
       implementation,
-      version: versions[implementation],
+      version:
+        versions[implementation] ??
+        (() => {
+          throw new Error("Missing native server version")
+        })(),
       uploadUrl: `${gateway.url.origin}${implementation === "pypiserver" ? "/" : "/root/release/"}`,
       simpleUrl: `${gateway.url.origin}${implementation === "pypiserver" ? "/simple/" : "/root/release/+simple/"}`,
       duplicateLaw: "not-inherited",
     })
-    const build = await Bun.file(join(import.meta.dir, "fixtures/build.json")).json()
     const filenames = build.files
-      .map((row: { filename: string }) => row.filename)
-      .filter((name: string) => count === 4 || /(?:py3-none-any\.whl|\.tar\.gz)$/u.test(name))
+      .map((row) => row.filename)
+      .filter((name) => count === 4 || /(?:py3-none-any\.whl|\.tar\.gz)$/u.test(name))
     await writeFile(
       join(root, "worker.json"),
       JSON.stringify({

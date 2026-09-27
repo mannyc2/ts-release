@@ -28,7 +28,11 @@ const crcTable = Array.from({ length: 256 }, (_, value) => {
 })
 const crc32 = (data: Uint8Array): number => {
   let crc = 0xffffffff
-  for (const byte of data) crc = (crc >>> 8) ^ crcTable[(crc ^ byte) & 0xff]!
+  for (const byte of data) {
+    // The mask is bounded to the dense 256-entry table constructed above.
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    crc = (crc >>> 8) ^ crcTable[(crc ^ byte) & 0xff]!
+  }
   return (crc ^ 0xffffffff) >>> 0
 }
 const zip = (entries: readonly Entry[]): Uint8Array => {

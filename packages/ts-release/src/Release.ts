@@ -1,10 +1,11 @@
 import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 import { currentHost, type HostShape, journalIdFor, read, scopeKind } from "./internal/Host.js"
 import { CoreDispatchError, CoreUndecodableReceipt } from "./internal/ReleaseModel.js"
 import { DispatchRejectedBeforeCommit, DispatchStarted } from "./internal/ReleaseModel.js"
 import { ObservationRecorded, PlanSuperseded, ReceiptAccepted } from "./internal/ReleaseModel.js"
 import { EventBody, JournalEvent, Operation, Plan, RiskAccepted } from "./internal/ReleaseModel.js"
-import type { RunOptions } from "./internal/ReleaseModel.js"
+import type { RequestFacts, RunOptions } from "./internal/ReleaseModel.js"
 import { canonical, decodeOwned, freeze, sha256 } from "./internal/Identity.js"
 import { attempt, fail, reject } from "./internal/Error.js"
 import { type Snapshot, verifyNativeEvidence, verifyPreparationSelection } from "./Journal.js"
@@ -57,11 +58,8 @@ export const appendFact = Effect.fn("ts-release.appendFact")(function* (
 })
 const appendBody = (host: HostShape, plan: Plan, body: EventBody) =>
   appendFact(host, plan, eventFor(host, plan, body))
-const appendObservation = (
-  host: HostShape,
-  plan: Plan,
-  body: Omit<typeof ObservationRecorded.Type, "_tag">,
-) => appendBody(host, plan, new ObservationRecorded(body))
+const appendObservation = (host: HostShape, plan: Plan, body: Omit<ObservationRecorded, "_tag">) =>
+  appendBody(host, plan, new ObservationRecorded(body))
 const recordObservation = Effect.fn("ts-release.recordObservation")(function* (
   host: HostShape,
   plan: Plan,
@@ -69,7 +67,10 @@ const recordObservation = Effect.fn("ts-release.recordObservation")(function* (
   provider: ProviderDefinition,
   snapshot: Snapshot,
 ) {
-  const observation = yield* provider.observe!(
+  const { observe, observationVersion } = provider
+  if (observe === undefined || observationVersion === undefined)
+    return yield* reject("invalid-data", "Value could not be admitted")
+  const observation = yield* observe(
     operation,
     yield* attempt(() => evidenceContext(plan, operation, snapshot.events)),
   )
@@ -78,7 +79,7 @@ const recordObservation = Effect.fn("ts-release.recordObservation")(function* (
     evidenceKind: "Observation",
     status: observation.status,
     evidence: observation.evidence,
-    evidenceVersion: provider.observationVersion!,
+    evidenceVersion: observationVersion,
     observedAt: host.now(),
   })
 })
@@ -97,12 +98,107 @@ export const observeRelease = Effect.fn("ts-release.observeRelease")(function* (
   // Validate all history and definitions before the first provider effect.
   yield* read(host, plan)
   for (const operation of plan.operations) {
-    const provider = host.providers.find((item) => item.definitionId === operation.definitionId)!
+    const provider = host.providers.find((item) => item.definitionId === operation.definitionId)
+    if (provider === undefined) return yield* reject("invalid-data", "Value could not be admitted")
     if (!provider.observe) continue
     const prefix = yield* read(host, plan)
     yield* recordObservation(host, plan, operation, provider, prefix.snapshot)
   }
   return (yield* read(host, plan)).report()
+})
+/** A checked request is a fact about one admitted journal prefix, not a cached
+ * body, cryptographic trust result, remote precondition or dispatch permission. */
+export interface PreflightReport {
+  readonly planId: string
+  readonly revision: number
+  readonly superseded: boolean
+  readonly satisfied: ReadonlyArray<string>
+  readonly checked: ReadonlyArray<{
+    readonly operationId: string
+    readonly request: RequestFacts
+    readonly fingerprint: string
+  }>
+  readonly deferred: ReadonlyArray<{
+    readonly operationId: string
+    readonly dependencies: ReadonlyArray<string>
+  }>
+}
+/** Admit every currently resolvable request, including operations behind an
+ * unfinished ordering dependency. Reading durable history can require journal
+ * credentials; provider credentials, remote probes and dispatch remain separate. */
+export const preflightRelease = Effect.fn("ts-release.preflightRelease")(function* (options: {
+  readonly plan: Plan
+}) {
+  const host = yield* currentHost
+  const plan = yield* loadPlan(options.plan, host.providers)
+  const admitted = yield* read(host, plan)
+  const current = admitted.report()
+  const { snapshot } = admitted
+  const satisfied = current.operations
+    .filter((operation) => operation.status === "Satisfied")
+    .map((operation) => operation.operationId)
+  const checked: Array<PreflightReport["checked"][number]> = []
+  const deferred: Array<PreflightReport["deferred"][number]> = []
+  const report: PreflightReport = {
+    planId: plan.planId,
+    revision: snapshot.revision,
+    superseded: current.superseded,
+    satisfied,
+    checked,
+    deferred,
+  }
+  if (current.superseded || satisfied.length === plan.operations.length) return freeze(report)
+  const selected = yield* attempt(() =>
+    plan.operations
+      .filter((operation) => !satisfied.includes(operation.operationId))
+      .map((operation) => {
+        const provider = host.providers.find((item) => item.definitionId === operation.definitionId)
+        const preflight = provider?.preflight
+        if (provider === undefined || preflight === undefined)
+          fail(
+            "preflight-provider-unsupported",
+            "Provider does not support local request preflight",
+          )
+        return { operation, provider, preflight }
+      }),
+  )
+  const validate = host.transport.validate
+  if (validate === undefined)
+    return yield* reject(
+      "preflight-transport-unsupported",
+      "Transport does not support local wire admission",
+    )
+  for (const { operation, provider, preflight } of selected) {
+    const context = yield* attempt(() => evidenceContext(plan, operation, snapshot.events))
+    const result = yield* preflight(operation, context)
+    if (result._tag === "Deferred") {
+      const dependencies = yield* attempt(() => {
+        const ids = decodeOwned(Schema.Array(Schema.String), result.dependencies)
+        if (
+          ids.length === 0 ||
+          new Set(ids).size !== ids.length ||
+          ids.some((id) => !operation.dependsOn.includes(id))
+        )
+          fail(
+            "preflight-dependencies",
+            "Deferred requests must identify declared parent dependencies",
+          )
+        return [...ids].sort()
+      })
+      deferred.push({ operationId: operation.operationId, dependencies })
+      continue
+    }
+    const request = yield* verifyRequest(result.request)
+    yield* attempt(() => assertRequestCorresponds(provider, operation, request.facts, context))
+    yield* attempt(() => assertTransportBinding(host.transport, request.facts))
+    yield* validate(yield* verifyRequest(request))
+    checked.push({
+      operationId: operation.operationId,
+      request: request.facts,
+      fingerprint: yield* requestFingerprint(request.facts),
+    })
+  }
+  return freeze(report)
 })
 /** One interpreter, no durable permit and no provider-selected mutation retry. */
 export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: RunOptions) {
@@ -136,7 +232,9 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
         continue
       progressed = true
       visited.add(operation.operationId)
-      const provider = host.providers.find((item) => item.definitionId === operation.definitionId)!
+      const provider = host.providers.find((item) => item.definitionId === operation.definitionId)
+      if (provider === undefined)
+        return yield* reject("invalid-data", "Value could not be admitted")
       if (options.observe !== false && provider.observe) {
         yield* recordObservation(host, plan, operation, provider, current.snapshot)
         current = yield* read(host, plan)
@@ -246,10 +344,10 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
           )
         } else {
           // The remote may have committed; keep the attempt uncertain and retain only a bounded, credential-free diagnostic.
-          let diagnostic: Uint8Array | null = null
-          try {
-            diagnostic = new TextEncoder().encode(canonical(result.receipt))
-          } catch {}
+          const diagnostic = yield* Effect.try({
+            try: () => new TextEncoder().encode(canonical(result.receipt)),
+            catch: () => null,
+          }).pipe(Effect.orElseSucceed(() => null))
           const evidence = new CoreUndecodableReceipt({
             code: "undecodable-receipt",
             message: "Committed response could not be admitted by the installed provider",
@@ -305,7 +403,10 @@ export const runRelease = Effect.fn("ts-release.runRelease")(function* (input: R
           evidenceKind: "DispatchError",
           dispatchId,
           status: "Inconclusive",
-          evidenceVersion: native ? provider.dispatchError!.version : "core-dispatch-error/1",
+          evidenceVersion:
+            native && provider.dispatchError
+              ? provider.dispatchError.version
+              : "core-dispatch-error/1",
           evidence,
           observedAt: host.now(),
         })

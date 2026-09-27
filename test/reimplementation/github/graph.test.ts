@@ -1,3 +1,4 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
 import { Effect, Schema } from "effect"
 import { File } from "@mannyc1/ts-release/bundle"
@@ -11,7 +12,7 @@ const repository = new GitHub.Repository({
   name: "release",
 })
 const base = { repository, tag: "v1.0.0", principal: "fixture" }
-const file = Schema.decodeUnknownSync(File)({
+const file = Schema.decodeSync(File)({
   _tag: "OwnedFile",
   logicalName: "asset",
   content: { bytes: 1, sha256: "a".repeat(64) },
@@ -113,7 +114,7 @@ test("complete GitHub graph rejects omitted assets, wrong parents/repositories, 
   const forgedPublish = await Effect.runPromise(
     GitHub.publish(
       new GitHub.PublishIntent({
-        ...(f.publish.intent as GitHub.PublishIntent),
+        ...Schema.decodeUnknownSync(GitHub.PublishIntent)(f.publish.intent),
         assetOperations: f.assets.slice(0, 2).map((op) => op.operationId),
       }),
     ),
@@ -121,7 +122,9 @@ test("complete GitHub graph rejects omitted assets, wrong parents/repositories, 
   const wrongDraft = await Effect.runPromise(
     GitHub.uploadAsset(
       new GitHub.AssetIntent({
-        ...(f.assets[0]!.intent as GitHub.AssetIntent),
+        ...Schema.decodeUnknownSync(GitHub.AssetIntent)(
+          (f.assets[0] ?? fail("Missing fixture f.assets[0]")).intent,
+        ),
         draftOperation: f.tag.operationId,
       }),
     ),
@@ -129,7 +132,9 @@ test("complete GitHub graph rejects omitted assets, wrong parents/repositories, 
   const foreign = await Effect.runPromise(
     GitHub.uploadAsset(
       new GitHub.AssetIntent({
-        ...(f.assets[0]!.intent as GitHub.AssetIntent),
+        ...Schema.decodeUnknownSync(GitHub.AssetIntent)(
+          (f.assets[0] ?? fail("Missing fixture f.assets[0]")).intent,
+        ),
         repository: new GitHub.Repository({ ...repository, name: "foreign" }),
       }),
     ),
@@ -137,7 +142,9 @@ test("complete GitHub graph rejects omitted assets, wrong parents/repositories, 
   const duplicateName = await Effect.runPromise(
     GitHub.uploadAsset(
       new GitHub.AssetIntent({
-        ...(f.assets[0]!.intent as GitHub.AssetIntent),
+        ...Schema.decodeUnknownSync(GitHub.AssetIntent)(
+          (f.assets[0] ?? fail("Missing fixture f.assets[0]")).intent,
+        ),
         mediaType: "application/zip",
       }),
     ),

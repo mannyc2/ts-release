@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test"
 import { Effect, Redacted } from "effect"
-import { createPlan, makeRequest } from "@mannyc1/ts-release"
+import { createPlan } from "@mannyc1/ts-release"
+import { Bundle } from "@mannyc1/ts-release/bundle"
 import * as Npm from "@mannyc1/ts-release-npm"
 import { npmCredentials } from "../../../apps/self-release/src/application.js"
-import { accessFor, artifact, pack } from "../npm/fixtures.js"
-import { scopeFor, endpointFor, readScope } from "../../../packages/npm/src/Native.js"
+import { accessFor, artifact, pack, structuralBundle } from "../npm/fixtures.js"
 import { checkCredentials, failureCode } from "../../../templates/npm-github/check-credentials.mjs"
 
 for (const status of [201, 401])
@@ -18,28 +18,46 @@ for (const status of [201, 401])
       issuer: "https://token.actions.githubusercontent.com",
       audience: "npm:registry.npmjs.org",
     })
+    const source = new Npm.ProvenanceSource({
+      format: "npm-github-actions-provenance-source/v1",
+      serverUrl: "https://github.com",
+      repository: "fixture/example",
+      workflow: authorization.workflow,
+      workflowRef: authorization.workflowRef,
+      sourceRef: "refs/heads/main",
+      sourceCommit: "a".repeat(40),
+      eventName: "workflow_dispatch",
+      repositoryId: "1",
+      repositoryOwnerId: "2",
+      runnerEnvironment: "github-hosted",
+      runId: "3",
+      runAttempt: "1",
+      repositoryVisibility: "public",
+    })
+    // The explicit Attest fixture supplies structure only, never native trust.
+    const provenance = await Effect.runPromise(
+      Npm.createProvenance(
+        {
+          authorize: true,
+          name: fixture.publication.name,
+          version: fixture.publication.version,
+          tarball: fixture.publication.tarball,
+          source,
+        },
+        {
+          ...fixture.access,
+          attest: ({ payload }) => Effect.succeed({ bundleBytes: structuralBundle(payload) }),
+        },
+      ),
+    )
+    const provenanceFile = artifact("structural-credential-fixture", provenance.bytes)
     const intent = new Npm.PublishIntent({
       ...fixture.publication,
       authorization,
       provenance: new Npm.GitHubActionsProvenance({
-        source: new Npm.ProvenanceSource({
-          format: "npm-github-actions-provenance-source/v1",
-          serverUrl: "https://github.com",
-          repository: "fixture/example",
-          workflow: authorization.workflow,
-          workflowRef: authorization.workflowRef,
-          sourceRef: "refs/heads/main",
-          sourceCommit: "a".repeat(40),
-          eventName: "workflow_dispatch",
-          repositoryId: "1",
-          repositoryOwnerId: "2",
-          runnerEnvironment: "github-hosted",
-          runId: "3",
-          runAttempt: "1",
-          repositoryVisibility: "public",
-        }),
-        bundle: artifact("structural-credential-fixture", new Uint8Array([1])),
-        mediaType: "application/vnd.dev.sigstore.bundle.v0.3+json",
+        source,
+        bundle: provenanceFile,
+        mediaType: provenance.mediaType,
       }),
     })
     const operation = await Effect.runPromise(Npm.publish(intent))
@@ -57,24 +75,20 @@ for (const status of [201, 401])
     const app = {
       options: { plan, authorize: true },
       host: {
-        // Cryptographic preparation has separate native coverage. This boundary
-        // supplies a request to exercise the real application credential policy.
-        providers: [
-          {
-            definitionId: "npm.publish",
-            prepare: () =>
-              makeRequest({
-                transport: "core.http/1",
-                endpoint: endpointFor(readScope(scopeFor(intent))),
-                method: "PUT",
-                principal: authorization.principal,
-                scope: scopeFor(intent),
-                headers: [],
-                body: new Uint8Array(),
-                replay: { _tag: "None" },
-              }),
-          },
-        ],
+        providers: Npm.definitions({
+          bundle: new Bundle({
+            format: "ts-release/bundle/2",
+            artifacts: [intent.tarball, provenanceFile],
+          }),
+          readContent: (content) =>
+            content.sha256 === provenanceFile.content.sha256
+              ? Effect.succeed(provenance.bytes.slice())
+              : fixture.access.readContent(content),
+          read: () => Effect.die(new Error("Preflight must not read the registry")),
+          // This deliberate port permits structural/credential-policy coverage;
+          // the actual native Sigstore profile owns cryptographic trust proof.
+          verifyProvenance: () => Effect.void,
+        }),
         store: {
           read: () =>
             Effect.sync(() => {
@@ -143,6 +157,9 @@ for (const status of [201, 401])
 test("credential diagnostics never emit arbitrary failure codes or messages", () => {
   expect(failureCode({ code: "npm-oidc-exchange", message: "sensitive-credential" })).toBe(
     "npm-oidc-exchange",
+  )
+  expect(failureCode({ code: "http-request-owner", message: "sensitive-credential" })).toBe(
+    "http-request-owner",
   )
   expect(failureCode({ code: "sensitive-credential", message: "sensitive-credential" })).toBe(
     "unclassified",

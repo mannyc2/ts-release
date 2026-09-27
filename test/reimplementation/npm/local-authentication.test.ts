@@ -1,5 +1,7 @@
-import { expect, test } from "bun:test"
-import { Effect, Layer, Redacted } from "effect"
+import { fail } from "node:assert"
+import { expect, onTestFinished, test } from "bun:test"
+import { Schema, Effect, Fiber, Redacted, Cause, Exit, Result } from "effect"
+import { TestClock } from "effect/testing"
 import {
   Host,
   createPlan,
@@ -34,7 +36,7 @@ const fixture = async () => {
   const operation = await Effect.runPromise(publish(f.publication))
   const providers = definitions({ ...f.access, read: () => Effect.succeed(response(404)) })
   const request = await Effect.runPromise(
-    providers[0]!.prepare(operation, {
+    (providers[0] ?? fail("Missing fixture providers[0]")).prepare(operation, {
       own: { operation, receipts: [], observations: [] },
       dependencies: [],
     }),
@@ -45,13 +47,19 @@ const config = `//registry.npmjs.org/:_authToken=${loginToken}\n`
 
 test("only the exact native OTP rejection is admitted, independently of ephemeral browser URLs", async () => {
   const f = await fixture(),
-    provider = f.providers[0]!
+    provider = f.providers[0] ?? fail("Missing fixture f.providers[0]")
   const rejected = await Effect.runPromise(provider.decodeResponse(f.request, challenge()))
   expect(rejected._tag).toBe("RejectedBeforeCommit")
   if (rejected._tag !== "RejectedBeforeCommit") throw new Error("rejection fixture")
-  expect(provider.rejection!.corresponds(f.operation, f.request.facts, rejected.proof)).toBe(true)
   expect(
-    provider.rejection!.corresponds(
+    (provider.rejection ?? fail("Missing fixture provider.rejection")).corresponds(
+      f.operation,
+      f.request.facts,
+      rejected.proof,
+    ),
+  ).toBe(true)
+  expect(
+    (provider.rejection ?? fail("Missing fixture provider.rejection")).corresponds(
       f.operation,
       { ...f.request.facts, bodyDigest: "0".repeat(64) },
       rejected.proof,
@@ -87,7 +95,7 @@ test("only the exact native OTP rejection is admitted, independently of ephemera
   ).toBeUndefined()
   const owned = await Effect.runPromise(authorizationBinding(f.request.facts))
   expect(owned).toEqual({ authorization: f.authorization, packageName: f.publication.name })
-  await expect(
+  expect(
     Effect.runPromise(authorizationBinding({ ...f.request.facts, principal: "foreign" })),
   ).rejects.toThrow()
 })
@@ -101,9 +109,10 @@ for (const lostResponse of [false, true])
     )
     let sends = 0,
       polls = 0,
-      visible = false
+      visible = false,
+      finishing = false
     const notices: string[] = []
-    const result = await Effect.runPromise(
+    const root = Effect.runFork(
       Effect.scoped(
         Effect.gen(function* () {
           const session = yield* makeLocalAuthenticationWith(
@@ -166,30 +175,34 @@ for (const lostResponse of [false, true])
                       expect(headers["npm-otp"]).toBeUndefined()
                       const native = challenge()
                       session.capture(actual, native)
-                      return yield* providers[0]!.decodeResponse(actual, native)
+                      return yield* (
+                        providers[0] ?? fail("Missing fixture providers[0]")
+                      ).decodeResponse(actual, native)
                     }
                     expect(headers["npm-otp"]).toBe(otp)
                     if (lostResponse)
                       return { _tag: "Unknown" as const, reason: "authenticated response was lost" }
                     visible = true
-                    return yield* providers[0]!.decodeResponse(actual, response(201))
+                    return yield* (
+                      providers[0] ?? fail("Missing fixture providers[0]")
+                    ).decodeResponse(actual, response(201))
                   })
               }),
           }
           const run = () =>
             runRelease({ plan, authorize: true }).pipe(
-              Effect.provide(
-                Layer.succeed(Host, {
-                  providers,
-                  store,
-                  transport,
-                  now: Date.now,
-                  uniqueId: () => crypto.randomUUID(),
-                }),
-              ),
+              Effect.provideService(Host, {
+                providers,
+                store,
+                transport,
+                now: Date.now,
+                uniqueId: () => crypto.randomUUID(),
+              }),
             )
           const rejected = yield* run()
-          expect(rejected.operations[0]!.status).toBe("Rejected")
+          expect(
+            (rejected.operations[0] ?? fail("Missing fixture rejected.operations[0]")).status,
+          ).toBe("Rejected")
           expect(sends).toBe(1)
           expect(
             (yield* store.read(plan.journalId)).events.some(
@@ -199,10 +212,17 @@ for (const lostResponse of [false, true])
           expect(
             yield* session.complete({
               ...f.operation,
-              intent: { ...(f.operation.intent as object), name: "different" },
+              intent: {
+                ...(yield* Schema.decodeUnknownEffect(Schema.Record(Schema.String, Schema.Unknown))(
+                  f.operation.intent,
+                )),
+                name: "different",
+              },
             }),
           ).toBe(false)
-          expect(yield* session.complete(f.operation)).toBe(true)
+          const completion = yield* Effect.forkChild(session.complete(f.operation))
+          yield* TestClock.adjust(1000)
+          expect(yield* Fiber.join(completion)).toBe(true)
           expect(sends).toBe(1)
           // Reads on the same origin/scope do not consume or receive the OTP or login token.
           for (const method of ["GET", "HEAD"])
@@ -213,15 +233,23 @@ for (const lostResponse of [false, true])
             ],
           ).toBeUndefined()
           const published = yield* run()
-          expect(published.operations[0]!.status).toBe(lostResponse ? "Inconclusive" : "Satisfied")
+          expect(
+            (published.operations[0] ?? fail("Missing fixture published.operations[0]")).status,
+          ).toBe(lostResponse ? "Inconclusive" : "Satisfied")
           expect(sends).toBe(2)
           expect(yield* session.complete(f.operation)).toBe(false)
           expect((yield* session.credentials(f.request.facts))["npm-otp"]).toBeUndefined()
           if (lostResponse) {
-            expect((yield* run()).operations[0]!.status).toBe("Inconclusive")
+            expect(
+              ((yield* run()).operations[0] ?? fail("Missing fixture (yield* run()).operations[0]"))
+                .status,
+            ).toBe("Inconclusive")
             expect(sends).toBe(2)
             visible = true
-            expect((yield* run()).operations[0]!.status).toBe("Satisfied")
+            expect(
+              ((yield* run()).operations[0] ?? fail("Missing fixture (yield* run()).operations[0]"))
+                .status,
+            ).toBe("Satisfied")
             expect(sends).toBe(2)
           }
           const events = (yield* store.read(plan.journalId)).events
@@ -234,11 +262,20 @@ for (const lostResponse of [false, true])
           ).toHaveLength(1)
           return session
         }),
-      ),
+      ).pipe(Effect.provide(TestClock.layer())),
     )
+    onTestFinished(async () => {
+      finishing = true
+      await Effect.runPromise(Fiber.interrupt(root))
+    })
+    // Bun abandons the test Promise on timeout; await an Exit so joined cleanup
+    // does not create a detached rejection after the runner has already failed.
+    const exit = await Effect.runPromise(Fiber.await(root))
+    if (finishing) return
+    const result = await Effect.runPromise(exit)
     expect(polls).toBe(2)
     expect(notices).toEqual([authUrl])
-    await expect(Effect.runPromise(result.credentials(f.request.facts))).rejects.toThrow("closed")
+    expect(Effect.runPromise(result.credentials(f.request.facts))).rejects.toThrow("closed")
   }, 10000)
 
 test("local credentials require explicit literal registry config and PUT body identity", async () => {
@@ -252,7 +289,7 @@ test("local credentials require explicit literal registry config and PUT body id
     '//registry.npmjs.org/:_authToken="quoted"',
     "x".repeat(65537),
   ])
-    await expect(
+    expect(
       Effect.runPromise(
         Effect.scoped(
           makeLocalAuthenticationWith(
@@ -329,26 +366,32 @@ test("a fresh scoped session requests a fresh challenge after a durable rejectio
                   sends++
                   const native = headers["npm-otp"] === otp ? response(201) : challenge()
                   session.capture(actual, native)
-                  return yield* f.providers[0]!.decodeResponse(actual, native)
+                  return yield* (
+                    f.providers[0] ?? fail("Missing fixture f.providers[0]")
+                  ).decodeResponse(actual, native)
                 })
             }),
         }
         const run = () =>
           runRelease({ plan, authorize: true }).pipe(
-            Effect.provide(
-              Layer.succeed(Host, {
-                providers: f.providers,
-                store,
-                transport,
-                now: Date.now,
-                uniqueId: () => crypto.randomUUID(),
-              }),
-            ),
+            Effect.provideService(Host, {
+              providers: f.providers,
+              store,
+              transport,
+              now: Date.now,
+              uniqueId: () => crypto.randomUUID(),
+            }),
           )
-        expect((yield* run()).operations[0]!.status).toBe("Rejected")
+        expect(
+          ((yield* run()).operations[0] ?? fail("Missing fixture (yield* run()).operations[0]"))
+            .status,
+        ).toBe("Rejected")
         if (finish) {
           expect(yield* session.complete(f.operation)).toBe(true)
-          expect((yield* run()).operations[0]!.status).toBe("Satisfied")
+          expect(
+            ((yield* run()).operations[0] ?? fail("Missing fixture (yield* run()).operations[0]"))
+              .status,
+          ).toBe("Satisfied")
         }
       }),
     )
@@ -403,8 +446,10 @@ test("browser completion refuses redirects, errors, malformed tokens and unbound
     )
     expect(polls).toBe(1)
   }
-  let canceled = false
-  await Effect.runPromise(
+  let canceled = false,
+    finishing = false
+  let cleanupDefect: TypeError | undefined
+  const root = Effect.runFork(
     Effect.scoped(
       Effect.gen(function* () {
         const session = yield* makeLocalAuthenticationWith(
@@ -421,16 +466,44 @@ test("browser completion refuses redirects, errors, malformed tokens and unbound
                 Effect.ensuring(
                   Effect.sync(() => {
                     canceled = true
-                  }),
+                  }).pipe(
+                    Effect.andThen(
+                      Effect.suspend(() =>
+                        cleanupDefect ? Effect.die(cleanupDefect) : Effect.void,
+                      ),
+                    ),
+                  ),
                 ),
               ),
           },
         )
         session.capture(f.request, challenge())
-        expect((yield* Effect.exit(session.complete(f.operation)))._tag).toBe("Failure")
+        const completion = yield* Effect.forkChild(Effect.exit(session.complete(f.operation)))
+        yield* TestClock.adjust(20)
+        expect((yield* Fiber.join(completion))._tag).toBe("Failure")
+        expect(yield* session.complete(f.operation)).toBe(false)
+        // Deadline settlement must preserve a real cleanup defect, not replace
+        // it with the ordinary authentication-timeout refusal.
+        cleanupDefect = new TypeError("Authentication read cleanup failed")
+        session.capture(f.request, challenge())
+        const failingCleanup = yield* Effect.forkChild(Effect.exit(session.complete(f.operation)))
+        yield* TestClock.adjust(20)
+        const cleanupExit = yield* Fiber.join(failingCleanup)
+        expect(Exit.isFailure(cleanupExit)).toBe(true)
+        if (!Exit.isFailure(cleanupExit)) throw new Error("Expected cleanup defect")
+        const found = Cause.findDefect(cleanupExit.cause)
+        expect(Result.isSuccess(found) && found.success).toBe(cleanupDefect)
+        expect(Cause.hasFails(cleanupExit.cause)).toBe(false)
         expect(yield* session.complete(f.operation)).toBe(false)
       }),
-    ),
+    ).pipe(Effect.provide(TestClock.layer())),
   )
+  onTestFinished(async () => {
+    finishing = true
+    await Effect.runPromise(Fiber.interrupt(root))
+  })
+  const exit = await Effect.runPromise(Fiber.await(root))
+  if (finishing) return
+  await Effect.runPromise(exit)
   expect(canceled).toBe(true)
 })

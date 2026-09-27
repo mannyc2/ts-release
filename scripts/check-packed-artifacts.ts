@@ -1,3 +1,6 @@
+import { Schema } from "effect"
+import nodeTypes from "../node_modules/@types/node/package.json" with { type: "json" }
+import upstream from "../test/fixtures/producer-upstream/registry.json" with { type: "json" }
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import { cp, lstat, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises"
@@ -6,14 +9,12 @@ import { delimiter, dirname, join, resolve } from "node:path"
 const root = resolve(import.meta.dir, "..")
 const work = await mkdtemp("/tmp/ts-release-packed-artifacts-")
 const node = process.env.TS_RELEASE_ACCEPTANCE_NODE ?? process.env.TS_RELEASE_HTTP_PEER_NODE
-assert(node?.startsWith("/"), "Choose an absolute supported native Node executable")
+assert(node && node.startsWith("/"), "Choose an absolute supported native Node executable")
 assert(process.env.TS_RELEASE_ALPINE_DEPENDENCIES, "Choose retained Alpine dependency archives")
-const nodeExecutable = node as string
+const nodeExecutable = node
 // Keep native declaration fixtures on the same Node types as the frozen workspace;
 // bun-types accepts any @types/node version and an older transitive copy conflicts.
-const nodeTypesVersion = (
-  await Bun.file(join(root, "node_modules/@types/node/package.json")).json()
-).version
+const nodeTypesVersion = nodeTypes.version
 const commands: unknown[] = [],
   outcomes: unknown[] = []
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex")
@@ -61,9 +62,6 @@ for await (const path of new Bun.Glob("**/*").scan({
   })
 sourceBindings.sort((a, b) => a.path.localeCompare(b.path))
 const upstreamRoot = join(root, "test/fixtures/producer-upstream")
-const upstream = JSON.parse(await readFile(join(upstreamRoot, "registry.json"), "utf8")) as {
-  packages: { name: string; version: string; sha256: string; retainedTarball: string }[]
-}
 const upstreamDependencies: Record<string, string> = {}
 for (const row of upstream.packages) {
   const archive = join(upstreamRoot, row.retainedTarball)
@@ -155,19 +153,28 @@ for (const manager of ["bun", "npm"]) {
     const executableOutput = await run(cwd, [runtime, "executables.mjs"], {
       TS_RELEASE_PRODUCER_BUN: process.execPath,
     })
-    const executable = JSON.parse(executableOutput.trim().split("\n").at(-1)!) as { work: string }
+    const executableLine = executableOutput.trim().split("\n").at(-1)
+    assert.ok(executableLine, "Executable acceptance emitted no result")
+    const executable = Schema.decodeSync(
+      Schema.fromJsonString(
+        Schema.StructWithRest(Schema.Struct({ work: Schema.String }), [
+          Schema.Record(Schema.String, Schema.Unknown),
+        ]),
+      ),
+    )(executableLine)
     const evidence: Record<string, unknown> = { executables: executable }
-    for (const name of ["archives", "python", "packages", "sbom"])
-      evidence[name] = JSON.parse(
-        (
-          await run(cwd, [runtime, name + ".mjs"], {
-            TS_RELEASE_EXECUTABLE_WITNESS: executable.work,
-          })
-        )
-          .trim()
-          .split("\n")
-          .at(-1)!,
+    for (const name of ["archives", "python", "packages", "sbom"]) {
+      const resultLine = (
+        await run(cwd, [runtime, name + ".mjs"], {
+          TS_RELEASE_EXECUTABLE_WITNESS: executable.work,
+        })
       )
+        .trim()
+        .split("\n")
+        .at(-1)
+      assert.ok(resultLine, `${name} acceptance emitted no result`)
+      evidence[name] = JSON.parse(resultLine)
+    }
     outcomes.push({ manager, runtime, evidence })
     await writeFile(join(work, "outcomes.json"), JSON.stringify(outcomes, null, 2) + "\n")
   }

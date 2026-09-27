@@ -1,3 +1,5 @@
+import { Schema } from "effect"
+import { FinalizedReport } from "@mannyc1/ts-release/node"
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import { cp, lstat, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises"
@@ -12,7 +14,8 @@ const work = await mkdtemp(join(tmpdir(), "ts-release-packed-action-"))
 const node =
   process.env.TS_RELEASE_ACCEPTANCE_NODE ??
   process.env.TS_RELEASE_HTTP_PEER_NODE ??
-  Bun.which("node")!
+  Bun.which("node")
+assert.ok(node, "native Node is required")
 const git = Bun.which("git")
 assert.ok(git, "native Git is required")
 const path = `${dirname(node)}${delimiter}${process.env.PATH}`
@@ -112,7 +115,7 @@ for (const manager of ["bun", "npm"] as const) {
       },
     })
     assert.equal(result.stderr, "")
-    const report = JSON.parse(result.stdout)
+    const report = Schema.decodeSync(Schema.fromJsonString(FinalizedReport))(result.stdout)
     assert.deepEqual(
       report.operations.map((entry: { readonly status: string }) => entry.status),
       ["Satisfied"],

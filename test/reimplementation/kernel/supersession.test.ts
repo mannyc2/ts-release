@@ -17,7 +17,7 @@ for (const candidate of evaluatorNames) {
         supersededPlans: [{ plan: f.plan, providers: f.host.providers }],
       },
     }
-    await expect(runWithHost(host, runRelease({ plan: next, authorize: true }))).rejects.toThrow(
+    expect(runWithHost(host, runRelease({ plan: next, authorize: true }))).rejects.toThrow(
       "superseded without any dispatch",
     )
     expect(f.sends).toHaveLength(0)
@@ -41,10 +41,8 @@ for (const candidate of evaluatorNames) {
       [next.planId, "DispatchStarted"],
       [next.planId, "ReceiptAccepted"],
     ])
-    await expect(runWithHost(f.host, reportRelease({ plan: next }))).rejects.toThrow(
-      "unknown scope",
-    )
-    await expect(runWithHost(host, runRelease({ plan: f.plan, authorize: true }))).rejects.toThrow(
+    expect(runWithHost(f.host, reportRelease({ plan: next }))).rejects.toThrow("unknown scope")
+    expect(runWithHost(host, runRelease({ plan: f.plan, authorize: true }))).rejects.toThrow(
       "not admitted",
     )
   })
@@ -72,7 +70,7 @@ for (const candidate of evaluatorNames) {
       },
     }
     const before = await Effect.runPromise(f.store.read(next.journalId))
-    await expect(runWithHost(host, runRelease({ plan: next, authorize: true }))).rejects.toThrow(
+    expect(runWithHost(host, runRelease({ plan: next, authorize: true }))).rejects.toThrow(
       "superseded without any dispatch",
     )
     expect(await Effect.runPromise(f.store.read(next.journalId))).toEqual(before)

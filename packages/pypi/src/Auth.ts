@@ -3,7 +3,7 @@ import * as Redacted from "effect/Redacted"
 import * as Http from "@mannyc1/ts-release/http"
 import { Endpoint, TokenAuthorization, TrustedAuthorization } from "./Model.js"
 import type { PyPi, TestPyPi } from "./Model.js"
-import { attempt, invalid, own, readScope, encode, object } from "./Native.js"
+import { attempt, invalid, own, readScope, encode, object, parseJson } from "./Native.js"
 
 const token = (value: Redacted.Redacted<string>) =>
   Http.credentialToken(value, () => invalid("credential-token"))
@@ -65,8 +65,8 @@ export const authorizeTrusted = Effect.fn("pypi.authorizeTrusted")(function* (
   })
   return yield* attempt(() => {
     if (response.status !== 200 || response.body.length > 128 * 1024) invalid("oidc-response")
-    const data = object(Http.decodeJson(response.body))
-    if (typeof data.token !== "string") invalid("oidc-token")
-    return basic("__token__", Redacted.make(data.token as string))
+    const data = object(parseJson(response.body))
+    if (typeof data.token !== "string") return invalid("oidc-token")
+    return basic("__token__", Redacted.make(data.token))
   })
 })

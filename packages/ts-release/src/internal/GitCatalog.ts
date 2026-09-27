@@ -7,6 +7,7 @@ import { canonical, decodeOwned, sha256 } from "./Identity.js"
 import { GitCas, type Operation } from "./ReleaseModel.js"
 import { GitReceipt, pushWitness, validRef } from "./GitAuthority.js"
 import { PROVIDER_CONTRACT, makeRequest, type ProviderDefinition } from "../Provider.js"
+import type { Transport } from "../Provider.js"
 import { createOperation } from "../Plan.js"
 import { publicUrl } from "../Http.js"
 
@@ -45,6 +46,15 @@ export class Intent extends Schema.Class<Intent>("GitCatalogIntent")({
   files: Schema.Array(FileEdit),
 }) {}
 export type RefCoordinate = Pick<Intent, "remote" | "ref" | "principal" | "scope">
+/** Constructed Git capabilities; native process ownership stays in the adapter. */
+export interface GitCatalogHost {
+  readonly objects: ObjectBuilder
+  readonly captureBase: (
+    input: RefCoordinate & { readonly expectedOld: string },
+  ) => Effect.Effect<Uint8Array, ReleaseError>
+  readonly observeRef: ObserveRef
+  readonly transport: (intents: readonly [Intent, ...Intent[]], otherwise?: Transport) => Transport
+}
 export type Credentials =
   | { readonly _tag: "Anonymous" }
   | { readonly _tag: "Bearer"; readonly token: Redacted.Redacted<string> }
@@ -96,6 +106,7 @@ export const validateFiles = (files: readonly FileEdit[]): void => {
       !file.path ||
       file.path.length > 4096 ||
       file.path !== file.path.normalize("NFC") ||
+      // oxlint-disable-next-line no-control-regex -- Git paths must reject control bytes and backslashes before invoking Git.
       /[\\\u0000-\u001f\u007f]/u.test(file.path) ||
       file.path
         .split("/")

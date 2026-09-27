@@ -1,3 +1,4 @@
+import assert from "node:assert/strict"
 import { randomUUID } from "node:crypto"
 import { chmod, cp, mkdir, readFile, writeFile } from "node:fs/promises"
 import { join } from "node:path"
@@ -74,9 +75,9 @@ export const makeSources = async (
       )
     }
   }
-  const collection = await run(
-    createApplePreparations(inputs as [ApplePreparationInput, ...ApplePreparationInput[]]),
-  )
+  const [first, ...remaining] = inputs
+  assert.ok(first, "Apple fixtures require a source")
+  const collection = await run(createApplePreparations([first, ...remaining]))
   return { owner, inputs, collection }
 }
 
@@ -85,7 +86,7 @@ export const appleDoubles = (lookupProducer: Artifact.Producer = producedBy) => 
   const calls = { submit: 0, info: 0, staple: 0, assess: 0 }
   let status: Apple.Notary.Status = { _tag: "Pending", providerStatus: "In Progress" }
   const tools: AppleToolsShape = {
-    submit: (artifact) =>
+    submit: () =>
       Effect.sync(() => {
         calls.submit++
         return randomUUID()

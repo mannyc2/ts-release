@@ -57,7 +57,7 @@ export const render = Effect.fn("Homebrew.render")((input: Formula, bundle: Bund
       "  end",
       "",
       "  test do",
-      `    assert_predicate bin/${ruby(value.executable.split("/").at(-1)!)}, :executable?`,
+      `    assert_predicate bin/${ruby(value.executable.split("/").at(-1) ?? "")}, :executable?`,
       "  end",
       "end",
       "",

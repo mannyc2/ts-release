@@ -3,10 +3,11 @@ import { createHash } from "node:crypto"
 import { execFileSync } from "node:child_process"
 import { realpathSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { Content } from "../../../packages/ts-release/src/Bundle.js"
-import type { ReadContent } from "../../../packages/ts-release/src/internal/Content.js"
+import { Content, type ReadContent } from "@mannyc1/ts-release/bundle"
 
-export const nativeGit = realpathSync(Bun.which("git")!)
+const selectedGit = Bun.which("git")
+if (selectedGit === null) throw new Error("Native Git fixtures require git")
+export const nativeGit = realpathSync(selectedGit)
 export const processOptions = {
   gitExecutable: nativeGit,
   temporaryRoot: tmpdir(),
@@ -76,6 +77,10 @@ export const contentFixture = () => {
     return content
   }
   const read: ReadContent = (content) =>
-    Effect.sync(() => new Uint8Array(stored.get(content.sha256)!))
+    Effect.sync(() => {
+      const bytes = stored.get(content.sha256)
+      if (bytes === undefined) throw new Error("Fixture content was not stored")
+      return new Uint8Array(bytes)
+    })
   return { stored, put, read }
 }

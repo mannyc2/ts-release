@@ -1,3 +1,4 @@
+import assert from "node:assert/strict"
 import { expect, test } from "bun:test"
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
@@ -7,7 +8,7 @@ import { Effect, Schema } from "effect"
 import { Plan } from "@mannyc1/ts-release"
 import { FinalizedReport, openGitJournal } from "@mannyc1/ts-release/node"
 import { prepareRelease } from "../../../apps/self-release/src/prepare.js"
-import { npmBrowserChallenge, startNativeReleasePeer } from "./native-peer.js"
+import { NpmPublication, npmBrowserChallenge, startNativeReleasePeer } from "./native-peer.js"
 
 const root = resolve(import.meta.dir, "../../..")
 const node =
@@ -79,8 +80,10 @@ test("native CLI completes journaled npm browser authentication and resumes with
     const plan = Schema.decodeUnknownSync(Plan)(JSON.parse(planBytes))
     const publication = plan.operations.find(
       (operation) => operation.definitionId === "npm.publish",
-    )!
-    const gitExecutable = Bun.which("git")!
+    )
+    assert.ok(publication)
+    const gitExecutable = Bun.which("git")
+    assert.ok(gitExecutable)
     const journal = join(work, "journal.git")
     const initialized = await run(
       [gitExecutable, "init", "--bare", "--quiet", journal],
@@ -122,7 +125,7 @@ test("native CLI completes journaled npm browser authentication and resumes with
             (event) => event.body._tag === "DispatchRejectedBeforeCommit",
           )
           expect(rejected).toHaveLength(1)
-          expect(rejected[0]!.body).toMatchObject({
+          expect(rejected[0]?.body).toMatchObject({
             proofVersion: "npm-authentication-rejection/1",
             proof: { status: 401, challenge: "otp" },
           })
@@ -133,11 +136,12 @@ test("native CLI completes journaled npm browser authentication and resumes with
           )
           expect(starts).toHaveLength(phase === "poll" ? 1 : 2)
           if (phase === "publish")
-            expect(starts[1]!.body).toMatchObject({ basis: { _tag: "NonCommit" } })
+            expect(starts[1]?.body).toMatchObject({ basis: { _tag: "NonCommit" } })
           phases.push(phase)
         },
       },
     })
+    const peerEnvironment = peer.environment
     let invocation = 0
     const invoke = async (observe = false) => {
       const inputFile = join(work, `input-${++invocation}.json`)
@@ -163,7 +167,7 @@ test("native CLI completes journaled npm browser authentication and resumes with
           inputFile,
         ],
         work,
-        { ...environment, ...peer!.environment, FIXTURE_GITHUB_TOKEN: githubToken },
+        { ...environment, ...peerEnvironment, FIXTURE_GITHUB_TOKEN: githubToken },
       )
     }
     const before = await invoke(true)
@@ -190,10 +194,14 @@ test("native CLI completes journaled npm browser authentication and resumes with
       (request) => request.host === "registry.npmjs.org" && request.method === "PUT",
     )
     expect(puts.map((request) => request.status)).toEqual([401, 200])
-    expect(puts[0]!.body).toEqual(puts[1]!.body)
-    const attachment = Object.values(
-      JSON.parse(new TextDecoder().decode(puts[1]!.body))._attachments,
-    )[0] as { data: string }
+    const [initial, authenticated] = puts
+    assert.ok(initial && authenticated)
+    expect(initial.body).toEqual(authenticated.body)
+    const publicationBody = Schema.decodeSync(Schema.fromJsonString(NpmPublication))(
+      new TextDecoder().decode(authenticated.body),
+    )
+    const attachment = Object.values(publicationBody._attachments)[0]
+    assert.ok(attachment)
     expect(Buffer.from(attachment.data, "base64")).toEqual(await readFile(archiveFile))
     expect(
       peer.requests.every(

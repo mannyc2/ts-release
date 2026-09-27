@@ -1,3 +1,4 @@
+import { fail } from "node:assert"
 import assert from "node:assert/strict"
 import { mkdtemp, cp, readdir, readFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
@@ -19,7 +20,11 @@ export const buildFixtures = async () => {
     assert.equal(code, 0, out + err)
   }
   await run(["-m", "build", "--no-isolation", "--outdir", "dist", "project"])
-  const wheel = (await readdir(join(work, "dist"))).find((name) => name.endsWith(".whl"))!
+  const wheel =
+    (await readdir(join(work, "dist"))).find((name) => name.endsWith(".whl")) ??
+    fail(
+      'Missing fixture (await readdir(join(work, "dist"))).find((name) => name.endsWith(".whl"))',
+    )
   for (const platform of ["manylinux_2_17_x86_64", "macosx_11_0_arm64"])
     await run([
       "-m",

@@ -1,4 +1,5 @@
-import { expect, test } from "bun:test"
+import { expect, onTestFinished, test } from "bun:test"
+import { Schema } from "effect"
 import { mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
@@ -6,6 +7,16 @@ import { join, resolve } from "node:path"
 const cli = resolve(import.meta.dir, "../../../packages/ts-release/dist/bin/ts-release.js")
 const application = join(import.meta.dir, "cli-fixture.mjs")
 const node = process.env.TS_RELEASE_HTTP_PEER_NODE ?? "node"
+const decodeReport = Schema.decodeUnknownSync(
+  Schema.fromJsonString(
+    Schema.Struct({
+      format: Schema.String,
+      journal: Schema.Unknown,
+      plan: Schema.Struct({ journalId: Schema.String }),
+      operations: Schema.Array(Schema.Struct({ status: Schema.String })),
+    }),
+  ),
+)
 for (const runtime of [node, process.execPath]) {
   test(`built shared CLI input, report, redaction and exit status: ${runtime}`, async () => {
     const work = await mkdtemp(join(tmpdir(), "ts-release-cli-"))
@@ -31,7 +42,7 @@ for (const runtime of [node, process.execPath]) {
       expect(result.exit).toBe(unresolved ? 2 : 0)
       if (unresolved) expect(result.stderr).toContain("ts-release --observe")
       else expect(result.stderr).toBe("")
-      const report = JSON.parse(result.stdout)
+      const report = decodeReport(result.stdout)
       expect(report.format).toBe("ts-release/report/1")
       expect(report.journal).toEqual({
         journalId: report.plan.journalId,
@@ -46,8 +57,8 @@ for (const runtime of [node, process.execPath]) {
     for (const [body, named] of [
       ["{invalid-fixture-private-json", "SyntaxError"],
       ['{"failure":true}', "Error"],
-    ]) {
-      await writeFile(input, body!)
+    ] as const) {
+      await writeFile(input, body)
       const failed = await run([application, input])
       expect(failed.exit).toBe(1)
       expect(failed.stdout).toBe("")
@@ -75,7 +86,7 @@ for (const runtime of [node, process.execPath]) {
     await writeFile(input, '{"log":true}')
     const logged = await run([application, input])
     expect(logged.exit).toBe(0)
-    expect(JSON.parse(logged.stdout).format).toBe("ts-release/report/1")
+    expect(decodeReport(logged.stdout).format).toBe("ts-release/report/1")
     expect(logged.stderr).toContain("fixture-application-log")
   }, 30_000)
 
@@ -114,15 +125,28 @@ for (const runtime of [node, process.execPath]) {
     }, 10_000)
   }
   test(`shared CLI native pipe cancellation and closed output: ${runtime}`, async () => {
-    const child = Bun.spawn(
+    let child: ReturnType<typeof Bun.spawn> | undefined
+    let drained: Promise<[number, string, string]> | undefined
+    let finishing = false
+    onTestFinished(async () => {
+      finishing = true
+      // Python forwards cancellation to its active CLI and joins it before
+      // exiting; killing only Python would leave its native child behind.
+      if (child?.exitCode === null) child.kill("SIGTERM")
+      await drained
+    })
+    const spawned = Bun.spawn(
       ["python3", join(import.meta.dir, "cli-pipes.py"), runtime, cli, application],
       { stdout: "pipe", stderr: "pipe" },
     )
-    const [exit, stdout, stderr] = await Promise.all([
-      child.exited,
-      new Response(child.stdout).text(),
-      new Response(child.stderr).text(),
+    child = spawned
+    drained = Promise.all([
+      spawned.exited,
+      new Response(spawned.stdout).text(),
+      new Response(spawned.stderr).text(),
     ])
+    const [exit, stdout, stderr] = await drained
+    if (finishing) return
     expect({ exit, stderr }).toEqual({ exit: 0, stderr: "" })
     expect(JSON.parse(stdout)).toEqual({ cases: 3, assertions: 13 })
   }, 15_000)

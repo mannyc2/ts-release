@@ -1,4 +1,5 @@
 import * as Effect from "effect/Effect"
+import * as Cause from "effect/Cause"
 import { validateHeaderName, validateHeaderValue } from "node:http"
 import type { Client, buildConnector } from "undici"
 import type { Socket } from "node:net"
@@ -8,16 +9,23 @@ import type { Socket } from "node:net"
 import NativeClient from "undici/lib/dispatcher/client.js"
 // @ts-expect-error Same exact-version adapter for Undici's native TCP/TLS connector.
 import nativeConnector from "undici/lib/core/connect.js"
+// oxlint-disable-next-line typescript/no-unsafe-assignment -- Pinned Undici 8.10.1 native entry implements its public Client ABI; native transport acceptance covers this bridge.
 const ClientConstructor: typeof Client = NativeClient
 // connect.js returns the pending socket before secureConnect; the public type
 // discards that return. Own it so interruption can close an unfinished handshake.
+// oxlint-disable-next-line typescript/no-unsafe-assignment -- Pinned Undici 8.10.1 connector returns the owned pending socket; real TLS cancellation checks cover this adapter contract.
 const connect: (
   options: Parameters<typeof buildConnector>[0],
 ) => (options: buildConnector.Options, callback: buildConnector.Callback) => Socket =
   nativeConnector
-import { canonical } from "../internal/Identity.js"
-import { ReleaseError, attempt, fail, reject } from "../internal/Error.js"
-import { verifyProviderContracts, verifyRequest, type Transport } from "../Provider.js"
+import { canonical, copyBytes } from "../internal/Identity.js"
+import { ReleaseError, attempt, fail, failure, reject } from "../internal/Error.js"
+import {
+  verifyProviderContracts,
+  verifyRequest,
+  type PreparedRequest,
+  type Transport,
+} from "../Provider.js"
 import { publicUrl } from "../Http.js"
 import type { CredentialExchange, Headers, HttpExchangeOptions } from "../Http.js"
 import type { HttpRead, HttpReadOptions, HttpResponse, HttpTransportOptions } from "../Http.js"
@@ -41,13 +49,18 @@ const limits = (input: HttpExchangeOptions) => {
   return { timeoutMilliseconds, maximumResponseBytes, maximumWireResponseBytes }
 }
 const headers = (pairs: Headers): Record<string, string> => {
-  const output: Record<string, string> = Object.create(null)
+  const output: Record<string, string> = {}
+  Object.setPrototypeOf(output, null)
   for (const [name, value] of pairs) {
-    validateHeaderName(name)
-    validateHeaderValue(name, value)
+    if (typeof value !== "string") invalid("headers")
+    try {
+      validateHeaderName(name)
+      validateHeaderValue(name, value)
+    } catch {
+      fail("invalid-data", "Value could not be admitted")
+    }
     const key = name.toLowerCase()
     if (
-      typeof value !== "string" ||
       key in output ||
       /^(host|content-length|transfer-encoding|connection|upgrade|expect|trailer|te|proxy-authorization)$/u.test(
         key,
@@ -79,10 +92,22 @@ const authorize = Effect.fn("http.authorize")(function* (
       }),
     ),
   ).pipe(
-    Effect.catchCause(() => reject("http-credentials", "HTTP credentials could not be acquired")),
+    Effect.catchCause((cause) =>
+      // Credential failures and defects can contain secrets. Preserve cancellation
+      // without retaining the secret-bearing remainder of a mixed Cause.
+      Cause.hasInterrupts(cause)
+        ? Effect.interrupt
+        : reject("http-credentials", "HTTP credentials could not be acquired"),
+    ),
   )
+  // Returned credential objects can run getters during enumeration. Their
+  // failures may themselves be typed errors containing secret text.
+  const entries = yield* Effect.try({
+    try: () => Object.entries(secret),
+    catch: () => failure("invalid-data", "Value could not be admitted"),
+  })
   return yield* attempt(() => {
-    const live = headers(Object.entries(secret))
+    const live = headers(entries)
     if (Object.keys(live).length && url.protocol !== "https:") invalid("credential-tls")
     for (const name of Object.keys(live)) if (name in durable) invalid("credential-collision")
     return Object.freeze({ ...durable, ...live })
@@ -100,41 +125,55 @@ const nativeRequest = (options: Required<HttpExchangeOptions>) =>
     fields: Readonly<Record<string, string>>,
     body: Uint8Array,
   ) {
+    let client: Client | undefined,
+      finished = false,
+      status = 0,
+      length = 0
+    let wireBytes = 0
+    let connection: Socket | undefined,
+      socketClosed = Promise.resolve()
+    const connector = connect({
+      rejectUnauthorized: true,
+      timeout: options.timeoutMilliseconds,
+      allowH2: false,
+    })
+    const chunks: Buffer[] = [],
+      responseHeaders: Record<string, string> = {}
+    Object.setPrototypeOf(responseHeaders, null)
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const cleanup = Effect.gen(function* () {
+      finished = true
+      clearTimeout(timer)
+      // Schedule both shutdowns before either can throw, then join every issued
+      // operation and the pending socket's close signal. Native failures remain
+      // private; onExit combines this fixed failure with any response failure.
+      const settled = yield* Effect.promise(() =>
+        Promise.allSettled([
+          Promise.resolve().then(() =>
+            connection?.destroy(new Error("Native HTTP request closed")),
+          ),
+          socketClosed,
+          Promise.resolve().then(() => client?.destroy()),
+        ]),
+      )
+      if (settled.some((result) => result.status === "rejected"))
+        return yield* reject("http-cleanup", "Native HTTP resources could not be released")
+    })
     return yield* Effect.callback<HttpResponse, ReleaseError>((resume) => {
-      let client: Client | undefined,
-        finished = false,
-        status = 0,
-        length = 0
-      let wireBytes = 0
-      let connection: Socket | undefined,
-        socketClosed = Promise.resolve()
-      const connector = connect({
-        rejectUnauthorized: true,
-        timeout: options.timeoutMilliseconds,
-        allowH2: false,
-      })
-      const chunks: Buffer[] = [],
-        responseHeaders: Record<string, string> = Object.create(null)
-      const cleanup = async (): Promise<void> => {
-        finished = true
-        clearTimeout(timer)
-        // Client cannot own the connection until secureConnect completes. Also
-        // close the pending socket, emitting a fixed error to clear its timer.
-        connection?.destroy(new Error("Native HTTP request closed"))
-        await Promise.all([socketClosed, client?.destroy().catch(() => {})])
-      }
       const complete = (result: Effect.Effect<HttpResponse, ReleaseError>) => {
         if (finished) return
-        const closed = cleanup()
-        resume(Effect.promise(() => closed).pipe(Effect.andThen(result)))
+        finished = true
+        resume(result)
       }
       const failed = () =>
         complete(reject("http-outcome-unknown", "Native HTTP response was not completely observed"))
-      const timer = setTimeout(failed, options.timeoutMilliseconds)
+      // Native I/O deadline includes DNS/TLS/header/body callbacks; cleanup joins the socket close.
+      // @effect-diagnostics-next-line globalTimersInEffect:off
+      timer = setTimeout(failed, options.timeoutMilliseconds)
       try {
         client = new ClientConstructor(url.origin, {
           connect: (settings, callback) => {
-            connection = connector(settings, (error, socket) => {
+            const pending = connector(settings, (error, socket) => {
               if (error || !socket) {
                 callback(error, socket)
                 return
@@ -154,9 +193,8 @@ const nativeRequest = (options: Required<HttpExchangeOptions>) =>
               socket.once("close", () => socket.off("data", count))
               callback(null, socket)
             })
-            socketClosed = new Promise<void>((resolve) =>
-              connection!.once("close", () => resolve()),
-            )
+            connection = pending
+            socketClosed = new Promise<void>((resolve) => pending.once("close", () => resolve()))
           },
           pipelining: 0,
           allowH2: false,
@@ -194,8 +232,12 @@ const nativeRequest = (options: Required<HttpExchangeOptions>) =>
                 return
               }
               for (let index = 0; index < raw.length; index += 2) {
-                const field = raw[index]!,
-                  bytes = raw[index + 1]!
+                const field = raw[index],
+                  bytes = raw[index + 1]
+                if (field === undefined || bytes === undefined) {
+                  failed()
+                  return
+                }
                 const name = (
                     typeof field === "string" ? field : field.toString("latin1")
                   ).toLowerCase(),
@@ -242,8 +284,7 @@ const nativeRequest = (options: Required<HttpExchangeOptions>) =>
       } catch {
         failed()
       }
-      return Effect.promise(cleanup)
-    })
+    }).pipe(Effect.onExit(() => cleanup))
   })
 
 /** Capture definition methods once; each owner sees its own bytes. Resolving
@@ -256,7 +297,7 @@ export const makeHttpTransport = (options: HttpTransportOptions): Transport => {
     ownsRequest: provider.ownsRequest.bind(provider),
     decodeResponse: provider.decodeResponse.bind(provider),
   }))
-  const prepare: NonNullable<Transport["prepare"]> = Effect.fn("http.prepare")(function* (input) {
+  const admit = Effect.fnUntraced(function* (input: PreparedRequest) {
     const request = yield* verifyRequest(input)
     const { url, durable, key } = yield* attempt(() => {
       if (
@@ -278,7 +319,13 @@ export const makeHttpTransport = (options: HttpTransportOptions): Transport => {
       const copy = yield* verifyRequest(request)
       if (yield* attempt(() => provider.ownsRequest(copy) === true)) owners.push(provider)
     }
-    if (owners.length !== 1) return yield* attempt(() => invalid("request-owner"))
+    const [owner] = owners
+    if (owners.length !== 1 || owner === undefined)
+      return yield* attempt(() => invalid("request-owner"))
+    return { request, url, durable, key, owner }
+  })
+  const prepare: NonNullable<Transport["prepare"]> = Effect.fn("http.prepare")(function* (input) {
+    const { request, url, durable, key, owner } = yield* admit(input)
     const fields = yield* authorize(
       resolve,
       url,
@@ -288,17 +335,20 @@ export const makeHttpTransport = (options: HttpTransportOptions): Transport => {
       request.facts.method,
       request.facts.bodyDigest,
     )
-    return Effect.fn("http.sendPrepared")(function* (actual) {
+    return Effect.fn("http.sendPrepared")(function* (actual: PreparedRequest) {
       const verified = yield* verifyRequest(actual)
       if (canonical(verified.facts) !== key)
         return yield* attempt(() => invalid("prepared-binding"))
       const response = yield* native(url, request.facts.method, fields, request.body)
-      return yield* owners[0]!.decodeResponse(request, response)
+      return yield* owner.decodeResponse(request, response)
     })
   })
   return Object.freeze({
+    validate: Effect.fn("http.validate")(function* (request: PreparedRequest) {
+      yield* admit(request)
+    }),
     prepare,
-    send: Effect.fn("http.send")(function* (request) {
+    send: Effect.fn("http.send")(function* (request: PreparedRequest) {
       return yield* (yield* prepare(request))(request)
     }),
   })
@@ -342,13 +392,24 @@ export const makeHttpRead = (options: HttpReadOptions): HttpRead => {
 export const makeCredentialExchange = (options: HttpExchangeOptions): CredentialExchange => {
   const native = nativeRequest(limits(options))
   return Effect.fn("http.exchange")(function* (input) {
+    // Capture live secret values before safe policy admission; do not preserve
+    // errors thrown by input getters or native byte-copy hooks.
+    const captured = yield* Effect.try({
+      try: () => ({
+        url: input.url,
+        fields: Object.entries(input.headers),
+        body: copyBytes(input.body),
+      }),
+      catch: () => failure("invalid-data", "Value could not be admitted"),
+    })
     const selected = yield* attempt(() => {
-      const url = endpoint(input.url)
+      if (typeof captured.url !== "string") invalid("endpoint")
+      const url = endpoint(captured.url)
       if (url.protocol !== "https:") invalid("credential-tls")
       return {
         url,
-        fields: headers(Object.entries(input.headers)),
-        body: new Uint8Array(input.body),
+        fields: headers(captured.fields),
+        body: captured.body,
       }
     })
     return yield* native(selected.url, "POST", selected.fields, selected.body)

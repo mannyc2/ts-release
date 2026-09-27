@@ -5,8 +5,8 @@ import { verifiedArtifacts, type ArtifactAccess } from "@mannyc1/ts-release/bund
 import type { HttpProviderDefinition, HttpRead } from "@mannyc1/ts-release/http"
 import * as Model from "./Model.js"
 import { descriptors, intentOf, kindOf, validatePlan, type Intent } from "./Graph.js"
-import { bindScope, readScope } from "./Binding.js"
-import { attempt, invalid, matches, ownOperation, responseObject } from "./Native.js"
+import { bindScope, missingParents, readScope, type BoundScope } from "./Binding.js"
+import { attempt, invalid, matches, own, ownOperation, responseObject } from "./Native.js"
 import { nativeRequest, ownsRequest, requestCorresponds } from "./Wire.js"
 import { NativeFailure, Observation, Receipt, decodeFacts } from "./Evidence.js"
 import { classifyObservation, failureCorresponds, receiptCorresponds } from "./Evidence.js"
@@ -17,6 +17,12 @@ export const definitions = (
 ): readonly HttpProviderDefinition[] => {
   const artifacts = verifiedArtifacts(dependencies, 2 ** 31 - 1),
     reader = observations(dependencies.read.bind(dependencies))
+  const localRequest = Effect.fn("github.localRequest")(function* (scope: BoundScope) {
+    const intent = intentOf(scope.operation)
+    const bytes =
+      intent instanceof Model.AssetIntent ? yield* artifacts.read(intent.file) : undefined
+    return yield* makeRequest(yield* attempt(() => nativeRequest(scope, bytes)))
+  })
   return Object.values(descriptors).map((descriptor) => {
     const intentCodec = (descriptor.intentCodec as Schema.Codec<Intent, unknown>).check(
       Schema.makeFilter(
@@ -41,14 +47,25 @@ export const definitions = (
         context: ProviderContext,
       ) {
         const scope = yield* attempt(() => {
-            ownOperation(intentCodec, descriptor, operation)
-            return bindScope(operation, context)
-          }),
-          intent = intentOf(operation)
+          ownOperation(intentCodec, descriptor, operation)
+          return bindScope(operation, context)
+        })
         yield* reader.preflight(operation, context)
-        const bytes =
-          intent instanceof Model.AssetIntent ? yield* artifacts.read(intent.file) : undefined
-        return yield* makeRequest(yield* attempt(() => nativeRequest(scope, bytes)))
+        return yield* localRequest(scope)
+      }),
+      preflight: Effect.fn("github.preflight")(function* (
+        operation: Operation,
+        context: ProviderContext,
+      ) {
+        const intent = yield* attempt(() => ownOperation(intentCodec, descriptor, operation))
+        const dependencies = yield* attempt(() => missingParents(operation, context))
+        if (dependencies.length > 0) {
+          // Owned bytes are knowable now even when a future release ID is not.
+          if (intent instanceof Model.AssetIntent) yield* artifacts.read(intent.file)
+          return { _tag: "Deferred" as const, dependencies }
+        }
+        const scope = yield* attempt(() => bindScope(operation, context))
+        return { _tag: "Prepared" as const, request: yield* localRequest(scope) }
       }),
       requestCorresponds,
       ownsRequest: owns,
@@ -72,17 +89,20 @@ export const definitions = (
             status = kindOf(scope.operation) === "publish" ? 200 : 201
           let kind: NativeFailure["kind"] = "http-status"
           if (response.status === status) {
-            try {
-              const receipt = new Receipt({
+            let receipt: Receipt | undefined
+            const admitted = matches(() => {
+              const candidate = new Receipt({
                 request: request.facts,
                 status,
                 facts: decodeFacts(scope, responseObject(response)),
               })
-              if (receiptCorresponds(scope.operation, request.facts, receipt))
-                return { _tag: "Accepted" as const, receipt }
+              if (receiptCorresponds(scope.operation, request.facts, candidate)) receipt = candidate
+              return true
+            })
+            if (!admitted) kind = "malformed-native"
+            else {
+              if (receipt !== undefined) return { _tag: "Accepted" as const, receipt }
               kind = "different-native"
-            } catch {
-              kind = "malformed-native"
             }
           }
           return {
@@ -90,7 +110,7 @@ export const definitions = (
             reason: "GitHub did not acknowledge the exact native operation",
             nativeError: new NativeFailure({
               request: request.facts,
-              status: response.status,
+              status: own(NativeFailure.fields.status, response.status),
               kind,
             }),
           }

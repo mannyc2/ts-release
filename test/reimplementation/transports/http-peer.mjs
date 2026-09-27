@@ -1,12 +1,17 @@
 import { createServer } from "node:http"
 
 let writes = 0
-const server = createServer(async (request) => {
-  for await (const _ of request) {
-    /* consume the complete native request */
-  }
-  writes++
-  process.send({ event: "committed", writes })
+const server = createServer((request, response) => {
+  request.on("error", (error) => {
+    console.error(error)
+    process.exitCode = 1
+    response.destroy(error)
+  })
+  request.on("end", () => {
+    writes++
+    process.send({ event: "committed", writes })
+  })
+  request.resume() // Consume the complete request without retaining its body.
 })
 server.on("connection", (socket) => {
   socket.on("close", () => process.send({ event: "socket-closed", writes }))

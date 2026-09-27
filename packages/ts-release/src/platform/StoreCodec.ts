@@ -11,7 +11,13 @@ export const eventBytes = (event: JournalEvent): Uint8Array =>
 export const readEvent = (bytes: Uint8Array): JournalEvent => {
   if (bytes.byteLength > EVENT_BYTES)
     fail("event-too-large", "Event exceeds the journal byte limit")
-  return decode(parseCanonical(new TextDecoder("utf-8", { fatal: true }).decode(bytes)))
+  let text: string
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+  } catch {
+    return fail("invalid-data", "Value could not be admitted")
+  }
+  return decode(parseCanonical(text))
 }
 
 export const encodeEvent = (event: JournalEvent, journalId: string): Uint8Array => {

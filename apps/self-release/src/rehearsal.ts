@@ -5,7 +5,12 @@ import type * as Producer from "effect-build/Artifact"
 import { ReleaseError, createPlan, loadPlan, type Operation } from "@mannyc1/ts-release"
 import type { ProviderDefinition, Transport } from "@mannyc1/ts-release"
 import { Tree, encodeBundle, finalize, loadBundle } from "@mannyc1/ts-release/bundle"
-import { verifiedArtifacts, type Artifact, type ContentOwner } from "@mannyc1/ts-release/bundle"
+import {
+  verifiedArtifacts,
+  type Artifact,
+  type ContentOwner,
+  type Content,
+} from "@mannyc1/ts-release/bundle"
 import { adoptFile } from "@mannyc1/ts-release/effect-build"
 import { Intent as GitIntent, definition as gitDefinition } from "@mannyc1/ts-release/git"
 import { decodeJson, sameBytes, sameData, type HttpRead } from "@mannyc1/ts-release/http"
@@ -119,7 +124,7 @@ export const createApplication = Effect.fn("selfRelease.createApplication")(func
     try: () => decodeJson(planBytes),
     catch: () => failure("self-release-plan", "Self-release Plan is not exact JSON"),
   })
-  const readContent = Effect.fn("selfRelease.readContent")((content) =>
+  const readContent = Effect.fn("selfRelease.readContent")((content: Content) =>
     Effect.mapError(owner.read(content), () =>
       failure("self-release-content", "Owned self-release content could not be read"),
     ),
@@ -146,11 +151,15 @@ export const createApplication = Effect.fn("selfRelease.createApplication")(func
   if (source?._tag !== "OwnedFile")
     return yield* failure("self-release-source", "Source identity is not a Bundle member")
   const sourceBytes = yield* files.read(source)
-  const sourceIdentity = yield* Effect.try(() =>
-    Schema.decodeUnknownSync(SourceIdentity, { onExcessProperty: "error" })(
-      decodeJson(sourceBytes),
-    ),
-  ).pipe(Effect.mapError(() => failure("self-release-source", "Source identity is invalid")))
+  const sourceData = yield* Effect.try({
+    try: () => decodeJson(sourceBytes),
+    catch: () => failure("self-release-source", "Source identity is invalid"),
+  })
+  const sourceIdentity = yield* Schema.decodeUnknownEffect(SourceIdentity, {
+    onExcessProperty: "error",
+  })(sourceData).pipe(
+    Effect.mapError(() => failure("self-release-source", "Source identity is invalid")),
+  )
   if (
     sourceIdentity.repository !== "mannyc2/ts-release" ||
     sourceIdentity.commit !== input.sourceCommit ||
@@ -183,10 +192,12 @@ export const createApplication = Effect.fn("selfRelease.createApplication")(func
   )
     return yield* failure("self-release-pypi", "PyPI four-wheel cohort differs")
   const githubTags = intents(plan.operations, "github.lightweight-tag", GitHub.LightweightTag)
+  const githubTag = githubTags[0]
   if (
     githubTags.length !== 1 ||
-    githubTags[0]!.tag !== `v${input.version}` ||
-    githubTags[0]!.commit !== input.sourceCommit
+    !githubTag ||
+    githubTag.tag !== `v${input.version}` ||
+    githubTag.commit !== input.sourceCommit
   )
     return yield* failure("self-release-github", "GitHub tag differs from the source release")
   const marketplace = yield* OpenAi.marketplace(

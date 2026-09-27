@@ -1,7 +1,14 @@
 import { randomUUID } from "node:crypto"
 import { join, resolve } from "node:path"
 import { Config, Effect, Redacted, Schema } from "effect"
-import { Plan, loadPlan, type Operation, type JournalContext } from "@mannyc1/ts-release"
+import {
+  Host,
+  Plan,
+  loadPlan,
+  preflightRelease,
+  type Operation,
+  type JournalContext,
+} from "@mannyc1/ts-release"
 import { loadBundle, verifiedArtifacts, type ReadContent } from "@mannyc1/ts-release/bundle"
 import {
   decodeJson,
@@ -25,7 +32,9 @@ import {
   GITHUB_PRINCIPAL,
   NPM_PRINCIPAL,
   SourceIdentity,
+  admissionFailure,
   attempt,
+  decodeText,
   failure,
   read,
   releaseJournalId,
@@ -112,16 +121,16 @@ export const createApplication = Effect.fn("release.createApplication")(function
   const sourceBytes = yield* files.read(sourceFile)
   const source = yield* attempt("source", () =>
     Schema.decodeUnknownSync(SourceIdentity, { onExcessProperty: "error" })(
-      decodeJson(sourceBytes),
+      decodeJson(decodeText("source", sourceBytes)),
     ),
   )
   const notesBytes = yield* files.read(notesFile)
-  const notes = yield* attempt("notes", () =>
-    new TextDecoder("utf-8", { fatal: true }).decode(notesBytes),
-  )
+  const notes = yield* attempt("notes", () => decodeText("notes", notesBytes))
   const planBytes = yield* read(join(candidateDirectory, "plan.json"))
   const retained = yield* attempt("plan", () =>
-    Schema.decodeUnknownSync(Plan, { onExcessProperty: "error" })(decodeJson(planBytes)),
+    Schema.decodeUnknownSync(Plan, { onExcessProperty: "error" })(
+      decodeJson(decodeText("plan", planBytes)),
+    ),
   )
   if (retained.planId !== input.planId || retained.bundleId !== input.bundleSha256)
     return yield* failure(
@@ -141,25 +150,26 @@ export const createApplication = Effect.fn("release.createApplication")(function
           operation.intent,
         ),
       )
-    if (!npm.length || new Set(npm.map((intent) => intent.name)).size !== npm.length)
-      throw new Error("Expected unique npm publications")
+    const [first, ...remaining] = npm
+    if (!first || new Set(npm.map((intent) => intent.name)).size !== npm.length)
+      throw admissionFailure("publication-policy")
     for (const intent of npm) {
       if (intent.version !== source.version || intent.authorization.principal !== NPM_PRINCIPAL)
-        throw new Error("Package version or principal differs")
+        throw admissionFailure("publication-policy")
       if (
         (intent.authorization._tag === "TrustedAuthorization") !==
         (input.authentication.mode === "Trusted")
       )
-        throw new Error("Authentication mode differs from the retained Plan")
-      if (!sameData(intent.authorization, npm[0]!.authorization))
-        throw new Error("npm authorization differs across the cohort")
+        throw admissionFailure("publication-policy")
+      if (!sameData(intent.authorization, first.authorization))
+        throw admissionFailure("publication-policy")
       if (
         intent.provenance._tag === "GitHubActionsProvenance" &&
         (intent.provenance.source.sourceCommit !== source.commit ||
           intent.provenance.source.repository !==
             `${source.repository.owner}/${source.repository.name}`)
       )
-        throw new Error("Provenance differs from retained source")
+        throw admissionFailure("publication-policy")
     }
     const tags: GitHub.LightweightTag[] = []
     const drafts: GitHub.DraftIntent[] = []
@@ -180,19 +190,23 @@ export const createApplication = Effect.fn("release.createApplication")(function
         !sameData(intent.repository, source.repository) ||
         intent.principal !== GITHUB_PRINCIPAL
       )
-        throw new Error("Release operation is outside the selected repository or principal")
+        throw admissionFailure("publication-policy")
       if (intent instanceof GitHub.LightweightTag) tags.push(intent)
       if (intent instanceof GitHub.DraftIntent) drafts.push(intent)
     }
+    const tag = tags[0]
+    const draft = drafts[0]
     if (
       tags.length !== 1 ||
-      tags[0]!.tag !== `v${source.version}` ||
-      tags[0]!.commit !== source.commit ||
+      !tag ||
+      tag.tag !== `v${source.version}` ||
+      tag.commit !== source.commit ||
       drafts.length !== 1 ||
-      drafts[0]!.body !== notes
+      !draft ||
+      draft.body !== notes
     )
-      throw new Error("Release tag or notes differ from the owned source")
-    return npm
+      throw admissionFailure("publication-policy")
+    return [first, ...remaining] as const
   })
   const hasProvenance = publications.some(
     (intent) => intent.provenance._tag === "GitHubActionsProvenance",
@@ -210,7 +224,7 @@ export const createApplication = Effect.fn("release.createApplication")(function
     maximumResponseBytes: 16 * 1024 * 1024,
   }
   const trusted = makeGithubTrustedPublisherHost(bounds)
-  const authorization = publications[0]!.authorization
+  const authorization = publications[0].authorization
   const credentials: ResolveCredentials = Effect.fn("release.credentials")(function* (binding) {
     if (new URL(binding.endpoint).origin === "https://registry.npmjs.org")
       return yield* npmCredentials(binding, {
@@ -277,7 +291,12 @@ export const createApplication = Effect.fn("release.createApplication")(function
     supersededPlans.push({ plan: historical, providers: historicalProviders })
   }
   const remote = yield* attempt("journal-remote", () => {
-    const url = new URL(input.journal.remote)
+    let url: URL
+    try {
+      url = new URL(input.journal.remote)
+    } catch {
+      throw admissionFailure("journal-remote")
+    }
     if (
       url.protocol === "file:" &&
       !url.hostname &&
@@ -296,22 +315,9 @@ export const createApplication = Effect.fn("release.createApplication")(function
       url.hash ||
       ![path, `${path}.git`].includes(url.pathname)
     )
-      throw new Error("Journal must be a local file remote or the selected GitHub repository")
+      throw admissionFailure("journal-remote")
     return "Github" as const
   })
-  // Admission above is pure with respect to credentials. Open the local npm
-  // session only after the complete retained Plan and journal destination pass.
-  const local =
-    input.authentication.mode === "Local" && authorization._tag === "TokenAuthorization"
-      ? yield* Npm.makeLocalAuthentication({
-          authorization,
-          configFile: input.authentication.npmConfigFile,
-          notify: (url) =>
-            Effect.sync(() => {
-              process.stderr.write(`Complete npm authentication: ${Redacted.value(url)}\n`)
-            }),
-        })
-      : null
   const store = yield* openGitJournal({
     ...input.journal,
     credentials: Effect.fn("release.journalCredentials")(function* (coordinate) {
@@ -329,25 +335,42 @@ export const createApplication = Effect.fn("release.createApplication")(function
       }
     }),
   })
+  const host = {
+    providers,
+    store,
+    transport: makeHttpTransport({ providers, credentials, ...bounds }),
+    now: Date.now,
+    uniqueId: randomUUID,
+    ...(supersededPlans.length
+      ? {
+          journal: {
+            journalId: plan.journalId,
+            scopes: [{ _tag: "PublicationScope" as const, plan }],
+            supersededPlans,
+          },
+        }
+      : {}),
+  }
+  // Reading the admitted journal may need its own Git credential. No provider
+  // reads, publication credentials or trust-network probes run in preflight.
+  if (input.authorize) yield* preflightRelease({ plan }).pipe(Effect.provideService(Host, host))
+  // Local authentication reads .npmrc immediately, so acquire it only after
+  // all currently resolvable requests pass their real native wire admission.
+  const local =
+    input.authentication.mode === "Local" && authorization._tag === "TokenAuthorization"
+      ? yield* Npm.makeLocalAuthentication({
+          authorization,
+          configFile: input.authentication.npmConfigFile,
+          notify: (url) =>
+            Effect.sync(() => {
+              process.stderr.write(`Complete npm authentication: ${Redacted.value(url)}\n`)
+            }),
+        })
+      : null
   return {
     bundle,
     options: { plan, authorize: input.authorize },
-    host: {
-      providers,
-      store,
-      transport: makeHttpTransport({ providers, credentials, ...bounds }),
-      now: Date.now,
-      uniqueId: randomUUID,
-      ...(supersededPlans.length
-        ? {
-            journal: {
-              journalId: plan.journalId,
-              scopes: [{ _tag: "PublicationScope" as const, plan }],
-              supersededPlans,
-            },
-          }
-        : {}),
-    },
+    host,
     ...(local ? { onRejected: (operation: Operation) => local.complete(operation) } : {}),
   }
 })

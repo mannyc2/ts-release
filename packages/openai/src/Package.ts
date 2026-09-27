@@ -16,6 +16,7 @@ export { canonical, compare }
 export const name = (value: string): boolean =>
   value.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(value)
 export const safePath = (value: string): boolean =>
+  // oxlint-disable-next-line no-control-regex -- package paths reject control characters as part of their wire contract.
   isSafePath(value) && value === value.normalize("NFC") && !/[\u0000-\u001f\u007f]/u.test(value)
 const Name = Schema.String.check(Schema.makeFilter(name))
 const Description = PublicText(1024)
@@ -29,6 +30,7 @@ const Instructions = Schema.String.check(
       normalized.trim().length > 0 &&
       normalized === normalized.normalize("NFC") &&
       [...normalized].length <= 64 * 1024 &&
+      // oxlint-disable-next-line no-control-regex -- instructions reject NUL and DEL without discarding ordinary line breaks.
       !/[\u0000\u007f]/u.test(normalized) &&
       !containsSecret(normalized)
     )
@@ -92,7 +94,8 @@ export const files = Effect.fn("openai.files")(function* (
   readContent: ReadContent,
 ) {
   const selected = yield* attempt("openai-package", () => {
-    if (typeof readContent !== "function") throw new Error("OpenAI content reader is unavailable")
+    if (typeof readContent !== "function")
+      throw failure("openai-package", "OpenAI value could not be admitted")
     return own(PluginInputCodec, input)
   })
   const rendered: RenderedFile[] = [
@@ -184,12 +187,19 @@ export const inspectPackage = Effect.fn("openai.inspectPackage")(function* (
   const bytes = contents.get(manifestPath)
   if (!bytes) return yield* reject("openai-tree", "plugin.json is missing")
   const plugin = yield* attempt("openai-manifest", () => {
-    const value = own(PluginManifest, decodeJson(bytes))
+    const decoder = new TextDecoder("utf-8", { fatal: true })
+    let text: string
+    try {
+      text = decoder.decode(bytes)
+    } catch {
+      throw failure("openai-manifest", "OpenAI value could not be admitted")
+    }
+    const value = own(PluginManifest, decodeJson(text))
     if (
       manifestPath === "plugin.json" &&
       value.$schema !== "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
     )
-      throw new Error("Root plugin.json must declare the Agent Plugins 1.0 schema")
+      throw failure("openai-manifest", "OpenAI value could not be admitted")
     for (const field of ["skills", "mcpServers", "apps", "hooks"]) {
       const selected = value[field]
       if (typeof selected !== "string") continue
@@ -199,13 +209,15 @@ export const inspectPackage = Effect.fn("openai.inspectPackage")(function* (
         !safePath(path) ||
         !paths.some((candidate) => candidate === path || candidate.startsWith(path + "/"))
       )
-        throw new Error(`Plugin ${field} must reference bundled contents`)
+        throw failure("openai-manifest", "OpenAI value could not be admitted")
     }
     return value
   })
-  const skillNames = [...contents.keys()]
-    .filter((path) => /(?:^|\/)SKILL\.md$/u.test(path))
-    .map((path) => path.split("/").at(-2)!)
+  // A root SKILL.md has no skill directory name; retain its bytes without inventing a name.
+  const skillNames = [...contents.keys()].flatMap((path) => {
+    const parent = path.endsWith("/SKILL.md") ? path.split("/").at(-2) : undefined
+    return parent === undefined ? [] : [parent]
+  })
   return Object.freeze({
     tree,
     manifest: plugin,
@@ -231,8 +243,8 @@ export const packageFiles = Effect.fn("openai.packageFiles")(function* (
         ? [
             {
               path: entry.path,
-              mode: entry.mode as 0o644 | 0o755,
-              bytes: new Uint8Array(inspected.contents.get(entry.path)!),
+              mode: entry.mode === 0o644 ? 0o644 : 0o755,
+              bytes: new Uint8Array(inspected.contents.get(entry.path) ?? []),
             },
           ]
         : [],

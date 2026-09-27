@@ -3,7 +3,7 @@ import * as Model from "./Model.js"
 import { createHash } from "node:crypto"
 import { gunzipSync } from "node:zlib"
 import { readTarBytes, verifiedArtifacts, type ArtifactAccess } from "@mannyc1/ts-release/bundle"
-import { decodeJson as parseJson, makeDataBoundary } from "@mannyc1/ts-release/http"
+import { decodeJson, makeDataBoundary } from "@mannyc1/ts-release/http"
 
 export const { failure, invalid, reject, attempt, matches, object, own, ownOperation, ownRequest } =
   makeDataBoundary("npm", "npm")
@@ -11,22 +11,36 @@ export const digest = (algorithm: string, bytes: Uint8Array) =>
   createHash(algorithm).update(bytes).digest("hex")
 export const encode = (input: unknown) => new TextEncoder().encode(JSON.stringify(input))
 
-export { decodeJson as parseJson } from "@mannyc1/ts-release/http"
+export const text = (bytes: Uint8Array): string => {
+  const decoder = new TextDecoder("utf-8", { fatal: true })
+  try {
+    return decoder.decode(bytes)
+  } catch {
+    return invalid("data")
+  }
+}
+export const parseJson = (input: string | Uint8Array): unknown =>
+  decodeJson(typeof input === "string" ? input : text(input))
 /** Native package metadata is extracted from the exact bounded owned tarball. */
 export const readManifest = (bytes: Uint8Array): Record<string, unknown> => {
-  const entries = readTarBytes(
-    gunzipSync(bytes, { maxOutputLength: 128 * 1024 * 1024 }),
-    128 * 1024 * 1024,
-    new Set(),
-    (reason) => invalid(`tar-${reason}`),
+  let tar: Uint8Array
+  try {
+    tar = gunzipSync(bytes, { maxOutputLength: 128 * 1024 * 1024 })
+  } catch {
+    return invalid("data")
+  }
+  const entries = readTarBytes(tar, 128 * 1024 * 1024, new Set(), (reason) =>
+    invalid(reason === "encoding" ? "data" : `tar-${reason}`),
   )
   if (entries.some((entry) => entry.path !== "package" && !entry.path.startsWith("package/")))
     invalid("tar-path")
   const manifests = entries.filter(
     (entry) => entry.kind === "file" && entry.path === "package/package.json",
   )
-  if (manifests.length !== 1 || manifests[0]!.body.length > 1024 * 1024) invalid("tar-manifest")
-  return object(parseJson(manifests[0]!.body))
+  const [manifest] = manifests
+  if (manifests.length !== 1 || manifest === undefined || manifest.body.length > 1024 * 1024)
+    return invalid("tar-manifest")
+  return object(parseJson(manifest.body))
 }
 
 export const captureArtifacts = (access: ArtifactAccess) =>

@@ -1,7 +1,7 @@
 # @mannyc1/ts-release-catalog
 
 Homebrew Formula and Scoop manifest rendering over exact owned Bundle files.
-Install with the matching `@mannyc1/ts-release@0.4.0` core and `effect@4.0.0-rc.115`.
+Install with the matching `@mannyc1/ts-release@0.4.2` core and `effect@4.0.0-rc.115`.
 
 Import `Download`, `Formula` and `render` from
 `@mannyc1/ts-release-catalog/homebrew`, or `Download`, `Manifest` and `render`
@@ -22,6 +22,9 @@ Its executable path permits Unicode letters/numbers/marks, spaces, dots, undersc
 hyphens and directory slashes, subject to portable path restrictions. Shell syntax
 and wildcard paths reject because native Scoop shims embed paths into scripts.
 Both renderers reject noncanonical URLs, incomplete cells and substituted Bundle files.
+These admission refusals use the fixed `catalog-input` error. Declared release
+errors retain their code and message; unexpected renderer exceptions remain Effect
+defects instead of being reported as invalid metadata.
 
 Store the rendered bytes in the application's content owner, then compose FileEdit,
 prepare and update from `@mannyc1/ts-release/git`. The common Git host builds one

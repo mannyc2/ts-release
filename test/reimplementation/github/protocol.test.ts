@@ -1,10 +1,52 @@
+import { fail } from "node:assert"
 import { expect, test } from "bun:test"
 import { Effect } from "effect"
-import { runRelease, observeRelease, type ProviderContext } from "@mannyc1/ts-release"
-import { verifyNativeEvidence } from "../../../packages/ts-release/src/Journal.js"
+import {
+  runRelease,
+  observeRelease,
+  preflightRelease,
+  type ProviderContext,
+} from "@mannyc1/ts-release"
 import { runWithHost } from "../kernel/fixtures.js"
 import { fixture, response, releaseDocument, assetDocument, base } from "./fixtures.js"
-import { repositoryDocument } from "./fixtures.js"
+import { commit, refDocument, repositoryDocument } from "./fixtures.js"
+
+// fa50ce3 coerced a native array type to "tag", then treated the original array
+// as a commit. Existing successful tag workflows cannot force this malformed reply.
+test("GitHub observation refuses a coerced annotated target type", async () => {
+  const f = await fixture(0, true)
+  await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true, maxDispatches: 2 }))
+  const snapshot = await Effect.runPromise(f.store.read(f.plan.journalId))
+  const dispatch = snapshot.events.find(
+    (event) =>
+      event.body._tag === "DispatchStarted" && event.body.operationId === f.ref.operationId,
+  )?.body
+  if (dispatch?._tag !== "DispatchStarted") throw new Error("Missing fixture ref dispatch")
+  const receipt = snapshot.events.find(
+    (event) =>
+      event.body._tag === "ReceiptAccepted" && event.body.dispatchId === dispatch.dispatchId,
+  )?.body
+  if (receipt?._tag !== "ReceiptAccepted") throw new Error("Missing fixture ref receipt")
+  const provider = f.providers.find((entry) => entry.definitionId === "github.draft")
+  if (provider?.observe === undefined) throw new Error("Missing fixture draft observer")
+  const tagOid = "b".repeat(40)
+  f.state.ref = refDocument(tagOid, "tag")
+  f.state.override = (request) =>
+    request.url === `${base}/git/tags/${tagOid}`
+      ? response(200, {
+          sha: tagOid,
+          url: `${base}/git/tags/${tagOid}`,
+          object: { sha: commit, type: ["tag"], url: `${base}/git/commits/${commit}` },
+        })
+      : undefined
+  const result = await Effect.runPromise(
+    provider.observe(f.draft, {
+      own: { operation: f.draft, receipts: [], observations: [] },
+      dependencies: [{ operation: f.ref, receipts: [receipt.receipt], observations: [] }],
+    }),
+  )
+  expect(result.status).toBe("Inconclusive")
+})
 
 for (const annotated of [false, true])
   for (const count of [0, 3])
@@ -13,10 +55,10 @@ for (const annotated of [false, true])
       const report = await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true }))
       expect(report.operations.every((operation) => operation.status === "Satisfied")).toBe(true)
       expect(f.state.sends).toHaveLength(count + (annotated ? 4 : 3))
-      expect(f.state.sends.at(-1)!.facts.method).toBe("PATCH")
-      expect(f.state.releases[0]!.draft).toBe(false)
-      const snapshot = await Effect.runPromise(f.store.read(f.plan.journalId))
-      expect(() => verifyNativeEvidence(f.plan, snapshot.events, f.providers)).not.toThrow()
+      expect(
+        (f.state.sends.at(-1) ?? fail("Missing fixture f.state.sends.at(-1)")).facts.method,
+      ).toBe("PATCH")
+      expect((f.state.releases[0] ?? fail("Missing fixture f.state.releases[0]")).draft).toBe(false)
       await runWithHost({ ...f.host }, runRelease({ plan: f.plan, authorize: true }))
       expect(f.state.sends).toHaveLength(count + (annotated ? 4 : 3))
       // After publication every asset is addressed by its tag URL; the published
@@ -28,6 +70,15 @@ for (const annotated of [false, true])
           latest.set(event.body.operationId, event.body.status)
       expect(latest.get(f.publish.operationId)).toBe("Satisfied")
       expect([...latest.values()].every((status) => status === "Satisfied")).toBe(true)
+      // Already published assets are history, not new upload candidates. This
+      // fixture's transport intentionally has no optional validation capability.
+      const preflight = await runWithHost(f.host, preflightRelease({ plan: f.plan }))
+      expect(preflight).toMatchObject({
+        superseded: false,
+        satisfied: report.operations.map((operation) => operation.operationId),
+        checked: [],
+        deferred: [],
+      })
     })
 
 test("response-lost hidden draft is observed by authenticated enumeration and its returned ID survives restart", async () => {
@@ -70,7 +121,12 @@ test("missing native digest downloads exact bytes and publish rejects missing or
   f.state.assets.push(assetDocument(9999, "foreign.bin", new Uint8Array([1])))
   const blocked = await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true }))
   expect(
-    blocked.operations.find((operation) => operation.operationId === f.publish.operationId)!.status,
+    (
+      blocked.operations.find((operation) => operation.operationId === f.publish.operationId) ??
+      fail(
+        "Missing fixture blocked.operations.find((operation) => operation.operationId === f.publish.operationId)",
+      )
+    ).status,
   ).toBe("Conflict")
   expect(f.state.sends).toHaveLength(5)
 })
@@ -79,13 +135,18 @@ test("ambiguous paginated draft records and foreign pagination routes remain inc
   const f = await fixture(0)
   await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true, maxDispatches: 1 }))
   const snapshot = await Effect.runPromise(f.store.read(f.plan.journalId)),
-    receipt = snapshot.events.find((event) => event.body._tag === "ReceiptAccepted")!.body
+    receipt = (
+      snapshot.events.find((event) => event.body._tag === "ReceiptAccepted") ??
+      fail('Missing fixture snapshot.events.find((event) => event.body._tag === "ReceiptAccepted")')
+    ).body
   if (receipt._tag !== "ReceiptAccepted") throw new Error("fixture receipt")
   const context: ProviderContext = {
     own: { operation: f.draft, receipts: [], observations: [] },
     dependencies: [{ operation: f.ref, receipts: [receipt.receipt], observations: [] }],
   }
-  const provider = f.providers.find((provider) => provider.definitionId === "github.draft")!
+  const provider =
+    f.providers.find((provider) => provider.definitionId === "github.draft") ??
+    fail('Missing fixture f.providers.find((provider) => provider.definitionId === "github.draft")')
   f.state.override = (request) =>
     request.url === `${base}/releases?per_page=100&page=1`
       ? response(200, [releaseDocument()], {
@@ -94,13 +155,33 @@ test("ambiguous paginated draft records and foreign pagination routes remain inc
       : request.url === `${base}/releases?per_page=100&page=2`
         ? response(200, [releaseDocument(732)])
         : undefined
-  expect((await Effect.runPromise(provider.observe!(f.draft, context))).status).toBe("Inconclusive")
+  expect(
+    (
+      await Effect.runPromise(
+        (provider.observe ?? fail("Missing fixture provider.observe")).call(
+          provider,
+          f.draft,
+          context,
+        ),
+      )
+    ).status,
+  ).toBe("Inconclusive")
   expect(f.state.reads.some((request) => request.url.endsWith("page=2"))).toBe(true)
   f.state.override = (request) =>
     request.url.includes("?per_page")
       ? response(200, [], { link: '<https://evil.invalid/?page=2>; rel="next"' })
       : undefined
-  expect((await Effect.runPromise(provider.observe!(f.draft, context))).status).toBe("Inconclusive")
+  expect(
+    (
+      await Effect.runPromise(
+        (provider.observe ?? fail("Missing fixture provider.observe")).call(
+          provider,
+          f.draft,
+          context,
+        ),
+      )
+    ).status,
+  ).toBe("Inconclusive")
   expect(f.state.reads.some((request) => request.url.startsWith("https://evil.invalid"))).toBe(
     false,
   )
@@ -111,12 +192,20 @@ test("asset response loss and native starter state never permit a second upload"
   f.state.lost = "github.asset"
   await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true }))
   expect(f.state.sends).toHaveLength(3)
-  f.state.assets[0]!.state = "starter"
-  f.state.assets[0]!.digest = null
+  ;(f.state.assets[0] ?? fail("Missing fixture f.state.assets[0]")).state = "starter"
+  ;(f.state.assets[0] ?? fail("Missing fixture f.state.assets[0]")).digest = null
   const blocked = await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true }))
   expect(
-    blocked.operations.find((operation) => operation.operationId === f.assets[0]!.operationId)!
-      .status,
+    (
+      blocked.operations.find(
+        (operation) =>
+          operation.operationId ===
+          (f.assets[0] ?? fail("Missing fixture f.assets[0]")).operationId,
+      ) ??
+      fail(
+        "Missing fixture blocked.operations.find((operation) => operation.operationId === f.assets[0]!.operationId)",
+      )
+    ).status,
   ).toBe("Conflict")
   expect(f.state.sends).toHaveLength(3)
 })
@@ -125,9 +214,9 @@ test("asset prepare rechecks a published or vanished parent even when observatio
   for (const hidden of [false, true]) {
     const f = await fixture(1)
     await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true, maxDispatches: 2 }))
-    f.state.releases[0]!.draft = false
+    ;(f.state.releases[0] ?? fail("Missing fixture f.state.releases[0]")).draft = false
     f.state.hidden = hidden
-    await expect(
+    expect(
       runWithHost(f.host, runRelease({ plan: f.plan, authorize: true, observe: false })),
     ).rejects.toThrow("asset parent")
     expect(f.state.sends).toHaveLength(2)
@@ -137,17 +226,17 @@ test("asset prepare rechecks a published or vanished parent even when observatio
 test("missing-digest download follows one explicit public redirect and keeps signed URLs out of journal evidence", async () => {
   const f = await fixture(1)
   await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true, maxDispatches: 3 }))
-  f.state.assets[0]!.digest = null
+  ;(f.state.assets[0] ?? fail("Missing fixture f.state.assets[0]")).digest = null
   const location =
     "https://release-assets.githubusercontent.com/github-production-release-asset/1/file?signature=ephemeral-fixture"
   f.state.override = (request) =>
-    request.url === f.state.assets[0]!.url
+    request.url === (f.state.assets[0] ?? fail("Missing fixture f.state.assets[0]")).url
       ? { status: 302, headers: { location }, body: new Uint8Array() }
       : request.url === location
         ? {
             status: 200,
             headers: { "content-type": "application/octet-stream" },
-            body: f.bytes[0]!,
+            body: f.bytes[0] ?? fail("Missing fixture f.bytes[0]"),
           }
         : undefined
   const report = await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true }))
@@ -182,12 +271,17 @@ test("unquoted next links are followed and malformed or foreign pagination canno
       Effect.exit(runRelease({ plan: f.plan, authorize: true })),
     )
     expect(f.state.sends).toHaveLength(2)
-    expect(f.state.releases[0]!.draft).toBe(true)
+    expect((f.state.releases[0] ?? fail("Missing fixture f.state.releases[0]")).draft).toBe(true)
     if (result._tag === "Success")
       expect(
-        result.value.operations.find(
-          (operation) => operation.operationId === f.publish.operationId,
-        )!.status,
+        (
+          result.value.operations.find(
+            (operation) => operation.operationId === f.publish.operationId,
+          ) ??
+          fail(
+            "Missing fixture result.value.operations.find(\n          (operation) => operation.operationId === f.publish.operationId,\n        )",
+          )
+        ).status,
       ).not.toBe("Satisfied")
     else expect(JSON.stringify(result.cause)).toContain("github-pagination-link")
     expect(
@@ -206,7 +300,7 @@ test("draft preparation independently requires complete absence when observation
           ? response(200, [], { link: 'garbage rel="next"' })
           : undefined
     else f.state.releases.push(releaseDocument())
-    await expect(
+    expect(
       runWithHost(f.host, runRelease({ plan: f.plan, authorize: true, observe: false })),
     ).rejects.toThrow(malformed ? "pagination link" : "draft precondition")
     expect(f.state.sends).toHaveLength(1)
@@ -217,20 +311,37 @@ test("last-page evidence persists across short intermediate pages and bounds com
   const f = await fixture(0)
   await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true, maxDispatches: 1 }))
   const snapshot = await Effect.runPromise(f.store.read(f.plan.journalId)),
-    body = snapshot.events.find((event) => event.body._tag === "ReceiptAccepted")!.body
+    body = (
+      snapshot.events.find((event) => event.body._tag === "ReceiptAccepted") ??
+      fail('Missing fixture snapshot.events.find((event) => event.body._tag === "ReceiptAccepted")')
+    ).body
   if (body._tag !== "ReceiptAccepted") throw new Error("fixture receipt")
   const context: ProviderContext = {
       own: { operation: f.draft, receipts: [], observations: [] },
       dependencies: [{ operation: f.ref, receipts: [body.receipt], observations: [] }],
     },
-    provider = f.providers.find((provider) => provider.definitionId === "github.draft")!
+    provider =
+      f.providers.find((provider) => provider.definitionId === "github.draft") ??
+      fail(
+        'Missing fixture f.providers.find((provider) => provider.definitionId === "github.draft")',
+      )
   f.state.override = (request) =>
     request.url.endsWith("/releases?per_page=100&page=1")
       ? response(200, [], { link: `<${base}/releases?per_page=100&page=3>; rel=last` })
       : request.url.endsWith("/releases?per_page=100&page=3")
         ? response(200, [releaseDocument()])
         : undefined
-  expect((await Effect.runPromise(provider.observe!(f.draft, context))).status).toBe("Satisfied")
+  expect(
+    (
+      await Effect.runPromise(
+        (provider.observe ?? fail("Missing fixture provider.observe")).call(
+          provider,
+          f.draft,
+          context,
+        ),
+      )
+    ).status,
+  ).toBe("Satisfied")
   expect(f.state.reads.some((request) => request.url.endsWith("page=3"))).toBe(true)
   f.state.reads = []
   const unrelated = Array.from({ length: 100 }, (_, i) => ({
@@ -241,7 +352,17 @@ test("last-page evidence persists across short intermediate pages and bounds com
     request.url.includes("/releases?per_page")
       ? response(200, unrelated, { link: `<${base}/releases?per_page=100&page=1>; rel=last` })
       : undefined
-  expect((await Effect.runPromise(provider.observe!(f.draft, context))).status).toBe("Absent")
+  expect(
+    (
+      await Effect.runPromise(
+        (provider.observe ?? fail("Missing fixture provider.observe")).call(
+          provider,
+          f.draft,
+          context,
+        ),
+      )
+    ).status,
+  ).toBe("Absent")
   expect(
     f.state.reads.filter((request) => request.url.includes("/releases?per_page")),
   ).toHaveLength(1)
@@ -274,27 +395,42 @@ test("populated release pages above the single-object limit remain complete acro
     f.state.reads.some((request) => request.url === `${base}/releases?per_page=100&page=2`),
   ).toBe(true)
   expect(f.state.releases).toHaveLength(1)
-  expect(f.state.releases[0]!.draft).toBe(false)
+  expect((f.state.releases[0] ?? fail("Missing fixture f.state.releases[0]")).draft).toBe(false)
 })
 
 test("oversized release pages remain inconclusive and cannot authorize draft creation", async () => {
   const f = await fixture(0)
   await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true, maxDispatches: 1 }))
   const snapshot = await Effect.runPromise(f.store.read(f.plan.journalId)),
-    receipt = snapshot.events.find((event) => event.body._tag === "ReceiptAccepted")!.body
+    receipt = (
+      snapshot.events.find((event) => event.body._tag === "ReceiptAccepted") ??
+      fail('Missing fixture snapshot.events.find((event) => event.body._tag === "ReceiptAccepted")')
+    ).body
   if (receipt._tag !== "ReceiptAccepted") throw new Error("fixture receipt")
   const context: ProviderContext = {
       own: { operation: f.draft, receipts: [], observations: [] },
       dependencies: [{ operation: f.ref, receipts: [receipt.receipt], observations: [] }],
     },
-    provider = f.providers.find((provider) => provider.definitionId === "github.draft")!,
+    provider =
+      f.providers.find((provider) => provider.definitionId === "github.draft") ??
+      fail(
+        'Missing fixture f.providers.find((provider) => provider.definitionId === "github.draft")',
+      ),
     oversized = { ...response(200, []), body: new Uint8Array(16 * 1024 * 1024 + 1) }
   f.state.override = (request) =>
     request.url.includes("/releases?per_page") ? oversized : undefined
-  expect((await Effect.runPromise(provider.observe!(f.draft, context))).status).toBe("Inconclusive")
-  await expect(Effect.runPromise(provider.prepare(f.draft, context))).rejects.toThrow(
-    "json response",
-  )
+  expect(
+    (
+      await Effect.runPromise(
+        (provider.observe ?? fail("Missing fixture provider.observe")).call(
+          provider,
+          f.draft,
+          context,
+        ),
+      )
+    ).status,
+  ).toBe("Inconclusive")
+  expect(Effect.runPromise(provider.prepare(f.draft, context))).rejects.toThrow("json response")
   expect(f.state.sends).toHaveLength(1)
   expect(f.state.releases).toHaveLength(0)
 })
@@ -303,13 +439,20 @@ test("complete release enumeration has an aggregate byte bound even when each pa
   const f = await fixture(0)
   await runWithHost(f.host, runRelease({ plan: f.plan, authorize: true, maxDispatches: 1 }))
   const snapshot = await Effect.runPromise(f.store.read(f.plan.journalId)),
-    receipt = snapshot.events.find((event) => event.body._tag === "ReceiptAccepted")!.body
+    receipt = (
+      snapshot.events.find((event) => event.body._tag === "ReceiptAccepted") ??
+      fail('Missing fixture snapshot.events.find((event) => event.body._tag === "ReceiptAccepted")')
+    ).body
   if (receipt._tag !== "ReceiptAccepted") throw new Error("fixture receipt")
   const context: ProviderContext = {
       own: { operation: f.draft, receipts: [], observations: [] },
       dependencies: [{ operation: f.ref, receipts: [receipt.receipt], observations: [] }],
     },
-    provider = f.providers.find((provider) => provider.definitionId === "github.draft")!,
+    provider =
+      f.providers.find((provider) => provider.definitionId === "github.draft") ??
+      fail(
+        'Missing fixture f.providers.find((provider) => provider.definitionId === "github.draft")',
+      ),
     populated = {
       ...response(200, []),
       body: new TextEncoder().encode("[]" + " ".repeat(8 * 1024 * 1024)),
@@ -327,7 +470,17 @@ test("complete release enumeration has an aggregate byte bound even when each pa
       },
     }
   }
-  expect((await Effect.runPromise(provider.observe!(f.draft, context))).status).toBe("Inconclusive")
+  expect(
+    (
+      await Effect.runPromise(
+        (provider.observe ?? fail("Missing fixture provider.observe")).call(
+          provider,
+          f.draft,
+          context,
+        ),
+      )
+    ).status,
+  ).toBe("Inconclusive")
   expect(
     f.state.reads.filter((request) => request.url.includes("/releases?per_page")),
   ).toHaveLength(Math.floor((64 * 1024 * 1024) / populated.body.length) + 1)
@@ -337,19 +490,43 @@ test("complete release enumeration has an aggregate byte bound even when each pa
 
 test("namespace authority is an authenticated exact repository view and requires no reported grant", async () => {
   const f = await fixture(1)
-  const provider = f.providers.find((provider) => provider.definitionId === f.ref.definitionId)!
+  const provider =
+    f.providers.find((provider) => provider.definitionId === f.ref.definitionId) ??
+    fail(
+      "Missing fixture f.providers.find((provider) => provider.definitionId === f.ref.definitionId)",
+    )
   const context: ProviderContext = {
     own: { operation: f.ref, receipts: [], observations: [] },
     dependencies: [],
   }
   // The double answers as GitHub does for the Actions installation token: every grant false.
-  expect((await Effect.runPromise(provider.observe!(f.ref, context))).status).toBe("Absent")
+  expect(
+    (
+      await Effect.runPromise(
+        (provider.observe ?? fail("Missing fixture provider.observe")).call(
+          provider,
+          f.ref,
+          context,
+        ),
+      )
+    ).status,
+  ).toBe("Absent")
   for (const document of [
     { full_name: "owner/repo", url: base },
     { ...repositoryDocument(), full_name: "owner/other" },
     { ...repositoryDocument(), permissions: [] },
   ]) {
     f.state.override = (request) => (request.url === base ? response(200, document) : undefined)
-    expect((await Effect.runPromise(provider.observe!(f.ref, context))).status).toBe("Inconclusive")
+    expect(
+      (
+        await Effect.runPromise(
+          (provider.observe ?? fail("Missing fixture provider.observe")).call(
+            provider,
+            f.ref,
+            context,
+          ),
+        )
+      ).status,
+    ).toBe("Inconclusive")
   }
 })

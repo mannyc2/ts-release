@@ -183,13 +183,12 @@ export const restoreTree = Effect.fn("ts-release.restoreTree")(function* (
             yield* fs.chmod(root, 0o700)
             for (const entry of source.entries) {
               if (entry.kind !== "directory") continue
-              yield* fs
-                .chmod(path.join(root, ...entry.path.split("/")), 0o700)
-                .pipe(
-                  Effect.catch((error) =>
-                    error.reason._tag === "NotFound" ? Effect.void : Effect.fail(error),
-                  ),
-                )
+              yield* fs.chmod(path.join(root, ...entry.path.split("/")), 0o700).pipe(
+                Effect.catchIf(
+                  (error) => error.reason._tag === "NotFound",
+                  () => Effect.void,
+                ),
+              )
             }
             yield* fs.remove(root, { recursive: true, force: true })
           }).pipe(Effect.orDie),

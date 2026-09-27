@@ -1,9 +1,75 @@
 import { expect, test } from "bun:test"
 import { generateKeyPairSync, sign } from "node:crypto"
-import { ConfigProvider, Effect } from "effect"
+import { Cause, ConfigProvider, Effect, Exit } from "effect"
 import { makeCredentialResolver, type OidcTokenRequest } from "@mannyc1/ts-release/http"
 import { makeGithubOidcTokenSource } from "@mannyc1/ts-release/node"
 import { verifyGithubToken } from "../../../packages/ts-release/src/platform/GithubOidc.js"
+import { makeHttpTransport } from "../../../packages/ts-release/src/Node.js"
+import { ReleaseError, runRelease } from "../../../packages/ts-release/src/index.js"
+import { makeFixture, providerFor, runWithHost } from "../kernel/fixtures.js"
+
+test("credential interruption stays interrupted and redacted before dispatch admission", async () => {
+  const secret = "credential-private-regression-marker"
+  const provider = {
+    ...providerFor(),
+    ownsRequest: () => true,
+    decodeResponse: () => Effect.die(new Error("Credentials must prevent native dispatch")),
+  }
+  const fixture = await makeFixture(provider)
+  const transport = makeHttpTransport({
+    providers: [provider],
+    timeoutMilliseconds: 100,
+    maximumResponseBytes: 100,
+    credentials: () =>
+      Effect.failCause(
+        Cause.combine(
+          Cause.interrupt(123),
+          Cause.combine(
+            Cause.fail(new ReleaseError({ code: "private-code", message: secret })),
+            Cause.die(new Error(secret)),
+          ),
+        ),
+      ),
+  })
+  const exit = await runWithHost(
+    { ...fixture.host, transport },
+    Effect.exit(runRelease({ plan: fixture.plan, authorize: true })),
+  )
+  if (!Exit.isFailure(exit)) throw new Error("Credential interruption unexpectedly succeeded")
+  expect(Cause.hasInterruptsOnly(exit.cause)).toBe(true)
+  expect(String(exit.cause)).not.toContain(secret)
+  expect((await Effect.runPromise(fixture.store.read(fixture.plan.journalId))).events).toEqual([])
+})
+
+test("returned credential getters cannot expose private typed errors before dispatch", async () => {
+  const secret = "returned-credential-private-regression-marker"
+  const provider = {
+    ...providerFor(),
+    ownsRequest: () => true,
+    decodeResponse: () => Effect.die(new Error("Credentials must prevent native dispatch")),
+  }
+  const fixture = await makeFixture(provider)
+  const transport = makeHttpTransport({
+    providers: [provider],
+    timeoutMilliseconds: 100,
+    maximumResponseBytes: 100,
+    credentials: () =>
+      Effect.succeed({
+        get authorization(): string {
+          throw new ReleaseError({ code: "private-code", message: secret })
+        },
+      }),
+  })
+  const exit = await runWithHost(
+    { ...fixture.host, transport },
+    Effect.exit(runRelease({ plan: fixture.plan, authorize: true })),
+  )
+  if (!Exit.isFailure(exit)) throw new Error("Credential getter unexpectedly admitted dispatch")
+  expect(Cause.hasFails(exit.cause)).toBe(true)
+  expect(Cause.hasDies(exit.cause)).toBe(false)
+  expect(String(exit.cause)).not.toContain(secret)
+  expect((await Effect.runPromise(fixture.store.read(fixture.plan.journalId))).events).toEqual([])
+})
 
 const request: OidcTokenRequest = {
   issuer: "https://token.actions.githubusercontent.com",
@@ -79,9 +145,13 @@ test("native RSA JWT verifies exact issuer, audience, workflow, source and clock
 
 test("native RSA signature, JOSE algorithm/key admission and duplicate-key controls fail closed", () => {
   const good = token(),
-    changed = good.split("."),
-    bytes = Buffer.from(changed[2]!, "base64url")
-  bytes[0] = bytes[0]! ^ 1
+    changed = good.split(".")
+  const signature = changed[2]
+  if (signature === undefined) throw new Error("Fixture JWT requires a signature")
+  const bytes = Buffer.from(signature, "base64url")
+  const first = bytes[0]
+  if (first === undefined) throw new Error("Fixture signature must contain bytes")
+  bytes[0] = first ^ 1
   changed[2] = bytes.toString("base64url")
   expect(() => verifyGithubToken(changed.join("."), { keys: [jwk] }, request, 1100_000)).toThrow()
   for (const header of [
@@ -145,7 +215,7 @@ test("exact credential routes acquire only after full binding, capture receivers
     { principal: "other" },
     { scope: "mutable/latest" },
   ])
-    await expect(Effect.runPromise(resolver({ ...binding, ...changed }))).rejects.toThrow()
+    expect(Effect.runPromise(resolver({ ...binding, ...changed }))).rejects.toThrow()
   expect(await Effect.runPromise(resolver(binding))).toEqual({ authorization: "fixture-1" })
   expect(() =>
     makeCredentialResolver([
@@ -184,14 +254,15 @@ test("GitHub host mismatches reject before reading either OIDC credential value"
       Effect.sync(() => {
         const name = path.join("_")
         reads.push(name)
-        return values[name] === undefined ? undefined : ConfigProvider.makeValue(values[name]!)
+        const value = values[name]
+        return value === undefined ? undefined : ConfigProvider.makeValue(value)
       }),
     )
     const source = makeGithubOidcTokenSource({
       timeoutMilliseconds: 100,
       maximumResponseBytes: 1024,
     })
-    await expect(
+    expect(
       Effect.runPromise(Effect.provide(source(request), ConfigProvider.layer(provider))),
     ).rejects.toThrow()
     expect(reads).not.toContain("ACTIONS_ID_TOKEN_REQUEST_URL")
@@ -214,14 +285,15 @@ test("substituted OIDC request origins reject before the runner bearer is read",
       Effect.sync(() => {
         const name = path.join("_")
         reads.push(name)
-        return values[name] === undefined ? undefined : ConfigProvider.makeValue(values[name]!)
+        const value = values[name]
+        return value === undefined ? undefined : ConfigProvider.makeValue(value)
       }),
     )
     const source = makeGithubOidcTokenSource({
       timeoutMilliseconds: 100,
       maximumResponseBytes: 1024,
     })
-    await expect(
+    expect(
       Effect.runPromise(Effect.provide(source(request), ConfigProvider.layer(provider))),
     ).rejects.toThrow()
     expect(reads).toContain("ACTIONS_ID_TOKEN_REQUEST_URL")

@@ -11,5 +11,11 @@ export {
 
 export { fileContentOwner } from "./platform/ContentStore.js"
 
-export { FinalizedReport, runInterruptibleProcess, runApplication } from "./platform/Application.js"
-export type { Application, CreateApplication } from "./platform/Application.js"
+export {
+  FinalizedReport,
+  BoundedObservationOptions,
+  runInterruptibleProcess,
+  runApplication,
+  runApplicationEffect,
+} from "./platform/Application.js"
+export type { Application, ApplicationMode, CreateApplication } from "./platform/Application.js"

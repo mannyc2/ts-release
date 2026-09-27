@@ -11,7 +11,9 @@ import {
   NPM_PRINCIPAL,
   PreparationInput,
   SourceIdentity,
+  admissionFailure,
   attempt,
+  decodeText,
   failure,
   io,
   read,
@@ -28,24 +30,26 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
   const input = yield* attempt("preparation-input", () =>
     Schema.decodeUnknownSync(PreparationInput, { onExcessProperty: "error" })(raw),
   )
-  const repository = yield* attempt(
-    "repository",
-    () => new GitHub.Repository({ apiUrl: "https://api.github.com", ...input.repository }),
+  const repository = yield* attempt("repository", () =>
+    Schema.decodeSync(GitHub.Repository)({
+      apiUrl: "https://api.github.com",
+      ...input.repository,
+    }),
   )
   const source = new SourceIdentity({ repository, ...input.source, version: input.version })
   const provenance = input.npm.provenance
   yield* attempt("preparation-policy", () => {
     if (!input.packages.length || input.npm.authorization.principal !== NPM_PRINCIPAL)
-      throw new Error("Expected a nonempty package cohort and its explicit npm principal")
+      throw admissionFailure("preparation-policy")
     if (input.npm.authorization._tag === "TrustedAuthorization" && !provenance)
-      throw new Error("Trusted publishing requires retained provenance")
+      throw admissionFailure("preparation-policy")
     if (provenance) {
       requireNodeProvenance()
       if (
         provenance.source.sourceCommit !== source.commit ||
         provenance.source.repository !== `${repository.owner}/${repository.name}`
       )
-        throw new Error("Provenance must name the selected repository and source")
+        throw admissionFailure("preparation-policy")
     }
     const names = [
       "source.json",
@@ -60,18 +64,21 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
         (name) =>
           name.length > 255 ||
           name !== name.normalize("NFC") ||
+          // oxlint-disable-next-line eslint/no-control-regex -- Asset names must exclude path separators and control bytes.
           /[/\\\u0000-\u001f\u007f]/u.test(name) ||
           name === "." ||
           name === "..",
       )
     )
-      throw new Error("Release asset names must be unique portable file names")
+      throw admissionFailure("preparation-policy")
   })
   const candidateDirectory = resolve(input.candidateDirectory)
   // Refuse replacement: a failed or interrupted preparation remains inspectable.
+  // Join each issued native mutation, then restore interruption before continuing.
+  // A native operation that never settles can delay cancellation.
   yield* io("candidate-directory", () =>
     mkdir(candidateDirectory, { recursive: false, mode: 0o700 }),
-  )
+  ).pipe(Effect.uninterruptible)
   const owner = fileContentOwner(join(candidateDirectory, "content"))
   const readContent: ReadContent = (content) =>
     owner
@@ -99,13 +106,13 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
     return file
   })
   const notesBytes = yield* read(input.notesFile, 1024 * 1024)
-  const notes = yield* attempt("notes", () =>
-    new TextDecoder("utf-8", { fatal: true }).decode(notesBytes),
-  )
+  const notes = yield* attempt("notes", () => decodeText("notes", notesBytes))
   yield* retain("release-notes.md", notesBytes, "text/markdown")
   yield* retain(
     "source.json",
-    new TextEncoder().encode(JSON.stringify(Schema.encodeSync(SourceIdentity)(source))),
+    new TextEncoder().encode(
+      JSON.stringify(yield* Schema.encodeEffect(SourceIdentity)(source).pipe(Effect.orDie)),
+    ),
     "application/json",
   )
   const packages: Array<{ file: File; metadata: Npm.PackageMetadata }> = []
@@ -221,7 +228,10 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
     }),
   )
   const assets: Operation[] = []
-  for (const file of files)
+  for (const file of files) {
+    const mediaType = mediaTypes.get(file.logicalName)
+    if (mediaType === undefined)
+      return yield* Effect.die(new Error("Retained asset media type is absent"))
     assets.push(
       yield* GitHub.uploadAsset(
         new GitHub.AssetIntent({
@@ -229,11 +239,12 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
           draftOperation: draft.operationId,
           file,
           publicName: file.logicalName,
-          mediaType: mediaTypes.get(file.logicalName)!,
+          mediaType,
           principal: GITHUB_PRINCIPAL,
         }),
       ),
     )
+  }
   const publication = yield* GitHub.publish(
     new GitHub.PublishIntent({
       repository,
@@ -264,12 +275,12 @@ export const prepareRelease = Effect.fn("release.prepare")(function* (raw: unkno
   ])
   yield* io("bundle", () =>
     writeFile(join(candidateDirectory, "bundle.json"), bundleBytes, { flag: "wx", mode: 0o600 }),
-  )
+  ).pipe(Effect.uninterruptible)
   yield* io("plan", () =>
     writeFile(join(candidateDirectory, "plan.json"), JSON.stringify(plan), {
       flag: "wx",
       mode: 0o600,
     }),
-  )
+  ).pipe(Effect.uninterruptible)
   return { candidateDirectory, bundleSha256, planId: plan.planId }
 })

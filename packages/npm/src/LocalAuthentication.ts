@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises"
-import { Effect, Redacted } from "effect"
+import { Cause, Effect, Exit, Redacted } from "effect"
 import type { Operation, PreparedRequest, ReleaseError, RequestFacts } from "@mannyc1/ts-release"
 import * as Http from "@mannyc1/ts-release/http"
 import { makeHttpRead } from "@mannyc1/ts-release/node"
@@ -26,27 +26,27 @@ export const authenticationChallenge = (
   request: PreparedRequest,
   response: Http.HttpResponse,
 ): AuthenticationChallenge | undefined => {
-  try {
-    if (!Evidence.isAuthenticationRejection(response) || response.body.length > 65536)
-      return undefined
+  let challenge: AuthenticationChallenge | undefined
+  Native.matches(() => {
+    if (!Evidence.isAuthenticationRejection(response) || response.body.length > 65536) return false
     const owned = Native.ownRequest(request),
       scope = Native.readScope(owned.facts.scope)
     if (
       scope.intent.authorization._tag !== "TokenAuthorization" ||
       !Evidence.ownsRequest(scope.definitionId, owned)
     )
-      return undefined
+      return false
     const body = Native.object(Native.parseJson(response.body))
     const authUrl = challengeUrl(body.authUrl, "https://www.npmjs.com")
     const doneUrl = challengeUrl(body.doneUrl, "https://registry.npmjs.org")
-    return Object.freeze({
+    challenge = Object.freeze({
       request: owned.facts,
       authUrl: Redacted.make(authUrl),
       doneUrl: Redacted.make(doneUrl),
     })
-  } catch {
-    return undefined
-  }
+    return true
+  })
+  return challenge
 }
 export interface LocalAuthenticationOptions {
   readonly authorization: Model.TokenAuthorization
@@ -93,11 +93,13 @@ const configToken = (contents: string): Redacted.Redacted<string> => {
       const match = /^[ \t]*\/\/registry\.npmjs\.org\/:_authToken[ \t]*=[ \t]*(.*?)[ \t]*$/u.exec(
         line,
       )
-      return match ? [match[1]!] : []
+      const value = match?.[1]
+      return value === undefined ? [] : [value]
     })
-  if (values.length !== 1 || /["'\s]|\$\{/u.test(values[0]!))
+  const [value] = values
+  if (values.length !== 1 || value === undefined || /["'\s]|\$\{/u.test(value))
     return Native.invalid("local-authentication-config")
-  const token = Redacted.make(values[0]!)
+  const token = Redacted.make(value)
   Http.credentialToken(token, () => Native.invalid("local-authentication-config"))
   return token
 }
@@ -272,14 +274,30 @@ export const makeLocalAuthenticationWith = Effect.fn("npm.makeLocalAuthenticatio
           yield* Effect.sleep(delay)
         }
       })
+      const settlement: { exit?: Exit.Exit<boolean, ReleaseError> } = {}
       return yield* authenticate.pipe(
+        Effect.onExit((exit) =>
+          Effect.sync(() => {
+            settlement.exit = exit
+          }),
+        ),
         Effect.timeoutOrElse({
           duration: selected.timeoutMilliseconds,
-          orElse: () =>
-            Native.reject(
+          orElse: () => {
+            // rc.115 joins the timeout loser but discards its Exit. Keep any
+            // failure or defect produced while its resources settle.
+            const exit = settlement.exit
+            if (
+              exit &&
+              Exit.isFailure(exit) &&
+              (Cause.hasFails(exit.cause) || Cause.hasDies(exit.cause))
+            )
+              return Effect.failCause(exit.cause)
+            return Native.reject(
               "authentication-timeout",
               "npm authentication timed out; rerun to request a fresh challenge",
-            ),
+            )
+          },
         }),
         Effect.ensuring(Effect.sync(() => eraseChallenge(challenge))),
       )

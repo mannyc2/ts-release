@@ -9,7 +9,7 @@ const Input = Schema.Struct({ publicName: Schema.String, file: OwnedFile })
 const safeName = (name: string) => {
   if (!Schema.is(LogicalName)(name))
     fail("checksum-name", "Checksum names must be portable relative paths without controls")
-  if (name.split("/").at(-1)!.toLowerCase() === "sha256sums")
+  if (name.split("/").at(-1)?.toLowerCase() === "sha256sums")
     fail("checksum-self", "A checksum cannot include itself")
   return name
 }
@@ -41,7 +41,7 @@ const prepare = (inputBundle: OwnedBundle, inputs: readonly ChecksumInput[]) =>
       })
       .sort((a, b) => compareText(a.publicName, b.publicName))
   })
-const render = (entries: readonly ChecksumInput[]) =>
+const render = (entries: readonly ChecksumInput[]): Uint8Array<ArrayBuffer> =>
   new TextEncoder().encode(
     entries.map(({ publicName, file }) => `${file.content.sha256}  ${publicName}\n`).join(""),
   )

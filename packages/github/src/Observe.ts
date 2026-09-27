@@ -94,19 +94,22 @@ export const observations = (read: HttpRead) => {
         if (response.status !== 200) invalid("pagination-status")
         if (response.body.length > MAX_ENUMERATION_BYTES - bytes) invalid("pagination-bytes")
         bytes += response.body.length
-        const items = responseJson(response, MAX_PAGE_BYTES)
-        if (!Array.isArray(items) || items.length > 100) return invalid("pagination-data")
+        const decoded = responseJson(response, MAX_PAGE_BYTES)
+        if (!Array.isArray(decoded) || decoded.length > 100) return invalid("pagination-data")
+        const items: readonly unknown[] = decoded
         const link = header(response, "link"),
           relations = new Set<string>()
         for (const part of link === undefined ? [] : link.split(",")) {
           const parsed = linkPattern.exec(part.trim())
           if (!parsed) return invalid("pagination-link")
-          const relation = (parsed[2] ?? parsed[3])!,
-            prefix = `${endpoint}?per_page=100&page=`,
-            number = parsed[1]!.slice(prefix.length),
+          const relation = parsed[2] ?? parsed[3],
+            url = parsed[1]
+          if (relation === undefined || url === undefined) return invalid("pagination-link")
+          const prefix = `${endpoint}?per_page=100&page=`,
+            number = url.slice(prefix.length),
             target = Number(number)
           if (
-            !parsed[1]!.startsWith(prefix) ||
+            !url.startsWith(prefix) ||
             !/^[1-9][0-9]{0,3}$/u.test(number) ||
             target > MAX_PAGES ||
             relations.has(relation) ||
@@ -155,15 +158,15 @@ export const observations = (read: HttpRead) => {
         if (
           raw.sha !== facts.sha ||
           !sameUrl(raw.url, `${base}/git/tags/${facts.sha}`, repository) ||
-          !["tag", "commit"].includes(String(target.type)) ||
+          (target.type !== "tag" && target.type !== "commit") ||
           !sameUrl(
             target.url,
             `${base}/git/${target.type === "tag" ? "tags" : "commits"}/${sha}`,
             repository,
           )
         )
-          invalid("tag-object")
-        return { sha, type: target.type as "tag" | "commit" }
+          return invalid("tag-object")
+        return { sha, type: target.type } as const
       })
     }
     return facts.sha
@@ -178,8 +181,8 @@ export const observations = (read: HttpRead) => {
     if (response.status === 302) {
       const url = yield* attempt(() => {
         const url = header(response, "location")
-        if (!url || !publicDownload(url)) invalid("download-redirect")
-        return url!
+        if (!url || !publicDownload(url)) return invalid("download-redirect")
+        return url
       })
       response = yield* get(scope, url, true, true)
     }
@@ -247,14 +250,15 @@ export const observations = (read: HttpRead) => {
             .filter((value) => value.tag === intent.tag),
         )
       if (candidates.length > 1) return yield* attempt(() => invalid("ambiguous-release"))
-      if (!candidates.length) {
+      const [candidate] = candidates
+      if (candidate === undefined) {
         if (commit !== scope.targetCommit)
           return yield* attempt(() => invalid("existing-tag-target"))
         return missing()
       }
-      return present(candidates[0]!, commit)
+      return present(candidate, commit)
     }
-    const parent = parentFacts(scope, intent.draftOperation, "draft") as Model.ReleaseFacts,
+    const parent = parentFacts(scope, intent.draftOperation, "draft"),
       response = yield* get(scope, `${base}/releases/${parent.releaseId}`)
     if (response.status === 404) return missing()
     const release = yield* attempt(() => {
@@ -272,9 +276,8 @@ export const observations = (read: HttpRead) => {
       return present(release, yield* tag(scope, release.tag), null, listed)
     const selected = listed.filter((value) => value.facts.storedName === intent.publicName)
     if (selected.length > 1) return yield* attempt(() => invalid("ambiguous-asset"))
-    return selected.length
-      ? present(selected[0]!.facts, null, selected[0]!.downloadedSha256)
-      : missing()
+    const [asset] = selected
+    return asset === undefined ? missing() : present(asset.facts, null, asset.downloadedSha256)
   })
   return {
     observe: Effect.fn("github.observe")(function* (
@@ -282,7 +285,7 @@ export const observations = (read: HttpRead) => {
       context: ProviderContext,
     ) {
       const value = yield* evidence(operation, context).pipe(
-        Effect.catch(() => Effect.succeed(unavailable(operation, "malformed-native"))),
+        Effect.orElseSucceed(() => unavailable(operation, "malformed-native")),
       )
       return {
         evidence: value,
@@ -303,7 +306,7 @@ export const observations = (read: HttpRead) => {
         const value = yield* evidence(operation, context)
         if (value._tag !== "Missing") return yield* attempt(() => invalid("draft-precondition"))
       } else if (intent instanceof Model.AssetIntent) {
-        const parent = parentFacts(scope, intent.draftOperation, "draft") as Model.ReleaseFacts,
+        const parent = parentFacts(scope, intent.draftOperation, "draft"),
           response = yield* get(scope, `${api(intent.repository)}/releases/${parent.releaseId}`)
         yield* attempt(() => {
           if (response.status !== 200) invalid("asset-parent-status")

@@ -2,13 +2,15 @@ import { Effect } from "effect"
 import type { Application } from "../../../packages/ts-release/src/Bun.js"
 import { ReleaseError } from "../../../packages/ts-release/src/index.js"
 
-export const createApplication = (input: unknown) =>
-  Effect.gen(function* () {
-    const { application, lifecycle, outcome } = input as {
-      application: Application
-      lifecycle: string[]
-      outcome?: "failure" | "interruption"
-    }
+export const createApplication = (input: {
+  application: Application
+  lifecycle: string[]
+  outcome?: "failure" | "interruption"
+  constructionFailure?: Error
+}) => {
+  if (input.constructionFailure) throw input.constructionFailure
+  return Effect.gen(function* () {
+    const { application, lifecycle, outcome } = input
     yield* Effect.acquireRelease(
       Effect.sync(() => lifecycle.push("acquire")),
       () =>
@@ -21,3 +23,4 @@ export const createApplication = (input: unknown) =>
     if (outcome === "interruption") return yield* Effect.interrupt
     return application
   })
+}

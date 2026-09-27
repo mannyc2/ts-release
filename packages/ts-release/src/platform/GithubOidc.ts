@@ -1,4 +1,4 @@
-import { Clock, Config, Effect, Redacted, Schema } from "effect"
+import { Clock, Config, Effect, Redacted, Result, Schema } from "effect"
 import { createPublicKey, verify } from "node:crypto"
 import type { HttpExchangeOptions, OidcTokenRequest } from "../Http.js"
 import type { OidcTokenSource, TrustedPublisherHost } from "../Http.js"
@@ -9,10 +9,50 @@ import { decodeJson } from "../internal/NativeJson.js"
 
 const issuer = "https://token.actions.githubusercontent.com"
 const invalid = (): never => fail("github-oidc", "GitHub workload identity could not be verified")
-const object = (value: unknown): Record<string, unknown> => {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return invalid()
-  return value as Record<string, unknown>
+const decodeOidcJson = (bytes: Uint8Array): unknown => {
+  const decoder = new TextDecoder("utf-8", { fatal: true })
+  let text: string
+  try {
+    text = decoder.decode(bytes)
+  } catch {
+    return fail("invalid-data", "Value could not be admitted")
+  }
+  return decodeJson(text)
 }
+const decode = <A, I>(codec: Schema.Codec<A, I>, value: unknown): A => {
+  const decoded = Schema.decodeUnknownResult(codec)(value)
+  return Result.isFailure(decoded) ? invalid() : decoded.success
+}
+const nonempty = Schema.String.check(Schema.isMinLength(1))
+const TokenParts = Schema.Tuple([Schema.String, Schema.String, Schema.String])
+const Header = Schema.Struct({
+  alg: Schema.Literal("RS256"),
+  typ: Schema.Literal("JWT"),
+  kid: nonempty,
+  crit: Schema.optionalKey(Schema.Never),
+  jku: Schema.optionalKey(Schema.Never),
+  jwk: Schema.optionalKey(Schema.Never),
+  x5u: Schema.optionalKey(Schema.Never),
+  b64: Schema.optionalKey(Schema.Never),
+})
+const Claims = Schema.StructWithRest(
+  Schema.Struct({ exp: Schema.Int, iat: Schema.Int, nbf: Schema.Int, sub: nonempty }),
+  [Schema.Record(Schema.String, Schema.Unknown)],
+)
+const KeySet = Schema.Struct({
+  keys: Schema.Array(Schema.Record(Schema.String, Schema.Unknown)).check(
+    Schema.isMinLength(1),
+    Schema.isMaxLength(32),
+  ),
+})
+const PublicKey = Schema.Struct({
+  kty: Schema.Literal("RSA"),
+  use: Schema.Literal("sig"),
+  alg: Schema.optional(Schema.Literal("RS256")),
+  n: Schema.String.check(Schema.isMaxLength(1400)),
+  e: Schema.String.check(Schema.isMaxLength(12)),
+})
+const TokenResponse = Schema.Struct({ value: nonempty.check(Schema.isMaxLength(65536)) })
 const text = Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(4096))
 const Request = Schema.Struct({
   issuer: Schema.Literal(issuer),
@@ -50,58 +90,41 @@ export const verifyGithubToken = (
 ): void => {
   const request = decodeOwned(Request, input)
   if (typeof token !== "string" || token.length > 64 * 1024) invalid()
-  const parts = token.split(".")
-  if (parts.length !== 3) invalid()
-  const header = object(decodeJson(base64url(parts[0]!))),
-    claims = object(decodeJson(base64url(parts[1]!)))
-  if (
-    header.alg !== "RS256" ||
-    header.typ !== "JWT" ||
-    typeof header.kid !== "string" ||
-    !header.kid ||
-    ["crit", "jku", "jwk", "x5u", "b64"].some((name) => name in header)
-  )
-    invalid()
-  const keys = object(jwks).keys
-  if (!Array.isArray(keys) || !keys.length || keys.length > 32) invalid()
-  const matches = (keys as unknown[]).map(object).filter((key) => key.kid === header.kid)
-  if (matches.length !== 1) invalid()
-  const key = matches[0]!
-  if (
-    key.kty !== "RSA" ||
-    key.use !== "sig" ||
-    (key.alg !== undefined && key.alg !== "RS256") ||
-    typeof key.n !== "string" ||
-    key.n.length > 1400 ||
-    typeof key.e !== "string" ||
-    key.e.length > 12
-  )
-    invalid()
-  const modulus = base64url(key.n as string)
+  const [rawHeader, rawClaims, signature] = decode(TokenParts, token.split("."))
+  const header = decode(Header, decodeOidcJson(base64url(rawHeader))),
+    claims = decode(Claims, decodeOidcJson(base64url(rawClaims)))
+  const matches = decode(KeySet, jwks).keys.filter((key) => key.kid === header.kid)
+  const [selected] = matches
+  if (matches.length !== 1 || selected === undefined) return invalid()
+  const key = decode(PublicKey, selected)
+  const modulus = base64url(key.n)
   if (modulus.length < 256 || modulus.length > 1024 || modulus[0] === 0) invalid()
-  base64url(key.e as string)
-  const publicKey = createPublicKey({
-    key: { kty: "RSA", n: key.n as string, e: key.e as string },
-    format: "jwk",
-  })
-  if (
-    !verify("RSA-SHA256", Buffer.from(`${parts[0]}.${parts[1]}`), publicKey, base64url(parts[2]!))
-  )
-    invalid()
-  if (
-    !Number.isSafeInteger(now) ||
-    now < 0 ||
-    ![claims.exp, claims.iat, claims.nbf].every(Number.isSafeInteger)
-  )
-    invalid()
+  base64url(key.e)
+  let publicKey: ReturnType<typeof createPublicKey>
+  try {
+    publicKey = createPublicKey({
+      key: { kty: "RSA", n: key.n, e: key.e },
+      format: "jwk",
+    })
+  } catch {
+    return fail("invalid-data", "Value could not be admitted")
+  }
+  const signed = Buffer.from(`${rawHeader}.${rawClaims}`),
+    signatureBytes = base64url(signature)
+  let verified: boolean
+  try {
+    verified = verify("RSA-SHA256", signed, publicKey, signatureBytes)
+  } catch {
+    return fail("invalid-data", "Value could not be admitted")
+  }
+  if (!verified) invalid()
+  if (!Number.isSafeInteger(now) || now < 0) invalid()
   const seconds = Math.floor(now / 1000)
   if (
-    Number(claims.iat) > seconds ||
-    Number(claims.nbf) > seconds ||
-    Number(claims.exp) <= seconds ||
-    Number(claims.exp) <= Number(claims.iat) ||
-    typeof claims.sub !== "string" ||
-    !claims.sub
+    claims.iat > seconds ||
+    claims.nbf > seconds ||
+    claims.exp <= seconds ||
+    claims.exp <= claims.iat
   )
     invalid()
   for (const [name, value] of Object.entries(expected(request)))
@@ -142,7 +165,7 @@ export const makeGithubOidcTokenSource = (options: HttpExchangeOptions): OidcTok
       if (
         !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(value.repository) ||
         !/^\.github\/workflows\/[A-Za-z0-9_.-]+\.ya?ml$/u.test(value.workflow) ||
-        !/^(?:refs\/(?:heads|tags)\/[^\s~^:?*\[\\]+|[0-9a-f]{40}(?:[0-9a-f]{24})?)$/u.test(
+        !/^(?:refs\/(?:heads|tags)\/[^\s~^:?*[\\]+|[0-9a-f]{40}(?:[0-9a-f]{24})?)$/u.test(
           value.workflowRef,
         )
       )
@@ -176,6 +199,7 @@ export const makeGithubOidcTokenSource = (options: HttpExchangeOptions): OidcTok
     }
     const rawUrl = yield* readEnvironment("ACTIONS_ID_TOKEN_REQUEST_URL")
     const url = yield* attempt(() => {
+      if (!URL.canParse(rawUrl)) fail("invalid-data", "Value could not be admitted")
       const url = new URL(rawUrl)
       // GitHub.com runner service endpoint, independent of the JWT issuer URL.
       // Refuse a substituted origin before reading the runner request token.
@@ -210,9 +234,7 @@ export const makeGithubOidcTokenSource = (options: HttpExchangeOptions): OidcTok
     })
     const token = yield* attempt(() => {
       if (response.status !== 200) invalid()
-      const value = object(decodeJson(response.body)).value
-      if (typeof value !== "string" || !value || value.length > 65536) invalid()
-      return value as string
+      return decode(TokenResponse, decodeOidcJson(response.body)).value
     })
     const keys = yield* publicRead({
       url: `${issuer}/.well-known/jwks`,
@@ -224,7 +246,12 @@ export const makeGithubOidcTokenSource = (options: HttpExchangeOptions): OidcTok
     const now = yield* Clock.currentTimeMillis
     yield* attempt(() => {
       if (keys.status !== 200) invalid()
-      verifyGithubToken(token, decodeJson(keys.body), { ...request, expectedClaims: claims }, now)
+      verifyGithubToken(
+        token,
+        decodeOidcJson(keys.body),
+        { ...request, expectedClaims: claims },
+        now,
+      )
     })
     return Redacted.make(token)
   })

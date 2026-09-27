@@ -1,9 +1,5 @@
 export type TarEntry = Readonly<{ path: string; kind: "file" | "directory"; body: Uint8Array }>
 const decoder = new TextDecoder("utf-8", { fatal: true })
-const cstring = (bytes: Uint8Array) => {
-  const end = bytes.indexOf(0)
-  return decoder.decode(bytes.subarray(0, end < 0 ? bytes.length : end))
-}
 export const registerArchivePath = (
   seen: Set<string>,
   raw: string,
@@ -16,6 +12,7 @@ export const registerArchivePath = (
     !path ||
     path.length > 1024 ||
     path !== path.normalize("NFC") ||
+    // oxlint-disable-next-line no-control-regex -- Archive paths reject native separators and control bytes.
     /[\\:\u0000-\u001f\u007f]/u.test(path) ||
     path.split("/").some((part) => !part || part === "." || part === "..") ||
     seen.has(key) ||
@@ -34,6 +31,17 @@ export const readTarBytes = (
   invalid: (reason: string) => never,
 ): readonly TarEntry[] => {
   if (!Number.isSafeInteger(maximumBytes) || input.length > maximumBytes) invalid("bound")
+  const text = (bytes: Uint8Array) => {
+    try {
+      return decoder.decode(bytes)
+    } catch {
+      return invalid("encoding")
+    }
+  }
+  const cstring = (bytes: Uint8Array) => {
+    const end = bytes.indexOf(0)
+    return text(bytes.subarray(0, end < 0 ? bytes.length : end))
+  }
   const bytes = input
   const entries: TarEntry[] = [],
     seen = new Set<string>()
@@ -50,12 +58,12 @@ export const readTarBytes = (
       selected: string | undefined
     while (cursor < body.length) {
       const space = body.indexOf(32, cursor),
-        raw = decoder.decode(body.subarray(cursor, space))
+        raw = text(body.subarray(cursor, space))
       if (space < cursor || !/^[1-9][0-9]*$/u.test(raw)) invalid("pax")
       const length = Number(raw),
         end = cursor + length
       if (!Number.isSafeInteger(length) || end <= space + 1 || end > body.length) invalid("pax")
-      const line = decoder.decode(body.subarray(space + 1, end))
+      const line = text(body.subarray(space + 1, end))
       if (!line.endsWith("\n")) invalid("pax")
       const equals = line.indexOf("=")
       if (equals <= 0) invalid("pax")

@@ -97,6 +97,7 @@ export const checkCredentials = Effect.fn("release.checkCredentials")(function* 
 const knownCodes = new Set([
   "github-oidc",
   "http-credentials",
+  "http-request-owner",
   "npm-oidc-exchange",
   "npm-data",
   "npm-credential-lifetime",

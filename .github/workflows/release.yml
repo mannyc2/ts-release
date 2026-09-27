@@ -104,6 +104,7 @@ jobs:
         with:
           node-version: "24.15.0"
       - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run prepare
       - run: bun run build
       - uses: actions/download-artifact@v4
         with:
@@ -152,6 +153,7 @@ jobs:
         with:
           node-version: "24.15.0"
       - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run prepare
       - run: bun run build
       - uses: actions/download-artifact@v4
         with:
@@ -169,8 +171,20 @@ jobs:
           printf '%s  %s\n' "$BUNDLE_SHA256" .release/signed/bundle.json | sha256sum --check
           printf '%s  %s\n' "$PLAN_SHA256" .release/signed/plan.json | sha256sum --check
           bun run release:check .release/signed
-      - name: Install the exact retained packages and shared application
-        run: bun scripts/install-release-runtime.ts .release/signed .release/publisher
+      - name: Install the selected checkout executor for the retained candidate
+        run: bun scripts/install-release-runtime.ts .release/signed .release/publisher --executor=checkout
+      - name: Retain the selected executor separately from publication artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ts-release-executor-${{ github.run_attempt }}
+          path: |
+            .release/publisher/executor.json
+            .release/publisher/archives/*.tgz
+            .release/publisher/*.js
+            .release/publisher/*.mjs
+            .release/publisher/bun.lock
+          if-no-files-found: error
+          retention-days: 90
       - name: Restore the superseded candidate
         if: inputs.superseded_run_id != ''
         uses: actions/download-artifact@v4

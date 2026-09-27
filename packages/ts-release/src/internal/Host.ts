@@ -123,7 +123,7 @@ export const read = Effect.fn("ts-release.readHistory")(function* (host: HostSha
   const stored = yield* host.store.read(journalId)
   const snapshot = yield* attempt(() =>
     decodeOwned(
-      Schema.Struct({ revision: Schema.Number, events: Schema.Array(JournalEvent) }),
+      Schema.Struct({ revision: Schema.Finite, events: Schema.Array(JournalEvent) }),
       stored,
     ),
   )
@@ -157,8 +157,8 @@ export const read = Effect.fn("ts-release.readHistory")(function* (host: HostSha
     )
     if (kind === "PreparationScope") yield* attempt(() => verifyPreparationSelection(scoped))
     yield* attempt(() => {
-      for (let index = 0; index < scoped.length; index++)
-        assertJournalAppend(admitted, scoped.slice(0, index), scoped[index]!, kind)
+      for (const [index, event] of scoped.entries())
+        assertJournalAppend(admitted, scoped.slice(0, index), event, kind)
       if (
         superseded.has(admitted.planId) &&
         (!scoped.some((event) => event.body._tag === "PlanSuperseded") ||
@@ -170,7 +170,8 @@ export const read = Effect.fn("ts-release.readHistory")(function* (host: HostSha
       selected = yield* attempt(() => (host.machine ?? historyMachine)(admitted, scoped, kind))
   }
   const events = snapshot.events
-  const machine = selected!
+  if (selected === undefined) return yield* reject("invalid-data", "Value could not be admitted")
+  const machine = selected
   return {
     plans: [...registered.values()].filter((item) => !superseded.has(item.planId)),
     supersededPlans: [...registered.values()].filter((item) => superseded.has(item.planId)),

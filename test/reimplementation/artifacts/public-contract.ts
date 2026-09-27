@@ -61,7 +61,8 @@ export type DurableFile = File
 // Base producer records must establish identity before release ownership.
 export const requireIdentity = (owner: ContentOwner, file: Entry1.File, tree: Entry1.Directory) => {
   // @ts-expect-error An ordinary file has no expected digest.
-  adoptFile(owner, "file", file)
+  const fileAdoption = adoptFile(owner, "file", file)
   // @ts-expect-error An ordinary directory has no expected manifest digests.
-  adoptTree(owner, "tree", tree)
+  const treeAdoption = adoptTree(owner, "tree", tree)
+  return { fileAdoption, treeAdoption }
 }

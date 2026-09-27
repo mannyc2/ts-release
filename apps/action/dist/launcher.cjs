@@ -14,12 +14,15 @@ class ActionError extends Error {
 }
 var bounded = (text) => text.replace(/[\u0000-\u001f\u007f-\u009f]+/gu, " ").trim().slice(0, 512);
 var describeFailure = (cause) => {
-  const value = cause;
-  if ((cause instanceof ActionError || value?._tag === "ReleaseError") && typeof value?.code === "string" && typeof value.message === "string")
-    return `${bounded(value.code)}: ${bounded(value.message)}`;
-  const name = typeof value?._tag === "string" ? value._tag : cause instanceof Error ? cause.name : typeof cause;
-  const code = typeof value?.code === "string" ? ` ${value.code}` : "";
-  return `${bounded(`${name}${code}`) || "unknown"} (only a ReleaseError's code and message are printed)`;
+  const value = typeof cause === "object" && cause !== null ? cause : {};
+  const tag = "_tag" in value ? value._tag : undefined;
+  const code = "code" in value ? value.code : undefined;
+  const message = "message" in value ? value.message : undefined;
+  if ((cause instanceof ActionError || tag === "ReleaseError") && typeof code === "string" && typeof message === "string")
+    return `${bounded(code)}: ${bounded(message)}`;
+  const name = typeof tag === "string" ? tag : cause instanceof Error ? cause.name : typeof cause;
+  const diagnosticCode = typeof code === "string" ? ` ${code}` : "";
+  return `${bounded(`${name}${diagnosticCode}`) || "unknown"} (only a ReleaseError's code and message are printed)`;
 };
 var required = (environment, name) => {
   const value = environment[name]?.trim();
@@ -45,8 +48,15 @@ var runActionEnvironment = async (environment = process.env) => {
   if (!manifestPath)
     throw new ActionError("action-install", "Install @mannyc1/ts-release in the application workspace");
   const manifest = JSON.parse(await import_promises.readFile(manifestPath, "utf8"));
-  const entry = import_node_path.resolve(import_node_path.dirname(manifestPath), manifest.exports["./node"].import);
-  const { runApplication, runInterruptibleProcess } = await import(import_node_url.pathToFileURL(entry).href);
+  const exports2 = typeof manifest === "object" && manifest !== null && "exports" in manifest ? manifest.exports : undefined;
+  const node = typeof exports2 === "object" && exports2 !== null && "./node" in exports2 ? exports2["./node"] : undefined;
+  if (typeof node !== "object" || node === null || !("import" in node) || typeof node.import !== "string")
+    throw new ActionError("action-install", "Installed ts-release must expose its Node entry");
+  const entry = import_node_path.resolve(import_node_path.dirname(manifestPath), node.import);
+  const loaded = await import(import_node_url.pathToFileURL(entry).href);
+  if (typeof loaded !== "object" || loaded === null || !("runApplication" in loaded) || typeof loaded.runApplication !== "function" || !("runInterruptibleProcess" in loaded) || typeof loaded.runInterruptibleProcess !== "function")
+    throw new ActionError("action-install", "Installed ts-release must expose its application runner");
+  const { runApplication, runInterruptibleProcess } = loaded;
   return runInterruptibleProcess(async (signal, exitCode) => {
     try {
       let input;

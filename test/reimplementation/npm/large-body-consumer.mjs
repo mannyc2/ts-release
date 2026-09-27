@@ -7,6 +7,7 @@ import { join } from "node:path"
 import { Effect, Schema } from "effect"
 import { Bundle, Content, File } from "@mannyc1/ts-release/bundle"
 import { decodeJson } from "@mannyc1/ts-release/http"
+import { makeHttpTransport } from "@mannyc1/ts-release/node"
 import { definitions, NoProvenance, publish, TokenAuthorization } from "@mannyc1/ts-release-npm"
 
 const accepted = [
@@ -117,6 +118,14 @@ try {
   )
   assert.ok(request.body.length > 18 * 1024 * 1024)
   assert.equal(provider.ownsRequest(request), true)
+  const { validate } = makeHttpTransport({
+    providers,
+    credentials: () => Effect.die("Wire admission cannot acquire publication credentials"),
+    timeoutMilliseconds: 1000,
+    maximumResponseBytes: 1024,
+  })
+  assert.ok(validate)
+  await Effect.runPromise(validate(request))
   const document = decodeJson(request.body)
   assert.deepEqual(
     Buffer.from(document._attachments[`${name}-${version}.tgz`].data, "base64"),
@@ -124,16 +133,18 @@ try {
   )
   document._attachments[`${name}-${version}.tgz`].data = "AAAA"
   const changed = new TextEncoder().encode(JSON.stringify(document))
+  const changedRequest = {
+    facts: {
+      ...request.facts,
+      bodyDigest: createHash("sha256").update(changed).digest("hex"),
+      byteLength: String(changed.length),
+    },
+    body: changed,
+  }
+  assert.equal(provider.ownsRequest(changedRequest), false)
   assert.equal(
-    provider.ownsRequest({
-      facts: {
-        ...request.facts,
-        bodyDigest: createHash("sha256").update(changed).digest("hex"),
-        byteLength: String(changed.length),
-      },
-      body: changed,
-    }),
-    false,
+    (await Effect.runPromise(Effect.flip(validate(changedRequest)))).code,
+    "http-request-owner",
   )
   console.log(JSON.stringify({ admitted: true, rejectsMutation: true, bytes: request.body.length }))
 } finally {

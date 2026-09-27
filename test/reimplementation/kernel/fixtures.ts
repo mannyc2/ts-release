@@ -1,5 +1,5 @@
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
+import * as Record from "effect/Record"
 import * as Schema from "effect/Schema"
 import { appendFileSync } from "node:fs"
 import {
@@ -32,7 +32,7 @@ export const evaluators = {
   M3: memoizedMachine(historyMachine),
 } as const satisfies Record<string, MachineConstructor>
 export type EvaluatorName = keyof typeof evaluators
-export const evaluatorNames = Object.keys(evaluators) as ReadonlyArray<EvaluatorName>
+export const evaluatorNames = Record.keys(evaluators)
 
 export class FixtureIntent extends Schema.Class<FixtureIntent>("FixtureIntent")({
   coordinate: Schema.String,
@@ -41,6 +41,8 @@ export class FixtureIntent extends Schema.Class<FixtureIntent>("FixtureIntent")(
 }) {}
 
 export class FixtureReceipt extends Schema.Class<FixtureReceipt>("FixtureReceipt")({
+  // The deliberately permissive fixture leaves finite/canonical receipt admission to the kernel under test.
+  // @effect-diagnostics-next-line schemaNumber:off
   status: Schema.Number,
   endpoint: Schema.String,
   bodyDigest: Schema.String,
@@ -118,6 +120,7 @@ export const providerFor = (
   receiptCodec: FixtureReceipt,
   classifyReceipt: () => "Satisfied",
   receiptCorresponds: (_operation, request, input) => {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- This opaque callback must receive receiptCodec's admitted value; decoding again would mask a broken kernel admission boundary.
     const receipt = input as FixtureReceipt
     return (
       receipt.status === 201 &&
@@ -126,6 +129,7 @@ export const providerFor = (
     )
   },
   prepare: Effect.fn("fixture.prepare")(function* (operation) {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The kernel under test must admit intentCodec before invoking this opaque provider callback.
     const intent = operation.intent as FixtureIntent
     return yield* makeRequest({
       transport: "core.http/1",
@@ -143,6 +147,7 @@ export const providerFor = (
         observationVersion: "fixture-visible/1",
         observationCodec: FixtureObservation,
         classifyObservation: (_operation: unknown, evidence: unknown) =>
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Keep observationCodec admission the kernel's responsibility instead of validating twice in this fixture.
           (evidence as FixtureObservation).visible ? ("Satisfied" as const) : ("Absent" as const),
         observe: () => Effect.sync(observation),
       }
@@ -192,11 +197,11 @@ export const makeFixture = async (provider = providerFor(), candidate: Evaluator
         }),
     },
   }
-  return { operation, plan, store, sends, host }
+  return { provider, operation, plan, store, sends, host }
 }
 
 export const runWithHost = <A, E>(host: HostShape, effect: Effect.Effect<A, E, Host>) =>
-  Effect.runPromise(Effect.provide(effect, Layer.succeed(Host, host)))
+  Effect.runPromise(Effect.provideService(effect, Host, host))
 
 export const startEvents = async (store: JournalStore, plan: Plan) =>
   (await Effect.runPromise(store.read(plan.journalId))).events.filter(

@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect"
 import { Bundle, File, Tree, verifiedArtifacts } from "@mannyc1/ts-release/bundle"
 import type { ArtifactAccess } from "@mannyc1/ts-release/bundle"
-import { attempt, canonical, inspectPackage, name, own, reject } from "./Package.js"
+import { attempt, failure, canonical, inspectPackage, name, own, reject } from "./Package.js"
 import { Marketplace, marketplaceDocument } from "./Marketplace.js"
 import { containsSecret, PublicText, publicUrl } from "@mannyc1/ts-release/http"
 
@@ -11,6 +11,7 @@ const narrative = (value: string, maximum = 8192): boolean =>
   value === value.normalize("NFC") &&
   value.trim() === value &&
   [...value].length <= maximum &&
+  // oxlint-disable-next-line no-control-regex -- human submission narratives reject NUL and DEL.
   !/[\u0000\u007f]/u.test(value) &&
   !containsSecret(value)
 const unique = (values: readonly string[]): boolean => new Set(values).size === values.length
@@ -88,14 +89,14 @@ export const submission = Effect.fn("openai.submission")(function* (
       bundle = own(Bundle, access.bundle)
     const artifacts = verifiedArtifacts({ bundle, readContent }, 10 * 1024 * 1024)
     if (!artifacts.has(value.plugin) || !artifacts.has(value.listing.logo))
-      throw new Error("OpenAI plugin or logo is not an exact owned Bundle member")
+      throw failure("openai-submission", "OpenAI value could not be admitted")
     return { value, marketplace, artifacts }
   })
   const plugin = yield* inspectPackage(selected.value.plugin, readContent)
   const entries = selected.marketplace.plugins.filter(
     (entry) => entry.name === plugin.manifest.name,
   )
-  if (entries.length !== 1 || entries[0]!.category !== selected.value.listing.category)
+  if (entries.length !== 1 || entries[0]?.category !== selected.value.listing.category)
     return yield* reject("openai-submission", "Marketplace does not contain the listed plugin")
   yield* selected.artifacts.read(selected.value.listing.logo)
   const status = "validated-handoff-human-submission-required" as const

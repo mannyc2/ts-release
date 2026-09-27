@@ -1,3 +1,4 @@
+import assert from "node:assert/strict"
 import { expect, test } from "bun:test"
 import {
   chmod,
@@ -101,7 +102,7 @@ for (const [runtime, services] of [
             Effect.provideService(FileSystem.FileSystem, raced),
           )
         })
-        await expect(runOn(restore)).rejects.toThrow("Restore destination already exists")
+        expect(runOn(restore)).rejects.toThrow("Restore destination already exists")
         if (originalInode === undefined) throw new Error("Destination claim was not exercised")
         expect((await lstat(destination)).ino).toBe(originalInode)
         if (kind === "file") expect(await readFile(destination, "utf8")).toBe("other writer")
@@ -132,7 +133,7 @@ for (const [runtime, services] of [
           }),
         )
       })
-      await expect(runOn(restore)).rejects.toThrow()
+      expect(runOn(restore)).rejects.toThrow()
       expect(await readFile(join(destination, "keep.txt"), "utf8")).toBe("other writer")
       expect(await readdir(destination)).toEqual(["keep.txt"])
       expect(
@@ -147,7 +148,7 @@ test("restoration refuses an existing dangling destination without replacing its
     const tree = await run(adoptTree(owner, "tree", source))
     const destination = join(root, "restored")
     await symlink("missing-target", destination)
-    await expect(run(restoreTree(owner, tree, destination))).rejects.toThrow(
+    expect(run(restoreTree(owner, tree, destination))).rejects.toThrow(
       "Restore destination already exists",
     )
     expect(await readlink(destination)).toBe("missing-target")
@@ -166,11 +167,11 @@ test("restoration preserves owned modes and links, refuses occupied destinations
     expect((await stat(join(destination, "bin"))).mode & 0o777).toBe(0o750)
     expect((await stat(join(destination, "bin/run"))).mode & 0o777).toBe(0o755)
     expect(await readlink(join(destination, "link"))).toBe("bin/run")
-    await expect(run(restoreTree(owner, owned, destination))).rejects.toThrow(
+    expect(run(restoreTree(owner, owned, destination))).rejects.toThrow(
       "Restore destination already exists",
     )
     const corrupt = join(root, "corrupt")
-    await expect(
+    expect(
       run(
         restoreTree(
           { ...owner, read: () => Effect.succeed(new TextEncoder().encode("wrong bytes")) },
@@ -179,10 +180,10 @@ test("restoration preserves owned modes and links, refuses occupied destinations
         ),
       ),
     ).rejects.toMatchObject({ _tag: "AdoptionError" })
-    await expect(stat(corrupt)).rejects.toMatchObject({ code: "ENOENT" })
+    expect(stat(corrupt)).rejects.toMatchObject({ code: "ENOENT" })
     // A read-only root is restored faithfully: the mode is applied after the entries.
     const readOnly = await run(
-      restoreTree(owner, { ...owned, rootMode: 0o555 } as typeof owned, join(root, "read-only")),
+      restoreTree(owner, { ...owned, rootMode: 0o555 }, join(root, "read-only")),
     )
     expect(readOnly.rootMode).toBe(0o555)
     await chmod(join(root, "read-only"), 0o755)
@@ -235,11 +236,11 @@ test("adoption rejects changed sources and forged identities while preserving th
     const file = await run(adoptFile(owner, "safe", source))
     await chmod(source.path, 0o600)
     await writeFile(source.path, "evil bytes!")
-    await expect(run(adoptFile(owner, "changed", source))).rejects.toThrow()
-    await expect(run(adoptFile(owner, "huge", { ...source, bytes: 2 ** 53 }))).rejects.toThrow()
+    expect(run(adoptFile(owner, "changed", source))).rejects.toThrow()
+    expect(run(adoptFile(owner, "huge", { ...source, bytes: 2 ** 53 }))).rejects.toThrow()
     await chmod(join(tree.path, "bin/run"), 0o600)
     await writeFile(join(tree.path, "bin/run"), "changed bytes")
-    await expect(run(adoptTree(owner, "changed", tree))).rejects.toThrow()
+    expect(run(adoptTree(owner, "changed", tree))).rejects.toThrow()
     await writeFile(join(tree.path, "bin/run"), new Uint8Array(128 * 1024))
     const attempts: { path: string; bytes: number }[] = []
     const counting = {
@@ -249,7 +250,7 @@ test("adoption rejects changed sources and forged identities while preserving th
         return owner.putFileOwned(input)
       },
     }
-    await expect(run(adoptTree(counting, "grown", tree))).rejects.toMatchObject({
+    expect(run(adoptTree(counting, "grown", tree))).rejects.toMatchObject({
       _tag: "AdoptionError",
     })
     expect(attempts.some((input) => input.path.endsWith("bin/run") && input.bytes === 11)).toBe(
@@ -274,8 +275,10 @@ test("invalid producer metadata, tree graphs and identities reject before any co
           return new Content({ bytes: 0, sha256: "0".repeat(64) })
         }),
     }
+    const firstEntry = tree.entries[0]
+    assert.ok(firstEntry)
     const invalidTrees = [
-      Schema.decodeUnknownSync(Artifact.Directory)(tree),
+      Schema.decodeSync(Artifact.Directory)(tree),
       { ...tree, sha256: "0".repeat(64) },
       {
         ...tree,
@@ -283,7 +286,7 @@ test("invalid producer metadata, tree graphs and identities reject before any co
           entry.kind === "file" ? { ...entry, mode: 0o600 } : entry,
         ),
       },
-      { ...tree, entries: [...tree.entries, tree.entries[0]!] },
+      { ...tree, entries: [...tree.entries, firstEntry] },
       {
         ...tree,
         entries: tree.entries.map((entry) =>
@@ -294,25 +297,27 @@ test("invalid producer metadata, tree graphs and identities reject before any co
       { ...tree, rootMode: 0o10000 },
     ]
     for (const input of invalidTrees)
-      await expect(
-        run(adoptTree(unused, "tree", input as Artifact.HashedDirectory)),
+      expect(
+        // @ts-expect-error Includes unhashed and malformed producer values to test admission.
+        run(adoptTree(unused, "tree", input)),
       ).rejects.toBeInstanceOf(AdoptionError)
     for (const input of [
-      Schema.decodeUnknownSync(Artifact.File)(file),
+      Schema.decodeSync(Artifact.File)(file),
       { ...file, kind: "blob" },
       { ...file, kind: "executable" },
       { ...file, path: "" },
     ])
-      await expect(run(adoptFile(unused, "file", input as Artifact.HashedFile))).rejects.toThrow()
+      // @ts-expect-error Includes unhashed and malformed producer values to test admission.
+      expect(run(adoptFile(unused, "file", input))).rejects.toThrow()
     for (const name of ["../unsafe", "é.txt", "/absolute", "back\\slash"])
-      await expect(run(adoptFile(unused, name, file))).rejects.toThrow()
+      expect(run(adoptFile(unused, name, file))).rejects.toThrow()
     const accessor = Object.defineProperty({ ...file }, "sha256", {
       get: () => {
         throw new Error("must not be invoked")
       },
       enumerable: true,
     })
-    await expect(run(adoptFile(unused, "file", accessor))).rejects.toThrow("must be plain data")
+    expect(run(adoptFile(unused, "file", accessor))).rejects.toThrow("must be plain data")
     expect(writes).toBe(0)
   }))
 
@@ -334,8 +339,8 @@ test("source record aliases and content-owner mismatches cannot alter the adopte
       putFileOwned: () => Effect.succeed(new Content({ bytes: 0, sha256: "0".repeat(64) })),
     }
     const native = await treeAt(root)
-    await expect(run(adoptTree(wrong, "tree", native))).rejects.toThrow("differs from its manifest")
-    await expect(run(adoptFile(wrong, "file", { ...source, bytes: 11 }))).rejects.toThrow(
+    expect(run(adoptTree(wrong, "tree", native))).rejects.toThrow("differs from its manifest")
+    expect(run(adoptFile(wrong, "file", { ...source, bytes: 11 }))).rejects.toThrow(
       "differs from its producer",
     )
   }))
@@ -380,8 +385,8 @@ test("provider refinements stay outside Bundle ownership while core identity is 
       await run(adoptFile(owner, "file", Object.defineProperty({ ...file }, "extension", getter))),
     ).toEqual(await run(adoptFile(owner, "file", file)))
     const producer = Object.defineProperty({ ...file.producedBy }, "path", getter)
-    await expect(
-      run(adoptFile(owner, "file", { ...file, producedBy: producer })),
-    ).rejects.toBeInstanceOf(AdoptionError)
+    expect(run(adoptFile(owner, "file", { ...file, producedBy: producer }))).rejects.toBeInstanceOf(
+      AdoptionError,
+    )
     expect(gets).toBe(0)
   }))

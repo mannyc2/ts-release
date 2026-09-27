@@ -1,3 +1,6 @@
+import { SourceIdentity } from "../apps/self-release/src/Model.js"
+import { CandidateIdentity, SigstoreSeeds } from "./ReleaseMetadata.js"
+import workspace from "../package.json" with { type: "json" }
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
@@ -37,7 +40,9 @@ const execute = async (argv: string[], cwd = root) => {
 }
 
 export async function readCandidate(directory: string) {
-  const identity = JSON.parse(await readFile(join(directory, "identity.json"), "utf8"))
+  const identity = Schema.decodeSync(Schema.fromJsonString(CandidateIdentity))(
+    await readFile(join(directory, "identity.json"), "utf8"),
+  )
   const bytes = await readFile(join(directory, "bundle.json"))
   assert.equal(digest(bytes), identity.bundleSha256, "Retained Bundle identity differs")
   const owner = fileContentOwner(join(directory, "content"))
@@ -73,7 +78,7 @@ export async function readCandidate(directory: string) {
     assert.ok(file?._tag === "OwnedFile", `Missing owned ${name}`)
     return file
   }
-  const source = JSON.parse(
+  const source = Schema.decodeSync(Schema.fromJsonString(SourceIdentity))(
     new TextDecoder().decode(await Effect.runPromise(readContent(artifact("source.json").content))),
   )
   assert.equal(`${source.repository.owner}/${source.repository.name}`, repository)
@@ -100,7 +105,6 @@ async function prepare(directory: string, original?: string) {
     "",
     "Commit the reviewed candidate before preparation",
   )
-  const workspace = JSON.parse(await readFile(join(root, "package.json"), "utf8"))
   assert.equal(Bun.version, workspace.packageManager.replace("bun@", ""))
   await execute([process.execPath, "run", "build:delivery"])
   assert.equal(
@@ -152,7 +156,7 @@ async function prepare(directory: string, original?: string) {
         env("GITHUB_WORKFLOW_REF"),
         `${repository}/.github/workflows/release.yml@refs/heads/main`,
       )
-      const seeds = JSON.parse(
+      const seeds = Schema.decodeSync(Schema.fromJsonString(SigstoreSeeds))(
         await readFile(join(root, "node_modules/@sigstore/tuf/seeds.json"), "utf8"),
       )
       const tufRootPath = join(staging, "trust-root.json")
@@ -196,7 +200,9 @@ async function prepare(directory: string, original?: string) {
       assert.match(workspace.version, /^\d+\.\d+\.\d+$/u)
       for (const owner of owners) {
         const cwd = join(root, "packages", owner)
-        const manifest = JSON.parse(await readFile(join(cwd, "package.json"), "utf8"))
+        const manifest = Schema.decodeSync(
+          Schema.fromJsonString(Schema.Struct({ name: Schema.String, version: Schema.String })),
+        )(await readFile(join(cwd, "package.json"), "utf8"))
         assert.equal(manifest.name, packageName(owner))
         assert.equal(manifest.version, workspace.version)
         const publicName = `${owner}-${workspace.version}.tgz`,

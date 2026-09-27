@@ -18,6 +18,12 @@ installed providers. `fileContentOwner` supplies local content; `openGitJournal`
 supplies a durable shared Git journal with a disposable local cache. The Bun
 subpath also supplies `openSqliteJournal` for a retained local database.
 
+`fileContentOwner` owns each file handle and temporary copy until its operation
+finishes, including interruption. Cancellation waits for an already-issued native
+file operation before closing its handle and removing its temporary copy; a
+native operation that never settles can therefore delay cancellation. An
+interrupted copy does not continue installing content in detached work.
+
 Provide services/layers at the application boundary. Credentials stay in the host;
 never put credential values in durable operation intents. Apple preparation runs
 its native operations through the `AppleTools` service from the `apple` subpath;
@@ -41,6 +47,22 @@ true asks the runner to re-enter `runRelease` with the original Plan and journal
 The hook is called at most once per operation per invocation, never during
 observation or an unauthorized run. An explicit `maxDispatches` covers all
 continuations. Unknown outcomes never invoke it or grant another dispatch.
+
+Effect hosts can compose `runApplicationEffect(createApplication, input, mode)`
+from the `node` or `bun` subpath. The returned Effect owns the application scope
+and preserves factory errors and service requirements, adding
+`ReleaseError | AdoptionError` for interpretation and Bundle admission. Provide
+factory layers around it and execute at your host boundary; the caller owns the
+runtime, logging and interruption policy. This additive API is available in this
+source checkout, not the already-published 0.4.2 package.
+
+The existing `runApplication(path, input, signal, mode)` remains the Promise
+adapter. It preserves 0.4.2 construction-throw behavior: a synchronously thrown
+`ReleaseError` from the same core instance remains that failure, while other
+factory throws become the safe `invalid-data` failure. The new Effect entrypoint
+instead defers synchronous factory throws as defects. Return `Effect.fail(error)`
+for an expected factory failure. Both entrypoints share admission, execution and
+scoped cleanup; neither changes publication authority or retained identities.
 
 Use Node for native Sigstore signing and verification. Bun remains supported for
 package management, scripts, tests and token-based publication. Bun 1.3.14 fails

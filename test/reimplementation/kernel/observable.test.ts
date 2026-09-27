@@ -1,9 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import {
-  AcceptedRisk,
   DispatchRejectedBeforeCommit,
   DispatchStarted,
   GitCas,
@@ -13,27 +11,21 @@ import {
   Initial,
   JournalEvent,
   ReleaseError,
-  ObservationRecorded,
   Operation,
-  Plan,
   PlanSuperseded,
   ReceiptAccepted,
   RiskAccepted,
   acceptRisk,
-  canonical,
   createOperation,
   createPlan,
   historyMachine,
-  loadPlan,
   makeRequest,
-  observeRelease,
   reportRelease,
   requestFingerprint,
   runRelease,
   supersedePlan,
   type HostShape,
   type JournalStore,
-  type SendResult,
 } from "./kernel.js"
 import {
   evaluatorNames,
@@ -76,13 +68,13 @@ for (const candidate of evaluatorNames)
     test("C02a: credential/prepare rejection creates no attempt and remains retryable", async () => {
       const fixture = await makeFixture(undefined, candidate)
       const unavailable = {
-        ...fixture.host.providers[0]!,
+        ...fixture.provider,
         prepare: () =>
           Effect.fail(
             new ReleaseError({ code: "credentials", message: "No credential available" }),
           ),
       }
-      await expect(
+      expect(
         runWithHost(
           { ...fixture.host, providers: [unavailable] },
           runRelease({ plan: fixture.plan, authorize: true }),
@@ -108,6 +100,7 @@ for (const candidate of evaluatorNames)
               terminal: Schema.Literal(true),
             }),
             corresponds: (_operation, request, proof) => {
+              // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The rejection codec admission must happen in the kernel under test, not be repeated in this callback.
               const native = proof as { endpoint: string; requestDigest: string }
               return (
                 native.endpoint === request.endpoint && native.requestDigest === request.bodyDigest
@@ -192,6 +185,7 @@ for (const candidate of evaluatorNames)
           receipt: unknown,
         ) =>
           request.replay._tag === "GitCas" &&
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The kernel must pass receiptCodec-admitted data through the opaque provider callback.
           (receipt as GitReceipt).desiredNew === request.replay.desiredNew,
         prepare: () =>
           makeRequest({
@@ -256,7 +250,8 @@ for (const candidate of evaluatorNames)
         },
       }
       await runWithHost(host, runRelease({ plan: fixture.plan, authorize: true }))
-      const start = (await startEvents(fixture.store, fixture.plan))[0]!.body as DispatchStarted
+      const start = (await startEvents(fixture.store, fixture.plan))[0]?.body
+      if (start?._tag !== "DispatchStarted") throw new Error("Fixture requires a dispatch start")
       const decision = new RiskAccepted({
         operationId: fixture.operation.operationId,
         decisionId: "approval-1",
@@ -265,7 +260,7 @@ for (const candidate of evaluatorNames)
         principal: "maintainer",
         expiresAt: 2000,
       })
-      await expect(
+      expect(
         runWithHost(host, acceptRisk({ plan: fixture.plan, authorize: false, decision })),
       ).rejects.toThrow("requires host authorization")
       await runWithHost(host, acceptRisk({ plan: fixture.plan, authorize: true, decision }))
@@ -334,7 +329,7 @@ for (const candidate of evaluatorNames)
           }),
         }),
       )
-      const provider = { ...fixture.host.providers[0]!, prepare: () => Effect.succeed(original) }
+      const provider = { ...fixture.provider, prepare: () => Effect.succeed(original) }
       const host: HostShape = {
         ...fixture.host,
         providers: [provider],
@@ -359,7 +354,7 @@ for (const candidate of evaluatorNames)
           runRelease({ plan: fixture.plan, authorize: true }),
         )
         if ("endpoint" in changed) await changedRun
-        else await expect(changedRun).rejects.toThrow()
+        else expect(changedRun).rejects.toThrow()
       }
       expect(await startEvents(fixture.store, fixture.plan)).toHaveLength(1)
     })
@@ -375,7 +370,7 @@ for (const candidate of evaluatorNames)
             stage === "after-send"
               ? supersedePlan({ plan: fixture.plan, authorize: true, reason: "replacement" }).pipe(
                   Effect.asVoid,
-                  Effect.provide(Layer.succeed(Host, fixture.host)),
+                  Effect.provideService(Host, fixture.host),
                 )
               : Effect.void,
         }),
@@ -428,12 +423,12 @@ for (const candidate of evaluatorNames)
       const fixture = await makeFixture(undefined, candidate)
       const a = new Operation({ ...fixture.operation, operationId: "a", dependsOn: ["b"] })
       const b = new Operation({ ...fixture.operation, operationId: "b", dependsOn: ["a"] })
-      await expect(Effect.runPromise(createPlan("bundle", [a, b]))).rejects.toThrow("cycle")
-      await expect(Effect.runPromise(createPlan("bundle", [a]))).rejects.toThrow("dangling")
-      await expect(
+      expect(Effect.runPromise(createPlan("bundle", [a, b]))).rejects.toThrow("cycle")
+      expect(Effect.runPromise(createPlan("bundle", [a]))).rejects.toThrow("dangling")
+      expect(
         Effect.runPromise(createPlan("bundle", [fixture.operation, fixture.operation])),
       ).rejects.toThrow("unique")
-      await expect(
+      expect(
         runWithHost(
           { ...fixture.host, providers: [] },
           runRelease({ plan: fixture.plan, authorize: true }),
@@ -445,7 +440,7 @@ for (const candidate of evaluatorNames)
     test("C12: one definition serves two distinct instance intents without ID collision", async () => {
       const fixture = await makeFixture(undefined, candidate)
       const second = await Effect.runPromise(
-        createOperation(fixture.host.providers[0]!, {
+        createOperation(fixture.provider, {
           coordinate: "package-1",
           endpoint: "https://other.invalid",
           content: "other bytes",
@@ -493,7 +488,7 @@ for (const candidate of evaluatorNames)
             }),
         },
       }
-      const base = fixture.host.providers[0]!
+      const base = fixture.provider
       const provider = {
         ...base,
         prepare: (operation: Operation) =>
@@ -502,7 +497,7 @@ for (const candidate of evaluatorNames)
               own: { operation, receipts: [], observations: [] },
               dependencies: [],
             })
-            .pipe(Effect.provide(Layer.succeed(Host, shadow))),
+            .pipe(Effect.provideService(Host, shadow)),
       }
       await runWithHost(
         { ...fixture.host, providers: [provider] },
@@ -516,7 +511,7 @@ for (const candidate of evaluatorNames)
 test("M1/M2 reject impossible histories, preserve late evidence, and expose equal reports", async () => {
   const fixture = await makeFixture()
   const request = await Effect.runPromise(
-    fixture.host.providers[0]!.prepare(fixture.operation, {
+    fixture.provider.prepare(fixture.operation, {
       own: { operation: fixture.operation, receipts: [], observations: [] },
       dependencies: [],
     }),

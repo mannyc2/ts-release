@@ -22,7 +22,7 @@ const fields = {
 export class Upload extends Schema.TaggedClass<Upload>()("Upload", fields) {}
 export class Opaque extends Schema.TaggedClass<Opaque>()("Opaque", {
   ...fields,
-  sequence: Schema.Number,
+  sequence: Schema.Finite,
 }) {}
 export const Intent = Schema.Union([Upload, Opaque])
 export type Intent = typeof Intent.Type
@@ -211,6 +211,8 @@ export const definition = (options: {
           if (response.status === 403)
             return {
               _tag: "RejectedBeforeCommit" as const,
+              // The surrounding Effect.try maps both decoding and encoding exceptions to invalid().
+              // @effect-diagnostics-next-line schemaSyncInEffect:off
               proof: Schema.encodeSync(NativeError)(decode(NativeError, value)),
             }
           if (response.status !== 201 && response.status !== 202) throw invalid()
